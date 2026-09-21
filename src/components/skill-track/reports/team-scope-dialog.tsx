@@ -28,6 +28,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 
 import { useOrganization } from "@/hooks/use-organization";
 import { cn } from "@/lib/utils";
@@ -48,8 +49,6 @@ export function SkillTrack_TeamScopeDialog({
     /** Hide the trigger button below `sm` — the report offers it in the dropdown menu instead. */
     compact?: boolean;
 }) {
-    const organization = useOrganization();
-
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["select-scope"] as const),
@@ -62,12 +61,6 @@ export function SkillTrack_TeamScopeDialog({
     // Back-button navigation that clears the param always closes it.
     const [dismissed, setDismissed] = useState(false);
     const open = action === "select-scope" || (forceOpen && !dismissed);
-
-    const { data: teams } = useSuspenseQuery(
-        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
-    );
-
-    const sortedTeams = R.sortBy(teams, (team) => team.name);
 
     function handleOpenChange(next: boolean) {
         if (!next) setDismissed(true);
@@ -95,30 +88,43 @@ export function SkillTrack_TeamScopeDialog({
                     <DialogTitle>Select a scope</DialogTitle>
                     <DialogDescription>Choose a team, or the whole organisation.</DialogDescription>
                 </DialogHeader>
-                <Command>
-                    <CommandInput placeholder="Search teams…" />
-                    <CommandList className="h-72">
-                        <CommandEmpty>No teams match your search.</CommandEmpty>
-                        <CommandItem
-                            value="Whole Organization"
-                            onSelect={() => handleSelect("all")}
-                        >
-                            <Building2Icon />
-                            <span>Whole Organisation</span>
-                        </CommandItem>
-                        {sortedTeams.map((team) => (
-                            <CommandItem
-                                key={team.id}
-                                value={team.name}
-                                onSelect={() => handleSelect(team.id)}
-                            >
-                                <UsersIcon />
-                                <span>{team.name}</span>
-                            </CommandItem>
-                        ))}
-                    </CommandList>
-                </Command>
+                <DialogBoundary>
+                    <TeamScope_Picker onSelect={handleSelect} />
+                </DialogBoundary>
             </DialogContent>
         </Dialog>
+    );
+}
+
+/**
+ * The list itself, rendered inside `DialogContent` so its query only runs once the dialog
+ * opens — the dialog is always mounted in the report header.
+ */
+function TeamScope_Picker({ onSelect }: { onSelect: (value: string) => void }) {
+    const organization = useOrganization();
+
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+
+    const sortedTeams = R.sortBy(teams, (team) => team.name);
+
+    return (
+        <Command>
+            <CommandInput placeholder="Search teams…" />
+            <CommandList className="h-72">
+                <CommandEmpty>No teams match your search.</CommandEmpty>
+                <CommandItem value="Whole Organization" onSelect={() => onSelect("all")}>
+                    <Building2Icon />
+                    <span>Whole Organisation</span>
+                </CommandItem>
+                {sortedTeams.map((team) => (
+                    <CommandItem key={team.id} value={team.name} onSelect={() => onSelect(team.id)}>
+                        <UsersIcon />
+                        <span>{team.name}</span>
+                    </CommandItem>
+                ))}
+            </CommandList>
+        </Command>
     );
 }

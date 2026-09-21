@@ -16,6 +16,7 @@ import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -232,22 +233,24 @@ function LinkDialog({
                         imported and kept in sync on demand.
                     </DialogDescription>
                 </DialogHeader>
-                <Select
-                    value={d4hTeamId ? String(d4hTeamId) : ""}
-                    onValueChange={(v) => setD4hTeamId(Number(v))}
-                >
-                    <SelectTrigger disabled={availableTeams.length === 0}>
-                        <SelectValue placeholder="Select a D4H team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableTeams.map((t) => (
-                            <SelectItem key={t.id} value={String(t.id)}>
-                                {t.title}
-                                {t.owner ? ` — ${t.owner.title}` : " — (org-less)"}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <DialogBody>
+                    <Select
+                        value={d4hTeamId ? String(d4hTeamId) : ""}
+                        onValueChange={(v) => setD4hTeamId(Number(v))}
+                    >
+                        <SelectTrigger disabled={availableTeams.length === 0}>
+                            <SelectValue placeholder="Select a D4H team" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableTeams.map((t) => (
+                                <SelectItem key={t.id} value={String(t.id)}>
+                                    {t.title}
+                                    {t.owner ? ` — ${t.owner.title}` : " — (org-less)"}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
@@ -334,20 +337,20 @@ function SyncDialog({
                     <DialogTitle>Sync {team.name} with D4H</DialogTitle>
                     <DialogDescription>Review the changes before applying them.</DialogDescription>
                 </DialogHeader>
+                <DialogBody>
+                    {staleNotice && (
+                        <p className="rounded bg-amber-100 p-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                            The D4H data changed since this preview loaded. Review the updated
+                            changes below and apply again.
+                        </p>
+                    )}
 
-                {staleNotice && (
-                    <p className="rounded bg-amber-100 p-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-                        The D4H data changed since this preview loaded. Review the updated changes
-                        below and apply again.
-                    </p>
-                )}
-
-                {planQuery.isLoading && <p className="text-sm">Loading preview…</p>}
-                {planQuery.isError && (
-                    <p className="text-destructive text-sm">{planQuery.error.message}</p>
-                )}
-                {plan && <SyncPlanView plan={plan} />}
-
+                    {planQuery.isLoading && <p className="text-sm">Loading preview…</p>}
+                    {planQuery.isError && (
+                        <p className="text-destructive text-sm">{planQuery.error.message}</p>
+                    )}
+                    {plan && <SyncPlanView plan={plan} />}
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

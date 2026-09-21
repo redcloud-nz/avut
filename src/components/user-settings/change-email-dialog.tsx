@@ -20,6 +20,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -156,169 +157,171 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSessi
                         Update the email address associated with your account.
                     </DialogDescription>
                 </DialogHeader>
-                <FieldGroup>
-                    <Field orientation="responsive">
-                        <FieldContent>
-                            <FieldLabel>Current Email</FieldLabel>
-                            {step.name === "start" && (
-                                <FieldDescription>
-                                    We&apos;ll send a verification code to this address to confirm
-                                    it&apos;s you.
-                                </FieldDescription>
-                            )}
-                        </FieldContent>
-                        <FieldContent>
-                            <Input
-                                disabled
-                                type="email"
-                                className="min-w-1/2"
-                                value={session.user.email}
+                <DialogBody>
+                    <FieldGroup>
+                        <Field orientation="responsive">
+                            <FieldContent>
+                                <FieldLabel>Current Email</FieldLabel>
+                                {step.name === "start" && (
+                                    <FieldDescription>
+                                        We&apos;ll send a verification code to this address to
+                                        confirm it&apos;s you.
+                                    </FieldDescription>
+                                )}
+                            </FieldContent>
+                            <FieldContent>
+                                <Input
+                                    disabled
+                                    type="email"
+                                    className="min-w-1/2"
+                                    value={session.user.email}
+                                />
+                            </FieldContent>
+                        </Field>
+                        {step.name === "start" && sendCurrentOtpMutation.isError && (
+                            <FieldError
+                                errors={[sendCurrentOtpMutation.error as { message?: string }]}
                             />
-                        </FieldContent>
-                    </Field>
-                    {step.name === "start" && sendCurrentOtpMutation.isError && (
-                        <FieldError
-                            errors={[sendCurrentOtpMutation.error as { message?: string }]}
-                        />
-                    )}
+                        )}
 
-                    {step.name !== "start" && (
-                        <>
-                            <FieldSeparator />
-                            <Controller
-                                control={changeEmailForm.control}
-                                name="code"
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation="responsive"
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent>
-                                            <FieldLabel htmlFor="current-email-code">
-                                                Verification Code
-                                            </FieldLabel>
-                                            {step.name === "verify-current" && (
-                                                <FieldDescription>
-                                                    Enter the 6-digit code we sent to your current
-                                                    email ({session.user.email}).
-                                                    <br />
-                                                    Didn&apos;t receive it?{" "}
-                                                    <a onClick={resendCurrentOtp}>Resend</a>
-                                                </FieldDescription>
-                                            )}
-                                        </FieldContent>
-                                        <FieldContent>
-                                            <InputOTP
-                                                id="current-email-code"
-                                                maxLength={6}
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                pattern={REGEXP_ONLY_DIGITS}
-                                                disabled={
-                                                    step.name === "verify-new" ||
-                                                    requestEmailChangeMutation.isPending
-                                                }
-                                                aria-invalid={fieldState.invalid}
-                                            >
-                                                <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                                    <InputOTPSlot index={0} />
-                                                    <InputOTPSlot index={1} />
-                                                    <InputOTPSlot index={2} />
-                                                    <InputOTPSlot index={3} />
-                                                    <InputOTPSlot index={4} />
-                                                    <InputOTPSlot index={5} />
-                                                </InputOTPGroup>
-                                            </InputOTP>
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </FieldContent>
-                                    </Field>
-                                )}
-                            />
-                            <Controller
-                                control={changeEmailForm.control}
-                                name="newEmail"
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation="responsive"
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent>
-                                            <FieldLabel htmlFor="user-new-email">
-                                                New Email
-                                            </FieldLabel>
-                                        </FieldContent>
-                                        <FieldContent>
-                                            <Input
-                                                id="user-new-email"
-                                                type="email"
-                                                aria-invalid={fieldState.invalid}
-                                                className="min-w-1/2"
-                                                disabled={
-                                                    step.name === "verify-new" ||
-                                                    requestEmailChangeMutation.isPending
-                                                }
-                                                {...field}
-                                            />
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </FieldContent>
-                                    </Field>
-                                )}
-                            />
-                            {step.name === "verify-current" &&
-                                requestEmailChangeMutation.isError && (
+                        {step.name !== "start" && (
+                            <>
+                                <FieldSeparator />
+                                <Controller
+                                    control={changeEmailForm.control}
+                                    name="code"
+                                    render={({ field, fieldState }) => (
+                                        <Field
+                                            orientation="responsive"
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <FieldContent>
+                                                <FieldLabel htmlFor="current-email-code">
+                                                    Verification Code
+                                                </FieldLabel>
+                                                {step.name === "verify-current" && (
+                                                    <FieldDescription>
+                                                        Enter the 6-digit code we sent to your
+                                                        current email ({session.user.email}).
+                                                        <br />
+                                                        Didn&apos;t receive it?{" "}
+                                                        <a onClick={resendCurrentOtp}>Resend</a>
+                                                    </FieldDescription>
+                                                )}
+                                            </FieldContent>
+                                            <FieldContent>
+                                                <InputOTP
+                                                    id="current-email-code"
+                                                    maxLength={6}
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    pattern={REGEXP_ONLY_DIGITS}
+                                                    disabled={
+                                                        step.name === "verify-new" ||
+                                                        requestEmailChangeMutation.isPending
+                                                    }
+                                                    aria-invalid={fieldState.invalid}
+                                                >
+                                                    <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                                        <InputOTPSlot index={0} />
+                                                        <InputOTPSlot index={1} />
+                                                        <InputOTPSlot index={2} />
+                                                        <InputOTPSlot index={3} />
+                                                        <InputOTPSlot index={4} />
+                                                        <InputOTPSlot index={5} />
+                                                    </InputOTPGroup>
+                                                </InputOTP>
+                                                {fieldState.error && (
+                                                    <FieldError errors={[fieldState.error]} />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
+                                    )}
+                                />
+                                <Controller
+                                    control={changeEmailForm.control}
+                                    name="newEmail"
+                                    render={({ field, fieldState }) => (
+                                        <Field
+                                            orientation="responsive"
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <FieldContent>
+                                                <FieldLabel htmlFor="user-new-email">
+                                                    New Email
+                                                </FieldLabel>
+                                            </FieldContent>
+                                            <FieldContent>
+                                                <Input
+                                                    id="user-new-email"
+                                                    type="email"
+                                                    aria-invalid={fieldState.invalid}
+                                                    className="min-w-1/2"
+                                                    disabled={
+                                                        step.name === "verify-new" ||
+                                                        requestEmailChangeMutation.isPending
+                                                    }
+                                                    {...field}
+                                                />
+                                                {fieldState.error && (
+                                                    <FieldError errors={[fieldState.error]} />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
+                                    )}
+                                />
+                                {step.name === "verify-current" &&
+                                    requestEmailChangeMutation.isError && (
+                                        <FieldError
+                                            errors={[
+                                                requestEmailChangeMutation.error as {
+                                                    message?: string;
+                                                },
+                                            ]}
+                                        />
+                                    )}
+                            </>
+                        )}
+
+                        {step.name === "verify-new" && (
+                            <>
+                                <FieldSeparator />
+                                <Field orientation="responsive">
+                                    <FieldContent>
+                                        <FieldLabel>Verification Code</FieldLabel>
+                                        <FieldDescription>
+                                            Enter the 6-digit code we sent to your new email address
+                                            ({step.newEmail}).
+                                        </FieldDescription>
+                                    </FieldContent>
+                                    <FieldContent>
+                                        <InputOTP
+                                            maxLength={6}
+                                            value={newCode}
+                                            onChange={setNewCode}
+                                            pattern={REGEXP_ONLY_DIGITS}
+                                            disabled={changeEmailMutation.isPending}
+                                        >
+                                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                                <InputOTPSlot index={0} />
+                                                <InputOTPSlot index={1} />
+                                                <InputOTPSlot index={2} />
+                                                <InputOTPSlot index={3} />
+                                                <InputOTPSlot index={4} />
+                                                <InputOTPSlot index={5} />
+                                            </InputOTPGroup>
+                                        </InputOTP>
+                                    </FieldContent>
+                                </Field>
+                                {changeEmailMutation.isError && (
                                     <FieldError
-                                        errors={[
-                                            requestEmailChangeMutation.error as {
-                                                message?: string;
-                                            },
-                                        ]}
+                                        errors={[changeEmailMutation.error as { message?: string }]}
                                     />
                                 )}
-                        </>
-                    )}
-
-                    {step.name === "verify-new" && (
-                        <>
-                            <FieldSeparator />
-                            <Field orientation="responsive">
-                                <FieldContent>
-                                    <FieldLabel>Verification Code</FieldLabel>
-                                    <FieldDescription>
-                                        Enter the 6-digit code we sent to your new email address (
-                                        {step.newEmail}).
-                                    </FieldDescription>
-                                </FieldContent>
-                                <FieldContent>
-                                    <InputOTP
-                                        maxLength={6}
-                                        value={newCode}
-                                        onChange={setNewCode}
-                                        pattern={REGEXP_ONLY_DIGITS}
-                                        disabled={changeEmailMutation.isPending}
-                                    >
-                                        <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                            <InputOTPSlot index={0} />
-                                            <InputOTPSlot index={1} />
-                                            <InputOTPSlot index={2} />
-                                            <InputOTPSlot index={3} />
-                                            <InputOTPSlot index={4} />
-                                            <InputOTPSlot index={5} />
-                                        </InputOTPGroup>
-                                    </InputOTP>
-                                </FieldContent>
-                            </Field>
-                            {changeEmailMutation.isError && (
-                                <FieldError
-                                    errors={[changeEmailMutation.error as { message?: string }]}
-                                />
-                            )}
-                        </>
-                    )}
-                </FieldGroup>
+                            </>
+                        )}
+                    </FieldGroup>
+                </DialogBody>
                 {step.name === "start" && (
                     <DialogFooter>
                         <DialogCloseButton variant="outline">Cancel</DialogCloseButton>

@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -20,6 +21,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
@@ -35,6 +37,36 @@ export function AdminModule_LinkPerson_Dialog({
     userName,
     ...props
 }: DialogProps & { userId: UserId; userName: string }) {
+    return (
+        <Dialog {...props}>
+            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                <DialogHeader>
+                    <DialogTitle>Link Person</DialogTitle>
+                    <DialogDescription>
+                        Link a personnel record to user <ObjectName>{userName}</ObjectName>.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <LinkPerson_Body
+                        userId={userId}
+                        userName={userName}
+                        onDone={() => props.onOpenChange?.(false)}
+                    />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function LinkPerson_Body({
+    userId,
+    userName,
+    onDone,
+}: {
+    userId: UserId;
+    userName: string;
+    onDone: () => void;
+}) {
     const organization = useOrganization();
 
     const [personId, setPersonId] = useState<string | null>(null);
@@ -57,32 +89,14 @@ export function AdminModule_LinkPerson_Dialog({
                     </>,
                 );
 
-                handleOpenChange(false);
+                onDone();
             },
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        props.onOpenChange?.(open);
-    }
-
-    useEffect(() => {
-        if (props.open) {
-            setPersonId(null);
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [props.open]);
-
     return (
-        <Dialog {...props} onOpenChange={handleOpenChange}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                <DialogHeader>
-                    <DialogTitle>Link Person</DialogTitle>
-                    <DialogDescription>
-                        Link a personnel record to user <ObjectName>{userName}</ObjectName>.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <DialogBody>
                 <FieldGroup>
                     <Field>
                         <FieldLabel>Person</FieldLabel>
@@ -99,28 +113,28 @@ export function AdminModule_LinkPerson_Dialog({
                         />
                     </Field>
                 </FieldGroup>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="button"
-                        disabled={!personId}
-                        onClick={() => {
-                            if (!personId) return;
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                userId,
-                                personId: PersonId.schema.parse(personId),
-                            });
-                        }}
-                        status={mutation.status}
-                        text={{
-                            idle: "Link Person",
-                            pending: "Linking Person",
-                            success: "Person Linked",
-                        }}
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    type="button"
+                    disabled={!personId}
+                    onClick={() => {
+                        if (!personId) return;
+                        mutation.mutate({
+                            organizationId: organization.id,
+                            userId,
+                            personId: PersonId.schema.parse(personId),
+                        });
+                    }}
+                    status={mutation.status}
+                    text={{
+                        idle: "Link Person",
+                        pending: "Linking Person",
+                        success: "Person Linked",
+                    }}
+                />
+            </DialogFooter>
+        </>
     );
 }

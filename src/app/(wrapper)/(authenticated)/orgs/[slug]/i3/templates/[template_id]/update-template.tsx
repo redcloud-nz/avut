@@ -5,17 +5,17 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -24,6 +24,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,23 +42,50 @@ import { I3Template } from "@/lib/schemas/i3-template";
 import { trpc } from "@/trpc/client";
 
 export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Template }) {
-    const organization = useOrganization();
-    const queryClient = useQueryClient();
-
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
-    const { data: categories } = useQuery(
-        trpc.d4hApi.listEquipmentCategories.queryOptions({
-            organizationId: organization.id,
-        }),
-    );
+    function handleDialogOpenChange(open: boolean) {
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
+    }
 
-    const { data: kinds } = useQuery(
-        trpc.d4hApi.listEquipmentKinds.queryOptions({
-            organizationId: organization.id,
-        }),
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <ObjectIcons.Edit />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Update Template</DialogTitle>
+                    <DialogDescription>Update the details of this template.</DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <UpdateTemplate_Body
+                        template={template}
+                        onDone={() => handleDialogOpenChange(false)}
+                    />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
     );
+}
+
+function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDone: () => void }) {
+    const organization = useOrganization();
+    const queryClient = useQueryClient();
+
+    const [{ data: categories }, { data: kinds }] = useSuspenseQueries({
+        queries: [
+            trpc.d4hApi.listEquipmentCategories.queryOptions({
+                organizationId: organization.id,
+            }),
+            trpc.d4hApi.listEquipmentKinds.queryOptions({
+                organizationId: organization.id,
+            }),
+        ],
+    });
 
     const form = useForm({
         resolver: zodResolver(I3Template.modifiableSchema),
@@ -76,13 +104,21 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                     </>,
                 );
 
-                handleDialogOpenChange(false);
+                onDone();
 
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplates.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
+                await Promise.all([
+                    queryClient.invalidateQueries(
+                        trpc.i3.listTemplates.queryFilter({
+                            organizationId: organization.id,
+                        }),
+                    ),
+                    queryClient.invalidateQueries(
+                        trpc.i3.getTemplate.queryFilter({
+                            organizationId: organization.id,
+                            templateId: template.id,
+                        }),
+                    ),
+                ]);
             },
         }),
     );
@@ -95,18 +131,6 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
     const filteredKinds = kinds?.filter(
         (k) => !selectedCategoryId || k.category.id === selectedCategoryId,
     );
-
-    function handleDialogOpenChange(open: boolean) {
-        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
-    }
-
-    useEffect(() => {
-        if (dialogOpen) {
-            form.reset(template);
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(
         (formData) =>
@@ -121,17 +145,8 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
     );
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <ObjectIcons.Edit />
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Update Template</DialogTitle>
-                    <DialogDescription>Update the details of this template.</DialogDescription>
-                </DialogHeader>
+        <>
+            <DialogBody>
                 <form id="update-template-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
@@ -274,20 +289,20 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
                         />
                     </FieldGroup>
                 </form>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="submit"
-                        form="update-template-form"
-                        status={mutation.status}
-                        text={{
-                            idle: "Update",
-                            pending: "Updating...",
-                            success: "Updated",
-                        }}
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    type="submit"
+                    form="update-template-form"
+                    status={mutation.status}
+                    text={{
+                        idle: "Update",
+                        pending: "Updating...",
+                        success: "Updated",
+                    }}
+                />
+            </DialogFooter>
+        </>
     );
 }

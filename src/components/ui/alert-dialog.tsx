@@ -52,7 +52,10 @@ function AlertDialogContent({
                 data-slot="alert-dialog-content"
                 data-size={size}
                 className={cn(
-                    "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+                    // Compact bottom sheet (below `sm`): as tall as its content, unlike the full-screen `DialogContent`
+                    "group/alert-dialog-content fixed inset-x-0 bottom-0 mx-auto z-50 grid max-h-[92dvh] w-full gap-4 overflow-y-auto rounded-t-2xl bg-popover p-4 pb-(--dialog-pad-b) [--dialog-pad-b:max(1rem,env(safe-area-inset-bottom))] text-popover-foreground ring-1 ring-foreground/10 outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
+                    // Centred modal (`sm` and up)
+                    "sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100dvh-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:[--dialog-pad-b:1rem] sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-open:duration-100 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:duration-100 data-[size=default]:sm:max-w-sm data-[size=sm]:sm:max-w-xs",
                     className,
                 )}
                 {...props}
@@ -79,7 +82,7 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<"div">)
         <div
             data-slot="alert-dialog-footer"
             className={cn(
-                "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
+                "-mx-4 -mb-(--dialog-pad-b,1rem) flex flex-wrap justify-end gap-2 rounded-b-xl border-t bg-muted/50 px-4 pt-3 pb-[calc(var(--dialog-pad-b,1rem)-0.25rem)] group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 max-sm:rounded-b-none max-sm:*:h-9 max-sm:*:flex-1",
                 className,
             )}
             {...props}

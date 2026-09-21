@@ -33,6 +33,7 @@ import {
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -179,9 +180,11 @@ export function SystemAdmin_MemberActionsMenu({
                             .
                         </DialogDescription>
                     </DialogHeader>
-                    <FormProvider {...roleForm}>
-                        <RoleFields secondaryRoles={secondaryRoles} />
-                    </FormProvider>
+                    <DialogBody>
+                        <FormProvider {...roleForm}>
+                            <RoleFields secondaryRoles={secondaryRoles} />
+                        </FormProvider>
+                    </DialogBody>
                     <DialogFooter>
                         <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         <MutationButton

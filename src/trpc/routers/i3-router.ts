@@ -181,6 +181,29 @@ export const i3Router = createTrpcRouter({
         }),
 
     /**
+     * Get a single I3 Template. Its variants are listed separately (`listTemplateVariants`).
+     *
+     * @throws TRPCError(NOT_FOUND) if the template does not exist in the organization.
+     */
+    getTemplate: organizationProcedure({ i3Template: ["view"] })
+        .input(z.object({ templateId: I3TemplateId.schema }))
+        .output(I3Template.schema)
+        .query(async ({ ctx, input: { templateId } }) => {
+            const template = await ctx.prisma.i3Template.findUnique({
+                where: { id: templateId, organizationId: ctx.organizationId },
+                include: { d4h: true },
+            });
+
+            if (!template)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.i3TemplateNotFound(templateId),
+                });
+
+            return I3Template.fromRecord(template);
+        }),
+
+    /**
      * List all D4H PPE Templates for the organization.
      */
     listTemplates: organizationProcedure({ i3Template: ["view"] })

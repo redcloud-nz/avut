@@ -17,6 +17,7 @@ import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -125,44 +126,50 @@ export function AdminModule_CreatePerson_Dialog() {
                     <DialogTitle>New Person</DialogTitle>
                     <DialogDescription>Create a new person.</DialogDescription>
                 </DialogHeader>
-                <form id="create-person-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-name">Name</FieldLabel>
-                                    <Input
-                                        id="person-name"
-                                        autoFocus
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="email"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-email">Email</FieldLabel>
-                                    <Input
-                                        id="person-email"
-                                        type="email"
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="create-person-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="person-name">Name</FieldLabel>
+                                        <Input
+                                            id="person-name"
+                                            autoFocus
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="email"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="person-email">Email</FieldLabel>
+                                        <Input
+                                            id="person-email"
+                                            type="email"
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

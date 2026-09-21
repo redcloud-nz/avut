@@ -32,6 +32,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import {
     Dialog,
+    DialogBody,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -475,117 +476,124 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                     <DialogTitle>Add Issued Item</DialogTitle>
                     <DialogDescription>Select the item being issued.</DialogDescription>
                 </DialogHeader>
-                <FieldGroup>
-                    <Controller
-                        control={form.control}
-                        name="template"
-                        render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="template">Template</FieldLabel>
-                                <Select
-                                    value={field.value.id ?? ""}
-                                    onValueChange={(value) => {
-                                        const selectedTemplate = templates.find(
-                                            (template) => template.id === value,
-                                        );
-                                        field.onChange(
-                                            selectedTemplate
-                                                ? {
-                                                      id: selectedTemplate.id,
-                                                      name: selectedTemplate.name,
-                                                  }
-                                                : { id: "", name: "" },
-                                        );
-                                    }}
-                                >
-                                    <SelectTrigger id="template" aria-invalid={fieldState.invalid}>
-                                        <SelectValue placeholder="Select a template" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {templates.map((template) => (
-                                            <SelectItem key={template.id} value={template.id}>
-                                                {template.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                    <Controller
-                        control={form.control}
-                        name="variant"
-                        render={({ field, fieldState }) => {
-                            const applicableVariants = currentTemplate
-                                ? variants.filter(
-                                      (variant) => variant.templateId === currentTemplate.id,
-                                  )
-                                : [];
-
-                            return (
+                <DialogBody>
+                    <FieldGroup>
+                        <Controller
+                            control={form.control}
+                            name="template"
+                            render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="variant">Variant</FieldLabel>
-
+                                    <FieldLabel htmlFor="template">Template</FieldLabel>
                                     <Select
-                                        value={field.value?.id ?? ""}
+                                        value={field.value.id ?? ""}
                                         onValueChange={(value) => {
-                                            const selectedVariant = variants.find(
-                                                (variant) => variant.id === value,
+                                            const selectedTemplate = templates.find(
+                                                (template) => template.id === value,
                                             );
                                             field.onChange(
-                                                selectedVariant
+                                                selectedTemplate
                                                     ? {
-                                                          id: selectedVariant.id,
-                                                          name: selectedVariant.name,
+                                                          id: selectedTemplate.id,
+                                                          name: selectedTemplate.name,
                                                       }
-                                                    : null,
+                                                    : { id: "", name: "" },
                                             );
                                         }}
-                                        disabled={!currentTemplate}
                                     >
                                         <SelectTrigger
-                                            id="variant"
+                                            id="template"
                                             aria-invalid={fieldState.invalid}
                                         >
-                                            <SelectValue placeholder="Select a variant" />
+                                            <SelectValue placeholder="Select a template" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {applicableVariants.map((variant) => (
-                                                <SelectItem key={variant.id} value={variant.id}>
-                                                    {variant.name}
+                                            {templates.map((template) => (
+                                                <SelectItem key={template.id} value={template.id}>
+                                                    {template.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
-                            );
-                        }}
-                    />
-                    <Controller
-                        control={form.control}
-                        name="serialNumber"
-                        render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+                            )}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="variant"
+                            render={({ field, fieldState }) => {
+                                const applicableVariants = currentTemplate
+                                    ? variants.filter(
+                                          (variant) => variant.templateId === currentTemplate.id,
+                                      )
+                                    : [];
 
-                                <Input
-                                    id="serialNumber"
-                                    value={field.value ?? ""}
-                                    onChange={field.onChange}
-                                    aria-invalid={fieldState.invalid}
-                                    disabled={!(currentTemplate?.d4h?.requireSN ?? false)}
-                                    placeholder={
-                                        currentTemplate?.d4h?.requireSN ? "Enter S/N" : "N/A"
-                                    }
-                                />
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                </FieldGroup>
+                                return (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant">Variant</FieldLabel>
+
+                                        <Select
+                                            value={field.value?.id ?? ""}
+                                            onValueChange={(value) => {
+                                                const selectedVariant = variants.find(
+                                                    (variant) => variant.id === value,
+                                                );
+                                                field.onChange(
+                                                    selectedVariant
+                                                        ? {
+                                                              id: selectedVariant.id,
+                                                              name: selectedVariant.name,
+                                                          }
+                                                        : null,
+                                                );
+                                            }}
+                                            disabled={!currentTemplate}
+                                        >
+                                            <SelectTrigger
+                                                id="variant"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select a variant" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {applicableVariants.map((variant) => (
+                                                    <SelectItem key={variant.id} value={variant.id}>
+                                                        {variant.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                );
+                            }}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="serialNumber"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+
+                                    <Input
+                                        id="serialNumber"
+                                        value={field.value ?? ""}
+                                        onChange={field.onChange}
+                                        aria-invalid={fieldState.invalid}
+                                        disabled={!(currentTemplate?.d4h?.requireSN ?? false)}
+                                        placeholder={
+                                            currentTemplate?.d4h?.requireSN ? "Enter S/N" : "N/A"
+                                        }
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" onClick={handleSubmit}>
                         Add
@@ -637,117 +645,124 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
                     <DialogTitle>Edit Issued Item</DialogTitle>
                     <DialogDescription>Update the details of the issued item.</DialogDescription>
                 </DialogHeader>
-                <FieldGroup>
-                    <Controller
-                        control={form.control}
-                        name="template"
-                        render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="template">Template</FieldLabel>
-                                <Select
-                                    value={field.value.id ?? ""}
-                                    onValueChange={(value) => {
-                                        const selectedTemplate = templates.find(
-                                            (template) => template.id === value,
-                                        );
-                                        field.onChange(
-                                            selectedTemplate
-                                                ? {
-                                                      id: selectedTemplate.id,
-                                                      name: selectedTemplate.name,
-                                                  }
-                                                : { id: "", name: "" },
-                                        );
-                                    }}
-                                >
-                                    <SelectTrigger id="template" aria-invalid={fieldState.invalid}>
-                                        <SelectValue placeholder="Select a template" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {templates.map((template) => (
-                                            <SelectItem key={template.id} value={template.id}>
-                                                {template.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                    <Controller
-                        control={form.control}
-                        name="variant"
-                        render={({ field, fieldState }) => {
-                            const applicableVariants = currentTemplate
-                                ? variants.filter(
-                                      (variant) => variant.templateId === currentTemplate.id,
-                                  )
-                                : [];
-
-                            return (
+                <DialogBody>
+                    <FieldGroup>
+                        <Controller
+                            control={form.control}
+                            name="template"
+                            render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="variant">Variant</FieldLabel>
-
+                                    <FieldLabel htmlFor="template">Template</FieldLabel>
                                     <Select
-                                        value={field.value?.id ?? ""}
+                                        value={field.value.id ?? ""}
                                         onValueChange={(value) => {
-                                            const selectedVariant = variants.find(
-                                                (variant) => variant.id === value,
+                                            const selectedTemplate = templates.find(
+                                                (template) => template.id === value,
                                             );
                                             field.onChange(
-                                                selectedVariant
+                                                selectedTemplate
                                                     ? {
-                                                          id: selectedVariant.id,
-                                                          name: selectedVariant.name,
+                                                          id: selectedTemplate.id,
+                                                          name: selectedTemplate.name,
                                                       }
-                                                    : null,
+                                                    : { id: "", name: "" },
                                             );
                                         }}
-                                        disabled={!currentTemplate}
                                     >
                                         <SelectTrigger
-                                            id="variant"
+                                            id="template"
                                             aria-invalid={fieldState.invalid}
                                         >
-                                            <SelectValue placeholder="Select a variant" />
+                                            <SelectValue placeholder="Select a template" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {applicableVariants.map((variant) => (
-                                                <SelectItem key={variant.id} value={variant.id}>
-                                                    {variant.name}
+                                            {templates.map((template) => (
+                                                <SelectItem key={template.id} value={template.id}>
+                                                    {template.name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
-                            );
-                        }}
-                    />
-                    <Controller
-                        control={form.control}
-                        name="serialNumber"
-                        render={({ field, fieldState }) => (
-                            <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+                            )}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="variant"
+                            render={({ field, fieldState }) => {
+                                const applicableVariants = currentTemplate
+                                    ? variants.filter(
+                                          (variant) => variant.templateId === currentTemplate.id,
+                                      )
+                                    : [];
 
-                                <Input
-                                    id="serialNumber"
-                                    value={field.value ?? ""}
-                                    onChange={field.onChange}
-                                    aria-invalid={fieldState.invalid}
-                                    disabled={!(currentTemplate?.d4h?.requireSN ?? false)}
-                                    placeholder={
-                                        currentTemplate?.d4h?.requireSN ? "Enter S/N" : "N/A"
-                                    }
-                                />
-                                {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                            </Field>
-                        )}
-                    />
-                </FieldGroup>
+                                return (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant">Variant</FieldLabel>
+
+                                        <Select
+                                            value={field.value?.id ?? ""}
+                                            onValueChange={(value) => {
+                                                const selectedVariant = variants.find(
+                                                    (variant) => variant.id === value,
+                                                );
+                                                field.onChange(
+                                                    selectedVariant
+                                                        ? {
+                                                              id: selectedVariant.id,
+                                                              name: selectedVariant.name,
+                                                          }
+                                                        : null,
+                                                );
+                                            }}
+                                            disabled={!currentTemplate}
+                                        >
+                                            <SelectTrigger
+                                                id="variant"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select a variant" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {applicableVariants.map((variant) => (
+                                                    <SelectItem key={variant.id} value={variant.id}>
+                                                        {variant.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                );
+                            }}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="serialNumber"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+
+                                    <Input
+                                        id="serialNumber"
+                                        value={field.value ?? ""}
+                                        onChange={field.onChange}
+                                        aria-invalid={fieldState.invalid}
+                                        disabled={!(currentTemplate?.d4h?.requireSN ?? false)}
+                                        placeholder={
+                                            currentTemplate?.d4h?.requireSN ? "Enter S/N" : "N/A"
+                                        }
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" onClick={handleSubmit}>
                         Update

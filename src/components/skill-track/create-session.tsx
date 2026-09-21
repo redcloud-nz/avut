@@ -19,6 +19,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -127,60 +128,68 @@ export function SkillTrack_CreateSession_Dialog() {
                         after it&apos;s created.
                     </DialogDescription>
                 </DialogHeader>
-                <form
-                    id="new-session-form"
-                    onSubmit={form.handleSubmit(
-                        (formData) =>
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                skillCheckSessionId: SkillCheckSessionId.create(),
-                                create: formData,
-                            }),
-                        (errors) => {
-                            console.error("Form validation errors:", errors);
-                        },
-                    )}
-                >
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Name</FieldLabel>
-                                    <Input {...field} placeholder={namePlaceholder} />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="date"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Date</FieldLabel>
-                                    <DatePicker
-                                        value={field.value}
-                                        onValueChange={(newValue) => field.onChange(newValue)}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
+                <DialogBody>
+                    <form
+                        id="new-session-form"
+                        onSubmit={form.handleSubmit(
+                            (formData) =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    skillCheckSessionId: SkillCheckSessionId.create(),
+                                    create: formData,
+                                }),
+                            (errors) => {
+                                console.error("Form validation errors:", errors);
+                            },
+                        )}
+                    >
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Name</FieldLabel>
+                                        <Input {...field} placeholder={namePlaceholder} />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="date"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Date</FieldLabel>
+                                        <DatePicker
+                                            value={field.value}
+                                            onValueChange={(newValue) => field.onChange(newValue)}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
 
-                        <Controller
-                            name="notes"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Notes</FieldLabel>
-                                    <Textarea {...field} placeholder="Session Notes" />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                            <Controller
+                                name="notes"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Notes</FieldLabel>
+                                        <Textarea {...field} placeholder="Session Notes" />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

@@ -6,13 +6,12 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
@@ -20,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -28,6 +28,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -60,8 +61,6 @@ const CreateCheckSchema = z.object({
 });
 
 export function SkillTrack_CreateCheck_Dialog() {
-    const organization = useOrganization();
-
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["create-check"] as const),
@@ -79,43 +78,54 @@ export function SkillTrack_CreateCheck_Dialog() {
         },
     ]);
 
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "create-check" : null, { history: open ? "push" : "replace" });
+    }
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline" aria-label="Add Check">
+                    <ObjectIcons.Create />
+                    <span className="hidden sm:inline">Add Check</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add Skill Check</DialogTitle>
+                    <DialogDescription>
+                        Record a single skill check outside of a session — for an informal
+                        observation or a historical result. You are recorded as the assessor.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <CreateCheck_Body onDone={() => handleOpenChange(false)} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function CreateCheck_Body({ onDone }: { onDone: () => void }) {
+    const organization = useOrganization();
+
     // The assessor is always the current user's linked person — mirrors the session
     // check-taking flow, where the recorder can't stand in for someone else.
-    const personSelfQuery = useQuery(
-        trpc.personnel.getPersonSelf.queryOptions(
-            { organizationId: organization.id },
-            { enabled: dialogOpen },
-        ),
-    );
-    const personSelf = personSelfQuery.data;
+    const [{ data: personSelf }, { data: personnel }, { data: skills }] = useSuspenseQueries({
+        queries: [
+            trpc.personnel.getPersonSelf.queryOptions({ organizationId: organization.id }),
+            trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
+            trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+        ],
+    });
 
-    const personnelQuery = useQuery(
-        trpc.personnel.listPersonnel.queryOptions(
-            { organizationId: organization.id },
-            { enabled: dialogOpen },
-        ),
-    );
-    const personnelOptions = useMemo(
-        () =>
-            [...(personnelQuery.data ?? [])]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((person) => ({ value: person.id, label: person.name })),
-        [personnelQuery.data],
-    );
+    const personnelOptions = [...personnel]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((person) => ({ value: person.id, label: person.name }));
 
-    const skillsQuery = useQuery(
-        trpc.skills.listAssessableSkills.queryOptions(
-            { organizationId: organization.id },
-            { enabled: dialogOpen },
-        ),
-    );
-    const skillOptions = useMemo(
-        () =>
-            [...(skillsQuery.data?.skills ?? [])]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((skill) => ({ value: skill.id, label: skill.name })),
-        [skillsQuery.data],
-    );
+    const skillOptions = [...skills.skills]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((skill) => ({ value: skill.id, label: skill.name }));
 
     const resultOptions = getEnabledSkillCheckResultOptions(organization.settings);
 
@@ -138,42 +148,17 @@ export function SkillTrack_CreateCheck_Dialog() {
             },
             onSuccess() {
                 toast.success("Skill check added");
-                handleOpenChange(false);
+                onDone();
             },
         }),
     );
 
-    function handleOpenChange(open: boolean) {
-        void setAction(open ? "create-check" : null, { history: open ? "push" : "replace" });
-    }
-
-    useEffect(() => {
-        if (dialogOpen) {
-            form.reset();
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [dialogOpen]);
-
-    // getPersonSelf returns null (not undefined) once loaded with no linked person.
-    const hasNoLinkedPerson = personSelfQuery.isSuccess && personSelf === null;
+    // getPersonSelf returns null once loaded with no linked person.
+    const hasNoLinkedPerson = personSelf === null;
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline" aria-label="Add Check">
-                    <ObjectIcons.Create />
-                    <span className="hidden sm:inline">Add Check</span>
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add Skill Check</DialogTitle>
-                    <DialogDescription>
-                        Record a single skill check outside of a session — for an informal
-                        observation or a historical result. You are recorded as the assessor.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <DialogBody>
                 {hasNoLinkedPerson ? (
                     <Alert variant="warning">
                         <AlertTitle>No linked person record</AlertTitle>
@@ -301,23 +286,23 @@ export function SkillTrack_CreateCheck_Dialog() {
                         </FieldGroup>
                     </form>
                 )}
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    {!hasNoLinkedPerson && (
-                        <MutationButton
-                            type="submit"
-                            form="add-check-form"
-                            disabled={!personSelf}
-                            status={mutation.status}
-                            text={{
-                                idle: "Add Check",
-                                pending: "Adding...",
-                                success: "Added",
-                            }}
-                        />
-                    )}
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                {!hasNoLinkedPerson && (
+                    <MutationButton
+                        type="submit"
+                        form="add-check-form"
+                        disabled={!personSelf}
+                        status={mutation.status}
+                        text={{
+                            idle: "Add Check",
+                            pending: "Adding...",
+                            success: "Added",
+                        }}
+                    />
+                )}
+            </DialogFooter>
+        </>
     );
 }

@@ -6,13 +6,12 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import {
     invitationRoles,
@@ -25,6 +24,7 @@ import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -33,6 +33,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
@@ -71,10 +72,53 @@ export function SystemAdmin_AddMember_Dialog({
     );
     const dialogOpen = action === "add-member";
 
-    const usersQuery = useQuery(trpc.systemAdmin.listUsers.queryOptions());
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
+    }
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <CreateNewIcon /> <span className="hidden md:inline">Add Member</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add Member</DialogTitle>
+                    <DialogDescription>
+                        Attach an existing user to this organisation directly, bypassing the
+                        invitation flow.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <AddMember_Body
+                        organizationId={organizationId}
+                        memberUserIds={memberUserIds}
+                        secondaryRoles={secondaryRoles}
+                        onDone={() => handleOpenChange(false)}
+                    />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function AddMember_Body({
+    organizationId,
+    memberUserIds,
+    secondaryRoles,
+    onDone,
+}: {
+    organizationId: OrganizationId;
+    memberUserIds: string[];
+    secondaryRoles: SecondaryRoleOptions;
+    onDone: () => void;
+}) {
+    const { data: usersData } = useSuspenseQuery(trpc.systemAdmin.listUsers.queryOptions());
 
     const existing = new Set(memberUserIds);
-    const options = (usersQuery.data?.users ?? [])
+    const options = usersData.users
         .filter((u) => !existing.has(u.id))
         .map((u) => ({ value: u.id, label: `${u.name} (${u.email})` }));
 
@@ -96,22 +140,10 @@ export function SystemAdmin_AddMember_Dialog({
             },
             onSuccess() {
                 toast.success("Member added.");
-                handleOpenChange(false);
+                onDone();
             },
         }),
     );
-
-    function handleOpenChange(open: boolean) {
-        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
-    }
-
-    useEffect(() => {
-        if (dialogOpen) {
-            form.reset({ userId: undefined, ...defaultRoles() });
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(
         (formData) =>
@@ -124,20 +156,8 @@ export function SystemAdmin_AddMember_Dialog({
     );
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">Add Member</span>
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add Member</DialogTitle>
-                    <DialogDescription>
-                        Attach an existing user to this organisation directly, bypassing the
-                        invitation flow.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <DialogBody>
                 <FormProvider {...form}>
                     <form id="add-member-form" onSubmit={handleSubmit}>
                         <FieldGroup>
@@ -153,11 +173,7 @@ export function SystemAdmin_AddMember_Dialog({
                                             options={options}
                                             placeholder="Select a user"
                                             searchPlaceholder="Search users..."
-                                            emptyMessage={
-                                                usersQuery.isLoading
-                                                    ? "Loading..."
-                                                    : "No eligible users."
-                                            }
+                                            emptyMessage="No eligible users."
                                             aria-invalid={fieldState.invalid}
                                         />
                                         {fieldState.error && (
@@ -170,16 +186,16 @@ export function SystemAdmin_AddMember_Dialog({
                         </FieldGroup>
                     </form>
                 </FormProvider>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="submit"
-                        form="add-member-form"
-                        status={mutation.status}
-                        text={{ idle: "Add", pending: "Adding", success: "Added" }}
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    type="submit"
+                    form="add-member-form"
+                    status={mutation.status}
+                    text={{ idle: "Add", pending: "Adding", success: "Added" }}
+                />
+            </DialogFooter>
+        </>
     );
 }

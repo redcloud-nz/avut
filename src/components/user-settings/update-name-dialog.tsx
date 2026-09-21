@@ -19,6 +19,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogFooter,
@@ -90,19 +91,21 @@ export function UserProfile_UpdateName_Dialog({ session }: { session: AuthSessio
                 <DialogHeader>
                     <DialogTitle>Change name</DialogTitle>
                 </DialogHeader>
-                <form id="update-name-form" onSubmit={handleSubmit}>
-                    <Field data-invalid={!!form.formState.errors.name}>
-                        <FieldLabel htmlFor="update-name-input">Name</FieldLabel>
-                        <Input
-                            id="update-name-input"
-                            aria-invalid={!!form.formState.errors.name}
-                            {...form.register("name")}
-                        />
-                        {form.formState.errors.name && (
-                            <FieldError errors={[form.formState.errors.name]} />
-                        )}
-                    </Field>
-                </form>
+                <DialogBody>
+                    <form id="update-name-form" onSubmit={handleSubmit}>
+                        <Field data-invalid={!!form.formState.errors.name}>
+                            <FieldLabel htmlFor="update-name-input">Name</FieldLabel>
+                            <Input
+                                id="update-name-input"
+                                aria-invalid={!!form.formState.errors.name}
+                                {...form.register("name")}
+                            />
+                            {form.formState.errors.name && (
+                                <FieldError errors={[form.formState.errors.name]} />
+                            )}
+                        </Field>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

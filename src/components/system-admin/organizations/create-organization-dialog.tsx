@@ -20,6 +20,7 @@ import { Button, MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -126,78 +127,86 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                         seeded automatically.
                     </DialogDescription>
                 </DialogHeader>
-                <form id="create-organization-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="organization-name">Name</FieldLabel>
-                                    <Input
-                                        id="organization-name"
-                                        autoFocus
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                        onChange={(ev) => {
-                                            field.onChange(ev);
-                                            if (!form.getFieldState("slug").isDirty) {
-                                                form.setValue("slug", slugify(ev.target.value));
+                <DialogBody>
+                    <form id="create-organization-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="organization-name">Name</FieldLabel>
+                                        <Input
+                                            id="organization-name"
+                                            autoFocus
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                            onChange={(ev) => {
+                                                field.onChange(ev);
+                                                if (!form.getFieldState("slug").isDirty) {
+                                                    form.setValue("slug", slugify(ev.target.value));
+                                                }
+                                            }}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="slug"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="organization-slug">Slug</FieldLabel>
+                                        <Input
+                                            id="organization-slug"
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                            onChange={(ev) =>
+                                                field.onChange(slugify(ev.target.value))
                                             }
-                                        }}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="slug"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="organization-slug">Slug</FieldLabel>
-                                    <Input
-                                        id="organization-slug"
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                        onChange={(ev) => field.onChange(slugify(ev.target.value))}
-                                    />
-                                    <FieldDescription>
-                                        Identifier used in URLs. Lowercase letters, numbers, and
-                                        hyphens only.
-                                    </FieldDescription>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="addSelfAsOwner"
-                            control={form.control}
-                            render={({ field }) => (
-                                <Field orientation="horizontal">
-                                    <Checkbox
-                                        id="organization-add-self-as-owner"
-                                        checked={field.value}
-                                        onCheckedChange={(checked) =>
-                                            field.onChange(checked === true)
-                                        }
-                                    />
-                                    <FieldContent>
-                                        <FieldLabel htmlFor="organization-add-self-as-owner">
-                                            Add me as owner
-                                        </FieldLabel>
+                                        />
                                         <FieldDescription>
-                                            Join the new organisation as its owner. Leave unchecked
-                                            to provision it without a membership.
+                                            Identifier used in URLs. Lowercase letters, numbers, and
+                                            hyphens only.
                                         </FieldDescription>
-                                    </FieldContent>
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="addSelfAsOwner"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <Field orientation="horizontal">
+                                        <Checkbox
+                                            id="organization-add-self-as-owner"
+                                            checked={field.value}
+                                            onCheckedChange={(checked) =>
+                                                field.onChange(checked === true)
+                                            }
+                                        />
+                                        <FieldContent>
+                                            <FieldLabel htmlFor="organization-add-self-as-owner">
+                                                Add me as owner
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Join the new organisation as its owner. Leave
+                                                unchecked to provision it without a membership.
+                                            </FieldDescription>
+                                        </FieldContent>
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

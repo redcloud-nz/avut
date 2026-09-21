@@ -18,6 +18,12 @@ export type PlaygroundEntry = {
 
 export const playgroundRegistry: readonly PlaygroundEntry[] = [
     {
+        slug: "bottom-sheet",
+        title: "Bottom sheet",
+        description:
+            "Dialogues and alert dialogues on small screens: bottom sheet below sm, centred modal from sm up. A test bench for short/long forms and the footer staying reachable.",
+    },
+    {
         slug: "person-picker",
         title: "Person picker",
         description:
