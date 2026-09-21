@@ -8,22 +8,138 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { auth } from "@/server/auth";
+import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
+import { type LogAction, type LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
-import { OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
+import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData, UserSessionId } from "@/lib/schemas/user-session";
 
 import { FieldConflictError } from "../errors";
-import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
+import {
+    type AuthenticatedContext,
+    authenticatedProcedure,
+    createTrpcRouter,
+    organizationProcedure,
+} from "../init";
 import { Messages } from "../messages";
+
+/**
+ * Loads a pending, unexpired invitation addressed to the caller. Better Auth re-checks the
+ * recipient itself, but doing it here gives a clean NOT_FOUND and the organization for the log.
+ */
+async function findOwnPendingInvitation(
+    ctx: Pick<AuthenticatedContext, "prisma" | "auth">,
+    invitationId: InvitationId,
+) {
+    const invitation = await ctx.prisma.organizationInvitation.findFirst({
+        where: {
+            id: invitationId,
+            email: ctx.auth.user.email,
+            status: "pending",
+            expiresAt: { gt: new Date() },
+        },
+        include: { organization: { select: { name: true, slug: true } } },
+    });
+
+    if (!invitation)
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Invitation not found, expired, or already answered.",
+        });
+
+    return invitation;
+}
+
+/**
+ * Records that the caller answered an invitation, on both timelines it belongs to: their own
+ * (`ctx.logEvent` is user-scoped for an `authenticatedProcedure`) and the organization's, which
+ * would otherwise never learn that a member joined or an invitation was turned down.
+ *
+ * Two independently meaningful events, so they share a `LogBatch`. Written in one interactive
+ * transaction — the batch has to exist before the entries that reference it, and its id is only
+ * known once it is created.
+ */
+async function logInvitationAnswer(
+    ctx: AuthenticatedContext,
+    input: {
+        operationKey: "invitation-accept" | "invitation-reject";
+        organizationId: string;
+        action: LogAction;
+        objectType: LogObjectType;
+        objectId: string;
+        description: string;
+    },
+) {
+    const { operationKey, organizationId, ...entry } = input;
+
+    await ctx.prisma.$transaction(async (tx) => {
+        const batch = await createLogBatch(
+            {
+                operationKey,
+                userId: ctx.userId,
+                actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                description: entry.description,
+            },
+            tx,
+        );
+
+        await ctx.logEvent({ ...entry, batchId: batch.id }, tx);
+        await recordLogEntry(
+            {
+                scope: "organization",
+                organizationId: OrganizationId.schema.parse(organizationId),
+                ...resolveActor(ctx.auth),
+                ...entry,
+                batchId: batch.id,
+            },
+            tx,
+        );
+    });
+}
 
 /**
  * Router for organization user (member) management, including the link between
  * a user account and a personnel record.
  */
 export const usersRouter = createTrpcRouter({
+    /**
+     * Accepts one of the caller's pending organization invitations, making them a member.
+     *
+     * @param ctx The authenticated context.
+     * @param input The invitation to accept.
+     * @returns The joined organization's slug, so the caller can navigate into it.
+     * @throws TRPCError(NOT_FOUND) if the invitation is not pending, has expired, or is addressed
+     *   to someone else.
+     */
+    acceptInvitation: authenticatedProcedure
+        .input(z.object({ invitationId: InvitationId.schema }))
+        .output(z.object({ organizationSlug: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            const invitation = await findOwnPendingInvitation(ctx, input.invitationId);
+
+            // Better Auth creates the membership and runs `afterAcceptInvitation` (person link,
+            // role cache revalidation). It isn't a Prisma operation, so it can't join a
+            // $transaction with the log entries — log only once it has succeeded.
+            const { member } = await auth.api.acceptInvitation({
+                body: { invitationId: invitation.id },
+                headers: await ctx.getHeaders(),
+            });
+
+            await logInvitationAnswer(ctx, {
+                operationKey: "invitation-accept",
+                organizationId: invitation.organizationId,
+                action: "Create",
+                objectType: "OrganizationMembership",
+                objectId: member.id,
+                description: `Accepted invitation to join ${invitation.organization.name} (${invitation.organizationId}).`,
+            });
+
+            return { organizationSlug: invitation.organization.slug };
+        }),
+
     /**
      * Counts log entries by organization, object type, and action over the last 24 hours,
      * across every organization the caller belongs to. For a dashboard-level activity
@@ -240,7 +356,11 @@ export const usersRouter = createTrpcRouter({
         )
         .query(async ({ ctx }) => {
             const invitations = await ctx.prisma.organizationInvitation.findMany({
-                where: { email: ctx.auth.user.email, status: "pending" },
+                where: {
+                    email: ctx.auth.user.email,
+                    status: "pending",
+                    expiresAt: { gt: new Date() },
+                },
                 include: { organization: true },
             });
 
@@ -331,6 +451,35 @@ export const usersRouter = createTrpcRouter({
             return sessions.map((session) =>
                 UserSessionData.fromRecord(session, session.id === ctx.auth.session.id),
             );
+        }),
+
+    /**
+     * Rejects one of the caller's pending organization invitations.
+     *
+     * @param ctx The authenticated context.
+     * @param input The invitation to reject.
+     * @throws TRPCError(NOT_FOUND) if the invitation is not pending, has expired, or is addressed
+     *   to someone else.
+     */
+    rejectInvitation: authenticatedProcedure
+        .input(z.object({ invitationId: InvitationId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            const invitation = await findOwnPendingInvitation(ctx, input.invitationId);
+
+            // Not a Prisma operation, so it can't join a $transaction with the log entries.
+            await auth.api.rejectInvitation({
+                body: { invitationId: invitation.id },
+                headers: await ctx.getHeaders(),
+            });
+
+            await logInvitationAnswer(ctx, {
+                operationKey: "invitation-reject",
+                organizationId: invitation.organizationId,
+                action: "Update",
+                objectType: "OrganizationInvitation",
+                objectId: invitation.id,
+                description: `Rejected invitation to join ${invitation.organization.name} (${invitation.organizationId}).`,
+            });
         }),
 
     /**

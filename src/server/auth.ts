@@ -23,6 +23,7 @@ import { revalidateOrganization } from "./organization";
 import { revalidateOrganizationUser } from "./organization-user-cache";
 import { revalidateRolesAfterLeave } from "./organization-user-hooks";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
+import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 import prisma from "./prisma";
 
 /**
@@ -125,6 +126,9 @@ export const auth = betterAuth({
             overrideDefaultEmailVerification: true,
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
+                // An account made from an invitation link is verified without this code.
+                if (type === "email-verification" && isVerificationOtpEmailSuppressed()) return;
+
                 console.log(`Sending verification OTP (type: ${type}) to:`, email);
                 await sendEmail({
                     from: NoReplyEmailAddress,

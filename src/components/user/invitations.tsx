@@ -6,15 +6,30 @@
 "use client";
 
 import { SendIcon } from "lucide-react";
+import { toast } from "sonner";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
+import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemMedia,
+    ItemTitle,
+} from "@/components/ui/item";
+import { ObjectName } from "@/components/ui/typography";
 
+import { usersEffects } from "@/client/users-effects";
+import { useLogger } from "@/hooks/use-logger";
 import { trpc } from "@/trpc/client";
+import type { RouterOutput } from "@/trpc/routers/_app";
+
+type Invitation = RouterOutput["users"]["listInvitations"][number];
 
 export function Invitations_Card() {
     const { data: invitations } = useSuspenseQuery(trpc.users.listInvitations.queryOptions());
@@ -40,18 +55,83 @@ export function Invitations_Card() {
                     }
                 >
                     {invitations.map((invitation) => (
-                        <Item key={invitation.id}>
-                            <ItemMedia>
-                                <SendIcon className="size-5" />
-                            </ItemMedia>
-                            <ItemContent>
-                                <ItemTitle>{invitation.organization.name}</ItemTitle>
-                                <ItemDescription>Invitation</ItemDescription>
-                            </ItemContent>
-                        </Item>
+                        <Invitation_Item key={invitation.id} invitation={invitation} />
                     ))}
                 </Show>
             </CardContent>
         </Card>
+    );
+}
+
+function Invitation_Item({ invitation }: { invitation: Invitation }) {
+    const logger = useLogger("Common", "Invitation_Item");
+
+    const acceptMutation = useMutation(
+        trpc.users.acceptInvitation.mutationOptions({
+            meta: { effects: usersEffects.acceptInvitation },
+            onError(error) {
+                logger.error("Failed to accept invitation", error);
+                toast.error(`Failed to accept invitation: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        Joined <ObjectName>{invitation.organization.name}</ObjectName>
+                    </>,
+                );
+            },
+        }),
+    );
+
+    const rejectMutation = useMutation(
+        trpc.users.rejectInvitation.mutationOptions({
+            meta: { effects: usersEffects.rejectInvitation },
+            onError(error) {
+                logger.error("Failed to reject invitation", error);
+                toast.error(`Failed to reject invitation: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        Rejected invitation to{" "}
+                        <ObjectName>{invitation.organization.name}</ObjectName>
+                    </>,
+                );
+            },
+        }),
+    );
+
+    const busy = acceptMutation.isPending || rejectMutation.isPending;
+    const input = { invitationId: invitation.id };
+
+    return (
+        <Item>
+            <ItemMedia>
+                <SendIcon className="size-5" />
+            </ItemMedia>
+            <ItemContent>
+                <ItemTitle>{invitation.organization.name}</ItemTitle>
+                <ItemDescription>Invitation</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+                <MutationButton
+                    type="button"
+                    size="sm"
+                    status={acceptMutation.status}
+                    disabled={busy}
+                    text={{ idle: "Accept", pending: "Accepting", success: "Accepted" }}
+                    onClick={() => acceptMutation.mutate(input)}
+                />
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={busy || acceptMutation.isSuccess}
+                    onClick={() => rejectMutation.mutate(input)}
+                >
+                    Reject
+                </Button>
+            </ItemActions>
+        </Item>
     );
 }
