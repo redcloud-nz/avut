@@ -4,17 +4,15 @@
  */
 import "server-only";
 
-import { APIError } from "better-auth/api";
-import { headers as nextHeaders } from "next/headers";
 import { forbidden } from "next/navigation";
 import { cache } from "react";
 
-import { Permissions } from "@/lib/permissions";
-import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
+import { hasAnyRoleWithPermissions, Permissions } from "@/lib/permissions";
+import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
-import { auth, AuthSession } from "./auth";
+import type { AuthSession } from "./auth";
 import { getOrganizationBySlug } from "./cache/organization";
 import { getOrganizationSettings } from "./cache/organization-settings";
 import { getOrganizationUserRoles } from "./cache/organization-user";
@@ -25,41 +23,6 @@ export interface OrganizationAccess {
     organization: OrganizationData;
     settings: OrganizationSettings;
     roles: OrganizationRole[];
-}
-
-/**
- * Assert that the current user holds `permissions` within `organizationId`.
- *
- * Better Auth signals denial two different ways, and both have to be handled: it *throws*
- * UNAUTHORIZED when the user is not a member of the organization at all, and it *returns*
- * `{ success: false }` when they are a member but lack the permission. Checking only the
- * throw silently grants every permission to every member.
- *
- * Denial raises Next's `forbidden()` interrupt rather than throwing. A thrown error would
- * reach the client error boundary with its class dropped and, in production, its message
- * replaced — so the reason would never be shown. Note that `forbidden()` signals by
- * throwing a sentinel, so it must stay outside the `try` that wraps the Better Auth call.
- */
-export async function assertPermission(
-    organizationId: OrganizationId,
-    permissions: Permissions,
-): Promise<void> {
-    let granted: boolean;
-
-    try {
-        const result = await auth.api.hasPermission({
-            headers: await nextHeaders(),
-            body: { organizationId, permissions },
-        });
-        granted = result.success;
-    } catch (error) {
-        // Only UNAUTHORIZED means "not a member" — anything else is a real failure and must
-        // surface as one rather than masquerade as a permission denial.
-        if (!(error instanceof APIError && error.status === "UNAUTHORIZED")) throw error;
-        granted = false;
-    }
-
-    if (!granted) forbidden();
 }
 
 /**
@@ -86,12 +49,32 @@ export const requireOrganization = cache(async (slug: string): Promise<Organizat
     return { session, organization, settings, roles };
 });
 
-/** As `requireOrganization`, additionally requiring `permissions`. */
+/**
+ * As `requireOrganization`, additionally requiring `permissions`.
+ *
+ * Evaluated in memory against the roles `requireOrganization` already loaded — the same
+ * approach as `hasPermission` in `@/server/trpc-context` — rather than a second round trip
+ * through Better Auth's `hasPermission`. `organization:view` is always required, as in
+ * `organizationProcedure`.
+ *
+ * Denial raises Next's `forbidden()` interrupt rather than throwing: a thrown error would reach
+ * the client error boundary with its class dropped and, in production, its message replaced, so
+ * the reason would never be shown. A non-member never gets this far — `requireOrganization`
+ * already responds with not-found.
+ */
 export async function requireOrganizationWith(
     slug: string,
     permissions: Permissions,
 ): Promise<OrganizationAccess> {
     const access = await requireOrganization(slug);
-    await assertPermission(access.organization.id, permissions);
+
+    const required: Permissions = {
+        ...permissions,
+        organization: permissions.organization?.includes("view")
+            ? permissions.organization
+            : [...(permissions.organization ?? []), "view"],
+    };
+
+    if (!hasAnyRoleWithPermissions(access.roles, required)) forbidden();
     return access;
 }
