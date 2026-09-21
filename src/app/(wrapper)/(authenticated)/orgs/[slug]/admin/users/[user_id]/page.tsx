@@ -7,7 +7,7 @@
 
 import { AdminModule_User_Content } from "@/components/admin/users/user-content";
 import { UserId } from "@/lib/schemas/user";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // A server page, so the `?action=` dialogs on this page don't remount it: a client page that read

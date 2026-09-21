@@ -9,7 +9,7 @@ import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import { I3Module_Template_Content } from "./template-content";

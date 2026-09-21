@@ -5,10 +5,6 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// i3-router reaches @/server/auth (via forms-router) at import time; the procedures under test
-// only touch ctx.prisma, so stubbing server-only is enough to load the module under jsdom.
-vi.mock("server-only", () => ({}));
-
 import { nanoId16 } from "@/lib/id";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -16,6 +12,10 @@ import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { i3Router } from "./i3-router";
+
+// i3-router reaches @/server/auth (via forms-router) at import time; the procedures under test
+// only touch ctx.prisma, so stubbing server-only is enough to load the module under jsdom.
+vi.mock("server-only", () => ({}));
 
 describe("i3Router.getTemplate", () => {
     const T = {
