@@ -12,6 +12,7 @@ vi.mock("server-only", () => ({}));
 import { nanoId16 } from "@/lib/id";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { createLogBatch } from "@/server/log-entry";
@@ -749,5 +750,89 @@ describe("personnel email normalisation", () => {
 
         expect((await getPersonByEmail(ctx, "Dana.Reed@EXAMPLE.com"))?.id).toBe(T.dana);
         expect(await getPersonByEmail(ctx, "nobody@example.com")).toBeNull();
+    });
+});
+
+describe("personnel.getLinkedUser", () => {
+    // Dataset: `linked` is attached to a two-role member; `unlinked` has no membership.
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        linked: PersonId.create(),
+        unlinked: PersonId.create(),
+        membership: OrganizationUserId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: T.user, name: "Lucy", email: "lucy@example.com", emailVerified: true },
+        });
+        for (const [id, name] of [
+            [T.linked, "Linked Lucy"],
+            [T.unlinked, "Unlinked Uma"],
+        ] as const) {
+            await db.person.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name,
+                    email: `${name.split(" ")[1].toLowerCase()}@example.com`,
+                    status: "Active",
+                    tags: [],
+                    properties: {},
+                },
+            });
+        }
+        await db.organizationUser.create({
+            data: {
+                id: T.membership,
+                organizationId: T.org,
+                userId: T.user,
+                role: "member,i3-editor",
+                personId: T.linked,
+            },
+        });
+    });
+
+    function caller() {
+        return personnelRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], member: ["view"], person: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns the membership row with the user composed alongside it", async () => {
+        const result = await caller().getLinkedUser({ organizationId: T.org, personId: T.linked });
+
+        expect(result).toMatchObject({
+            organizationUserId: T.membership,
+            organizationId: T.org,
+            userId: T.user,
+            personId: T.linked,
+            roles: ["member", "i3-editor"],
+            user: { id: T.user, name: "Lucy", email: "lucy@example.com" },
+        });
+        expect(result).not.toHaveProperty("name");
+        expect(result).not.toHaveProperty("email");
+    });
+
+    it("returns null for a person with no linked user", async () => {
+        expect(
+            await caller().getLinkedUser({ organizationId: T.org, personId: T.unlinked }),
+        ).toBeNull();
+    });
+
+    it("rejects an unknown person", async () => {
+        await expect(
+            caller().getLinkedUser({ organizationId: T.org, personId: PersonId.create() }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 });

@@ -10,6 +10,7 @@ import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 import { d4hApiRouter } from "./d4h-api-router";
 import { formsRouter } from "./forms-router";
 import { i3Router } from "./i3-router";
+import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
@@ -26,6 +27,7 @@ export const appRouter = createTrpcRouter({
     d4hApi: d4hApiRouter,
     forms: formsRouter,
     i3: i3Router,
+    invitations: invitationsRouter,
     notifications: notificationsRouter,
     organizations: organizationsRouter,
     personnel: personnelRouter,

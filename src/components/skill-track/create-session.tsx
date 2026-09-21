@@ -80,7 +80,7 @@ export function SkillTrack_CreateSession_Dialog() {
 
     const mutation = useMutation(
         trpc.skills.createSession.mutationOptions({
-            meta: { effects: skillsEffects.createSession },
+            meta: { effects: skillsEffects.createSession, navigates: true },
             onError(error) {
                 console.error("Failed to create session", error);
                 toast.error(`Failed to create session ${error.message}`);

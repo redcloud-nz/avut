@@ -338,6 +338,35 @@ page. **update** → `onSuccess` does only `handleDialogOpenChange(false)` (no
 navigation, stays on the page). **delete** → `onSuccess` does only `router.push`
 to the list.
 
+### A mutation that navigates sets `navigates: true`
+
+```tsx
+trpc.teams.createTeam.mutationOptions({
+  meta: { effects: teamsEffects.createTeam, navigates: true },
+  onSuccess({ created }) {
+    router.push(route("/orgs/[slug]/admin/teams/[team_id]", { slug, team_id: created.id }));
+  },
+});
+```
+
+`meta.effects` run — and are **awaited** — before the call site's own `onSuccess`, and an
+`invalidate()` effect awaits a real refetch of every matching query that is still mounted. For a
+create that redirects, the mounted query is the list on the page being left, so the redirect and
+the button's spinner sit through a round trip nobody will see. After a delete it is worse: the
+detail page's own query is still mounted, so the invalidation refetches the record that no longer
+exists.
+
+`navigates: true` makes the effector mark those queries stale (`refetchType: "none"`) without
+fetching anything. They refetch the next time they are used — when the list mounts after the
+redirect, or on Back — so nothing goes stale-but-unrefreshed for long. The trade-off is that a
+query that stays mounted _across_ the navigation (a layout or sidebar query) is not refetched
+until its next trigger, so don't set the flag when an effect has to refresh something the
+destination page shows straight away.
+
+Keep the cache side-effects in `meta.effects` rather than a hand-rolled
+`await queryClient.invalidateQueries(...)` before `router.push`: the hand-rolled version blocks
+the redirect in exactly the same way and has no flag to turn it off.
+
 ## Wave-2 dialog kinds
 
 Beyond plain create / update / delete on a record that owns a route, four

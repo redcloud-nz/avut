@@ -24,18 +24,9 @@ import { SystemAdmin_CreateOrganization_Dialog } from "@/components/system-admin
 import { formatDate } from "@/lib/datetime";
 import { type ModuleId, Modules } from "@/lib/modules";
 import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
+import { trpc, type RouterOutput } from "@/trpc/client";
 
-type OrganizationRow = {
-    id: string;
-    name: string;
-    slug: string;
-    logo: string | null;
-    createdAt: Date;
-    memberCount: number;
-    ownerCount: number;
-    enabledModules: ModuleId[];
-};
+type OrganizationRow = RouterOutput["systemAdmin"]["listOrganizations"]["organizations"][number];
 
 export function SystemAdmin_Organizations_List() {
     const {

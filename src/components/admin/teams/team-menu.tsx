@@ -33,7 +33,7 @@ interface AdminModule_TeamMenuProps {
     team: TeamData;
 }
 
-const ACTIONS = ["delete", "d4h-link", "d4h-sync", "d4h-unlink"] as const;
+const ACTIONS = ["update", "delete", "d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
 export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
@@ -44,6 +44,13 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     const linked = team.d4h !== null;
 
     const actions: MenuActionProps[] = [
+        {
+            verb: "update",
+            label: "Edit",
+            icon: <ObjectIcons.Edit />,
+            onSelect: () => setAction("update", { history: "push" }),
+            disabled: !canUpdate,
+        },
         {
             verb: "delete",
             label: "Delete",

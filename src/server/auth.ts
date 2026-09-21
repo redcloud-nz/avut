@@ -23,7 +23,9 @@ import { UserId } from "@/lib/schemas/user";
 
 import { revalidateOrganization } from "./organization";
 import { revalidateOrganizationUser } from "./organization-user-cache";
+import { revalidateRolesAfterLeave } from "./organization-user-hooks";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
+import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 import prisma from "./prisma";
 
 /**
@@ -65,6 +67,18 @@ export const auth = betterAuth({
         },
     },
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    /*
+     * With `advanced.database.joins` on, better-auth's Prisma adapter guesses relation field
+     * names from the joined model's name (`organizationusers`, `organizationinvitations`),
+     * not our schema's `users` / `invitations`. This endpoint is the only better-auth path
+     * that joins Organization to those, so it 500s with a PrismaClientValidationError. The
+     * app never calls it; keep it off until upstream fixes the key naming (#97).
+     */
+    disabledPaths: ["/organization/get-full-organization"],
+    hooks: {
+        // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
+        after: revalidateRolesAfterLeave(revalidateOrganizationUser),
+    },
     /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and
@@ -125,6 +139,9 @@ export const auth = betterAuth({
             overrideDefaultEmailVerification: true,
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
+                // An account made from an invitation link is verified without this code.
+                if (type === "email-verification" && isVerificationOtpEmailSuppressed()) return;
+
                 console.log(`Sending verification OTP (type: ${type}) to:`, email);
                 await sendEmail({
                     from: NoReplyEmailAddress,
@@ -199,6 +216,12 @@ export const auth = betterAuth({
                 async afterRemoveMember({ user }) {
                     // As above: a removed member must lose access to the organization
                     // immediately, not once the cache entry happens to expire.
+                    await revalidateOrganizationUser(user.id);
+                },
+                async afterAddMember({ user }) {
+                    // The lookup caches "not a member" too, so a member added outside our own
+                    // mutations (Better Auth's server-side `addMember`) would otherwise stay
+                    // locked out until the cached `null` expires.
                     await revalidateOrganizationUser(user.id);
                 },
             },

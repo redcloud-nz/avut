@@ -121,10 +121,7 @@ export function SkillPackageBuilder_Packages_List({
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
-            columnFilters: [
-                { id: "status", value: ["Active"] },
-                { id: "published", value: [true] },
-            ],
+            columnFilters: [{ id: "status", value: ["Active"] }],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },

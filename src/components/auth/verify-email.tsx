@@ -17,12 +17,14 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 import { authClient } from "@/client/auth-client";
+import { postSignInUrl } from "@/lib/auth-redirect";
 
 /**
  * Card for verifying user's email with OTP code.
  * @param email - The email address to verify.
+ * @param redirectTo - Optional path to return to once verified and signed in.
  */
-export function VerifyEmail_Card({ email }: { email: string }) {
+export function VerifyEmail_Card({ email, redirectTo }: { email: string; redirectTo?: string }) {
     const router = useRouter();
 
     const [code, setCode] = useState<string>("");
@@ -36,7 +38,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
             return data;
         },
         onSuccess() {
-            router.push("/auth/post-sign-in");
+            router.push(postSignInUrl(redirectTo));
         },
     });
 
