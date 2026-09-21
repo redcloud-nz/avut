@@ -71,19 +71,14 @@ fi
 #      reconcile it with this branch's package-lock.json. --no-save keeps the lockfile untouched.
 #   2. Otherwise, or if either step fails: `npm ci`, which installs exactly what the lockfile says.
 #
-# `prisma generate` never opens a connection, but prisma.config.ts reads only `.env` (not
-# `.env.local`) and insists the URL is set, so a bare install fails. Give it the same placeholder CI
-# uses unless the shell already exports a real one.
-#
 # node_modules can be left half-installed by a failed run, so "done" is a marker written at the end
 # rather than the directory existing.
-db_url="${POSTGRES_PRISMA_URL:-postgresql://user:password@localhost:5432/postgres}"
 
 # run_quiet <cmd...> — silent on success; on failure prints the captured output and returns 1.
 run_quiet() {
   local log
   log="$(mktemp)"
-  if POSTGRES_PRISMA_URL="$db_url" "$@" >"$log" 2>&1; then
+  if "$@" >"$log" 2>&1; then
     rm -f "$log"
     return 0
   fi

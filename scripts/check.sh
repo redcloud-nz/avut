@@ -6,7 +6,8 @@
 #         npm run check -- --all    # whole project: `eslint .` and the full test suite
 #
 # Runs tsc, eslint and vitest together and prints one line per step; a step's output is shown
-# only when it fails (the first lines, plus the path of the full log). Exits 1 if any step fails.
+# only when it fails (the first lines, plus the path of the full log), or for eslint when it passes
+# with warnings. Exits 1 if any step fails.
 #
 #   tsc     whole project (it can't be scoped), preceded by `next typegen` when route files changed
 #           or .next/types is missing. Stale generated route types are retried once — see AGENTS.md.
@@ -148,8 +149,15 @@ for name in tsc eslint vitest; do
   if [ "$rc" = 0 ]; then
     note=""
     [ -f "$logs/$name.note" ] && note="  ($(cat "$logs/$name.note"))"
-    [ "$name" = eslint ] && [ -s "$logs/eslint.log" ] && note="  (warnings — see $logs/eslint.log)"
+    warned=0
+    if [ "$name" = eslint ] && [ -s "$logs/eslint.log" ]; then warned=1; note="  (warnings)"; fi
     printf '✓ %-7s %ss%s\n' "$name" "$secs" "$note"
+    # The logs are deleted on success, so show the warnings here rather than pointing at a file.
+    if [ "$warned" = 1 ]; then
+      sed -n '1,40p' "$logs/eslint.log" | sed 's/^/    /'
+      warn_lines="$(wc -l <"$logs/eslint.log" | tr -d ' ')"
+      [ "$warn_lines" -gt 40 ] && echo "    … $((warn_lines - 40)) more lines (run \`npx eslint .\` for all)"
+    fi
   else
     failed="$failed $name"
     limit=40

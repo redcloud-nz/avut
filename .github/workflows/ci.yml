@@ -21,13 +21,6 @@ jobs:
   check:
     name: Typecheck & test
     runs-on: ubuntu-latest
-    # Set job-wide because `npm ci` triggers the `postinstall` hook, which runs
-    # `prisma generate` — and prisma.config.ts resolves this via `env()`, so it
-    # must exist before install, not just before the client is generated.
-    # `generate` never opens a connection, so a dummy URL is enough and no
-    # database service is required.
-    env:
-      POSTGRES_PRISMA_URL: postgresql://user:password@localhost:5432/postgres
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,7 +33,8 @@ jobs:
 
       # The `postinstall` hook generates the Prisma client into
       # `src/generated/prisma`, which the whole codebase imports, so there's no
-      # separate generate step here.
+      # separate generate step here. `prisma generate` never opens a connection and
+      # prisma.config.ts gives it a placeholder URL, so no database or env is needed.
       - name: Install dependencies
         run: npm ci
 
