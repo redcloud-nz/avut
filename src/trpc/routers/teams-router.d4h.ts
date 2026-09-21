@@ -8,12 +8,13 @@
 
 import { TRPCError } from "@trpc/server";
 
-import { Prisma, Team_D4H as TeamD4HRecord } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { PersonId } from "@/lib/schemas/person";
+import type { TeamD4HRecord } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import {

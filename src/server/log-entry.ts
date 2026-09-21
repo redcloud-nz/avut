@@ -22,11 +22,18 @@ import "server-only";
 
 import * as z from "zod";
 
-import type { LogBatch, LogEntry, Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { Operations, type OperationKey } from "@/lib/operations";
-import { LogAction, LogObjectType, LogRefRoleInput, LogScope } from "@/lib/schemas/log-entry";
+import {
+    LogAction,
+    LogObjectType,
+    LogRefRoleInput,
+    LogScope,
+    type LogBatchRecord,
+    type LogEntryRecord,
+} from "@/lib/schemas/log-entry";
 import type { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
@@ -190,7 +197,7 @@ function assertActorInvariant(input: RecordLogEntryInput): void {
 export function recordLogEntry(
     input: RecordLogEntryInput,
     tx: LogEntryPrisma,
-): Prisma.PrismaPromise<LogEntry> {
+): Prisma.PrismaPromise<LogEntryRecord> {
     // `scope` and `action` are stored as text columns, so nothing downstream rejects a value
     // off their unions — the parse here is the whole guarantee, and `scope` in particular
     // must be parsed before the owner invariant switches on it.
@@ -277,7 +284,7 @@ export function recordLogEntry(
 export function createLogBatch(
     input: CreateLogBatchInput,
     tx: LogEntryPrisma,
-): Prisma.PrismaPromise<LogBatch> {
+): Prisma.PrismaPromise<LogBatchRecord> {
     // `Object.hasOwn`, not `in`: `in` walks the prototype chain, so `"constructor"` and
     // `"toString"` would pass the very check this function exists to make impossible.
     if (!Object.hasOwn(Operations, input.operationKey)) {

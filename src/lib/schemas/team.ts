@@ -5,11 +5,13 @@
 
 import * as z from "zod";
 
-import { Team_D4H as TeamD4HRecord, Team as TeamRecord } from "@/generated/prisma/client";
+import type { Team_D4H as TeamD4HRecord, Team as TeamRecord } from "@/generated/prisma/client";
 
 import { D4HServerCode } from "../d4h-servers";
 import { nanoId16 } from "../id";
 import { propertiesSchema, tagsSchema, zodNanoId16 } from "../validation";
+
+export type { TeamD4HRecord };
 
 export const TeamId = {
     schema: zodNanoId16("TeamId expected").brand<"TeamId">(),

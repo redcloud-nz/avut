@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { Organization_D4H as OrganizationD4HRecord } from "@/generated/prisma/client";
+import type { Organization_D4H as OrganizationD4HRecord } from "@/generated/prisma/client";
 
 import { D4HServerCode } from "../d4h-servers";
 

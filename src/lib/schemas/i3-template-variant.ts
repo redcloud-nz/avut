@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import {
+import type {
     I3TemplateVariant_D4H as I3TemplateVariant_D4HRecord,
     I3TemplateVariant as I3TemplateVariantRecord,
 } from "@/generated/prisma/client";

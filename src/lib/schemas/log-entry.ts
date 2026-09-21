@@ -5,7 +5,13 @@
 
 import * as z from "zod";
 
+import type {
+    LogBatch as LogBatchRecord,
+    LogEntry as LogEntryRecord,
+} from "@/generated/prisma/client";
 import type { ModuleId } from "@/lib/modules";
+
+export type { LogBatchRecord, LogEntryRecord };
 
 /**
  * Which log a `LogEntry` belongs to.

@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import {
+import type {
     FormInstanceItem as FormInstanceItemRecord,
     FormInstance as FormInstanceRecord,
 } from "@/generated/prisma/client";

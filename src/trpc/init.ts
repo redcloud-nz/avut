@@ -8,10 +8,10 @@ import * as z from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
-import type { LogEntry, Prisma } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
 import { Permissions } from "@/lib/permissions";
-import type { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
+import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
@@ -97,7 +97,7 @@ export type AuthenticatedContext = Context & {
     logEvent: (
         options: LogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**
@@ -146,7 +146,7 @@ export type SystemAdminContext = Omit<AuthenticatedContext, "logEvent"> & {
     logEvent: (
         options: SystemAdminLogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**
@@ -202,7 +202,7 @@ export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     logEvent: (
         options: LogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**

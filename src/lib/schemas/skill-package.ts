@@ -5,10 +5,12 @@
 
 import * as z from "zod";
 
-import { SkillPackage as SkillPackageRecord } from "@/generated/prisma/client";
+import type { SkillPackage as SkillPackageRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
+
+export type { SkillPackageRecord };
 
 export const SkillPackageId = {
     schema: zodNanoId16("SkillPackageId expected").brand<"SkillPackageId">(),

@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import {
+import type {
     TeamMembership_D4H as TeamMembershipD4HRecord,
     TeamMembership as TeamMembershipRecord,
 } from "@/generated/prisma/client";

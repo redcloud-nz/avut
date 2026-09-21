@@ -5,10 +5,12 @@
 
 import * as z from "zod";
 
-import { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
+import type { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
+
+export type { D4HAccessTokenRecord };
 
 export const D4HAccessTokenId = {
     schema: zodNanoId16("D4HAccessTokenId expected").brand<"D4HAccessTokenId">(),

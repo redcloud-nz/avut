@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { Session as SessionRecord } from "@/generated/prisma/client";
+import type { Session as SessionRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";

@@ -5,10 +5,12 @@
 
 import * as z from "zod";
 
-import { User as UserRecord } from "@/generated/prisma/client";
+import type { User as UserRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
+
+export type { UserRecord };
 
 export const UserId = {
     schema: zodNanoId16("UserId expected").brand<"UserId">(),

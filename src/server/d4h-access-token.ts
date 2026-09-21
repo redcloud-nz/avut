@@ -7,9 +7,11 @@ import "server-only";
 
 import { cacheTag, revalidateTag } from "next/cache";
 
-import { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
 import { NotConfiguredError } from "@/lib/errors";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import {
+    D4HAccessToken_ServerOnly,
+    type D4HAccessTokenRecord,
+} from "@/lib/schemas/d4h-access-token";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { decryptDBValue } from "@/server/encrypt";
