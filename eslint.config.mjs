@@ -9,6 +9,7 @@ import prettier from "eslint-config-prettier";
 import boundaries from "eslint-plugin-boundaries";
 
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
+import noPrismaModelImports from "./eslint-rules/no-prisma-model-imports.mjs";
 import noTrpcClientInServerComponent from "./eslint-rules/no-trpc-client-in-server-component.mjs";
 import nzSpelling from "./eslint-rules/nz-spelling.mjs";
 import requireServerOnly from "./eslint-rules/require-server-only.mjs";
@@ -19,6 +20,7 @@ const avut = {
   rules: {
     "nz-spelling": nzSpelling,
     "no-deep-relative-imports": noDeepRelativeImports,
+    "no-prisma-model-imports": noPrismaModelImports,
     "no-trpc-client-in-server-component": noTrpcClientInServerComponent,
     "require-server-only": requireServerOnly,
   },
@@ -148,6 +150,14 @@ const config = [
                 "Don't import the Prisma client here. Use a function from src/server, or ctx.prisma inside a tRPC procedure.",
             },
             {
+              from: {
+                element: { types: ["client", "hooks", "components", "app", "emails", "forms"] },
+              },
+              disallow: { to: { element: { type: "generated" } } },
+              message:
+                "UI code doesn't import the generated Prisma client; take record types from src/lib/schemas.",
+            },
+            {
               from: { file: { categories: "trpc-context" } },
               allow: { to: { file: { categories: "prisma-client" } } },
             },
@@ -174,6 +184,18 @@ const config = [
     ignores: ["src/server/email.ts"],
     rules: {
       "no-restricted-imports": ["error", { paths: [resendRestriction] }],
+    },
+  },
+  {
+    // The generated Prisma client is imported for its model types only in `src/lib/schemas`, each
+    // under a `<Name>Record` alias and re-exported from there, so `Skill` (the domain type) and
+    // `Skill` (the Prisma model) never meet in one file. Elsewhere only the client machinery may
+    // come from the generated package.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/lib/schemas/**", "src/generated/**"],
+    plugins: { avut },
+    rules: {
+      "avut/no-prisma-model-imports": ["error", { allow: ["Prisma", "PrismaClient"] }],
     },
   },
   {
