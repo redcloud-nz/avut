@@ -95,15 +95,6 @@ echo "  … next typegen"
 npx next typegen >/dev/null
 echo "  ✓ route types generated"
 
-# src/generated is committed, but the pre-commit hook runs it through Prettier and a fresh
-# `prisma generate` (the install's postinstall) doesn't — so it usually shows as modified in a new
-# worktree even though nothing changed. Say so rather than reverting files on the user's behalf.
-generated_dirty="$(git status --porcelain -- src/generated | wc -l | tr -d ' ')"
-if [ "$generated_dirty" != 0 ]; then
-  echo "  ! src/generated shows $generated_dirty modified files — regenerated output, not your changes."
-  echo "    If the branch didn't touch prisma/schema.prisma: git checkout -- src/generated"
-fi
-
 # Suggest the first free port from 3100 so this doesn't collide with the main checkout's 3000.
 port=3100
 while lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; do port=$((port + 1)); done

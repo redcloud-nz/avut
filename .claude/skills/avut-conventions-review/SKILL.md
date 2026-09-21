@@ -57,7 +57,7 @@ Lint catches ID imports but not an ID built without one:
 
 ## Generated files
 
-- `src/generated/prisma/` and `src/generated/dmmf.ts` must never be hand-edited. If a diff touches either, the real fix is a Prisma schema change followed by `npx prisma generate` (or `npm run prisma migrate dev`) — flag any direct edit as a finding regardless of how small it looks, and check that a schema change that should have regenerated these actually did.
+- `src/generated/` (the Prisma client and `dmmf.ts`) is gitignored — it's produced by `prisma generate`. If a diff includes files under it, they were force-added: flag it, and the real change belongs in `prisma/schema.prisma`.
 
 ## Server/client data fetching
 

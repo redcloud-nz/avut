@@ -6,7 +6,7 @@ A Next.js web application providing organizational management tools with optiona
 
 All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 
-`src/generated/` (the Prisma client and `dmmf.ts`) is generated — never edit it manually; regenerate with `npx prisma generate`.
+`src/generated/` (the Prisma client and `dmmf.ts`) is generated and gitignored — never edit it manually. `npm install` regenerates it; after switching to a branch that changes `prisma/schema.prisma`, run `npx prisma generate` yourself or the client and mock metadata will be stale.
 
 ---
 
@@ -76,7 +76,7 @@ The dev database holds records for **real people with their real email addresses
 - All git worktrees go under `.claude/worktrees/<name>` inside the repo (gitignored). Don't create them as siblings of the repo or anywhere else — a single location keeps `git worktree list` and cleanup predictable.
 - Remove a worktree with `npm run worktree:remove <name>` — it drops the worktree's `db:branch` database copy first (a branch DB must never outlive its worktree), then runs `git worktree remove` + `prune`. Pass `git worktree remove` flags after `--` (e.g. `npm run worktree:remove <name> -- --force` when the tree has uncommitted changes). Plain `git worktree remove` still works but leaks the branch DB.
 - If a worktree directory was deleted by hand, run `git worktree prune` — and `npm run db:unbranch` from wherever `.env.local` was last pointed, or `dropdb avut_<slug>` directly, to clean up its branch DB.
-- Set up a fresh worktree with `npm run worktree:setup` (from inside it, or pass its name) — it copies `.env.local`, links `.vercel`, installs dependencies and generates route types, and is safe to re-run. It reports `src/generated` as modified (regenerated output, not your changes) and says how to reset it. It doesn't start a dev server: run one on its own port (`npm run dev -- -p 3100`; the main checkout uses 3000 and `dev-email` 3001), and ask first since the user may already have one up. `.claude/settings.local.json` (the personal permission allowlist) isn't copied, so expect more permission prompts until you re-add entries.
+- Set up a fresh worktree with `npm run worktree:setup` (from inside it, or pass its name) — it copies `.env.local`, links `.vercel`, installs dependencies and generates route types, and is safe to re-run. It doesn't start a dev server: run one on its own port (`npm run dev -- -p 3100`; the main checkout uses 3000 and `dev-email` 3001), and ask first since the user may already have one up. `.claude/settings.local.json` (the personal permission allowlist) isn't copied, so expect more permission prompts until you re-add entries.
 
 ---
 
