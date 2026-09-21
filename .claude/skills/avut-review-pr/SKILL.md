@@ -42,6 +42,14 @@ Also read the PR description and any existing review comments for context:
 gh pr view "$ARGUMENTS" --repo redcloud-nz/avut --comments
 ```
 
+And the CI result — CI runs lint, typecheck and the full test suite, so a review shouldn't re-run them:
+
+```bash
+gh pr checks "$ARGUMENTS" --repo redcloud-nz/avut
+```
+
+A failing check is a finding (`gh run view <run-id> --log-failed` shows why). If checks are pending or absent and the PR's branch is the one checked out here, `npm run check -- --all` gives the same answer; don't check a branch out just for this.
+
 Read the full current version of any non-trivially-changed file from the working tree (the local checkout is assumed to be on or near `master`; if a changed file can't be found locally, fall back to `gh` blob fetch). Don't review from the diff hunk alone when surrounding context matters.
 
 **Read in parallel.** Once the diff shows which files matter, request all of them in a single message — one tool call per file, all in the same turn — rather than one file per turn. Every turn re-reads the whole conversation, so serial reads are the main cost of a review. Do the same for any follow-up lookups (callers, tests, the matching router/schema): list what you need, then fetch it together. If a later read genuinely depends on an earlier one, batch what you can and continue.

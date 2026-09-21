@@ -55,6 +55,8 @@ Before writing any code, restate in your own words: what's being built, the rele
 
 Then proceed with implementation as normal, following the rest of `AGENTS.md`'s conventions (tRPC router patterns, data-fetching patterns, permissions, etc. — read the relevant pattern doc before writing a new page or mutation rather than inferring it).
 
+When the work looks done, run `npm run check` (tsc, eslint and the tests related to what you changed, in one call) and fix what it reports before saying it's done. Use `npm run check -- --all` for the full run CI does.
+
 ## Common mistakes
 
 - Creating a second worktree for a slug that already has one instead of resuming it
@@ -62,3 +64,4 @@ Then proceed with implementation as normal, following the rest of `AGENTS.md`'s 
 - Starting a dev server unprompted instead of asking the user to start one
 - Treating an idea's open questions or an issue's unresolved alternatives as already decided
 - Proactively branching the database before a migration is actually about to be written
+- Running `tsc`, `eslint` and `vitest` as separate calls (each a full turn) instead of `npm run check`

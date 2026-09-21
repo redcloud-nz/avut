@@ -18,6 +18,7 @@ How to operate in this repo — commands, tooling gotchas, and git.
 
 ```bash
 npm run build                # Run migrations + build
+npm run check                # tsc + eslint + related tests for what you changed, in one call (-- --all: what CI runs)
 npm run lint                 # eslint . — CI fails on errors; enforces the rules marked (lint) below
 npx next typegen             # Regenerate typed routes — required after adding a page
 
@@ -28,10 +29,11 @@ npm run db:branch <slug>     # Copy the dev DB for a migration-bearing branch (a
 npm run db:unbranch          # Point .env.local back at avut, drop the copy
 ```
 
+- Verify with `npm run check` rather than separate `tsc`/`eslint`/`vitest` calls: it runs them together and prints output only for what fails. It runs `next typegen` when route files changed and regenerates stale route types itself, so the two tsc gotchas below are handled for you there. `npm run check -- --all` runs what CI runs
 - After adding a new `page.tsx`, run `npx next typegen` — the dev server does not regenerate route types on its own, so `route()` calls for the new path will fail to typecheck until you do
 - If `npx tsc --noEmit` fails with `.next/types/routes` "Cannot find module" errors unrelated to your change, `.next/types` is just stale/missing (e.g. no dev server has run recently) — run `npx next typegen` to regenerate before investigating further
 - If `npx tsc --noEmit` fails inside `.next/types/validator.ts` with `LayoutRoutes`/`Route` mismatches between `.next/types/routes` and `.next/dev/types/routes`, the running dev server's `.next/dev/types` is stale against the current branch's routes — `rm -rf .next/dev/types && npx next typegen`. Common when checking out branches that add or remove `page.tsx`/route groups.
-- Formatting is handled by a husky + lint-staged pre-commit hook running `prettier --write`; don't hand-format for style
+- Formatting is handled by a husky + lint-staged pre-commit hook running `prettier --write`; don't hand-format for style, run prettier by hand, or report that it ran (`npm run check` leaves it out too)
 
 ## Database
 
