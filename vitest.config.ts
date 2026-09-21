@@ -34,11 +34,13 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": resolve(__dirname, "./src"),
+            // The real package throws outside Next's `react-server` condition, so every server
+            // module would be unimportable from a test.
+            "server-only": resolve(__dirname, "./src/test/server-only.ts"),
             "content-collections": resolve(__dirname, "./.content-collections/generated"),
         },
     },
     define: {
-        // Mock server-only module for tests
         "process.env.NODE_ENV": '"test"',
     },
 });

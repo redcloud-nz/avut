@@ -11,6 +11,7 @@ import boundaries from "eslint-plugin-boundaries";
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
 import noTrpcClientInServerComponent from "./eslint-rules/no-trpc-client-in-server-component.mjs";
 import nzSpelling from "./eslint-rules/nz-spelling.mjs";
+import requireServerOnly from "./eslint-rules/require-server-only.mjs";
 
 // One shared plugin object: flat config rejects redefining a plugin name with a different object
 // when two blocks match the same file.
@@ -19,6 +20,7 @@ const avut = {
     "nz-spelling": nzSpelling,
     "no-deep-relative-imports": noDeepRelativeImports,
     "no-trpc-client-in-server-component": noTrpcClientInServerComponent,
+    "require-server-only": requireServerOnly,
   },
 };
 
@@ -144,6 +146,18 @@ const config = [
     ignores: ["src/server/email.ts"],
     rules: {
       "no-restricted-imports": ["error", { paths: [resendRestriction] }],
+    },
+  },
+  {
+    // Every server module carries the `server-only` marker, so a client component that reaches one
+    // fails the build. Exempt: tests (Vitest mocks the marker anyway), `.d.ts` files, and
+    // `prisma.ts`, which `prisma/seed-demo.ts` imports from `tsx` outside Next, where the marker
+    // would throw.
+    files: ["src/server/**/*.{ts,tsx}"],
+    ignores: ["src/server/**/*.test.{ts,tsx}", "src/server/**/*.d.ts", "src/server/prisma.ts"],
+    plugins: { avut },
+    rules: {
+      "avut/require-server-only": "error",
     },
   },
   {

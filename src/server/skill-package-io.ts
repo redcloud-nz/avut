@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import "server-only";
+
 import { TRPCError } from "@trpc/server";
 
 import type {

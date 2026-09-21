@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import "server-only";
+
 import crypto from "crypto";
 
 const ALGORITHM = "aes-256-gcm";

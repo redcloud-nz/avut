@@ -4,6 +4,8 @@
  *
  */
 
+import "server-only";
+
 import prisma from "@/server/prisma";
 import { requireSession } from "@/server/session";
 

@@ -4,11 +4,13 @@
  */
 
 /*
- * Deliberately NOT marked `server-only` and deliberately free of any `@/server/prisma` import:
+ * Deliberately free of any `@/server/prisma` import:
  * routers (which are exercised from the jsdom test environment) need to invalidate the settings
  * cache, and they cannot pull in `@/server/organization-settings` to do it. Tests mock this
  * module — `revalidateTag` throws outside a Next.js request/render store.
  */
+
+import "server-only";
 
 import { revalidateTag } from "next/cache";
 

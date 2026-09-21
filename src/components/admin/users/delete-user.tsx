@@ -24,7 +24,7 @@ import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { AuthOrganizationMember } from "@/server/auth";
+import { type AuthOrganizationMember } from "@/server/auth";
 
 export function AdminModule_DeleteUser_Dialog({
     organizationUser,

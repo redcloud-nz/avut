@@ -9,6 +9,8 @@
  * what makes the guard rail below possible to enforce rather than merely remember.
  */
 
+import "server-only";
+
 import { CreateEmailOptions, Resend } from "resend";
 
 let _resend: Resend | null = null;

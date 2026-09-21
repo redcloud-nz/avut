@@ -58,6 +58,8 @@
  *   catch.
  */
 
+import "server-only";
+
 import type { DiffChange } from "@/lib/diff";
 import { UserId } from "@/lib/schemas/user";
 

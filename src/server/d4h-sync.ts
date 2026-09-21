@@ -6,6 +6,8 @@
  *  (`d4h-sync.test.ts`). See docs/specs/d4h-linking.md §7.
  */
 
+import "server-only";
+
 import { createHash } from "node:crypto";
 
 import { diffObject } from "@/lib/diff";

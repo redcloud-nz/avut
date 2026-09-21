@@ -5,6 +5,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import "server-only";
+
 import { AVUTLogger } from "@/lib/logger";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 

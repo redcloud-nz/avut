@@ -6,7 +6,7 @@
 /*
  * The single write path for the audit log.
  *
- * Deliberately NOT marked `server-only` and deliberately free of any `@/server/prisma`
+ * Deliberately free of any `@/server/prisma`
  * import — the Prisma client is injected by the caller, so this can be exercised from the
  * jsdom test environment against `createMockPrisma()`. Same reasoning as
  * `organization-settings-store.ts`.
@@ -17,6 +17,8 @@
  * code must tolerate a null actor and fall back to `actorLabel`. Do not re-assert these
  * invariants as zod parses on query results.
  */
+
+import "server-only";
 
 import * as z from "zod";
 
