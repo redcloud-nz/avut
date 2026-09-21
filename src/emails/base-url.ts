@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { env as appEnv } from "@/lib/env";
+
 const PRODUCTION_FALLBACK_URL = "https://www.avut.nz";
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -53,7 +55,7 @@ export function resolveAssetBaseUrl(env: Env): string {
  * Base URL for the link in the invitation email, which the invitee has to be able to open.
  * See `resolveBaseUrl` for how it depends on the environment.
  */
-export const baseUrl = resolveBaseUrl(process.env);
+export const baseUrl = resolveBaseUrl(appEnv);
 
 /** Base URL for static assets in an email. See `resolveAssetBaseUrl`. */
-export const assetBaseUrl = resolveAssetBaseUrl(process.env);
+export const assetBaseUrl = resolveAssetBaseUrl(appEnv);

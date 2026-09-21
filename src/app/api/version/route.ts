@@ -20,6 +20,8 @@
 import { execSync } from "node:child_process";
 import { NextResponse } from "next/server";
 
+import { env } from "@/lib/env";
+
 // eslint-disable-next-line avut/no-deep-relative-imports -- package.json lives outside src/, so it has no @/ alias
 import appPackage from "../../../../package.json" with { type: "json" };
 
@@ -47,16 +49,14 @@ function readGitFallback(): { branch: string | null; commit: string | null } {
 
 // Reads request-specific query params, so this always runs at request time.
 export async function GET(request: Request): Promise<NextResponse> {
-    const envBranch = process.env.VERCEL_GIT_COMMIT_REF ?? process.env.GITHUB_REF_NAME ?? null;
-    const environment = process.env.VERCEL_ENV ?? "development";
+    const envBranch = env.VERCEL_GIT_COMMIT_REF ?? env.GITHUB_REF_NAME ?? null;
+    const environment = env.VERCEL_ENV ?? "development";
     const isProduction = environment === "production" || envBranch === "production";
 
     const gitFallback = envBranch ? null : readGitFallback();
     const branch = envBranch ?? gitFallback?.branch ?? null;
     const commit =
-        (process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA)?.slice(0, 7) ??
-        gitFallback?.commit ??
-        null;
+        (env.VERCEL_GIT_COMMIT_SHA ?? env.GITHUB_SHA)?.slice(0, 7) ?? gitFallback?.commit ?? null;
 
     // Keep in sync with next.config.ts: only production renders a real version
     // and codename; everything else is `DEV.{branch}@{commit}`.

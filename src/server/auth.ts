@@ -3,6 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { env } from "@/lib/env";
+import { serverEnv } from "@/server/env";
+
 import "server-only";
 
 import { networkInterfaces } from "node:os";
@@ -67,7 +70,7 @@ export const auth = betterAuth({
             joins: true,
         },
     },
-    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    baseURL: serverEnv.BETTER_AUTH_URL ?? "http://localhost:3000",
     /*
      * With `advanced.database.joins` on, better-auth's Prisma adapter guesses relation field
      * names from the joined model's name (`organizationusers`, `organizationinvitations`),
@@ -87,13 +90,13 @@ export const auth = betterAuth({
      * email templates already special-case `VERCEL_URL`; mirror that here.
      */
     trustedOrigins: [
-        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-        ...(process.env.VERCEL_BRANCH_URL ? [`https://${process.env.VERCEL_BRANCH_URL}`] : []),
-        ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
-            ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
+        ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
+        ...(env.VERCEL_BRANCH_URL ? [`https://${env.VERCEL_BRANCH_URL}`] : []),
+        ...(env.VERCEL_PROJECT_PRODUCTION_URL
+            ? [`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`]
             : []),
-        ...(process.env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
-        ...(process.env.NODE_ENV === "development"
+        ...(env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
+        ...(env.NODE_ENV === "development"
             ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
             : []),
     ],
@@ -278,12 +281,12 @@ export const auth = betterAuth({
     },
     socialProviders: {
         github: {
-            clientId: process.env.GITHUB_OAUTH_CLIENT_ID as string,
-            clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET as string,
+            clientId: serverEnv.GITHUB_OAUTH_CLIENT_ID as string,
+            clientSecret: serverEnv.GITHUB_OAUTH_CLIENT_SECRET as string,
         },
         google: {
-            clientId: process.env.GOOGLE_OAUTH_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET as string,
+            clientId: serverEnv.GOOGLE_OAUTH_CLIENT_ID as string,
+            clientSecret: serverEnv.GOOGLE_OAUTH_CLIENT_SECRET as string,
         },
     },
 

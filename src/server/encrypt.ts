@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { serverEnv } from "@/server/env";
+
 import "server-only";
 
 import crypto from "crypto";
@@ -69,7 +71,7 @@ export function decryptValue(ciphertext: string, secret: string): string {
  * @throws Error if the encryption secret is not set or invalid.
  */
 export function encryptDBValue(text: string): string {
-    const secret = process.env.DB_ENCRYPTION_SECRET;
+    const secret = serverEnv.DB_ENCRYPTION_SECRET;
     if (!secret) {
         throw new Error("DB_ENCRYPTION_SECRET environment variable is not set.");
     }
@@ -83,7 +85,7 @@ export function encryptDBValue(text: string): string {
  * @throws Error if the decryption secret is not set, invalid, or if decryption fails.
  */
 export function decryptDBValue(ciphertext: string): string {
-    const secret = process.env.DB_ENCRYPTION_SECRET;
+    const secret = serverEnv.DB_ENCRYPTION_SECRET;
     if (!secret) {
         throw new Error("DB_ENCRYPTION_SECRET environment variable is not set.");
     }

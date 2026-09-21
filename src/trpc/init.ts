@@ -10,6 +10,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
+import { env } from "@/lib/env";
 import { Permissions } from "@/lib/permissions";
 import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -68,7 +69,7 @@ export const createTrpcRouter = t.router;
 export type PublicContext = Context;
 
 export const publicProcedure = t.procedure.use(async function artificialDelayInDevelopment(opts) {
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
         const start = performance.now();
         const delay =
             Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +

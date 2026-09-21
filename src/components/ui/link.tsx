@@ -5,6 +5,7 @@
 
 import { ComponentProps } from "react";
 
+import { REPO_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export type EmailLinkProps = Omit<ComponentProps<"a">, "href"> & {
@@ -78,7 +79,7 @@ export function GitHubIssueLink({ className, issueNumber, ...props }: GitHubIssu
     return (
         <ExternalLink
             className={cn("text-blue-900 hover:underline", className)}
-            href={`${process.env.NEXT_PUBLIC_APP_REPOSITORY_URL}/issues/${issueNumber}`}
+            href={`${REPO_URL}/issues/${issueNumber}`}
             data-component="GitHubIssueLink"
             data-slot="link"
             {...props}
