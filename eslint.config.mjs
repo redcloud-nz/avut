@@ -7,7 +7,14 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypeScript from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier";
 
+import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
 import nzSpelling from "./eslint-rules/nz-spelling.mjs";
+
+// One shared plugin object: flat config rejects redefining a plugin name with a different object
+// when two blocks match the same file.
+const avut = {
+  rules: { "nz-spelling": nzSpelling, "no-deep-relative-imports": noDeepRelativeImports },
+};
 
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
@@ -28,6 +35,15 @@ const config = [
           destructuredArrayIgnorePattern: "^_",
         },
       ],
+    },
+  },
+  {
+    // Keep relative imports to one `../` at most — anything further uses the `@/` alias.
+    files: ["**/*.{ts,tsx,mjs}"],
+    ignores: [".content-collections/**"], // generated
+    plugins: { avut },
+    rules: {
+      "avut/no-deep-relative-imports": "error",
     },
   },
   {
@@ -76,7 +92,7 @@ const config = [
     // just warn. Scoped to rendered JSX text and a handful of text-bearing attributes — never
     // code identifiers or class names — so it can safely cover all app/component/email source.
     files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/emails/**/*.tsx"],
-    plugins: { avut: { rules: { "nz-spelling": nzSpelling } } },
+    plugins: { avut },
     rules: {
       "avut/nz-spelling": "error",
     },
@@ -90,7 +106,7 @@ const config = [
       "src/lib/schemas/organization-role.ts",
       "src/lib/glossary.ts",
     ],
-    plugins: { avut: { rules: { "nz-spelling": nzSpelling } } },
+    plugins: { avut },
     rules: {
       "avut/nz-spelling": ["error", { checkLabelProperties: true }],
     },
