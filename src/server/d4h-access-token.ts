@@ -16,7 +16,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { decryptDBValue } from "@/server/encrypt";
 
-import { getOrganizationSettings } from "./organization-settings";
+import { getOrganizationSettings } from "./cache/organization-settings";
 import prisma from "./prisma";
 
 /** Builds the server-only token from its DB record, decrypting the stored token value. */

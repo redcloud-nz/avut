@@ -11,9 +11,9 @@ import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
-import { getOrganizationBySlug } from "@/server/organization";
 
 async function fetchEquipmentCategories(accessToken: D4HAccessToken_ServerOnly) {
     "use cache";

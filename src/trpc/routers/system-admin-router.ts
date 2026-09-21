@@ -16,13 +16,13 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
+import { revalidateOrganizationSettings } from "@/server/cache/organization-settings-revalidate";
+import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
-import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
 import {
     readOrganizationSettings,
     writeOrganizationSettings,
 } from "@/server/organization-settings-store";
-import { revalidateOrganizationUser } from "@/server/organization-user-cache";
 import { prepareSkillPackageImport } from "@/server/skill-package-io";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";

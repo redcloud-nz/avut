@@ -6,7 +6,7 @@
 /*
  * Deliberately free of any `@/server/prisma` import:
  * routers (which are exercised from the jsdom test environment) need to invalidate the settings
- * cache, and they cannot pull in `@/server/organization-settings` to do it. Tests mock this
+ * cache, and they cannot pull in `@/server/cache/organization-settings` to do it. Tests mock this
  * module — `revalidateTag` throws outside a Next.js request/render store.
  */
 

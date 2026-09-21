@@ -8,9 +8,9 @@
 import { Std } from "@/components/blocks/std";
 import { D4HToday_Content } from "@/components/d4h-today/d4h-today-content";
 import { UserId } from "@/lib/schemas/user";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { getOrganizationSettings } from "@/server/cache/organization-settings";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 import { requireSession } from "@/server/session";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

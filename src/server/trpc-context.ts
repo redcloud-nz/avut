@@ -9,7 +9,7 @@ import { cache } from "react";
 
 import { TRPCError } from "@trpc/server";
 
-import { getOrganizationUserRolesOrNull } from "@/server/organization-user";
+import { getOrganizationUserRolesOrNull } from "@/server/cache/organization-user";
 import { getSession } from "@/server/session";
 import { createInnerTrpcContext } from "@/trpc/init";
 import { assertHasPermissionResult, hasAnyRoleWithPermissions } from "@/trpc/permissions";

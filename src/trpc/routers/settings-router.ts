@@ -10,7 +10,7 @@ import {
     getOrganizationSettings,
     revalidateOrganizationSettings,
     writeOrganizationSettings,
-} from "@/server/organization-settings";
+} from "@/server/cache/organization-settings";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 

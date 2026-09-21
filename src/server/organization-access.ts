@@ -15,9 +15,9 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { auth, AuthSession } from "./auth";
-import { getOrganizationBySlug } from "./organization";
-import { getOrganizationSettings } from "./organization-settings";
-import { getOrganizationUserRoles } from "./organization-user";
+import { getOrganizationBySlug } from "./cache/organization";
+import { getOrganizationSettings } from "./cache/organization-settings";
+import { getOrganizationUserRoles } from "./cache/organization-user";
 import { requireSession } from "./session";
 
 export interface OrganizationAccess {

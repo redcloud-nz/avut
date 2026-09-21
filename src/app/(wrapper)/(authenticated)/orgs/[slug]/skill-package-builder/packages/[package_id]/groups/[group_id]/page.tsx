@@ -10,7 +10,7 @@ import { Metadata } from "next";
 import { SkillPackageBuilder_Group_Content } from "@/components/skill-package-builder/group-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props =

@@ -19,9 +19,9 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { orgModules } from "@/lib/modules";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { getOrganizationSettings } from "@/server/cache/organization-settings";
 import { resolveModuleFlags } from "@/server/module-flags";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 
 export default async function Organization_Index_Page(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;

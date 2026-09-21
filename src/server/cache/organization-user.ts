@@ -10,9 +10,9 @@ import * as z from "zod";
 
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
+import prisma from "@/server/prisma";
 
-import { organizationUserCacheTag } from "./organization-user-cache";
-import prisma from "./prisma";
+import { organizationUserCacheTag } from "./organization-user-revalidate";
 
 /**
  * Get a user's role(s) within an organization, or `null` if they aren't a member.

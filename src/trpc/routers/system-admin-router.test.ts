@@ -26,11 +26,11 @@ import { systemAdminRouter } from "./system-admin-router";
 
 // `revalidateTag` needs a Next.js render/request store, which the test environment has no
 // business standing up — the router's contract here is just that it invalidates the tag.
-vi.mock("@/server/organization-settings-cache", () => ({
+vi.mock("@/server/cache/organization-settings-revalidate", () => ({
     organizationSettingsCacheTag: (id: string) => `organization-settings-${id}`,
     revalidateOrganizationSettings: vi.fn(async () => {}),
 }));
-vi.mock("@/server/organization-user-cache", () => ({
+vi.mock("@/server/cache/organization-user-revalidate", () => ({
     organizationUserCacheTag: (id: string) => `organization-user-${id}`,
     revalidateOrganizationUser: vi.fn(async () => {}),
 }));

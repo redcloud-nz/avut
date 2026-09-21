@@ -25,8 +25,8 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
-import { revalidateOrganization } from "./organization";
-import { revalidateOrganizationUser } from "./organization-user-cache";
+import { revalidateOrganization } from "./cache/organization";
+import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
 import { revalidateRolesAfterLeave } from "./organization-user-hooks";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
 import prisma from "./prisma";

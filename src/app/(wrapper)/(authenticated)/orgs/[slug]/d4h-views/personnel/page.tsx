@@ -7,10 +7,10 @@
 
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { getOrganizationSettings } from "@/server/cache/organization-settings";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 
 import { D4HViewsModules_Personnel_List } from "./personnel-list";
 

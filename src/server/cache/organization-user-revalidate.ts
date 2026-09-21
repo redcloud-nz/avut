@@ -6,7 +6,7 @@
 /*
  * Deliberately free of any `@/server/prisma` import:
  * routers (which are exercised from the jsdom test environment) need to invalidate this cache
- * after changing a membership or role, and they cannot pull in `@/server/organization-user` to
+ * after changing a membership or role, and they cannot pull in `@/server/cache/organization-user` to
  * do it. Tests mock this module — `revalidateTag` throws outside a Next.js request/render store.
  */
 
@@ -16,7 +16,7 @@ import { revalidateTag } from "next/cache";
 
 /**
  * The cache tag under which a user's organization roles are cached, across every organization
- * they belong to — see `getOrganizationUserRoles` in `@/server/organization-user`.
+ * they belong to — see `getOrganizationUserRoles` in `@/server/cache/organization-user`.
  */
 export function organizationUserCacheTag(userId: string) {
     return `organization-user-${userId}`;

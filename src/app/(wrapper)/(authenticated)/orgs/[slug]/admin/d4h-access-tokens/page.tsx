@@ -7,7 +7,7 @@
 
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import { AdminModule_D4HAccessTokensList } from "./d4h-access-tokens-list";

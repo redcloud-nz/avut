@@ -8,7 +8,7 @@
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 
 import { AdminModule_CreateD4HAccessToken_Form } from "./create-d4h-access-token";
 

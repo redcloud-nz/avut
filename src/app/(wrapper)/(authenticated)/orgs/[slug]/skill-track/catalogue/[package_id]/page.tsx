@@ -10,7 +10,7 @@ import { Metadata } from "next";
 import { SkillTrack_CataloguePackage_Content } from "@/components/skill-track/catalogue-package-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/orgs/[slug]/skill-track/catalogue/[package_id]">;

@@ -19,7 +19,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 
 export default async function AdminModule_Organization_Page(
     props: PageProps<`/orgs/[slug]/admin/organization`>,

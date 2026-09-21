@@ -19,13 +19,13 @@ import {
 } from "@/lib/schemas/d4h-access-token";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { OrganizationData } from "@/lib/schemas/organization";
+import { revalidateOrganizationSettings } from "@/server/cache/organization-settings";
 import {
     revalidatePersonalD4HAccessTokenForUser,
     toServerOnlyD4HAccessToken,
 } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
-import { revalidateOrganizationSettings } from "@/server/organization-settings";
 
 import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";

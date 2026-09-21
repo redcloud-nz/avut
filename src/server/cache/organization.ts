@@ -8,8 +8,7 @@ import { cacheTag, revalidateTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { OrganizationData } from "@/lib/schemas/organization";
-
-import prisma from "./prisma";
+import prisma from "@/server/prisma";
 
 export async function getOrganizationBySlug(slug: string): Promise<OrganizationData> {
     "use cache";

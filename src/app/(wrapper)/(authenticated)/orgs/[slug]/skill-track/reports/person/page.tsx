@@ -14,7 +14,7 @@ import { PageLoadingSpinner } from "@/components/ui/loading";
 import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {

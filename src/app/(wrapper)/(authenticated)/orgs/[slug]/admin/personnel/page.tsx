@@ -9,7 +9,7 @@ import { AdminModule_Personnel_List } from "@/components/admin/personnel/personn
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
