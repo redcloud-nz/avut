@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries, useQueryClient } from "@tanstack/react-query";
 
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,18 +43,33 @@ import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
+    return (
+        <Dialog {...props}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Import team from D4H</DialogTitle>
+                    <DialogDescription>
+                        Create a team that is synchronised with a team in D4H.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <ImportTeamFromD4H_Body onDone={() => props.onOpenChange?.(false)} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ImportTeamFromD4H_Body({ onDone }: { onDone: () => void }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const [{ data: availableTeams = [], isSuccess }, { data: existingTeams = [] }] = useQueries({
+    const [{ data: availableTeams }, { data: existingTeams }] = useSuspenseQueries({
         queries: [
-            trpc.d4hApi.listTeamsAccessibleToUser.queryOptions(
-                {
-                    organizationId: organization.id,
-                },
-                { enabled: props.open },
-            ),
+            trpc.d4hApi.listTeamsAccessibleToUser.queryOptions({
+                organizationId: organization.id,
+            }),
             trpc.teams.listTeams.queryOptions({
                 organizationId: organization.id,
             }),
@@ -76,15 +92,6 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
         },
     });
 
-    function handleDialogOpenChange(open: boolean) {
-        if (!open) {
-            form.reset();
-            mutation.reset();
-        }
-
-        props.onOpenChange?.(open);
-    }
-
     const mutation = useMutation(
         trpc.teams.createTeamFromD4H.mutationOptions({
             onError(error) {
@@ -104,7 +111,7 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
                     }),
                 );
 
-                handleDialogOpenChange(false);
+                onDone();
 
                 router.push(`/orgs/${organization.slug}/admin/teams/${created.id}`);
             },
@@ -115,126 +122,115 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
     const selectedTeam = availableTeams.find((team) => team.id === selectedTeamId);
 
     return (
-        <Dialog {...props} onOpenChange={handleDialogOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Import team from D4H</DialogTitle>
-                    <DialogDescription>
-                        Create a team that is synchronised with a team in D4H.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogBody>
-                    <form
-                        id="import-d4h-team-form"
-                        onSubmit={form.handleSubmit(({ teamId, ...values }) =>
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                d4hTeamId: teamId,
-                                name: values.name || selectedTeam!.title,
-                            }),
-                        )}
-                    >
-                        <FieldGroup>
+        <>
+            <DialogBody>
+                <form
+                    id="import-d4h-team-form"
+                    onSubmit={form.handleSubmit(({ teamId, ...values }) =>
+                        mutation.mutate({
+                            organizationId: organization.id,
+                            d4hTeamId: teamId,
+                            name: values.name || selectedTeam!.title,
+                        }),
+                    )}
+                >
+                    <FieldGroup>
+                        <Controller
+                            name="teamId"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel>D4H Team</FieldLabel>
+                                    <Select
+                                        value={field.value ? field.value + "" : ""}
+                                        onValueChange={(newValue) =>
+                                            field.onChange(parseInt(newValue))
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            aria-invalid={fieldState.invalid}
+                                            disabled={availableTeams.length == 0}
+                                        >
+                                            <SelectValue placeholder="Select a team" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableTeams.map((team) => (
+                                                <SelectItem
+                                                    key={team.id}
+                                                    value={team.id + ""}
+                                                    disabled={existingTeams.some(
+                                                        (existingTeam) =>
+                                                            existingTeam.d4h?.d4hTeamId === team.id,
+                                                    )}
+                                                >
+                                                    {team.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <Show when={selectedTeamId != null}>
                             <Controller
-                                name="teamId"
+                                name="name"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel>D4H Team</FieldLabel>
-                                        <Select
-                                            value={field.value ? field.value + "" : ""}
-                                            onValueChange={(newValue) =>
-                                                field.onChange(parseInt(newValue))
-                                            }
-                                        >
-                                            <SelectTrigger
-                                                aria-invalid={fieldState.invalid}
-                                                disabled={!isSuccess || availableTeams.length == 0}
-                                            >
-                                                <SelectValue placeholder="Select a team" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {availableTeams.map((team) => (
-                                                    <SelectItem
-                                                        key={team.id}
-                                                        value={team.id + ""}
-                                                        disabled={existingTeams.some(
-                                                            (existingTeam) =>
-                                                                existingTeam.d4h?.d4hTeamId ===
-                                                                team.id,
-                                                        )}
-                                                    >
-                                                        {team.title}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FieldLabel htmlFor="team-name">Name</FieldLabel>
+                                        <Input
+                                            id="team-name"
+                                            placeholder={selectedTeam!.title}
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}
                                     </Field>
                                 )}
                             />
-                            <Show when={selectedTeamId != null}>
-                                <Controller
-                                    name="name"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel htmlFor="team-name">Name</FieldLabel>
-                                            <Input
-                                                id="team-name"
-                                                placeholder={selectedTeam!.title}
-                                                autoComplete="off"
-                                                aria-invalid={fieldState.invalid}
-                                                {...field}
-                                            />
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </Field>
-                                    )}
-                                />
-                                <Controller
-                                    name="description"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel htmlFor="team-description">
-                                                Description
-                                            </FieldLabel>
-                                            <Textarea
-                                                id="team-description"
-                                                placeholder={`Imported from D4H Team '${selectedTeam!.title}'`}
-                                                aria-invalid={fieldState.invalid}
-                                                {...field}
-                                            />
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </Field>
-                                    )}
-                                />
-                            </Show>
-                        </FieldGroup>
-                    </form>
-                </DialogBody>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    {selectedTeamId != null && (
-                        <MutationButton
-                            type="submit"
-                            form="import-d4h-team-form"
-                            status={mutation.status}
-                            text={{
-                                idle: "Import",
-                                pending: "Importing",
-                                success: "Imported",
-                            }}
-                        />
-                    )}
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="team-description">
+                                            Description
+                                        </FieldLabel>
+                                        <Textarea
+                                            id="team-description"
+                                            placeholder={`Imported from D4H Team '${selectedTeam!.title}'`}
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </Show>
+                    </FieldGroup>
+                </form>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                {selectedTeamId != null && (
+                    <MutationButton
+                        type="submit"
+                        form="import-d4h-team-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Import",
+                            pending: "Importing",
+                            success: "Imported",
+                        }}
+                    />
+                )}
+            </DialogFooter>
+        </>
     );
 }

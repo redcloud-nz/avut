@@ -167,6 +167,15 @@ function MoveSkill_Body({ skill }: { skill: Skill }) {
   query on every page load if it runs in the host. Putting it in the child makes it
   lazy, because the child is only mounted while open — see the scope pickers in
   `skill-track/reports/`.
+- **A form that needs a list for a select counts as loading data.** A host that runs
+  `useQuery(...)` and falls back to `?? []` leaves the select silently empty until the
+  data arrives, and shows nothing at all if the query fails. Run the query in the child
+  with `useSuspenseQuery` (or `useSuspenseQueries` for more than one, so they fetch in
+  parallel rather than one after another) — the create/update dialogs that pick a team,
+  person, skill or D4H category are built this way. Only data that is cosmetic is worth
+  leaving out: `create-session` fetches the next session number for a placeholder, and
+  a spinner in front of the form for that would be worse than the placeholder appearing
+  late.
 - **Prefetch a dialog's list only when the dialog will be open on the first render.**
   In a `page.tsx`, that means the dialog opens on arrival (nothing picked yet, so it
   is forced open) or `searchParams.action` names it. Otherwise the list isn't needed

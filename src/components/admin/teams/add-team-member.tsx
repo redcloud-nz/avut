@@ -5,13 +5,12 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -26,6 +25,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
@@ -37,31 +37,56 @@ import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
-    const organization = useOrganization();
-
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["add-member"] as const),
     );
     const dialogOpen = action === "add-member";
 
-    const personnelQuery = useQuery(
-        trpc.personnel.listPersonnel.queryOptions({
-            organizationId: organization.id,
-        }),
-    );
-    const personnel = (personnelQuery.data ?? []).sort((a, b) => a.name.localeCompare(b.name));
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
+    }
 
-    const teamMembershipsQuery = useQuery(
-        trpc.teams.listTeamMemberships.queryOptions({
-            organizationId: organization.id,
-            teamId: team.id,
-        }),
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <ObjectIcons.Create /> <span className="hidden md:inline">New Member</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add Person to Team</DialogTitle>
+                    <DialogDescription>
+                        Select a person to add to <ObjectName>{team.name}</ObjectName>.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <AddTeamMember_Body team={team} onDone={() => handleOpenChange(false)} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
     );
-    const teamMemberships = teamMembershipsQuery.data ?? [];
+}
+
+function AddTeamMember_Body({ team, onDone }: { team: TeamData; onDone: () => void }) {
+    const organization = useOrganization();
+
+    const [{ data: personnel }, { data: teamMemberships }] = useSuspenseQueries({
+        queries: [
+            trpc.personnel.listPersonnel.queryOptions({
+                organizationId: organization.id,
+            }),
+            trpc.teams.listTeamMemberships.queryOptions({
+                organizationId: organization.id,
+                teamId: team.id,
+            }),
+        ],
+    });
 
     const assignedIds = new Set(teamMemberships.map((tm) => tm.personId));
-    const personOptions = personnel
+    const personOptions = [...personnel]
+        .sort((a, b) => a.name.localeCompare(b.name))
         .filter((person) => !assignedIds.has(person.id))
         .map((person) => ({ value: person.id, label: person.name }));
 
@@ -88,22 +113,10 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
                     </>,
                 );
 
-                handleOpenChange(false);
+                onDone();
             },
         }),
     );
-
-    function handleOpenChange(open: boolean) {
-        void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });
-    }
-
-    useEffect(() => {
-        if (dialogOpen) {
-            form.reset();
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
@@ -123,62 +136,47 @@ export function AdminModule_AddTeamMember_Dialog({ team }: { team: TeamData }) {
     );
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <ObjectIcons.Create /> <span className="hidden md:inline">New Member</span>
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add Person to Team</DialogTitle>
-                    <DialogDescription>
-                        Select a person to add to <ObjectName>{team.name}</ObjectName>.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogBody>
-                    <form id="add-person-to-team-form" onSubmit={handleSubmit}>
-                        <FieldGroup>
-                            <Controller
-                                control={form.control}
-                                name="personId"
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel>Person</FieldLabel>
-                                        <SearchableSelect
-                                            value={field.value ?? null}
-                                            onValueChange={(value) =>
-                                                field.onChange((value as PersonId) || null)
-                                            }
-                                            options={personOptions}
-                                            placeholder="Select a person"
-                                            searchPlaceholder="Search personnel..."
-                                            emptyMessage="No personnel found."
-                                            aria-invalid={fieldState.invalid}
-                                        />
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
-                        </FieldGroup>
-                    </form>
-                </DialogBody>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="submit"
-                        form="add-person-to-team-form"
-                        status={mutation.status}
-                        text={{
-                            idle: "Add",
-                            pending: "Adding",
-                            success: "Added",
-                        }}
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <>
+            <DialogBody>
+                <form id="add-person-to-team-form" onSubmit={handleSubmit}>
+                    <FieldGroup>
+                        <Controller
+                            control={form.control}
+                            name="personId"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel>Person</FieldLabel>
+                                    <SearchableSelect
+                                        value={field.value ?? null}
+                                        onValueChange={(value) =>
+                                            field.onChange((value as PersonId) || null)
+                                        }
+                                        options={personOptions}
+                                        placeholder="Select a person"
+                                        searchPlaceholder="Search personnel..."
+                                        emptyMessage="No personnel found."
+                                        aria-invalid={fieldState.invalid}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
+                </form>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    type="submit"
+                    form="add-person-to-team-form"
+                    status={mutation.status}
+                    text={{
+                        idle: "Add",
+                        pending: "Adding",
+                        success: "Added",
+                    }}
+                />
+            </DialogFooter>
+        </>
     );
 }
