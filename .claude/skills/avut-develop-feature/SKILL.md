@@ -1,6 +1,6 @@
 ---
 name: avut-develop-feature
-description: Start building a feature from a GitHub issue — resolves the source, moves into a fresh worktree, does the worktree setup from AGENTS.md, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an issue number/URL.
+description: Start building a feature from a GitHub issue — resolves the source, moves into a fresh worktree, does the worktree setup via the avut-worktree-setup skill, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an issue number/URL.
 effort: high
 manual: true
 ---
@@ -36,7 +36,7 @@ git worktree list
 
 ## Step 4 — Worktree setup
 
-Follow **"Setting up a fresh worktree"** in `AGENTS.md` — do this every time, `EnterWorktree` only handles the git side:
+Follow the `avut-worktree-setup` skill — do this every time, `EnterWorktree` only handles the git side:
 
 ```bash
 cp ../../../.env.local .env.local

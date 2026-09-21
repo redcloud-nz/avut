@@ -2,54 +2,11 @@
 
 A Next.js web application providing organizational management tools with optional D4H platform integration.
 
-## Stack
-
-- **Framework**: Next.js 16, App Router, React 19, TypeScript
-- **Database**: PostgreSQL via Prisma 7 (generated client in `src/generated/prisma/` — never edit manually)
-- **API layer**: tRPC 11 with React Query 5 — standard data-fetching pattern
-- **Auth**: better-auth with organization plugin
-- **UI**: Tailwind CSS 4, shadcn/ui primitives, lucide-react icons, radix-ui
-- **Forms**: react-hook-form + zod 4
-- **D4H API**: openapi-fetch with a generated OpenAPI schema (`src/server/d4h-api/schema.d.ts`)
-- **Package manager**: npm
-
 ## Project Structure
 
-```
-src/
-  app/                        # Next.js App Router pages
-    (authenticated)/orgs/[slug]/   # Organization scope root (org-admin, i3, skill-track, notes, …)
-    (authenticated)/user/      # User scope root — personal dashboard, profile, settings
-    (authenticated)/system/    # System scope root — site-wide admin
-    (public)/policies/        # Privacy / terms pages (no auth)
-    api/                      # API routes (auth)
-    trpc/[trpc]/              # tRPC HTTP handler
-  client/                     # Browser-side auth client + query helpers
-  components/
-    blocks/                   # Named high-level layout blocks (see below)
-    ui/                       # shadcn/ui primitives + custom UI (see ui/README.md for a catalogue)
-    nav/                      # Navigation components
-  emails/                     # React Email templates (preview: npm run dev-email)
-  forms/                      # Form definitions for the forms/i3 flows
-  hooks/                      # Shared React hooks (use-organization, use-person, …)
-  lib/
-    collections/              # TanStack DB collection factories (experimental)
-    schemas/                  # Zod schemas used across client and server (incl. schemas/d4h/)
-    modules.ts                # Single source of truth for org modules (ids, labels, routes)
-    permissions.ts            # Role definitions and permission statements
-    routes.ts                 # route() helper for dynamic typed routes
-  server/                     # Server-only utilities (auth, prisma, etc.)
-    d4h-api/                  # D4H API client + generated OpenAPI schema
-  test/                       # Test helpers (create-prisma-mock, trpc-helpers, setup)
-  trpc/
-    init.ts                   # tRPC init, context, procedure factories
-    routers/                  # One file per domain router
-    routers/_app.ts           # Root app router
-  generated/prisma/           # Auto-generated Prisma client — DO NOT EDIT
-  proxy.ts                    # Request proxy / middleware entry
-```
-
 All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
+
+`src/generated/` (the Prisma client and `dmmf.ts`) is generated — never edit it manually; regenerate with `npx prisma generate`.
 
 ---
 
@@ -60,14 +17,7 @@ How to operate in this repo — commands, tooling gotchas, and git.
 ## Commands
 
 ```bash
-npm run dev                  # Start dev server (with Node inspector)
-npm run dev-email            # React Email preview server (src/emails, port 3001)
 npm run build                # Run migrations + build
-npm run lint                 # ESLint
-npm run lint:fix             # ESLint with --fix
-npm run test                 # Vitest (watch mode)
-npm run test:run             # Vitest (single run)
-npx tsc --noEmit             # Type check
 npx next typegen             # Regenerate typed routes — required after adding a page
 
 # Prisma (always uses .env.local) — see Database section before running migrations
@@ -123,22 +73,7 @@ The dev database holds records for **real people with their real email addresses
 - All git worktrees go under `.claude/worktrees/<name>` inside the repo (gitignored). Don't create them as siblings of the repo or anywhere else — a single location keeps `git worktree list` and cleanup predictable.
 - Remove a worktree with `npm run worktree:remove <name>` — it drops the worktree's `db:branch` database copy first (a branch DB must never outlive its worktree), then runs `git worktree remove` + `prune`. Pass `git worktree remove` flags after `--` (e.g. `npm run worktree:remove <name> -- --force` when the tree has uncommitted changes). Plain `git worktree remove` still works but leaks the branch DB.
 - If a worktree directory was deleted by hand, run `git worktree prune` — and `npm run db:unbranch` from wherever `.env.local` was last pointed, or `dropdb avut_<slug>` directly, to clean up its branch DB.
-
-### Setting up a fresh worktree
-
-The scanning tools (`tsc`, `eslint`, `vitest`) already skip `.claude/worktrees/`, so a worktree doesn't disturb the main checkout. But a new worktree is missing every gitignored file, so from the worktree root:
-
-```bash
-cp ../../../.env.local .env.local        # shared env — needed by prisma, build, seed, dev server (copy, not symlink, so db:branch can repoint it)
-ln -s ../../../.vercel .vercel            # only if using the Vercel CLI / skills
-npm install                              # node_modules is gitignored; also required for the pre-commit hook. Runs `prisma generate` via postinstall
-npx next typegen                          # .next/ is per-worktree; typed routes won't resolve without this
-```
-
-- If the worktree's branch changed `prisma/schema.prisma`, also run `npx prisma generate` (the committed `src/generated/` may be stale).
-- Run the dev server on its own port — `npm run dev -- -p 3100` — so it doesn't collide with a dev server in the main checkout (3000, and 3001 for `dev-email`).
-- The database is shared (see **Database** above) — a worktree that adds a migration must `npm run db:branch <slug>` before running `migrate dev`. `npm run worktree:remove` drops that copy at teardown; `npm run db:unbranch` does it mid-stream (e.g. once the branch merges but the worktree stays).
-- `.claude/settings.local.json` (personal permission allowlist) is not copied; expect more permission prompts until you re-add entries.
+- Setting up a fresh worktree (copy `.env.local`, `npm install`, `npx next typegen`, own dev-server port) — use the `avut-worktree-setup` skill.
 
 ---
 
@@ -150,50 +85,11 @@ Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec carries a
 
 ## tRPC Routers
 
-- One file per domain in `src/trpc/routers/`
-- Register new routers in `src/trpc/routers/_app.ts`
-- Procedures within each router must be kept in alphabetical order
-- Use `organizationProcedure()` for org-scoped mutations/queries — it injects `organizationId` into input and checks permissions automatically
-- Use `authenticatedProcedure` for user-scoped procedures
-- Use `publicProcedure` only for truly unauthenticated endpoints
+Router conventions and the audit-logging guide (which `ctx.logEvent` you hold, `LogBatch`, the `Operations` registry) are in [`src/trpc/CLAUDE.md`](src/trpc/CLAUDE.md), loaded when working under `src/trpc/`. The rules that apply everywhere:
+
 - Always call `ctx.logEvent(...)` after state-changing operations on records — org-scoped, user-scoped, or system-wide
 - Pair a write with `ctx.logEvent(...)` inside `ctx.prisma.$transaction([...])`, not `Promise.all([...])` — see [`docs/patterns/transactional-writes.md`](docs/patterns/transactional-writes.md) for the shape and its gotchas (non-Prisma operations can't join the array)
 - Never write `prisma.logEntry.create` by hand. Every entry goes through a `ctx.logEvent`, which delegates to `recordLogEntry` in `src/server/log-entry.ts` — the one place the write-time invariants and the closed vocabularies are enforced
-
-## Audit logging — which `logEvent` am I holding?
-
-All three procedure factories put a `logEvent` on `ctx`, and they differ only in which log the entry lands in. Each returns the un-awaited `PrismaPromise`, so all three compose into `$transaction([...])`.
-
-| Procedure                | `ctx.logEvent` writes                                           | Extra options                                                    |
-| ------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `organizationProcedure`  | `scope: "organization"`, the org from the procedure's own input | none — the org is not a parameter                                |
-| `authenticatedProcedure` | `scope: "user"`, owned by the **calling** user                  | none — the owner is not a parameter                              |
-| `systemAdminProcedure`   | whichever of the three the call chooses                         | exactly one of `organizationId`, `ownerId`, or `scope: "system"` |
-
-A system admin acts outside any one organization, so its `logEvent` takes the target:
-
-```ts
-ctx.logEvent({ organizationId, action: "Create", objectType: "Organization", objectId });
-ctx.logEvent({
-  ownerId: input.userId,
-  action: "Update",
-  objectType: "User",
-  objectId: input.userId,
-});
-ctx.logEvent({ scope: "system", action: "Delete", objectType: "User", objectId: input.userId });
-```
-
-The union forces exactly one. Which one to pick:
-
-- **`organizationId`** — the action changed something inside that organization.
-- **`ownerId`** — the action belongs on that user's own account timeline. `log_entries.ownerId` is `onDelete: Cascade`, so the entry dies with the user. Never use this arm for an action that deletes the user it names: the entry would be cascaded away inside the very transaction that wrote it.
-- **`scope: "system"`** — no organization, no owner, so no FK for anything to cascade through. This is the arm for an action that must outlive its subject (`deleteUser`). The subject survives only as `objectId` plus whatever the `description` denormalizes, so put the name/email in the description.
-
-**`LogBatch` and the `Operations` registry.** A multi-entry operation opens a `LogBatch` with `createLogBatch` (`src/server/log-entry.ts`) and passes the resulting `batch.id` as `batchId` on each of its entries, correlating them. `operationKey` must be a key of the `Operations` registry (`src/lib/operations.ts`) — that registry is the closed vocabulary, and `createLogBatch` rejects anything off it.
-
-A batch correlates **independently meaningful events** — ones that would each belong, on their own, on their own entity's timeline. It is not for grouping the row-writes of a single event. A D4H team import creating people and memberships earns an entry per person, so it is a batch; a reorder writing a `sequence` integer across five rows is one event whose five-ness is an implementation detail, so it is one entry.
-
-A batch also supplies provenance for an unattended run: `recordLogEntry` allows a null `actor` only alongside a `batchId`, so an entry with no human behind it is still traceable to the operation that produced it.
 
 ## Data Fetching
 
@@ -281,59 +177,7 @@ route("/orgs/[slug]/admin/personnel/[person_id]", { slug, person_id: id });
 
 ## Testing
 
-Vitest with jsdom environment. Tests live alongside source files; the include glob is `**/*.{test,spec}.{ts,tsx}`.
-
-### In-memory Prisma
-
-Tests use `prisma-mock` (not `prismock` — that library is unmaintained and incompatible with Prisma 7). A thin wrapper in `src/test/create-prisma-mock.ts` hides the messy Prisma 7 API:
-
-```ts
-import { createMockPrisma } from "@/test/create-prisma-mock";
-
-const db = createMockPrisma(); // fresh in-memory PrismaClient
-```
-
-`prisma-mock` requires schema metadata at runtime. A generator in `prisma/schema.prisma` outputs `src/generated/dmmf.ts` — never edit it manually; regenerate with `npx prisma generate` after schema changes.
-
-### tRPC router tests
-
-Use `router.createCaller(ctx)` to call procedures directly. Build the context with `createAuthenticatedMockContext` from `src/test/trpc-helpers.ts`:
-
-```ts
-import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
-import { myRouter } from "./my-router";
-
-const ctx = createAuthenticatedMockContext({
-  user: { id: nanoId16() }, // required
-  permissions: { thing: ["create"] }, // defaults to {}
-  prisma: db, // required — inject the mock db
-});
-const caller = myRouter.createCaller(ctx);
-```
-
-**Fixture IDs**: use the `.create()` factory on branded ID types instead of casting — `PersonId.create()`, `TeamId.create()`, `SkillId.create()`, etc. Use plain `nanoId16()` only for unbranded string IDs.
-
-**Dataset structure**: seed a single shared dataset in `beforeAll` scoped inside the outer `describe`, then write each test as an assertion about the correct slice of that data. Only use `beforeEach` seeding when tests genuinely need isolated state.
-
-```ts
-describe("myRouter.someQuery", () => {
-    const T = { org: OrganizationId.create(), person1: PersonId.create(), ... };
-    const db = createMockPrisma();
-
-    beforeAll(async () => {
-        await db.organization.create({ data: { id: T.org, ... } });
-        // seed all fixtures once
-    });
-
-    function makeCaller() {
-        return myRouter.createCaller(createAuthenticatedMockContext({ ..., prisma: db }));
-    }
-
-    it("returns ...", async () => { ... });
-});
-```
-
-**`server-only` constraint**: `@/server/auth`, `@/server/prisma`, and anything that imports them will throw in the jsdom test environment. Never import them in test files or router files. `@/trpc/init.ts` is safe because it uses `import type` for server-only deps.
+Vitest with jsdom; tests live alongside source files. The conventions (prisma-mock, `createCaller` contexts, fixture IDs, dataset structure, the `server-only` constraint) are in [`.claude/rules/testing.md`](.claude/rules/testing.md), loaded when working on test files.
 
 ## UI Block Components
 
@@ -382,19 +226,6 @@ For detail pages use `Saratoga.Columns` with `<Saratoga.Column slot="main">` and
 The app has three real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
 
 `src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere.
-
-| `ModuleId`              | Scope        | Path                                 | Description                                                      |
-| ----------------------- | ------------ | ------------------------------------ | ---------------------------------------------------------------- |
-| `org-admin`             | organization | `/orgs/[slug]/admin`                 | Org management — users, teams, personnel, invitations. Always on |
-| `d4h-views`             | organization | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                                      |
-| `forms`                 | organization | —                                    | Vestigial — form machinery lives under the `i3` module           |
-| `i3`                    | organization | `/orgs/[slug]/i3`                    | Equipment issue/inspect/return (I3) & PPE templates              |
-| `notes`                 | organization | `/orgs/[slug]/notes`                 | Rich-text notes                                                  |
-| `skill-track`           | organization | `/orgs/[slug]/skill-track`           | Skill checks, sessions, catalogue, reports                       |
-| `skill-package-builder` | organization | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                                         |
-| `user-dashboard`        | user         | `/user`                              | Personal dashboard — orgs, invitations, activity. Always on      |
-| `profile`               | user         | `/user/settings`                     | User settings — profile, organizations, D4H tokens. Always on    |
-| `system-admin`          | system       | `/system/admin`                      | Site-wide admin — organizations, users, skill packages           |
 
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
 - Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules
