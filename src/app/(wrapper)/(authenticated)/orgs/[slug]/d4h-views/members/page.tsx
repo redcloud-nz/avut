@@ -18,11 +18,11 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { getD4HMembersCollection } from "@/client/collections/d4h-members";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HMembersCollection } from "@/lib/collections/d4h-members";
 import { route } from "@/lib/routes";
 
 export default function D4HViewsModule_Members_Page() {

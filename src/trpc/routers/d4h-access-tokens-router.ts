@@ -19,7 +19,10 @@ import {
 } from "@/lib/schemas/d4h-access-token";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { revalidatePersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
+import {
+    revalidatePersonalD4HAccessTokenForUser,
+    toServerOnlyD4HAccessToken,
+} from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
 import { revalidateOrganizationSettings } from "@/server/organization-settings";
@@ -358,7 +361,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     message: Messages.d4HAccessTokenNotFound(input.tokenId),
                 });
 
-            const token = D4HAccessToken_ServerOnly.fromRecord(record);
+            const token = toServerOnlyD4HAccessToken(record);
 
             const fetchClient = getD4HFetchClient(token);
             const { data, response } = await fetchClient.GET("/v3/whoami");

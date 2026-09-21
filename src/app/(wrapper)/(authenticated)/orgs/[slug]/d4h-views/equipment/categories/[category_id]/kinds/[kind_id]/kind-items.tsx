@@ -17,11 +17,11 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { getD4HEquipmentItemsCollection } from "@/client/collections/d4h-equipment-items";
 import { Kaga } from "@/components/blocks/kaga";
 import { Show } from "@/components/show";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentItemsCollection } from "@/lib/collections/d4h-equipment-items";
 import { route } from "@/lib/routes";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 

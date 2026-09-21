@@ -7,10 +7,9 @@
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 import { createCollection } from "@tanstack/react-db";
 
+import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
 import { perOrganization } from "@/lib/utils";
 import { getQueryClient, trpc, trpcClient } from "@/trpc/client";
-
-import { D4HEquipmentBrand } from "../schemas/d4h/equipment-brand";
 
 export const getD4HEquipmentBrandsCollection = perOrganization((organizationId) =>
     createCollection(

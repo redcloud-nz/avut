@@ -18,12 +18,12 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { getD4HEquipmentCategoriesCollection } from "@/client/collections/d4h-equipment-categories";
+import { getD4HEquipmentKindsCollection } from "@/client/collections/d4h-equipment-kinds";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
-import { getD4HEquipmentKindsCollection } from "@/lib/collections/d4h-equipment-kinds";
 import { route } from "@/lib/routes";
 
 export default function D4HViewsModule_EquipmentCategories_Page() {

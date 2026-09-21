@@ -7,7 +7,7 @@
 
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { toServerOnlyD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { getOrganizationBySlug } from "@/server/organization";
 import { getOrganizationSettings } from "@/server/organization-settings";
@@ -41,7 +41,7 @@ export default async function D4HViewsModule_Teams_Page(
         throw new Error("Token not found");
     }
 
-    const token = D4HAccessToken_ServerOnly.fromRecord(record);
+    const token = toServerOnlyD4HAccessToken(record);
 
     const teams = await getD4HTeamsAccessibleWithToken(token);
 

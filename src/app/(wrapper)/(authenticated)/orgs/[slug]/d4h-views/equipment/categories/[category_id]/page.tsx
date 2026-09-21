@@ -10,12 +10,12 @@ import { use } from "react";
 
 import { eq, useLiveSuspenseQuery } from "@tanstack/react-db";
 
+import { getD4HEquipmentCategoriesCollection } from "@/client/collections/d4h-equipment-categories";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
 import { route } from "@/lib/routes";
 
 import { D4HViewsModule_EquipmentCategory_Kinds_List } from "./category-kinds";
