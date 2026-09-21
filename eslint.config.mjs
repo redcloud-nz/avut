@@ -13,6 +13,7 @@ import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
 import noDeprecatedZod from "./eslint-rules/no-deprecated-zod.mjs";
 import noDirectLogWrites from "./eslint-rules/no-direct-log-writes.mjs";
 import noPrismaModelImports from "./eslint-rules/no-prisma-model-imports.mjs";
+import noProcessEnv from "./eslint-rules/no-process-env.mjs";
 import noTrpcClientInServerComponent from "./eslint-rules/no-trpc-client-in-server-component.mjs";
 import nzSpelling from "./eslint-rules/nz-spelling.mjs";
 import requireServerOnly from "./eslint-rules/require-server-only.mjs";
@@ -28,6 +29,7 @@ const avut = {
     "no-deprecated-zod": noDeprecatedZod,
     "no-direct-log-writes": noDirectLogWrites,
     "no-prisma-model-imports": noPrismaModelImports,
+    "no-process-env": noProcessEnv,
     "no-trpc-client-in-server-component": noTrpcClientInServerComponent,
     "require-server-only": requireServerOnly,
     "zod-import-style": zodImportStyle,
@@ -204,6 +206,22 @@ const config = [
     plugins: { avut },
     rules: {
       "avut/no-prisma-model-imports": ["error", { allow: ["Prisma", "PrismaClient"] }],
+    },
+  },
+  {
+    // Environment variables are read in `@/lib/env` and `@/server/env`, and imported from there.
+    // Tests set `process.env` per case.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: [
+      "src/lib/env.ts",
+      "src/server/env.ts",
+      "src/generated/**",
+      "src/test/**",
+      "**/*.test.{ts,tsx}",
+    ],
+    plugins: { avut },
+    rules: {
+      "avut/no-process-env": "error",
     },
   },
   {
