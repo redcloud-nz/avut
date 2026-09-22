@@ -2,6 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/*
+ * Tailwind's automatic content scan respects .gitignore, and system/scratch/** is
+ * gitignored (see AGENTS.md's scratchpad convention) — without this, any utility class
+ * used only in a scratch page never gets generated, so it silently no-ops instead of
+ * rendering. Re-include it explicitly so scratch pages can use arbitrary classes.
+ */
+@source "./**/scratch/**/*.tsx";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
