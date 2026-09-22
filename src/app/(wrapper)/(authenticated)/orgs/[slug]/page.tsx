@@ -8,8 +8,7 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
-import { Argus } from "@/components/blocks/argus";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Std } from "@/components/blocks/std";
 import {
     Item,
     ItemActions,
@@ -37,38 +36,33 @@ export default async function Organization_Index_Page(props: LayoutProps<"/orgs/
     );
 
     return (
-        <Argus.Root>
-            <Argus.Column>
-                <Argus.Header title={organization.name} />
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Available Modules</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ItemGroup>
-                            {availableModules.map((mod) => {
-                                const Icon = mod.icon;
+        <>
+            <Std.Navbar breadcrumbs={[organization.name]} />
+            <Std.ScrollContainer>
+                <Std.IndexPage title={organization.name}>
+                    <ItemGroup>
+                        {availableModules.map((mod) => {
+                            const Icon = mod.icon;
 
-                                return (
-                                    <Item key={mod.id} asChild>
-                                        <Link href={mod.href(slug)}>
-                                            <ItemMedia>
-                                                <Icon />
-                                            </ItemMedia>
-                                            <ItemContent>
-                                                <ItemTitle>{mod.label}</ItemTitle>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ChevronRightIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                );
-                            })}
-                        </ItemGroup>
-                    </CardContent>
-                </Card>
-            </Argus.Column>
-        </Argus.Root>
+                            return (
+                                <Item key={mod.id} asChild>
+                                    <Link href={mod.href(slug)}>
+                                        <ItemMedia>
+                                            <Icon />
+                                        </ItemMedia>
+                                        <ItemContent>
+                                            <ItemTitle>{mod.label}</ItemTitle>
+                                        </ItemContent>
+                                        <ItemActions>
+                                            <ChevronRightIcon className="size-4" />
+                                        </ItemActions>
+                                    </Link>
+                                </Item>
+                            );
+                        })}
+                    </ItemGroup>
+                </Std.IndexPage>
+            </Std.ScrollContainer>
+        </>
     );
 }
