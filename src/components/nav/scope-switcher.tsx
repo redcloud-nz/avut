@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { useUser } from "@/client/auth-queries";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -22,8 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-
-import { useUser } from "@/client/auth-queries";
 import { trpc } from "@/trpc/client";
 
 /** Which of the three scope roots the current pathname is inside, or `null` for a route above all of them. */

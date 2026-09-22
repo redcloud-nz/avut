@@ -6,12 +6,13 @@
 
 import { createContext, ReactNode, useContext, useMemo } from "react";
 
+import { useSuspenseQueries } from "@tanstack/react-query";
+
 import type { ModuleFlagState } from "@/lib/module-flags";
 import { Modules, type ModuleDef, type OrganizationModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
-import { useSuspenseQueries } from "@tanstack/react-query";
 import { trpc } from "@/trpc/client";
 
 interface OrganizationIdentity {

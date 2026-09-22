@@ -9,6 +9,8 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { skillsEffects } from "@/client/skills-effects";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -19,10 +21,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { skillsEffects } from "@/client/skills-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";

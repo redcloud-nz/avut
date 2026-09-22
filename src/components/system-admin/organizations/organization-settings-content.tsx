@@ -10,7 +10,6 @@ import { OrganizationSettingsForm } from "@/components/admin-settings/organizati
 import { OrganizationSettingsScopeProvider } from "@/components/admin-settings/settings-scope";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-
 import type { ModuleFlagState } from "@/lib/module-flags";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";

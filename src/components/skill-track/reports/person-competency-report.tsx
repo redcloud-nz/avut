@@ -5,16 +5,21 @@
 
 "use client";
 
+import { UserXIcon } from "lucide-react";
+import { useQueryState } from "nuqs";
 import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useQueryState } from "nuqs";
-
-import { UserXIcon } from "lucide-react";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import {
+    deriveStatus,
+    StatusBadge,
+    tallyStatuses,
+    type CompetencyStatus,
+} from "@/components/skill-track/reports/competency-status";
 import { SkillTrack_PersonScopeDialog } from "@/components/skill-track/reports/person-scope-dialog";
 import {
     CheckDetailsTrigger,
@@ -22,12 +27,7 @@ import {
     SkillInfoTrigger,
 } from "@/components/skill-track/reports/report-cell-popovers";
 import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
-import {
-    deriveStatus,
-    StatusBadge,
-    tallyStatuses,
-    type CompetencyStatus,
-} from "@/components/skill-track/reports/competency-status";
+import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -39,8 +39,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { PersonId } from "@/lib/schemas/person";

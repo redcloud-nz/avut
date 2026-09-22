@@ -8,6 +8,7 @@
 import { Route } from "next";
 import Link from "next/link";
 import { useState } from "react";
+
 import { useQuery } from "@tanstack/react-query";
 
 import { NotificationsIcon } from "@/components/icons";
@@ -24,7 +25,6 @@ import {
     UnreadIndicator,
 } from "@/components/ui/notification";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
 import { trpc } from "@/trpc/client";
 
 export function NotificationsMenu() {

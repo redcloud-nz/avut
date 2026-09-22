@@ -14,9 +14,7 @@ import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-
 import {
     Table,
     TableBody,
@@ -25,7 +23,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { trpc } from "@/trpc/client";

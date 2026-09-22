@@ -11,11 +11,10 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillTrack_SkillMatrixReport } from "@/components/skill-track/reports/skill-matrix-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
-
 import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {

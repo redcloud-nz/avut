@@ -6,6 +6,7 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Argus } from "@/components/blocks/argus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,11 +18,10 @@ import {
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/item";
-import Link from "next/link";
 import { orgModules } from "@/lib/modules";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { getOrganizationSettings } from "@/server/cache/organization-settings";
 import { resolveModuleFlags } from "@/server/module-flags";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
 
 export default async function Organization_Index_Page(props: LayoutProps<"/orgs/[slug]">) {
     const { slug } = await props.params;

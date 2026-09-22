@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";

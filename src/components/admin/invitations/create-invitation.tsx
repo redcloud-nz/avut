@@ -30,7 +30,6 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ObjectName } from "@/components/ui/typography";
-
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";

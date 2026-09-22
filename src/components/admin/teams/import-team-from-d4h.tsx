@@ -13,6 +13,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { Show } from "@/components/show";
 import { MutationButton } from "@/components/ui/button";
 import {
@@ -37,8 +38,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";

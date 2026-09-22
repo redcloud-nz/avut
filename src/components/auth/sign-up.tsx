@@ -12,6 +12,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
+import { authClient } from "@/client/auth-client";
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -24,8 +25,6 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-
-import { authClient } from "@/client/auth-client";
 import { authUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { route } from "@/lib/routes";
 import { PasswordSchema } from "@/lib/schemas/password";

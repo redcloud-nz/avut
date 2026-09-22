@@ -19,7 +19,6 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Badge } from "@/components/ui/badge";
-
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { trpc, type RouterOutput } from "@/trpc/client";

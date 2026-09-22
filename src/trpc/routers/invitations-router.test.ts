@@ -5,6 +5,17 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { nanoId16 } from "@/lib/id";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { InvitationId } from "@/lib/schemas/organization-invitation";
+import { PersonId } from "@/lib/schemas/person";
+import { UserId } from "@/lib/schemas/user";
+import { isVerificationOtpEmailSuppressed } from "@/server/verification-otp-suppression";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
+
+import { invitationsRouter } from "./invitations-router";
+
 vi.mock("server-only", () => ({}));
 
 // `signUp` delegates account creation and sign-in to Better Auth. The tests assert on that
@@ -19,17 +30,6 @@ vi.mock("@/server/auth", () => ({
         },
     },
 }));
-
-import { nanoId16 } from "@/lib/id";
-import { OrganizationId } from "@/lib/schemas/organization";
-import { InvitationId } from "@/lib/schemas/organization-invitation";
-import { PersonId } from "@/lib/schemas/person";
-import { UserId } from "@/lib/schemas/user";
-import { createMockPrisma } from "@/test/create-prisma-mock";
-import { isVerificationOtpEmailSuppressed } from "@/server/verification-otp-suppression";
-import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
-
-import { invitationsRouter } from "./invitations-router";
 
 describe("invitations.getLanding", () => {
     // Dataset (all invited to the same organization by the same inviter):

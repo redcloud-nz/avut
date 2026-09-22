@@ -5,13 +5,12 @@
 
 "use client";
 
+import { TelescopeIcon } from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
-
-import { TelescopeIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +37,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";

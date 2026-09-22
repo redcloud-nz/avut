@@ -10,15 +10,15 @@ import createFetchClient from "openapi-fetch";
 import { cache } from "react";
 import * as z from "zod";
 
+import { getD4HServer } from "@/lib/d4h-servers";
 import { D4HAccessToken_ServerOnly, D4HAccessTokenMetadata } from "@/lib/schemas/d4h-access-token";
+import { D4HActivityAttendance } from "@/lib/schemas/d4h/activity-attendance";
+import { D4HMember } from "@/lib/schemas/d4h/member";
+import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
+import { D4HTeamDetail, D4HTeamRef } from "@/lib/schemas/d4h/team";
+import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 
-import { D4HActivityAttendance } from "../../lib/schemas/d4h/activity-attendance";
-import { D4HMember } from "../../lib/schemas/d4h/member";
-import { D4HOrganisation } from "../../lib/schemas/d4h/organisation";
 import type { paths } from "./schema";
-import { getD4HServer } from "../../lib/d4h-servers";
-import { D4HTeamDetail, D4HTeamRef } from "../../lib/schemas/d4h/team";
-import { D4HWhoami } from "../../lib/schemas/d4h/whoami";
 
 export type D4HListResponse = {
     results: unknown[];

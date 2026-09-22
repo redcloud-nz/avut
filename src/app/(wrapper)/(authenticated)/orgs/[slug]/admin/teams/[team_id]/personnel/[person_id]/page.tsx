@@ -8,11 +8,10 @@
 import { Metadata } from "next";
 
 import { AdminModule_TeamMembership_Content } from "@/components/admin/teams/team-membership-content";
-
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]">;

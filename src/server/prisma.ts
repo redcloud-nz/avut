@@ -2,7 +2,10 @@
  *  Copyright (c) 2025 A.V.U.T. Project
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
+import { env } from "@/lib/env";
+
 import "dotenv/config";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
@@ -35,7 +38,7 @@ function withDevelopmentLatency(client: PrismaClient): PrismaClient {
         name: "development-query-latency",
         query: {
             async $allOperations({ model, operation, args, query }) {
-                if (process.env.NODE_ENV !== "development") return query(args);
+                if (env.NODE_ENV !== "development") return query(args);
 
                 const delay =
                     Math.floor(
@@ -61,6 +64,7 @@ function withDevelopmentLatency(client: PrismaClient): PrismaClient {
 
 const prismaClientSingleton = () => {
     const adapter = new PrismaPg({
+        // eslint-disable-next-line avut/no-process-env -- this module also runs under tsx (prisma/seed-demo.ts), where the server-only marker in @/server/env would throw
         connectionString: process.env.POSTGRES_PRISMA_URL,
     });
     return withDevelopmentLatency(new PrismaClient({ adapter }));
@@ -74,4 +78,4 @@ const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;
+if (env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;

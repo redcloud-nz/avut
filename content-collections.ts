@@ -7,10 +7,11 @@
  * wrapper in `next.config.ts` runs this on `next dev` (watch) and `next build`.
  */
 
+import remarkGfm from "remark-gfm";
+import * as z from "zod";
+
 import { defineCollection, defineConfig } from "@content-collections/core";
 import { compileMDX } from "@content-collections/mdx";
-import remarkGfm from "remark-gfm";
-import { z } from "zod";
 
 // GFM adds table syntax (among other things) — `docsMdxComponents` already
 // styles `table`/`th`/`td`, so wire the plugin in to match.

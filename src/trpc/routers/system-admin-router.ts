@@ -9,20 +9,20 @@ import { TRPCError } from "@trpc/server";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
-import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
+import { revalidateOrganizationSettings } from "@/server/cache/organization-settings-revalidate";
+import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
-import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
 import {
     readOrganizationSettings,
     writeOrganizationSettings,
 } from "@/server/organization-settings-store";
-import { revalidateOrganizationUser } from "@/server/organization-user-cache";
 import { prepareSkillPackageImport } from "@/server/skill-package-io";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";
@@ -140,7 +140,7 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            const id = nanoId16();
+            const id = OrganizationUserId.create();
 
             try {
                 await ctx.prisma.$transaction([
@@ -224,7 +224,7 @@ export const systemAdminRouter = createTrpcRouter({
                         ? [
                               ctx.prisma.organizationUser.create({
                                   data: {
-                                      id: nanoId16(),
+                                      id: OrganizationUserId.create(),
                                       organizationId,
                                       userId,
                                       role: "owner",

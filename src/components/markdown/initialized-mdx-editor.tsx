@@ -8,18 +8,19 @@ import { ForwardedRef } from "react";
 
 import {
     headingsPlugin,
-    listsPlugin,
-    quotePlugin,
-    markdownShortcutPlugin,
+    linkDialogPlugin,
     linkPlugin,
+    listsPlugin,
+    markdownShortcutPlugin,
+    MDXEditor,
+    quotePlugin,
+    Separator,
     tablePlugin,
     toolbarPlugin,
-    Separator,
-    MDXEditor,
     type MDXEditorMethods,
     type MDXEditorProps,
-    linkDialogPlugin,
 } from "@mdxeditor/editor";
+
 import "@mdxeditor/editor/style.css";
 import "./markdown.css";
 

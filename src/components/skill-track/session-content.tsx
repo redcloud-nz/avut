@@ -17,7 +17,6 @@ import { Protect } from "@/components/protect";
 import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
 import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "@/components/skill-track/update-session";
-
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -36,7 +35,6 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";

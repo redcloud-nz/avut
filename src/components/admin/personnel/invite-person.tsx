@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { usersEffects } from "@/client/users-effects";
 import {
     InvitationRoleFields,
     invitationRoles,
@@ -31,8 +32,6 @@ import {
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { FieldDescription, FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
-
-import { usersEffects } from "@/client/users-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatRelativeDateTime } from "@/lib/datetime";
 import { OrganizationRole } from "@/lib/schemas/organization-role";

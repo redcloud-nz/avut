@@ -5,25 +5,25 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// skill-package-builder-router reaches @/server/auth at import time via ../init. The
-// procedures under test only touch ctx.prisma (the injected mock), so stubbing
-// server-only is enough to let the module load under jsdom.
-vi.mock("server-only", () => ({}));
-
 import { nanoId16 } from "@/lib/id";
 import type { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SkillId } from "@/lib/schemas/skill";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import {
     SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
     type SkillPackageExport,
 } from "@/lib/schemas/skill-package-export";
-import { SkillGroupId } from "@/lib/schemas/skill-group";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
+
+// skill-package-builder-router reaches @/server/auth at import time via ../init. The
+// procedures under test only touch ctx.prisma (the injected mock), so stubbing
+// server-only is enough to let the module load under jsdom.
+vi.mock("server-only", () => ({}));
 
 describe("skillPackageBuilderRouter.getPackage / getGroup / getSkill", () => {
     const T = {

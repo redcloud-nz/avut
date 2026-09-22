@@ -6,11 +6,13 @@
  *  (`d4h-sync.test.ts`). See docs/specs/d4h-linking.md §7.
  */
 
+import "server-only";
+
 import { createHash } from "node:crypto";
 
 import { diffObject } from "@/lib/diff";
-import { D4HMember } from "@/lib/schemas/d4h/member";
 import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
+import { D4HMember } from "@/lib/schemas/d4h/member";
 
 /** The `TeamMembership_D4H` snapshot fields, in the shape `diffObject` compares. */
 export type D4HMembershipSnapshot = {

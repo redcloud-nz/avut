@@ -8,11 +8,9 @@ import { notFound } from "next/navigation";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
 import { route } from "@/lib/routes";
-
 import { D4HMember } from "@/lib/schemas/d4h/member";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 

@@ -9,8 +9,8 @@ import { useMemo, useState } from "react";
 import {
     formatForDisplay,
     getHotkeyManager,
-    type Hotkey,
     useHotkey,
+    type Hotkey,
 } from "@tanstack/react-hotkeys";
 
 import {
@@ -22,7 +22,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { HotkeyKbd } from "@/components/ui/hotkey-kbd";
-
 import { HELP_HOTKEY } from "@/lib/hotkeys";
 
 /**

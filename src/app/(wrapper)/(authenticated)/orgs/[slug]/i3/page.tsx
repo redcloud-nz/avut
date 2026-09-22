@@ -19,7 +19,6 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
-
 import { route } from "@/lib/routes";
 
 export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>) {

@@ -20,7 +20,6 @@ import {
     useMenuActionHotkeys,
     type MenuActionProps,
 } from "@/components/ui/menu-action";
-
 import type { RouterOutput } from "@/trpc/routers/_app";
 
 import { UserSettings_LeaveOrganization_Dialog } from "./leave-organization-dialog";

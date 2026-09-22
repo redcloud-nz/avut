@@ -17,29 +17,23 @@ export function NotImplemented({ docUrl, ghIssueNumber }: NotImplementedProps) {
         <div className="h-full flex flex-col justify-center items-center">
             <div className="flex flex-col gap-2 justify-center items-center">
                 <div className="font-semibold text-2xl text-zinc-800">501</div>
-                <div className="font-semibold text-zinc-800">
-                    Not Implemented
-                </div>
+                <div className="font-semibold text-zinc-800">Not Implemented</div>
                 <Separator orientation="horizontal" className="w-40" />
                 <Paragraph>
-                    This page is part of a planned or proposed feature that has
-                    not yet been implemented.
+                    This page is part of a planned or proposed feature that has not yet been
+                    implemented.
                 </Paragraph>
                 {docUrl ? (
                     <Paragraph>
                         Learn more about the concept of this feature in the{" "}
-                        <ExternalLink href={docUrl}>documentation</ExternalLink>
-                        .
+                        <ExternalLink href={docUrl}>documentation</ExternalLink>.
                     </Paragraph>
                 ) : null}
 
                 {ghIssueNumber ? (
                     <Paragraph>
                         Learn more about this proposal:{" "}
-                        <GitHubIssueLink
-                            issueNumber={ghIssueNumber}
-                        ></GitHubIssueLink>
-                        .
+                        <GitHubIssueLink issueNumber={ghIssueNumber}></GitHubIssueLink>.
                     </Paragraph>
                 ) : null}
             </div>

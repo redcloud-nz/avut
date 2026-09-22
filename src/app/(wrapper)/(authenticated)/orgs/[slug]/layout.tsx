@@ -7,13 +7,13 @@
 
 import { Metadata } from "next";
 
-import { TITLE_SEPARATOR } from "@/lib/constants";
-import { resolveModuleFlags } from "@/server/module-flags";
-import { getOrganizationBySlug } from "@/server/organization";
-import { requireOrganization } from "@/server/organization-access";
-import { OrganizationProvider } from "@/hooks/use-organization";
 import { OrgSidebar_Modules } from "@/components/nav/org-sidebar-modules";
 import { SidebarPortal } from "@/components/nav/sidebar-portal";
+import { OrganizationProvider } from "@/hooks/use-organization";
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { resolveModuleFlags } from "@/server/module-flags";
+import { requireOrganization } from "@/server/organization-access";
 import { getServerQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
 // NOTE: metadata generation deliberately uses the plain cached lookup rather than

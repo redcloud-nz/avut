@@ -11,10 +11,8 @@ import { OrganizationSettingsScopeProvider } from "@/components/admin-settings/s
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_Settings_Content() {

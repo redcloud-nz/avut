@@ -14,8 +14,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
-import { authUrl, postSignInUrl, SIGN_UP_PATH } from "@/lib/auth-redirect";
-
 import { SocialProviderId, SocialProviders } from "@/components/auth/social-providers";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +28,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { authUrl, postSignInUrl, SIGN_UP_PATH } from "@/lib/auth-redirect";
 
 /**
  * Card for a user to sign in to the application.

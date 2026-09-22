@@ -5,8 +5,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { D4HMember } from "@/lib/schemas/d4h/member";
 import { isSyncPlanEmpty } from "@/lib/schemas/d4h-sync-plan";
+import { D4HMember } from "@/lib/schemas/d4h/member";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 

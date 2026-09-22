@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/card";
 import { FieldGroup } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
-
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 

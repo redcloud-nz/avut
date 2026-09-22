@@ -4,6 +4,7 @@
  */
 
 import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
+
 import { createTrpcRouter } from "../init";
 
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
@@ -16,8 +17,8 @@ import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { settingsRouter } from "./settings-router";
 import { skillChecksRouter } from "./skill-checks-router";
-import { skillsRouter } from "./skills-router";
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
+import { skillsRouter } from "./skills-router";
 import { systemAdminRouter } from "./system-admin-router";
 import { teamsRouter } from "./teams-router";
 import { usersRouter } from "./users-router";

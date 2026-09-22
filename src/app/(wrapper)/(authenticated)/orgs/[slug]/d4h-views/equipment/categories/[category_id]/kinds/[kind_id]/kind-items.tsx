@@ -5,6 +5,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
 import { eq, useLiveQuery } from "@tanstack/react-db";
@@ -16,15 +17,13 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { getD4HEquipmentItemsCollection } from "@/client/collections/d4h-equipment-items";
 import { Kaga } from "@/components/blocks/kaga";
 import { Show } from "@/components/show";
-import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentItemsCollection } from "@/lib/collections/d4h-equipment-items";
-import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { route } from "@/lib/routes";
+import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 
 export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: number }) {
     const organization = useOrganization();

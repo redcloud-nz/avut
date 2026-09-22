@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { SkillCheckSession as SkillCheckSessionRecord } from "@/generated/prisma/client";
+import type { SkillCheckSession as SkillCheckSessionRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";

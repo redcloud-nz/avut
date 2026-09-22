@@ -6,6 +6,7 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Std } from "@/components/blocks/std";
 import {
@@ -16,8 +17,6 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
-import Link from "next/link";
-
 import { route } from "@/lib/routes";
 
 export default async function D4HViewsModule_Equipment_Page(

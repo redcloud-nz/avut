@@ -16,15 +16,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
-import { authUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
-import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
-
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { PasswordInput } from "@/components/ui/password-input";
+import { authUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
+import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
 
 /**
  * Single-card forgot/reset-password flow: an email step that sends a 6-digit code, then a

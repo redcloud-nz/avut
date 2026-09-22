@@ -14,9 +14,9 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 
 import { put } from "@vercel/blob";
-import sharp from "sharp";
 
 const INDEX_PATH = path.join(process.cwd(), "src/lib/screenshots.generated.json");
 

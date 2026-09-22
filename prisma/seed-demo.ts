@@ -27,6 +27,7 @@ import "dotenv/config";
 import { hashPassword } from "better-auth/crypto";
 
 import { Prisma } from "@/generated/prisma/client";
+// eslint-disable-next-line avut/ids-via-schemas -- the credential Account row has no schema of its own; it mirrors the ID better-auth generates
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -37,6 +38,7 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
+import { UserId } from "@/lib/schemas/user";
 import prisma from "@/server/prisma";
 
 const DEMO_SLUG = "demo";
@@ -263,7 +265,7 @@ async function createUsers(
     const byName = new Map(personnel.map((p) => [p.name, p.id]));
 
     async function createLogin(email: string, name: string) {
-        const userId = nanoId16();
+        const userId = UserId.create();
         const now = new Date();
         await prisma.user.create({
             data: {

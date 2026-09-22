@@ -10,10 +10,12 @@ import { toast } from "sonner";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     Dialog,
     DialogBody,
@@ -24,7 +26,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
     Select,
     SelectContent,
@@ -32,11 +33,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-
-import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
-import { SyncPlan, isSyncPlanEmpty } from "@/lib/schemas/d4h-sync-plan";
+import { isSyncPlanEmpty, SyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 

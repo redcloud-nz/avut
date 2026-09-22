@@ -8,7 +8,7 @@
 import { Metadata } from "next";
 
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/organization";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import { AdminModule_D4HAccessToken_Content } from "./access-token-content";

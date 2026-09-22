@@ -7,9 +7,9 @@
 
 import { Suspense } from "react";
 
-import { Argus } from "@/components/blocks/argus";
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { Auth_ForgotPassword_Card } from "@/components/auth/forgot-password";
+import { Argus } from "@/components/blocks/argus";
 import { safeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata = { title: "Forgot Password" };

@@ -8,9 +8,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { Argus } from "@/components/blocks/argus";
-
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
+import { Argus } from "@/components/blocks/argus";
 import { InvitationLanding_Card } from "@/components/invitations/invitation-landing";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";

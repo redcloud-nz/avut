@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { personnelEffects } from "@/client/personnel-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -21,8 +22,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { personnelEffects } from "@/client/personnel-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";

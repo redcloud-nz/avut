@@ -7,19 +7,22 @@
  * Matching and linking a `Person` to a `User` within one organization — the shared half of
  * `docs/specs/person-user-linking.md` Parts 2 and 3.
  *
- * Deliberately NOT marked `server-only` and free of any `@/server/prisma` import: the Prisma
+ * Deliberately free of any `@/server/prisma` import: the Prisma
  * client is injected by the caller, so this is reachable both from a better-auth hook (which runs
  * outside any tRPC procedure) and from the jsdom test environment against `createMockPrisma()`.
  * Keeping the logic here rather than inline in `src/server/auth.ts` is what makes it testable at
- * all — that module pulls in `server-only` transitively and cannot be imported under jsdom.
+ * all — that module pulls in `@/server/prisma` (via the Prisma adapter) and cannot be imported under jsdom.
  *
  * Nothing here grants membership. Both lookups only ever fill in `OrganizationUser.personId` on a
  * membership that already exists; an email match is never an authorisation decision.
  */
 
-import type { Person, PrismaClient, User } from "@/generated/prisma/client";
+import "server-only";
+
+import type { PrismaClient } from "@/generated/prisma/client";
 import type { OrganizationId } from "@/lib/schemas/organization";
-import type { UserId } from "@/lib/schemas/user";
+import type { PersonRecord } from "@/lib/schemas/person";
+import type { UserId, UserRecord } from "@/lib/schemas/user";
 
 import { formatActorLabel, recordLogEntry, type LogEntryPrisma } from "./log-entry";
 import { readOrganizationSettings } from "./organization-settings-store";
@@ -72,7 +75,7 @@ export interface LinkActor {
 export async function findLinkablePerson(
     prisma: PersonUserLinkPrisma,
     { organizationId, email }: { organizationId: string; email: string },
-): Promise<Person | null> {
+): Promise<PersonRecord | null> {
     return await prisma.person.findFirst({
         where: {
             organizationId,
@@ -99,7 +102,7 @@ export async function findLinkablePerson(
 export async function findLinkableMember(
     prisma: PersonUserLinkPrisma,
     { organizationId, email }: { organizationId: string; email: string },
-): Promise<{ user: User; organizationUserId: string } | null> {
+): Promise<{ user: UserRecord; organizationUserId: string } | null> {
     const user = await prisma.user.findFirst({
         where: { email: email.toLowerCase() },
         include: {

@@ -7,8 +7,6 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { auth } from "@/server/auth";
-import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
 import { type LogAction, type LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
@@ -16,13 +14,15 @@ import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData, UserSessionId } from "@/lib/schemas/user-session";
+import { auth } from "@/server/auth";
+import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
 
 import { FieldConflictError } from "../errors";
 import {
-    type AuthenticatedContext,
     authenticatedProcedure,
     createTrpcRouter,
     organizationProcedure,
+    type AuthenticatedContext,
 } from "../init";
 import { Messages } from "../messages";
 

@@ -7,7 +7,6 @@
 import { ComponentProps } from "react";
 
 import { Input } from "@/components/ui/input";
-
 import { cn } from "@/lib/utils";
 
 type TmplExprInputProps = ComponentProps<typeof Input>;

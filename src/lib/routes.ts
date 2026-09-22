@@ -4,6 +4,8 @@
  */
 
 import { Route } from "next";
+
+// eslint-disable-next-line avut/no-deep-relative-imports -- generated types live outside src/, so they have no @/ alias
 import { AppRoutes, ParamMap } from "../../.next/types/routes";
 
 export function route<AppRoute extends AppRoutes>(

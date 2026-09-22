@@ -13,7 +13,6 @@ import { I3Module_SettingsCard } from "@/components/admin-settings/i3-module-car
 import { Personnel_SettingsCard } from "@/components/admin-settings/personnel-card";
 import { SkillPackageBuilderModule_SettingsCard } from "@/components/admin-settings/skill-package-builder-module-card";
 import { SkillTrackModule_SettingsCard } from "@/components/admin-settings/skill-track-module-card";
-
 import type { ModuleFlagState } from "@/lib/module-flags";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";

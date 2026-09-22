@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -21,9 +22,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
 import { getQueryClient } from "@/trpc/query-client";
 
 /**

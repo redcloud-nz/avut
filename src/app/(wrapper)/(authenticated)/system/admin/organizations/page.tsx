@@ -7,7 +7,6 @@
 
 import { Std } from "@/components/blocks/std";
 import { SystemAdmin_Organizations_List } from "@/components/system-admin/organizations/organizations-list";
-
 import { requireSystemAdmin } from "@/server/system-admin-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

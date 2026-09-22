@@ -8,14 +8,12 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
-import { OrganizationUser } from "@/lib/schemas/organization-user";
-
 import { InvitationId } from "@/lib/schemas/organization-invitation";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserData } from "@/lib/schemas/user";
-
-import { findLinkableMember } from "@/server/person-user-link";
 import { readOrganizationSettings } from "@/server/organization-settings-store";
+import { findLinkableMember } from "@/server/person-user-link";
 
 import { FieldConflictError } from "../errors";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";

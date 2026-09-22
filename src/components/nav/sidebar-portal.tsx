@@ -15,8 +15,8 @@
 import { createContext, ReactNode, use, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarGroup, SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SidebarPortalContextValue {
     container: HTMLDivElement | null;

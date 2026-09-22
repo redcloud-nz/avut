@@ -5,13 +5,12 @@
 
 "use client";
 
+import { Building2Icon, TelescopeIcon, UsersIcon } from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
-
-import { Building2Icon, TelescopeIcon, UsersIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +28,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";

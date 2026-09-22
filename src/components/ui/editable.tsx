@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { type ComponentProps, createContext, useMemo, useState } from "react";
+import { createContext, useMemo, useState, type ComponentProps } from "react";
 
 import { Card } from "@/components/ui/card";
 
@@ -24,10 +24,7 @@ interface EditableCardProps extends ComponentProps<"div"> {
     defaultState?: Partial<EdiableCardState>;
 }
 
-export function EditableCard({
-    defaultState = {},
-    ...props
-}: EditableCardProps) {
+export function EditableCard({ defaultState = {}, ...props }: EditableCardProps) {
     const [state, setState] = useState<EdiableCardState>({
         mode: "View",
         targetId: null,

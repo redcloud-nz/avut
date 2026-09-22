@@ -5,25 +5,7 @@
 
 import { TRPCError } from "@trpc/server";
 
-import { Permissions, Role, Roles } from "@/lib/permissions";
-
-/**
- * Whether any of the given roles authorizes every one of `requiredPermissions`.
- *
- * Mirrors `useHasPermission`'s client-side union of roles and Better Auth's own
- * `hasPermissionFn` semantics (granted if a single role authorises the full request) — that
- * three-way agreement is what makes evaluating locally, against a role lookup already in hand,
- * a safe substitute for a second `auth.api.hasPermission` round trip. See
- * `createTrpcContext`'s `hasPermission` in `@/server/trpc-context`, the only caller.
- *
- * Lives here rather than there so it can be tested without pulling in server-only modules.
- */
-export function hasAnyRoleWithPermissions(
-    roles: Role[],
-    requiredPermissions: Permissions,
-): boolean {
-    return roles.some((role) => Roles[role].authorize(requiredPermissions).success);
-}
+import { Permissions } from "@/lib/permissions";
 
 /**
  * Translate a Better Auth `hasPermission` result into a tRPC error.

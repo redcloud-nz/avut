@@ -5,11 +5,11 @@
 
 "use client";
 
+import { MonitorIcon, SmartphoneIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { MonitorIcon, SmartphoneIcon } from "lucide-react";
 
 import { useSignOut } from "@/client/use-sign-out";
 import { usersEffects } from "@/client/users-effects";

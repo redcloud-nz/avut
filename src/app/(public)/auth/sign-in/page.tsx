@@ -7,10 +7,9 @@
 
 import { Suspense } from "react";
 
-import { Argus } from "@/components/blocks/argus";
-
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { SignIn_Card } from "@/components/auth/sign-in";
+import { Argus } from "@/components/blocks/argus";
 import { safeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata = { title: "Sign In" };

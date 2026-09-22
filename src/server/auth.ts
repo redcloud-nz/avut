@@ -3,30 +3,34 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { networkInterfaces } from "node:os";
+import { env } from "@/lib/env";
+import { serverEnv } from "@/server/env";
 
+import "server-only";
+
+import { networkInterfaces } from "node:os";
 import { betterAuth, BetterAuthOptions } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { admin } from "better-auth/plugins/admin";
 import { emailOTP, organization } from "better-auth/plugins";
+import { admin } from "better-auth/plugins/admin";
 
 import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
-
-import { NoReplyEmailAddress, sendEmail } from "@/server/email";
+// eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
+import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
-import { revalidateOrganization } from "./organization";
-import { revalidateOrganizationUser } from "./organization-user-cache";
-import { revalidateRolesAfterLeave } from "./organization-user-hooks";
+import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
+import { revalidateOrganization } from "./cache/organization";
+import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
-import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 import prisma from "./prisma";
+import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 
 /**
  * Bridges better-auth's `beforeEmailVerification` and `afterEmailVerification`
@@ -66,7 +70,7 @@ export const auth = betterAuth({
             joins: true,
         },
     },
-    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    baseURL: serverEnv.BETTER_AUTH_URL ?? "http://localhost:3000",
     /*
      * With `advanced.database.joins` on, better-auth's Prisma adapter guesses relation field
      * names from the joined model's name (`organizationusers`, `organizationinvitations`),
@@ -86,13 +90,13 @@ export const auth = betterAuth({
      * email templates already special-case `VERCEL_URL`; mirror that here.
      */
     trustedOrigins: [
-        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-        ...(process.env.VERCEL_BRANCH_URL ? [`https://${process.env.VERCEL_BRANCH_URL}`] : []),
-        ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
-            ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
+        ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
+        ...(env.VERCEL_BRANCH_URL ? [`https://${env.VERCEL_BRANCH_URL}`] : []),
+        ...(env.VERCEL_PROJECT_PRODUCTION_URL
+            ? [`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`]
             : []),
-        ...(process.env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
-        ...(process.env.NODE_ENV === "development"
+        ...(env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
+        ...(env.NODE_ENV === "development"
             ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
             : []),
     ],
@@ -277,12 +281,12 @@ export const auth = betterAuth({
     },
     socialProviders: {
         github: {
-            clientId: process.env.GITHUB_OAUTH_CLIENT_ID as string,
-            clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET as string,
+            clientId: serverEnv.GITHUB_OAUTH_CLIENT_ID as string,
+            clientSecret: serverEnv.GITHUB_OAUTH_CLIENT_SECRET as string,
         },
         google: {
-            clientId: process.env.GOOGLE_OAUTH_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET as string,
+            clientId: serverEnv.GOOGLE_OAUTH_CLIENT_ID as string,
+            clientSecret: serverEnv.GOOGLE_OAUTH_CLIENT_SECRET as string,
         },
     },
 

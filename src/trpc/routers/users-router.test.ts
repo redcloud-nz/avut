@@ -5,6 +5,19 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { nanoId16 } from "@/lib/id";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { InvitationId } from "@/lib/schemas/organization-invitation";
+import { OrganizationUserId } from "@/lib/schemas/organization-user";
+import { PersonId } from "@/lib/schemas/person";
+import { UserId } from "@/lib/schemas/user";
+import { UserSessionId } from "@/lib/schemas/user-session";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
+
+import { personnelRouter } from "./personnel-router";
+import { usersRouter } from "./users-router";
+
 // The routers under test reach server-only modules at import time. The procedures
 // exercised here use ctx.prisma (the injected mock), so an empty stub is enough to let
 // them import in jsdom.
@@ -25,19 +38,6 @@ vi.mock("@/server/auth", () => ({
         },
     },
 }));
-
-import { nanoId16 } from "@/lib/id";
-import { OrganizationId } from "@/lib/schemas/organization";
-import { InvitationId } from "@/lib/schemas/organization-invitation";
-import { OrganizationUserId } from "@/lib/schemas/organization-user";
-import { PersonId } from "@/lib/schemas/person";
-import { UserId } from "@/lib/schemas/user";
-import { UserSessionId } from "@/lib/schemas/user-session";
-import { createMockPrisma } from "@/test/create-prisma-mock";
-import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
-
-import { personnelRouter } from "./personnel-router";
-import { usersRouter } from "./users-router";
 
 describe("user↔person linking", () => {
     // Dataset:

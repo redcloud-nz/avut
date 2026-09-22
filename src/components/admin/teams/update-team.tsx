@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -29,8 +30,6 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-import { teamsEffects } from "@/client/teams-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";

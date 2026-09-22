@@ -16,6 +16,7 @@ import {
     useSuspenseQuery,
 } from "@tanstack/react-query";
 
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -39,13 +40,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ObjectName } from "@/components/ui/typography";
-
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_MoveSkill_Dialog({

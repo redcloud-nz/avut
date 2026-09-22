@@ -9,11 +9,10 @@ import { formatISO, parseISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { ComponentProps } from "react";
 
-import { formatDate } from "@/lib/datetime";
-import { cn } from "@/lib/utils";
-
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatDate } from "@/lib/datetime";
+import { cn } from "@/lib/utils";
 
 export interface DatePickerProps {
     className?: string;

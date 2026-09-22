@@ -19,7 +19,6 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
-
 import { route } from "@/lib/routes";
 
 export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/admin`>) {

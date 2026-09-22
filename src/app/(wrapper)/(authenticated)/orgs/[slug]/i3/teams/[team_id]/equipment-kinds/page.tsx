@@ -6,18 +6,17 @@
  */
 "use client";
 
+import Link from "next/link";
 import { Fragment, use } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-
+import { Table, TableBody, TableHeadCell, TableHeader, TableRow } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-import { Table, TableBody, TableHeadCell, TableHeader, TableRow } from "@/components/ui/table";
-import Link from "next/link";
 
 export default function I3Module_Team_EquipmentKindsList_Page(
     props: PageProps<"/orgs/[slug]/i3/teams/[team_id]/equipment-kinds">,

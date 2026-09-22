@@ -10,16 +10,14 @@ import { notFound } from "next/navigation";
 import { Eagle } from "@/components/blocks/eagle";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-
 import { route } from "@/lib/routes";
-
-import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/organization";
+import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import {
-    getD4HFetchClient,
     fetchD4HWhoamiCached,
+    getD4HFetchClient,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
 

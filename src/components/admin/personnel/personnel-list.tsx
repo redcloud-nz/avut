@@ -20,7 +20,6 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { Protect } from "@/components/protect";
-
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { PersonData } from "@/lib/schemas/person";

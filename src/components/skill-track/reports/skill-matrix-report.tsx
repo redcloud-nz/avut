@@ -5,27 +5,27 @@
 
 "use client";
 
+import { useQueryState } from "nuqs";
 import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
+import {
+    deriveStatus,
+    StatusIcon,
+    tallyStatuses,
+} from "@/components/skill-track/reports/competency-status";
 import {
     CheckDetailsTrigger,
     ReportCellPopoversProvider,
     SkillInfoTrigger,
 } from "@/components/skill-track/reports/report-cell-popovers";
 import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
-import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
-import {
-    deriveStatus,
-    StatusIcon,
-    tallyStatuses,
-} from "@/components/skill-track/reports/competency-status";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
+import { SkillTrack_TeamScopeDialog } from "@/components/skill-track/reports/team-scope-dialog";
 import { Button } from "@/components/ui/button";
 import {
     DiagonalColumnHeader,
@@ -41,10 +41,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
-
 import { useOrganization } from "@/hooks/use-organization";
-import { cn } from "@/lib/utils";
 import { TeamId } from "@/lib/schemas/team";
+import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 const stickyFirstCol = "sticky left-0 z-10 bg-background";

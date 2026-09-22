@@ -5,7 +5,39 @@
 
 import * as z from "zod";
 
+import type {
+    LogBatch as LogBatchRecord,
+    LogEntry as LogEntryRecord,
+} from "@/generated/prisma/client";
+import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
+import { zodNanoId16 } from "@/lib/validation";
+
+export type { LogBatchRecord, LogEntryRecord };
+
+export const LogEntryId = {
+    schema: zodNanoId16("LogEntryId expected").brand<"LogEntryId">(),
+
+    create: () => LogEntryId.schema.parse(nanoId16()),
+} as const;
+
+export type LogEntryId = z.infer<typeof LogEntryId.schema>;
+
+export const LogEntryObjectId = {
+    schema: zodNanoId16("LogEntryObjectId expected").brand<"LogEntryObjectId">(),
+
+    create: () => LogEntryObjectId.schema.parse(nanoId16()),
+} as const;
+
+export type LogEntryObjectId = z.infer<typeof LogEntryObjectId.schema>;
+
+export const LogBatchId = {
+    schema: zodNanoId16("LogBatchId expected").brand<"LogBatchId">(),
+
+    create: () => LogBatchId.schema.parse(nanoId16()),
+} as const;
+
+export type LogBatchId = z.infer<typeof LogBatchId.schema>;
 
 /**
  * Which log a `LogEntry` belongs to.
@@ -34,7 +66,7 @@ export type LogScope = (typeof logScopeValues)[number];
  *
  * Declared centrally and closed, so no call site can invent a value. Entries
  * marked DORMANT reach no database today. `Ban`/`Unban`/`Impersonate` are
- * constructed only in `server/auth-log-hooks.ts`, whose better-auth
+ * constructed only in `server/auth-hooks/auth-log-hooks.ts`, whose better-auth
  * `databaseHooks` wire was written and then reverted, so nothing calls it.
  * `Move` has no producer at all — `skill-package-builder-router`'s `moveSkill`
  * still logs `Update`. They are kept because the vocabulary is the design, not
@@ -69,7 +101,7 @@ export type LogAction = (typeof logActionValues)[number];
  * What it happened to.
  *
  * `Account` and `Session` are DORMANT for the same reason as the dormant
- * actions above: they appear only in `server/auth-log-hooks.ts`, which has no
+ * actions above: they appear only in `server/auth-hooks/auth-log-hooks.ts`, which has no
  * callers. Every other value is written by at least one live call site.
  */
 const logObjectTypeValues = [

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -36,12 +37,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-import { i3Effects } from "@/client/i3-effects";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
-import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { route } from "@/lib/routes";
+import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { trpc } from "@/trpc/client";
 
 export function I3Module_CreateTemplate_Dialog() {

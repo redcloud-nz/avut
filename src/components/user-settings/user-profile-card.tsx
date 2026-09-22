@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DLAction, DLActions, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { UserProfile_ChangeEmail_Dialog } from "@/components/user-settings/change-email-dialog";
 import { UserProfile_UpdateName_Dialog } from "@/components/user-settings/update-name-dialog";
-
 import { getUserInitials } from "@/lib/utils";
 import { type AuthSession } from "@/server/auth";
 

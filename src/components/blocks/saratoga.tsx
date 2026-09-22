@@ -6,9 +6,10 @@
  *
  */
 
-import { cn } from "@/lib/utils";
 import { ComponentProps } from "react";
 import { tv, VariantProps } from "tailwind-variants";
+
+import { cn } from "@/lib/utils";
 
 function SaratogaRoot({ children, className, ...props }: ComponentProps<"div">) {
     return (

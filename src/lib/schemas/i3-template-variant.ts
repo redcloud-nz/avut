@@ -5,18 +5,16 @@
 
 import * as z from "zod";
 
-import {
-    I3TemplateVariant as I3TemplateVariantRecord,
+import type {
     I3TemplateVariant_D4H as I3TemplateVariant_D4HRecord,
+    I3TemplateVariant as I3TemplateVariantRecord,
 } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
 export const I3TemplateVariantId = {
-    schema: zodNanoId16(
-        "I3TemplateVariantId expected",
-    ).brand<"I3TemplateVariantId">(),
+    schema: zodNanoId16("I3TemplateVariantId expected").brand<"I3TemplateVariantId">(),
 
     create: () => I3TemplateVariantId.schema.parse(nanoId16()),
 } as const;
@@ -61,6 +59,4 @@ export const I3TemplateVariant = {
 
 export type I3TemplateVariant = z.infer<typeof i3TemplateVariantSchema>;
 
-export type ModifiableI3TemplateVariant = z.infer<
-    typeof I3TemplateVariant.modifiableSchema
->;
+export type ModifiableI3TemplateVariant = z.infer<typeof I3TemplateVariant.modifiableSchema>;

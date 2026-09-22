@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider, useMutation, useQuery } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { invalidate, useMutationEffector, write } from "./mutation-effector";
 

@@ -14,7 +14,7 @@ const InitializedMDXEditor = dynamic(() => import("./initialized-mdx-editor"), {
     ssr: false,
 });
 
-export const MarkdownEditor = forwardRef<MDXEditorMethods, MDXEditorProps>(
-    (props, ref) => <InitializedMDXEditor {...props} editorRef={ref} />,
-);
+export const MarkdownEditor = forwardRef<MDXEditorMethods, MDXEditorProps>((props, ref) => (
+    <InitializedMDXEditor {...props} editorRef={ref} />
+));
 MarkdownEditor.displayName = "MarkdownEditor";

@@ -10,13 +10,14 @@
  * sub-bar (title + search) and the sidebar/main split.
  */
 
-import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
+import { Suspense, type ReactNode } from "react";
 
 import { DocsNav_Skeleton } from "@/components/docs/docs-nav-skeleton";
 import { DocsSearch } from "@/components/docs/docs-search";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
 import { docsHref } from "@/lib/docs";
+import { env } from "@/lib/env";
 import { getVisibleDocsNav } from "@/server/docs";
 
 // Not `async`. `getVisibleDocsNav()` resolves module flags, which read headers, so awaiting it
@@ -28,7 +29,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4">
             <div className="flex h-14 items-center justify-between gap-4 border-b">
                 <Link href={docsHref("")} className="font-semibold">
-                    {process.env.NEXT_PUBLIC_APP_DISPLAY_NAME ?? "AVUT"} Docs
+                    {env.NEXT_PUBLIC_APP_DISPLAY_NAME ?? "AVUT"} Docs
                 </Link>
                 <DocsSearch />
             </div>

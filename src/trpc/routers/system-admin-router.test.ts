@@ -3,37 +3,37 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, beforeEach, describe, it, expect, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createMockPrisma } from "@/test/create-prisma-mock";
-import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import {
     SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
     type SkillPackageExport,
 } from "@/lib/schemas/skill-package-export";
-import { SkillGroupId } from "@/lib/schemas/skill-group";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
+
+import { systemAdminRouter } from "./system-admin-router";
 
 // `revalidateTag` needs a Next.js render/request store, which the test environment has no
 // business standing up — the router's contract here is just that it invalidates the tag.
-vi.mock("@/server/organization-settings-cache", () => ({
+vi.mock("@/server/cache/organization-settings-revalidate", () => ({
     organizationSettingsCacheTag: (id: string) => `organization-settings-${id}`,
     revalidateOrganizationSettings: vi.fn(async () => {}),
 }));
-vi.mock("@/server/organization-user-cache", () => ({
+vi.mock("@/server/cache/organization-user-revalidate", () => ({
     organizationUserCacheTag: (id: string) => `organization-user-${id}`,
     revalidateOrganizationUser: vi.fn(async () => {}),
 }));
-
-import { systemAdminRouter } from "./system-admin-router";
 
 describe("systemAdminProcedure gate", () => {
     const db = createMockPrisma();

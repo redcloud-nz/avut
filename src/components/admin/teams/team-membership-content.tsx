@@ -13,7 +13,6 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";

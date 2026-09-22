@@ -23,7 +23,6 @@ import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { HelpButton } from "@/components/docs/help-button";
 import { ItemLinkActionIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HMemberStatus, formatD4HMemberStatus } from "@/lib/schemas/d4h/member";

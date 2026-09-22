@@ -8,17 +8,19 @@ import * as z from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
-import type { LogEntry, Prisma } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
+import { env } from "@/lib/env";
 import { Permissions } from "@/lib/permissions";
-import type { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
+import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
 import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-entry";
 import prisma from "@/server/prisma";
+
 import { formatTrpcError } from "./error-formatter";
-import { UserId } from "@/lib/schemas/user";
 
 // Artificial delay in development approximating the client-to-server network round trip for a
 // real user (as opposed to `localhost`, which has none). Deliberately small — this fires once
@@ -67,7 +69,7 @@ export const createTrpcRouter = t.router;
 export type PublicContext = Context;
 
 export const publicProcedure = t.procedure.use(async function artificialDelayInDevelopment(opts) {
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
         const start = performance.now();
         const delay =
             Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +
@@ -96,7 +98,7 @@ export type AuthenticatedContext = Context & {
     logEvent: (
         options: LogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**
@@ -145,7 +147,7 @@ export type SystemAdminContext = Omit<AuthenticatedContext, "logEvent"> & {
     logEvent: (
         options: SystemAdminLogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**
@@ -201,7 +203,7 @@ export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     logEvent: (
         options: LogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**

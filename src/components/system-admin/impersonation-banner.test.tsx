@@ -2,11 +2,11 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { useSession } from "@/client/auth-queries";
 

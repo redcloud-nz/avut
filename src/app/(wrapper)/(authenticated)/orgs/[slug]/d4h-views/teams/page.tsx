@@ -6,13 +6,11 @@
  */
 
 import { Std } from "@/components/blocks/std";
-
-import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/organization";
-import { getOrganizationSettings } from "@/server/organization-settings";
-import prisma from "@/server/prisma";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { getOrganizationSettings } from "@/server/cache/organization-settings";
+import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 
 import { D4HViewsModule_Teams_List } from "./d4h-teams-list";
 
@@ -31,18 +29,14 @@ export default async function D4HViewsModule_Teams_Page(
     if (!accessTokenId)
         throw new Error("D4H Views module is not configured properly. No sync token found.");
 
-    const record = await prisma.d4HAccessToken.findUnique({
-        where: {
-            id: accessTokenId,
-            organizationId: organization.id,
-        },
+    const token = await getOrganizationD4HAccessToken({
+        organizationId: organization.id,
+        tokenId: accessTokenId,
     });
 
-    if (!record) {
+    if (!token) {
         throw new Error("Token not found");
     }
-
-    const token = D4HAccessToken_ServerOnly.fromRecord(record);
 
     const teams = await getD4HTeamsAccessibleWithToken(token);
 

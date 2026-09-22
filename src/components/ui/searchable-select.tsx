@@ -7,8 +7,6 @@
 import { ChevronDownIcon } from "lucide-react";
 import { useId, useState } from "react";
 
-import { cn } from "@/lib/utils";
-
 import { Badge } from "@/components/ui/badge";
 import {
     Command,
@@ -19,6 +17,7 @@ import {
     CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export type SearchableSelectOption = {
     value: string;

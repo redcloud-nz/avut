@@ -1,4 +1,3 @@
-import { ComponentProps, ElementType } from "react";
 import {
     CircleCheckIcon,
     CircleXIcon,
@@ -6,7 +5,9 @@ import {
     InfoIcon,
     TriangleAlertIcon,
 } from "lucide-react";
+import { ComponentProps, ElementType } from "react";
 import { tv, VariantProps } from "tailwind-variants";
+
 import { cn } from "@/lib/utils";
 
 const alertVariants = tv({

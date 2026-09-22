@@ -6,7 +6,7 @@
 /*
  * Read/write access to the `OrganizationConfig` rows backing an organization's settings.
  *
- * Deliberately NOT marked `server-only` and deliberately free of any `@/server/prisma` import —
+ * Deliberately free of any `@/server/prisma` import —
  * the Prisma client is injected by the caller so this can be used from tRPC routers (which are
  * exercised from the jsdom test environment against `createMockPrisma()`).
  *
@@ -14,6 +14,8 @@
  * which is what lets the system-admin router operate on organizations the caller does not belong
  * to.
  */
+
+import "server-only";
 
 import * as R from "remeda";
 

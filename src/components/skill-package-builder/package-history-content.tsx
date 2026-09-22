@@ -8,7 +8,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Std } from "@/components/blocks/std";
 import { NotImplemented } from "@/components/nav/errors";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";

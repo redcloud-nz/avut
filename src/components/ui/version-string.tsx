@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,11 +33,11 @@ export function VersionString({
     layout?: "inline" | "stacked";
     className?: string;
 }) {
-    const name = process.env.NEXT_PUBLIC_APP_DISPLAY_NAME;
-    const version = process.env.NEXT_PUBLIC_APP_VERSION;
-    const versionName = process.env.NEXT_PUBLIC_APP_VERSION_NAME;
-    const branch = process.env.NEXT_PUBLIC_APP_BRANCH;
-    const commit = process.env.NEXT_PUBLIC_APP_COMMIT;
+    const name = env.NEXT_PUBLIC_APP_DISPLAY_NAME;
+    const version = env.NEXT_PUBLIC_APP_VERSION;
+    const versionName = env.NEXT_PUBLIC_APP_VERSION_NAME;
+    const branch = env.NEXT_PUBLIC_APP_BRANCH;
+    const commit = env.NEXT_PUBLIC_APP_COMMIT;
 
     if (branch && layout === "stacked") {
         return (

@@ -9,11 +9,10 @@ import * as R from "remeda";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
 import { route } from "@/lib/routes";
-import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/organization";
+import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 

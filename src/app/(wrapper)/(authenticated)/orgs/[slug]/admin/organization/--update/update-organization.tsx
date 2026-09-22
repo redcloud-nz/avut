@@ -15,15 +15,14 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { FieldValue } from "@/components/ui/field-value";
-
+import { Input } from "@/components/ui/input";
+import { route } from "@/lib/routes";
 import {
     ModifiableOrganizationData,
     OrganizationData,
     OrganizationId,
 } from "@/lib/schemas/organization";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_UpdateOrganization_Form({

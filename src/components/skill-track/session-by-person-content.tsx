@@ -25,7 +25,6 @@ import { HelpButton } from "@/components/docs/help-button";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Show } from "@/components/show";
 import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
-
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,8 +40,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { RainbowSpinner } from "@/components/ui/loading";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
+import { RainbowSpinner } from "@/components/ui/loading";
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import {
     Select,
@@ -52,16 +51,15 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
 import {
     getEnabledSkillCheckResultOptions,
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SessionByPerson_Content({

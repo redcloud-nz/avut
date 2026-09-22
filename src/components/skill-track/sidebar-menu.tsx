@@ -6,10 +6,8 @@
 "use client";
 
 import { NavSubItem } from "@/components/nav/nav-section";
-
-import { route } from "@/lib/routes";
-
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 
 /** Nested pages for the Skill Track module's `NavCollapsible` section — not a standalone sidebar group. */
 export function SkillTrack_Sidebar_Menu() {

@@ -1,6 +1,6 @@
 ---
 name: avut-develop-feature
-description: Start building a feature from a GitHub issue — resolves the source, moves into a fresh worktree, does the worktree setup from AGENTS.md, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an issue number/URL.
+description: Start building a feature from a GitHub issue — resolves the source, moves into a fresh worktree, runs `npm run worktree:setup`, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an issue number/URL.
 effort: high
 manual: true
 ---
@@ -36,14 +36,13 @@ git worktree list
 
 ## Step 4 — Worktree setup
 
-Follow **"Setting up a fresh worktree"** in `AGENTS.md` — do this every time, `EnterWorktree` only handles the git side:
+`EnterWorktree` only handles the git side — run the setup script from the worktree every time:
 
 ```bash
-cp ../../../.env.local .env.local
-ln -s ../../../.vercel .vercel   # only if using the Vercel CLI / skills
-npm install
-npx next typegen
+npm run worktree:setup
 ```
+
+It copies `.env.local`, links `.vercel`, installs dependencies and generates the Prisma client and route types (see the Worktrees section of `AGENTS.md`).
 
 Don't start a dev server — check whether the user already has one running (elsewhere) and ask them to start one for this worktree on its own port (`npm run dev -- -p 3100` or similar) rather than launching one yourself.
 
@@ -55,10 +54,13 @@ Before writing any code, restate in your own words: what's being built, the rele
 
 Then proceed with implementation as normal, following the rest of `AGENTS.md`'s conventions (tRPC router patterns, data-fetching patterns, permissions, etc. — read the relevant pattern doc before writing a new page or mutation rather than inferring it).
 
+When the work looks done, run `npm run check` (tsc, eslint and the tests related to what you changed, in one call) and fix what it reports before saying it's done. Use `npm run check -- --all` for the full run CI does.
+
 ## Common mistakes
 
 - Creating a second worktree for a slug that already has one instead of resuming it
-- Skipping the worktree setup steps (especially `npx next typegen`) and hitting confusing typecheck failures later
+- Skipping `npm run worktree:setup` and hitting confusing typecheck failures later
 - Starting a dev server unprompted instead of asking the user to start one
 - Treating an idea's open questions or an issue's unresolved alternatives as already decided
 - Proactively branching the database before a migration is actually about to be written
+- Running `tsc`, `eslint` and `vitest` as separate calls (each a full turn) instead of `npm run check`

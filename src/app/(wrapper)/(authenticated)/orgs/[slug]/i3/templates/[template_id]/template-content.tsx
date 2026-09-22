@@ -11,7 +11,6 @@ import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
@@ -19,8 +18,8 @@ import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { trpc } from "@/trpc/client";
 
 import { I3Module_Template_Menu } from "./template-menu";
-import { I3Module_UpdateTemplate_Dialog } from "./update-template";
 import { I3Module_Template_Variants_List } from "./template-variants";
+import { I3Module_UpdateTemplate_Dialog } from "./update-template";
 
 export function I3Module_Template_Content({ templateId }: { templateId: I3TemplateId }) {
     const organization = useOrganization();

@@ -5,14 +5,12 @@
  * Path: /auth/sign-up
  */
 
-import { Suspense } from "react";
-
 import Link from "next/link";
-
-import { Argus } from "@/components/blocks/argus";
+import { Suspense } from "react";
 
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { SignUp_Card } from "@/components/auth/sign-up";
+import { Argus } from "@/components/blocks/argus";
 import { safeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata = { title: "Sign Up" };

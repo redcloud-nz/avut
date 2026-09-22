@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
+import { usersEffects } from "@/client/users-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -25,8 +26,6 @@ import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ObjectName } from "@/components/ui/typography";
-
-import { usersEffects } from "@/client/users-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";

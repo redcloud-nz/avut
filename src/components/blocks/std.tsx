@@ -8,8 +8,8 @@
  * breadcrumbs above a scrollable main content area.
  */
 
-import type { Route } from "next";
 import { ChevronDownIcon, MinusIcon } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 

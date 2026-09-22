@@ -1,0 +1,31 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { queryCollectionOptions } from "@tanstack/query-db-collection";
+import { createCollection } from "@tanstack/react-db";
+
+import { D4HMember } from "@/lib/schemas/d4h/member";
+import { D4HTeamRef } from "@/lib/schemas/d4h/team";
+import { perOrganization } from "@/lib/utils";
+import { getQueryClient, trpc, trpcClient } from "@/trpc/client";
+
+export const getD4HMembersCollection = perOrganization((organizationId) =>
+    createCollection(
+        queryCollectionOptions({
+            queryClient: getQueryClient(),
+            queryKey: trpc.d4hApi.listEquipmentItems.queryKey({
+                organizationId,
+            }),
+            queryFn: async () => {
+                return trpcClient.d4hApi.listMembers.query({
+                    organizationId,
+                });
+            },
+            getKey: (item) => item.id,
+            schema: D4HMember.schema.extend({ team: D4HTeamRef.schema }),
+        }),
+    ),
+);

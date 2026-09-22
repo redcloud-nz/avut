@@ -9,14 +9,19 @@
  * what makes the guard rail below possible to enforce rather than merely remember.
  */
 
+import { env } from "@/lib/env";
+import { serverEnv } from "@/server/env";
+
+import "server-only";
+
 import { CreateEmailOptions, Resend } from "resend";
 
 let _resend: Resend | null = null;
 function getResend(): Resend {
-    return (_resend ??= new Resend(process.env.RESEND_API_KEY!));
+    return (_resend ??= new Resend(serverEnv.RESEND_API_KEY));
 }
 
-export const NoReplyEmailAddress = process.env.NOREPLY_EMAIL || "no-reply@mx.avut.nz";
+export const NoReplyEmailAddress = serverEnv.NOREPLY_EMAIL ?? "no-reply@mx.avut.nz";
 
 /** `live` puts the message on the wire as addressed; `redirect` sends it to Resend's sink. */
 export type EmailDelivery = "live" | "redirect";
@@ -34,10 +39,10 @@ export type EmailDelivery = "live" | "redirect";
  * deployment, `redirect` to mute production.
  */
 export function emailDelivery(): EmailDelivery {
-    const override = process.env.EMAIL_DELIVERY?.trim().toLowerCase();
+    const override = serverEnv.EMAIL_DELIVERY?.trim().toLowerCase();
     if (override === "live" || override === "redirect") return override;
 
-    return process.env.VERCEL_ENV === "production" ? "live" : "redirect";
+    return env.VERCEL_ENV === "production" ? "live" : "redirect";
 }
 
 /** `"Alex Westphal <alex@example.com>"` → `"alex@example.com"` */
@@ -118,7 +123,7 @@ export async function sendEmail(payload: CreateEmailOptions): Promise<void> {
 
     if (delivery === "redirect") {
         console.log(
-            `Email redirected to the Resend sink (${process.env.VERCEL_ENV ?? "local"}):`,
+            `Email redirected to the Resend sink (${env.VERCEL_ENV ?? "local"}):`,
             `"${payload.subject}" intended for ${asList(payload.to).join(", ") || "nobody"}`,
         );
     }

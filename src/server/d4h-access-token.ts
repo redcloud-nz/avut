@@ -7,15 +7,27 @@ import "server-only";
 
 import { cacheTag, revalidateTag } from "next/cache";
 
-import { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
-
 import { NotConfiguredError } from "@/lib/errors";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import {
+    D4HAccessToken_ServerOnly,
+    type D4HAccessTokenRecord,
+} from "@/lib/schemas/d4h-access-token";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
+import { decryptDBValue } from "@/server/encrypt";
 
-import { getOrganizationSettings } from "./organization-settings";
+import { getOrganizationSettings } from "./cache/organization-settings";
 import prisma from "./prisma";
+
+/** Builds the server-only token from its DB record, decrypting the stored token value. */
+export function toServerOnlyD4HAccessToken(
+    record: D4HAccessTokenRecord,
+): D4HAccessToken_ServerOnly {
+    return D4HAccessToken_ServerOnly.schema.parse({
+        ...record,
+        token: decryptDBValue(record.token),
+    });
+}
 
 async function fetchD4HAccessToken(tokenId: string): Promise<D4HAccessTokenRecord | null> {
     "use cache";
@@ -48,7 +60,7 @@ export async function getOrganizationD4HAccessToken({
     }
     if (record.userId) throw new Error("Not an organization token");
 
-    return D4HAccessToken_ServerOnly.fromRecord(record);
+    return toServerOnlyD4HAccessToken(record);
 }
 
 /**
@@ -72,7 +84,7 @@ export async function getPersonalD4HAccessTokenForUser(
 
     if (!record) return null;
 
-    return D4HAccessToken_ServerOnly.fromRecord(record);
+    return toServerOnlyD4HAccessToken(record);
 }
 
 export function revalidatePersonalD4HAccessTokenForUser(

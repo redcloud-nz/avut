@@ -7,6 +7,7 @@
 "use client";
 
 import { CornerDownRightIcon } from "lucide-react";
+import Link from "next/link";
 import { use, useMemo } from "react";
 
 import { eq, useLiveQuery, useLiveSuspenseQuery } from "@tanstack/react-db";
@@ -18,18 +19,16 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { getD4HEquipmentCategoriesCollection } from "@/client/collections/d4h-equipment-categories";
+import { getD4HEquipmentItemsCollection } from "@/client/collections/d4h-equipment-items";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentCategoriesCollection } from "@/lib/collections/d4h-equipment-categories";
-import { getD4HEquipmentItemsCollection } from "@/lib/collections/d4h-equipment-items";
 import { route } from "@/lib/routes";
 
 export default function D4HViewsModule_EquipmentItem_Page(

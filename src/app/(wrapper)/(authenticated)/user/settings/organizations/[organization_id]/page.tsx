@@ -9,7 +9,6 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { UserSettings_OrganizationContent } from "@/components/user-settings/organization-content";
-
 import { OrganizationId } from "@/lib/schemas/organization";
 import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
 

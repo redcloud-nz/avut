@@ -4,8 +4,8 @@
  */
 "use client";
 
-import { Fragment } from "react";
 import Link from "next/link";
+import { Fragment } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
@@ -20,7 +20,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";

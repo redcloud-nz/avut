@@ -5,11 +5,10 @@
  * Path: /
  */
 
-import { Suspense, type ReactNode } from "react";
-
+import { Cable, Tag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Cable, Tag } from "lucide-react";
+import { Suspense, type ReactNode } from "react";
 
 import { OssBanner } from "@/components/marketing/oss-banner";
 import { ProductShot } from "@/components/marketing/product-shot";

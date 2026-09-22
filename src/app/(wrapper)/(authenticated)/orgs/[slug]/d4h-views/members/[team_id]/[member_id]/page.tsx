@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use, useMemo } from "react";
 
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -21,15 +22,13 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
-import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
-
-import { useOrganization } from "@/hooks/use-organization";
-import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
-import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
+import { trpc } from "@/trpc/client";
 
 export default function D4HViewsModule_Member_Page(
     props: PageProps<"/orgs/[slug]/d4h-views/members/[team_id]/[member_id]">,

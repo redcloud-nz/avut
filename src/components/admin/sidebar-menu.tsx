@@ -7,10 +7,8 @@
 
 import { NavSubItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
-
-import { route } from "@/lib/routes";
-
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 
 /** Nested pages for the Admin module's `NavCollapsible` section — not a standalone sidebar group. */
 export function Admin_Sidebar_Menu() {

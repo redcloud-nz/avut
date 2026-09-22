@@ -13,6 +13,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
+import { skillChecksEffects } from "@/client/skill-checks-effects";
 import { ObjectIcons } from "@/components/icons";
 import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -39,8 +40,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-import { skillChecksEffects } from "@/client/skill-checks-effects";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";

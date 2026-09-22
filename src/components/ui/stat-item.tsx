@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { ComponentProps } from "react";
-
 import { Slot as SlotPrimitive } from "radix-ui";
+import { ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -60,17 +59,11 @@ export function StatItemTitle({ className, ...props }: ComponentProps<"div">) {
     );
 }
 
-export function StatItemDescription({
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function StatItemDescription({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="stat-item-description"
-            className={cn(
-                "text-sm text-center text-muted-foreground",
-                className,
-            )}
+            className={cn("text-sm text-center text-muted-foreground", className)}
             {...props}
         />
     );

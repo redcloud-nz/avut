@@ -17,7 +17,7 @@ import { requireSession } from "./session";
  * single session lookup; `requireSession()` also handles the signed-out → sign-in
  * redirect. A non-admin raises Next's `forbidden()` interrupt (this repo enables
  * `experimental.authInterrupts` and ships `src/app/forbidden.tsx`), mirroring
- * `assertPermission` in `organization-access.ts` rather than a bare redirect.
+ * `requireOrganizationWith` in `organization-access.ts` rather than a bare redirect.
  *
  * No standalone unit test: `@/server/auth` (transitively pulled in via
  * `./session`) imports `server-only` and cannot be loaded in the jsdom test env,

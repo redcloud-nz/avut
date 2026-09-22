@@ -7,6 +7,7 @@
 
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { ComponentProps, useState } from "react";
+
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "./input-group";
 
 export function PasswordInput(

@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { encryptValue, decryptValue, encryptDBValue, decryptDBValue } from "./encrypt";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { decryptDBValue, decryptValue, encryptDBValue, encryptValue } from "./encrypt";
 
 describe("encrypt", () => {
     const validSecret = "a".repeat(32); // 32 characters for AES-256

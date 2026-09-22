@@ -5,10 +5,10 @@
 
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import MiniSearch from "minisearch";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type { DocsSearchRecord } from "@/app/(public)/(marketing)/docs/search-index.json/route";
 import { Input } from "@/components/ui/input";

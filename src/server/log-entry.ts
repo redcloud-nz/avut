@@ -6,7 +6,7 @@
 /*
  * The single write path for the audit log.
  *
- * Deliberately NOT marked `server-only` and deliberately free of any `@/server/prisma`
+ * Deliberately free of any `@/server/prisma`
  * import — the Prisma client is injected by the caller, so this can be exercised from the
  * jsdom test environment against `createMockPrisma()`. Same reasoning as
  * `organization-settings-store.ts`.
@@ -18,16 +18,28 @@
  * invariants as zod parses on query results.
  */
 
+import "server-only";
+
 import * as z from "zod";
 
-import type { LogBatch, LogEntry, Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
-import { nanoId16 } from "@/lib/id";
 import { Operations, type OperationKey } from "@/lib/operations";
-import { LogAction, LogObjectType, LogRefRoleInput, LogScope } from "@/lib/schemas/log-entry";
+import {
+    LogAction,
+    LogBatchId,
+    LogEntryId,
+    LogEntryObjectId,
+    LogObjectType,
+    LogRefRoleInput,
+    LogScope,
+    type LogBatchRecord,
+    type LogEntryRecord,
+} from "@/lib/schemas/log-entry";
 import type { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
+
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at
 // runtime from this file, which is deliberately reachable from the jsdom test environment.
 
@@ -187,7 +199,7 @@ function assertActorInvariant(input: RecordLogEntryInput): void {
 export function recordLogEntry(
     input: RecordLogEntryInput,
     tx: LogEntryPrisma,
-): Prisma.PrismaPromise<LogEntry> {
+): Prisma.PrismaPromise<LogEntryRecord> {
     // `scope` and `action` are stored as text columns, so nothing downstream rejects a value
     // off their unions — the parse here is the whole guarantee, and `scope` in particular
     // must be parsed before the owner invariant switches on it.
@@ -214,7 +226,7 @@ export function recordLogEntry(
     );
 
     const refRows = refs.map((ref) => ({
-        id: nanoId16(),
+        id: LogEntryObjectId.create(),
         objectType: parseOrThrow(
             LogObjectType.schema,
             ref.objectType,
@@ -232,7 +244,7 @@ export function recordLogEntry(
 
     return tx.logEntry.create({
         data: {
-            id: nanoId16(),
+            id: LogEntryId.create(),
             scope,
             organizationId: input.organizationId ?? null,
             ownerId: input.ownerId ?? null,
@@ -251,7 +263,7 @@ export function recordLogEntry(
             objects: {
                 create: [
                     {
-                        id: nanoId16(),
+                        id: LogEntryObjectId.create(),
                         objectType,
                         objectId: input.objectId,
                         role: "primary",
@@ -274,7 +286,7 @@ export function recordLogEntry(
 export function createLogBatch(
     input: CreateLogBatchInput,
     tx: LogEntryPrisma,
-): Prisma.PrismaPromise<LogBatch> {
+): Prisma.PrismaPromise<LogBatchRecord> {
     // `Object.hasOwn`, not `in`: `in` walks the prototype chain, so `"constructor"` and
     // `"toString"` would pass the very check this function exists to make impossible.
     if (!Object.hasOwn(Operations, input.operationKey)) {
@@ -285,7 +297,7 @@ export function createLogBatch(
 
     return tx.logBatch.create({
         data: {
-            id: nanoId16(),
+            id: LogBatchId.create(),
             operationKey: input.operationKey,
             userId: input.userId ?? null,
             actorLabel: input.actorLabel ?? null,

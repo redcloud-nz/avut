@@ -11,12 +11,11 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { authClient } from "@/client/auth-client";
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-
-import { authClient } from "@/client/auth-client";
 import { postSignInUrl } from "@/lib/auth-redirect";
 
 /**

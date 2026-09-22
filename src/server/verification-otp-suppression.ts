@@ -4,10 +4,12 @@
  */
 
 /*
- * Deliberately NOT marked `server-only` and free of any Better Auth import: `@/server/auth` reads
+ * Deliberately free of any Better Auth import: `@/server/auth` reads
  * this from its `sendVerificationOTP`, and the invitations router (exercised from the jsdom test
  * environment) writes to it.
  */
+
+import "server-only";
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
