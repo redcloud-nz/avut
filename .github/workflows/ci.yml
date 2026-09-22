@@ -1,13 +1,18 @@
 name: CI
 
-# Type checks and runs the test suite on every PR and on integration. The Vercel
-# deployment already covers `prisma migrate deploy && next build`, so this
-# deliberately doesn't build — it covers the two things nothing else did.
+# Type checks and runs the test suite on every PR and on integration. Also
+# runs on PRs into `production` — the single release PR (docs/releasing.md) —
+# since that's the one PR that isn't otherwise covered by a prior run on
+# `integration` alone (it can carry commits integration's CI never saw if the
+# release branch was cut before they landed). The Vercel deployment already
+# covers `prisma migrate deploy && next build`, so this deliberately doesn't
+# build — it covers the two things nothing else did.
 
 on:
   pull_request:
     branches:
       - integration
+      - production
   push:
     branches:
       - integration

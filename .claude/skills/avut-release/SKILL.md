@@ -1,6 +1,6 @@
 ---
 name: avut-release
-description: Cut an AVUT release — bump the version on integration, open the integration→production release PR, then verify the tag/Release/deploy after the admin merges. Trigger when the user types /avut-release with a version.
+description: Cut an AVUT release — bump the version on a release branch, open the one release/vX→production PR, then verify the tag/Release/deploy/sync-back after the admin merges. Trigger when the user types /avut-release with a version.
 effort: high
 manual: true
 ---
@@ -9,8 +9,9 @@ manual: true
 
 Cuts a release of AVUT following [`docs/releasing.md`](../../../docs/releasing.md).
 Read that doc first — it carries the rationale (two-tier branch model, why the
-merge must be a merge commit, why `package.json`'s version only ever moves on
-`integration`). This skill is the mechanical procedure.
+merge must be a merge commit, why the version bump lives on a release branch
+that PRs straight into `production`, how the sync-back to `integration`
+works). This skill is the mechanical procedure.
 
 `$ARGUMENTS` is the target version, optionally with a codename:
 
@@ -24,20 +25,20 @@ already marked used, flag that and ask before continuing.
 
 Work happens in the main checkout, not a worktree.
 
-> Identity note: both PRs this skill opens (the version-bump PR and the release
-> PR) are authored as `claude-avut`, a separate GitHub account registered as a
-> second `gh` identity — not as your default account. Scope its token to each
-> `git push`/`gh pr create` via `GH_TOKEN=$(gh auth token --user claude-avut)`,
-> never `gh auth switch` (that would leave the wrong account active for the
-> rest of the session). Everything else in this skill (merges, `gh pr view`,
-> reads) uses your default account as normal.
+> Identity note: the release PR this skill opens is authored as `claude-avut`,
+> a separate GitHub account registered as a second `gh` identity — not as your
+> default account. Scope its token to the `git push`/`gh pr create` via
+> `GH_TOKEN=$(gh auth token --user claude-avut)`, never `gh auth switch` (that
+> would leave the wrong account active for the rest of the session).
+> Everything else in this skill (merges, `gh pr view`, reads) uses your
+> default account as normal.
 
 ## Step 0 — Preflight
 
 ```bash
 git fetch origin -q --prune --tags
 git switch integration && git pull --ff-only
-node -p "require('./package.json')['nz.avut']"          # current version / build / versionName
+node -p "require('./package.json')['nz.avut']"          # current version / versionName
 git ls-remote --tags origin | grep "refs/tags/v$NEW" || echo "tag free"
 git log --oneline origin/production..origin/integration | wc -l   # size of the payload
 ```
@@ -52,7 +53,7 @@ Stop if:
 Confirm the plan with the user before touching anything: old version → new
 version, codename change or not, and the commit count going live.
 
-## Step 1 — Bump the version on `integration`
+## Step 1 — Cut the release branch and open the one release PR
 
 ```bash
 git switch -c "release/v$NEW"
@@ -71,8 +72,8 @@ missing**. Draft it from the payload and the format in
 git log --oneline --no-merges origin/production..origin/integration
 ```
 
-Group the noteworthy commits into `### Highlights` (skip `chore: increment build
-number`, pure-internal refactors, and doc-only churn — GitHub appends the full
+Group the noteworthy commits into `### Highlights` (skip pure-internal
+refactors and doc-only churn — the workflow appends the full categorized PR
 list anyway). Add `### Upgrade notes` only if there's a migration / env var /
 config action. Two or three sentences of framing at the top. Show the draft to
 the user and let them edit before committing.
@@ -81,36 +82,16 @@ the user and let them edit before committing.
 git commit -am "chore(release): v$NEW ($CODENAME)"     # include the Co-Authored-By trailer
 BOT_TOKEN=$(gh auth token --user claude-avut)
 GH_TOKEN="$BOT_TOKEN" git push -u origin "release/v$NEW"
-GH_TOKEN="$BOT_TOKEN" gh pr create --repo redcloud-nz/avut --base integration --head "release/v$NEW" \
-  --title "chore(release): v$NEW ($CODENAME)" \
-  --body "Step 1 of docs/releasing.md. Bumps nz.avut.version. Nothing tags or deploys from this PR."
-```
-
-Wait for the `Typecheck & test` check to pass, then squash-merge:
-
-```bash
-gh pr merge <n> --repo redcloud-nz/avut --squash --delete-branch
-git fetch origin -q && git switch integration && git pull --ff-only
-git show origin/integration:package.json | grep -A5 '"nz.avut"'   # confirm the bump landed
-```
-
-`increment-build-number.yml` will bump `nz.avut.build` right after — expected.
-`integration` still renders `DEV.{build}`; `v$NEW` doesn't exist yet.
-
-## Step 2 — Open the release PR
-
-```bash
-git fetch origin -q
-GH_TOKEN=$(gh auth token --user claude-avut) gh pr create --repo redcloud-nz/avut --base production --head integration \
+GH_TOKEN="$BOT_TOKEN" gh pr create --repo redcloud-nz/avut --base production --head "release/v$NEW" \
   --title "Release v$NEW ($CODENAME)" \
   --body "$(git log --oneline origin/production..origin/integration | head -60)"
 ```
 
 If the payload is more than ~60 commits, summarise in the body and give the
 count rather than pasting hundreds of lines. Sanity-check the diff — this is the
-whole payload going live.
+whole payload going live, version bump included.
 
-## Step 3 — Hand off the review and merge (STOP here)
+## Step 2 — Hand off the review and merge (STOP here)
 
 This PR is authored by `claude-avut`, so it's a genuine second-party artifact
 for you to review like anyone else's PR — not a rubber stamp. Note:
@@ -127,7 +108,7 @@ Tell the user, in these words:
 
 Then stop and wait. Do not poll.
 
-## Step 4 — Verify (after the user confirms the merge)
+## Step 3 — Verify (after the user confirms the merge)
 
 ```bash
 git fetch origin -q --prune --tags
@@ -137,19 +118,27 @@ git ls-remote --tags origin | grep "v$NEW"
 curl -s https://www.avut.nz/api/version
 curl -s "https://www.avut.nz/api/version?format=shields"
 curl -s "https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.avut.nz%2Fapi%2Fversion%3Fformat%3Dshields" | grep -o '<title>[^<]*</title>'
+git log --oneline -3 origin/integration    # sync-back merge commit should be at the tip
 ```
 
 Report:
 
-- workflow run succeeded,
+- workflow run succeeded (both the `create-release` and `sync-integration` jobs),
 - tag `v$NEW` pushed and Release `$NEW - $CODENAME` published and marked Latest,
+- the Release body lists the actual feature PRs in this release under
+  `## What's Changed`, not just the release PR itself,
 - `/api/version` shows `"environment":"production"` and `"display":"v$NEW ($CODENAME)"`,
-- the shields endpoint is `brightgreen` and the badge renders `production: v$NEW ($CODENAME)`.
+- the shields endpoint is `brightgreen` and the badge renders `production: v$NEW ($CODENAME)`,
+- `origin/integration`'s tip is the `chore(release): sync v$NEW back from
+  production` merge commit — if `sync-integration` failed (conflict), flag it
+  to the user rather than leaving `integration` behind; resolving it is a
+  manual `git merge origin/production` on `integration` (see
+  `docs/releasing.md`).
 
 If anything is off, the doc's Notes cover the common cases (tag already existed,
 re-cutting at the same version, workflow idempotency).
 
-## Step 5 — Fold back anything that surprised you
+## Step 4 — Fold back anything that surprised you
 
 If the run diverged from this skill or from `docs/releasing.md`, update whichever
 is wrong before finishing.

@@ -14,9 +14,10 @@ branch listed below.
   - Require branches to be up to date before merging
 - Do not allow bypassing the above settings, **except** allow
   `github-actions[bot]` (or the "GitHub Actions" app) to bypass the PR
-  requirement — [`increment-build-number.yml`](../.github/workflows/increment-build-number.yml)
-  pushes its build-number commit directly to `integration` using `GITHUB_TOKEN`,
-  and that push would otherwise be rejected
+  requirement — the `sync-integration` job in
+  [`manage-release-version.yml`](../.github/workflows/manage-release-version.yml)
+  pushes `production` back into `integration` directly using `GITHUB_TOKEN`
+  after every release, and that push would otherwise be rejected
 
 ## `production`
 
@@ -27,12 +28,12 @@ Everything required for `integration`, plus:
 
 ## Rationale
 
-- `integration` is where every feature PR merges, and
-  [`increment-build-number.yml`](../.github/workflows/increment-build-number.yml)
-  bumps `nz.avut.build` on every push.
-- `production` only receives merges from `integration` (features) or hotfix
-  branches cut from `production` itself. Restricting direct pushes to admins
-  and disabling auto-merge keeps releases deliberate — merging to
-  `production` is what triggers
+- `integration` is where every feature PR merges.
+- `production` only receives merges from a `release/*` branch cut from
+  `integration` (see [`releasing.md`](releasing.md)) or a hotfix branch cut
+  from `production` itself. Restricting direct pushes to admins and disabling
+  auto-merge keeps releases deliberate — merging to `production` is what
+  triggers
   [`manage-release-version.yml`](../.github/workflows/manage-release-version.yml),
-  which tags and publishes a GitHub Release from `nz.avut.version`.
+  which tags and publishes a GitHub Release from `nz.avut.version`, then syncs
+  the merge back onto `integration`.

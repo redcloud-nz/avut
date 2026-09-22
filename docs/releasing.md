@@ -2,42 +2,42 @@
 
 How a version of AVUT gets from `integration` to a tagged, deployed release.
 
-> **Status:** exercised once. **v0.8 (Philomel)** was cut this way on
-> 2026-09-11 (PRs [#125](https://github.com/redcloud-nz/avut/pull/125) then
-> [#126](https://github.com/redcloud-nz/avut/pull/126)) — tag `v0.8`, GitHub
-> Release **0.8 - Philomel**, first `production` deploy. The [`release`
-> skill](../.claude/skills/avut-release/SKILL.md) automates the mechanical steps;
-> this doc is the rationale.
+> **Status:** reworked 2026-09-22 to a single-PR flow. **v0.8 (Philomel)**
+> through **v0.9.2** were cut with an older two-PR version of this process
+> (a version-bump PR into `integration`, then a separate
+> `integration→production` PR) — see git history on this file if you need the
+> old procedure. The [`release` skill](../.claude/skills/avut-release/SKILL.md)
+> automates the mechanical steps below; this doc is the rationale.
 
 ## The model
 
 Two long-lived branches:
 
 - **`integration`** — every feature PR merges here. Vercel deploys it as a
-  pre-production environment. [`increment-build-number.yml`](../.github/workflows/increment-build-number.yml)
-  bumps `nz.avut.build` on every push. Non-production environments don't render
-  the version or codename at all — they show just `DEV.{build}` (see
+  pre-production environment. Non-production environments don't render a real
+  version or codename — they show `DEV.{branch}@{commit}` (see
   [`next.config.ts`](../next.config.ts) and
-  [`version-string.tsx`](../src/components/ui/version-string.tsx)).
+  [`src/app/api/version/route.ts`](../src/app/api/version/route.ts)).
 - **`production`** — the release target. Admin-only pushes, no auto-merge (see
   [`branch-protection.md`](branch-protection.md)). The only environment that
   renders a real version: `v{version} ({versionName})`. A push here runs
   [`manage-release-version.yml`](../.github/workflows/manage-release-version.yml),
   which tags `v{version}` and publishes a GitHub Release **if that tag doesn't
-  already exist**.
+  already exist**, then merges `production` back into `integration` so the
+  version bump isn't lost there.
 
 The single source of truth for the version is the `nz.avut` block in
 [`package.json`](../package.json): `version` (e.g. `0.7`) and `versionName`, the
-codename (e.g. `Philomel`). `nz.avut.build` is a separate monotonic counter that
-only appears as `DEV.{build}` outside production.
+codename (e.g. `Philomel`).
 
-**The rule:** `package.json`'s version is only ever edited by a PR into
-`integration`. `production` only ever receives it by merging `integration` (or a
-hotfix branch — see below). The two branches never diverge on `package.json`.
+**The rule:** `package.json`'s version only ever changes on a release branch
+cut from `integration`, PR'd into `production`. `integration` gets it back
+automatically (see below), so the two branches never diverge on
+`package.json` for long.
 
 ## Cutting a release
 
-### 1. Bump the version on `integration`
+### 1. Cut the release branch and open the one release PR
 
 ```bash
 git switch integration && git pull
@@ -51,33 +51,21 @@ the codename advances — pick the next unused name from the top of
 Write the release notes: [`docs/releases/v0.8.md`](releases/README.md), the
 hand-written top of the GitHub Release. The workflow **fails the release if this
 file is missing**, so it has to land in this PR. Keep it to a couple of
-sentences plus highlights — GitHub's full PR list gets appended automatically.
-The `/avut-release` skill drafts it from the commit range.
+sentences plus highlights — the actual PR list gets appended automatically
+(see [Release notes](#release-notes) below). The `/avut-release` skill drafts
+it from the commit range.
 
 ```bash
 git commit -am "chore(release): v0.8 (Laburnum)"
 git push -u origin release/v0.8
-gh pr create --base integration --title "chore(release): v0.8 (Laburnum)"
+gh pr create --repo redcloud-nz/avut --base production --head release/v0.8 \
+  --title "Release v0.8 (Laburnum)"
 ```
 
-Get it reviewed and merged like any other PR. Nothing tags or releases at this
-point — `integration` still just renders `DEV.{build}`, and `v0.8` only comes
-into existence once it reaches `production`. Confirm the bump landed with
-`git show origin/integration:package.json`.
+The diff is everything on `integration` that `production` hasn't seen yet,
+plus the version bump. Sanity check it — this is the whole payload going live.
 
-### 2. Open the release PR
-
-```bash
-git fetch origin
-gh pr create --repo redcloud-nz/avut --base production --head integration \
-  --title "Release v0.8 (Laburnum)" \
-  --body "$(git log --oneline origin/production..origin/integration)"
-```
-
-The diff is everything on `integration` that production hasn't seen yet. Sanity
-check it — this is the whole payload going live.
-
-### 3. Merge it
+### 2. Merge it
 
 - **Merge commit — not squash, not rebase.** `integration` and `production` must
   keep shared history; squashing makes them diverge and every subsequent release
@@ -92,14 +80,21 @@ check it — this is the whole payload going live.
   commit history, because `production` had only ever held the initial scaffold.
   Every release after that is a normal-sized diff.
 
-### 4. Automated, on the push to `production`
+### 3. Automated, on the push to `production`
 
 - Vercel deploys production.
 - `manage-release-version.yml` sees no matching tag, creates the annotated tag
   and publishes the GitHub Release (`{version} - {versionName}`). The body is
-  `docs/releases/v{version}.md` with GitHub's auto-generated PR list appended
-  below it (categorised by [`.github/release.yml`](../.github/release.yml)). The
-  run fails if that notes file is missing. For v0.8 the run took ~15s.
+  `docs/releases/v{version}.md` with a categorized PR list appended below it —
+  see [Release notes](#release-notes). The run fails if that notes file is
+  missing.
+- The same workflow then merges `production` back into `integration` and
+  pushes directly (bypassing the PR requirement the same way
+  `github-actions[bot]` always has — see
+  [`branch-protection.md`](branch-protection.md)). If that merge conflicts —
+  rare, since `production` only ever moves via an admin-merged PR — the
+  workflow fails loudly and it needs resolving by hand:
+  `git switch integration && git merge origin/production`, fix, push.
 
 Confirm:
 
@@ -126,38 +121,53 @@ git switch -c hotfix/0.9        # only if it doesn't already exist — otherwise
 
 Land one or more fixes on that branch over time (PRs into `hotfix/0.9`, or
 direct commits — it's a working branch, not `production`). When the
-accumulated fixes are ready to ship, bring them to both branches:
+accumulated fixes are ready to ship, merge into `production`:
 
 ```bash
-# Into production (this IS the release — bump version first if it warrants one)
 git switch production && git pull
 git merge --no-ff hotfix/0.9
 git push
-
-# Back into integration, so it doesn't regress
-git switch integration && git pull
-git merge hotfix/0.9
-git push
 ```
 
-Bump `nz.avut.version` (e.g. `0.9.2` → `0.9.3`) on whichever branch you merge
-into `production` first, following the same version-bump-then-release-PR shape
-as `docs/releases/` — see the `avut-release` skill. The branch survives the
-merge; keep accumulating on it and repeat until `production` moves to the next
-minor, at which point cut a fresh `hotfix/<minor>` branch.
+`manage-release-version.yml` runs on that push the same as any release — it
+tags, publishes, and merges `production` back into `integration`
+automatically, so there's no separate manual "back into integration" step
+anymore.
+
+Bump `nz.avut.version` (e.g. `0.9.2` → `0.9.3`) on `hotfix/0.9` before merging
+into `production`, and add its `docs/releases/v0.9.3.md` — same requirement as
+a normal release. The branch survives the merge; keep accumulating on it and
+repeat until `production` moves to the next minor, at which point cut a fresh
+`hotfix/<minor>` branch.
+
+## Release notes
+
+`manage-release-version.yml` appends a `## What's Changed` section below the
+hand-written notes, generated by
+[`.github/scripts/generate-release-notes.sh`](../.github/scripts/generate-release-notes.sh)
+— **not** GitHub's built-in `generate_release_notes`. That built-in feature
+only picks up PRs whose _base branch_ is the one being tagged
+(`production`), which in this model is just the release PR itself — every
+feature PR targets `integration` and would never show up. The script instead
+walks the commit range since the previous tag and resolves each commit to its
+originating PR by SHA (`gh api repos/{owner}/{repo}/commits/{sha}/pulls`,
+excluding any PR based on `production` so it doesn't attribute the commit to
+the umbrella release PR that's just carrying it along), then categorizes by
+the same labels as [`.github/release.yml`](../.github/release.yml).
 
 ## Notes
 
 - The README's **Production** badge is served live by
   [`/api/version?format=shields`](../src/app/api/version/route.ts) on
   `www.avut.nz`, so it always reflects what's actually deployed and moves only
-  when a release lands. The **Integration** badge reads `nz.avut.build` straight
-  off `integration`'s `package.json` on GitHub and shows `DEV.{build}` (the
-  integration deployment sits behind Vercel auth, so shields can't reach its
-  endpoint). The CI badge follows the default branch.
+  when a release lands. The **Integration** badge reads GitHub's
+  `last-commit` for the `integration` branch directly (the integration
+  deployment sits behind Vercel auth, so shields can't reach its own
+  `/api/version` endpoint). The CI badge follows the default branch.
 - `curl https://www.avut.nz/api/version` (or the local dev server) returns the
-  ground-truth `version` / `versionName` / `build` / `branch` / `commit` as JSON
-  regardless of environment — handy for support.
+  ground-truth `version` / `versionName` / `branch` / `commit` / `display` as
+  JSON regardless of environment — handy for support. Non-production
+  environments render `display` as `DEV.{branch}@{commit}`.
 - `manage-release-version.yml` is idempotent: re-pushing `production` at an
   already-released version does nothing.
 - If a release needs to be re-cut at the same version (tag already exists),
