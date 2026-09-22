@@ -29,16 +29,20 @@ export function StatCard({
     className?: string;
 }) {
     return (
-        <Item variant="outline" asChild className={className}>
+        <Item variant="outline" asChild className={className + " h-[120px]"}>
             <Link href={href}>
                 <ItemHeader className="justify-between">
                     <ItemMedia>
-                        <Icon className="size-8 text-muted-foreground" />
+                        <Icon className="size-9 text-muted-foreground" />
                     </ItemMedia>
-                    <ItemTitle className="w-14 text-2xl font-semibold">{value}</ItemTitle>
+                    <ItemTitle className="w-14 text-3xl font-semibold">{value}</ItemTitle>
                 </ItemHeader>
                 <ItemDescription>{label}</ItemDescription>
             </Link>
         </Item>
     );
+}
+
+export function StatCardSkeleton({ className }: { className?: string }) {
+    return <div className={cn("h-[120px] animate-pulse bg-muted rounded-lg", className)} />;
 }

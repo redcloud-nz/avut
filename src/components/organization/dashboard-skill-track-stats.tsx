@@ -5,50 +5,88 @@
 "use client";
 
 import { ClipboardCheckIcon, ClipboardListIcon, PackageIcon, PocketKnifeIcon } from "lucide-react";
+import { Suspense } from "react";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Protect } from "@/components/protect";
-import { StatCard, StatCardGrid } from "@/components/ui/stat-card";
+import { StatCard, StatCardGrid, StatCardSkeleton } from "@/components/ui/stat-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function Organization_Dashboard_SkillTrackStats() {
+    return (
+        <StatCardGrid>
+            <Suspense fallback={<StatCardSkeleton />}>
+                <Organization_Dashboard_SkillPackagesStat />
+            </Suspense>
+            <Suspense fallback={<StatCardSkeleton />}>
+                <Organization_Dashboard_SkillsStat />
+            </Suspense>
+            <Suspense fallback={<StatCardSkeleton />}>
+                <Organization_Dashboard_SkillCheckSessionsStat />
+            </Suspense>
+            <Protect permissions={{ skillCheck: ["view"] }}>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_SkillChecksStat />
+                </Suspense>
+            </Protect>
+        </StatCardGrid>
+    );
+}
+
+function Organization_Dashboard_SkillPackagesStat() {
     const organization = useOrganization();
     const { slug } = organization;
 
-    const [{ data: assessable }, { data: sessions }] = useSuspenseQueries({
-        queries: [
-            trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
-            trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
-        ],
-    });
+    const { data: assessable } = useSuspenseQuery(
+        trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+    );
 
     return (
-        <StatCardGrid>
-            <StatCard
-                label="Skill Packages"
-                value={assessable.skillPackages.length}
-                icon={PackageIcon}
-                href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
-            />
-            <StatCard
-                label="Skills"
-                value={assessable.skills.length}
-                icon={PocketKnifeIcon}
-                href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
-            />
-            <StatCard
-                label="Skill Check Sessions"
-                value={sessions.length}
-                icon={ClipboardListIcon}
-                href={route("/orgs/[slug]/skill-track/sessions", { slug })}
-            />
-            <Protect permissions={{ skillCheck: ["view"] }}>
-                <Organization_Dashboard_SkillChecksStat />
-            </Protect>
-        </StatCardGrid>
+        <StatCard
+            label="Skill Packages"
+            value={assessable.skillPackages.length}
+            icon={PackageIcon}
+            href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
+        />
+    );
+}
+
+function Organization_Dashboard_SkillsStat() {
+    const organization = useOrganization();
+    const { slug } = organization;
+
+    const { data: assessable } = useSuspenseQuery(
+        trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+    );
+
+    return (
+        <StatCard
+            label="Skills"
+            value={assessable.skills.length}
+            icon={PocketKnifeIcon}
+            href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
+        />
+    );
+}
+
+function Organization_Dashboard_SkillCheckSessionsStat() {
+    const organization = useOrganization();
+    const { slug } = organization;
+
+    const { data: sessions } = useSuspenseQuery(
+        trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
+    );
+
+    return (
+        <StatCard
+            label="Skill Check Sessions"
+            value={sessions.length}
+            icon={ClipboardListIcon}
+            href={route("/orgs/[slug]/skill-track/sessions", { slug })}
+        />
     );
 }
 

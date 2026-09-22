@@ -5,26 +5,79 @@
 "use client";
 
 import { ShieldCheckIcon, UserIcon, UserPlusIcon, UsersIcon } from "lucide-react";
+import { Suspense } from "react";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 import { Protect } from "@/components/protect";
-import { StatCard, StatCardGrid } from "@/components/ui/stat-card";
+import { StatCard, StatCardGrid, StatCardSkeleton } from "@/components/ui/stat-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function Organization_Dashboard_AdminStats() {
+    return (
+        <StatCardGrid>
+            <Suspense fallback={<StatCardSkeleton />}>
+                <Organization_Dashboard_ActivePersonnelStat />
+            </Suspense>
+            <Suspense fallback={<StatCardSkeleton />}>
+                <Organization_Dashboard_TeamsStat />
+            </Suspense>
+            <Suspense fallback={<StatCardSkeleton />}>
+                <Organization_Dashboard_UsersStat />
+            </Suspense>
+            <Protect permissions={{ invitation: ["view"] }}>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_PendingInvitationsStat />
+                </Suspense>
+            </Protect>
+        </StatCardGrid>
+    );
+}
+
+function Organization_Dashboard_ActivePersonnelStat() {
     const organization = useOrganization();
     const { slug } = organization;
 
-    const [{ data: personnel }, { data: teams }] = useSuspenseQueries({
-        queries: [
-            trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
-            trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
-        ],
-    });
+    const { data: personnel } = useSuspenseQuery(
+        trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
+    );
+
+    const activePersonnelCount = personnel.filter((person) => person.status === "Active").length;
+
+    return (
+        <StatCard
+            label="Active Personnel"
+            value={activePersonnelCount}
+            icon={UsersIcon}
+            href={route("/orgs/[slug]/admin/personnel", { slug })}
+        />
+    );
+}
+
+function Organization_Dashboard_TeamsStat() {
+    const organization = useOrganization();
+    const { slug } = organization;
+
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+
+    return (
+        <StatCard
+            label="Teams"
+            value={teams.length}
+            icon={ShieldCheckIcon}
+            href={route("/orgs/[slug]/admin/teams", { slug })}
+        />
+    );
+}
+
+function Organization_Dashboard_UsersStat() {
+    const organization = useOrganization();
+    const { slug } = organization;
 
     const {
         data: { members },
@@ -37,32 +90,13 @@ export function Organization_Dashboard_AdminStats() {
             ),
     });
 
-    const activePersonnelCount = personnel.filter((person) => person.status === "Active").length;
-
     return (
-        <StatCardGrid>
-            <StatCard
-                label="Active Personnel"
-                value={activePersonnelCount}
-                icon={UsersIcon}
-                href={route("/orgs/[slug]/admin/personnel", { slug })}
-            />
-            <StatCard
-                label="Teams"
-                value={teams.length}
-                icon={ShieldCheckIcon}
-                href={route("/orgs/[slug]/admin/teams", { slug })}
-            />
-            <StatCard
-                label="Users"
-                value={members.length}
-                icon={UserIcon}
-                href={route("/orgs/[slug]/admin/users", { slug })}
-            />
-            <Protect permissions={{ invitation: ["view"] }}>
-                <Organization_Dashboard_PendingInvitationsStat />
-            </Protect>
-        </StatCardGrid>
+        <StatCard
+            label="Users"
+            value={members.length}
+            icon={UserIcon}
+            href={route("/orgs/[slug]/admin/users", { slug })}
+        />
     );
 }
 
