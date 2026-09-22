@@ -18,15 +18,17 @@ import { trpc } from "@/trpc/client";
 export function Organization_Dashboard_SkillTrackStats() {
     return (
         <StatCardGrid>
-            <Suspense fallback={<StatCardSkeleton />}>
-                <Organization_Dashboard_SkillPackagesStat />
-            </Suspense>
-            <Suspense fallback={<StatCardSkeleton />}>
-                <Organization_Dashboard_SkillsStat />
-            </Suspense>
-            <Suspense fallback={<StatCardSkeleton />}>
-                <Organization_Dashboard_SkillCheckSessionsStat />
-            </Suspense>
+            <Protect permissions={{ skillPackageSubscription: ["view"] }}>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_SkillPackagesStat />
+                </Suspense>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_SkillsStat />
+                </Suspense>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_SkillCheckSessionsStat />
+                </Suspense>
+            </Protect>
             <Protect permissions={{ skillCheck: ["view"] }}>
                 <Suspense fallback={<StatCardSkeleton />}>
                     <Organization_Dashboard_SkillChecksStat />

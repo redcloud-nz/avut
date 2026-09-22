@@ -19,15 +19,21 @@ import { trpc } from "@/trpc/client";
 export function Organization_Dashboard_AdminStats() {
     return (
         <StatCardGrid>
-            <Suspense fallback={<StatCardSkeleton />}>
-                <Organization_Dashboard_ActivePersonnelStat />
-            </Suspense>
-            <Suspense fallback={<StatCardSkeleton />}>
-                <Organization_Dashboard_TeamsStat />
-            </Suspense>
-            <Suspense fallback={<StatCardSkeleton />}>
-                <Organization_Dashboard_UsersStat />
-            </Suspense>
+            <Protect permissions={{ person: ["view"] }}>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_ActivePersonnelStat />
+                </Suspense>
+            </Protect>
+            <Protect permissions={{ team: ["view"] }}>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_TeamsStat />
+                </Suspense>
+            </Protect>
+            <Protect permissions={{ member: ["view"] }}>
+                <Suspense fallback={<StatCardSkeleton />}>
+                    <Organization_Dashboard_UsersStat />
+                </Suspense>
+            </Protect>
             <Protect permissions={{ invitation: ["view"] }}>
                 <Suspense fallback={<StatCardSkeleton />}>
                     <Organization_Dashboard_PendingInvitationsStat />
