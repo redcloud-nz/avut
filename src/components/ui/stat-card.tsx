@@ -29,13 +29,13 @@ export function StatCard({
     className?: string;
 }) {
     return (
-        <Item variant="outline" asChild className={className + " h-[120px]"}>
+        <Item variant="outline" asChild className={cn(className, "h-[120px]")}>
             <Link href={href}>
                 <ItemHeader className="justify-between">
                     <ItemMedia>
                         <Icon className="size-9 text-muted-foreground" />
                     </ItemMedia>
-                    <ItemTitle className="w-14 text-3xl font-semibold">{value}</ItemTitle>
+                    <ItemTitle className="min-w-14 text-3xl font-semibold">{value}</ItemTitle>
                 </ItemHeader>
                 <ItemDescription>{label}</ItemDescription>
             </Link>

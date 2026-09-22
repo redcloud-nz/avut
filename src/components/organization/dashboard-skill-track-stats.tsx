@@ -19,11 +19,15 @@ export function Organization_Dashboard_SkillTrackStats() {
     return (
         <StatCardGrid>
             <Protect permissions={{ skillPackageSubscription: ["view"] }}>
-                <Suspense fallback={<StatCardSkeleton />}>
-                    <Organization_Dashboard_SkillPackagesStat />
-                </Suspense>
-                <Suspense fallback={<StatCardSkeleton />}>
-                    <Organization_Dashboard_SkillsStat />
+                <Suspense
+                    fallback={
+                        <>
+                            <StatCardSkeleton />
+                            <StatCardSkeleton />
+                        </>
+                    }
+                >
+                    <Organization_Dashboard_SkillPackageAndSkillStats />
                 </Suspense>
                 <Suspense fallback={<StatCardSkeleton />}>
                     <Organization_Dashboard_SkillCheckSessionsStat />
@@ -38,7 +42,7 @@ export function Organization_Dashboard_SkillTrackStats() {
     );
 }
 
-function Organization_Dashboard_SkillPackagesStat() {
+function Organization_Dashboard_SkillPackageAndSkillStats() {
     const organization = useOrganization();
     const { slug } = organization;
 
@@ -46,31 +50,23 @@ function Organization_Dashboard_SkillPackagesStat() {
         trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
     );
 
-    return (
-        <StatCard
-            label="Skill Packages"
-            value={assessable.skillPackages.length}
-            icon={PackageIcon}
-            href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
-        />
-    );
-}
-
-function Organization_Dashboard_SkillsStat() {
-    const organization = useOrganization();
-    const { slug } = organization;
-
-    const { data: assessable } = useSuspenseQuery(
-        trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
-    );
+    const catalogueHref = route("/orgs/[slug]/skill-track/catalogue", { slug });
 
     return (
-        <StatCard
-            label="Skills"
-            value={assessable.skills.length}
-            icon={PocketKnifeIcon}
-            href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
-        />
+        <>
+            <StatCard
+                label="Skill Packages"
+                value={assessable.skillPackages.length}
+                icon={PackageIcon}
+                href={catalogueHref}
+            />
+            <StatCard
+                label="Skills"
+                value={assessable.skills.length}
+                icon={PocketKnifeIcon}
+                href={catalogueHref}
+            />
+        </>
     );
 }
 
