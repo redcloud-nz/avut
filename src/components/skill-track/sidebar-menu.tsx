@@ -16,10 +16,6 @@ export function SkillTrack_Sidebar_Menu() {
     return (
         <>
             <NavSubItem
-                label="Dashboard"
-                href={route("/orgs/[slug]/skill-track", { slug: organization.slug })}
-            />
-            <NavSubItem
                 label="Catalogue"
                 href={route("/orgs/[slug]/skill-track/catalogue", { slug: organization.slug })}
             />

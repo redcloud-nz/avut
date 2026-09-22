@@ -14,10 +14,17 @@
  *
  * `playground` is deliberately absent — it is an unregistered, org-scoped dev sandbox, not part
  * of the `Modules` registry or this sidebar.
+ *
+ * `Dashboard` (the org root, `/orgs/[slug]`) is hardcoded above the `orgModules` loop rather
+ * than registered in `Modules`, for the same reason `playground` is left out: it isn't a
+ * settings-gated module: it's the scope root, already reachable without being toggleable.
+ * Registering it as a real module would also pull it into the marketing page's module grid
+ * and the docs section list, both of which key off `orgModules`.
  */
 
 "use client";
 
+import { LayoutDashboardIcon } from "lucide-react";
 import { ReactNode } from "react";
 
 import { Admin_Sidebar_Menu } from "@/components/admin/sidebar-menu";
@@ -27,6 +34,7 @@ import { NavCollapsible, NavItem, NavSection } from "@/components/nav/nav-sectio
 import { SkillTrack_Sidebar_Menu } from "@/components/skill-track/sidebar-menu";
 import { useOrganization } from "@/hooks/use-organization";
 import { orgModules, type OrganizationModuleId } from "@/lib/modules";
+import { route } from "@/lib/routes";
 
 /**
  * Sub-pages for a module's `NavCollapsible`, keyed by module id. A module absent here — a
@@ -46,6 +54,11 @@ export function OrgSidebar_Modules() {
 
     return (
         <NavSection>
+            <NavItem
+                icon={<LayoutDashboardIcon />}
+                label="Dashboard"
+                href={route("/orgs/[slug]", { slug: organization.slug })}
+            />
             {orgModules
                 .filter((mod) => organization.isModuleEnabled(mod.id))
                 .map((mod) => {
