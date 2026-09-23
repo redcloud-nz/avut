@@ -5,20 +5,14 @@
  *  Path: /(wrapper)
  */
 
-import { cookies } from "next/headers";
 import { type ReactNode } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
 import { ImpersonationBanner } from "@/components/system-admin/impersonation-banner";
-import { SIDEBAR_COOKIE_NAME } from "@/lib/constants";
 
-export default async function AppLayout(props: { children: ReactNode }) {
-    // `SidebarProvider` persists the collapsed/expanded choice to this cookie but never reads it
-    // back, so the server has to seed it. Absent cookie = expanded, matching a first-time visitor.
-    const sidebarOpen = (await cookies()).get(SIDEBAR_COOKIE_NAME)?.value !== "false";
-
+export default function AppLayout(props: { children: ReactNode }) {
     return (
-        <AppProviders defaultSidebarOpen={sidebarOpen}>
+        <AppProviders>
             <ImpersonationBanner />
             {props.children}
         </AppProviders>
