@@ -23,6 +23,7 @@ import {
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/item";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ObjectName } from "@/components/ui/typography";
 import { useLogger } from "@/hooks/use-logger";
 import { trpc } from "@/trpc/client";
@@ -57,6 +58,32 @@ export function Invitations_Card() {
                         <Invitation_Item key={invitation.id} invitation={invitation} />
                     ))}
                 </Show>
+            </CardContent>
+        </Card>
+    );
+}
+
+/**
+ * Placeholder for `Invitations_Card` while it streams in behind its own `<Suspense>`
+ * boundary — see `user/page.tsx`.
+ */
+export function Invitations_Skeleton() {
+    return (
+        <Card aria-busy="true" aria-label="Loading invitations">
+            <CardHeader>
+                <Skeleton className="h-6 w-1/3" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {Array.from({ length: 2 }, (_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="size-5 rounded" />
+                        <div className="flex-1 space-y-1.5">
+                            <Skeleton className="h-4 w-1/3" />
+                            <Skeleton className="h-3 w-1/4" />
+                        </div>
+                        <Skeleton className="h-8 w-16" />
+                    </div>
+                ))}
             </CardContent>
         </Card>
     );

@@ -9,21 +9,17 @@ import { Suspense } from "react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { Card, CardContent } from "@/components/ui/card";
-import { ActivityStats_Card } from "@/components/user/activity-stats";
-import { ActivityStats_Skeleton } from "@/components/user/activity-stats-skeleton";
-import { Invitations_Card } from "@/components/user/invitations";
-import { OrgSelector_Card } from "@/components/user/org-selector";
-import { requireSession } from "@/server/session";
+import { ActivityStats_Card, ActivityStats_Skeleton } from "@/components/user/activity-stats";
+import { Invitations_Card, Invitations_Skeleton } from "@/components/user/invitations";
+import { OrgSelector_Card, OrgSelector_Skeleton } from "@/components/user/org-selector";
+import { SignedInAs_Card, SignedInAs_Skeleton } from "@/components/user/signed-in-as";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: `Dashboard`,
 };
 
-export default async function UserDashboard_Page() {
-    const session = await requireSession();
-
+export default function UserDashboard_Page() {
     prefetch(trpc.users.listMemberships.queryOptions());
     prefetch(trpc.users.listInvitations.queryOptions());
     prefetch(trpc.users.getActivityStats.queryOptions());
@@ -36,17 +32,17 @@ export default async function UserDashboard_Page() {
                     <Saratoga.Header>
                         <Saratoga.Title>User Dashboard</Saratoga.Title>
                     </Saratoga.Header>
-                    <Card>
-                        <CardContent className="flex gap-2">
-                            <div className="font-medium pr-2">Signed in as</div>
-                            <div>{session.user.name}</div>
-                            <div className="text-muted-foreground">{session.user.email}</div>
-                        </CardContent>
-                    </Card>
+                    <Suspense fallback={<SignedInAs_Skeleton />}>
+                        <SignedInAs_Card />
+                    </Suspense>
                     <Saratoga.Columns variant="1-1">
                         <Saratoga.Column slot="main">
-                            <OrgSelector_Card />
-                            <Invitations_Card />
+                            <Suspense fallback={<OrgSelector_Skeleton />}>
+                                <OrgSelector_Card />
+                            </Suspense>
+                            <Suspense fallback={<Invitations_Skeleton />}>
+                                <Invitations_Card />
+                            </Suspense>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Suspense fallback={<ActivityStats_Skeleton />}>

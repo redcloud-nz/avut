@@ -11,6 +11,7 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -19,8 +20,8 @@ import { trpc } from "@/trpc/client";
  * permission concerns beyond membership itself (see `users.getActivityStats`).
  *
  * Reads via `useSuspenseQuery` behind its own `<Suspense>` boundary (see
- * `ActivityStats_Skeleton` and its usage in `user/page.tsx`) rather than the page's
- * shared one, so a slow activity query doesn't hold up the rest of the dashboard.
+ * `ActivityStats_Skeleton` below and its usage in `user/page.tsx`) rather than the
+ * page's shared one, so a slow activity query doesn't hold up the rest of the dashboard.
  */
 export function ActivityStats_Card() {
     const [{ data: memberships }, { data: stats }] = useSuspenseQueries({
@@ -68,6 +69,32 @@ export function ActivityStats_Card() {
                         </div>
                     ))
                 )}
+            </CardContent>
+        </Card>
+    );
+}
+
+/**
+ * Placeholder for `ActivityStats_Card` while it streams in behind its own `<Suspense>`
+ * boundary — see `user/page.tsx`.
+ */
+export function ActivityStats_Skeleton() {
+    return (
+        <Card aria-busy="true" aria-label="Loading activity">
+            <CardHeader>
+                <Skeleton className="h-6 w-2/3" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {Array.from({ length: 2 }, (_, i) => (
+                    <div key={i} className="space-y-1.5">
+                        <Skeleton className="h-4 w-32" />
+                        <div className="flex flex-wrap gap-2">
+                            <Skeleton className="h-5 w-24" />
+                            <Skeleton className="h-5 w-20" />
+                            <Skeleton className="h-5 w-28" />
+                        </div>
+                    </div>
+                ))}
             </CardContent>
         </Card>
     );
