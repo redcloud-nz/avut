@@ -68,7 +68,7 @@ describe("InvitationSignIn_Form", () => {
             email: EMAIL,
             password: "hunter2hunter2",
         });
-        expect(invalidate).toHaveBeenCalledWith(trpc.users.getSession.queryFilter());
+        expect(invalidate).toHaveBeenCalledWith(trpc.user.getSession.queryFilter());
         expect(invalidate).toHaveBeenCalledTimes(2);
         expect(router.push).not.toHaveBeenCalled();
     });

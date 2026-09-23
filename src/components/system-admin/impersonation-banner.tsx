@@ -37,7 +37,7 @@ import { getQueryClient } from "@/trpc/query-client";
  */
 export function ImpersonationBanner() {
     const router = useRouter();
-    const { data } = useSuspenseQuery(trpc.users.getSession.queryOptions());
+    const { data } = useSuspenseQuery(trpc.user.getSession.queryOptions());
 
     const impersonatedBy = data?.session?.impersonatedBy;
     const user = data?.user;

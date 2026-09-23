@@ -42,7 +42,7 @@ import { trpc } from "@/trpc/client";
 
 export function ActiveSessions_Card() {
     const logger = useLogger("Common", "ActiveSessions_Card");
-    const sessionsQuery = useQuery(trpc.users.listSessions.queryOptions());
+    const sessionsQuery = useQuery(trpc.user.listSessions.queryOptions());
 
     // The session awaiting revoke confirmation. Held here rather than in the row so that
     // invalidating the list on success can't unmount an open dialog mid-close.

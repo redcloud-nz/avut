@@ -18,7 +18,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const { organization_id } = await props.params;
     const organizationId = OrganizationId.schema.parse(organization_id);
 
-    const memberships = await fetchQuery(trpc.users.listMemberships.queryOptions());
+    const memberships = await fetchQuery(trpc.user.listMemberships.queryOptions());
     const membership = memberships.find((m) => m.organization.id === organizationId);
 
     return { title: membership?.organization.name ?? "Organisation" };
@@ -28,7 +28,7 @@ export default async function UserSettings_Organization_Page(props: Props) {
     const { organization_id } = await props.params;
     const organizationId = OrganizationId.schema.parse(organization_id);
 
-    const memberships = await fetchQuery(trpc.users.listMemberships.queryOptions());
+    const memberships = await fetchQuery(trpc.user.listMemberships.queryOptions());
     if (!memberships.some((m) => m.organization.id === organizationId)) notFound();
 
     return (

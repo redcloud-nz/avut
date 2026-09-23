@@ -10,13 +10,13 @@ import { authClient } from "@/client/auth-client";
 import { authQueryKeys } from "@/lib/auth-query-keys";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
-/** The shape `useSession()`/`useUser()` resolve to — `trpc.users.getSession`'s output. */
-export type SessionData = NonNullable<RouterOutput["users"]["getSession"]>;
+/** The shape `useSession()`/`useUser()` resolve to — `trpc.user.getSession`'s output. */
+export type SessionData = NonNullable<RouterOutput["user"]["getSession"]>;
 
 /**
  * The single definition of the session query.
  *
- * Goes through `trpc.users.getSession` rather than `authClient.getSession()` directly, so it
+ * Goes through `trpc.user.getSession` rather than `authClient.getSession()` directly, so it
  * shares tRPC's prefetch/hydrate machinery with every other query instead of needing its own
  * hand-aligned server/client key pair — `AuthenticatedLayout` prefetches the same procedure,
  * and the shared queryKey `queryOptions()` derives is what lets that hydrate this entry
@@ -24,7 +24,7 @@ export type SessionData = NonNullable<RouterOutput["users"]["getSession"]>;
  */
 export function sessionQueryOptions() {
     return queryOptions({
-        ...trpc.users.getSession.queryOptions(),
+        ...trpc.user.getSession.queryOptions(),
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 }

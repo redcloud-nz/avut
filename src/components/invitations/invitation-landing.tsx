@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { useSignOut } from "@/client/use-sign-out";
-import { usersEffects } from "@/client/users-effects";
+import { userEffects } from "@/client/user-effects";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -186,8 +186,8 @@ function Respond_Actions({
     const logger = useLogger("Common", "InvitationLanding");
 
     const acceptMutation = useMutation(
-        trpc.users.acceptInvitation.mutationOptions({
-            meta: { effects: usersEffects.acceptInvitation },
+        trpc.user.acceptInvitation.mutationOptions({
+            meta: { effects: userEffects.acceptInvitation },
             onError(error) {
                 logger.error("Failed to accept invitation", error);
                 toast.error(`Failed to accept invitation: ${error.message}`);
@@ -204,8 +204,8 @@ function Respond_Actions({
     );
 
     const rejectMutation = useMutation(
-        trpc.users.rejectInvitation.mutationOptions({
-            meta: { effects: usersEffects.rejectInvitation },
+        trpc.user.rejectInvitation.mutationOptions({
+            meta: { effects: userEffects.rejectInvitation },
             onError(error) {
                 logger.error("Failed to reject invitation", error);
                 toast.error(`Failed to decline invitation: ${error.message}`);

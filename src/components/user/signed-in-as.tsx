@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/trpc/client";
 
 export function SignedInAs_Card() {
-    const { data: session } = useSuspenseQuery(trpc.users.getSession.queryOptions());
+    const { data: session } = useSuspenseQuery(trpc.user.getSession.queryOptions());
 
     if (!session) return null;
 

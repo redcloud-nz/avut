@@ -16,6 +16,6 @@ export const invitationsEffects = createEffects<"invitations">()({
     // itself — have both changed underneath their cached copies.
     signUp: (vars) => [
         invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
-        invalidate(trpc.users.getSession.queryFilter()),
+        invalidate(trpc.user.getSession.queryFilter()),
     ],
 });

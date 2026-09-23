@@ -10,7 +10,7 @@ import { UserId } from "@/lib/schemas/user";
 /**
  * Hierarchical key factory for the auth-related queries that still go straight through
  * Better Auth's client rather than tRPC (the session itself no longer does — see
- * `trpc.users.getSession`). Everything nests under `["auth"]` and every per-user read under
+ * `trpc.user.getSession`). Everything nests under `["auth"]` and every per-user read under
  * `["auth", "user", userId]`, so evicting one account's entire cache subtree on sign-out is
  * a single `removeQueries({ queryKey: authQueryKeys.all })`.
  */

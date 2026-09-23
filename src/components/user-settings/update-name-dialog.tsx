@@ -56,7 +56,7 @@ export function UserProfile_UpdateName_Dialog({ session }: { session: SessionDat
             toast.error(`Failed to update name: ${error.message}`);
         },
         onSuccess() {
-            void queryClient.invalidateQueries(trpc.users.getSession.queryFilter());
+            void queryClient.invalidateQueries(trpc.user.getSession.queryFilter());
             toast.success("Name updated");
             handleDialogOpenChange(false);
         },

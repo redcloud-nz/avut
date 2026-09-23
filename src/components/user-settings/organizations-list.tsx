@@ -22,10 +22,10 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
-type Membership = RouterOutput["users"]["listMemberships"][number];
+type Membership = RouterOutput["user"]["listMemberships"][number];
 
 export function UserSettings_OrganizationsList() {
-    const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
+    const { data: memberships } = useSuspenseQuery(trpc.user.listMemberships.queryOptions());
 
     const columns = useMemo(
         () =>

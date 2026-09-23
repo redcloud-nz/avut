@@ -39,7 +39,7 @@ export function UserMenu_Skeleton() {
 }
 
 export function UserMenu() {
-    const { data: session } = useSuspenseQuery(trpc.users.getSession.queryOptions());
+    const { data: session } = useSuspenseQuery(trpc.user.getSession.queryOptions());
 
     const signOut = useSignOut();
 

@@ -17,7 +17,7 @@ import { trpc } from "@/trpc/client";
 /**
  * Prototype dashboard card — per-organization counts of log entries by object type and
  * action over the last 24 hours. Counts only, no entry details, so it carries no
- * permission concerns beyond membership itself (see `users.getActivityStats`).
+ * permission concerns beyond membership itself (see `user.getActivityStats`).
  *
  * Reads via `useSuspenseQuery` behind its own `<Suspense>` boundary (see
  * `ActivityStats_Skeleton` below and its usage in `user/page.tsx`) rather than the
@@ -26,8 +26,8 @@ import { trpc } from "@/trpc/client";
 export function ActivityStats_Card() {
     const [{ data: memberships }, { data: stats }] = useSuspenseQueries({
         queries: [
-            trpc.users.listMemberships.queryOptions(),
-            trpc.users.getActivityStats.queryOptions(),
+            trpc.user.listMemberships.queryOptions(),
+            trpc.user.getActivityStats.queryOptions(),
         ],
     });
 

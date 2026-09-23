@@ -49,11 +49,11 @@ export default async function AuthenticatedLayout(props: {
     // a still-pending dehydrated snapshot racing the live query client's resolution is exactly
     // what produces a hydration mismatch. Awaiting costs nothing extra: `getSession` only
     // re-reads `ctx.auth`, which is `requireSession()`'s own `cache()`-wrapped lookup.
-    await fetchQuery(trpc.users.getSession.queryOptions());
+    await fetchQuery(trpc.user.getSession.queryOptions());
 
     // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
     // prefetching here removes the round trip that would otherwise show as its skeleton.
-    prefetch(trpc.users.listMemberships.queryOptions());
+    prefetch(trpc.user.listMemberships.queryOptions());
 
     return (
         <HydrateClient>

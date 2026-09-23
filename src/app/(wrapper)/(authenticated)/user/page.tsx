@@ -20,9 +20,9 @@ export const metadata = {
 };
 
 export default function UserDashboard_Page() {
-    prefetch(trpc.users.listMemberships.queryOptions());
-    prefetch(trpc.users.listInvitations.queryOptions());
-    prefetch(trpc.users.getActivityStats.queryOptions());
+    prefetch(trpc.user.listMemberships.queryOptions());
+    prefetch(trpc.user.listInvitations.queryOptions());
+    prefetch(trpc.user.getActivityStats.queryOptions());
 
     return (
         <HydrateClient>

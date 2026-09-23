@@ -62,7 +62,7 @@ export function ScopeSwitcher() {
     const currentScope = useCurrentScope();
 
     const [{ data: session }, { data: memberships }] = useSuspenseQueries({
-        queries: [trpc.users.getSession.queryOptions(), trpc.users.listMemberships.queryOptions()],
+        queries: [trpc.user.getSession.queryOptions(), trpc.user.listMemberships.queryOptions()],
     });
 
     const currentMembership =

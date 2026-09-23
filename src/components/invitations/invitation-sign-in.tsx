@@ -71,7 +71,7 @@ export function InvitationSignIn_Form({
             if (verified) {
                 // The session cookie changed: drop the cached copies that were fetched signed
                 // out, and re-render the server tree that reads it.
-                void queryClient.invalidateQueries(trpc.users.getSession.queryFilter());
+                void queryClient.invalidateQueries(trpc.user.getSession.queryFilter());
                 void queryClient.invalidateQueries(
                     trpc.invitations.getLanding.queryFilter({ invitationId }),
                 );

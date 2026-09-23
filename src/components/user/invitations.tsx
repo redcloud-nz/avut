@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
-import { usersEffects } from "@/client/users-effects";
+import { userEffects } from "@/client/user-effects";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,10 +29,10 @@ import { useLogger } from "@/hooks/use-logger";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
-type Invitation = RouterOutput["users"]["listInvitations"][number];
+type Invitation = RouterOutput["user"]["listInvitations"][number];
 
 export function Invitations_Card() {
-    const { data: invitations } = useSuspenseQuery(trpc.users.listInvitations.queryOptions());
+    const { data: invitations } = useSuspenseQuery(trpc.user.listInvitations.queryOptions());
 
     return (
         <Card>
@@ -93,8 +93,8 @@ function Invitation_Item({ invitation }: { invitation: Invitation }) {
     const logger = useLogger("Common", "Invitation_Item");
 
     const acceptMutation = useMutation(
-        trpc.users.acceptInvitation.mutationOptions({
-            meta: { effects: usersEffects.acceptInvitation },
+        trpc.user.acceptInvitation.mutationOptions({
+            meta: { effects: userEffects.acceptInvitation },
             onError(error) {
                 logger.error("Failed to accept invitation", error);
                 toast.error(`Failed to accept invitation: ${error.message}`);
@@ -110,8 +110,8 @@ function Invitation_Item({ invitation }: { invitation: Invitation }) {
     );
 
     const rejectMutation = useMutation(
-        trpc.users.rejectInvitation.mutationOptions({
-            meta: { effects: usersEffects.rejectInvitation },
+        trpc.user.rejectInvitation.mutationOptions({
+            meta: { effects: userEffects.rejectInvitation },
             onError(error) {
                 logger.error("Failed to reject invitation", error);
                 toast.error(`Failed to reject invitation: ${error.message}`);

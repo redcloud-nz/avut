@@ -29,7 +29,7 @@ import { trpc } from "@/trpc/client";
 
 export function OrgSelector_Card() {
     const [{ data: session }, { data: memberships }] = useSuspenseQueries({
-        queries: [trpc.users.getSession.queryOptions(), trpc.users.listMemberships.queryOptions()],
+        queries: [trpc.user.getSession.queryOptions(), trpc.user.listMemberships.queryOptions()],
     });
 
     return (

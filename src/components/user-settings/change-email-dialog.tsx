@@ -109,7 +109,7 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
             // /email-otp/change-email isn't in the client's atomListeners, so the shared
             // session store won't auto-refresh on its own - explicitly invalidate it so this
             // dialog (and the rest of the UI, e.g. nav) picks up the new email immediately.
-            void queryClient.invalidateQueries(trpc.users.getSession.queryFilter());
+            void queryClient.invalidateQueries(trpc.user.getSession.queryFilter());
             toast.success("Your email address has been updated.");
             restart();
             handleDialogOpenChange(false);

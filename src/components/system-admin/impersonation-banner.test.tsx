@@ -21,14 +21,14 @@ vi.mock("@/client/auth-client", () => ({
     authClient: { admin: { stopImpersonating: vi.fn().mockResolvedValue({}) } },
 }));
 
-type SessionData = NonNullable<RouterOutput["users"]["getSession"]>;
+type SessionData = NonNullable<RouterOutput["user"]["getSession"]>;
 
 function makeQueryClient() {
     return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
 function seedSession(queryClient: QueryClient, data: SessionData | null) {
-    queryClient.setQueryData(trpc.users.getSession.queryKey(), data);
+    queryClient.setQueryData(trpc.user.getSession.queryKey(), data);
 }
 
 function renderBanner(queryClient: QueryClient) {
@@ -111,7 +111,7 @@ describe("ImpersonationBanner", () => {
 
     it("falls back to the email when the impersonated user has no name", () => {
         const queryClient = makeQueryClient();
-        queryClient.setQueryData(trpc.users.getSession.queryKey(), {
+        queryClient.setQueryData(trpc.user.getSession.queryKey(), {
             user: {
                 id: UserId.create(),
                 name: "",
