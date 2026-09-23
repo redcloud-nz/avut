@@ -7,8 +7,6 @@
 import { ChevronDownIcon } from "lucide-react";
 import { useId, useState } from "react";
 
-import { cn } from "@/lib/utils";
-
 import { Badge } from "@/components/ui/badge";
 import {
     Command,
@@ -19,6 +17,7 @@ import {
     CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export type SearchableSelectOption = {
     value: string;
@@ -76,14 +75,13 @@ export function SearchableSelect({
 
     const id = useId();
 
+    function handleOpenChange(next: boolean) {
+        setOpen(next);
+        if (!next) setSearch("");
+    }
+
     return (
-        <Popover
-            open={open}
-            onOpenChange={(next) => {
-                setOpen(next);
-                if (!next) setSearch("");
-            }}
-        >
+        <Popover modal open={open} onOpenChange={handleOpenChange}>
             <PopoverTrigger asChild>
                 <button
                     type="button"
@@ -134,7 +132,7 @@ export function SearchableSelect({
                                     data-checked={value === option.value}
                                     onSelect={() => {
                                         onValueChange(option.value);
-                                        setOpen(false);
+                                        handleOpenChange(false);
                                     }}
                                 >
                                     <div className="flex min-w-0 flex-col">

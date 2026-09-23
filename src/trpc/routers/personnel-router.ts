@@ -8,14 +8,12 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
-import { OrganizationUser } from "@/lib/schemas/organization-user";
-
 import { InvitationId } from "@/lib/schemas/organization-invitation";
+import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserData } from "@/lib/schemas/user";
-
-import { findLinkableMember } from "@/server/person-user-link";
 import { readOrganizationSettings } from "@/server/organization-settings-store";
+import { findLinkableMember } from "@/server/person-user-link";
 
 import { FieldConflictError } from "../errors";
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
@@ -271,8 +269,8 @@ export const personnelRouter = createTrpcRouter({
                 }),
                 // Matches what the invite dialog writes, which lowercases for the same reason.
                 // An invitation typed mixed-case on the Invitations page will not be found here —
-                // it is also invisible to `getEntryControl`, which is a pre-existing gap in that
-                // flow rather than something this query should paper over.
+                // it is also invisible to the dashboard's own invitation lookup, which is a
+                // pre-existing gap in that flow rather than something this query should paper over.
                 ctx.prisma.organizationInvitation.findFirst({
                     where: { organizationId: ctx.organizationId, email, status: "pending" },
                     orderBy: { createdAt: "desc" },
@@ -316,7 +314,11 @@ export const personnelRouter = createTrpcRouter({
                 personId: PersonId.schema,
             }),
         )
-        .output(OrganizationUser.schema.nullable())
+        .output(
+            OrganizationUser.schema
+                .extend({ user: UserData.schema.pick({ id: true, name: true, email: true }) })
+                .nullable(),
+        )
         .query(async ({ ctx, input: { personId } }) => {
             const person = await ctx.prisma.person.findUnique({
                 where: { organizationId: ctx.organizationId, id: personId },
@@ -330,7 +332,10 @@ export const personnelRouter = createTrpcRouter({
                 });
 
             return person.organizationUser
-                ? OrganizationUser.fromRecord(person.organizationUser.user, person.organizationUser)
+                ? {
+                      ...OrganizationUser.fromRecord(person.organizationUser),
+                      user: UserData.fromRecord(person.organizationUser.user),
+                  }
                 : null;
         }),
 

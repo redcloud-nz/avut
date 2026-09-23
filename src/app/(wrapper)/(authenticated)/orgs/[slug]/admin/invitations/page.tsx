@@ -5,11 +5,9 @@
  * Paths: /orgs/[slug]/admin/invitations
  */
 
+import { AdminModule_Invitations_List } from "@/components/admin/invitations/invitations-list";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-
-import { AdminModule_Invitations_List } from "@/components/admin/invitations/invitations-list";
-import { requireOrganization } from "@/server/organization-access";
 import { route } from "@/lib/routes";
 
 export const metadata = {
@@ -20,7 +18,6 @@ export default async function AdminModule_Invitations_Page(
     props: PageProps<"/orgs/[slug]/admin/invitations">,
 ) {
     const { slug } = await props.params;
-    await requireOrganization(slug);
 
     return (
         <>

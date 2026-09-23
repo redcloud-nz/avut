@@ -12,9 +12,8 @@
 
 import "server-only";
 
-import { cache } from "react";
-
 import { allDocs } from "content-collections";
+import { cache } from "react";
 
 import { getDocsNav, type Doc, type DocsNavSection } from "@/lib/docs";
 import { resolveModuleFlags } from "@/server/module-flags";

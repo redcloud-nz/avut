@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { personnelEffects } from "@/client/personnel-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -21,8 +22,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { personnelEffects } from "@/client/personnel-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
@@ -37,7 +36,7 @@ export function AdminModule_DeletePerson_Dialog({
 
     const mutation = useMutation(
         trpc.personnel.deletePerson.mutationOptions({
-            meta: { effects: personnelEffects.deletePerson },
+            meta: { effects: personnelEffects.deletePerson, navigates: true },
             onError(error) {
                 console.error("Failed to delete person:", error);
                 toast.error(`Failed to delete person: ${error.message}`);

@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
+import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 
 /**
  * Cache effects for `teams` router mutations, keyed by procedure name.
@@ -33,6 +33,12 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
 export const teamsEffects = createEffects<"teams">()({
     applyD4HTeamSync: (vars) => teamCaches(vars),
     createTeam: (vars) => [
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    ],
+    createTeamFromD4H: (vars) => [
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    ],
+    deleteTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],
     linkTeamToD4H: (vars) => teamCaches(vars),

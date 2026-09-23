@@ -17,7 +17,7 @@ import { requireSession } from "./session";
  * single session lookup; `requireSession()` also handles the signed-out → sign-in
  * redirect. A non-admin raises Next's `forbidden()` interrupt (this repo enables
  * `experimental.authInterrupts` and ships `src/app/forbidden.tsx`), mirroring
- * `assertPermission` in `organization-access.ts` rather than a bare redirect.
+ * `requireOrganizationWith` in `organization-access.ts` rather than a bare redirect.
  *
  * No standalone unit test: `@/server/auth` (transitively pulled in via
  * `./session`) imports `server-only` and cannot be loaded in the jsdom test env,
@@ -25,7 +25,7 @@ import { requireSession } from "./session";
  * mirror. Coverage comes from the `system-admin/layout.tsx` integration and the
  * `systemAdminProcedure` tests, which exercise the same `role === "admin"` gate.
  */
-export async function requireGlobalAdmin() {
+export async function requireSystemAdmin() {
     const session = await requireSession();
     if (session.user.role !== "admin") forbidden();
     return { user: session.user };

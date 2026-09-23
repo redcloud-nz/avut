@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider, useMutation, useQuery } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { invalidate, useMutationEffector, write } from "./mutation-effector";
 
@@ -47,6 +47,63 @@ describe("useMutationEffector", () => {
         fireEvent.click(screen.getByRole("button"));
 
         await waitFor(() => expect(queryFn).toHaveBeenCalledTimes(1));
+    });
+
+    describe("meta.navigates", () => {
+        // A refetch that never settles stands in for a slow round trip: anything that awaits it
+        // is stuck for the whole test.
+        function setup(navigates: boolean) {
+            const queryClient = makeClient();
+            const queryFn = vi.fn(() => new Promise<string>(() => {}));
+            const onSuccess = vi.fn();
+            queryClient.setQueryData(["list"], "cached");
+
+            function Harness() {
+                useMutationEffector(queryClient);
+                useQuery({ queryKey: ["list"], queryFn, staleTime: Infinity });
+                const mutation = useMutation<void, Error, void>({
+                    mutationFn: () => Promise.resolve(),
+                    onSuccess,
+                    meta: { effects: () => [invalidate({ queryKey: ["list"] })], navigates },
+                });
+                return <button onClick={() => mutation.mutate()}>mutate</button>;
+            }
+
+            render(
+                <QueryClientProvider client={queryClient}>
+                    <Harness />
+                </QueryClientProvider>,
+            );
+
+            return { queryClient, queryFn, onSuccess };
+        }
+
+        it("runs the call site's onSuccess without waiting on a refetch of a mounted query", async () => {
+            const { queryFn, onSuccess } = setup(true);
+
+            fireEvent.click(screen.getByRole("button"));
+
+            await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+            expect(queryFn).not.toHaveBeenCalled();
+        });
+
+        it("still marks the invalidated query stale, so it refetches next time it is used", async () => {
+            const { queryClient, onSuccess } = setup(true);
+
+            fireEvent.click(screen.getByRole("button"));
+
+            await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+            expect(queryClient.getQueryState(["list"])?.isInvalidated).toBe(true);
+        });
+
+        it("otherwise holds the call site's onSuccess until the refetch settles", async () => {
+            const { queryFn, onSuccess } = setup(false);
+
+            fireEvent.click(screen.getByRole("button"));
+
+            await waitFor(() => expect(queryFn).toHaveBeenCalledTimes(1));
+            expect(onSuccess).not.toHaveBeenCalled();
+        });
     });
 
     it("does nothing for mutations without meta.effects", async () => {

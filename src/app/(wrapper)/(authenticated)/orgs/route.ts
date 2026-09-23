@@ -7,11 +7,17 @@
 
 import { redirect } from "next/navigation";
 
-import { requireSession } from "@/server/session";
+import { route } from "@/lib/routes";
+import { getEntryControl } from "@/server/entry-control";
 
 export async function GET() {
     // Route handlers do not render layouts, so the group-level guard does not apply here.
-    await requireSession();
+    // `getEntryControl` calls `requireSession` itself.
+    const entryControl = await getEntryControl();
 
-    redirect("/orgs/--select-org");
+    if (entryControl.status === "Proceed") {
+        redirect(route("/orgs/[slug]", { slug: entryControl.slug }));
+    }
+
+    redirect("/user");
 }

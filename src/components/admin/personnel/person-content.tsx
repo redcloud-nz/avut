@@ -21,7 +21,6 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
@@ -107,9 +106,9 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                                                 {linkedUser.userId}
                                             </DLDetails>
                                             <DLTerm>Name</DLTerm>
-                                            <DLDetails>{linkedUser.name}</DLDetails>
+                                            <DLDetails>{linkedUser.user.name}</DLDetails>
                                             <DLTerm>Email</DLTerm>
-                                            <DLDetails>{linkedUser.email}</DLDetails>
+                                            <DLDetails>{linkedUser.user.email}</DLDetails>
                                             <DLTerm>Roles</DLTerm>
                                             <DLDetails>
                                                 {linkedUser.roles

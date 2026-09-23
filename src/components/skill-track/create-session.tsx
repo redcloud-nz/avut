@@ -14,11 +14,13 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { skillsEffects } from "@/client/skills-effects";
 import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -30,8 +32,6 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-import { skillsEffects } from "@/client/skills-effects";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -79,7 +79,7 @@ export function SkillTrack_CreateSession_Dialog() {
 
     const mutation = useMutation(
         trpc.skills.createSession.mutationOptions({
-            meta: { effects: skillsEffects.createSession },
+            meta: { effects: skillsEffects.createSession, navigates: true },
             onError(error) {
                 console.error("Failed to create session", error);
                 toast.error(`Failed to create session ${error.message}`);
@@ -127,60 +127,68 @@ export function SkillTrack_CreateSession_Dialog() {
                         after it&apos;s created.
                     </DialogDescription>
                 </DialogHeader>
-                <form
-                    id="new-session-form"
-                    onSubmit={form.handleSubmit(
-                        (formData) =>
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                skillCheckSessionId: SkillCheckSessionId.create(),
-                                create: formData,
-                            }),
-                        (errors) => {
-                            console.error("Form validation errors:", errors);
-                        },
-                    )}
-                >
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Name</FieldLabel>
-                                    <Input {...field} placeholder={namePlaceholder} />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="date"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Date</FieldLabel>
-                                    <DatePicker
-                                        value={field.value}
-                                        onValueChange={(newValue) => field.onChange(newValue)}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
+                <DialogBody>
+                    <form
+                        id="new-session-form"
+                        onSubmit={form.handleSubmit(
+                            (formData) =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    skillCheckSessionId: SkillCheckSessionId.create(),
+                                    create: formData,
+                                }),
+                            (errors) => {
+                                console.error("Form validation errors:", errors);
+                            },
+                        )}
+                    >
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Name</FieldLabel>
+                                        <Input {...field} placeholder={namePlaceholder} />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="date"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Date</FieldLabel>
+                                        <DatePicker
+                                            value={field.value}
+                                            onValueChange={(newValue) => field.onChange(newValue)}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
 
-                        <Controller
-                            name="notes"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel>Notes</FieldLabel>
-                                    <Textarea {...field} placeholder="Session Notes" />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                            <Controller
+                                name="notes"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Notes</FieldLabel>
+                                        <Textarea {...field} placeholder="Session Notes" />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

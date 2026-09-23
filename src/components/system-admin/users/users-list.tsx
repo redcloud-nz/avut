@@ -19,21 +19,11 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Badge } from "@/components/ui/badge";
-
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
+import { trpc, type RouterOutput } from "@/trpc/client";
 
-type UserRow = {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    banned: boolean;
-    emailVerified: boolean;
-    createdAt: Date;
-    organizationCount: number;
-};
+type UserRow = RouterOutput["systemAdmin"]["listUsers"]["users"][number];
 
 export function SystemAdmin_Users_List() {
     const {
@@ -48,7 +38,7 @@ export function SystemAdmin_Users_List() {
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/system-admin/users/[user_id]", {
+                            href={route("/system/admin/users/[user_id]", {
                                 user_id: ctx.row.original.id,
                             })}
                         >

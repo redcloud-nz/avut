@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { z } from "zod";
+import * as z from "zod";
 
 export const d4hActivityTypeSchema = z.enum(["Event", "Exercise", "Incident"]);
 export const d4hTodayStatusSchema = z.enum(["attending", "absent", "requested", "not-involved"]);

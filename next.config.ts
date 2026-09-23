@@ -3,9 +3,12 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 import { execSync } from "node:child_process";
+import { networkInterfaces } from "node:os";
+import type { NextConfig } from "next";
 
 import { withContentCollections } from "@content-collections/next";
-import type { NextConfig } from "next";
+
+import packageDataJson from "./package.json" with { type: "json" };
 
 interface PackageData {
     name: string;
@@ -23,7 +26,6 @@ interface PackageData {
     };
 }
 
-import packageDataJson from "./package.json" with { type: "json" };
 const packageData = packageDataJson as unknown as PackageData;
 
 const appMetadata = packageData["nz.avut"];
@@ -79,8 +81,37 @@ const environmentLabel =
 const appVersion = isProduction ? `v${appMetadata.version}` : environmentLabel;
 const appVersionName = isProduction ? appMetadata.versionName : "";
 
+// So a phone on the same network can reach this machine's dev server (e.g.
+// `http://192.168.x.x:3000`) without Next.js blocking its HMR/asset requests as
+// cross-origin. Mirrors the LAN-origin detection in `src/server/auth.ts`.
+function localNetworkHostnames(): string[] {
+    return Object.values(networkInterfaces())
+        .flat()
+        .filter((info) => info != null && info.family === "IPv4" && !info.internal)
+        .map((info) => info!.address);
+}
+
 const nextConfig: NextConfig = {
+    async redirects() {
+        // `system-admin` and `user-settings` moved under the real `/system` and `/user`
+        // scope roots (#92) — keep old bookmarks/links working.
+        return [
+            {
+                source: "/system-admin/:path*",
+                destination: "/system/admin/:path*",
+                permanent: true,
+            },
+            { source: "/user-settings", destination: "/user/profile", permanent: true },
+            // Invitation emails already sent link to the old accept route.
+            {
+                source: "/auth/accept-invitation/:invitation_id",
+                destination: "/invitations/:invitation_id",
+                permanent: true,
+            },
+        ];
+    },
     cacheComponents: true,
+    ...(environment === "development" ? { allowedDevOrigins: localNetworkHostnames() } : {}),
     images: {
         // Product screenshots served from the Vercel Blob store (see
         // docs/specs/docs-screenshots.md). Public, immutable pathnames.
@@ -101,6 +132,14 @@ const nextConfig: NextConfig = {
         // and message across the RSC boundary, so an interrupt is the only way a
         // permission failure can carry its own copy into production.
         authInterrupts: true,
+        // Cache Components' default ("warning") implicitly validates every Page/layout
+        // segment for instant navigation, which flags routes we haven't restructured yet
+        // (e.g. the whole authenticated tree, blocked on `requireSession()`). Switch to
+        // only validating segments that opt in explicitly via `export const instant`, so
+        // the warning stops firing app-wide and we can turn it on route-by-route instead.
+        instantInsights: {
+            validationLevel: "manual-warning",
+        },
     },
     typedRoutes: true,
 };

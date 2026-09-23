@@ -14,20 +14,18 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons, SettingsIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 
 export default async function AdminModule_Organization_Page(
     props: PageProps<`/orgs/[slug]/admin/organization`>,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     return (
         <>

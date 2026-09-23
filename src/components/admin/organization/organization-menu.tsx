@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons, DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +22,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { teamsEffects } from "@/client/teams-effects";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";

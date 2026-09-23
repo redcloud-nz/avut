@@ -13,7 +13,7 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationClient } from "./use-organization";
 
 const ALL_ON: ModuleFlagState = {
-    admin: true,
+    "org-admin": true,
     "d4h-views": true,
     forms: true,
     i3: true,
@@ -62,11 +62,13 @@ describe("OrganizationClient.isModuleEnabled", () => {
         expect(makeClient({}).isModuleEnabled("skill-track")).toBe(false);
     });
 
-    it("keeps always-on admin enabled regardless of settings", () => {
-        expect(makeClient({}).isModuleEnabled("admin")).toBe(true);
+    it("keeps always-on org-admin enabled regardless of settings", () => {
+        expect(makeClient({}).isModuleEnabled("org-admin")).toBe(true);
     });
 
-    it("blocks even always-on admin when its flag is off", () => {
-        expect(makeClient({ moduleFlags: { admin: false } }).isModuleEnabled("admin")).toBe(false);
+    it("blocks even always-on org-admin when its flag is off", () => {
+        expect(
+            makeClient({ moduleFlags: { "org-admin": false } }).isModuleEnabled("org-admin"),
+        ).toBe(false);
     });
 });

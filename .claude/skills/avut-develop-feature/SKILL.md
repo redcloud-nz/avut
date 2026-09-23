@@ -1,32 +1,27 @@
 ---
 name: avut-develop-feature
-description: Start building a feature from a captured idea (docs/ideas/) or a GitHub issue — resolves the source, moves into a fresh worktree, does the worktree setup from AGENTS.md, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an idea slug or an issue number/URL.
+description: Start building a feature from a GitHub issue — resolves the source, moves into a fresh worktree, runs `npm run worktree:setup`, and summarizes the plan before writing code. Trigger when the user types /avut-develop-feature with an issue number/URL.
 effort: high
 manual: true
 ---
 
 # Develop Feature
 
-Takes a feature from "captured somewhere" to "worktree set up and ready to implement." `$ARGUMENTS` is either:
+Takes a feature from "captured somewhere" to "worktree set up and ready to implement." `$ARGUMENTS` is a GitHub issue — a bare number, `#123`, or an issue URL.
 
-- an idea reference — a slug or partial filename under `docs/ideas/` (e.g. `organization-groups` or `2026-09-10-organization-groups`)
-- a GitHub issue — a bare number, `#123`, or an issue URL
-
-If `$ARGUMENTS` is missing or doesn't resolve to either, ask the user which idea or issue to build from and stop.
+If it doesn't parse as one, try it as a fuzzy title search against open `brainstorm`-labeled issues (`gh issue list --repo redcloud-nz/avut --label brainstorm --search "<text>"`). If more than one matches, list them and ask which. If `$ARGUMENTS` is missing or nothing matches, ask the user which issue to build from and stop.
 
 ## Step 1 — Resolve the source
 
-**Idea**: find the matching file under `docs/ideas/` (fuzzy on the slug portion — dates prefix every filename). If more than one matches, list them and ask which. Read the whole file — `## Idea`/`## Context`, `## Options considered`, `## Open questions`, and any `## Review` section from `/avut-review-ideas`.
+`gh issue view <n> --repo redcloud-nz/avut --json number,title,url,body,labels,comments`. Read the body and comments — a `brainstorm` issue carries `## Idea`/`## Context`, `## Options considered`, `## Open questions`, and any `## Review` comment from `/avut-review-ideas`; a bug issue filed via `avut-bug` carries its own structure (What happened / Steps to reproduce / Expected behavior / Environment); a feature issue via `avut-draft-feature` carries its own (Proposed solution / Alternatives considered / Related module).
 
-**Issue**: `gh issue view <n> --repo redcloud-nz/avut --json number,title,url,body,labels,comments`. Read the body and comments — a bug issue filed via `avut-bug` carries its own structure (What happened / Steps to reproduce / Expected behavior / Environment); a feature issue via `avut-draft-feature` carries its own (Proposed solution / Alternatives considered / Related module).
+Show the user a one-line summary and confirm this is the right source before continuing:
 
-Either way, show the user a one-line summary and confirm this is the right source before continuing:
-
-> Building from docs/ideas/2026-09-10-organization-groups.md — "Organization groups". Proceed?
+> Building from #142 — "Organization groups". Proceed?
 
 ## Step 2 — Check for unresolved ambiguity
 
-If the source has open questions that materially change scope (an idea's `## Open questions`, or a feature issue's `Alternatives considered` left unresolved), surface them and ask before setting up a worktree — don't build the wrong shape of the thing. Skip this if the source is already concrete (most bug reports are).
+If the source has open questions that materially change scope (a `brainstorm` issue's `## Open questions`, or a feature issue's `Alternatives considered` left unresolved), surface them and ask before setting up a worktree — don't build the wrong shape of the thing. Skip this if the source is already concrete (most bug reports are).
 
 ## Step 3 — Pick a name and check for an existing worktree
 
@@ -41,14 +36,13 @@ git worktree list
 
 ## Step 4 — Worktree setup
 
-Follow **"Setting up a fresh worktree"** in `AGENTS.md` — do this every time, `EnterWorktree` only handles the git side:
+`EnterWorktree` only handles the git side — run the setup script from the worktree every time:
 
 ```bash
-cp ../../../.env.local .env.local
-ln -s ../../../.vercel .vercel   # only if using the Vercel CLI / skills
-npm install
-npx next typegen
+npm run worktree:setup
 ```
+
+It copies `.env.local`, links `.vercel`, installs dependencies and generates the Prisma client and route types (see the Worktrees section of `AGENTS.md`).
 
 Don't start a dev server — check whether the user already has one running (elsewhere) and ask them to start one for this worktree on its own port (`npm run dev -- -p 3100` or similar) rather than launching one yourself.
 
@@ -60,10 +54,13 @@ Before writing any code, restate in your own words: what's being built, the rele
 
 Then proceed with implementation as normal, following the rest of `AGENTS.md`'s conventions (tRPC router patterns, data-fetching patterns, permissions, etc. — read the relevant pattern doc before writing a new page or mutation rather than inferring it).
 
+When the work looks done, run `npm run check` (tsc, eslint and the tests related to what you changed, in one call) and fix what it reports before saying it's done. Use `npm run check -- --all` for the full run CI does.
+
 ## Common mistakes
 
 - Creating a second worktree for a slug that already has one instead of resuming it
-- Skipping the worktree setup steps (especially `npx next typegen`) and hitting confusing typecheck failures later
+- Skipping `npm run worktree:setup` and hitting confusing typecheck failures later
 - Starting a dev server unprompted instead of asking the user to start one
 - Treating an idea's open questions or an issue's unresolved alternatives as already decided
 - Proactively branching the database before a migration is actually about to be written
+- Running `tsc`, `eslint` and `vitest` as separate calls (each a full turn) instead of `npm run check`

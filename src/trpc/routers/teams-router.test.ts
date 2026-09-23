@@ -5,6 +5,16 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { nanoId16 } from "@/lib/id";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
+import { TeamMembershipId } from "@/lib/schemas/team-membership";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
+
+import { teamsRouter } from "./teams-router";
+
 // teams-router reaches @/server/auth at import time. The procedures under test only touch
 // ctx.prisma (the injected mock), so stubbing server-only is enough to let the module load
 // under jsdom.
@@ -53,16 +63,6 @@ vi.mock("@/server/d4h-access-token", () => ({
         metadata: { d4HTeams: [], d4HOrganisations: [] },
     })),
 }));
-
-import { nanoId16 } from "@/lib/id";
-import { OrganizationId } from "@/lib/schemas/organization";
-import { PersonId } from "@/lib/schemas/person";
-import { TeamId } from "@/lib/schemas/team";
-import { TeamMembershipId } from "@/lib/schemas/team-membership";
-import { createMockPrisma } from "@/test/create-prisma-mock";
-import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
-
-import { teamsRouter } from "./teams-router";
 
 describe("teamsRouter.getTeam", () => {
     const T = {

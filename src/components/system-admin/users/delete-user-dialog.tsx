@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { systemAdminEffects } from "@/client/system-admin-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -24,8 +25,6 @@ import { MutationButton } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ObjectName } from "@/components/ui/typography";
-
-import { systemAdminEffects } from "@/client/system-admin-effects";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
@@ -48,7 +47,7 @@ export function SystemAdmin_DeleteUser_Dialog({
 
     const mutation = useMutation(
         trpc.systemAdmin.deleteUser.mutationOptions({
-            meta: { effects: systemAdminEffects.deleteUser },
+            meta: { effects: systemAdminEffects.deleteUser, navigates: true },
             onError(error) {
                 console.error("Failed to delete user:", error);
                 toast.error(`Failed to delete user: ${error.message}`);
@@ -59,7 +58,7 @@ export function SystemAdmin_DeleteUser_Dialog({
                         User <ObjectName>{user.name}</ObjectName> deleted.
                     </>,
                 );
-                router.push("/system-admin/users");
+                router.push("/system/admin/users");
             },
         }),
     );

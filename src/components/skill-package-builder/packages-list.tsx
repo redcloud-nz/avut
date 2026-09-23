@@ -22,7 +22,6 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
-
 import {
     Empty,
     EmptyDescription,
@@ -30,7 +29,6 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from "@/components/ui/empty";
-
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -121,10 +119,7 @@ export function SkillPackageBuilder_Packages_List({
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
-            columnFilters: [
-                { id: "status", value: ["Active"] },
-                { id: "published", value: [true] },
-            ],
+            columnFilters: [{ id: "status", value: ["Active"] }],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },

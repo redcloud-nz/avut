@@ -7,8 +7,9 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
+import { teamsEffects } from "@/client/teams-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -21,7 +22,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
@@ -34,16 +34,16 @@ export function AdminModule_DeleteTeam_Dialog({
     team: TeamData;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
     const mutation = useMutation(
         trpc.teams.deleteTeam.mutationOptions({
+            meta: { effects: teamsEffects.deleteTeam, navigates: true },
             onError(error) {
                 console.error("Failed to delete team:", error);
                 toast.error("Failed to delete team: " + error.message);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Team <ObjectName>{team.name}</ObjectName> deleted.
@@ -51,12 +51,6 @@ export function AdminModule_DeleteTeam_Dialog({
                 );
 
                 router.push(route("/orgs/[slug]/admin/teams", { slug: organization.slug }));
-
-                await queryClient.invalidateQueries(
-                    trpc.teams.listTeams.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
             },
         }),
     );

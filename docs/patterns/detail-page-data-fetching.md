@@ -219,3 +219,11 @@ If a detail page's title doesn't need the entity's name (a static title is fine)
 used by list-style pages (e.g. `skill-track/catalogue/page.tsx`:
 `` `Catalogue ${TITLE_SEPARATOR} Skill Track` ``). In that case the page body's
 `prefetch` calls are the only server-side data touch needed.
+
+## Pages that host `?action=` dialogs
+
+Use this split (a server `page.tsx` and a `<entity>-content.tsx`) for any detail page that
+hosts `?action=` dialogs. A client `page.tsx` that reads route params with
+`use(props.params)` re-suspends whenever the search param changes and flashes
+`PageLoadingSpinner` over the page each time a dialog opens or closes — see
+[mutation-dialog.md](mutation-dialog.md#general-points).

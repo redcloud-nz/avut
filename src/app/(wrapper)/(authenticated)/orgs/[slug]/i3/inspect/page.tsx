@@ -5,11 +5,6 @@
  * Path: /i3/[slug]/inspect
  */
 
-import { requireOrganization } from "@/server/organization-access";
-
-export default async function I3_Inspect_Page(props: PageProps<"/orgs/[slug]/i3/inspect">) {
-    const { slug } = await props.params;
-    await requireOrganization(slug);
-
+export default async function I3_Inspect_Page() {
     return <div>TODO</div>;
 }

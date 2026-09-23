@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Separator } from "@/components/ui/separator";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { trpc } from "@/trpc/client";
 
@@ -67,7 +66,10 @@ function D4HToday_NotConfigured({
                     ) : (
                         <>
                             Add a personal D4H access token in your{" "}
-                            <Link href="/user-settings" className="underline underline-offset-4">
+                            <Link
+                                href="/user/settings/d4h"
+                                className="underline underline-offset-4"
+                            >
                                 account settings
                             </Link>{" "}
                             to see your schedule.

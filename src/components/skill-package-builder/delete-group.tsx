@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -21,12 +22,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 interface SkillPackageBuilder_DeleteSkillGroup_DialogProps extends AlertDialogProps {
@@ -42,7 +41,7 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deleteGroup.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.deleteGroup },
+            meta: { effects: skillPackageBuilderEffects.deleteGroup, navigates: true },
             onError(error) {
                 console.error("Failed to delete skill group:", error);
                 toast.error(`Failed to delete skill group: ${error.message}`);

@@ -8,17 +8,16 @@
 import { Metadata } from "next";
 
 import { SkillTrack_Session_Content } from "@/components/skill-track/session-content";
-
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, session_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
     const session = await fetchQuery(
@@ -35,7 +34,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function SkillTrack_Session_Page(props: Props) {
     const { slug, session_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
 

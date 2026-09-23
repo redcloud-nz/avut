@@ -19,13 +19,10 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
-
 import { route } from "@/lib/routes";
-import { requireOrganization } from "@/server/organization-access";
 
 export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/admin`>) {
     const { slug } = await props.params;
-    await requireOrganization(slug);
 
     return (
         <>

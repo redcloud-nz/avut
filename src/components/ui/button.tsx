@@ -1,9 +1,10 @@
-import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
+import * as React from "react";
+import { match } from "ts-pattern";
 
 import { cn } from "@/lib/utils";
-import { match } from "ts-pattern";
+
 import { Spinner } from "./spinner";
 
 const buttonVariants = cva(

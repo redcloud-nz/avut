@@ -8,20 +8,27 @@ import * as z from "zod";
 
 import { initTRPC, TRPCError } from "@trpc/server";
 
-import type { LogEntry, Prisma } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
+import { env } from "@/lib/env";
 import { Permissions } from "@/lib/permissions";
-import type { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
+import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
 import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-entry";
 import prisma from "@/server/prisma";
-import { formatTrpcError } from "./error-formatter";
-import { UserId } from "@/lib/schemas/user";
 
-// Artificial delay in development to simulate real-world conditions
-const DEVELOPMENT_DELAY = { min: 250, max: 1000 }; // ms
+import { formatTrpcError } from "./error-formatter";
+
+// Artificial delay in development approximating the client-to-server network round trip for a
+// real user (as opposed to `localhost`, which has none). Deliberately small — this fires once
+// per tRPC call regardless of how many DB queries it makes; the per-query DB round trip is
+// simulated separately in `server/prisma.ts`, additively, so sequential vs. parallel query
+// patterns actually show up as different wall-clock time in dev instead of being masked by one
+// flat delay per procedure.
+const DEVELOPMENT_DELAY = { min: 20, max: 80 }; // ms
 
 /**
  * Create the inner tRPC context.
@@ -29,17 +36,22 @@ const DEVELOPMENT_DELAY = { min: 250, max: 1000 }; // ms
 export function createInnerTrpcContext({
     auth,
     hasPermission,
-    headers,
+    getHeaders,
 }: {
     auth: AuthSession | null;
     hasPermission(organizationId: OrganizationId, permissions: Permissions): Promise<void>;
-    headers: Headers;
+    /**
+     * Lazily resolves the request's headers — only two procedures need them (passthroughs to
+     * Better Auth calls that want the raw request), so this stays unread rather than costing
+     * every call an unconditional `next/headers` read it has no use for.
+     */
+    getHeaders(): Promise<Headers>;
 }) {
     return {
         prisma,
         auth,
         hasPermission,
-        headers,
+        getHeaders,
     };
 }
 
@@ -57,20 +69,22 @@ export const createTrpcRouter = t.router;
 export type PublicContext = Context;
 
 export const publicProcedure = t.procedure.use(async function artificialDelayInDevelopment(opts) {
-    const res = opts.next(opts);
-
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
+        const start = performance.now();
         const delay =
             Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +
             DEVELOPMENT_DELAY.min;
 
-        console.debug(
-            `ℹ️  doing artificial delay of ${delay}ms before returning result for ${opts.path}`,
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        const [res] = await Promise.all([
+            opts.next(opts),
+            new Promise((resolve) => setTimeout(resolve, delay)),
+        ]);
+        const durationMs = Math.round(performance.now() - start);
+        console.debug(`[trpc] ${opts.path} — ${durationMs}ms (+${delay}ms artificial)`);
+        return res;
     }
 
-    return res;
+    return opts.next(opts);
 });
 
 export type AuthenticatedContext = Context & {
@@ -84,7 +98,7 @@ export type AuthenticatedContext = Context & {
     logEvent: (
         options: LogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**
@@ -133,7 +147,7 @@ export type SystemAdminContext = Omit<AuthenticatedContext, "logEvent"> & {
     logEvent: (
         options: SystemAdminLogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**
@@ -189,7 +203,7 @@ export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     logEvent: (
         options: LogEventOptions,
         tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntry>;
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
 };
 
 /**

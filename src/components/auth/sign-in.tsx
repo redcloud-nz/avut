@@ -14,8 +14,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
-import { postSignInUrl } from "@/lib/auth-redirect";
-
 import { SocialProviderId, SocialProviders } from "@/components/auth/social-providers";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +27,8 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { authUrl, postSignInUrl, SIGN_UP_PATH } from "@/lib/auth-redirect";
 
 /**
  * Card for a user to sign in to the application.
@@ -51,7 +51,10 @@ export function SignIn_Card({ email, redirectTo }: { email?: string; redirectTo?
                     </FieldSeparator>
                     <SocialSignInButtons_Field redirectTo={redirectTo} />
                     <FieldDescription className="text-center">
-                        Don&apos;t have an account? <Link href="/auth/sign-up">Sign Up</Link>
+                        Don&apos;t have an account?{" "}
+                        <Link href={authUrl(SIGN_UP_PATH, { email, returnTo: redirectTo })}>
+                            Sign Up
+                        </Link>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>
@@ -136,9 +139,9 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                                 </Link>
                             </div>
 
-                            <Input
+                            <PasswordInput
                                 id="sign-in-password"
-                                type="password"
+                                autoComplete="current-password"
                                 placeholder="Your password"
                                 aria-invalid={fieldState.invalid}
                                 {...field}
@@ -181,13 +184,19 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
  * Social sign-In buttons field
  *
  * @param redirectTo Optional path to return to once signed in.
+ * @param loginHint Optional address sent as the OIDC `login_hint`. Google preselects the matching
+ *   account; GitHub ignores it.
  */
-export function SocialSignInButtons_Field({ redirectTo }: { redirectTo?: string } = {}) {
+export function SocialSignInButtons_Field({
+    redirectTo,
+    loginHint,
+}: { redirectTo?: string; loginHint?: string } = {}) {
     async function handleSignIn(provider: SocialProviderId) {
         try {
             const { error } = await authClient.signIn.social({
                 provider,
                 callbackURL: postSignInUrl(redirectTo),
+                loginHint,
             });
 
             if (error) {

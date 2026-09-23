@@ -7,13 +7,12 @@
 
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { requireOrganization } from "@/server/organization-access";
 import { TITLE_SEPARATOR } from "@/lib/constants";
-
 import { route } from "@/lib/routes";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import { SkillTrack_CataloguePackages_List } from "./catalogue-packages-list";
-import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: `Catalogue ${TITLE_SEPARATOR} Skill Track`,
@@ -23,7 +22,7 @@ export default async function SkillTrack_Catalogue_Page(
     props: PageProps<"/orgs/[slug]/skill-track/catalogue">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(trpc.skills.listPackages.queryOptions({ organizationId: organization.id }));
 

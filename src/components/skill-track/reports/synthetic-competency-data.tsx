@@ -9,18 +9,14 @@
 
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-
-import { useQueryState } from "nuqs";
-
 import { DicesIcon, FlaskConicalIcon } from "lucide-react";
-
-import { useOrganization } from "@/hooks/use-organization";
-import { getEnabledSkillCheckResultOptions } from "@/lib/schemas/skill-check";
+import { useQueryState } from "nuqs";
+import { useMemo, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -30,8 +26,12 @@ import {
 import { DropdownMenuCheckboxItem, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Slider } from "@/components/ui/slider";
-
-import { SKILL_CHECK_RESULT_VALUES, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import { useOrganization } from "@/hooks/use-organization";
+import {
+    getEnabledSkillCheckResultOptions,
+    SKILL_CHECK_RESULT_VALUES,
+    SkillCheckResultValue,
+} from "@/lib/schemas/skill-check";
 import { RouterOutput } from "@/trpc/client";
 
 type CompetencyMatrix = RouterOutput["skillChecks"]["getCompetencyMatrix"];
@@ -286,52 +286,56 @@ export function SyntheticDataDialog({
                         checks. Drop the <code>?synthetic</code> search param to see real data.
                     </DialogDescription>
                 </DialogHeader>
-
-                <FieldGroup>
-                    <Field>
-                        <FieldLabel>Assessed — {config.coverage}% of skills</FieldLabel>
-                        <Slider
-                            value={[config.coverage]}
-                            min={0}
-                            max={100}
-                            step={5}
-                            onValueChange={([coverage]) => onConfigChange({ ...config, coverage })}
-                        />
-                    </Field>
-                    <Field>
-                        <FieldLabel>Spread over the last {config.maxAgeMonths} months</FieldLabel>
-                        <Slider
-                            value={[config.maxAgeMonths]}
-                            min={1}
-                            max={60}
-                            step={1}
-                            onValueChange={([maxAgeMonths]) =>
-                                onConfigChange({ ...config, maxAgeMonths })
-                            }
-                        />
-                    </Field>
-
-                    {resultOptions.map(({ value, label }) => (
-                        <Field key={value}>
-                            <FieldLabel>
-                                {label} — {config.weights[value]}
-                            </FieldLabel>
+                <DialogBody>
+                    <FieldGroup>
+                        <Field>
+                            <FieldLabel>Assessed — {config.coverage}% of skills</FieldLabel>
                             <Slider
-                                value={[config.weights[value]]}
+                                value={[config.coverage]}
                                 min={0}
                                 max={100}
                                 step={5}
-                                onValueChange={([weight]) =>
-                                    onConfigChange({
-                                        ...config,
-                                        weights: { ...config.weights, [value]: weight },
-                                    })
+                                onValueChange={([coverage]) =>
+                                    onConfigChange({ ...config, coverage })
                                 }
                             />
                         </Field>
-                    ))}
-                </FieldGroup>
+                        <Field>
+                            <FieldLabel>
+                                Spread over the last {config.maxAgeMonths} months
+                            </FieldLabel>
+                            <Slider
+                                value={[config.maxAgeMonths]}
+                                min={1}
+                                max={60}
+                                step={1}
+                                onValueChange={([maxAgeMonths]) =>
+                                    onConfigChange({ ...config, maxAgeMonths })
+                                }
+                            />
+                        </Field>
 
+                        {resultOptions.map(({ value, label }) => (
+                            <Field key={value}>
+                                <FieldLabel>
+                                    {label} — {config.weights[value]}
+                                </FieldLabel>
+                                <Slider
+                                    value={[config.weights[value]]}
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    onValueChange={([weight]) =>
+                                        onConfigChange({
+                                            ...config,
+                                            weights: { ...config.weights, [value]: weight },
+                                        })
+                                    }
+                                />
+                            </Field>
+                        ))}
+                    </FieldGroup>
+                </DialogBody>
                 <DialogFooter>
                     <Button
                         variant="outline"

@@ -5,21 +5,21 @@
 
 import * as z from "zod";
 
-import { SkillCheck as SkillCheckRecord } from "@/generated/prisma/client";
+import type { SkillCheck as SkillCheckRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
 import { OrganizationId } from "./organization";
 import { OrganizationSettings } from "./organization-settings";
+import { PersonId } from "./person";
+import { SkillId } from "./skill";
 import {
     defaultSkillCheckResultLabel,
     SKILL_CHECK_RESULT_VALUES,
     SkillCheckResultValue,
 } from "./skill-check-result";
 import { SkillCheckSessionId } from "./skill-check-session";
-import { PersonId } from "./person";
-import { SkillId } from "./skill";
 
 export const SkillCheckId = {
     schema: zodNanoId16("SkillCheckId expected").brand<"SkillCheckId">(),

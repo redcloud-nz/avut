@@ -16,10 +16,9 @@ import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
-
 import { useOrganization } from "@/hooks/use-organization";
-import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { route } from "@/lib/routes";
+import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { PersonRef } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 

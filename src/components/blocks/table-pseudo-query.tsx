@@ -11,12 +11,14 @@
 
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useState } from "react";
+
 import { RowData, Table as TanstackTable } from "@tanstack/react-table";
 
 import { getColumnDisplayName } from "@/components/blocks/kaga";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogContent,
     DialogDescription,
     DialogHeader,
@@ -138,28 +140,30 @@ export function TablePseudoQuery<TData extends RowData>({
                         real query behind this table.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="relative">
-                    <pre className="overflow-x-auto font-mono rounded-md bg-muted p-3 pr-10 text-xs leading-relaxed">
-                        <code>{queryText}</code>
-                    </pre>
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="absolute top-1.5 right-1.5"
-                        aria-label="Copy query"
-                        onClick={() => {
-                            void navigator.clipboard
-                                ?.writeText(queryText)
-                                .then(() => setCopied(true));
-                        }}
-                    >
-                        {copied ? (
-                            <CheckIcon className="size-4" />
-                        ) : (
-                            <CopyIcon className="size-4" />
-                        )}
-                    </Button>
-                </div>
+                <DialogBody>
+                    <div className="relative">
+                        <pre className="overflow-x-auto font-mono rounded-md bg-muted p-3 pr-10 text-xs leading-relaxed">
+                            <code>{queryText}</code>
+                        </pre>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="absolute top-1.5 right-1.5"
+                            aria-label="Copy query"
+                            onClick={() => {
+                                void navigator.clipboard
+                                    ?.writeText(queryText)
+                                    .then(() => setCopied(true));
+                            }}
+                        >
+                            {copied ? (
+                                <CheckIcon className="size-4" />
+                            ) : (
+                                <CopyIcon className="size-4" />
+                            )}
+                        </Button>
+                    </div>
+                </DialogBody>
             </DialogContent>
         </Dialog>
     );

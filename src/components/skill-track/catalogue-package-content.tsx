@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
@@ -73,7 +72,7 @@ export function SkillTrack_CataloguePackage_Content({
                             <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 {skillPackage.subscription ? (
                                     <Button
-                                        variant="outline"
+                                        variant="destructive"
                                         onClick={() =>
                                             void setAction("unsubscribe", { history: "push" })
                                         }

@@ -5,6 +5,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Fragment, useState } from "react";
 
@@ -24,8 +25,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
-
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
@@ -35,15 +35,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import { useOrganization } from "@/hooks/use-organization";
-import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
+import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
-import { SkillPackageBuilder_ReorderGroups_Dialog } from "./reorder-groups";
 import { SkillPackageBuilder_CreateGroup_Dialog } from "./create-group";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { SkillPackageBuilder_ReorderGroups_Dialog } from "./reorder-groups";
 
 interface SkillPackageBuilder_Package_Groups_ListProps {
     skillPackage: SkillPackage;

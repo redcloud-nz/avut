@@ -4,7 +4,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-
 import * as z from "zod";
 
 import { OrganizationId } from "@/lib/schemas/organization";

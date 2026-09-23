@@ -8,6 +8,7 @@
 import { useState } from "react";
 
 import { Label } from "@/components/ui/label";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import {
     Select,
     SelectContent,
@@ -15,7 +16,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
 
 import { Harness } from "../_components/harness";

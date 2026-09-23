@@ -3,19 +3,16 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import "server-only";
+
 import { TRPCError } from "@trpc/server";
 
-import type {
-    Prisma,
-    PrismaClient,
-    Skill,
-    SkillGroup,
-    SkillPackage,
-} from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { DiffChange, diffObject } from "@/lib/diff";
 import { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
-import type { SkillId } from "@/lib/schemas/skill";
-import type { SkillGroupId } from "@/lib/schemas/skill-group";
+import type { SkillId, SkillRecord } from "@/lib/schemas/skill";
+import type { SkillGroupId, SkillGroupRecord } from "@/lib/schemas/skill-group";
+import type { SkillPackageRecord } from "@/lib/schemas/skill-package";
 import {
     SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
     SkillPackageExport,
@@ -32,16 +29,16 @@ type SkillPackagePrisma = Pick<PrismaClient, "skillPackage" | "skillGroup" | "sk
  * supplies the already-loaded records.
  */
 export function buildSkillPackageExport(
-    pkg: SkillPackage,
-    groups: SkillGroup[],
-    skills: Skill[],
+    pkg: SkillPackageRecord,
+    groups: SkillGroupRecord[],
+    skills: SkillRecord[],
 ): SkillPackageExportType {
     // Export only the live tree — archived groups/skills are kept in the DB to
     // preserve SkillCheck history, and the envelope has no `status` field, so
     // importing them would silently reactivate them.
     const activeGroups = groups.filter((group) => group.status === "Active");
     const sortedGroups = [...activeGroups].sort((a, b) => a.sequence - b.sequence);
-    const skillsByGroup = new Map<string, Skill[]>();
+    const skillsByGroup = new Map<string, SkillRecord[]>();
     for (const skill of skills) {
         if (skill.status !== "Active") continue;
         const list = skillsByGroup.get(skill.skillGroupId) ?? [];

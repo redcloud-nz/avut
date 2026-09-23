@@ -6,7 +6,7 @@
 
 import * as z from "zod";
 
-import { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
+import type { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
 
 import {
@@ -70,7 +70,7 @@ const organizationSettingsSchema = z.object({
         }),
     }),
     /*
-     * Personnel lives under the always-on `admin` module rather than a gated one, so these are
+     * Personnel lives under the always-on `org-admin` module rather than a gated one, so these are
      * top-level rather than a `modules.*` key.
      *
      * Both default to `false`: an organization that upgrades into this feature keeps doing

@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { Organization as OrganizationRecord } from "@/generated/prisma/client";
+import type { Organization as OrganizationRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
@@ -39,9 +39,8 @@ export const OrganizationData = {
     }),
 
     /**
-     * Input schema for creating a new organization (name + slug). Mirrors the slug refinement used
-     * by the user-facing `CreateOrganization_Card` (`/orgs/--create`) — lowercase letters, digits,
-     * and hyphens — so system-admin-created orgs validate identically to user-created ones.
+     * Input schema for creating a new organization (name + slug) — lowercase letters, digits,
+     * and hyphens.
      */
     createSchema: z.object({
         name: z.string().min(2).max(100),

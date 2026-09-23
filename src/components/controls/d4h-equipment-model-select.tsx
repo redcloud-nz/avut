@@ -19,7 +19,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
 import { cn } from "@/lib/utils";

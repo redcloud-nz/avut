@@ -5,7 +5,39 @@
 
 import * as z from "zod";
 
+import type {
+    LogBatch as LogBatchRecord,
+    LogEntry as LogEntryRecord,
+} from "@/generated/prisma/client";
+import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
+import { zodNanoId16 } from "@/lib/validation";
+
+export type { LogBatchRecord, LogEntryRecord };
+
+export const LogEntryId = {
+    schema: zodNanoId16("LogEntryId expected").brand<"LogEntryId">(),
+
+    create: () => LogEntryId.schema.parse(nanoId16()),
+} as const;
+
+export type LogEntryId = z.infer<typeof LogEntryId.schema>;
+
+export const LogEntryObjectId = {
+    schema: zodNanoId16("LogEntryObjectId expected").brand<"LogEntryObjectId">(),
+
+    create: () => LogEntryObjectId.schema.parse(nanoId16()),
+} as const;
+
+export type LogEntryObjectId = z.infer<typeof LogEntryObjectId.schema>;
+
+export const LogBatchId = {
+    schema: zodNanoId16("LogBatchId expected").brand<"LogBatchId">(),
+
+    create: () => LogBatchId.schema.parse(nanoId16()),
+} as const;
+
+export type LogBatchId = z.infer<typeof LogBatchId.schema>;
 
 /**
  * Which log a `LogEntry` belongs to.
@@ -14,11 +46,11 @@ import type { ModuleId } from "@/lib/modules";
  * owner invariant can be guarded on write and the per-scope feeds can be
  * indexed.
  *
- * Intended to match a realigned `modules.ts` `ModuleScope`, which it does NOT
- * today: `ModuleScope` is `"organization" | "global"` and has no `user` member,
- * where this is `"organization" | "user" | "system"`. So `"system"` and
- * `"global"` name the same idea in two vocabularies. Do not map one onto the
- * other until they are actually realigned.
+ * `modules.ts`'s `ModuleScope` now uses the same three values, but the two
+ * types remain intentionally separate — a log entry's scope is a fact about
+ * where the entry lives (which FK is set, which feed it appears in), not a
+ * derived property of the module that produced it. Don't collapse them into
+ * one shared type without checking that invariant still holds.
  */
 const logScopeValues = ["organization", "user", "system"] as const;
 
@@ -34,7 +66,7 @@ export type LogScope = (typeof logScopeValues)[number];
  *
  * Declared centrally and closed, so no call site can invent a value. Entries
  * marked DORMANT reach no database today. `Ban`/`Unban`/`Impersonate` are
- * constructed only in `server/auth-log-hooks.ts`, whose better-auth
+ * constructed only in `server/auth-hooks/auth-log-hooks.ts`, whose better-auth
  * `databaseHooks` wire was written and then reverted, so nothing calls it.
  * `Move` has no producer at all — `skill-package-builder-router`'s `moveSkill`
  * still logs `Update`. They are kept because the vocabulary is the design, not
@@ -69,7 +101,7 @@ export type LogAction = (typeof logActionValues)[number];
  * What it happened to.
  *
  * `Account` and `Session` are DORMANT for the same reason as the dormant
- * actions above: they appear only in `server/auth-log-hooks.ts`, which has no
+ * actions above: they appear only in `server/auth-hooks/auth-log-hooks.ts`, which has no
  * callers. Every other value is written by at least one live call site.
  */
 const logObjectTypeValues = [
@@ -78,6 +110,7 @@ const logObjectTypeValues = [
     "I3Template",
     "I3TemplateVariant",
     "Organization",
+    "OrganizationInvitation",
     "OrganizationMembership",
     "OrganizationSettings",
     "Person",
@@ -157,20 +190,21 @@ export type LogRefRoleInput = z.infer<typeof logRefRoleInputSchema>;
  */
 const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Account: null,
-    D4HAccessToken: "admin",
+    D4HAccessToken: "org-admin",
     I3Template: "i3",
     I3TemplateVariant: "i3",
-    Organization: "admin",
-    OrganizationMembership: "admin",
-    OrganizationSettings: "admin",
-    Person: "admin",
+    Organization: "org-admin",
+    OrganizationInvitation: "org-admin",
+    OrganizationMembership: "org-admin",
+    OrganizationSettings: "org-admin",
+    Person: "org-admin",
     Session: null,
     Skill: "skill-package-builder",
     SkillCheckSession: "skill-track",
     SkillGroup: "skill-package-builder",
     SkillPackage: "skill-package-builder",
-    Team: "admin",
-    TeamMembership: "admin",
+    Team: "org-admin",
+    TeamMembership: "org-admin",
     User: null,
 };
 

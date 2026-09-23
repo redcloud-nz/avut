@@ -83,3 +83,19 @@ export type Permissions = {
 export type Role = keyof typeof Roles;
 
 export const roles = Object.keys(Roles) as Role[];
+
+/**
+ * Whether any of the given roles authorizes every one of `requiredPermissions`.
+ *
+ * Mirrors `useHasPermission`'s client-side union of roles and Better Auth's own
+ * `hasPermissionFn` semantics (granted if a single role authorises the full request) — that
+ * agreement is what makes evaluating locally, against a role lookup already in hand, a safe
+ * substitute for a second `auth.api.hasPermission` round trip. Used by `createTrpcContext` and
+ * `requireOrganizationWith`.
+ */
+export function hasAnyRoleWithPermissions(
+    roles: Role[],
+    requiredPermissions: Permissions,
+): boolean {
+    return roles.some((role) => Roles[role].authorize(requiredPermissions).success);
+}

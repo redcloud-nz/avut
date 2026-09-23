@@ -13,6 +13,7 @@ import { useQueries, useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { Spinner } from "@/components/ui/spinner";
 import {
     Table,
     TableBody,
@@ -21,11 +22,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-import { Spinner } from "@/components/ui/spinner";
 
 export default function I3Module_MembersList_Page(
     props: PageProps<"/orgs/[slug]/i3/teams/[team_id]/members">,

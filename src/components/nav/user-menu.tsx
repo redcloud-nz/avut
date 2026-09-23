@@ -5,11 +5,13 @@
 
 "use client";
 
-import { ChevronsUpDown, LogOutIcon, ShieldIcon } from "lucide-react";
+import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-import { PersonalSettingsIcon, SwitchOrganizationIcon } from "@/components/icons";
+import { useUser } from "@/client/auth-queries";
+import { useSignOut } from "@/client/use-sign-out";
+import { PersonalSettingsIcon } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -20,26 +22,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from "@/components/ui/sidebar";
-
-import { useSession } from "@/client/auth-queries";
-import { useSignOut } from "@/client/use-sign-out";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { getUserInitials } from "@/lib/utils";
 
 export function UserMenu() {
-    const { isMobile } = useSidebar();
-
-    const { data: session } = useSession();
+    const { data: user } = useUser();
     const signOut = useSignOut();
 
-    if (!session) return null;
-
-    const user = session.user;
+    if (!user) return null;
 
     const initials = getUserInitials(user.name);
 
@@ -73,7 +63,7 @@ export function UserMenu() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                        side={isMobile ? "bottom" : "right"}
+                        side="top"
                         align="end"
                         sideOffset={4}
                     >
@@ -95,33 +85,14 @@ export function UserMenu() {
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Personal</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href="/user-settings">
+                                <Link href="/user/settings">
                                     <PersonalSettingsIcon />
                                     <span>Settings</span>
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
-                        {user.role === "admin" && (
-                            <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuGroup>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/system-admin">
-                                            <ShieldIcon />
-                                            <span>System Admin</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                </DropdownMenuGroup>
-                            </>
-                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem asChild>
-                                <Link href="/orgs/--select-org">
-                                    <SwitchOrganizationIcon />
-                                    <span>Switch Organisation</span>
-                                </Link>
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleSignOut}>
                                 <LogOutIcon />
                                 <span>Sign Out</span>

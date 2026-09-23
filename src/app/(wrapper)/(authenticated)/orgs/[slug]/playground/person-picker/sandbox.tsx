@@ -10,7 +10,6 @@ import { useState } from "react";
 import { PersonPicker } from "@/components/controls/person-picker";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { PersonId } from "@/lib/schemas/person";
 

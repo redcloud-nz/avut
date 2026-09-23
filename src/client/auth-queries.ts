@@ -51,9 +51,9 @@ export function useUser() {
 /**
  * The single definition of the linked-accounts query.
  *
- * Both `UserSecuritySettings` (which only needs to know whether a credential account
- * exists) and `LinkedAccounts_Card` read through this, so the two share one cache entry
- * and one request rather than each fetching the list.
+ * Both `UserProfile_ChangePassword_Dialog` (which only needs to know whether a credential
+ * account exists) and `LinkedAccounts_Card` read through this, so the two share one cache
+ * entry and one request rather than each fetching the list.
  *
  * The key sits inside the `["auth"]` subtree so it inherits `authQueryRetryOptions` — a
  * 403 from a stale session fails fast instead of burning three pointless retries — and is

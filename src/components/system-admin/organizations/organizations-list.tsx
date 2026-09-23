@@ -18,24 +18,14 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { Badge } from "@/components/ui/badge";
 import { SystemAdmin_CreateOrganization_Dialog } from "@/components/system-admin/organizations/create-organization-dialog";
-
+import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/datetime";
-import { type ModuleId, Modules } from "@/lib/modules";
+import { Modules, type ModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
-import { trpc } from "@/trpc/client";
+import { trpc, type RouterOutput } from "@/trpc/client";
 
-type OrganizationRow = {
-    id: string;
-    name: string;
-    slug: string;
-    logo: string | null;
-    createdAt: Date;
-    memberCount: number;
-    ownerCount: number;
-    enabledModules: ModuleId[];
-};
+type OrganizationRow = RouterOutput["systemAdmin"]["listOrganizations"]["organizations"][number];
 
 export function SystemAdmin_Organizations_List() {
     const {
@@ -50,7 +40,7 @@ export function SystemAdmin_Organizations_List() {
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/system-admin/organizations/[organizationId]", {
+                            href={route("/system/admin/organizations/[organizationId]", {
                                 organizationId: ctx.row.original.id,
                             })}
                         >

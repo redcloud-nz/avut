@@ -8,7 +8,7 @@ step buried on the user detail page; this spec adds an invite path from the
 person side and two email-match automations, each gated by a new organization
 setting.
 
-Source idea: [`docs/ideas/2026-09-14-streamline-person-user-linking.md`](../ideas/2026-09-14-streamline-person-user-linking.md).
+Source idea: <https://github.com/redcloud-nz/avut/issues/208>.
 That idea's fourth part — offering membership at signup on an email match — is
 **not** being built; see §9.
 
@@ -202,13 +202,13 @@ person's email (read-only) and the same primary/secondary role controls as
 
 On submit the dialog branches on a new query, `personnel.getInviteState`:
 
-| State | Dialog shows | Action |
-| --- | --- | --- |
-| No user account with that email | Normal invite form | `authClient.organization.inviteMember({ email, role, organizationId, personId, resend: false })` |
-| User exists, **already a member** of this org, not linked to anyone | "Dana already has an account in this organization" + a **Link** button, roles hidden | `users.linkPerson({ userId, personId })` — the existing mutation, no invitation |
-| User exists, already a member, but **linked to a different person** | "That account is already linked to a different person record" — no action, Cancel only | none; someone has to unlink it first |
-| User exists, not a member | Normal invite form, note that they already have an AVUT account | invite as above |
-| Person already linked | Action not offered | — |
+| State                                                               | Dialog shows                                                                           | Action                                                                                           |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| No user account with that email                                     | Normal invite form                                                                     | `authClient.organization.inviteMember({ email, role, organizationId, personId, resend: false })` |
+| User exists, **already a member** of this org, not linked to anyone | "Dana already has an account in this organization" + a **Link** button, roles hidden   | `users.linkPerson({ userId, personId })` — the existing mutation, no invitation                  |
+| User exists, already a member, but **linked to a different person** | "That account is already linked to a different person record" — no action, Cancel only | none; someone has to unlink it first                                                             |
+| User exists, not a member                                           | Normal invite form, note that they already have an AVUT account                        | invite as above                                                                                  |
+| Person already linked                                               | Action not offered                                                                     | —                                                                                                |
 
 The middle row is required, not a nicety: better-auth rejects the invite outright in that
 case (§1), and linking is what the admin actually wanted.
@@ -315,17 +315,17 @@ correction, and silently binding an account to it is surprising. Revisit only if
 
 Every row is a no-op-and-move-on, never an error shown to an end user.
 
-| Situation | Result |
-| --- | --- |
-| Person already linked to another user | Automation skips. Part 1 does not offer the action. |
-| User already linked to a different person in the org | Automation skips. Part 1 reports `MemberLinkedElsewhere` and offers no action. **Corrected 2026-09-15** (PR #153 review): this row claimed `users.linkPerson` already threw `CONFLICT` here. It did not — it guarded only the *person* side, so linking overwrote `OrganizationUser.personId`, silently unlinking the previous person with no conflict and no audit entry. The mirror guard was added, making the claim true. |
-| Two people in one org with the same email | Impossible — `Person @@unique([organizationId, email])`. |
-| Emails differ only in case | Treated as a match (§3.1). |
-| Person is Archived or Deleted | Not linkable. |
-| Invite to a person whose user is already a member | Part 1 links instead of inviting (§4). |
-| Re-invite the same person | Works once §2 lands; before that it is a P2002. |
-| Race: manual link lands between read and write | `updateMany … where personId: null` returns 0; automation skips. |
-| Person deleted after linking | `onDelete: SetNull` already clears `OrganizationUser.personId`. |
+| Situation                                            | Result                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Person already linked to another user                | Automation skips. Part 1 does not offer the action.                                                                                                                                                                                                                                                                                                                                                                           |
+| User already linked to a different person in the org | Automation skips. Part 1 reports `MemberLinkedElsewhere` and offers no action. **Corrected 2026-09-15** (PR #153 review): this row claimed `users.linkPerson` already threw `CONFLICT` here. It did not — it guarded only the _person_ side, so linking overwrote `OrganizationUser.personId`, silently unlinking the previous person with no conflict and no audit entry. The mirror guard was added, making the claim true. |
+| Two people in one org with the same email            | Impossible — `Person @@unique([organizationId, email])`.                                                                                                                                                                                                                                                                                                                                                                      |
+| Emails differ only in case                           | Treated as a match (§3.1).                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Person is Archived or Deleted                        | Not linkable.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Invite to a person whose user is already a member    | Part 1 links instead of inviting (§4).                                                                                                                                                                                                                                                                                                                                                                                        |
+| Re-invite the same person                            | Works once §2 lands; before that it is a P2002.                                                                                                                                                                                                                                                                                                                                                                               |
+| Race: manual link lands between read and write       | `updateMany … where personId: null` returns 0; automation skips.                                                                                                                                                                                                                                                                                                                                                              |
+| Person deleted after linking                         | `onDelete: SetNull` already clears `OrganizationUser.personId`.                                                                                                                                                                                                                                                                                                                                                               |
 
 ---
 

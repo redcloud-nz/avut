@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { Permissions, Roles, roles } from "./permissions";
+import { hasAnyRoleWithPermissions, Permissions, Roles, roles } from "./permissions";
 
 function can(role: keyof typeof Roles, permissions: Permissions): boolean {
     return Roles[role].authorize(permissions).success;
@@ -88,5 +88,35 @@ describe("Roles", () => {
                 expect(can(role, { i3Template: ["create"] })).toBe(true);
             }
         });
+    });
+});
+
+describe("hasAnyRoleWithPermissions", () => {
+    // Pins equivalence with Better Auth's own `hasPermissionFn` (organization plugin): granted
+    // if a single role in the list authorizes the full permission set. Only holds because AVUT's
+    // org plugin config sets no `creatorRole`/`allowCreatorAllPermissions` override — if either
+    // is ever configured, this equivalence (and the local-evaluation optimisation it justifies
+    // in `createTrpcContext`) needs revisiting.
+    it("grants when any single role authorizes every requested permission", () => {
+        expect(hasAnyRoleWithPermissions(["member"], { person: ["view"] })).toBe(true);
+        expect(hasAnyRoleWithPermissions(["member", "owner"], { organization: ["delete"] })).toBe(
+            true,
+        );
+    });
+
+    it("denies when no single role covers the full request", () => {
+        expect(hasAnyRoleWithPermissions(["member"], { person: ["delete"] })).toBe(false);
+        expect(hasAnyRoleWithPermissions([], { person: ["view"] })).toBe(false);
+    });
+
+    it("does not grant by summing partial permissions across roles", () => {
+        // "i3-editor" has i3Item but not skillCheck, "skills-assessor" has skillCheck but not
+        // i3Item — neither role alone satisfies a request for both.
+        expect(
+            hasAnyRoleWithPermissions(["i3-editor", "skills-assessor"], {
+                i3Item: ["issue"],
+                skillCheck: ["create"],
+            }),
+        ).toBe(false);
     });
 });

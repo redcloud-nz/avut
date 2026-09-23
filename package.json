@@ -5,7 +5,7 @@
   "nz.avut": {
     "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.9.2",
+    "version": "0.10",
     "versionName": "Philomel"
   },
   "scripts": {
@@ -15,6 +15,7 @@
     "prisma": "dotenv -e .env.local -- npx prisma",
     "db:branch": "bash scripts/db-branch.sh",
     "db:unbranch": "bash scripts/db-unbranch.sh",
+    "worktree:setup": "bash scripts/worktree-setup.sh",
     "worktree:remove": "bash scripts/worktree-remove.sh",
     "seed:demo": "dotenv -e .env.local -- tsx prisma/seed-demo.ts",
     "screenshot": "dotenv -e .env.local -- tsx scripts/screenshots/upload.ts",
@@ -22,6 +23,7 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "check": "bash scripts/check.sh",
     "postinstall": "prisma generate",
     "test": "vitest",
     "test:watch": "vitest --watch",
@@ -106,6 +108,7 @@
   "devDependencies": {
     "@content-collections/cli": "^0.1.9",
     "@eslint/eslintrc": "^3.3.1",
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "@react-email/ui": "^6.9.5",
     "@tailwindcss/postcss": "^4.1.10",
     "@tailwindcss/typography": "^0.5.19",
@@ -125,6 +128,7 @@
     "eslint": "^9.38.0",
     "eslint-config-next": "^16.0.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-boundaries": "^7.2.0",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.2.7",

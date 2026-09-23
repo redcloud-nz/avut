@@ -16,12 +16,11 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { getD4HEquipmentModelsCollection } from "@/client/collections/equipment-models";
 import { Kaga } from "@/components/blocks/kaga";
 import { Show } from "@/components/show";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { useOrganization } from "@/hooks/use-organization";
-import { getD4HEquipmentModelsCollection } from "@/lib/collections/equipment-models";
 
 export function D4HViewsModule_EquipmentBrand_Models_List({ brandId }: { brandId: number }) {
     const organization = useOrganization();

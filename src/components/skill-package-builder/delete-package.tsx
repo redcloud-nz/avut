@@ -9,23 +9,22 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import {
     AlertDialog,
-    AlertDialogProps,
+    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
+    AlertDialogProps,
     AlertDialogTitle,
-    AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
-import { SkillPackage } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
+import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_DeletePackage_Dialog({
@@ -37,7 +36,7 @@ export function SkillPackageBuilder_DeletePackage_Dialog({
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.deletePackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.deletePackage },
+            meta: { effects: skillPackageBuilderEffects.deletePackage, navigates: true },
             onError(error) {
                 console.error("Failed to delete skill package:", error);
                 toast.error(`Failed to delete skill package: ${error.message}`);

@@ -9,19 +9,19 @@ import { useMemo, useState } from "react";
 import {
     formatForDisplay,
     getHotkeyManager,
-    type Hotkey,
     useHotkey,
+    type Hotkey,
 } from "@tanstack/react-hotkeys";
 
 import {
     Dialog,
+    DialogBody,
     DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { HotkeyKbd } from "@/components/ui/hotkey-kbd";
-
 import { HELP_HOTKEY } from "@/lib/hotkeys";
 
 /**
@@ -51,7 +51,7 @@ export function HotkeyHelp() {
                     <DialogTitle>Keyboard shortcuts</DialogTitle>
                     <DialogDescription>Shortcuts available on this page.</DialogDescription>
                 </DialogHeader>
-                {open && <HotkeyHelpList />}
+                <DialogBody>{open && <HotkeyHelpList />}</DialogBody>
             </DialogContent>
         </Dialog>
     );

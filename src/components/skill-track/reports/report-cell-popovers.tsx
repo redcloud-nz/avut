@@ -22,11 +22,10 @@ import {
     PopoverHeader,
     PopoverTitle,
 } from "@/components/ui/popover";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate, formatRelativeDateTime } from "@/lib/datetime";
-import { getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
 import type { Skill } from "@/lib/schemas/skill";
+import { getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
 import { RouterOutput, trpc } from "@/trpc/client";
 
 type Competency = RouterOutput["skillChecks"]["getCompetencyMatrix"]["competencies"][number];

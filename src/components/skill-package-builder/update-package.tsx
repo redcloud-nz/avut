@@ -12,10 +12,12 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -28,8 +30,6 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableSkillPackage, SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
@@ -105,47 +105,53 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                     <DialogTitle>Update skill package</DialogTitle>
                     <DialogDescription>Update the details of this skill package.</DialogDescription>
                 </DialogHeader>
-                <form id="update-skill-package-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Field>
-                            <FieldLabel>Package ID</FieldLabel>
-                            <FieldValue value={skillPackage.id} format="id" />
-                        </Field>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="package-name">Name</FieldLabel>
-                                    <Input
-                                        id="package-name"
-                                        autoFocus
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="description"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="package-description">
-                                        Description
-                                    </FieldLabel>
-                                    <Textarea
-                                        id="package-description"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="update-skill-package-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel>Package ID</FieldLabel>
+                                <FieldValue value={skillPackage.id} format="id" />
+                            </Field>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="package-name">Name</FieldLabel>
+                                        <Input
+                                            id="package-name"
+                                            autoFocus
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="package-description">
+                                            Description
+                                        </FieldLabel>
+                                        <Textarea
+                                            id="package-description"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

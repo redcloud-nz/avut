@@ -3,26 +3,34 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { env } from "@/lib/env";
+import { serverEnv } from "@/server/env";
+
+import "server-only";
+
+import { networkInterfaces } from "node:os";
 import { betterAuth, BetterAuthOptions } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { admin } from "better-auth/plugins/admin";
 import { emailOTP, organization } from "better-auth/plugins";
+import { admin } from "better-auth/plugins/admin";
 
 import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
-
-import { NoReplyEmailAddress, sendEmail } from "@/server/email";
+// eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
+import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
-import { revalidateOrganization } from "./organization";
-import { revalidateOrganizationUser } from "./organization-user-cache";
+import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
+import { revalidateOrganization } from "./cache/organization";
+import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
 import { linkPersonOnInvitationAccept } from "./person-user-link";
 import prisma from "./prisma";
+import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 
 /**
  * Bridges better-auth's `beforeEmailVerification` and `afterEmailVerification`
@@ -32,6 +40,22 @@ import prisma from "./prisma";
  * is request-scoped and garbage-collected with the request.
  */
 const previousEmailByRequest = new WeakMap<Request, string>();
+
+const DEV_PORTS = ["3000", "3001", "3002", "3100"];
+
+/**
+ * This machine's LAN IPv4 addresses, so a phone on the same network can sign in
+ * against a dev server started with e.g. `npm run dev` and reached over
+ * `http://192.168.x.x:3000` — better-auth's origin check otherwise rejects it since
+ * only `localhost` is trusted below.
+ */
+function localNetworkOrigins(): string[] {
+    const addresses = Object.values(networkInterfaces())
+        .flat()
+        .filter((info) => info != null && info.family === "IPv4" && !info.internal)
+        .map((info) => info!.address);
+    return addresses.flatMap((address) => DEV_PORTS.map((port) => `http://${address}:${port}`));
+}
 
 export const auth = betterAuth({
     account: {
@@ -46,7 +70,19 @@ export const auth = betterAuth({
             joins: true,
         },
     },
-    baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+    baseURL: serverEnv.BETTER_AUTH_URL ?? "http://localhost:3000",
+    /*
+     * With `advanced.database.joins` on, better-auth's Prisma adapter guesses relation field
+     * names from the joined model's name (`organizationusers`, `organizationinvitations`),
+     * not our schema's `users` / `invitations`. This endpoint is the only better-auth path
+     * that joins Organization to those, so it 500s with a PrismaClientValidationError. The
+     * app never calls it; keep it off until upstream fixes the key naming (#97).
+     */
+    disabledPaths: ["/organization/get-full-organization"],
+    hooks: {
+        // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
+        after: revalidateRolesAfterLeave(revalidateOrganizationUser),
+    },
     /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and
@@ -54,19 +90,14 @@ export const auth = betterAuth({
      * email templates already special-case `VERCEL_URL`; mirror that here.
      */
     trustedOrigins: [
-        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-        ...(process.env.VERCEL_BRANCH_URL ? [`https://${process.env.VERCEL_BRANCH_URL}`] : []),
-        ...(process.env.VERCEL_PROJECT_PRODUCTION_URL
-            ? [`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`]
+        ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
+        ...(env.VERCEL_BRANCH_URL ? [`https://${env.VERCEL_BRANCH_URL}`] : []),
+        ...(env.VERCEL_PROJECT_PRODUCTION_URL
+            ? [`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`]
             : []),
-        ...(process.env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
-        ...(process.env.NODE_ENV === "development"
-            ? [
-                  "http://localhost:3000",
-                  "http://localhost:3001",
-                  "http://localhost:3002",
-                  "http://localhost:3100", // worktree dev servers
-              ]
+        ...(env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
+        ...(env.NODE_ENV === "development"
+            ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
             : []),
     ],
     database: prismaAdapter(prisma, {
@@ -112,6 +143,9 @@ export const auth = betterAuth({
             overrideDefaultEmailVerification: true,
             sendVerificationOnSignUp: true,
             async sendVerificationOTP({ email, otp, type }) {
+                // An account made from an invitation link is verified without this code.
+                if (type === "email-verification" && isVerificationOtpEmailSuppressed()) return;
+
                 console.log(`Sending verification OTP (type: ${type}) to:`, email);
                 await sendEmail({
                     from: NoReplyEmailAddress,
@@ -177,6 +211,23 @@ export const auth = betterAuth({
                     // Revalidate organization cache
                     revalidateOrganization(organization!.slug);
                 },
+                async afterUpdateMemberRole({ user }) {
+                    // `organizationProcedure`'s permission check reads through
+                    // `getOrganizationUserRolesOrNull`'s cache — without this, a demoted member
+                    // keeps their old permissions on every org-scoped mutation until it expires.
+                    await revalidateOrganizationUser(user.id);
+                },
+                async afterRemoveMember({ user }) {
+                    // As above: a removed member must lose access to the organization
+                    // immediately, not once the cache entry happens to expire.
+                    await revalidateOrganizationUser(user.id);
+                },
+                async afterAddMember({ user }) {
+                    // The lookup caches "not a member" too, so a member added outside our own
+                    // mutations (Better Auth's server-side `addMember`) would otherwise stay
+                    // locked out until the cached `null` expires.
+                    await revalidateOrganizationUser(user.id);
+                },
             },
             roles: Roles,
             schema: {
@@ -230,12 +281,12 @@ export const auth = betterAuth({
     },
     socialProviders: {
         github: {
-            clientId: process.env.GITHUB_OAUTH_CLIENT_ID as string,
-            clientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET as string,
+            clientId: serverEnv.GITHUB_OAUTH_CLIENT_ID as string,
+            clientSecret: serverEnv.GITHUB_OAUTH_CLIENT_SECRET as string,
         },
         google: {
-            clientId: process.env.GOOGLE_OAUTH_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET as string,
+            clientId: serverEnv.GOOGLE_OAUTH_CLIENT_ID as string,
+            clientSecret: serverEnv.GOOGLE_OAUTH_CLIENT_SECRET as string,
         },
     },
 

@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
-
 import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
 
 const FAIL_TIERS: readonly SkillCheckResultValue[] = ["LowFail", "Fail", "HighFail"];

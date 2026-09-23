@@ -14,7 +14,6 @@ import { SystemAdmin_UserActions_Menu } from "@/components/system-admin/users/us
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
-
 import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
@@ -26,8 +25,8 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "System Admin", href: "/system-admin" },
-                    { label: "Users", href: "/system-admin/users" },
+                    { label: "System Admin", href: "/system/admin" },
+                    { label: "Users", href: "/system/admin/users" },
                     { label: user.name },
                 ]}
             />
@@ -90,7 +89,7 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                                                         <td className="py-1 pr-4">
                                                             <Link
                                                                 href={route(
-                                                                    "/system-admin/organizations/[organizationId]",
+                                                                    "/system/admin/organizations/[organizationId]",
                                                                     { organizationId: org.id },
                                                                 )}
                                                                 className="underline-offset-2 hover:underline"

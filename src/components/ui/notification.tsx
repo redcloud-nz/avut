@@ -3,24 +3,15 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 import { formatDistanceToNow } from "date-fns";
-import { ComponentProps } from "react";
-
 import { Slot as SlotPrimitive } from "radix-ui";
+import { ComponentProps } from "react";
 
 import { NotificationsIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-export function Notifications({
-    children,
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function Notifications({ children, className, ...props }: ComponentProps<"div">) {
     return (
-        <div
-            data-slot="notifications"
-            className={cn("divide-y", className)}
-            {...props}
-        >
+        <div data-slot="notifications" className={cn("divide-y", className)} {...props}>
             {children}
         </div>
     );
@@ -33,16 +24,11 @@ export function NotificationsEmpty({
     return (
         <div
             data-slot="notifications-empty"
-            className={cn(
-                "flex flex-col items-center justify-center py-12 text-center",
-                className,
-            )}
+            className={cn("flex flex-col items-center justify-center py-12 text-center", className)}
             {...props}
         >
             <NotificationsIcon className="size-12 text-muted-foreground/50 mb-2" />
-            <p className="text-sm text-muted-foreground">
-                No new notifications
-            </p>
+            <p className="text-sm text-muted-foreground">No new notifications</p>
         </div>
     );
 }
@@ -69,18 +55,11 @@ export function Notification({
     );
 }
 
-export function NotificationHeader({
-    children,
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function NotificationHeader({ children, className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="notification-header"
-            className={cn(
-                "flex basis-full items-center justify-between gap-2",
-                className,
-            )}
+            className={cn("flex basis-full items-center justify-between gap-2", className)}
             {...props}
         >
             {children}
@@ -88,11 +67,7 @@ export function NotificationHeader({
     );
 }
 
-export function NotificationContent({
-    children,
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function NotificationContent({ children, className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="notification-content"
@@ -104,18 +79,11 @@ export function NotificationContent({
     );
 }
 
-export function NotificationFooter({
-    children,
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function NotificationFooter({ children, className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="notification-footer"
-            className={cn(
-                "flex basis-full items-center justify-between gap-2",
-                className,
-            )}
+            className={cn("flex basis-full items-center justify-between gap-2", className)}
             {...props}
         >
             {children}
@@ -123,11 +91,7 @@ export function NotificationFooter({
     );
 }
 
-export function NotificationTitle({
-    children,
-    className,
-    ...props
-}: ComponentProps<"h4">) {
+export function NotificationTitle({ children, className, ...props }: ComponentProps<"h4">) {
     return (
         <div
             data-slot="notification-title"
@@ -142,11 +106,7 @@ export function NotificationTitle({
     );
 }
 
-export function NotificationDescription({
-    children,
-    className,
-    ...props
-}: ComponentProps<"p">) {
+export function NotificationDescription({ children, className, ...props }: ComponentProps<"p">) {
     return (
         <p
             data-slot="notification-description"
@@ -178,10 +138,7 @@ export function NotificationDate({
     );
 }
 
-export function UnreadIndicator({
-    className,
-    ...props
-}: ComponentProps<"div">) {
+export function UnreadIndicator({ className, ...props }: ComponentProps<"div">) {
     return (
         <div
             data-slot="unread-indicator"

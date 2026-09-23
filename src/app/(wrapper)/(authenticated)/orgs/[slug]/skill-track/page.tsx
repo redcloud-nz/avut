@@ -6,12 +6,11 @@
  */
 
 import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
-import Link from "next/link";
-
 import {
     Item,
     ItemActions,
@@ -20,14 +19,10 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
-
 import { route } from "@/lib/routes";
-import { requireOrganization } from "@/server/organization-access";
 
 export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slug]/skill-track`>) {
     const { slug } = await props.params;
-    await requireOrganization(slug);
-
     return (
         <>
             <Std.Navbar

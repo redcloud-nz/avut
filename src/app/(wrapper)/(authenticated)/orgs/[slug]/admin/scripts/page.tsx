@@ -7,12 +7,7 @@
 
 import { Std } from "@/components/blocks/std";
 
-import { requireOrganization } from "@/server/organization-access";
-
-export default async function AdminScripts_Page(props: PageProps<"/orgs/[slug]/admin/scripts">) {
-    const { slug } = await props.params;
-    await requireOrganization(slug);
-
+export default async function AdminScripts_Page() {
     return (
         <>
             <Std.Navbar breadcrumbs={["Admin", "Scripts"]} />

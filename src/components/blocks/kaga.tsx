@@ -18,10 +18,11 @@ import {
     TerminalIcon,
 } from "lucide-react";
 import { cloneElement, ComponentProps, ReactElement, useState } from "react";
+
 import {
+    Column,
     ColumnDef,
     ColumnHelper,
-    Column,
     createColumnHelper,
     flexRender,
     Header,
@@ -52,7 +53,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import { cn } from "@/lib/utils";
 
 interface KagaTableProps<TData extends RowData> {

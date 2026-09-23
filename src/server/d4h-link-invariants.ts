@@ -6,6 +6,8 @@
  *  Unit-tested in `d4h-link-invariants.test.ts`.
  */
 
+import "server-only";
+
 import { TRPCError } from "@trpc/server";
 
 /** The existing `Organization_D4H` row, reduced to what the invariants read. */

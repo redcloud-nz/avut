@@ -4,8 +4,10 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -13,11 +15,8 @@ import {
     getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Kaga } from "@/components/blocks/kaga";
-import Link from "next/link";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";

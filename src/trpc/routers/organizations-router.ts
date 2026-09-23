@@ -11,8 +11,8 @@ import { diffObject } from "@/lib/diff";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { auth } from "@/server/auth";
-import { revalidateOrganization } from "@/server/organization";
-import { getOrganizationUserRoles } from "@/server/organization-user";
+import { revalidateOrganization } from "@/server/cache/organization";
+import { getOrganizationUserRoles } from "@/server/cache/organization-user";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -78,7 +78,7 @@ export const organizationsRouter = createTrpcRouter({
             }
 
             await auth.api.updateOrganization({
-                headers: ctx.headers,
+                headers: await ctx.getHeaders(),
                 body: {
                     organizationId: ctx.organizationId,
                     data: {

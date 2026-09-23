@@ -11,18 +11,19 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { authClient } from "@/client/auth-client";
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-
-import { authClient } from "@/client/auth-client";
+import { postSignInUrl } from "@/lib/auth-redirect";
 
 /**
  * Card for verifying user's email with OTP code.
  * @param email - The email address to verify.
+ * @param redirectTo - Optional path to return to once verified and signed in.
  */
-export function VerifyEmail_Card({ email }: { email: string }) {
+export function VerifyEmail_Card({ email, redirectTo }: { email: string; redirectTo?: string }) {
     const router = useRouter();
 
     const [code, setCode] = useState<string>("");
@@ -36,7 +37,7 @@ export function VerifyEmail_Card({ email }: { email: string }) {
             return data;
         },
         onSuccess() {
-            router.push("/auth/post-sign-in");
+            router.push(postSignInUrl(redirectTo));
         },
     });
 
@@ -89,7 +90,14 @@ export function VerifyEmail_Card({ email }: { email: string }) {
                     </Field>
                     {mutation.isError && <FieldError errors={[mutation.error]} />}
                     <FieldDescription className="text-center">
-                        Didn&apos;t receive the code? <a onClick={handleResend}>Resend</a>
+                        Didn&apos;t receive the code?{" "}
+                        <button
+                            type="button"
+                            className="cursor-pointer underline-offset-4 hover:underline"
+                            onClick={handleResend}
+                        >
+                            Resend
+                        </button>
                     </FieldDescription>
                 </FieldGroup>
             </CardContent>

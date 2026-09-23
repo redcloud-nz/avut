@@ -34,11 +34,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { SkillPackageBuilder_CreateSkill_Dialog } from "./create-skill";

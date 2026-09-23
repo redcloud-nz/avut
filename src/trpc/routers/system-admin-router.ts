@@ -9,23 +9,41 @@ import { TRPCError } from "@trpc/server";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
-import { nanoId16 } from "@/lib/id";
 import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
+import { revalidateOrganizationSettings } from "@/server/cache/organization-settings-revalidate";
+import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
-import { revalidateOrganizationSettings } from "@/server/organization-settings-cache";
 import {
     readOrganizationSettings,
     writeOrganizationSettings,
 } from "@/server/organization-settings-store";
-import { revalidateOrganizationUser } from "@/server/organization-user-cache";
 import { prepareSkillPackageImport } from "@/server/skill-package-io";
 
 import { createTrpcRouter, systemAdminProcedure } from "../init";
+
+/**
+ * The memberships holding the `owner` role, filtered by `where`.
+ *
+ * `OrganizationUser.role` is comma-joined (an owner who is also an `i3-editor` is stored as
+ * `"owner,i3-editor"`), so matching `role: "owner"` exactly would miss them. `contains` narrows
+ * the query and the exact-role check afterwards keeps it from matching on a substring.
+ */
+async function findOwnerMemberships(
+    prisma: Pick<PrismaClient, "organizationUser">,
+    where: { organizationId?: string | { in: string[] }; userId?: string },
+) {
+    const rows = await prisma.organizationUser.findMany({
+        where: { ...where, role: { contains: "owner" } },
+        select: { organizationId: true, userId: true, role: true },
+    });
+    return rows.filter((row) => OrganizationRole.includes(row.role, "owner"));
+}
 
 /**
  * Guard against orphaning an organization: throws `BAD_REQUEST` if `userId` is the
@@ -37,10 +55,7 @@ export async function assertNotLastOwner(
     organizationId: string,
     userId: string,
 ) {
-    const owners = await prisma.organizationUser.findMany({
-        where: { organizationId, role: "owner" },
-        select: { userId: true },
-    });
+    const owners = await findOwnerMemberships(prisma, { organizationId });
     if (owners.length <= 1 && owners.some((o) => o.userId === userId)) {
         throw new TRPCError({
             code: "BAD_REQUEST",
@@ -79,6 +94,14 @@ async function assertUserExists(prisma: Pick<PrismaClient, "user">, userId: stri
 }
 
 /**
+ * Whether `error` is a Prisma unique-constraint violation (`P2002`) — what a concurrent duplicate
+ * insert raises after a `findFirst` pre-check has already passed.
+ */
+function isUniqueViolation(error: unknown): boolean {
+    return error instanceof Object && "code" in error && error.code === "P2002";
+}
+
+/**
  * Site-wide administration router. Gated by `systemAdminProcedure`
  * (`session.user.role === "admin"`), not by org-scoped permissions.
  *
@@ -99,7 +122,7 @@ export const systemAdminRouter = createTrpcRouter({
             z.object({
                 organizationId: OrganizationId.schema,
                 userId: UserId.schema,
-                role: OrganizationRole.schema,
+                roles: OrganizationRole.assignmentSchema,
             }),
         )
         .mutation(async ({ ctx, input }) => {
@@ -117,27 +140,38 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            const id = nanoId16();
+            const id = OrganizationUserId.create();
 
-            await ctx.prisma.$transaction([
-                ctx.prisma.organizationUser.create({
-                    data: {
-                        id,
+            try {
+                await ctx.prisma.$transaction([
+                    ctx.prisma.organizationUser.create({
+                        data: {
+                            id,
+                            organizationId: input.organizationId,
+                            userId: input.userId,
+                            role: OrganizationRole.serialize(input.roles),
+                            createdAt: new Date(),
+                        },
+                    }),
+                    ctx.logEvent({
                         organizationId: input.organizationId,
-                        userId: input.userId,
-                        role: input.role,
-                        createdAt: new Date(),
-                    },
-                }),
-                ctx.logEvent({
-                    organizationId: input.organizationId,
-                    action: "Create",
-                    objectType: "OrganizationMembership",
-                    objectId: id,
-                    changes: [],
-                    description: `Added user ${input.userId} as ${input.role}`,
-                }),
-            ]);
+                        action: "Create",
+                        objectType: "OrganizationMembership",
+                        objectId: id,
+                        changes: [],
+                        description: `Added user ${input.userId} as ${OrganizationRole.serialize(input.roles)}`,
+                    }),
+                ]);
+            } catch (error) {
+                // A concurrent add slipped in between the check above and this insert.
+                if (isUniqueViolation(error)) {
+                    throw new TRPCError({
+                        code: "CONFLICT",
+                        message: "That user is already a member of this organisation.",
+                    });
+                }
+                throw error;
+            }
 
             await revalidateOrganizationUser(input.userId);
 
@@ -175,37 +209,48 @@ export const systemAdminRouter = createTrpcRouter({
                 OrganizationSettings.flatten(OrganizationSettings.default()),
             ).map(([key, value]) => ({ organizationId, key, value }));
 
-            await ctx.prisma.$transaction([
-                ctx.prisma.organization.create({
-                    data: {
-                        id: organizationId,
-                        name: input.name,
-                        slug: input.slug,
-                        createdAt: new Date(),
-                    },
-                }),
-                ctx.prisma.organizationConfig.createMany({ data: configRows }),
-                ...(input.addSelfAsOwner
-                    ? [
-                          ctx.prisma.organizationUser.create({
-                              data: {
-                                  id: nanoId16(),
-                                  organizationId,
-                                  userId,
-                                  role: "owner",
-                                  createdAt: new Date(),
-                              },
-                          }),
-                      ]
-                    : []),
-                ctx.logEvent({
-                    organizationId,
-                    action: "Create",
-                    objectType: "Organization",
-                    objectId: organizationId,
-                    changes: [],
-                }),
-            ]);
+            try {
+                await ctx.prisma.$transaction([
+                    ctx.prisma.organization.create({
+                        data: {
+                            id: organizationId,
+                            name: input.name,
+                            slug: input.slug,
+                            createdAt: new Date(),
+                        },
+                    }),
+                    ctx.prisma.organizationConfig.createMany({ data: configRows }),
+                    ...(input.addSelfAsOwner
+                        ? [
+                              ctx.prisma.organizationUser.create({
+                                  data: {
+                                      id: OrganizationUserId.create(),
+                                      organizationId,
+                                      userId,
+                                      role: "owner",
+                                      createdAt: new Date(),
+                                  },
+                              }),
+                          ]
+                        : []),
+                    ctx.logEvent({
+                        organizationId,
+                        action: "Create",
+                        objectType: "Organization",
+                        objectId: organizationId,
+                        changes: [],
+                    }),
+                ]);
+            } catch (error) {
+                // A concurrent create took the slug between the check above and this insert.
+                if (isUniqueViolation(error)) {
+                    throw new TRPCError({
+                        code: "CONFLICT",
+                        message: `An organisation with the slug "${input.slug}" already exists.`,
+                    });
+                }
+                throw error;
+            }
 
             if (input.addSelfAsOwner) {
                 await revalidateOrganizationUser(userId);
@@ -274,19 +319,15 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            const ownerships = await ctx.prisma.organizationUser.findMany({
-                where: { userId: input.userId, role: "owner" },
-                select: { organizationId: true },
-            });
+            const ownerships = await findOwnerMemberships(ctx.prisma, { userId: input.userId });
             const ownedOrgIds = ownerships.map((o) => o.organizationId);
 
             // One query for every owner row across the orgs this user owns; the target is
             // an owner of each, so an org with a single owner row is one they solely own.
             const soleOwnerOrgIds: string[] = [];
             if (ownedOrgIds.length > 0) {
-                const ownerRows = await ctx.prisma.organizationUser.findMany({
-                    where: { organizationId: { in: ownedOrgIds }, role: "owner" },
-                    select: { organizationId: true },
+                const ownerRows = await findOwnerMemberships(ctx.prisma, {
+                    organizationId: { in: ownedOrgIds },
                 });
                 const ownerCountByOrg = new Map<string, number>();
                 for (const { organizationId } of ownerRows) {
@@ -440,9 +481,17 @@ export const systemAdminRouter = createTrpcRouter({
         .query(async ({ ctx, input }) => {
             const user = await ctx.prisma.user.findUnique({
                 where: { id: input.userId },
-                include: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    banned: true,
+                    emailVerified: true,
+                    createdAt: true,
                     organizationUsers: {
-                        include: {
+                        select: {
+                            role: true,
                             organization: { select: { id: true, name: true, slug: true } },
                         },
                     },
@@ -542,7 +591,7 @@ export const systemAdminRouter = createTrpcRouter({
                 createdAt: true,
                 configs: true,
                 _count: { select: { users: true } },
-                users: { where: { role: "owner" }, select: { id: true } },
+                users: { where: { role: { contains: "owner" } }, select: { role: true } },
             },
             orderBy: { createdAt: "asc" },
         });
@@ -551,7 +600,7 @@ export const systemAdminRouter = createTrpcRouter({
             organizations: rows.map(({ _count, configs, users, ...o }) => ({
                 ...o,
                 memberCount: _count.users,
-                ownerCount: users.length,
+                ownerCount: users.filter((u) => OrganizationRole.includes(u.role, "owner")).length,
                 enabledModules: Object.entries(OrganizationSettings.fromRecords(configs).modules)
                     .filter(([, v]) => v.enabled)
                     .map(([k]) => k as ModuleId),
@@ -603,7 +652,7 @@ export const systemAdminRouter = createTrpcRouter({
             }
 
             // Only an owner removal can orphan the org — skip the owners query otherwise.
-            if (membership.role === "owner") {
+            if (OrganizationRole.includes(membership.role, "owner")) {
                 await assertNotLastOwner(ctx.prisma, input.organizationId, input.userId);
             }
 
@@ -625,15 +674,15 @@ export const systemAdminRouter = createTrpcRouter({
         }),
 
     /**
-     * Change a member's role within an organization. `BAD_REQUEST` if this would demote the
-     * organization's last `owner`.
+     * Replace a member's roles within an organization — one primary role plus any secondary
+     * roles. `BAD_REQUEST` if this would remove `owner` from the organization's last owner.
      */
     setOrganizationMemberRole: systemAdminProcedure
         .input(
             z.object({
                 organizationId: OrganizationId.schema,
                 userId: UserId.schema,
-                role: OrganizationRole.schema,
+                roles: OrganizationRole.assignmentSchema,
             }),
         )
         .mutation(async ({ ctx, input }) => {
@@ -648,15 +697,20 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            // The guard only matters when demoting an existing owner to a non-owner role.
-            if (membership.role === "owner" && input.role !== "owner") {
+            // The guard only matters when an existing owner is losing the owner role.
+            if (
+                OrganizationRole.includes(membership.role, "owner") &&
+                !input.roles.includes("owner")
+            ) {
                 await assertNotLastOwner(ctx.prisma, input.organizationId, input.userId);
             }
+
+            const role = OrganizationRole.serialize(input.roles);
 
             const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.organizationUser.update({
                     where: { id: membership.id },
-                    data: { role: input.role },
+                    data: { role },
                 }),
                 ctx.logEvent({
                     organizationId: input.organizationId,
@@ -664,13 +718,16 @@ export const systemAdminRouter = createTrpcRouter({
                     objectType: "OrganizationMembership",
                     objectId: membership.id,
                     changes: [],
-                    description: `Changed user ${input.userId} role from ${membership.role} to ${input.role}`,
+                    description: `Changed user ${input.userId} role from ${membership.role} to ${role}`,
                 }),
             ]);
 
             await revalidateOrganizationUser(input.userId);
 
-            return { id: updated.id, role: updated.role };
+            return {
+                id: updated.id,
+                roles: OrganizationRole.schema.array().parse(role.split(",")),
+            };
         }),
 
     /**

@@ -4,17 +4,16 @@
  */
 "use client";
 
+import { TriangleAlertIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { TriangleAlertIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { useSession } from "@/client/auth-queries";
 import { authClient } from "@/client/auth-client";
+import { useSession } from "@/client/auth-queries";
 import { MutationButton } from "@/components/ui/button";
-
 import { getQueryClient } from "@/trpc/query-client";
 
 /**
@@ -55,7 +54,7 @@ export function ImpersonationBanner() {
         },
         onSuccess() {
             getQueryClient().clear();
-            router.push("/system-admin/users");
+            router.push("/system/admin/users");
             router.refresh();
         },
     });

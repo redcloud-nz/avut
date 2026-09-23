@@ -5,13 +5,11 @@
  * Paths: /orgs/[slug]/admin/teams
  */
 
+import { AdminModule_Teams_List } from "@/components/admin/teams/teams-list";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-
 import { route } from "@/lib/routes";
-
-import { AdminModule_Teams_List } from "@/components/admin/teams/teams-list";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -22,7 +20,7 @@ export default async function AdminModule_TeamsList_Page(
     props: PageProps<"/orgs/[slug]/admin/teams">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
 

@@ -6,17 +6,18 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -25,6 +26,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -35,23 +37,46 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
-import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { route } from "@/lib/routes";
+import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { trpc } from "@/trpc/client";
 
 export function I3Module_CreateTemplate_Dialog() {
-    const logger = useLogger("I3", "CreateTemplate");
-    const organization = useOrganization();
-    const queryClient = useQueryClient();
-    const router = useRouter();
-
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
 
-    const [{ data: categories }, { data: kinds }] = useQueries({
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <ObjectIcons.Create /> <span className="hidden md:inline">New Template</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>New I3 Template</DialogTitle>
+                    <DialogDescription>Create a new I3 item template.</DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <CreateTemplate_Body />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function CreateTemplate_Body() {
+    const logger = useLogger("I3", "CreateTemplate");
+    const organization = useOrganization();
+    const router = useRouter();
+
+    const [{ data: categories }, { data: kinds }] = useSuspenseQueries({
         queries: [
             trpc.d4hApi.listEquipmentCategories.queryOptions({
                 organizationId: organization.id,
@@ -80,16 +105,12 @@ export function I3Module_CreateTemplate_Dialog() {
 
     const mutation = useMutation(
         trpc.i3.createTemplate.mutationOptions({
+            meta: { effects: i3Effects.createTemplate, navigates: true },
             onError(error) {
                 logger.error(`Failed to create template`, error);
                 toast.error(`Failed to create template: ${error.message}`);
             },
-            async onSuccess({ created }) {
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplates.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
+            onSuccess({ created }) {
                 router.push(
                     route("/orgs/[slug]/i3/templates/[template_id]", {
                         slug: organization.slug,
@@ -114,18 +135,6 @@ export function I3Module_CreateTemplate_Dialog() {
         },
     );
 
-    function handleOpenChange(open: boolean) {
-        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
-    }
-
-    useEffect(() => {
-        if (dialogOpen) {
-            form.reset();
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [dialogOpen]);
-
     const selectedCategoryId = useWatch({
         control: form.control,
         name: "d4h.categoryId",
@@ -133,17 +142,8 @@ export function I3Module_CreateTemplate_Dialog() {
     const filteredKinds = kinds?.filter((k) => k.category.id === selectedCategoryId);
 
     return (
-        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <ObjectIcons.Create /> <span className="hidden md:inline">New Template</span>
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>New I3 Template</DialogTitle>
-                    <DialogDescription>Create a new I3 item template.</DialogDescription>
-                </DialogHeader>
+        <>
+            <DialogBody>
                 <form id="create-template-form" onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
@@ -289,20 +289,20 @@ export function I3Module_CreateTemplate_Dialog() {
                         />
                     </FieldGroup>
                 </form>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        type="submit"
-                        form="create-template-form"
-                        status={mutation.status}
-                        text={{
-                            idle: "Create",
-                            pending: "Creating",
-                            success: "Created",
-                        }}
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    type="submit"
+                    form="create-template-form"
+                    status={mutation.status}
+                    text={{
+                        idle: "Create",
+                        pending: "Creating",
+                        success: "Created",
+                    }}
+                />
+            </DialogFooter>
+        </>
     );
 }

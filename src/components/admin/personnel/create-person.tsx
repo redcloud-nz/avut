@@ -6,17 +6,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+
+import { personnelEffects } from "@/client/personnel-effects";
 import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -27,8 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-
-import { personnelEffects } from "@/client/personnel-effects";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -66,7 +67,7 @@ export function AdminModule_CreatePerson_Dialog() {
 
     const mutation = useMutation(
         trpc.personnel.createPerson.mutationOptions({
-            meta: { effects: personnelEffects.createPerson },
+            meta: { effects: personnelEffects.createPerson, navigates: true },
             onError(error) {
                 if (error.data?.conflict) {
                     form.setError(error.data.conflict.fieldName as keyof ModifiablePersonData, {
@@ -125,44 +126,50 @@ export function AdminModule_CreatePerson_Dialog() {
                     <DialogTitle>New Person</DialogTitle>
                     <DialogDescription>Create a new person.</DialogDescription>
                 </DialogHeader>
-                <form id="create-person-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-name">Name</FieldLabel>
-                                    <Input
-                                        id="person-name"
-                                        autoFocus
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="email"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-email">Email</FieldLabel>
-                                    <Input
-                                        id="person-email"
-                                        type="email"
-                                        autoComplete="off"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="create-person-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="person-name">Name</FieldLabel>
+                                        <Input
+                                            id="person-name"
+                                            autoFocus
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="email"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="person-email">Email</FieldLabel>
+                                        <Input
+                                            id="person-email"
+                                            type="email"
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

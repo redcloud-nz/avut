@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -20,11 +22,9 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { MutationButton } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { ObjectName } from "@/components/ui/typography";
-
 import type { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
@@ -111,17 +111,21 @@ export function SystemAdmin_BanUser_Dialog({
                         )}
                     </DialogDescription>
                 </DialogHeader>
-                {ban && (
-                    <Field>
-                        <FieldLabel htmlFor="ban-user-reason">Reason</FieldLabel>
-                        <Textarea
-                            id="ban-user-reason"
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                        />
-                        <FieldDescription>Optional. Stored on the user record.</FieldDescription>
-                    </Field>
-                )}
+                <DialogBody>
+                    {ban && (
+                        <Field>
+                            <FieldLabel htmlFor="ban-user-reason">Reason</FieldLabel>
+                            <Textarea
+                                id="ban-user-reason"
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                            />
+                            <FieldDescription>
+                                Optional. Stored on the user record.
+                            </FieldDescription>
+                        </Field>
+                    )}
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

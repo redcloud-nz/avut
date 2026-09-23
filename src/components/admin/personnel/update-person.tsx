@@ -12,10 +12,12 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
+import { personnelEffects } from "@/client/personnel-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -27,8 +29,6 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
-
-import { personnelEffects } from "@/client/personnel-effects";
 import { useOrganization } from "@/hooks/use-organization";
 import { ModifiablePersonData, PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
@@ -88,59 +88,65 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                     <DialogTitle>Update person</DialogTitle>
                     <DialogDescription>Update the details of this person record.</DialogDescription>
                 </DialogHeader>
-                <form
-                    id="update-person-form"
-                    onSubmit={form.handleSubmit(
-                        (formData) =>
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                personId: person.id,
-                                update: formData,
-                            }),
-                        (errors) => {
-                            console.error("Form validation errors:", errors);
-                        },
-                    )}
-                >
-                    <FieldGroup>
-                        <Field>
-                            <FieldLabel>Person ID</FieldLabel>
-                            <FieldValue value={person.id} format="id" />
-                        </Field>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-name">Name</FieldLabel>
-                                    <Input
-                                        id="person-name"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="email"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="person-email">Email</FieldLabel>
-                                    <Input
-                                        id="person-email"
-                                        type="email"
-                                        aria-invalid={fieldState.invalid}
-                                        className="min-w-1/2"
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form
+                        id="update-person-form"
+                        onSubmit={form.handleSubmit(
+                            (formData) =>
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    personId: person.id,
+                                    update: formData,
+                                }),
+                            (errors) => {
+                                console.error("Form validation errors:", errors);
+                            },
+                        )}
+                    >
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel>Person ID</FieldLabel>
+                                <FieldValue value={person.id} format="id" />
+                            </Field>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="person-name">Name</FieldLabel>
+                                        <Input
+                                            id="person-name"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="email"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="person-email">Email</FieldLabel>
+                                        <Input
+                                            id="person-email"
+                                            type="email"
+                                            aria-invalid={fieldState.invalid}
+                                            className="min-w-1/2"
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

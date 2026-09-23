@@ -47,10 +47,10 @@ describe("log-entry vocabularies", () => {
 });
 
 describe("moduleIdForObjectType", () => {
-    it("attributes org-admin entities to the admin module", () => {
-        expect(moduleIdForObjectType("Person")).toBe("admin");
-        expect(moduleIdForObjectType("Team")).toBe("admin");
-        expect(moduleIdForObjectType("D4HAccessToken")).toBe("admin");
+    it("attributes org-admin entities to the org-admin module", () => {
+        expect(moduleIdForObjectType("Person")).toBe("org-admin");
+        expect(moduleIdForObjectType("Team")).toBe("org-admin");
+        expect(moduleIdForObjectType("D4HAccessToken")).toBe("org-admin");
     });
 
     it("attributes skill authoring entities to skill-package-builder", () => {
@@ -91,6 +91,8 @@ describe("Operations", () => {
             "d4h-team-import",
             "d4h-team-link",
             "d4h-team-sync",
+            "invitation-accept",
+            "invitation-reject",
             "skill-package-import",
         ]);
     });

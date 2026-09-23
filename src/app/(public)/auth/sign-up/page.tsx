@@ -5,14 +5,13 @@
  * Path: /auth/sign-up
  */
 
-import { Suspense } from "react";
-
 import Link from "next/link";
-
-import { Argus } from "@/components/blocks/argus";
+import { Suspense } from "react";
 
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { SignUp_Card } from "@/components/auth/sign-up";
+import { Argus } from "@/components/blocks/argus";
+import { safeRedirectPath } from "@/lib/auth-redirect";
 
 export const metadata = { title: "Sign Up" };
 
@@ -21,7 +20,7 @@ export default function Auth_SignUp_Page(props: PageProps<"/auth/sign-up">) {
     return (
         <Argus.Root fullHeight={false}>
             <Argus.Column>
-                <Suspense fallback={<AuthCard_Skeleton fields={3} />}>
+                <Suspense fallback={<AuthCard_Skeleton fields={4} />}>
                     <SignUp_CardFromParams searchParams={props.searchParams} />
                 </Suspense>
                 <Argus.Footer>
@@ -47,6 +46,14 @@ async function SignUp_CardFromParams({
 }) {
     const params = await searchParams;
     const email = Array.isArray(params.email) ? params.email[0] : params.email;
+    const name = Array.isArray(params.name) ? params.name[0] : params.name;
+    const redirectTo = Array.isArray(params.redirectTo) ? params.redirectTo[0] : params.redirectTo;
 
-    return <SignUp_Card email={email ? decodeURIComponent(email) : undefined} />;
+    return (
+        <SignUp_Card
+            email={email || undefined}
+            name={name || undefined}
+            redirectTo={safeRedirectPath(redirectTo) ?? undefined}
+        />
+    );
 }

@@ -5,6 +5,7 @@
 
 "use client";
 
+import { ClipboardCheckIcon } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 
@@ -23,8 +24,6 @@ import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { SkillTrack_CreateCheck_Dialog } from "@/components/skill-track/create-check";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { ClipboardCheckIcon } from "lucide-react";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";

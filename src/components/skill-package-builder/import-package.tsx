@@ -5,16 +5,20 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { ObjectIcons } from "@/components/icons";
+import { SkillPackageImportPlanTable } from "@/components/skill-packages/import-plan-table";
+import { useSkillPackageImportFile } from "@/components/skill-packages/use-skill-package-import-file";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -25,10 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { FileDropzone } from "@/components/ui/file-dropzone";
-
-import { SkillPackageImportPlanTable } from "@/components/skill-packages/import-plan-table";
-import { useSkillPackageImportFile } from "@/components/skill-packages/use-skill-package-import-file";
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -108,39 +108,42 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
                         omits is archived. The package always lands unpublished.
                     </DialogDescription>
                 </DialogHeader>
+                <DialogBody>
+                    <div className="flex flex-col gap-4">
+                        <Field data-invalid={!!file.error}>
+                            <FieldLabel htmlFor="import-package-file">Export file</FieldLabel>
+                            <FileDropzone
+                                id="import-package-file"
+                                accept="application/json"
+                                aria-invalid={!!file.error}
+                                hint="Up to 1 MB · .json"
+                                onFileSelected={(selected) => {
+                                    file.handleFile(selected);
+                                    setResult(null);
+                                }}
+                            />
+                            {file.error && <FieldError errors={[{ message: file.error }]} />}
+                            {file.envelope && !file.error && (
+                                <p className="text-muted-foreground text-xs">
+                                    {file.envelope.package.name} —{" "}
+                                    {file.envelope.package.groups.length} groups,{" "}
+                                    {file.envelope.package.groups.reduce(
+                                        (n, g) => n + g.skills.length,
+                                        0,
+                                    )}{" "}
+                                    skills
+                                </p>
+                            )}
+                        </Field>
 
-                <div className="flex flex-col gap-4">
-                    <Field data-invalid={!!file.error}>
-                        <FieldLabel htmlFor="import-package-file">Export file</FieldLabel>
-                        <FileDropzone
-                            id="import-package-file"
-                            accept="application/json"
-                            aria-invalid={!!file.error}
-                            hint="Up to 1 MB · .json"
-                            onFileSelected={(selected) => {
-                                file.handleFile(selected);
-                                setResult(null);
-                            }}
-                        />
-                        {file.error && <FieldError errors={[{ message: file.error }]} />}
-                        {file.envelope && !file.error && (
-                            <p className="text-muted-foreground text-xs">
-                                {file.envelope.package.name} — {file.envelope.package.groups.length}{" "}
-                                groups,{" "}
-                                {file.envelope.package.groups.reduce(
-                                    (n, g) => n + g.skills.length,
-                                    0,
-                                )}{" "}
-                                skills
-                            </p>
+                        {result && (
+                            <SkillPackageImportPlanTable
+                                plan={result.plan}
+                                applied={result.applied}
+                            />
                         )}
-                    </Field>
-
-                    {result && (
-                        <SkillPackageImportPlanTable plan={result.plan} applied={result.applied} />
-                    )}
-                </div>
-
+                    </div>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">
                         {result?.applied ? "Close" : "Cancel"}

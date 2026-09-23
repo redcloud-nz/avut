@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { createEffects, invalidate } from "@/trpc/mutation-effector";
 import { trpc } from "@/trpc/client";
+import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
 /**
  * Cache effects for `users` router mutations, keyed by procedure name.
@@ -15,6 +15,19 @@ import { trpc } from "@/trpc/client";
  * remember all five affected queries.
  */
 export const usersEffects = createEffects<"users">()({
+    // Joining an organization adds a membership (and its activity feed) to the dashboard.
+    acceptInvitation: (vars) => [
+        invalidate(trpc.users.listInvitations.queryFilter()),
+        invalidate(trpc.users.listMemberships.queryFilter()),
+        invalidate(trpc.users.getActivityStats.queryFilter()),
+        invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
+    ],
+
+    rejectInvitation: (vars) => [
+        invalidate(trpc.users.listInvitations.queryFilter()),
+        invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
+    ],
+
     linkPerson: (vars) => [
         invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
         invalidate(

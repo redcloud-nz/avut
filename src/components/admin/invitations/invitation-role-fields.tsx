@@ -18,7 +18,6 @@ import {
     FieldLegend,
 } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 
@@ -48,23 +47,42 @@ const PRIMARY_ROLES = ["owner", "admin", "member"] as const;
  * without generic plumbing — the caller wraps its `useForm` in a `<FormProvider>`.
  *
  * Secondary roles are gated on the module that grants them being enabled, so an org that does not
- * run I3 or Skill Track never offers their roles.
+ * run I3, Skill Track or the Skill Package Builder never offers their roles.
  */
 export function InvitationRoleFields() {
     const organization = useOrganization();
-    const { control } = useFormContext<InvitationRolesFormValues>();
 
-    const secondaryRoles = [
-        { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
-        {
-            role: "skills-assessor",
-            enabled: organization.settings.modules["skill-track"].enabled,
-        },
-        {
-            role: "skill-package-author",
-            enabled: organization.settings.modules["skill-track"].enabled,
-        },
-    ] as const;
+    return (
+        <RoleFields
+            secondaryRoles={[
+                { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
+                {
+                    role: "skills-assessor",
+                    enabled: organization.settings.modules["skill-track"].enabled,
+                },
+                {
+                    role: "skill-package-author",
+                    enabled: organization.settings.modules["skill-package-builder"].enabled,
+                },
+            ]}
+        />
+    );
+}
+
+/** The secondary roles a role form offers, and whether each is currently available. */
+export type SecondaryRoleOptions = readonly {
+    role: z.infer<typeof OrganizationRole.secondaryRoleSchema>;
+    enabled: boolean;
+}[];
+
+/**
+ * The role fields themselves, with no dependency on an organization provider — the caller says
+ * which secondary roles are available. `InvitationRoleFields` supplies them from the current
+ * organization's settings; the system-admin screens, which sit outside any one organization,
+ * supply them from the organization they are acting on.
+ */
+export function RoleFields({ secondaryRoles }: { secondaryRoles: SecondaryRoleOptions }) {
+    const { control } = useFormContext<InvitationRolesFormValues>();
 
     return (
         <>
@@ -72,7 +90,11 @@ export function InvitationRoleFields() {
                 name="primaryRole"
                 control={control}
                 render={({ field, fieldState }) => (
-                    <RadioGroup value={field.value} onValueChange={field.onChange} className="w-fit">
+                    <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="w-fit"
+                    >
                         <FieldLegend variant="label">Primary Role</FieldLegend>
                         {PRIMARY_ROLES.map((role) => (
                             <Field key={role} orientation="horizontal">

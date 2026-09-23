@@ -8,16 +8,15 @@
 import { Metadata } from "next";
 
 import { AdminModule_TeamMembers_List } from "@/components/admin/teams/team-members-list";
-
 import { TeamId } from "@/lib/schemas/team";
-import { requireOrganization } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/admin/teams/[team_id]/personnel`>;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, team_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const teamId = TeamId.schema.parse(team_id);
     const team = await fetchQuery(
@@ -32,7 +31,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_Team_Personnel_Page(props: Props) {
     const { slug, team_id } = await props.params;
-    const { organization } = await requireOrganization(slug);
+    const organization = await getOrganizationBySlug(slug);
 
     const teamId = TeamId.schema.parse(team_id);
 

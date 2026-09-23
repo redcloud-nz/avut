@@ -13,6 +13,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { ItemLinkActionIcon } from "@/components/icons";
 import {
     Item,
     ItemActions,
@@ -21,11 +22,9 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-import { ItemLinkActionIcon } from "@/components/icons";
 
 export default function I3Module_Team_Page(props: PageProps<"/orgs/[slug]/i3/teams/[team_id]">) {
     const { team_id } = use(props.params);

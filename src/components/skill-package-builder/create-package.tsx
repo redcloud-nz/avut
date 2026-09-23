@@ -5,19 +5,21 @@
 
 "use client";
 
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -29,13 +31,11 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { ModifiableSkillPackage, SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { route } from "@/lib/routes";
+import { ModifiableSkillPackage, SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_CreatePackage_Dialog() {
@@ -68,7 +68,7 @@ export function SkillPackageBuilder_CreatePackage_Dialog() {
 
     const mutation = useMutation(
         trpc.skillPackageBuilder.createPackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.createPackage },
+            meta: { effects: skillPackageBuilderEffects.createPackage, navigates: true },
             onError(error) {
                 if (error.shape?.cause?.name == "FieldConflictError") {
                     form.setError(error.shape.cause.message as keyof ModifiableSkillPackage, {
@@ -127,43 +127,49 @@ export function SkillPackageBuilder_CreatePackage_Dialog() {
                     <DialogTitle>New Package</DialogTitle>
                     <DialogDescription>Create a new skill package.</DialogDescription>
                 </DialogHeader>
-                <form id="create-skill-package-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            name="name"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="package-name">Name</FieldLabel>
-                                    <Input
-                                        id="package-name"
-                                        autoFocus
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="description"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="package-description">
-                                        Description
-                                    </FieldLabel>
-                                    <Textarea
-                                        id="package-description"
-                                        aria-invalid={fieldState.invalid}
-                                        {...field}
-                                    />
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
+                <DialogBody>
+                    <form id="create-skill-package-form" onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="package-name">Name</FieldLabel>
+                                        <Input
+                                            id="package-name"
+                                            autoFocus
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="package-description">
+                                            Description
+                                        </FieldLabel>
+                                        <Textarea
+                                            id="package-description"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

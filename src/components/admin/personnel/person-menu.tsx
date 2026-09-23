@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
+import { personnelEffects } from "@/client/personnel-effects";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,8 +27,6 @@ import {
     useMenuActionHotkeys,
     type MenuActionProps,
 } from "@/components/ui/menu-action";
-
-import { personnelEffects } from "@/client/personnel-effects";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -131,7 +130,7 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             disabled: !canUpdate,
         });
     }
-    if (person.status !== "Archived") {
+    if (person.status !== "Deleted") {
         actions.push({
             verb: "delete",
             label: "Delete",

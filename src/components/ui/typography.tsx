@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { cn } from "@/lib/utils";
 import { tv, type VariantProps } from "tailwind-variants";
+
+import { cn } from "@/lib/utils";
 
 const headingVariants = tv({
     variants: {
@@ -22,50 +23,24 @@ const headingVariants = tv({
     },
 });
 
-type HeadingProps = React.ComponentPropsWithRef<
-    "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
-> &
+type HeadingProps = React.ComponentPropsWithRef<"h1" | "h2" | "h3" | "h4" | "h5" | "h6"> &
     VariantProps<typeof headingVariants>;
 
 export function Heading({ className, level = 1, ...props }: HeadingProps) {
     const Element: `h${typeof level}` = `h${level}`;
 
-    return (
-        <Element
-            {...props}
-            className={cn(headingVariants({ level }), className)}
-        />
-    );
+    return <Element {...props} className={cn(headingVariants({ level }), className)} />;
 }
 
-export function Paragraph({
-    className,
-    ...props
-}: React.ComponentPropsWithRef<"p">) {
-    return (
-        <p
-            className={cn("leading-7 not-first:mt-6 text-sm", className)}
-            {...props}
-        />
-    );
+export function Paragraph({ className, ...props }: React.ComponentPropsWithRef<"p">) {
+    return <p className={cn("leading-7 not-first:mt-6 text-sm", className)} {...props} />;
 }
 
-export function Blockquote({
-    className,
-    ...props
-}: React.ComponentPropsWithRef<"blockquote">) {
-    return (
-        <blockquote
-            className={cn("mt-6 border-l-2 pl-6 italic", className)}
-            {...props}
-        />
-    );
+export function Blockquote({ className, ...props }: React.ComponentPropsWithRef<"blockquote">) {
+    return <blockquote className={cn("mt-6 border-l-2 pl-6 italic", className)} {...props} />;
 }
 
-export function InlineCode({
-    className,
-    ...props
-}: React.ComponentPropsWithRef<"code">) {
+export function InlineCode({ className, ...props }: React.ComponentPropsWithRef<"code">) {
     return (
         <code
             className={cn(
@@ -77,24 +52,12 @@ export function InlineCode({
     );
 }
 
-export function Description({
-    className,
-    ...props
-}: React.ComponentPropsWithRef<"p">) {
-    return (
-        <p className={cn("mt-2 text-sm text-gray-700", className)} {...props} />
-    );
+export function Description({ className, ...props }: React.ComponentPropsWithRef<"p">) {
+    return <p className={cn("mt-2 text-sm text-gray-700", className)} {...props} />;
 }
 
-export function ObjectName({
-    className,
-    ...props
-}: React.ComponentProps<"span">) {
+export function ObjectName({ className, ...props }: React.ComponentProps<"span">) {
     return (
-        <span
-            className={cn("font-semibold", className)}
-            data-component="ObjectName"
-            {...props}
-        />
+        <span className={cn("font-semibold", className)} data-component="ObjectName" {...props} />
     );
 }

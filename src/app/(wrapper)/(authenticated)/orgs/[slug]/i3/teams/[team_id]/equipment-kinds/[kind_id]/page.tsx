@@ -13,7 +13,6 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
-
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -31,7 +30,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";

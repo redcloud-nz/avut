@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
     DialogCloseButton,
@@ -21,9 +22,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-
 import { getQueryClient } from "@/trpc/query-client";
 
 /**
@@ -33,10 +32,10 @@ import { getQueryClient } from "@/trpc/query-client";
  * Impersonation is a Better Auth session action, not an app write — there is no tRPC
  * procedure and no `ctx.logEvent`. On confirm we call `authClient.admin.impersonateUser`
  * directly; on success the operator now holds the target's session, so we drop the stale
- * session cache and navigate to `/orgs/--select-org` — inside the `(authenticated)` layout so
- * the impersonation banner is visible, and it re-runs entry control for the new identity
- * rather than assuming the target has the same landing org. Stopping impersonation is handled
- * by the Phase 10 banner.
+ * session cache and navigate to `/user` — inside the `(authenticated)` layout so the
+ * impersonation banner is visible, and it lands on the dashboard for the new identity rather
+ * than assuming the target has the same landing org. Stopping impersonation is handled by the
+ * Phase 10 banner.
  */
 export function SystemAdmin_ImpersonateUser_Dialog({
     user,
@@ -62,7 +61,7 @@ export function SystemAdmin_ImpersonateUser_Dialog({
             // the RSC tree, mirroring `useSignOut`. No param clear / mutation.reset() race (see
             // docs/patterns/mutation-dialog.md).
             getQueryClient().clear();
-            router.push("/orgs/--select-org");
+            router.push("/user");
             router.refresh();
         },
     });

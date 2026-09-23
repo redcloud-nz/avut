@@ -5,17 +5,17 @@
 
 "use client";
 
-import Link from "next/link";
 import { ArrowUpRightIcon } from "lucide-react";
+import Link from "next/link";
 import { parseAsString, useQueryState } from "nuqs";
 
 import { MDXContent } from "@content-collections/mdx/react";
 import { useQuery } from "@tanstack/react-query";
 
+import type { DocsHelpPayload } from "@/app/(public)/(marketing)/docs/help/[...slug]/route";
 import { DocsFlagsProvider } from "@/components/docs/docs-flags-context";
 import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
-import { Spinner } from "@/components/ui/spinner";
 import {
     Sheet,
     SheetContent,
@@ -24,7 +24,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import type { DocsHelpPayload } from "@/app/(public)/(marketing)/docs/help/[...slug]/route";
+import { Spinner } from "@/components/ui/spinner";
 import { docsHref } from "@/lib/docs-sections";
 
 // The sheet header already shows the doc title, so drop the body's leading <h1>.

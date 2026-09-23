@@ -5,12 +5,12 @@
 
 import * as z from "zod";
 
-import { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
-
+import type { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
-import { decryptDBValue } from "@/server/encrypt";
+
+export type { D4HAccessTokenRecord };
 
 export const D4HAccessTokenId = {
     schema: zodNanoId16("D4HAccessTokenId expected").brand<"D4HAccessTokenId">(),
@@ -95,12 +95,6 @@ export const D4HAccessToken_ServerOnly = {
         token: z.string(),
         metadata: D4HAccessTokenMetadata.schema,
     }),
-
-    fromRecord: (record: D4HAccessTokenRecord) =>
-        D4HAccessToken_ServerOnly.schema.parse({
-            ...record,
-            token: decryptDBValue(record.token),
-        }),
 };
 
 export type D4HAccessToken_ServerOnly = z.infer<typeof D4HAccessToken_ServerOnly.schema>;

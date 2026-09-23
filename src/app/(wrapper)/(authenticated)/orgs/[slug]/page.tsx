@@ -5,68 +5,8 @@
  * Path: /orgs/[slug]
  */
 
-import { ChevronRightIcon } from "lucide-react";
+import { Organization_Dashboard_Content } from "@/components/organization/dashboard-content";
 
-import { Argus } from "@/components/blocks/argus";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemGroup,
-    ItemMedia,
-    ItemTitle,
-} from "@/components/ui/item";
-import Link from "next/link";
-import { orgModules } from "@/lib/modules";
-import { resolveModuleFlags } from "@/server/module-flags";
-import { requireOrganization } from "@/server/organization-access";
-
-export default async function Organization_Index_Page(props: LayoutProps<"/orgs/[slug]">) {
-    const { slug } = await props.params;
-    const { organization, settings } = await requireOrganization(slug);
-    const { modules } = settings;
-    const moduleFlags = await resolveModuleFlags();
-
-    const availableModules = orgModules.filter(
-        (mod) =>
-            moduleFlags[mod.id] !== false &&
-            (mod.alwaysOn || (mod.id !== "admin" && modules[mod.id].enabled)),
-    );
-
-    return (
-        <Argus.Root>
-            <Argus.Column>
-                <Argus.Header title={organization.name} />
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Available Modules</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ItemGroup>
-                            {availableModules.map((mod) => {
-                                const Icon = mod.icon;
-
-                                return (
-                                    <Item key={mod.id} asChild>
-                                        <Link href={mod.href(slug)}>
-                                            <ItemMedia>
-                                                <Icon />
-                                            </ItemMedia>
-                                            <ItemContent>
-                                                <ItemTitle>{mod.label}</ItemTitle>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ChevronRightIcon className="size-4" />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                );
-                            })}
-                        </ItemGroup>
-                    </CardContent>
-                </Card>
-            </Argus.Column>
-        </Argus.Root>
-    );
+export default function Organization_Index_Page() {
+    return <Organization_Dashboard_Content />;
 }

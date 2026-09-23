@@ -5,15 +5,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import * as z from "zod";
 
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    useMutation,
+    useQueryClient,
+    useSuspenseQueries,
+    useSuspenseQuery,
+} from "@tanstack/react-query";
 
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -22,6 +29,7 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import {
@@ -31,47 +39,56 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ObjectName } from "@/components/ui/typography";
-
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function SkillPackageBuilder_MoveSkill_Dialog({
     skill,
     ...props
 }: { skill: Skill } & DialogProps) {
+    return (
+        <Dialog {...props}>
+            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                <DialogHeader>
+                    <DialogTitle>Move Skill</DialogTitle>
+                    <DialogDescription>
+                        Move skill <ObjectName>{skill.name}</ObjectName> to another group.
+                    </DialogDescription>
+                </DialogHeader>
+                {/* Radix only mounts DialogContent's children while the dialog is open, so the
+                    body (and its destination state) is created fresh on each open. */}
+                <DialogBoundary>
+                    <MoveSkill_Body skill={skill} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function MoveSkill_Body({ skill }: { skill: Skill }) {
     const organization = useOrganization();
     const queryClient = useQueryClient();
     const router = useRouter();
 
-    const { data: skillPackages = [], isSuccess: skillPackagesReady } = useQuery(
+    const { data: skillPackages } = useSuspenseQuery(
         trpc.skillPackageBuilder.listPackages.queryOptions({
             organizationId: organization.id,
         }),
     );
 
-    const { data: skillGroups = [], isSuccess: skillGroupsReady } = useQueries({
+    const skillGroups = useSuspenseQueries({
         queries: skillPackages.map((skillPackage) =>
             trpc.skillPackageBuilder.listGroups.queryOptions({
                 organizationId: organization.id,
                 skillPackageId: skillPackage.id,
             }),
         ),
-        combine: (results) => {
-            return {
-                data: results.flatMap((result) => result.data ?? []),
-                isSuccess: results.every((result) => result.isSuccess),
-                isLoading: results.some((result) => result.isLoading),
-                isPending: results.some((result) => result.isPending),
-                isError: results.some((result) => result.isError),
-            };
-        },
+        combine: (results) => results.flatMap((result) => result.data),
     });
 
     const originPackage = skillPackages.find((pkg) => pkg.id === skill.skillPackageId);
@@ -195,132 +212,103 @@ export function SkillPackageBuilder_MoveSkill_Dialog({
         }),
     );
 
-    useEffect(() => {
-        if (props.open) {
-            setDestinationPackageId(skill.skillPackageId);
-            setDestinationGroupId(null);
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [props.open]);
-
-    const loading = !skillPackagesReady || !skillGroupsReady;
+    if (!originPackage || !originGroup) {
+        return (
+            <>
+                <DialogBody>
+                    <p className="text-sm text-muted-foreground">
+                        This skill&rsquo;s current package or group could not be found. It may have
+                        been moved or deleted. Reload the page and try again.
+                    </p>
+                </DialogBody>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Close</DialogCloseButton>
+                </DialogFooter>
+            </>
+        );
+    }
 
     return (
-        <Dialog {...props}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                <DialogHeader>
-                    <DialogTitle>Move Skill</DialogTitle>
-                    <DialogDescription>
-                        Move skill <ObjectName>{skill.name}</ObjectName> to another group.
-                    </DialogDescription>
-                </DialogHeader>
-
-                {loading ? (
-                    <div className="flex flex-col gap-2">
-                        <Skeleton className="w-full h-14" />
-                        <Skeleton className="w-full h-14" />
-                        <Skeleton className="w-full h-14" />
-                        <Skeleton className="w-full h-14" />
-                    </div>
-                ) : !originPackage || !originGroup ? (
-                    <>
-                        <p className="text-sm text-muted-foreground">
-                            This skill&rsquo;s current package or group could not be found. It may
-                            have been moved or deleted. Reload the page and try again.
-                        </p>
-                        <DialogFooter>
-                            <DialogCloseButton variant="outline">Close</DialogCloseButton>
-                        </DialogFooter>
-                    </>
-                ) : (
-                    <>
-                        <FieldGroup>
-                            <Field>
-                                <FieldLabel>Origin Package</FieldLabel>
-                                <FieldValue value={originPackage.name} />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Origin Group</FieldLabel>
-                                <FieldValue value={originGroup.name} />
-                            </Field>
-                            <Field>
-                                <FieldLabel>Destination Package</FieldLabel>
-                                <Select
-                                    value={destinationPackageId}
-                                    onValueChange={(value) => {
-                                        setDestinationPackageId(value);
-                                        setDestinationGroupId(null);
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {skillPackages.map((skillPackage) => (
-                                            <SelectItem
-                                                key={skillPackage.id}
-                                                value={skillPackage.id}
-                                            >
-                                                {skillPackage.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                            <Field>
-                                <FieldLabel>Destination Group</FieldLabel>
-                                <Select
-                                    value={destinationGroupId ?? ""}
-                                    onValueChange={(value) =>
-                                        setDestinationGroupId(value as SkillGroupId)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a group" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {skillGroups
-                                            .filter(
-                                                (group) =>
-                                                    group.skillPackageId === destinationPackageId,
-                                            )
-                                            .map((group) => (
-                                                <SelectItem
-                                                    key={group.id}
-                                                    value={group.id}
-                                                    disabled={group.id == skill.skillGroupId}
-                                                >
-                                                    {group.name}
-                                                </SelectItem>
-                                            ))}
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                        </FieldGroup>
-                        <DialogFooter>
-                            <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                            <MutationButton
-                                onClick={() =>
-                                    mutation.mutateAsync({
-                                        organizationId: organization.id,
-                                        skillId: skill.id,
-                                        destinationPackageId,
-                                        destinationGroupId: destinationGroupId!,
-                                    })
-                                }
-                                status={mutation.status}
-                                disabled={!destinationGroupId}
-                                text={{
-                                    idle: "Move",
-                                    pending: "Moving",
-                                    success: "Moved",
-                                }}
-                            />
-                        </DialogFooter>
-                    </>
-                )}
-            </DialogContent>
-        </Dialog>
+        <>
+            <DialogBody>
+                <FieldGroup>
+                    <Field>
+                        <FieldLabel>Origin Package</FieldLabel>
+                        <FieldValue value={originPackage.name} />
+                    </Field>
+                    <Field>
+                        <FieldLabel>Origin Group</FieldLabel>
+                        <FieldValue value={originGroup.name} />
+                    </Field>
+                    <Field>
+                        <FieldLabel>Destination Package</FieldLabel>
+                        <Select
+                            value={destinationPackageId}
+                            onValueChange={(value) => {
+                                setDestinationPackageId(value);
+                                setDestinationGroupId(null);
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {skillPackages.map((skillPackage) => (
+                                    <SelectItem key={skillPackage.id} value={skillPackage.id}>
+                                        {skillPackage.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Destination Group</FieldLabel>
+                        <Select
+                            value={destinationGroupId ?? ""}
+                            onValueChange={(value) => setDestinationGroupId(value as SkillGroupId)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a group" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {skillGroups
+                                    .filter(
+                                        (group) => group.skillPackageId === destinationPackageId,
+                                    )
+                                    .map((group) => (
+                                        <SelectItem
+                                            key={group.id}
+                                            value={group.id}
+                                            disabled={group.id == skill.skillGroupId}
+                                        >
+                                            {group.name}
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                </FieldGroup>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    onClick={() =>
+                        mutation.mutateAsync({
+                            organizationId: organization.id,
+                            skillId: skill.id,
+                            destinationPackageId,
+                            destinationGroupId: destinationGroupId!,
+                        })
+                    }
+                    status={mutation.status}
+                    disabled={!destinationGroupId}
+                    text={{
+                        idle: "Move",
+                        pending: "Moving",
+                        success: "Moved",
+                    }}
+                />
+            </DialogFooter>
+        </>
     );
 }

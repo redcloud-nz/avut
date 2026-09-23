@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 
 import { installDevTools } from "@/client/dev-tools";
+import { env } from "@/lib/env";
 import { getQueryClient } from "@/trpc/client";
 import { useMutationEffector } from "@/trpc/mutation-effector";
 
@@ -24,7 +25,7 @@ export function ClientProvider({ children }: Readonly<{ children: ReactNode }>) 
     useMutationEffector(queryClient);
 
     useEffect(() => {
-        if (process.env.NODE_ENV !== "production") installDevTools();
+        if (env.NODE_ENV !== "production") installDevTools();
     }, []);
 
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;

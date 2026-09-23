@@ -18,6 +18,7 @@ import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -29,7 +30,6 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ObjectName } from "@/components/ui/typography";
-
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
@@ -126,44 +126,48 @@ export function AdminModule_CreateInvitation_Dialog() {
                         <ObjectName>{organization.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
-                <FormProvider {...form}>
-                    <form
-                        id="create-invitation-form"
-                        onSubmit={form.handleSubmit(
-                            (data) =>
-                                mutation.mutate({
-                                    email: data.email,
-                                    roles: invitationRoles(data),
-                                }),
-                            (errors) => {
-                                console.error("Form validation errors:", errors);
-                            },
-                        )}
-                    >
-                        <FieldGroup>
-                            <Controller
-                                name="email"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="invitation-email">Email</FieldLabel>
-                                        <Input
-                                            id="invitation-email"
-                                            autoFocus
-                                            autoComplete="off"
-                                            aria-invalid={fieldState.invalid}
-                                            {...field}
-                                        />
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </Field>
-                                )}
-                            />
-                            <InvitationRoleFields />
-                        </FieldGroup>
-                    </form>
-                </FormProvider>
+                <DialogBody>
+                    <FormProvider {...form}>
+                        <form
+                            id="create-invitation-form"
+                            onSubmit={form.handleSubmit(
+                                (data) =>
+                                    mutation.mutate({
+                                        email: data.email,
+                                        roles: invitationRoles(data),
+                                    }),
+                                (errors) => {
+                                    console.error("Form validation errors:", errors);
+                                },
+                            )}
+                        >
+                            <FieldGroup>
+                                <Controller
+                                    name="email"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldLabel htmlFor="invitation-email">
+                                                Email
+                                            </FieldLabel>
+                                            <Input
+                                                id="invitation-email"
+                                                autoFocus
+                                                autoComplete="off"
+                                                aria-invalid={fieldState.invalid}
+                                                {...field}
+                                            />
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                                <InvitationRoleFields />
+                            </FieldGroup>
+                        </form>
+                    </FormProvider>
+                </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton

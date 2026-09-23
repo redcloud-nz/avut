@@ -5,26 +5,26 @@
 
 "use client";
 
+import { useQueryState } from "nuqs";
 import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useQueryState } from "nuqs";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
-import {
-    CheckDetailsTrigger,
-    ReportCellPopoversProvider,
-} from "@/components/skill-track/reports/report-cell-popovers";
-import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
-import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
 import {
     deriveStatus,
     STATUS_RANK,
     StatusBadge,
     tallyStatuses,
 } from "@/components/skill-track/reports/competency-status";
+import {
+    CheckDetailsTrigger,
+    ReportCellPopoversProvider,
+} from "@/components/skill-track/reports/report-cell-popovers";
+import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
+import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
 import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +37,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { SkillId } from "@/lib/schemas/skill";

@@ -5,13 +5,12 @@
 
 "use client";
 
+import { TelescopeIcon } from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useMemo, useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
-
-import { TelescopeIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +27,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { useOrganization } from "@/hooks/use-organization";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
@@ -48,8 +47,6 @@ export function SkillTrack_PersonScopeDialog({
     /** Hide the trigger button below `sm` — the report offers it in the dropdown menu instead. */
     compact?: boolean;
 }) {
-    const organization = useOrganization();
-
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["select-scope"] as const),
@@ -62,22 +59,6 @@ export function SkillTrack_PersonScopeDialog({
     // Back-button navigation that clears the param always closes it.
     const [dismissed, setDismissed] = useState(false);
     const open = action === "select-scope" || (forceOpen && !dismissed);
-
-    const { data: personnel } = useSuspenseQuery(
-        trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
-    );
-
-    // The competency report only resolves active personnel — archived people would render
-    // an empty report.
-    const activePersonnel = useMemo(
-        () =>
-            R.pipe(
-                personnel,
-                R.filter((person) => person.status === "Active"),
-                R.sortBy((person) => person.name),
-            ),
-        [personnel],
-    );
 
     function handleOpenChange(next: boolean) {
         if (!next) setDismissed(true);
@@ -107,23 +88,53 @@ export function SkillTrack_PersonScopeDialog({
                         Choose a person to view their competency report.
                     </DialogDescription>
                 </DialogHeader>
-                <Command>
-                    <CommandInput placeholder="Search people…" />
-                    <CommandList className="h-72">
-                        <CommandEmpty>No active personnel match your search.</CommandEmpty>
-                        {activePersonnel.map((person) => (
-                            <CommandItem
-                                key={person.id}
-                                value={`${person.name} ${person.email}`}
-                                onSelect={() => handleSelect(person.id)}
-                            >
-                                <span>{person.name}</span>
-                                <span className="text-muted-foreground">{person.email}</span>
-                            </CommandItem>
-                        ))}
-                    </CommandList>
-                </Command>
+                <DialogBoundary>
+                    <PersonScope_Picker onSelect={handleSelect} />
+                </DialogBoundary>
             </DialogContent>
         </Dialog>
+    );
+}
+
+/**
+ * The list itself, rendered inside `DialogContent` so its query only runs once the dialog
+ * opens — the dialog is always mounted in the report header.
+ */
+function PersonScope_Picker({ onSelect }: { onSelect: (personId: string) => void }) {
+    const organization = useOrganization();
+
+    const { data: personnel } = useSuspenseQuery(
+        trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
+    );
+
+    // The competency report only resolves active personnel — archived people would render
+    // an empty report.
+    const activePersonnel = useMemo(
+        () =>
+            R.pipe(
+                personnel,
+                R.filter((person) => person.status === "Active"),
+                R.sortBy((person) => person.name),
+            ),
+        [personnel],
+    );
+
+    return (
+        <Command>
+            <CommandInput placeholder="Search people…" />
+            <CommandList className="h-72">
+                <CommandEmpty>No active personnel match your search.</CommandEmpty>
+                {activePersonnel.map((person) => (
+                    <CommandItem
+                        key={person.id}
+                        value={`${person.name} ${person.email}`}
+                        onSelect={() => onSelect(person.id)}
+                    >
+                        <span>{person.name}</span>
+                        <span className="text-muted-foreground">{person.email}</span>
+                    </CommandItem>
+                ))}
+            </CommandList>
+        </Command>
     );
 }

@@ -6,7 +6,7 @@
 "use client";
 
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from "lucide-react";
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers";
@@ -20,6 +20,7 @@ import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import {
     Dialog,
+    DialogBody,
     DialogCloseButton,
     DialogContent,
     DialogDescription,
@@ -28,10 +29,9 @@ import {
     DialogProps,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ObjectName } from "@/components/ui/typography";
-
 import { useOrganization } from "@/hooks/use-organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
@@ -60,30 +60,19 @@ export function SkillPackageBuilder_ReorderSkills_Dialog({
                         <ObjectName>{skillGroup.name}</ObjectName>.
                     </DialogDescription>
                 </DialogHeader>
-
                 {/* Radix only mounts DialogContent's children while the dialog is
                     open, so the body (and its `order` state) is created fresh on
                     each open — always seeded from the current skills, with no
                     reseeding effect needed. */}
-                <Suspense fallback={<ReorderSkills_Skeleton />}>
+                <DialogBoundary>
                     <ReorderSkills_Body
                         skillGroup={skillGroup}
                         skillPackage={skillPackage}
                         onSaved={() => props.onOpenChange?.(false)}
                     />
-                </Suspense>
+                </DialogBoundary>
             </DialogContent>
         </Dialog>
-    );
-}
-
-function ReorderSkills_Skeleton() {
-    return (
-        <div className="space-y-2">
-            <Skeleton className="w-full h-11" />
-            <Skeleton className="w-full h-11" />
-            <Skeleton className="w-full h-11" />
-        </div>
     );
 }
 
@@ -136,79 +125,85 @@ function ReorderSkills_Body({
         <Show
             when={skills.length > 0}
             fallback={
-                <Empty>
-                    <EmptyHeader>
-                        <EmptyTitle>No skills to reorder</EmptyTitle>
-                        <EmptyDescription>
-                            This group does not contain any skills to reorder. Please add skills to
-                            this group before attempting to reorder.
-                        </EmptyDescription>
-                    </EmptyHeader>
-                </Empty>
+                <DialogBody>
+                    <Empty>
+                        <EmptyHeader>
+                            <EmptyTitle>No skills to reorder</EmptyTitle>
+                            <EmptyDescription>
+                                This group does not contain any skills to reorder. Please add skills
+                                to this group before attempting to reorder.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                    </Empty>
+                </DialogBody>
             }
         >
-            <DragDropProvider
-                onDragEnd={(event) => {
-                    if (event.canceled) return;
+            <>
+                <DialogBody>
+                    <DragDropProvider
+                        onDragEnd={(event) => {
+                            if (event.canceled) return;
 
-                    const { source } = event.operation;
+                            const { source } = event.operation;
 
-                    if (isSortable(source)) {
-                        const { initialIndex, index } = source;
+                            if (isSortable(source)) {
+                                const { initialIndex, index } = source;
 
-                        if (initialIndex != index) {
-                            setOrder((prevOrder) => {
-                                const newOrder = [...prevOrder];
-                                const [removed] = newOrder.splice(initialIndex, 1);
-                                newOrder.splice(index, 0, removed);
-                                return newOrder;
-                            });
-                        }
-                    }
-                }}
-            >
-                <div className="space-y-2" id="sortable-skill-list">
-                    {order.map((skillId, index) => {
-                        const skill = skills.find((s) => s.id === skillId)!;
-
-                        return (
-                            <SortableSkill
-                                key={skillId}
-                                skill={skill}
-                                index={index}
-                                isLast={index === order.length - 1}
-                                onSwap={(fromIndex, toIndex) => {
+                                if (initialIndex != index) {
                                     setOrder((prevOrder) => {
                                         const newOrder = [...prevOrder];
-                                        const [moved] = newOrder.splice(fromIndex, 1);
-                                        newOrder.splice(toIndex, 0, moved);
+                                        const [removed] = newOrder.splice(initialIndex, 1);
+                                        newOrder.splice(index, 0, removed);
                                         return newOrder;
                                     });
-                                }}
-                            />
-                        );
-                    })}
-                </div>
-            </DragDropProvider>
-            <DialogFooter>
-                <MutationButton
-                    type="button"
-                    onClick={() =>
-                        mutation.mutate({
-                            organizationId: organization.id,
-                            skillGroupId: skillGroup.id,
-                            newOrder: order,
-                        })
-                    }
-                    status={mutation.status}
-                    text={{
-                        idle: "Save",
-                        pending: "Saving",
-                        success: "Saved",
-                    }}
-                />
-                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-            </DialogFooter>
+                                }
+                            }
+                        }}
+                    >
+                        <div className="space-y-2" id="sortable-skill-list">
+                            {order.map((skillId, index) => {
+                                const skill = skills.find((s) => s.id === skillId)!;
+
+                                return (
+                                    <SortableSkill
+                                        key={skillId}
+                                        skill={skill}
+                                        index={index}
+                                        isLast={index === order.length - 1}
+                                        onSwap={(fromIndex, toIndex) => {
+                                            setOrder((prevOrder) => {
+                                                const newOrder = [...prevOrder];
+                                                const [moved] = newOrder.splice(fromIndex, 1);
+                                                newOrder.splice(toIndex, 0, moved);
+                                                return newOrder;
+                                            });
+                                        }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </DragDropProvider>
+                </DialogBody>
+                <DialogFooter>
+                    <MutationButton
+                        type="button"
+                        onClick={() =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                skillGroupId: skillGroup.id,
+                                newOrder: order,
+                            })
+                        }
+                        status={mutation.status}
+                        text={{
+                            idle: "Save",
+                            pending: "Saving",
+                            success: "Saved",
+                        }}
+                    />
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                </DialogFooter>
+            </>
         </Show>
     );
 }

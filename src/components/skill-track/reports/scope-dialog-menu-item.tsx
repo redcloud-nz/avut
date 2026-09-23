@@ -5,9 +5,8 @@
 
 "use client";
 
-import { parseAsStringLiteral, useQueryState } from "nuqs";
-
 import { TelescopeIcon } from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 

@@ -5,9 +5,8 @@
  * Path: /auth/sign-out
  */
 
-import { Argus } from "@/components/blocks/argus";
-
 import { SignOut } from "@/components/auth/sign-out";
+import { Argus } from "@/components/blocks/argus";
 
 export const metadata = { title: "Sign Out" };
 

@@ -5,9 +5,9 @@
 
 import * as z from "zod";
 
-import {
-    I3Template as I3TemplateRecord,
+import type {
     I3Template_D4H as I3Template_D4HRecord,
+    I3Template as I3TemplateRecord,
 } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
