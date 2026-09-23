@@ -189,6 +189,32 @@ export const systemAdminProcedure = authenticatedProcedure.use(async ({ ctx, nex
     return next({ ctx: enhancedCtx });
 });
 
+/**
+ * Throws `NOT_FOUND` if the organization does not exist.
+ *
+ * `hasPermission` normally does this implicitly — a nonexistent organization has no members,
+ * so the lookup it does finds none and refuses the caller before anything else runs. The
+ * `allowSystemAdmin` bypass in `organizationProcedure` skips that lookup entirely, so it calls
+ * this explicitly to keep the guarantee: every procedure built on `organizationProcedure` can
+ * assume `ctx.organizationId` names a real organization, regardless of which path let the
+ * caller through.
+ */
+export async function assertOrganizationExists(
+    prisma: Pick<Context["prisma"], "organization">,
+    organizationId: OrganizationId,
+) {
+    const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { id: true },
+    });
+    if (!org) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Organization ${organizationId} not found.`,
+        });
+    }
+}
+
 export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     organizationId: OrganizationId;
     /**
@@ -249,8 +275,12 @@ export function organizationProcedure(
 
             // A system admin bypasses the membership/permission check entirely — there is no
             // membership to look up, so `hasPermission` (which 403s a non-member outright)
-            // would refuse them before ever weighing `requiredPermissions`.
-            if (!(allowSystemAdmin && isSystemAdmin)) {
+            // would refuse them before ever weighing `requiredPermissions`. That check is also
+            // what would have caught a nonexistent organization (no members either), so the
+            // bypass path re-asserts that explicitly instead of silently losing the guarantee.
+            if (allowSystemAdmin && isSystemAdmin) {
+                await assertOrganizationExists(opts.ctx.prisma, opts.input.organizationId);
+            } else {
                 await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
             }
 

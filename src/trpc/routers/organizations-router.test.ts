@@ -104,6 +104,24 @@ describe("organizations member management — permission gate", () => {
             caller.removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
+
+    it("gives a system admin a clean NOT_FOUND for a nonexistent organization, not a raw insert failure", async () => {
+        // A non-admin gets this for free — `hasPermission` finds no membership of a nonexistent
+        // org and refuses before anything else runs. The `allowSystemAdmin` bypass skips that
+        // lookup, so `organizationProcedure` has to re-assert existence itself; without it this
+        // would fall through to the create and fail as an unrelated FK violation.
+        const caller = organizationsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+        await expect(
+            caller.addOrganizationMember({
+                organizationId: OrganizationId.create(),
+                userId: T.other,
+                roles: ["member"],
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
 });
 
 describe("organizations member management (system admin)", () => {

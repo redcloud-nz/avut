@@ -7,7 +7,6 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import type { PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
@@ -25,30 +24,9 @@ import {
 } from "@/server/organization-settings-store";
 import { prepareSkillPackageImport } from "@/server/skill-package-io";
 
-import { createTrpcRouter, systemAdminProcedure } from "../init";
+import { assertOrganizationExists, createTrpcRouter, systemAdminProcedure } from "../init";
 
 import { findOwnerMemberships } from "./organizations-router";
-
-/**
- * Throws `NOT_FOUND` if the organization does not exist. Settings resolve from defaults when no
- * config rows exist, so without this an unknown id would silently look like a valid, untouched
- * organization.
- */
-async function assertOrganizationExists(
-    prisma: Pick<PrismaClient, "organization">,
-    organizationId: string,
-) {
-    const org = await prisma.organization.findUnique({
-        where: { id: organizationId },
-        select: { id: true },
-    });
-    if (!org) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Organization ${organizationId} not found.`,
-        });
-    }
-}
 
 /**
  * Whether `error` is a Prisma unique-constraint violation (`P2002`) — what a concurrent duplicate
