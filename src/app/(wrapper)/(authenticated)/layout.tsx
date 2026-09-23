@@ -8,13 +8,14 @@
 import Image from "next/image";
 import { ReactNode, Suspense } from "react";
 
+import { SessionWatcher } from "@/components/auth/session-watcher";
 import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
 import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
 import { ScopeSwitcher, ScopeSwitcher_Skeleton } from "@/components/nav/scope-switcher";
 import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
-import { UserMenu } from "@/components/nav/user-menu";
+import { UserMenu, UserMenu_Skeleton } from "@/components/nav/user-menu";
 import {
     Sidebar,
     SidebarContent,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
 import { requireSession } from "@/server/session";
-import { HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // `requireSession()` below is a blocking request read. `(wrapper)/loading.tsx` sitting above
 // this layout satisfies *build-time* prerender validation for it (see that file's docstring),
@@ -43,15 +44,22 @@ export default async function AuthenticatedLayout(props: {
     // cookie is *present*; this is the check that actually validates it.
     await requireSession();
 
-    // `ScopeSwitcher` reads both of these via `useSuspenseQuery`/`useQuery` on every
-    // authenticated page — prefetching here removes the round trips that would otherwise
-    // show as its skeleton. `getSession` re-reads `ctx.auth`, but that's `requireSession()`'s
-    // own `cache()`-wrapped lookup, not a second one.
+    // `ScopeSwitcher` and `UserMenu` both read `getSession` via plain `useQuery` (not
+    // suspense), so unlike `listMemberships` below it can't tolerate an unresolved prefetch —
+    // a still-pending dehydrated snapshot racing the live query client's resolution is exactly
+    // what produces a hydration mismatch. Awaiting costs nothing extra: `getSession` only
+    // re-reads `ctx.auth`, which is `requireSession()`'s own `cache()`-wrapped lookup.
+    await fetchQuery(trpc.users.getSession.queryOptions());
+
+    // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
+    // prefetching here removes the round trip that would otherwise show as its skeleton.
     prefetch(trpc.users.listMemberships.queryOptions());
-    prefetch(trpc.users.getSession.queryOptions());
 
     return (
         <HydrateClient>
+            {/* Redirects to sign-in if the session is revoked or expires after first paint —
+                see the hook's own docstring. Renders nothing. */}
+            <SessionWatcher />
             <SidebarPortalProvider>
                 <Sidebar>
                     <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
@@ -85,7 +93,9 @@ export default async function AuthenticatedLayout(props: {
                         <div className="py-1 text-center text-xs text-muted-foreground">
                             <VersionString layout="stacked" />
                         </div>
-                        <UserMenu />
+                        <Suspense fallback={<UserMenu_Skeleton />}>
+                            <UserMenu />
+                        </Suspense>
                     </SidebarFooter>
                     <SidebarRail />
                 </Sidebar>

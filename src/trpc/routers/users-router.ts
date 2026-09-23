@@ -267,7 +267,7 @@ export const usersRouter = createTrpcRouter({
      * The current session, or `null` if the caller isn't signed in.
      *
      * Deliberately a `publicProcedure` rather than `authenticatedProcedure`: an absent
-     * session is a valid result (`null`), not an error. `useAuthenticate` depends on that —
+     * session is a valid result (`null`), not an error. `SessionWatcher` depends on that —
      * it redirects on `data === null`, and an `UNAUTHORIZED` throw here would surface as a
      * query `error` instead, which it deliberately treats as a transient failure, not a
      * sign-out.
