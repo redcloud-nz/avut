@@ -22,9 +22,20 @@ import {
     authenticatedProcedure,
     createTrpcRouter,
     organizationProcedure,
+    publicProcedure,
     type AuthenticatedContext,
 } from "../init";
 import { Messages } from "../messages";
+
+/**
+ * Output of `getSession` — the subset of Better Auth's session/user record the client actually
+ * needs. Kept separate from `UserData` (used by `getSelf`) because `role` and
+ * `impersonatedBy` are session-level concerns `getSelf`'s callers have no business seeing.
+ */
+const SessionData = z.object({
+    user: UserData.schema.extend({ role: z.string().nullable() }),
+    session: z.object({ impersonatedBy: z.string().nullable() }),
+});
 
 /**
  * Loads a pending, unexpired invitation addressed to the caller. Better Auth re-checks the
@@ -249,6 +260,37 @@ export const usersRouter = createTrpcRouter({
             name: user.name,
             email: user.email,
             image: user.image || null,
+        };
+    }),
+
+    /**
+     * The current session, or `null` if the caller isn't signed in.
+     *
+     * Deliberately a `publicProcedure` rather than `authenticatedProcedure`: an absent
+     * session is a valid result (`null`), not an error. `useAuthenticate` depends on that —
+     * it redirects on `data === null`, and an `UNAUTHORIZED` throw here would surface as a
+     * query `error` instead, which it deliberately treats as a transient failure, not a
+     * sign-out.
+     *
+     * @param ctx The (possibly unauthenticated) context.
+     * @returns The caller's user fields plus session-level ones (`role`, `impersonatedBy`)
+     *   `getSelf` doesn't expose, or `null`.
+     */
+    getSession: publicProcedure.output(SessionData.nullable()).query(({ ctx }) => {
+        if (!ctx.auth) return null;
+
+        const { user, session } = ctx.auth;
+
+        return {
+            user: {
+                id: UserId.schema.parse(user.id),
+                name: user.name,
+                email: user.email,
+                emailVerified: user.emailVerified,
+                image: user.image || null,
+                role: user.role ?? null,
+            },
+            session: { impersonatedBy: session.impersonatedBy ?? null },
         };
     }),
 

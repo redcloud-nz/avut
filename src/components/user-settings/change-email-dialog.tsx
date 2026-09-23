@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { type SessionData } from "@/client/auth-queries";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -40,8 +41,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { authQueryKeys } from "@/lib/auth-query-keys";
-import { type AuthSession } from "@/server/auth";
+import { trpc } from "@/trpc/client";
 
 type ChangeEmailStep =
     | { name: "start" }
@@ -49,7 +49,7 @@ type ChangeEmailStep =
     | { name: "verify-new"; newEmail: string };
 
 /** `?action=change-email` — self-triggered (Recipe A): the trigger button lives in this dialog. */
-export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSession }) {
+export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionData }) {
     const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState(
@@ -109,7 +109,7 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: AuthSessi
             // /email-otp/change-email isn't in the client's atomListeners, so the shared
             // session store won't auto-refresh on its own - explicitly invalidate it so this
             // dialog (and the rest of the UI, e.g. nav) picks up the new email immediately.
-            void queryClient.invalidateQueries({ queryKey: authQueryKeys.session });
+            void queryClient.invalidateQueries(trpc.users.getSession.queryFilter());
             toast.success("Your email address has been updated.");
             restart();
             handleDialogOpenChange(false);

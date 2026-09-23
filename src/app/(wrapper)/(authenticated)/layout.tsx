@@ -23,9 +23,8 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
-import { serverSessionQueryOptions } from "@/server/auth-queries";
 import { requireSession } from "@/server/session";
-import { getServerQueryClient, HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // `requireSession()` below is a blocking request read. `(wrapper)/loading.tsx` sitting above
 // this layout satisfies *build-time* prerender validation for it (see that file's docstring),
@@ -42,14 +41,14 @@ export default async function AuthenticatedLayout(props: {
 }) {
     // Baseline guard for every authenticated route. The proxy only checks that a session
     // cookie is *present*; this is the check that actually validates it.
-    const session = await requireSession();
+    await requireSession();
 
-    const queryClient = getServerQueryClient();
-    queryClient.setQueryData(serverSessionQueryOptions().queryKey, session);
-
-    // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
-    // prefetching here removes the round trip that would otherwise show as its skeleton.
+    // `ScopeSwitcher` reads both of these via `useSuspenseQuery`/`useQuery` on every
+    // authenticated page — prefetching here removes the round trips that would otherwise
+    // show as its skeleton. `getSession` re-reads `ctx.auth`, but that's `requireSession()`'s
+    // own `cache()`-wrapped lookup, not a second one.
     prefetch(trpc.users.listMemberships.queryOptions());
+    prefetch(trpc.users.getSession.queryOptions());
 
     return (
         <HydrateClient>

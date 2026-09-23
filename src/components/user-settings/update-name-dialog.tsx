@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { type SessionData } from "@/client/auth-queries";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -29,11 +30,10 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { authQueryKeys } from "@/lib/auth-query-keys";
-import { type AuthSession } from "@/server/auth";
+import { trpc } from "@/trpc/client";
 
 /** `?action=update-name` — self-triggered (Recipe A): the trigger button lives in this dialog. */
-export function UserProfile_UpdateName_Dialog({ session }: { session: AuthSession }) {
+export function UserProfile_UpdateName_Dialog({ session }: { session: SessionData }) {
     const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState(
@@ -56,7 +56,7 @@ export function UserProfile_UpdateName_Dialog({ session }: { session: AuthSessio
             toast.error(`Failed to update name: ${error.message}`);
         },
         onSuccess() {
-            void queryClient.invalidateQueries({ queryKey: authQueryKeys.session });
+            void queryClient.invalidateQueries(trpc.users.getSession.queryFilter());
             toast.success("Name updated");
             handleDialogOpenChange(false);
         },

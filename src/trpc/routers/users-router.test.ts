@@ -417,6 +417,54 @@ describe("users.listMemberships", () => {
     });
 });
 
+describe("users.getSession", () => {
+    const db = createMockPrisma();
+
+    it("returns the caller's user and session-level fields", async () => {
+        const userId = UserId.create();
+
+        const result = await usersRouter
+            .createCaller(
+                createAuthenticatedMockContext({
+                    user: {
+                        id: userId,
+                        name: "Ada Lovelace",
+                        email: "ada@example.com",
+                        role: "admin",
+                    },
+                    session: { impersonatedBy: "impersonator-id" },
+                    prisma: db,
+                }),
+            )
+            .getSession();
+
+        expect(result).toEqual({
+            user: {
+                id: userId,
+                name: "Ada Lovelace",
+                email: "ada@example.com",
+                emailVerified: true,
+                image: null,
+                role: "admin",
+            },
+            session: { impersonatedBy: "impersonator-id" },
+        });
+    });
+
+    it("returns null rather than throwing when there is no session", async () => {
+        const result = await usersRouter
+            .createCaller({
+                prisma: db,
+                auth: null,
+                hasPermission: async () => {},
+                getHeaders: async () => new Headers(),
+            })
+            .getSession();
+
+        expect(result).toBeNull();
+    });
+});
+
 describe("users invitations", () => {
     // Dataset: the caller has two pending invitations (one to accept, one to reject, so neither
     // test leans on the mocked Better Auth leaving the other's fixture untouched), an expired and

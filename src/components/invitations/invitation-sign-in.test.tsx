@@ -9,8 +9,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { authClient } from "@/client/auth-client";
-import { authQueryKeys } from "@/lib/auth-query-keys";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
+import { trpc } from "@/trpc/client";
 
 import { InvitationSignIn_Form } from "./invitation-sign-in";
 
@@ -68,7 +68,7 @@ describe("InvitationSignIn_Form", () => {
             email: EMAIL,
             password: "hunter2hunter2",
         });
-        expect(invalidate).toHaveBeenCalledWith({ queryKey: authQueryKeys.session });
+        expect(invalidate).toHaveBeenCalledWith(trpc.users.getSession.queryFilter());
         expect(invalidate).toHaveBeenCalledTimes(2);
         expect(router.push).not.toHaveBeenCalled();
     });
