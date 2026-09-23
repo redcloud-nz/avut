@@ -192,6 +192,16 @@ export const systemAdminProcedure = authenticatedProcedure.use(async ({ ctx, nex
 export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     organizationId: OrganizationId;
     /**
+     * Whether the caller reached this procedure as a site-wide administrator (Better Auth
+     * `admin` plugin — `session.user.role === "admin"`) rather than through org membership.
+     * Only meaningful on a procedure built with `{ allowSystemAdmin: true }`; on any other
+     * `organizationProcedure` call the caller was necessarily a permitted member, so this is
+     * always `false` there. Handlers that behave differently for an admin acting outside their
+     * own membership (e.g. skipping a self-only guard) should branch on this rather than
+     * re-deriving it from `ctx.auth.user.role`.
+     */
+    isSystemAdmin: boolean;
+    /**
      * Records an entry in the organization's change-log.
      *
      * Returns the underlying `PrismaPromise` rather than awaiting it internally, so it can be
@@ -209,9 +219,19 @@ export type AuthenticatedOrganizationContext = AuthenticatedContext & {
 /**
  * An organization scoped procedure that checks for required permissions.
  * @param requiredPermissions The permissions required to access this procedure.
+ * @param options.allowSystemAdmin When `true`, a site-wide administrator (`ctx.auth.user.role
+ *   === "admin"`) is let through without an org-membership or permission check — the same
+ *   access `systemAdminProcedure` grants, just from an org-scoped procedure. Membership is
+ *   checked as usual for every other caller. Default `false`: an admin with no membership of
+ *   their own is refused like anyone else, same as before this option existed.
  * @returns A tRPC procedure with organization context and permission checks.
  */
-export function organizationProcedure(requiredPermissions: Permissions = {}) {
+export function organizationProcedure(
+    requiredPermissions: Permissions = {},
+    options: { allowSystemAdmin?: boolean } = {},
+) {
+    const { allowSystemAdmin = false } = options;
+
     // Ensure that the required organization permissions include at least 'organization:view'
     requiredPermissions = {
         ...requiredPermissions,
@@ -221,12 +241,18 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
     };
 
     return authenticatedProcedure
-        .meta({ requiresOrganization: true, requiredPermissions })
+        .meta({ requiresOrganization: true, requiredPermissions, allowSystemAdmin })
         .input(z.object({ organizationId: OrganizationId.schema }))
 
         .use(async (opts) => {
-            // Check organization permissions
-            await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
+            const isSystemAdmin = opts.ctx.auth.user.role === "admin";
+
+            // A system admin bypasses the membership/permission check entirely — there is no
+            // membership to look up, so `hasPermission` (which 403s a non-member outright)
+            // would refuse them before ever weighing `requiredPermissions`.
+            if (!(allowSystemAdmin && isSystemAdmin)) {
+                await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
+            }
 
             function logEvent(
                 options: LogEventOptions,
@@ -250,6 +276,7 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
                 ctx: {
                     ...opts.ctx,
                     organizationId: opts.input.organizationId,
+                    isSystemAdmin,
                     logEvent,
                 } satisfies AuthenticatedOrganizationContext,
             });
