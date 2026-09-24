@@ -55,7 +55,11 @@ describe("UserSettings", () => {
                 "user-dashboard": { enabled: true },
                 profile: { enabled: true },
             },
-            display: { dateFormat: "iso-extended", timeFormat: "24-hour" },
+            display: {
+                dateFormat: "iso-extended",
+                timeFormat: "24-hour",
+                timeZone: "Pacific/Auckland",
+            },
         });
     });
 

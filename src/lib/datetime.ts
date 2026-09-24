@@ -56,6 +56,44 @@ export type DisplayPreferences = UserSettings["display"];
 export const DEFAULT_DISPLAY_PREFERENCES: DisplayPreferences = UserSettings.default().display;
 
 /**
+ * Re-express `date` as the wall-clock time an observer in `timeZone` would read off it, as a
+ * plain `Date` in the *process* zone — which is the form date-fns patterns can render.
+ *
+ * `Intl` is what does the real work, so DST transitions and historical offset changes come from
+ * the runtime's zone database rather than arithmetic here. The alternative, `TZDate` from
+ * `@date-fns/tz`, silently does nothing on date-fns 3: its `format` funnels values through
+ * `toDate()`, which drops the subclass, so every zone renders identically. It needs date-fns 4.
+ *
+ * Only correct for *formatting*. The result is a lie about the instant it represents — its epoch
+ * value is shifted — so never do arithmetic on it or hand it back to a caller.
+ */
+function wallClockIn(date: Date, timeZone: string): Date {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        hour12: false,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    }).formatToParts(date);
+
+    const at = (type: Intl.DateTimeFormatPartTypes): number =>
+        Number(parts.find((part) => part.type === type)?.value ?? 0);
+
+    // `hour` comes back as 24 rather than 0 for midnight under `hour12: false`.
+    return new Date(
+        at("year"),
+        at("month") - 1,
+        at("day"),
+        at("hour") % 24,
+        at("minute"),
+        at("second"),
+    );
+}
+
+/**
  * Formats a date for display to the user.
  *
  * `prefs` is optional, and omitting it renders `DEFAULT_DISPLAY_PREFERENCES` — i.e. the call
@@ -71,7 +109,7 @@ export function formatDate(
     dateOrString: string | Date,
     prefs: DisplayPreferences = DEFAULT_DISPLAY_PREFERENCES,
 ): string {
-    const date = new Date(dateOrString);
+    const date = wallClockIn(new Date(dateOrString), prefs.timeZone);
     return format(date, DATE_FORMAT_PATTERNS[prefs.dateFormat]);
 }
 
@@ -80,7 +118,7 @@ export function formatDateTime(
     dateOrString: string | Date,
     prefs: DisplayPreferences = DEFAULT_DISPLAY_PREFERENCES,
 ): string {
-    const date = new Date(dateOrString);
+    const date = wallClockIn(new Date(dateOrString), prefs.timeZone);
     return format(
         date,
         `${DATE_FORMAT_PATTERNS[prefs.dateFormat]} ${TIME_FORMAT_PATTERNS[prefs.timeFormat]}`,

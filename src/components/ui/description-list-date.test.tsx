@@ -22,8 +22,13 @@ vi.mock("@/hooks/use-preferences", async (importOriginal) => ({
     usePreferences: vi.fn(),
 }));
 
-/** Local-time components, so the rendering is stable whatever zone the test process is in. */
-const CREATED_AT = new Date(2026, 8, 24, 14, 30);
+/*
+ * A fixed instant plus an explicit zone on every expectation, rather than local-time components
+ * — see the same note in `src/lib/datetime.test.ts`. The suite's process zone is deliberately
+ * neither of the zones named here.
+ */
+const CREATED_AT = new Date("2026-02-02T22:36:00.000Z");
+const NZ = "Pacific/Auckland";
 
 function givenPreferences(display: Partial<UserSettings["display"]>) {
     const settings = UserSettings.default();
@@ -36,24 +41,24 @@ describe("DLDateDetails", () => {
     beforeEach(() => vi.mocked(usePreferences).mockReset());
 
     it("renders the timestamp using the viewer's presets", () => {
-        givenPreferences({ dateFormat: "written", timeFormat: "12-hour" });
+        givenPreferences({ dateFormat: "written", timeFormat: "12-hour", timeZone: NZ });
         render(<DLDateDetails date={CREATED_AT} />);
 
-        expect(screen.getByText("24 Sep 2026 2:30 PM")).toBeInTheDocument();
+        expect(screen.getByText("03 Feb 2026 11:36 AM")).toBeInTheDocument();
     });
 
     it("follows a change of preset rather than a hardcoded default", () => {
-        givenPreferences({ dateFormat: "slash", timeFormat: "24-hour" });
+        givenPreferences({ dateFormat: "slash", timeFormat: "24-hour", timeZone: NZ });
         const { rerender } = render(<DLDateDetails date={CREATED_AT} />);
-        expect(screen.getByText("24/09/2026 14:30")).toBeInTheDocument();
+        expect(screen.getByText("03/02/2026 11:36")).toBeInTheDocument();
 
-        givenPreferences({ dateFormat: "dot", timeFormat: "24-hour" });
+        givenPreferences({ dateFormat: "dot", timeFormat: "24-hour", timeZone: NZ });
         rerender(<DLDateDetails date={CREATED_AT} />);
-        expect(screen.getByText("24.09.2026 14:30")).toBeInTheDocument();
+        expect(screen.getByText("03.02.2026 11:36")).toBeInTheDocument();
     });
 
     it("still renders the relative line, which takes no preference", () => {
-        givenPreferences({ dateFormat: "iso-extended" });
+        givenPreferences({ dateFormat: "iso-extended", timeZone: NZ });
         render(<DLDateDetails date={new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)} />);
 
         expect(screen.getByText("3 days ago")).toBeInTheDocument();
