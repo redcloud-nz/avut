@@ -146,8 +146,8 @@ Add these to `ActionHotkey`:
 | `unlink` | `Alt+L` | Shares the key with `link`. The two are mutually exclusive on any page, like a toggle. |
 
 Update the registry comment to say that some verbs deliberately share a key when they can never
-be registered at the same time. The alternative is to give `unlink` its own key: `Alt+U` is
-taken by `unpublish`, and `Alt+K` has no mnemonic. (Open question 1.)
+be registered at the same time. (Decided 2026-09-25: share the key rather than give `unlink` its
+own. `Alt+U` is taken by `unpublish`, and nothing else has a mnemonic.)
 
 ### 2b. User menu (#260)
 
@@ -167,7 +167,7 @@ shell with category `"Users"`. Its actions are:
 - Edit sets `?action=update`, which opens the existing self-triggered
   `AdminModule_UpdateUser_Dialog`. **Keep the pencil on the User Details card.** The person and
   team pages have Edit on both the card and the menu, and the point of this work is to match
-  them. #260 says to "move" Edit. (Open question 2.)
+  them. #260 says to "move" Edit, but keeping both was decided on 2026-09-25.
 - Remove the Link/Unlink `CardAction` from the Linked Person card. Render that card only when
   `linkedPerson` is set, which also removes the "No linked person." empty state.
 - The two `useQueryState("action", …)` calls, in the menu and in `UpdateUser_Dialog`, parse
@@ -245,18 +245,19 @@ file.
 
 ### 3b. Hotkey verb
 
-Add `addMembership: "Alt+T"` ("T for team"). The label differs by page: "Add to team" on a
-person, "Add person" on a team. `create` (`Alt+N`) was considered, but on a detail page it would
-suggest creating another record of the page's own type. (Open question 3.)
+Reuse the existing `create` verb (`Alt+N`); no new verb is added. On these pages the new record
+is a team membership. The label differs by page: "Add to team" on a person, "Add person" on a
+team, both with `ObjectIcons.Create`. Neither detail menu has any other `create` action, so the
+`verb` key stays unique in each menu. (Decided 2026-09-25.)
 
 ### 3c. Wiring
 
-- **Person menu (#261).** Add `addMembership` / "Add to team", shown when the person is
+- **Person menu (#261).** Add `create` / "Add to team", shown when the person is
   `Active`, with permission `team: ["update"]` (which is what `createTeamMembership` needs). The
   Teams card keeps its `+` `CardAction`, which now sets `add-membership`. Either the menu or the
   card hosts the dialog, not both. Put it in the menu, since the menu is always mounted and the
   Teams card sits inside a `Suspense`.
-- **Team menu (#262).** Add `addMembership` / "Add person" with `team: ["update"]`. Host the
+- **Team menu (#262).** Add `create` / "Add person" with `team: ["update"]`. Host the
   dialog in `team-menu.tsx`.
 - **Team overview card (#262).** Add a `+` `CardAction` to the "Related" card
   (`team-links.tsx`), next to the Personnel count and gated with `<Protect permissions={{ team: ["update"] }}>`.
@@ -317,7 +318,7 @@ This follows #225's proposal, with the open questions answered below. Ask before
   - the add-membership picker (Phase 3)
   - the team and skill scope dialogs, and the report pages' default team
   - session personnel's team filter
-  - the admin dashboard team count (decide whether it should count Active only)
+  - the admin dashboard team count, which counts Active teams only (decided 2026-09-25)
 
   Check `import-team-from-d4h.tsx` and `client/collections/teams.ts` as well: the first uses
   `listTeams` for duplicate detection, which must still see archived teams.
@@ -354,13 +355,12 @@ This follows #225's proposal, with the open questions answered below. Ask before
     dialogs; its page still loads; sync is refused; restore brings it back.
 - Run `/avut-conventions-review` over each phase's diff before committing it.
 
-## Open questions
+## Decisions (2026-09-25)
 
-1. Should `link` and `unlink` share `Alt+L`, or should `unlink` get its own key?
-2. Should the user page keep the Edit pencil on its card, as person and team do, or move Edit
-   to the menu only, as #260 literally says? This plan keeps it.
-3. For adding a membership: a new `addMembership` verb on `Alt+T`, or reuse `create`?
-4. Should the admin dashboard team count show Active teams only?
+1. `link` and `unlink` share `Alt+L`.
+2. The user page has Edit in both places, the card pencil and the menu, like person and team.
+3. Adding a membership reuses the `create` verb (`Alt+N`).
+4. The admin dashboard team count shows Active teams only.
 
 ---
 
