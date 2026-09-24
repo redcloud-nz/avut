@@ -4,15 +4,13 @@
  */
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
-
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { UserSettingsForm } from "@/components/user-settings/user-settings-form";
-import { trpc } from "@/trpc/client";
+import { usePreferences } from "@/hooks/use-preferences";
 
 export function UserSettings_PreferencesContent() {
-    const { data: settings } = useSuspenseQuery(trpc.settings.getUserSettings.queryOptions());
+    const { settings } = usePreferences();
 
     return (
         <>
