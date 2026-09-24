@@ -6,6 +6,7 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
+import { AdminModule_AddTeamMembership_Dialog } from "@/components/admin/teams/add-team-membership";
 import { D4HIcons, ObjectIcons } from "@/components/icons";
 import {
     DropdownMenuGroup,
@@ -24,7 +25,14 @@ interface AdminModule_TeamMenuProps {
     team: TeamData;
 }
 
-const ACTIONS = ["update", "delete", "d4h-link", "d4h-sync", "d4h-unlink"] as const;
+const ACTIONS = [
+    "update",
+    "delete",
+    "d4h-link",
+    "d4h-sync",
+    "d4h-unlink",
+    "add-membership",
+] as const;
 
 export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
@@ -40,6 +48,13 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
             label: "Edit",
             icon: <ObjectIcons.Edit />,
             onSelect: () => setAction("update", { history: "push" }),
+            disabled: !canUpdate,
+        },
+        {
+            verb: "create",
+            label: "Add person",
+            icon: <ObjectIcons.Create />,
+            onSelect: () => setAction("add-membership", { history: "push" }),
             disabled: !canUpdate,
         },
         {
@@ -106,6 +121,16 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                 open={action === "delete"}
                 onOpenChange={(open) =>
                     void setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            <AdminModule_AddTeamMembership_Dialog
+                team={team}
+                open={action === "add-membership"}
+                onOpenChange={(open) =>
+                    void setAction(open ? "add-membership" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

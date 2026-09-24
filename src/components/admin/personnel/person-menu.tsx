@@ -9,6 +9,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { AdminModule_LinkUser_Dialog } from "@/components/admin/person-user-link/link-user";
 import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/person-user-link/unlink-person";
+import { AdminModule_AddTeamMembership_Dialog } from "@/components/admin/teams/add-team-membership";
 import { ObjectIcons } from "@/components/icons";
 import {
     DropdownMenuGroup,
@@ -46,6 +47,7 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
             "restore",
             "link-user",
             "unlink-user",
+            "add-membership",
         ] as const),
     );
 
@@ -53,6 +55,7 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
     const canDelete = useHasPermission({ person: ["delete"] });
     const canInvite = useHasPermission({ invitation: ["create"] });
     const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
+    const canAddMembership = useHasPermission({ team: ["update"] });
 
     const actions: MenuActionProps[] = [
         {
@@ -63,6 +66,15 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
             disabled: !canUpdate,
         },
     ];
+    if (person.status === "Active") {
+        actions.push({
+            verb: "create",
+            label: "Add to team",
+            icon: <ObjectIcons.Create />,
+            onSelect: () => setAction("add-membership", { history: "push" }),
+            disabled: !canAddMembership,
+        });
+    }
     if (person.status === "Active" && !linkedUser) {
         actions.push({
             verb: "invite",
@@ -213,6 +225,17 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
                     }
                 />
             )}
+
+            {/* Add Team Membership dialog */}
+            <AdminModule_AddTeamMembership_Dialog
+                person={person}
+                open={action === "add-membership"}
+                onOpenChange={(open) =>
+                    setAction(open ? "add-membership" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
         </>
     );
 }

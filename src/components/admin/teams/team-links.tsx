@@ -5,11 +5,14 @@
 "use client";
 
 import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { ItemLinkActionIcon } from "@/components/icons";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
@@ -19,6 +22,11 @@ import { trpc } from "@/trpc/client";
 
 export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
     const organization = useOrganization();
+
+    const [, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["add-membership"] as const),
+    );
 
     const teamMembersQuery = useQuery(
         trpc.teams.listTeamMemberships.queryOptions({
@@ -31,6 +39,18 @@ export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
         <Card>
             <CardHeader>
                 <CardTitle>Related</CardTitle>
+                <Protect permissions={{ team: ["update"] }}>
+                    <CardAction>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Add person"
+                            onClick={() => setAction("add-membership", { history: "push" })}
+                        >
+                            <ObjectIcons.Create />
+                        </Button>
+                    </CardAction>
+                </Protect>
             </CardHeader>
             <CardContent className="px-2 -my-2">
                 {teamMembersQuery.isLoading && <Skeleton className="h-16 w-full" />}
