@@ -5,15 +5,11 @@
 
 "use client";
 
-import { Controller, useForm } from "react-hook-form";
+import { Fragment } from "react";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-
-import { Button, MutationButton } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldContent, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { Switch } from "@/components/ui/switch";
-import { useUserSettingsMutation } from "@/components/user-settings/use-user-settings-mutation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DLAction, DLActions, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { UserModules_UpdateSettings_Dialog } from "@/components/user-settings/update-modules-settings-dialog";
 import { userModules as allUserModules, configurableUserModuleIds } from "@/lib/modules";
 import { UserSettings } from "@/lib/schemas/user-settings";
 
@@ -28,20 +24,6 @@ const userModules = allUserModules.filter((m) => configurableUserModuleIds.inclu
  * that actually needs one.
  */
 export function UserModules_SettingsCard({ settings }: { settings: UserSettings }) {
-    const form = useForm({
-        resolver: zodResolver(UserSettings.schema.shape.modules),
-        defaultValues: settings.modules,
-    });
-
-    const mutation = useUserSettingsMutation({
-        errorMessage: "Failed to update module settings",
-        onSaved: (updated) => form.reset(updated.modules),
-    });
-
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({ settings: { ...settings, modules: formData } });
-    });
-
     if (userModules.length === 0) return null;
 
     return (
@@ -50,47 +32,25 @@ export function UserModules_SettingsCard({ settings }: { settings: UserSettings 
                 <CardTitle>Modules</CardTitle>
             </CardHeader>
             <CardContent>
-                <form id="user-modules-settings-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        {userModules.map((module, index) => (
-                            <div key={module.id}>
-                                <Field orientation="horizontal">
-                                    <FieldContent>
-                                        <FieldLabel htmlFor={`${module.id}-module-enabled`}>
-                                            {module.label}
-                                        </FieldLabel>
-                                    </FieldContent>
-                                    <Controller
-                                        control={form.control}
-                                        name={`${module.id}.enabled`}
-                                        render={({ field }) => (
-                                            <Switch
-                                                id={`${module.id}-module-enabled`}
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        )}
-                                    />
-                                </Field>
-                                {index < userModules.length - 1 && <FieldSeparator />}
-                            </div>
-                        ))}
-                    </FieldGroup>
-                </form>
+                <DLActions>
+                    {userModules.map((module, index) => (
+                        <Fragment key={module.id}>
+                            <DLTerm>{module.label}</DLTerm>
+                            <DLDetails>
+                                {settings.modules[module.id as keyof UserSettings["modules"]]
+                                    ?.enabled
+                                    ? "Enabled"
+                                    : "Disabled"}
+                            </DLDetails>
+                            <DLAction>
+                                {index === 0 && (
+                                    <UserModules_UpdateSettings_Dialog settings={settings} />
+                                )}
+                            </DLAction>
+                        </Fragment>
+                    ))}
+                </DLActions>
             </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                {form.formState.isDirty && (
-                    <Button variant="ghost" type="button" onClick={() => form.reset()}>
-                        Reset
-                    </Button>
-                )}
-                <MutationButton
-                    form="user-modules-settings-form"
-                    status={mutation.status}
-                    text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
-                    disabled={mutation.status !== "idle"}
-                />
-            </CardFooter>
         </Card>
     );
 }
