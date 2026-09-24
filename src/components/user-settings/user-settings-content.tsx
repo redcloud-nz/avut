@@ -23,7 +23,12 @@ export function UserSettings_PreferencesContent() {
                         <Saratoga.Title>Preferences</Saratoga.Title>
                     </Saratoga.Header>
 
-                    <UserSettingsForm settings={settings} />
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <UserSettingsForm settings={settings} />
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary" />
+                    </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>

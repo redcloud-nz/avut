@@ -13,6 +13,7 @@ import { I3Module_SettingsCard } from "@/components/admin-settings/i3-module-car
 import { Personnel_SettingsCard } from "@/components/admin-settings/personnel-card";
 import { SkillPackageBuilderModule_SettingsCard } from "@/components/admin-settings/skill-package-builder-module-card";
 import { SkillTrackModule_SettingsCard } from "@/components/admin-settings/skill-track-module-card";
+import type { SaratogaContentsItem } from "@/components/blocks/saratoga-contents";
 import type { ModuleFlagState } from "@/lib/module-flags";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -38,16 +39,16 @@ export function OrganizationSettingsForm({
 }) {
     return (
         <>
-            <div className="space-y-4">
+            <div id="general" className="space-y-4 scroll-mt-4">
                 <General_SettingsCard />
             </div>
 
-            <div className="space-y-4 pt-6">
+            <div id="personnel" className="space-y-4 pt-6 scroll-mt-4">
                 <h3 className="text-lg font-semibold tracking-tight">Personnel</h3>
                 <Personnel_SettingsCard organizationId={organizationId} settings={settings} />
             </div>
 
-            <div className="space-y-4 pt-6">
+            <div id="integrations" className="space-y-4 pt-6 scroll-mt-4">
                 <h3 className="text-lg font-semibold tracking-tight">Integrations</h3>
                 <D4HIntegration_SettingsCard organizationId={organizationId} settings={settings} />
                 <EmailIntegration_SettingsCard
@@ -56,21 +57,60 @@ export function OrganizationSettingsForm({
                 />
             </div>
 
-            <div className="space-y-4 pt-6">
+            <div id="modules" className="space-y-4 pt-6 scroll-mt-4">
                 <h3 className="text-lg font-semibold tracking-tight">Modules</h3>
-                <D4HViewsModule_SettingsCard organizationId={organizationId} settings={settings} />
+                <div id="module-d4h-views" className="scroll-mt-4">
+                    <D4HViewsModule_SettingsCard
+                        organizationId={organizationId}
+                        settings={settings}
+                    />
+                </div>
                 {moduleFlags.i3 !== false && (
-                    <I3Module_SettingsCard organizationId={organizationId} settings={settings} />
+                    <div id="module-i3" className="scroll-mt-4">
+                        <I3Module_SettingsCard
+                            organizationId={organizationId}
+                            settings={settings}
+                        />
+                    </div>
                 )}
-                <SkillPackageBuilderModule_SettingsCard
-                    organizationId={organizationId}
-                    settings={settings}
-                />
-                <SkillTrackModule_SettingsCard
-                    organizationId={organizationId}
-                    settings={settings}
-                />
+                <div id="module-skill-package-builder" className="scroll-mt-4">
+                    <SkillPackageBuilderModule_SettingsCard
+                        organizationId={organizationId}
+                        settings={settings}
+                    />
+                </div>
+                <div id="module-skill-track" className="scroll-mt-4">
+                    <SkillTrackModule_SettingsCard
+                        organizationId={organizationId}
+                        settings={settings}
+                    />
+                </div>
             </div>
         </>
     );
+}
+
+/**
+ * Matches the section (and, for "Modules", per-module card) `id`s above — passed to
+ * `Saratoga.Contents` by the page. Takes `moduleFlags` so the "Modules" children stay in sync
+ * with which cards the form itself actually renders (e.g. `i3`, gated the same way above).
+ */
+export function getOrganizationSettingsFormSections(
+    moduleFlags: ModuleFlagState,
+): SaratogaContentsItem[] {
+    return [
+        { id: "general", label: "General" },
+        { id: "personnel", label: "Personnel" },
+        { id: "integrations", label: "Integrations" },
+        {
+            id: "modules",
+            label: "Modules",
+            children: [
+                { id: "module-d4h-views", label: "D4H Views" },
+                ...(moduleFlags.i3 !== false ? [{ id: "module-i3", label: "I3" }] : []),
+                { id: "module-skill-package-builder", label: "Skill Package Builder" },
+                { id: "module-skill-track", label: "Skill Track" },
+            ],
+        },
+    ];
 }

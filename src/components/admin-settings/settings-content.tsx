@@ -6,7 +6,10 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { OrganizationSettingsForm } from "@/components/admin-settings/organization-settings-form";
+import {
+    getOrganizationSettingsFormSections,
+    OrganizationSettingsForm,
+} from "@/components/admin-settings/organization-settings-form";
 import { OrganizationSettingsScopeProvider } from "@/components/admin-settings/settings-scope";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
@@ -46,11 +49,23 @@ export function AdminModule_Settings_Content() {
                         <Saratoga.Title>Organisation Settings</Saratoga.Title>
                     </Saratoga.Header>
 
-                    <OrganizationSettingsForm
-                        organizationId={organization.id}
-                        settings={settings}
-                        moduleFlags={organization.moduleFlags}
-                    />
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <OrganizationSettingsForm
+                                organizationId={organization.id}
+                                settings={settings}
+                                moduleFlags={organization.moduleFlags}
+                            />
+                            <Saratoga.ContentsSpacer />
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary">
+                            <Saratoga.Contents
+                                items={getOrganizationSettingsFormSections(
+                                    organization.moduleFlags,
+                                )}
+                            />
+                        </Saratoga.Column>
+                    </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </OrganizationSettingsScopeProvider>
