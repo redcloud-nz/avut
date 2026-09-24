@@ -41,7 +41,6 @@
     "@content-collections/mdx": "^0.2.2",
     "@content-collections/next": "^0.2.11",
     "@date-fns/tz": "^1.5.0",
-    "@date-fns/utc": "^2.1.1",
     "@dnd-kit/react": "^0.3.2",
     "@flags-sdk/vercel": "^1.4.7",
     "@hookform/lenses": "^0.9.0",
