@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import * as z from "zod";
 
-import { createSettingsSchema } from "./settings-schema";
+import { createSettingsSchema, defineSettingsSlices } from "./settings-schema";
 import { UserSettings } from "./user-settings";
 
 describe("createSettingsSchema default skeleton", () => {
@@ -79,5 +79,50 @@ describe("UserSettings", () => {
         expect(restored.display.dateFormat).toBe("slash");
         expect(restored.display.timeFormat).toBe("24-hour");
         expect(restored.modules.profile.enabled).toBe(true);
+    });
+});
+
+describe("defineSettingsSlices", () => {
+    const schema = z.object({
+        group: z.object({
+            enabled: z.boolean().default(false),
+            mode: z.enum(["a", "b"]).default("b"),
+        }),
+        nested: z.object({
+            inner: z.object({ flag: z.boolean().default(true) }),
+        }),
+    });
+    const Slices = defineSettingsSlices(schema, ["group", "nested.inner"] as const);
+
+    it("resolves a dot path to its split segments", () => {
+        expect(Slices.pathOf("nested.inner")).toEqual(["nested", "inner"]);
+    });
+
+    it("leaves an omitted field absent rather than resolving it to its default", () => {
+        // The bug this guards: `.partial()` alone still applies `.default()` to an omitted key,
+        // so a card patching one field would carry defaults for the rest of its slice and reset
+        // them. An omitted key must mean "leave alone".
+        const parsed = Slices.input.parse({ slice: "group", patch: { mode: "a" } });
+        if (parsed.slice !== "group") throw new Error("expected the group slice");
+
+        expect(parsed.patch.mode).toBe("a");
+        expect(parsed.patch.enabled).toBeUndefined();
+    });
+
+    it("rejects a patch field that does not belong to the named slice", () => {
+        expect(() =>
+            Slices.input.parse({ slice: "nested.inner", patch: { enabled: true } }),
+        ).not.toThrow(); // unknown keys are stripped, not rejected
+        expect(Slices.input.parse({ slice: "nested.inner", patch: { flag: false } }).patch).toEqual(
+            { flag: false },
+        );
+    });
+
+    it("rejects an unknown slice", () => {
+        expect(() => Slices.input.parse({ slice: "nope", patch: {} })).toThrow();
+    });
+
+    it("rejects a patch field of the wrong type", () => {
+        expect(() => Slices.input.parse({ slice: "group", patch: { enabled: 7 } })).toThrow();
     });
 });

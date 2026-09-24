@@ -62,7 +62,7 @@ export function SkillTrackModule_SettingsCard({
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId,
-            settings: { ...settings, modules: { ...settings.modules, "skill-track": formData } },
+            update: { slice: "modules.skill-track", patch: formData },
         });
     });
 

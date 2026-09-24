@@ -60,6 +60,13 @@ export interface SettingsStore<TSettings, TReadPrisma, TWritePrisma> {
         settings: TSettings,
         logEntry?: (changes: DiffChange[]) => Prisma.PrismaPromise<unknown>,
     ): Promise<TSettings>;
+    writeSlice(
+        prisma: TWritePrisma,
+        scopeId: string,
+        path: string[],
+        patch: Record<string, unknown>,
+        logEntry?: (changes: DiffChange[]) => Prisma.PrismaPromise<unknown>,
+    ): Promise<TSettings>;
 }
 
 /**
@@ -91,16 +98,21 @@ export function createSettingsStore<
         return settingsSchema.fromRecords(records);
     }
 
-    async function write(
+    /**
+     * The shared write path. `produce` is handed the settings as they stand *in the database*
+     * and returns what they should become, so a caller that merges (`writeSlice`) merges onto
+     * current state rather than onto whatever snapshot its client was holding.
+     */
+    async function writeWith(
         prisma: TWritePrisma,
         scopeId: string,
-        next: TSettings,
+        produce: (existing: TSettings) => TSettings,
         logEntry?: (changes: DiffChange[]) => Prisma.PrismaPromise<unknown>,
     ): Promise<TSettings> {
-        // Validate before writing — the settings may have come straight off the wire.
-        const parsed = settingsSchema.schema.parse(next);
-
         const existing = await read(prisma, scopeId);
+
+        // Validate before writing — the settings may have come straight off the wire.
+        const parsed = settingsSchema.schema.parse(produce(existing));
 
         const flattenedExisting = settingsSchema.flatten(existing);
         const flattenedNext = settingsSchema.flatten(parsed);
@@ -135,5 +147,50 @@ export function createSettingsStore<
         return await read(prisma, scopeId);
     }
 
-    return { read, write };
+    function write(
+        prisma: TWritePrisma,
+        scopeId: string,
+        settings: TSettings,
+        logEntry?: (changes: DiffChange[]) => Prisma.PrismaPromise<unknown>,
+    ): Promise<TSettings> {
+        return writeWith(prisma, scopeId, () => settings, logEntry);
+    }
+
+    function writeSlice(
+        prisma: TWritePrisma,
+        scopeId: string,
+        path: string[],
+        patch: Record<string, unknown>,
+        logEntry?: (changes: DiffChange[]) => Prisma.PrismaPromise<unknown>,
+    ): Promise<TSettings> {
+        return writeWith(
+            prisma,
+            scopeId,
+            (existing) => {
+                const next = structuredClone(existing) as Record<string, unknown>;
+
+                let cursor = next;
+                for (const part of path.slice(0, -1)) {
+                    cursor = cursor[part] as Record<string, unknown>;
+                }
+
+                // Drop keys the patch left undefined before merging. `.partial()` yields an
+                // object with *every* field present, the omitted ones as `undefined`, so a naive
+                // spread would blank a field the patch never mentioned — and the re-parse would
+                // then quietly substitute that field's schema default. An absent key means
+                // "leave alone"; JSON cannot carry `undefined` over the wire anyway.
+                const defined = Object.fromEntries(
+                    Object.entries(patch).filter(([, value]) => value !== undefined),
+                );
+
+                const leaf = path[path.length - 1];
+                cursor[leaf] = { ...(cursor[leaf] as Record<string, unknown>), ...defined };
+
+                return next as TSettings;
+            },
+            logEntry,
+        );
+    }
+
+    return { read, write, writeSlice };
 }

@@ -44,7 +44,7 @@ export function EmailIntegration_SettingsCard({
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId,
-            settings: { ...settings, integrations: { ...settings.integrations, email: formData } },
+            update: { slice: "integrations.email", patch: formData },
         });
     });
 

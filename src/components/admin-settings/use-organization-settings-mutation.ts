@@ -16,8 +16,11 @@ import { trpc } from "@/trpc/client";
 /**
  * The save mutation shared by every organization-settings card.
  *
+ * Cards send a patch to their own slice (`mutate({ organizationId, slice, patch })`) rather than
+ * the whole settings tree, so two admins saving different cards no longer clobber each other.
+ *
  * There is one tRPC surface here regardless of who is calling:
- * `settings.updateOrganizationSettings` is declared `allowSystemAdmin`, so a site-wide
+ * `settings.updateOrganizationSettingsSlice` is declared `allowSystemAdmin`, so a site-wide
  * administrator editing an organization they don't belong to goes through the same procedure as
  * one of its own admins. (It used to be mirrored by `systemAdmin.updateOrganizationSettings`,
  * which forced a runtime scope branch here and kept these cards off `meta.effects`.)
@@ -39,8 +42,8 @@ export function useOrganizationSettingsMutation({
     onSaved: (updated: OrganizationSettings) => void;
 }) {
     const mutation = useMutation(
-        trpc.settings.updateOrganizationSettings.mutationOptions({
-            meta: { effects: settingsEffects.updateOrganizationSettings },
+        trpc.settings.updateOrganizationSettingsSlice.mutationOptions({
+            meta: { effects: settingsEffects.updateOrganizationSettingsSlice },
             onError(error) {
                 toast.error(`${errorMessage}: ${error.message}`);
                 mutation.reset();

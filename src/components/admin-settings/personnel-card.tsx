@@ -48,7 +48,7 @@ export function Personnel_SettingsCard({
     });
 
     const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({ organizationId, settings: { ...settings, personnel: formData } });
+        mutation.mutate({ organizationId, update: { slice: "personnel", patch: formData } });
     });
 
     return (

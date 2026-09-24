@@ -65,7 +65,7 @@ export function UserModules_UpdateSettings_Dialog({ settings }: { settings: User
     }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({ settings: { ...settings, modules: formData } });
+        mutation.mutate({ update: { slice: "modules", patch: formData } });
     });
 
     return (

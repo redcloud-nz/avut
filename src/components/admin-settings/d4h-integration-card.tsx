@@ -52,10 +52,7 @@ export function D4HIntegration_SettingsCard({
     });
 
     const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId,
-            settings: { ...settings, integrations: { ...settings.integrations, d4h: formData } },
-        });
+        mutation.mutate({ organizationId, update: { slice: "integrations.d4h", patch: formData } });
     });
 
     return (

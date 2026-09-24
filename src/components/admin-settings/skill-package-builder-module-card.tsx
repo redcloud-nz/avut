@@ -47,10 +47,7 @@ export function SkillPackageBuilderModule_SettingsCard({
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId,
-            settings: {
-                ...settings,
-                modules: { ...settings.modules, "skill-package-builder": formData },
-            },
+            update: { slice: "modules.skill-package-builder", patch: formData },
         });
     });
 

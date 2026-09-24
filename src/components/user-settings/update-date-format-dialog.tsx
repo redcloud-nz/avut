@@ -70,9 +70,7 @@ export function UserDisplay_UpdateDateFormat_Dialog({ settings }: { settings: Us
     }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(({ dateFormat }) => {
-        mutation.mutate({
-            settings: { ...settings, display: { ...settings.display, dateFormat } },
-        });
+        mutation.mutate({ update: { slice: "display", patch: { dateFormat } } });
     });
 
     return (

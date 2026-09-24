@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { createSettingsSchema } from "./settings-schema";
+import { createSettingsSchema, defineSettingsSlices } from "./settings-schema";
 
 const userSettingsSchema = z.object({
     /**
@@ -46,3 +46,15 @@ const userSettingsSchema = z.object({
 export const UserSettings = createSettingsSchema(userSettingsSchema);
 
 export type UserSettings = z.infer<typeof userSettingsSchema>;
+
+/**
+ * The editable groups of the user settings tree — one per settings card. `modules` is a single
+ * slice because one dialog edits every user module together, where the organization tree has a
+ * card (and so a slice) per module.
+ */
+export const UserSettingsSlices = defineSettingsSlices(userSettingsSchema, [
+    "modules",
+    "display",
+] as const);
+
+export type UserSettingsSliceId = (typeof UserSettingsSlices.ids)[number];

@@ -14,9 +14,11 @@ import { UserSettings } from "@/lib/schemas/user-settings";
 import { trpc } from "@/trpc/client";
 
 /**
- * The save mutation shared by every user-settings card. Unlike organization settings, there is
- * only one tRPC surface here — a user always edits their own settings — so this needs no
- * scope-provider indirection.
+ * The save mutation shared by every user-settings card. A user always edits their own settings,
+ * so the procedure takes no owner — only which slice to patch.
+ *
+ * Cards send a patch to their own slice (`mutate({ slice, patch })`) rather than the whole
+ * settings tree, so two cards saving at once no longer clobber each other.
  *
  * The cache write itself is declared once as `meta.effects` (`settingsEffects.updateUserSettings`)
  * rather than here — this hook's `onSuccess` only handles the form-reset and toast concerns
@@ -34,8 +36,8 @@ export function useUserSettingsMutation({
     onSaved: (updated: UserSettings) => void;
 }) {
     const mutation = useMutation(
-        trpc.settings.updateUserSettings.mutationOptions({
-            meta: { effects: settingsEffects.updateUserSettings },
+        trpc.settings.updateUserSettingsSlice.mutationOptions({
+            meta: { effects: settingsEffects.updateUserSettingsSlice },
             onError(error) {
                 toast.error(`${errorMessage}: ${error.message}`);
                 mutation.reset();

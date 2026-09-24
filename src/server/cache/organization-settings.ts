@@ -17,6 +17,7 @@ export { revalidateOrganizationSettings } from "./organization-settings-revalida
 export {
     readOrganizationSettings,
     writeOrganizationSettings,
+    writeOrganizationSettingsSlice,
 } from "@/server/organization-settings-store";
 
 /**

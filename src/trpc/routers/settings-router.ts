@@ -5,17 +5,20 @@
 
 import * as z from "zod";
 
-import { OrganizationSettings } from "@/lib/schemas/organization-settings";
-import { UserSettings } from "@/lib/schemas/user-settings";
+import {
+    OrganizationSettings,
+    OrganizationSettingsSlices,
+} from "@/lib/schemas/organization-settings";
+import { UserSettings, UserSettingsSlices } from "@/lib/schemas/user-settings";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings-revalidate";
 import {
     getUserSettings,
     revalidateUserSettings,
-    writeUserSettings,
+    writeUserSettingsSlice,
 } from "@/server/cache/user-settings";
 import {
     readOrganizationSettings,
-    writeOrganizationSettings,
+    writeOrganizationSettingsSlice,
 } from "@/server/organization-settings-store";
 
 import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
@@ -60,40 +63,43 @@ export const settingsRouter = createTrpcRouter({
     }),
 
     /**
-     * Update the organization settings for a given organization.
+     * Apply a patch to one slice of an organization's settings.
+     *
+     * A card sends only the fields of its own group that changed, and the patch is merged onto
+     * the settings as they stand in the database — so two admins saving different cards at the
+     * same time no longer overwrite each other with a stale snapshot of the whole tree. The
+     * merged group is re-parsed in full, so invariants within a slice still hold.
      *
      * `allowSystemAdmin` lets a site-wide administrator write the settings of an organization
      * they are not a member of — `systemAdminRouter` reuses this procedure directly rather than
      * duplicating it, so the audit entry lands in the target organization's log either way,
      * attributed to the acting user, with no `description` distinguishing the two paths.
-     * Only the config leaves whose value actually changed are upserted, and the audit entry
-     * rides in the same transaction.
      *
      * @param ctx The authenticated context.
-     * @param input The input object containing the updates to apply.
-     * @returns The updated organization settings.
+     * @param input `update` names the slice to patch and the changed fields of it. It is
+     *     nested rather than flat because tRPC can only merge object inputs, and this one is a
+     *     discriminated union over the slices.
+     * @returns The organization's settings as they stand after the write.
      */
-    updateOrganizationSettings: organizationProcedure(
+    updateOrganizationSettingsSlice: organizationProcedure(
         { organization: ["update"] },
         { allowSystemAdmin: true },
     )
-        .input(
-            z.object({
-                settings: OrganizationSettings.schema,
-            }),
-        )
+        .input(z.object({ update: OrganizationSettingsSlices.input }))
         .output(OrganizationSettings.schema)
         .mutation(async ({ ctx, input }) => {
-            const settings = await writeOrganizationSettings(
+            const settings = await writeOrganizationSettingsSlice(
                 ctx.prisma,
                 ctx.organizationId,
-                input.settings,
+                OrganizationSettingsSlices.pathOf(input.update.slice),
+                input.update.patch,
                 (changes) =>
                     ctx.logEvent({
                         action: "Update",
                         objectType: "OrganizationSettings",
                         objectId: ctx.organizationId,
                         changes,
+                        description: `Updated ${input.update.slice} settings`,
                     }),
             );
 
@@ -103,33 +109,32 @@ export const settingsRouter = createTrpcRouter({
         }),
 
     /**
-     * Update the settings for the current (authenticated) user.
+     * Apply a patch to one slice of the current (authenticated) user's settings.
      *
-     * Only the config leaves whose value actually changed are upserted, and the audit entry
-     * rides in the same transaction.
+     * See `updateOrganizationSettingsSlice` — this is the same mechanism over the user tree.
      *
      * @param ctx The authenticated context.
-     * @param input The input object containing the updates to apply.
-     * @returns The updated user settings.
+     * @param input `update` names the slice to patch and the changed fields of it. It is
+     *     nested rather than flat because tRPC can only merge object inputs, and this one is a
+     *     discriminated union over the slices.
+     * @returns The user's settings as they stand after the write.
      */
-    updateUserSettings: authenticatedProcedure
-        .input(
-            z.object({
-                settings: UserSettings.schema,
-            }),
-        )
+    updateUserSettingsSlice: authenticatedProcedure
+        .input(z.object({ update: UserSettingsSlices.input }))
         .output(UserSettings.schema)
         .mutation(async ({ ctx, input }) => {
-            const settings = await writeUserSettings(
+            const settings = await writeUserSettingsSlice(
                 ctx.prisma,
                 ctx.userId,
-                input.settings,
+                UserSettingsSlices.pathOf(input.update.slice),
+                input.update.patch,
                 (changes) =>
                     ctx.logEvent({
                         action: "Update",
                         objectType: "UserSettings",
                         objectId: ctx.userId,
                         changes,
+                        description: `Updated ${input.update.slice} settings`,
                     }),
             );
 

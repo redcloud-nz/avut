@@ -13,7 +13,11 @@ import { readUserSettings } from "@/server/user-settings-store";
 import { userSettingsCacheTag } from "./user-settings-revalidate";
 
 export { revalidateUserSettings } from "./user-settings-revalidate";
-export { readUserSettings, writeUserSettings } from "@/server/user-settings-store";
+export {
+    readUserSettings,
+    writeUserSettings,
+    writeUserSettingsSlice,
+} from "@/server/user-settings-store";
 
 /**
  * Get the settings for a given user ID. This function is cached and will revalidate when

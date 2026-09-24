@@ -44,10 +44,7 @@ export function D4HViewsModule_SettingsCard({
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId,
-            settings: {
-                ...settings,
-                modules: { ...settings.modules, "d4h-views": formData },
-            },
+            update: { slice: "modules.d4h-views", patch: formData },
         });
     });
 

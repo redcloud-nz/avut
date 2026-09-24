@@ -12,7 +12,7 @@ import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const settingsEffects = createEffects<"settings">()({
-    updateOrganizationSettings: ({ organizationId }, updated) => [
+    updateOrganizationSettingsSlice: ({ organizationId }, updated) => [
         write(trpc.settings.getOrganizationSettings.queryKey({ organizationId }), updated),
         // `enabledModules` on the system-administration organization screens is derived from the
         // same config rows, so a settings save leaves those lists stale otherwise. Invalidating a
@@ -21,7 +21,7 @@ export const settingsEffects = createEffects<"settings">()({
         invalidate(trpc.systemAdmin.getOrganization.queryFilter({ organizationId })),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
     ],
-    updateUserSettings: (_vars, updated) => [
+    updateUserSettingsSlice: (_vars, updated) => [
         write(trpc.settings.getUserSettings.queryKey(), updated),
     ],
 });

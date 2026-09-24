@@ -70,9 +70,7 @@ export function UserDisplay_UpdateTimeFormat_Dialog({ settings }: { settings: Us
     }, [dialogOpen]);
 
     const handleSubmit = form.handleSubmit(({ timeFormat }) => {
-        mutation.mutate({
-            settings: { ...settings, display: { ...settings.display, timeFormat } },
-        });
+        mutation.mutate({ update: { slice: "display", patch: { timeFormat } } });
     });
 
     return (

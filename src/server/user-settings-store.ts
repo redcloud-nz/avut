@@ -52,6 +52,23 @@ export const readUserSettings = store.read;
  * the same `$transaction` as the config writes, so the audit entry can never drift from the
  * write.
  *
+ * No tRPC procedure exposes this: a whole-tree write built from a client's snapshot reverts any
+ * leaf another writer changed in the meantime, which is why the settings cards go through
+ * `writeUserSettingsSlice` instead. Kept as the primitive that slice writes are built on.
+ *
  * @returns the user's settings as they stand after the write.
  */
 export const writeUserSettings = store.write;
+
+/**
+ * Persist a patch to a single slice of the user's settings — the fields of one settings group
+ * that changed, rather than the whole tree.
+ *
+ * The patch is merged onto the settings as they stand in the database, not onto the snapshot the
+ * caller was holding, so a concurrent edit to a different group survives. Everything else
+ * (leaf-level diffing, revert-to-default deletes, the in-transaction audit entry) is
+ * `writeUserSettings`.
+ *
+ * @returns the user's settings as they stand after the write.
+ */
+export const writeUserSettingsSlice = store.writeSlice;

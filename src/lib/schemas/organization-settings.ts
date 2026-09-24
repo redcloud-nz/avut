@@ -7,7 +7,7 @@ import * as z from "zod";
 
 import { D4HServerCode } from "@/lib/d4h-servers";
 
-import { createSettingsSchema } from "./settings-schema";
+import { createSettingsSchema, defineSettingsSlices } from "./settings-schema";
 import {
     defaultSkillCheckResultLabel,
     SKILL_CHECK_RESULT_VALUES,
@@ -112,3 +112,22 @@ const organizationSettingsSchema = z.object({
 export const OrganizationSettings = createSettingsSchema(organizationSettingsSchema);
 
 export type OrganizationSettings = z.infer<typeof organizationSettingsSchema>;
+
+/**
+ * The editable groups of the organization settings tree — one per settings card. See
+ * `defineSettingsSlices` for why cards save a slice patch rather than the whole tree.
+ */
+export const OrganizationSettingsSlices = defineSettingsSlices(organizationSettingsSchema, [
+    "general",
+    "integrations.d4h",
+    "integrations.email",
+    "personnel",
+    "modules.d4h-views",
+    "modules.forms",
+    "modules.i3",
+    "modules.notes",
+    "modules.skill-track",
+    "modules.skill-package-builder",
+] as const);
+
+export type OrganizationSettingsSliceId = (typeof OrganizationSettingsSlices.ids)[number];

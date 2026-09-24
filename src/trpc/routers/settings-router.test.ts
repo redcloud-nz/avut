@@ -121,12 +121,9 @@ describe("settings organization settings", () => {
     });
 
     it("lets a site admin enable a module for an org they do not belong to", async () => {
-        const next = OrganizationSettings.default();
-        next.modules.notes.enabled = true;
-
-        const result = await asSiteAdmin().updateOrganizationSettings({
+        const result = await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.bareOrg,
-            settings: next,
+            update: { slice: "modules.notes", patch: { enabled: true } },
         });
 
         expect(result.modules.notes.enabled).toBe(true);
@@ -145,26 +142,18 @@ describe("settings organization settings", () => {
     });
 
     it("lets an in-org admin write through the same procedure", async () => {
-        const next = OrganizationSettings.default();
-        next.modules.notes.enabled = true;
-        next.modules["d4h-views"].enabled = true;
-
-        const result = await asOrgAdmin().updateOrganizationSettings({
+        const result = await asOrgAdmin().updateOrganizationSettingsSlice({
             organizationId: T.bareOrg,
-            settings: next,
+            update: { slice: "modules.d4h-views", patch: { enabled: true } },
         });
 
         expect(result.modules["d4h-views"].enabled).toBe(true);
     });
 
     it("updates an existing config row on a fully materialised organization", async () => {
-        const next = OrganizationSettings.default();
-        next.modules.i3.enabled = true;
-        next.modules.i3.storage = "AVUT";
-
-        const result = await asSiteAdmin().updateOrganizationSettings({
+        const result = await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            settings: next,
+            update: { slice: "modules.i3", patch: { enabled: true, storage: "AVUT" } },
         });
 
         expect(result.modules.i3).toEqual({ enabled: true, storage: "AVUT" });
@@ -175,13 +164,55 @@ describe("settings organization settings", () => {
         expect(row?.value).toBe("AVUT");
     });
 
-    it("writes an audit entry against the organization", async () => {
-        const next = OrganizationSettings.default();
-        next.modules["skill-track"].enabled = true;
-
-        await asSiteAdmin().updateOrganizationSettings({
+    it("leaves the rest of a slice alone when the patch names one field", async () => {
+        await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            settings: next,
+            update: { slice: "modules.i3", patch: { enabled: true, storage: "AVUT" } },
+        });
+
+        const settings = await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.seededOrg,
+            update: { slice: "modules.i3", patch: { storage: "D4H" } },
+        });
+
+        // `enabled` is absent from the second patch, so it keeps the value the first one set —
+        // even though "D4H" is the default for `storage` and so deletes that row.
+        expect(settings.modules.i3).toEqual({ enabled: true, storage: "D4H" });
+
+        const rows = await db.organizationConfig.findMany({
+            where: { organizationId: T.seededOrg, key: { startsWith: "modules.i3" } },
+        });
+        expect(rows.map((r) => r.key)).toEqual(["modules.i3.enabled"]);
+    });
+
+    it("does not clobber a concurrent edit to another slice", async () => {
+        // The case the whole-tree write got wrong: A reads, B writes a different group, A saves.
+        // A's payload used to carry its stale copy of B's leaf and revert it.
+        const beforeA = await asSiteAdmin().getOrganizationSettings({
+            organizationId: T.bareOrg,
+        });
+        expect(beforeA.integrations.email.enabled).toBe(true);
+
+        // B turns the email integration off while A is still holding `beforeA`.
+        await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.bareOrg,
+            update: { slice: "integrations.email", patch: { enabled: false } },
+        });
+
+        // A now saves its own card, having never seen B's change.
+        const afterA = await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.bareOrg,
+            update: { slice: "personnel", patch: { autoLinkOnInviteAccept: true } },
+        });
+
+        expect(afterA.personnel.autoLinkOnInviteAccept).toBe(true);
+        expect(afterA.integrations.email.enabled).toBe(false);
+    });
+
+    it("writes an audit entry against the organization, naming the slice", async () => {
+        await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.seededOrg,
+            update: { slice: "modules.skill-track", patch: { enabled: true } },
         });
 
         const entries = await db.logEntry.findMany({
@@ -193,22 +224,27 @@ describe("settings organization settings", () => {
             objectType: "OrganizationSettings",
             objectId: T.seededOrg,
             userId: T.siteAdmin,
+            description: "Updated modules.skill-track settings",
         });
     });
 
-    it("rejects settings that fail schema validation", async () => {
-        const next = OrganizationSettings.default();
-
+    it("rejects a patch field that fails schema validation", async () => {
         await expect(
-            asSiteAdmin().updateOrganizationSettings({
+            asSiteAdmin().updateOrganizationSettingsSlice({
                 organizationId: T.bareOrg,
-                settings: {
-                    ...next,
-                    modules: {
-                        ...next.modules,
-                        notes: { enabled: 7 as unknown as boolean },
-                    },
+                update: {
+                    slice: "modules.notes",
+                    patch: { enabled: 7 as unknown as boolean },
                 },
+            }),
+        ).rejects.toBeTruthy();
+    });
+
+    it("rejects an unknown slice", async () => {
+        await expect(
+            asSiteAdmin().updateOrganizationSettingsSlice({
+                organizationId: T.bareOrg,
+                update: { slice: "nope" as "personnel", patch: {} },
             }),
         ).rejects.toBeTruthy();
     });
@@ -234,9 +270,9 @@ describe("settings organization settings", () => {
             }),
         );
         await expect(
-            caller.updateOrganizationSettings({
+            caller.updateOrganizationSettingsSlice({
                 organizationId: T.bareOrg,
-                settings: OrganizationSettings.default(),
+                update: { slice: "personnel", patch: { autoLinkOnPersonCreate: true } },
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
