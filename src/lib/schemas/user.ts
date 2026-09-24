@@ -34,6 +34,7 @@ export const UserData = {
     fromRecord: (record: Pick<UserRecord, "id" | "name" | "email" | "image">): UserData =>
         userSchema.parse({
             ...record,
+            image: record.image || null,
         }),
 } as const;
 
