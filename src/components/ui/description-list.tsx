@@ -5,8 +5,12 @@
 
 import React from "react";
 
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
+
+// `DLDateDetails` has to be a Client Component (it reads the viewer's format preferences), and
+// this module is imported by Server Components. Re-exported so call sites still take all four
+// pieces from one import.
+export { DLDateDetails } from "./description-list-date";
 
 export function DL({ className, ...props }: React.ComponentPropsWithRef<"dl">) {
     return (
@@ -44,25 +48,5 @@ export function DLDetails({ className, ...props }: React.ComponentPropsWithRef<"
             )}
             {...props}
         />
-    );
-}
-
-export function DLDateDetails({
-    className,
-    date,
-    ...props
-}: Omit<React.ComponentPropsWithRef<"dd">, "children"> & { date: Date | string }) {
-    return (
-        <dd
-            data-component="DLDateDetails"
-            className={cn(
-                "pb-3 pt-1 text-foreground sm:border-t sm:border-border/50 sm:py-3 sm:nth-2:border-none",
-                className,
-            )}
-            {...props}
-        >
-            <div>{formatDateTime(date)}</div>
-            <div className="text-muted-foreground">{formatRelativeDateTime(date)}</div>
-        </dd>
     );
 }

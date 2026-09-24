@@ -51,6 +51,13 @@ export default async function AuthenticatedLayout(props: {
     // re-reads `ctx.auth`, which is `requireSession()`'s own `cache()`-wrapped lookup.
     await fetchQuery(trpc.user.getSession.queryOptions());
 
+    // Every authenticated page can render a date, and `DLDateDetails` reads the viewer's format
+    // preference through `usePreferences()` — a `useSuspenseQuery` sitting deep inside a card
+    // with no Suspense boundary of its own. Awaiting rather than `prefetch`ing is what keeps a
+    // still-pending query from suspending whole card subtrees on first paint. Costs little:
+    // `settings.getUserSettings` is `"use cache"`-tagged per user.
+    await fetchQuery(trpc.settings.getUserSettings.queryOptions());
+
     // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
     // prefetching here removes the round trip that would otherwise show as its skeleton.
     prefetch(trpc.user.listMemberships.queryOptions());

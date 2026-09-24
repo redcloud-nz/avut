@@ -5,7 +5,7 @@
 
 import { format, formatDistanceToNow } from "date-fns";
 
-import type { UserSettings } from "@/lib/schemas/user-settings";
+import { UserSettings } from "@/lib/schemas/user-settings";
 
 export const DATE_FORMAT_LABELS: Record<keyof typeof DATE_FORMAT_PATTERNS, string> = {
     "iso-basic": "ISO Basic",
@@ -41,29 +41,56 @@ export const TIME_FORMAT_PATTERNS: Record<UserSettings["display"]["timeFormat"],
 };
 
 /**
- * Formats a date string for display to the user.
- *
- * Currently always renders the `iso-extended` preset (`DATE_FORMAT_PATTERNS`) regardless of the
- * caller's `UserSettings.display.dateFormat` — wiring this up to the user's actual preference is
- * a follow-up, since many call sites are plain Server Components with no per-user context today.
- *
- * @param dateOrString The date or date string to format.
- * @returns The formatted date string.
+ * The subset of a user's settings that governs how a date or time is rendered — the `display`
+ * slice of `UserSettings`, named separately so a formatter's signature doesn't imply it reads
+ * anything else.
  */
-export function formatDate(dateOrString: string | Date): string {
+export type DisplayPreferences = UserSettings["display"];
+
+/**
+ * What the formatters fall back to when no preference is supplied.
+ *
+ * Taken from the schema rather than restated, so a change to the declared default of
+ * `display.dateFormat`/`display.timeFormat` moves this with it.
+ */
+export const DEFAULT_DISPLAY_PREFERENCES: DisplayPreferences = UserSettings.default().display;
+
+/**
+ * Formats a date for display to the user.
+ *
+ * `prefs` is optional, and omitting it renders `DEFAULT_DISPLAY_PREFERENCES` — i.e. the call
+ * site ignores the viewer's preference. That's the state most call sites are still in: only the
+ * entity created/updated cards (`DLDateDetails`) pass real preferences today. Reaching the rest
+ * means threading preferences into TanStack table column definitions and `FieldValue`, which is
+ * deliberately a separate change.
+ *
+ * Client components get preferences from `usePreferences()`; server components from
+ * `getDisplayPreferences()` in `@/server/display-preferences`.
+ */
+export function formatDate(
+    dateOrString: string | Date,
+    prefs: DisplayPreferences = DEFAULT_DISPLAY_PREFERENCES,
+): string {
     const date = new Date(dateOrString);
-    return format(date, DATE_FORMAT_PATTERNS["iso-extended"]);
+    return format(date, DATE_FORMAT_PATTERNS[prefs.dateFormat]);
 }
 
-/** Same caveat as `formatDate` — always renders the `iso-extended` + `24-hour` presets for now. */
-export function formatDateTime(dateOrString: string | Date): string {
+/** Same `prefs` contract as `formatDate`, rendering the date and time together. */
+export function formatDateTime(
+    dateOrString: string | Date,
+    prefs: DisplayPreferences = DEFAULT_DISPLAY_PREFERENCES,
+): string {
     const date = new Date(dateOrString);
     return format(
         date,
-        `${DATE_FORMAT_PATTERNS["iso-extended"]} ${TIME_FORMAT_PATTERNS["24-hour"]}`,
+        `${DATE_FORMAT_PATTERNS[prefs.dateFormat]} ${TIME_FORMAT_PATTERNS[prefs.timeFormat]}`,
     );
 }
 
+/**
+ * A coarse "3 days ago" rendering. Takes no preferences: the wording is relative to *now*, so
+ * neither format preset applies.
+ */
 export function formatRelativeDateTime(dateOrString: string | Date): string {
     const date = new Date(dateOrString);
     return formatDistanceToNow(date, { addSuffix: true });

@@ -16,8 +16,7 @@ import { ObjectIcons, SettingsIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
+import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 
@@ -93,12 +92,7 @@ export default async function AdminModule_Organization_Page(
                                 <CardContent>
                                     <DL>
                                         <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(organization.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(organization.createdAt)}
-                                            </div>
-                                        </DLDetails>
+                                        <DLDateDetails date={organization.createdAt} />
                                     </DL>
                                 </CardContent>
                             </Card>

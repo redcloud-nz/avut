@@ -8,6 +8,12 @@ import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import {
+    formatDate,
+    formatDateTime,
+    formatRelativeDateTime,
+    type DisplayPreferences,
+} from "@/lib/datetime";
 import { Modules, type UserModuleId } from "@/lib/modules";
 import { UserSettings } from "@/lib/schemas/user-settings";
 import { trpc } from "@/trpc/client";
@@ -30,6 +36,31 @@ export class PreferencesClient {
     constructor(settings: UserSettings) {
         this.settings = settings;
     }
+
+    /** The `display` slice, for handing to a formatter directly. */
+    get display(): DisplayPreferences {
+        return this.settings.display;
+    }
+
+    /**
+     * Render a date using this user's `display.dateFormat` preset.
+     *
+     * Arrow properties rather than methods so `const { formatDate } = usePreferences()` keeps
+     * working — these are meant to be pulled apart at the call site.
+     */
+    readonly formatDate = (dateOrString: string | Date): string =>
+        formatDate(dateOrString, this.settings.display);
+
+    /** Render a date and time using this user's `display` presets. */
+    readonly formatDateTime = (dateOrString: string | Date): string =>
+        formatDateTime(dateOrString, this.settings.display);
+
+    /**
+     * Render a date as "3 days ago". Preference-free (see `formatRelativeDateTime`); re-exposed
+     * here only so a component needing both renderings takes one import.
+     */
+    readonly formatRelativeDateTime = (dateOrString: string | Date): string =>
+        formatRelativeDateTime(dateOrString);
 
     /**
      * Whether `moduleId` is enabled for the current user. Every user module is `alwaysOn` today
