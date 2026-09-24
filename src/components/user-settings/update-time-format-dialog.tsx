@@ -19,24 +19,20 @@ import {
     DialogBody,
     DialogCloseButton,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUserSettingsMutation } from "@/components/user-settings/use-user-settings-mutation";
-import { TIME_FORMAT_PATTERNS } from "@/lib/datetime";
+import { TIME_FORMAT_LABELS, TIME_FORMAT_PATTERNS } from "@/lib/datetime";
 import { UserSettings } from "@/lib/schemas/user-settings";
 
 /** A fixed example instant, used only to render a live preview of each format preset. */
 const PREVIEW_DATE = new Date(2026, 8, 24, 14, 30);
-
-const TIME_FORMAT_LABELS: Record<keyof typeof TIME_FORMAT_PATTERNS, string> = {
-    "12-hour": "12-hour",
-    "24-hour": "24-hour",
-};
 
 /** `?action=update-time-format` — self-triggered (Recipe A): the trigger button lives here. */
 export function UserDisplay_UpdateTimeFormat_Dialog({ settings }: { settings: UserSettings }) {
@@ -89,6 +85,7 @@ export function UserDisplay_UpdateTimeFormat_Dialog({ settings }: { settings: Us
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Time Format</DialogTitle>
+                    <DialogDescription>Select your preferred time format.</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
                     <form id="update-time-format-form" onSubmit={handleSubmit}>
@@ -102,23 +99,24 @@ export function UserDisplay_UpdateTimeFormat_Dialog({ settings }: { settings: Us
                                             TIME_FORMAT_PATTERNS,
                                         ) as (keyof typeof TIME_FORMAT_PATTERNS)[]
                                     ).map((preset) => (
-                                        <Field key={preset} orientation="horizontal">
-                                            <RadioGroupItem
-                                                value={preset}
-                                                id={`time-format-${preset}`}
-                                            />
-                                            <FieldContent>
-                                                <FieldLabel htmlFor={`time-format-${preset}`}>
+                                        <FieldLabel htmlFor={`time-format-${preset}`} key={preset}>
+                                            <Field key={preset} orientation="horizontal">
+                                                <RadioGroupItem
+                                                    value={preset}
+                                                    id={`time-format-${preset}`}
+                                                />
+
+                                                <FieldTitle>
                                                     {TIME_FORMAT_LABELS[preset]}
-                                                </FieldLabel>
-                                                <FieldDescription>
+                                                </FieldTitle>
+                                                <FieldDescription className="w-26">
                                                     {format(
                                                         PREVIEW_DATE,
                                                         TIME_FORMAT_PATTERNS[preset],
                                                     )}
                                                 </FieldDescription>
-                                            </FieldContent>
-                                        </Field>
+                                            </Field>
+                                        </FieldLabel>
                                     ))}
                                 </RadioGroup>
                             )}

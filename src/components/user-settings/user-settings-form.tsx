@@ -5,7 +5,7 @@
 
 "use client";
 
-import { UserDisplay_SettingsCard } from "@/components/user-settings/display-card";
+import { UserDateTime_SettingsCard } from "@/components/user-settings/datetime-card";
 import { UserModules_SettingsCard } from "@/components/user-settings/modules-card";
 import { configurableUserModuleIds } from "@/lib/modules";
 import { UserSettings } from "@/lib/schemas/user-settings";
@@ -24,7 +24,7 @@ export function UserSettingsForm({ settings }: { settings: UserSettings }) {
         <div className="space-y-8 pt-6">
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold tracking-tight">Display</h3>
-                <UserDisplay_SettingsCard settings={settings} />
+                <UserDateTime_SettingsCard settings={settings} />
             </div>
 
             {configurableUserModuleIds.length > 0 && (

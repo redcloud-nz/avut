@@ -5,10 +5,8 @@
 
 "use client";
 
-import { Fragment } from "react";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DLAction, DLActions, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemAction, DataItemTitle, DataItemValue } from "@/components/ui/data-item";
 import { UserModules_UpdateSettings_Dialog } from "@/components/user-settings/update-modules-settings-dialog";
 import { userModules as allUserModules, configurableUserModuleIds } from "@/lib/modules";
 import { UserSettings } from "@/lib/schemas/user-settings";
@@ -32,24 +30,21 @@ export function UserModules_SettingsCard({ settings }: { settings: UserSettings 
                 <CardTitle>Modules</CardTitle>
             </CardHeader>
             <CardContent>
-                <DLActions>
-                    {userModules.map((module, index) => (
-                        <Fragment key={module.id}>
-                            <DLTerm>{module.label}</DLTerm>
-                            <DLDetails>
-                                {settings.modules[module.id as keyof UserSettings["modules"]]
-                                    ?.enabled
-                                    ? "Enabled"
-                                    : "Disabled"}
-                            </DLDetails>
-                            <DLAction>
-                                {index === 0 && (
-                                    <UserModules_UpdateSettings_Dialog settings={settings} />
-                                )}
-                            </DLAction>
-                        </Fragment>
-                    ))}
-                </DLActions>
+                {userModules.map((module, index) => (
+                    <DataItem key={module.id}>
+                        <DataItemTitle>{module.label}</DataItemTitle>
+                        <DataItemValue>
+                            {settings.modules[module.id as keyof UserSettings["modules"]]?.enabled
+                                ? "Enabled"
+                                : "Disabled"}
+                        </DataItemValue>
+                        <DataItemAction>
+                            {index === 0 && (
+                                <UserModules_UpdateSettings_Dialog settings={settings} />
+                            )}
+                        </DataItemAction>
+                    </DataItem>
+                ))}
             </CardContent>
         </Card>
     );

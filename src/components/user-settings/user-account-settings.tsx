@@ -8,7 +8,7 @@
 import { useSession } from "@/client/auth-queries";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DLAction, DLActions, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemAction, DataItemTitle, DataItemValue } from "@/components/ui/data-item";
 import { RainbowSpinner } from "@/components/ui/loading";
 import { UserProfile_ChangePassword_Dialog } from "@/components/user-settings/change-password-dialog";
 import { UserProfile_Card } from "@/components/user-settings/user-profile-card";
@@ -36,13 +36,13 @@ export function UserAccountSettings() {
                     <CardDescription>Manage your security settings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <DLActions>
-                        <DLTerm>Password</DLTerm>
-                        <DLDetails>********</DLDetails>
-                        <DLAction>
+                    <DataItem>
+                        <DataItemTitle>Password</DataItemTitle>
+                        <DataItemValue>********</DataItemValue>
+                        <DataItemAction>
                             <UserProfile_ChangePassword_Dialog />
-                        </DLAction>
-                    </DLActions>
+                        </DataItemAction>
+                    </DataItem>
                 </CardContent>
             </Card>
             <LinkedAccounts_Card />

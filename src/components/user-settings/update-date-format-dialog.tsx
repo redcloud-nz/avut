@@ -19,28 +19,20 @@ import {
     DialogBody,
     DialogCloseButton,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useUserSettingsMutation } from "@/components/user-settings/use-user-settings-mutation";
-import { DATE_FORMAT_PATTERNS } from "@/lib/datetime";
+import { DATE_FORMAT_LABELS, DATE_FORMAT_PATTERNS } from "@/lib/datetime";
 import { UserSettings } from "@/lib/schemas/user-settings";
 
 /** A fixed example instant, used only to render a live preview of each format preset. */
 const PREVIEW_DATE = new Date(2026, 8, 24, 14, 30);
-
-const DATE_FORMAT_LABELS: Record<keyof typeof DATE_FORMAT_PATTERNS, string> = {
-    "iso-basic": "ISO Basic",
-    "iso-extended": "ISO Extended",
-    "iso-ordinal": "ISO Ordinal",
-    slash: "Slash",
-    dot: "Dot",
-    written: "Written",
-};
 
 /** `?action=update-date-format` — self-triggered (Recipe A): the trigger button lives here. */
 export function UserDisplay_UpdateDateFormat_Dialog({ settings }: { settings: UserSettings }) {
@@ -93,6 +85,7 @@ export function UserDisplay_UpdateDateFormat_Dialog({ settings }: { settings: Us
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Date Format</DialogTitle>
+                    <DialogDescription>Select your preferred date format.</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
                     <form id="update-date-format-form" onSubmit={handleSubmit}>
@@ -106,23 +99,24 @@ export function UserDisplay_UpdateDateFormat_Dialog({ settings }: { settings: Us
                                             DATE_FORMAT_PATTERNS,
                                         ) as (keyof typeof DATE_FORMAT_PATTERNS)[]
                                     ).map((preset) => (
-                                        <Field key={preset} orientation="horizontal">
-                                            <RadioGroupItem
-                                                value={preset}
-                                                id={`date-format-${preset}`}
-                                            />
-                                            <FieldContent>
-                                                <FieldLabel htmlFor={`date-format-${preset}`}>
+                                        <FieldLabel htmlFor={`date-format-${preset}`} key={preset}>
+                                            <Field orientation="horizontal">
+                                                <RadioGroupItem
+                                                    value={preset}
+                                                    id={`date-format-${preset}`}
+                                                />
+
+                                                <FieldTitle>
                                                     {DATE_FORMAT_LABELS[preset]}
-                                                </FieldLabel>
-                                                <FieldDescription>
+                                                </FieldTitle>
+                                                <FieldDescription className="w-26">
                                                     {format(
                                                         PREVIEW_DATE,
                                                         DATE_FORMAT_PATTERNS[preset],
                                                     )}
                                                 </FieldDescription>
-                                            </FieldContent>
-                                        </Field>
+                                            </Field>
+                                        </FieldLabel>
                                     ))}
                                 </RadioGroup>
                             )}

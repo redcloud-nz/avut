@@ -7,6 +7,20 @@ import { format, formatDistanceToNow } from "date-fns";
 
 import type { UserSettings } from "@/lib/schemas/user-settings";
 
+export const DATE_FORMAT_LABELS: Record<keyof typeof DATE_FORMAT_PATTERNS, string> = {
+    "iso-basic": "ISO Basic",
+    "iso-extended": "ISO Extended",
+    "iso-ordinal": "ISO Ordinal",
+    slash: "Slash",
+    dot: "Dot",
+    written: "Written",
+};
+
+export const TIME_FORMAT_LABELS: Record<keyof typeof TIME_FORMAT_PATTERNS, string> = {
+    "12-hour": "12 Hour",
+    "24-hour": "24 Hour",
+};
+
 /**
  * date-fns patterns backing `UserSettings.display.dateFormat`. Keyed by preset id rather than
  * exposing raw date-fns patterns as a setting, so the choices stay curated.
