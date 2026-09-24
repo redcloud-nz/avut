@@ -92,7 +92,7 @@ function PickTeam_Body({ person, onDone }: { person: PersonRef; onDone: () => vo
 
     const joinedTeamIds = new Set(memberships.map((m) => m.teamId));
     const teamOptions = teams
-        .filter((team) => !joinedTeamIds.has(team.id))
+        .filter((team) => team.status === "Active" && !joinedTeamIds.has(team.id))
         .map((team) => ({ value: team.id, label: team.name }));
 
     const form = useForm({

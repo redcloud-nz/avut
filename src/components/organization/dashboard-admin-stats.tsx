@@ -70,11 +70,12 @@ function Organization_Dashboard_TeamsStat() {
     const { data: teams } = useSuspenseQuery(
         trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
     );
+    const activeTeamCount = teams.filter((team) => team.status === "Active").length;
 
     return (
         <StatCard
             label="Teams"
-            value={teams.length}
+            value={activeTeamCount}
             icon={ShieldCheckIcon}
             href={route("/orgs/[slug]/admin/teams", { slug })}
         />

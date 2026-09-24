@@ -121,6 +121,7 @@ export function SkillTrack_SessionPersonnel_Content({
     // are dropped.
     const teamSections = R.pipe(
         teams,
+        R.filter((team) => team.status === "Active"),
         R.sortBy((team) => team.name),
         R.map((team) => ({
             team,

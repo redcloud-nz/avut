@@ -224,15 +224,19 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                     <Saratoga.Header>
                         <Saratoga.Title>Members of {team.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect permissions={{ team: ["update"] }}>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setAction("add-membership", { history: "push" })}
-                                >
-                                    <ObjectIcons.Create />{" "}
-                                    <span className="hidden md:inline">New Member</span>
-                                </Button>
-                            </Protect>
+                            {team.status === "Active" && (
+                                <Protect permissions={{ team: ["update"] }}>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setAction("add-membership", { history: "push" })
+                                        }
+                                    >
+                                        <ObjectIcons.Create />{" "}
+                                        <span className="hidden md:inline">New Member</span>
+                                    </Button>
+                                </Protect>
+                            )}
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div>
