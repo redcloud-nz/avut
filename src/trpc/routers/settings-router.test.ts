@@ -277,3 +277,58 @@ describe("settings organization settings", () => {
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
+
+describe("settings hasUserTimeZonePreference", () => {
+    const db = createMockPrisma();
+
+    function makeCaller() {
+        const userId = UserId.create();
+        return {
+            userId,
+            caller: settingsRouter.createCaller(
+                createAuthenticatedMockContext({ user: { id: userId }, prisma: db }),
+            ),
+        };
+    }
+
+    it("is false for a user with no display.timeZone row", async () => {
+        const { caller } = makeCaller();
+        await expect(caller.hasUserTimeZonePreference()).resolves.toBe(false);
+    });
+
+    it("becomes true once the user saves a non-default zone", async () => {
+        const { caller } = makeCaller();
+        await caller.updateUserSettingsSlice({
+            update: { slice: "display", patch: { timeZone: "America/New_York" } },
+        });
+
+        await expect(caller.hasUserTimeZonePreference()).resolves.toBe(true);
+    });
+
+    it("goes back to false once the zone is reverted to the schema default", async () => {
+        const { caller } = makeCaller();
+        await caller.updateUserSettingsSlice({
+            update: { slice: "display", patch: { timeZone: "America/New_York" } },
+        });
+        await caller.updateUserSettingsSlice({
+            update: { slice: "display", patch: { timeZone: "Pacific/Auckland" } },
+        });
+
+        // Matches `writeUserSettings`'s revert-to-default behaviour: setting a leaf back to its
+        // default deletes the row rather than storing it, so this is indistinguishable from
+        // never having set it — see `hasExplicitUserTimeZone`'s docstring.
+        await expect(caller.hasUserTimeZonePreference()).resolves.toBe(false);
+    });
+
+    it("rejects an unauthenticated caller", async () => {
+        const caller = settingsRouter.createCaller({
+            prisma: db,
+            auth: null,
+            hasPermission: async () => {},
+            getHeaders: async () => new Headers(),
+        });
+        await expect(caller.hasUserTimeZonePreference()).rejects.toMatchObject({
+            code: "UNAUTHORIZED",
+        });
+    });
+});

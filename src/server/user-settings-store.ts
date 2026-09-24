@@ -72,3 +72,22 @@ export const writeUserSettings = store.write;
  * @returns the user's settings as they stand after the write.
  */
 export const writeUserSettingsSlice = store.writeSlice;
+
+/**
+ * Whether a user has a `UserConfig` row for `display.timeZone`, as opposed to it resolving to
+ * `UserSettings.default().display.timeZone` for lack of one.
+ *
+ * Backs the client's one-time browser-zone auto-detection (`TimeZoneAutoDetect`), which only
+ * fires while this is `false`. A row-existence check rather than comparing the resolved value
+ * against the default: the write path deletes a leaf's row when it's set back to its default
+ * (see `writeUserSettings`), so a user whose real zone happens to match the schema default will
+ * never accumulate a row here either — harmless, since auto-detection then re-proposes the same
+ * value each load and the store's own existing-vs-next diff turns that into a no-op write.
+ */
+export async function hasExplicitUserTimeZone(
+    prisma: Pick<PrismaClient, "userConfig">,
+    userId: string,
+): Promise<boolean> {
+    const row = await prisma.userConfig.findFirst({ where: { userId, key: "display.timeZone" } });
+    return row !== null;
+}

@@ -24,6 +24,7 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
+import { TimeZoneAutoDetect } from "@/components/user-settings/timezone-auto-detect";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -67,6 +68,9 @@ export default async function AuthenticatedLayout(props: {
             {/* Redirects to sign-in if the session is revoked or expires after first paint —
                 see the hook's own docstring. Renders nothing. */}
             <SessionWatcher />
+            {/* Adopts the browser's zone as `display.timeZone` on a user's first visit with no
+                saved preference — see the component's own docstring. Renders nothing. */}
+            <TimeZoneAutoDetect />
             <SidebarPortalProvider>
                 <Sidebar>
                     <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">

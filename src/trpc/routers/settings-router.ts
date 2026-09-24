@@ -20,6 +20,7 @@ import {
     readOrganizationSettings,
     writeOrganizationSettingsSlice,
 } from "@/server/organization-settings-store";
+import { hasExplicitUserTimeZone } from "@/server/user-settings-store";
 
 import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
 
@@ -60,6 +61,21 @@ export const settingsRouter = createTrpcRouter({
      */
     getUserSettings: authenticatedProcedure.output(UserSettings.schema).query(async ({ ctx }) => {
         return await getUserSettings(ctx.userId);
+    }),
+
+    /**
+     * Whether the current user has ever explicitly saved a `display.timeZone` preference.
+     *
+     * Uncached and read straight off `ctx.prisma` — a single indexed lookup, and caching a
+     * boolean the client only checks once per session isn't worth a cache tag. See
+     * `hasExplicitUserTimeZone`'s docstring for why this is a row-existence check rather than a
+     * value comparison against the default.
+     *
+     * @param ctx The authenticated context.
+     * @returns `true` once a `display.timeZone` row exists for this user.
+     */
+    hasUserTimeZonePreference: authenticatedProcedure.output(z.boolean()).query(async ({ ctx }) => {
+        return await hasExplicitUserTimeZone(ctx.prisma, ctx.userId);
     }),
 
     /**
