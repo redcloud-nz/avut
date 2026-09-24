@@ -14,21 +14,15 @@ import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { settingsRouter } from "./settings-router";
 
-// The router reads through the `"use cache"` wrappers, which pull in the real Prisma client and
-// need a Next.js render store — neither of which the test environment has any business standing
-// up. Swap them for the uncached store functions bound to the mock db; the caching itself is not
-// this router's contract, only that it revalidates the tag afterwards.
+// The router calls `revalidateOrganizationSettings`/`revalidateUserSettings` after every write,
+// which need a Next.js render store the test environment has no business standing up — mock both
+// away as no-ops. The reads/writes themselves already go straight through `ctx.prisma`-injected
+// store functions (not the `"use cache"` wrappers), so only the revalidation needs mocking.
 const h = vi.hoisted(() => ({ db: null as unknown as ReturnType<typeof createMockPrisma> }));
 
-vi.mock("@/server/cache/organization-settings", async () => {
-    const store = await import("@/server/organization-settings-store");
-    return {
-        ...store,
-        getOrganizationSettings: (organizationId: string) =>
-            store.readOrganizationSettings(h.db, organizationId),
-        revalidateOrganizationSettings: vi.fn(async () => {}),
-    };
-});
+vi.mock("@/server/cache/organization-settings-revalidate", () => ({
+    revalidateOrganizationSettings: vi.fn(async () => {}),
+}));
 
 vi.mock("@/server/cache/user-settings", async () => {
     const store = await import("@/server/user-settings-store");

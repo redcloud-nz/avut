@@ -581,5 +581,5 @@ export const systemAdminRouter = createTrpcRouter({
         }),
 
     /** Reused directly from `settingsRouter` — see `getOrganizationSettings` above. */
-    updateOrganizationSettings: settingsRouter.updateOrganizationSettings,
+    updateOrganizationSettingsSlice: settingsRouter.updateOrganizationSettingsSlice,
 });
