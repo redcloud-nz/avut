@@ -24,6 +24,20 @@ const userSettingsSchema = z.object({
             enabled: z.boolean().default(true),
         }),
     }),
+
+    /**
+     * Preferences that change what the user sees, rather than what's available to them (compare
+     * `modules` above). `dateFormat`/`dateTimeFormat` name a preset from `DATE_FORMAT_PATTERNS`/
+     * `DATE_TIME_FORMAT_PATTERNS` (`src/lib/datetime.ts`) rather than storing a raw date-fns
+     * pattern, so the set of choices stays curated. Not wired into `formatDate`/`formatDateTime`
+     * yet — see those functions' docstrings.
+     */
+    display: z.object({
+        /** Used for compact contexts — table/list columns. */
+        dateFormat: z.enum(["ISO", "Slash", "Written"]).default("ISO"),
+        /** Used for fuller contexts — entity created/updated timestamps. */
+        dateTimeFormat: z.enum(["ISO", "Slash", "Written"]).default("ISO"),
+    }),
 });
 
 export const UserSettings = {
@@ -35,6 +49,7 @@ export const UserSettings = {
                 "user-dashboard": {},
                 profile: {},
             },
+            display: {},
         });
     },
 
