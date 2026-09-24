@@ -54,6 +54,9 @@ export const usersEffects = createEffects<"users">()({
                 personId: vars.personId,
             }),
         ),
+        invalidate(
+            trpc.users.listUnlinkedMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     // `unlinkPerson`'s input only carries `userId` — the `personId` being unlinked comes back
     // in the response instead, since the server already knows it from the existing link.
@@ -70,6 +73,9 @@ export const usersEffects = createEffects<"users">()({
             trpc.personnel.listUnlinkedPersonnel.queryFilter({
                 organizationId: vars.organizationId,
             }),
+        ),
+        invalidate(
+            trpc.users.listUnlinkedMembers.queryFilter({ organizationId: vars.organizationId }),
         ),
         ...(data.personId
             ? [

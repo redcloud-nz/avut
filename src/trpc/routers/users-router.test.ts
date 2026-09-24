@@ -6,6 +6,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
+import { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
@@ -201,6 +202,111 @@ describe("user↔person linking", () => {
         // person2 kept its account.
         const linked = await users().getLinkedPerson({ organizationId: T.org, userId: T.user2 });
         expect(linked?.id).toBe(T.person2);
+    });
+});
+
+describe("users.listUnlinkedMembers", () => {
+    // Dataset:
+    //   user1 → unlinked member
+    //   user2 → linked to person1
+    //   otherOrgUser → unlinked member of a different organization
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user1: UserId.create(),
+        user2: UserId.create(),
+        otherOrgUser: UserId.create(),
+        person1: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.otherOrg, name: "Other Org", slug: T.otherOrg, createdAt: new Date() },
+        });
+
+        await db.person.create({
+            data: {
+                id: T.person1,
+                organizationId: T.org,
+                name: "Alice Anderson",
+                email: `${T.person1}@example.com`,
+                status: "Active",
+                tags: [],
+                properties: {},
+            },
+        });
+
+        await db.user.create({
+            data: { id: T.user1, name: "User One", email: `${T.user1}@example.com` },
+        });
+        await db.user.create({
+            data: { id: T.user2, name: "User Two", email: `${T.user2}@example.com` },
+        });
+        await db.user.create({
+            data: {
+                id: T.otherOrgUser,
+                name: "Other Org User",
+                email: `${T.otherOrgUser}@example.com`,
+            },
+        });
+
+        await db.organizationUser.create({
+            data: { id: nanoId16(), organizationId: T.org, userId: T.user1, role: "member" },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.user2,
+                role: "member",
+                personId: T.person1,
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.otherOrg,
+                userId: T.otherOrgUser,
+                role: "member",
+            },
+        });
+    });
+
+    function makeContext(
+        permissions: Permissions = {
+            organization: ["view"],
+            member: ["view"],
+            person: ["view"],
+        },
+    ) {
+        return createAuthenticatedMockContext({
+            user: { id: T.user1 },
+            permissions,
+            prisma: db,
+        });
+    }
+
+    it("excludes linked members and members of other organizations", async () => {
+        const caller = usersRouter.createCaller(makeContext());
+
+        const unlinked = await caller.listUnlinkedMembers({ organizationId: T.org });
+
+        expect(unlinked.map((m) => m.userId)).toEqual([T.user1]);
+    });
+
+    it("is forbidden without member:view permission", async () => {
+        const caller = usersRouter.createCaller(
+            makeContext({ organization: ["view"], person: ["view"] }),
+        );
+
+        await expect(caller.listUnlinkedMembers({ organizationId: T.org })).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
     });
 });
 

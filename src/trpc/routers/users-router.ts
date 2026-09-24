@@ -454,6 +454,34 @@ export const usersRouter = createTrpcRouter({
         }),
 
     /**
+     * Lists the organization's members that are not yet linked to a personnel record.
+     * Used to populate the "link user" picker on the person detail page — the mirror of
+     * `personnel.listUnlinkedPersonnel`.
+     *
+     * @param ctx The authenticated organization context.
+     * @returns The org's unlinked members, sorted by name.
+     */
+    listUnlinkedMembers: organizationProcedure({ member: ["view"], person: ["view"] })
+        .output(z.array(z.object({ userId: UserId.schema, name: z.string(), email: z.email() })))
+        .query(async ({ ctx }) => {
+            const members = await ctx.prisma.organizationUser.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    personId: null,
+                },
+                include: { user: true },
+            });
+
+            return members
+                .map((member) => ({
+                    userId: UserId.schema.parse(member.userId),
+                    name: member.user.name,
+                    email: member.user.email,
+                }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        }),
+
+    /**
      * Rejects one of the caller's pending organization invitations.
      *
      * @param ctx The authenticated context.

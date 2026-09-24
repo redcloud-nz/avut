@@ -7,6 +7,8 @@
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
+import { AdminModule_LinkUser_Dialog } from "@/components/admin/person-user-link/link-user";
+import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/person-user-link/unlink-person";
 import { ObjectIcons } from "@/components/icons";
 import {
     DropdownMenuGroup,
@@ -18,6 +20,7 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
+import { UserId } from "@/lib/schemas/user";
 
 import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
@@ -26,21 +29,30 @@ import { AdminModule_RestorePerson_Dialog } from "./restore-person";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
-    /** Whether a user account is already attached — hides the invite action when it is. */
-    linked: boolean;
+    /** The linked user account, if any — governs Invite (hidden when linked) and Link/Unlink. */
+    linkedUser: { userId: UserId; user: { name: string } } | null;
 }
 
-export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMenuProps) {
+export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["update", "delete", "invite", "archive", "restore"] as const),
+        parseAsStringLiteral([
+            "update",
+            "delete",
+            "invite",
+            "archive",
+            "restore",
+            "link-user",
+            "unlink-user",
+        ] as const),
     );
 
     const canUpdate = useHasPermission({ person: ["update"] });
     const canDelete = useHasPermission({ person: ["delete"] });
     const canInvite = useHasPermission({ invitation: ["create"] });
+    const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
 
     const actions: MenuActionProps[] = [
         {
@@ -51,13 +63,30 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             disabled: !canUpdate,
         },
     ];
-    if (person.status === "Active" && !linked) {
+    if (person.status === "Active" && !linkedUser) {
         actions.push({
             verb: "invite",
             label: "Invite to AVUT",
             icon: <ObjectIcons.Invite />,
             onSelect: () => setAction("invite", { history: "push" }),
             disabled: !canInvite,
+        });
+    }
+    if (linkedUser) {
+        actions.push({
+            verb: "unlink",
+            label: "Unlink from user",
+            icon: <ObjectIcons.Unlink />,
+            onSelect: () => setAction("unlink-user", { history: "push" }),
+            disabled: !canUpdateLink,
+        });
+    } else {
+        actions.push({
+            verb: "link",
+            label: "Link to user",
+            icon: <ObjectIcons.Link />,
+            onSelect: () => setAction("link-user", { history: "push" }),
+            disabled: !canUpdateLink,
         });
     }
     if (person.status === "Active") {
@@ -158,6 +187,32 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
                     })
                 }
             />
+
+            {/* Link User dialog */}
+            <AdminModule_LinkUser_Dialog
+                person={person}
+                open={action === "link-user"}
+                onOpenChange={(open) =>
+                    setAction(open ? "link-user" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Unlink User dialog */}
+            {linkedUser && (
+                <AdminModule_UnlinkPerson_Dialog
+                    userId={linkedUser.userId}
+                    userName={linkedUser.user.name}
+                    personName={person.name}
+                    open={action === "unlink-user"}
+                    onOpenChange={(open) =>
+                        setAction(open ? "unlink-user" : null, {
+                            history: open ? "push" : "replace",
+                        })
+                    }
+                />
+            )}
         </>
     );
 }
