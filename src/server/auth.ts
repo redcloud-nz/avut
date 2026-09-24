@@ -96,7 +96,7 @@ export const auth = betterAuth({
             ? [`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`]
             : []),
         ...(env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
-        ...(env.NODE_ENV === "development"
+        ...(env.isDevelopment()
             ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
             : []),
     ],

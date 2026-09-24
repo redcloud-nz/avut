@@ -10,7 +10,6 @@ import { initTRPC, TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { DiffChange } from "@/lib/diff";
-import { env } from "@/lib/env";
 import { Permissions } from "@/lib/permissions";
 import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -21,14 +20,6 @@ import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-ent
 import prisma from "@/server/prisma";
 
 import { formatTrpcError } from "./error-formatter";
-
-// Artificial delay in development approximating the client-to-server network round trip for a
-// real user (as opposed to `localhost`, which has none). Deliberately small — this fires once
-// per tRPC call regardless of how many DB queries it makes; the per-query DB round trip is
-// simulated separately in `server/prisma.ts`, additively, so sequential vs. parallel query
-// patterns actually show up as different wall-clock time in dev instead of being masked by one
-// flat delay per procedure.
-const DEVELOPMENT_DELAY = { min: 20, max: 80 }; // ms
 
 /**
  * Create the inner tRPC context.
@@ -68,24 +59,7 @@ export const createTrpcRouter = t.router;
 //
 export type PublicContext = Context;
 
-export const publicProcedure = t.procedure.use(async function artificialDelayInDevelopment(opts) {
-    if (env.NODE_ENV === "development") {
-        const start = performance.now();
-        const delay =
-            Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +
-            DEVELOPMENT_DELAY.min;
-
-        const [res] = await Promise.all([
-            opts.next(opts),
-            new Promise((resolve) => setTimeout(resolve, delay)),
-        ]);
-        const durationMs = Math.round(performance.now() - start);
-        console.debug(`[trpc] ${opts.path} — ${durationMs}ms (+${delay}ms artificial)`);
-        return res;
-    }
-
-    return opts.next(opts);
-});
+export const publicProcedure = t.procedure;
 
 export type AuthenticatedContext = Context & {
     auth: AuthSession;
