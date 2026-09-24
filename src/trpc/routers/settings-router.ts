@@ -6,13 +6,19 @@
 import * as z from "zod";
 
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
+import { UserSettings } from "@/lib/schemas/user-settings";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings-revalidate";
+import {
+    getUserSettings,
+    revalidateUserSettings,
+    writeUserSettings,
+} from "@/server/cache/user-settings";
 import {
     readOrganizationSettings,
     writeOrganizationSettings,
 } from "@/server/organization-settings-store";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
 
 export const settingsRouter = createTrpcRouter({
     /**
@@ -36,6 +42,16 @@ export const settingsRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             return await readOrganizationSettings(ctx.prisma, ctx.organizationId);
         }),
+
+    /**
+     * Get the settings for the current (authenticated) user.
+     *
+     * @param ctx The authenticated context.
+     * @returns The user's settings object.
+     */
+    getUserSettings: authenticatedProcedure.output(UserSettings.schema).query(async ({ ctx }) => {
+        return await getUserSettings(ctx.userId);
+    }),
 
     /**
      * Update the organization settings for the current organization.
@@ -75,6 +91,42 @@ export const settingsRouter = createTrpcRouter({
             );
 
             await revalidateOrganizationSettings(ctx.organizationId);
+
+            return settings;
+        }),
+
+    /**
+     * Update the settings for the current (authenticated) user.
+     *
+     * Only the config leaves whose value actually changed are upserted, and the audit entry
+     * rides in the same transaction.
+     *
+     * @param ctx The authenticated context.
+     * @param input The input object containing the updates to apply.
+     * @returns The updated user settings.
+     */
+    updateUserSettings: authenticatedProcedure
+        .input(
+            z.object({
+                settings: UserSettings.schema,
+            }),
+        )
+        .output(UserSettings.schema)
+        .mutation(async ({ ctx, input }) => {
+            const settings = await writeUserSettings(
+                ctx.prisma,
+                ctx.userId,
+                input.settings,
+                (changes) =>
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "UserSettings",
+                        objectId: ctx.userId,
+                        changes,
+                    }),
+            );
+
+            await revalidateUserSettings(ctx.userId);
 
             return settings;
         }),

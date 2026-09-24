@@ -122,6 +122,7 @@ const logObjectTypeValues = [
     "Team",
     "TeamMembership",
     "User",
+    "UserSettings",
 ] as const;
 
 export const LogObjectType = {
@@ -206,6 +207,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Team: "org-admin",
     TeamMembership: "org-admin",
     User: null,
+    UserSettings: "profile",
 };
 
 /** The module an entry about this kind of object belongs to, or null for account entities. */

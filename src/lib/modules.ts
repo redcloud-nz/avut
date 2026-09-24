@@ -206,5 +206,12 @@ export const orgModules = moduleList.filter(
 /** User-scoped modules (always available), in display order. */
 export const userModules = moduleList.filter((m): m is UserModuleDef => m.scope === "user");
 
+/**
+ * User-scoped modules with per-user configurable settings — i.e. not `alwaysOn`. Empty today
+ * (every user module is `alwaysOn`), so `UserSettings.modules` has nothing worth surfacing in
+ * the preferences UI yet; see `UserModules_SettingsCard`.
+ */
+export const configurableUserModuleIds = userModules.filter((m) => !m.alwaysOn).map((m) => m.id);
+
 /** Site-wide modules (gated on the Better Auth `admin` role), in display order. */
 export const systemModules = moduleList.filter((m): m is SystemModuleDef => m.scope === "system");

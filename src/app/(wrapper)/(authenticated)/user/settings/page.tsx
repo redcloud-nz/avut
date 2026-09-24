@@ -60,6 +60,19 @@ export default async function UserSettings_IndexPage() {
                                 </ItemActions>
                             </Link>
                         </Item>
+                        <Item asChild>
+                            <Link href="/user/settings/preferences">
+                                <ItemContent>
+                                    <ItemTitle>Preferences</ItemTitle>
+                                    <ItemDescription>
+                                        Your personal preferences across AVUT.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>
