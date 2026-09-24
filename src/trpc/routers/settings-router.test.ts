@@ -5,6 +5,7 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { UserId } from "@/lib/schemas/user";
@@ -80,7 +81,8 @@ describe("settings organization settings", () => {
             OrganizationSettings.flatten(OrganizationSettings.default()),
         )) {
             await db.organizationConfig.create({
-                data: { organizationId: T.seededOrg, key, value },
+                // `flatten` types a leaf as `unknown` — it is whatever JSON that path declares.
+                data: { organizationId: T.seededOrg, key, value: value as Prisma.InputJsonValue },
             });
         }
     });

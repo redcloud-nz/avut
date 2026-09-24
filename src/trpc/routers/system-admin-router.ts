@@ -7,6 +7,7 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import type { ModuleId } from "@/lib/modules";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
@@ -66,9 +67,14 @@ export const systemAdminRouter = createTrpcRouter({
             const organizationId = OrganizationId.create();
             const userId = ctx.auth.user.id;
 
+            // `flatten` types a leaf as `unknown` — it is whatever JSON that path declares.
             const configRows = Object.entries(
                 OrganizationSettings.flatten(OrganizationSettings.default()),
-            ).map(([key, value]) => ({ organizationId, key, value }));
+            ).map(([key, value]) => ({
+                organizationId,
+                key,
+                value: value as Prisma.InputJsonValue,
+            }));
 
             try {
                 await ctx.prisma.$transaction([

@@ -4,8 +4,9 @@
  */
 
 /*
- * Read/write access to the `UserConfig` rows backing a user's settings. Mirrors
- * `organization-settings-store.ts` — see that file for the rationale behind the shape.
+ * Read/write access to the `UserConfig` rows backing a user's settings. The algorithm lives in
+ * `settings-store.ts` and is shared with `organization-settings-store.ts`; this file is just its
+ * binding to the user scope.
  *
  * Deliberately free of any `@/server/prisma` import — the Prisma client is injected by the
  * caller so this can be used from tRPC routers (which are exercised from the jsdom test
@@ -14,14 +15,22 @@
 
 import "server-only";
 
-import * as R from "remeda";
-
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import { diffObject, type DiffChange } from "@/lib/diff";
+import type { PrismaClient } from "@/generated/prisma/client";
 import { UserSettings } from "@/lib/schemas/user-settings";
+import { createSettingsStore } from "@/server/settings-store";
 
-/** The slice of the Prisma client this module needs. */
+/** The slice of the Prisma client the write path needs. */
 export type UserSettingsPrisma = Pick<PrismaClient, "userConfig" | "$transaction">;
+
+const store = createSettingsStore<
+    UserSettings,
+    Pick<PrismaClient, "userConfig">,
+    UserSettingsPrisma
+>({
+    settings: UserSettings,
+    model: "userConfig",
+    scopeField: "userId",
+});
 
 /**
  * Read a user's settings straight from the database (uncached).
@@ -30,14 +39,7 @@ export type UserSettingsPrisma = Pick<PrismaClient, "userConfig" | "$transaction
  * identical result for a config-less user and for one whose defaults have been fully
  * materialised.
  */
-export async function readUserSettings(
-    prisma: Pick<PrismaClient, "userConfig">,
-    userId: string,
-): Promise<UserSettings> {
-    const records = await prisma.userConfig.findMany({ where: { userId } });
-
-    return UserSettings.fromRecords(records);
-}
+export const readUserSettings = store.read;
 
 /**
  * Persist a user's settings, writing only the `UserConfig` rows whose value actually changed
@@ -52,39 +54,4 @@ export async function readUserSettings(
  *
  * @returns the user's settings as they stand after the write.
  */
-export async function writeUserSettings(
-    prisma: UserSettingsPrisma,
-    userId: string,
-    settings: UserSettings,
-    logEntry?: (changes: DiffChange[]) => Prisma.PrismaPromise<unknown>,
-): Promise<UserSettings> {
-    // Validate before writing — the settings may have come straight off the wire.
-    const parsed = UserSettings.schema.parse(settings);
-
-    const existing = await readUserSettings(prisma, userId);
-
-    const flattenedExisting = UserSettings.flatten(existing);
-    const flattenedNext = UserSettings.flatten(parsed);
-
-    const flattenedDefaults = UserSettings.flatten(UserSettings.default());
-
-    const writes = R.pipe(
-        R.entries(flattenedNext),
-        R.filter(([key, newValue]) => newValue !== flattenedExisting[key]),
-        R.map(([key, value]) =>
-            value === flattenedDefaults[key]
-                ? prisma.userConfig.deleteMany({ where: { userId, key } })
-                : prisma.userConfig.upsert({
-                      where: { userId_key: { userId, key } },
-                      create: { userId, key, value },
-                      update: { value },
-                  }),
-        ),
-    );
-
-    const changes = diffObject(existing, parsed);
-
-    await prisma.$transaction([...writes, ...(logEntry ? [logEntry(changes)] : [])]);
-
-    return await readUserSettings(prisma, userId);
-}
+export const writeUserSettings = store.write;
