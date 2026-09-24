@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { useOrganizationSettingsMutation } from "@/components/admin-settings/settings-scope";
+import { useOrganizationSettingsMutation } from "@/components/admin-settings/use-organization-settings-mutation";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -40,7 +40,6 @@ export function SkillPackageBuilderModule_SettingsCard({
     });
 
     const mutation = useOrganizationSettingsMutation({
-        organizationId,
         errorMessage: "Failed to update Skill Package Builder module settings",
         onSaved: (updated) => form.reset(updated.modules["skill-package-builder"]),
     });

@@ -4,17 +4,23 @@
  */
 
 import { trpc } from "@/trpc/client";
-import { createEffects, write } from "@/trpc/mutation-effector";
+import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 
 /**
  * Cache effects for `settings` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
- * `updateOrganizationSettings` isn't declared here — it still writes its cache side-effects
- * manually via `useOrganizationSettingsMutation`, since it also needs to target either
- * `settings.*` or `systemAdmin.*` depending on scope (see `settings-scope.tsx`).
  */
 export const settingsEffects = createEffects<"settings">()({
+    updateOrganizationSettings: ({ organizationId }, updated) => [
+        write(trpc.settings.getOrganizationSettings.queryKey({ organizationId }), updated),
+        // `enabledModules` on the system-administration organization screens is derived from the
+        // same config rows, so a settings save leaves those lists stale otherwise. Invalidating a
+        // query this viewer has never loaded is a no-op, so both scopes can declare it flatly
+        // rather than branching on who is calling.
+        invalidate(trpc.systemAdmin.getOrganization.queryFilter({ organizationId })),
+        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+    ],
     updateUserSettings: (_vars, updated) => [
         write(trpc.settings.getUserSettings.queryKey(), updated),
     ],

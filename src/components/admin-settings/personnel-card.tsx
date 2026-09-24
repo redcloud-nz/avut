@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { useOrganizationSettingsMutation } from "@/components/admin-settings/settings-scope";
+import { useOrganizationSettingsMutation } from "@/components/admin-settings/use-organization-settings-mutation";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -43,7 +43,6 @@ export function Personnel_SettingsCard({
     });
 
     const mutation = useOrganizationSettingsMutation({
-        organizationId,
         errorMessage: "Failed to update personnel settings",
         onSaved: (updated) => form.reset(updated.personnel),
     });

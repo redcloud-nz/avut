@@ -38,7 +38,7 @@ export default async function SystemAdmin_OrganizationSettings_Page(props: Props
     const organizationId = OrganizationId.schema.parse(raw);
 
     prefetch(trpc.systemAdmin.getOrganization.queryOptions({ organizationId }));
-    prefetch(trpc.systemAdmin.getOrganizationSettings.queryOptions({ organizationId }));
+    prefetch(trpc.settings.getOrganizationSettings.queryOptions({ organizationId }));
 
     const moduleFlags = await resolveModuleFlags();
 

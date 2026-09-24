@@ -7,7 +7,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { OrganizationSettingsForm } from "@/components/admin-settings/organization-settings-form";
-import { OrganizationSettingsScopeProvider } from "@/components/admin-settings/settings-scope";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import type { ModuleFlagState } from "@/lib/module-flags";
@@ -16,9 +15,10 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
 /**
- * The same settings form the in-org admin sees, but reading and writing through the
- * `systemAdmin.*` procedures — so it works for an organization the acting admin is not a member
- * of, and for one that has no `OrganizationConfig` rows yet.
+ * The same settings form the in-org admin sees, reading and writing through the same
+ * `settings.*` procedures. Those are declared `allowSystemAdmin`, so they work for an
+ * organization the acting admin is not a member of, and for one that has no
+ * `OrganizationConfig` rows yet.
  */
 export function SystemAdmin_OrganizationSettings_Content({
     organizationId,
@@ -32,11 +32,11 @@ export function SystemAdmin_OrganizationSettings_Content({
     );
 
     const { data: settings } = useSuspenseQuery(
-        trpc.systemAdmin.getOrganizationSettings.queryOptions({ organizationId }),
+        trpc.settings.getOrganizationSettings.queryOptions({ organizationId }),
     );
 
     return (
-        <OrganizationSettingsScopeProvider scope="system-admin">
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "System Admin", href: "/system/admin" },
@@ -63,6 +63,6 @@ export function SystemAdmin_OrganizationSettings_Content({
                     />
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </OrganizationSettingsScopeProvider>
+        </>
     );
 }

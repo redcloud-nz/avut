@@ -7,7 +7,6 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
@@ -26,10 +25,6 @@ import { systemAdminRouter } from "./system-admin-router";
 
 // `revalidateTag` needs a Next.js render/request store, which the test environment has no
 // business standing up — the router's contract here is just that it invalidates the tag.
-vi.mock("@/server/cache/organization-settings-revalidate", () => ({
-    organizationSettingsCacheTag: (id: string) => `organization-settings-${id}`,
-    revalidateOrganizationSettings: vi.fn(async () => {}),
-}));
 vi.mock("@/server/cache/organization-user-revalidate", () => ({
     organizationUserCacheTag: (id: string) => `organization-user-${id}`,
     revalidateOrganizationUser: vi.fn(async () => {}),
@@ -454,151 +449,6 @@ describe("systemAdmin.listOrganizations", () => {
         expect(empty.memberCount).toBe(0);
         expect(empty.ownerCount).toBe(0);
         expect(empty.enabledModules).toEqual([]);
-    });
-});
-
-describe("systemAdmin organization settings", () => {
-    const T = {
-        admin: UserId.create(),
-        // An organization with no `OrganizationConfig` rows at all — what the normal
-        // (non-system-admin) org-creation path produces.
-        bareOrg: OrganizationId.create(),
-        // An organization whose default config rows have been fully materialised — what
-        // `systemAdmin.createOrganization` produces.
-        seededOrg: OrganizationId.create(),
-    };
-    const db = createMockPrisma();
-
-    beforeAll(async () => {
-        await db.user.create({
-            data: {
-                id: T.admin,
-                name: "Admin",
-                email: "admin@x.test",
-                emailVerified: true,
-                createdAt: new Date(),
-            },
-        });
-        await db.organization.create({
-            data: { id: T.bareOrg, name: "Bare", slug: "bare", createdAt: new Date() },
-        });
-        await db.organization.create({
-            data: { id: T.seededOrg, name: "Seeded", slug: "seeded", createdAt: new Date() },
-        });
-
-        for (const [key, value] of Object.entries(
-            OrganizationSettings.flatten(OrganizationSettings.default()),
-        )) {
-            await db.organizationConfig.create({
-                data: { organizationId: T.seededOrg, key, value },
-            });
-        }
-    });
-
-    // The admin is deliberately NOT a member of either organization.
-    const call = () =>
-        systemAdminRouter.createCaller(
-            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
-        );
-
-    it("getOrganizationSettings resolves defaults for a config-less organization", async () => {
-        const settings = await call().getOrganizationSettings({ organizationId: T.bareOrg });
-        expect(settings).toEqual(OrganizationSettings.default());
-    });
-
-    it("getOrganizationSettings resolves a fully materialised organization identically", async () => {
-        const settings = await call().getOrganizationSettings({ organizationId: T.seededOrg });
-        expect(settings).toEqual(OrganizationSettings.default());
-    });
-
-    it("enables a module for an org the admin does not belong to", async () => {
-        const next = OrganizationSettings.default();
-        next.modules.notes.enabled = true;
-
-        const result = await call().updateOrganizationSettings({
-            organizationId: T.bareOrg,
-            settings: next,
-        });
-
-        expect(result.modules.notes.enabled).toBe(true);
-
-        // Persisted, and only the changed leaf was materialised.
-        const rows = await db.organizationConfig.findMany({
-            where: { organizationId: T.bareOrg },
-        });
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({ key: "modules.notes.enabled", value: true });
-
-        const reread = await call().getOrganizationSettings({ organizationId: T.bareOrg });
-        expect(reread.modules.notes.enabled).toBe(true);
-    });
-
-    it("updates an existing config row on a fully materialised organization", async () => {
-        const next = OrganizationSettings.default();
-        next.modules.i3.enabled = true;
-        next.modules.i3.storage = "AVUT";
-
-        const result = await call().updateOrganizationSettings({
-            organizationId: T.seededOrg,
-            settings: next,
-        });
-
-        expect(result.modules.i3).toEqual({ enabled: true, storage: "AVUT" });
-
-        const row = await db.organizationConfig.findFirst({
-            where: { organizationId: T.seededOrg, key: "modules.i3.storage" },
-        });
-        expect(row?.value).toBe("AVUT");
-    });
-
-    it("writes an audit entry against the organization", async () => {
-        const next = OrganizationSettings.default();
-        next.modules["skill-track"].enabled = true;
-
-        await call().updateOrganizationSettings({
-            organizationId: T.seededOrg,
-            settings: next,
-        });
-
-        const entries = await db.logEntry.findMany({
-            where: { organizationId: T.seededOrg, objectType: "OrganizationSettings" },
-        });
-        expect(entries.length).toBeGreaterThan(0);
-        expect(entries.at(-1)).toMatchObject({
-            action: "Update",
-            objectType: "OrganizationSettings",
-            objectId: T.seededOrg,
-            userId: T.admin,
-        });
-    });
-
-    it("rejects settings that fail schema validation", async () => {
-        const next = OrganizationSettings.default();
-
-        await expect(
-            call().updateOrganizationSettings({
-                organizationId: T.bareOrg,
-                settings: {
-                    ...next,
-                    modules: {
-                        ...next.modules,
-                        notes: { enabled: 7 as unknown as boolean },
-                    },
-                },
-            }),
-        ).rejects.toBeTruthy();
-    });
-
-    it("rejects a non-admin", async () => {
-        const caller = systemAdminRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: UserId.create(), role: "user" },
-                prisma: db,
-            }),
-        );
-        await expect(
-            caller.getOrganizationSettings({ organizationId: T.bareOrg }),
-        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
 

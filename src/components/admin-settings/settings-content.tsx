@@ -10,7 +10,6 @@ import {
     getOrganizationSettingsFormSections,
     OrganizationSettingsForm,
 } from "@/components/admin-settings/organization-settings-form";
-import { OrganizationSettingsScopeProvider } from "@/components/admin-settings/settings-scope";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -28,7 +27,7 @@ export function AdminModule_Settings_Content() {
     );
 
     return (
-        <OrganizationSettingsScopeProvider scope="organization">
+        <>
             <Std.Navbar
                 breadcrumbs={[
                     {
@@ -68,6 +67,6 @@ export function AdminModule_Settings_Content() {
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-        </OrganizationSettingsScopeProvider>
+        </>
     );
 }
