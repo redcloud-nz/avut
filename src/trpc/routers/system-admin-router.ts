@@ -15,18 +15,14 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
-import { revalidateOrganizationSettings } from "@/server/cache/organization-settings-revalidate";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
-import {
-    readOrganizationSettings,
-    writeOrganizationSettings,
-} from "@/server/organization-settings-store";
 import { prepareSkillPackageImport } from "@/server/skill-package-io";
 
 import { assertOrganizationExists, createTrpcRouter, systemAdminProcedure } from "../init";
 
 import { findOwnerMemberships } from "./organizations-router";
+import { settingsRouter } from "./settings-router";
 
 /**
  * Whether `error` is a Prisma unique-constraint violation (`P2002`) — what a concurrent duplicate
@@ -324,22 +320,11 @@ export const systemAdminRouter = createTrpcRouter({
         }),
 
     /**
-     * Resolve an organization's settings, keyed purely on `organizationId` — no membership in
-     * that organization is required (or consulted).
-     *
-     * Reads through `readOrganizationSettings`, which layers the stored `OrganizationConfig`
-     * rows over `OrganizationSettings.default()`. That makes a config-less organization (the
-     * normal org-creation path seeds no rows) and a fully materialised one (`createOrganization`
-     * above seeds every default leaf) resolve identically.
+     * Reused directly from `settingsRouter` via `{ allowSystemAdmin: true }` rather than
+     * duplicated — a system admin hits the same permission-checked procedure org members do,
+     * just without needing membership of their own.
      */
-    getOrganizationSettings: systemAdminProcedure
-        .input(z.object({ organizationId: OrganizationId.schema }))
-        .output(OrganizationSettings.schema)
-        .query(async ({ ctx, input }) => {
-            await assertOrganizationExists(ctx.prisma, input.organizationId);
-
-            return await readOrganizationSettings(ctx.prisma, input.organizationId);
-        }),
+    getOrganizationSettings: settingsRouter.getOrganizationSettings,
 
     getUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
@@ -589,43 +574,6 @@ export const systemAdminRouter = createTrpcRouter({
             return { id: updated.id, role: updated.role };
         }),
 
-    /**
-     * Replace an organization's settings, without requiring membership in it.
-     *
-     * The incoming `settings` are validated against `OrganizationSettings.schema` (by the input
-     * schema, and again inside `writeOrganizationSettings` before anything is written), and only
-     * the `OrganizationConfig` leaves whose value actually changed are upserted — so this behaves
-     * identically for a config-less and a fully materialised organization.
-     */
-    updateOrganizationSettings: systemAdminProcedure
-        .input(
-            z.object({
-                organizationId: OrganizationId.schema,
-                settings: OrganizationSettings.schema,
-            }),
-        )
-        .output(OrganizationSettings.schema)
-        .mutation(async ({ ctx, input }) => {
-            await assertOrganizationExists(ctx.prisma, input.organizationId);
-
-            const settings = await writeOrganizationSettings(
-                ctx.prisma,
-                input.organizationId,
-                input.settings,
-                (changes) =>
-                    ctx.logEvent({
-                        organizationId: input.organizationId,
-                        action: "Update",
-                        objectType: "OrganizationSettings",
-                        objectId: input.organizationId,
-                        changes,
-                        description: "Updated settings from system administration",
-                    }),
-            );
-
-            // Same tag the in-org settings path invalidates, so in-org UI reflects the change.
-            await revalidateOrganizationSettings(input.organizationId);
-
-            return settings;
-        }),
+    /** Reused directly from `settingsRouter` — see `getOrganizationSettings` above. */
+    updateOrganizationSettings: settingsRouter.updateOrganizationSettings,
 });
