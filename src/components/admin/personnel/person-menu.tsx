@@ -6,35 +6,23 @@
 
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
-
-import { personnelEffects } from "@/client/personnel-effects";
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    MenuAction,
-    useMenuActionHotkeys,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
-import { trpc } from "@/trpc/client";
 
+import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
 import { AdminModule_InvitePerson_Dialog } from "./invite-person";
+import { AdminModule_RestorePerson_Dialog } from "./restore-person";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
@@ -47,53 +35,12 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["update", "delete", "invite"] as const),
+        parseAsStringLiteral(["update", "delete", "invite", "archive", "restore"] as const),
     );
 
     const canUpdate = useHasPermission({ person: ["update"] });
     const canDelete = useHasPermission({ person: ["delete"] });
     const canInvite = useHasPermission({ invitation: ["create"] });
-
-    const archiveMutation = useMutation(
-        trpc.personnel.archivePerson.mutationOptions({
-            meta: { effects: personnelEffects.archivePerson },
-            onError(error) {
-                toast.error(`Failed to archive person: ${error.message}`);
-                console.error("Failed to archive person:", error);
-            },
-        }),
-    );
-    const restoreMutation = useMutation(
-        trpc.personnel.restorePerson.mutationOptions({
-            meta: { effects: personnelEffects.restorePerson },
-            onError(error) {
-                toast.error(`Failed to restore person: ${error.message}`);
-                console.error("Failed to restore person:", error);
-            },
-        }),
-    );
-
-    function handleArchive() {
-        toast.promise(
-            archiveMutation.mutateAsync({ organizationId: organization.id, personId: person.id }),
-            {
-                loading: "Archiving person record...",
-                success: "Person record archived.",
-                error: (error) => "Failed to archive person record: " + error.message,
-            },
-        );
-    }
-
-    function handleRestore() {
-        toast.promise(
-            restoreMutation.mutateAsync({ organizationId: organization.id, personId: person.id }),
-            {
-                loading: "Restoring person record...",
-                success: "Person record restored.",
-                error: (error) => "Failed to restore person record: " + error.message,
-            },
-        );
-    }
 
     const actions: MenuActionProps[] = [
         {
@@ -118,7 +65,7 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             verb: "archive",
             label: "Archive",
             icon: <ObjectIcons.Archive />,
-            onSelect: handleArchive,
+            onSelect: () => setAction("archive", { history: "push" }),
             disabled: !canUpdate,
         });
     } else {
@@ -126,7 +73,7 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
-            onSelect: handleRestore,
+            onSelect: () => setAction("restore", { history: "push" }),
             disabled: !canUpdate,
         });
     }
@@ -141,41 +88,32 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
         });
     }
 
-    useMenuActionHotkeys(actions, "Personnel");
-
     return (
         <>
-            {/* Person dropdown menu */}
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="end">
-                    <DropdownMenuGroup>
-                        <DropdownMenuItem disabled asChild>
-                            <Link
-                                href={route("/orgs/[slug]/admin/personnel/[person_id]/history", {
-                                    slug: organization.slug,
-                                    person_id: person.id,
-                                })}
-                            >
-                                <ObjectIcons.History /> History
-                            </Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuGroup>
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuGroup>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {actions.map((a) => (
-                            <MenuAction key={a.verb} {...a} />
-                        ))}
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu
+                actions={actions}
+                category="Personnel"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem disabled asChild>
+                                <Link
+                                    href={route(
+                                        "/orgs/[slug]/admin/personnel/[person_id]/history",
+                                        {
+                                            slug: organization.slug,
+                                            person_id: person.id,
+                                        },
+                                    )}
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
+            />
 
             {/* Invite Person dialog */}
             <AdminModule_InvitePerson_Dialog
@@ -183,6 +121,28 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
                 open={action === "invite"}
                 onOpenChange={(open) =>
                     setAction(open ? "invite" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Archive Person dialog */}
+            <AdminModule_ArchivePerson_Dialog
+                person={person}
+                open={action === "archive"}
+                onOpenChange={(open) =>
+                    setAction(open ? "archive" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Restore Person dialog */}
+            <AdminModule_RestorePerson_Dialog
+                person={person}
+                open={action === "restore"}
+                onOpenChange={(open) =>
+                    setAction(open ? "restore" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

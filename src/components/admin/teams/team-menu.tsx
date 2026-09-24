@@ -6,22 +6,14 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { D4HIcons, DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+import { D4HIcons, ObjectIcons } from "@/components/icons";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    MenuAction,
-    useMenuActionHotkeys,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";
@@ -60,23 +52,14 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
         },
     ];
 
-    useMenuActionHotkeys(actions, "Teams");
-
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-44" align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    {actions.map((a) => (
-                        <MenuAction key={a.verb} {...a} />
-                    ))}
-
-                    {d4hEnabled && (
+            <EntityActionMenu
+                actions={actions}
+                category="Teams"
+                width="w-44"
+                after={
+                    d4hEnabled && (
                         <>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel>D4H</DropdownMenuLabel>
@@ -114,9 +97,9 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                                 )}
                             </DropdownMenuGroup>
                         </>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
+                    )
+                }
+            />
 
             <AdminModule_DeleteTeam_Dialog
                 team={team}
