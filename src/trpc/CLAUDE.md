@@ -26,7 +26,10 @@ importing another router's helper is the symptom that led here. Piloted on
   entity (`Personnel.requireById`, `Teams.getById`, the namespace alone disambiguates), or
   `require<Entity>ById`/`get<Entity>ById` when it has several (`SkillPackages.requireSkillById` /
   `.requireGroupById` / `.requirePackageById`). Never drop the suffix just because the entity name
-  in the function already implies "by id".
+  in the function already implies "by id". `get*` returns `T | null`; `require*` throws
+  `NotFoundError` and returns `T`. Add whichever a caller needs — a module isn't required to expose
+  both. `find*` is reserved for a different shape entirely: a filtered candidate search (e.g.
+  `Personnel.findLinkablePerson`), not a lookup by a specific key.
 - A service takes `OrgServiceContext` (`src/server/services/service-context.ts`) — `{ prisma,
 organizationId, userId, logEvent }` — not `AuthenticatedOrganizationContext`. The tRPC type
   structurally satisfies it, so no adapter is needed at call sites; the point is that a service
