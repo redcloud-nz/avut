@@ -33,6 +33,12 @@ export function Admin_Sidebar_Menu() {
                     href={route("/orgs/[slug]/admin/personnel", { slug })}
                 />
             </Protect>
+            <Protect permissions={{ person: ["delete"] }}>
+                <NavSubItem
+                    label="Rubbish"
+                    href={route("/orgs/[slug]/admin/rubbish-bin", { slug })}
+                />
+            </Protect>
             <Protect permissions={{ team: ["view"] }}>
                 <NavSubItem label="Teams" href={route("/orgs/[slug]/admin/teams", { slug })} />
             </Protect>
