@@ -9,7 +9,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { useOrganizationSettingsMutation } from "@/components/admin-settings/settings-scope";
+import { useOrganizationSettingsMutation } from "@/components/admin-settings/use-organization-settings-mutation";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -47,16 +47,12 @@ export function D4HIntegration_SettingsCard({
     const integrationEnabled = useWatch({ control: form.control, name: "enabled" });
 
     const mutation = useOrganizationSettingsMutation({
-        organizationId,
         errorMessage: "Failed to update D4H integration settings",
         onSaved: (updated) => form.reset(updated.integrations.d4h),
     });
 
     const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId,
-            settings: { ...settings, integrations: { ...settings.integrations, d4h: formData } },
-        });
+        mutation.mutate({ organizationId, update: { slice: "integrations.d4h", patch: formData } });
     });
 
     return (

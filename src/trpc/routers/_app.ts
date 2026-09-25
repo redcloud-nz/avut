@@ -21,6 +21,7 @@ import { skillPackageBuilderRouter } from "./skill-package-builder-router";
 import { skillsRouter } from "./skills-router";
 import { systemAdminRouter } from "./system-admin-router";
 import { teamsRouter } from "./teams-router";
+import { userRouter } from "./user-router";
 import { usersRouter } from "./users-router";
 
 export const appRouter = createTrpcRouter({
@@ -38,6 +39,7 @@ export const appRouter = createTrpcRouter({
     skills: skillsRouter,
     systemAdmin: systemAdminRouter,
     teams: teamsRouter,
+    user: userRouter,
     users: usersRouter,
 });
 

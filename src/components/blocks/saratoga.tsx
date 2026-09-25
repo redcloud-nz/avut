@@ -11,6 +11,8 @@ import { tv, VariantProps } from "tailwind-variants";
 
 import { cn } from "@/lib/utils";
 
+import { SaratogaContents, SaratogaContentsSpacer } from "./saratoga-contents";
+
 function SaratogaRoot({ children, className, ...props }: ComponentProps<"div">) {
     return (
         <div
@@ -118,4 +120,6 @@ export const Saratoga = {
     Actions: SaratogaActions,
     Columns: SaratogaColumns,
     Column: SaratogaColumn,
+    Contents: SaratogaContents,
+    ContentsSpacer: SaratogaContentsSpacer,
 };

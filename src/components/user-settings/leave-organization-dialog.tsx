@@ -25,7 +25,7 @@ import { ObjectName } from "@/components/ui/typography";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
-type Membership = RouterOutput["users"]["listMemberships"][number];
+type Membership = RouterOutput["user"]["listMemberships"][number];
 
 export function UserSettings_LeaveOrganization_Dialog({
     membership,
@@ -45,7 +45,7 @@ export function UserSettings_LeaveOrganization_Dialog({
             toast.error(`Failed to leave organisation: ${error.message}`);
         },
         async onSuccess() {
-            await queryClient.invalidateQueries(trpc.users.listMemberships.queryFilter());
+            await queryClient.invalidateQueries(trpc.user.listMemberships.queryFilter());
             toast.success(
                 <>
                     Left <ObjectName>{membership.organization.name}</ObjectName>

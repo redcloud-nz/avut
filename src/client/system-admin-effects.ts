@@ -12,32 +12,11 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const systemAdminEffects = createEffects<"systemAdmin">()({
-    addOrganizationMember: (vars) => [
-        invalidate(
-            trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
-        ),
-        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
-        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
-    ],
     createOrganization: () => [invalidate(trpc.systemAdmin.listOrganizations.queryFilter())],
     deleteUser: () => [
         invalidate(trpc.systemAdmin.listUsers.queryFilter()),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
         invalidate(trpc.systemAdmin.getOrganization.queryFilter()),
-    ],
-    removeOrganizationMember: (vars) => [
-        invalidate(
-            trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
-        ),
-        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
-        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
-    ],
-    setOrganizationMemberRole: (vars) => [
-        invalidate(
-            trpc.systemAdmin.getOrganization.queryFilter({ organizationId: vars.organizationId }),
-        ),
-        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
-        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],
     setUserRole: (vars) => [
         invalidate(trpc.systemAdmin.listUsers.queryFilter()),

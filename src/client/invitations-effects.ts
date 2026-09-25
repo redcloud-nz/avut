@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { authQueryKeys } from "@/lib/auth-query-keys";
 import { trpc } from "@/trpc/client";
 import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
@@ -17,6 +16,6 @@ export const invitationsEffects = createEffects<"invitations">()({
     // itself — have both changed underneath their cached copies.
     signUp: (vars) => [
         invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
-        invalidate({ queryKey: authQueryKeys.session }),
+        invalidate(trpc.user.getSession.queryFilter()),
     ],
 });

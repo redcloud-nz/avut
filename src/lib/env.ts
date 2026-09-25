@@ -83,4 +83,46 @@ export const env = {
     get NEXT_PUBLIC_APP_COMMIT() {
         return text(process.env.NEXT_PUBLIC_APP_COMMIT);
     },
+
+    /**
+     * Kept as `string | undefined`, like every other field here, rather than coerced to
+     * `boolean` — `base-url.ts` passes the whole `env` object into a helper typed
+     * `Record<string, string | undefined>`, so a `boolean` field would break that call.
+     * Callers just check it for truthiness (`if (env.AVUT_DEBUG_DB_QUERIES)`), which works
+     * the same either way.
+     */
+    get AVUT_DEBUG_DB_QUERIES() {
+        return text(process.env.AVUT_DEBUG_DB_QUERIES);
+    },
+
+    /** See `withArtificialLatency` — a single `ms` value, or a `"min:max"` range. */
+    get AVUT_TRPC_ARTIFICIAL_LATENCY() {
+        return parseNumberOrRange(text(process.env.AVUT_TRPC_ARTIFICIAL_LATENCY));
+    },
+
+    /** See `withArtificialLatency` — a single `ms` value, or a `"min:max"` range. */
+    get AVUT_DB_ARTIFICIAL_LATENCY() {
+        return parseNumberOrRange(text(process.env.AVUT_DB_ARTIFICIAL_LATENCY));
+    },
+
+    isDevelopment() {
+        return this.NODE_ENV === "development";
+    },
+    isProduction() {
+        return this.NODE_ENV === "production";
+    },
+    isPreview() {
+        return this.VERCEL_ENV === "preview";
+    },
 } as const;
+
+function parseNumberOrRange(value: string | undefined): number | [number, number] | undefined {
+    if (value === undefined) return undefined;
+    const rangeMatch = value.match(/^(\d+):(\d+)$/);
+    if (rangeMatch) {
+        const [, start, end] = rangeMatch;
+        return [Number(start), Number(end)];
+    }
+    const num = Number(value);
+    return isNaN(num) ? undefined : num;
+}

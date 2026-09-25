@@ -24,7 +24,7 @@ import type { RouterOutput } from "@/trpc/routers/_app";
 
 import { UserSettings_LeaveOrganization_Dialog } from "./leave-organization-dialog";
 
-type Membership = RouterOutput["users"]["listMemberships"][number];
+type Membership = RouterOutput["user"]["listMemberships"][number];
 
 export function UserSettings_OrganizationMenu({ membership }: { membership: Membership }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["leave"] as const));

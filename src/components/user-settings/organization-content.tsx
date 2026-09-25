@@ -24,7 +24,7 @@ export function UserSettings_OrganizationContent({
 }: {
     organizationId: OrganizationId;
 }) {
-    const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
+    const { data: memberships } = useSuspenseQuery(trpc.user.listMemberships.queryOptions());
     const membership = memberships.find((m) => m.organization.id === organizationId);
 
     if (!membership) notFound();

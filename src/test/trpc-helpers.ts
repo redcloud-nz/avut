@@ -107,7 +107,13 @@ export const createOrganizationMockContext = ({
         );
     }
 
-    return { ...ctx, organizationId, userId: UserId.schema.parse(auth.user.id), logEvent };
+    return {
+        ...ctx,
+        organizationId,
+        userId: UserId.schema.parse(auth.user.id),
+        isSystemAdmin: auth.user.role === "admin",
+        logEvent,
+    };
 };
 
 // Reset all mocks before each test

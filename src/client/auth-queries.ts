@@ -6,27 +6,25 @@
 
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
-import { authClient, AuthClientSession } from "@/client/auth-client";
+import { authClient } from "@/client/auth-client";
 import { authQueryKeys } from "@/lib/auth-query-keys";
+import { trpc, type RouterOutput } from "@/trpc/client";
+
+/** The shape `useSession()`/`useUser()` resolve to — `trpc.user.getSession`'s output. */
+export type SessionData = NonNullable<RouterOutput["user"]["getSession"]>;
 
 /**
  * The single definition of the session query.
  *
- * Unwraps to the session itself rather than Better Auth's `{ data, error }` envelope —
- * everything downstream wants the session. The key matches the server-side factory in
- * `@/server/auth-queries`, which is what lets a server component hydrate this entry.
+ * Goes through `trpc.user.getSession` rather than `authClient.getSession()` directly, so it
+ * shares tRPC's prefetch/hydrate machinery with every other query instead of needing its own
+ * hand-aligned server/client key pair — `AuthenticatedLayout` prefetches the same procedure,
+ * and the shared queryKey `queryOptions()` derives is what lets that hydrate this entry
+ * instead of this query re-fetching on mount.
  */
 export function sessionQueryOptions() {
     return queryOptions({
-        queryKey: authQueryKeys.session,
-        // `throw: true` makes better-fetch reject on error and resolve with the session
-        // itself rather than a `{ data, error }` envelope.
-        queryFn: async ({ signal }): Promise<AuthClientSession | null> => {
-            const session = await authClient.getSession({
-                fetchOptions: { signal, throw: true },
-            });
-            return session ?? null;
-        },
+        ...trpc.user.getSession.queryOptions(),
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 }

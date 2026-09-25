@@ -8,13 +8,14 @@
 import Image from "next/image";
 import { ReactNode, Suspense } from "react";
 
+import { SessionWatcher } from "@/components/auth/session-watcher";
 import { Std } from "@/components/blocks/std";
 import { ModeToggle } from "@/components/nav/mode-toggle";
 import { NotificationsMenu } from "@/components/nav/notifications-menu";
 import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
 import { ScopeSwitcher, ScopeSwitcher_Skeleton } from "@/components/nav/scope-switcher";
 import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
-import { UserMenu } from "@/components/nav/user-menu";
+import { UserMenu, UserMenu_Skeleton } from "@/components/nav/user-menu";
 import {
     Sidebar,
     SidebarContent,
@@ -23,9 +24,9 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
-import { serverSessionQueryOptions } from "@/server/auth-queries";
+import { TimeZoneAutoDetect } from "@/components/user-settings/timezone-auto-detect";
 import { requireSession } from "@/server/session";
-import { getServerQueryClient, HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // `requireSession()` below is a blocking request read. `(wrapper)/loading.tsx` sitting above
 // this layout satisfies *build-time* prerender validation for it (see that file's docstring),
@@ -42,17 +43,39 @@ export default async function AuthenticatedLayout(props: {
 }) {
     // Baseline guard for every authenticated route. The proxy only checks that a session
     // cookie is *present*; this is the check that actually validates it.
-    const session = await requireSession();
+    await requireSession();
 
-    const queryClient = getServerQueryClient();
-    queryClient.setQueryData(serverSessionQueryOptions().queryKey, session);
+    // `ScopeSwitcher` and `UserMenu` both read `getSession` via plain `useQuery` (not
+    // suspense), so unlike `listMemberships` below it can't tolerate an unresolved prefetch —
+    // a still-pending dehydrated snapshot racing the live query client's resolution is exactly
+    // what produces a hydration mismatch. Awaiting costs nothing extra: `getSession` only
+    // re-reads `ctx.auth`, which is `requireSession()`'s own `cache()`-wrapped lookup.
+    //
+    // Every authenticated page can render a date, and `DLDateDetails` reads the viewer's format
+    // preference through `usePreferences()` — a `useSuspenseQuery` sitting deep inside a card
+    // with no Suspense boundary of its own. Awaiting rather than `prefetch`ing is what keeps a
+    // still-pending query from suspending whole card subtrees on first paint. Costs little:
+    // `settings.getUserSettings` is `"use cache"`-tagged per user.
+    //
+    // Neither depends on the other's result, so run them concurrently rather than paying for
+    // two sequential round trips.
+    await Promise.all([
+        fetchQuery(trpc.user.getSession.queryOptions()),
+        fetchQuery(trpc.settings.getUserSettings.queryOptions()),
+    ]);
 
     // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
     // prefetching here removes the round trip that would otherwise show as its skeleton.
-    prefetch(trpc.users.listMemberships.queryOptions());
+    prefetch(trpc.user.listMemberships.queryOptions());
 
     return (
         <HydrateClient>
+            {/* Redirects to sign-in if the session is revoked or expires after first paint —
+                see the hook's own docstring. Renders nothing. */}
+            <SessionWatcher />
+            {/* Adopts the browser's zone as `display.timeZone` on a user's first visit with no
+                saved preference — see the component's own docstring. Renders nothing. */}
+            <TimeZoneAutoDetect />
             <SidebarPortalProvider>
                 <Sidebar>
                     <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
@@ -86,7 +109,9 @@ export default async function AuthenticatedLayout(props: {
                         <div className="py-1 text-center text-xs text-muted-foreground">
                             <VersionString layout="stacked" />
                         </div>
-                        <UserMenu />
+                        <Suspense fallback={<UserMenu_Skeleton />}>
+                            <UserMenu />
+                        </Suspense>
                     </SidebarFooter>
                     <SidebarRail />
                 </Sidebar>

@@ -36,6 +36,7 @@ model User {
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
   invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
   d4hAccessTokens   D4HAccessToken[]         @relation("d4h_access_token_to_user")
+  configs           UserConfig[]             @relation("user_config_to_user")
 
   authoredNotes          Note[]         @relation("note_to_author")
   formInstances          FormInstance[] @relation("form_instance_to_user")
@@ -140,6 +141,16 @@ model OrganizationConfig {
 
   @@unique([organizationId, key])
   @@map("organization_config")
+}
+
+model UserConfig {
+  userId String
+  user   User   @relation("user_config_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  key    String
+  value  Json
+
+  @@unique([userId, key])
+  @@map("user_config")
 }
 
 model Team {

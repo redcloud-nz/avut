@@ -87,7 +87,7 @@ function AddD4HAccessToken_Body() {
     const logger = useLogger("Common", "UserSettings_AddD4HAccessToken_Dialog");
     const router = useRouter();
 
-    const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
+    const { data: memberships } = useSuspenseQuery(trpc.user.listMemberships.queryOptions());
 
     const form = useForm({
         resolver: zodResolver(

@@ -15,7 +15,7 @@ export const metadata = {
 
 export default async function UserSettings_D4H_Page() {
     prefetch(trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions());
-    prefetch(trpc.users.listMemberships.queryOptions());
+    prefetch(trpc.user.listMemberships.queryOptions());
 
     return (
         <HydrateClient>

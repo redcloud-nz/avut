@@ -5,24 +5,24 @@
 
 "use client";
 
+import { type SessionData } from "@/client/auth-queries";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DLAction, DLActions, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemAction, DataItemTitle, DataItemValue } from "@/components/ui/data-item";
 import { UserProfile_ChangeEmail_Dialog } from "@/components/user-settings/change-email-dialog";
 import { UserProfile_UpdateName_Dialog } from "@/components/user-settings/update-name-dialog";
 import { getUserInitials } from "@/lib/utils";
-import { type AuthSession } from "@/server/auth";
 
-export function UserProfile_Card({ session }: { session: AuthSession }) {
+export function UserProfile_Card({ session }: { session: SessionData }) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>User Profile</CardTitle>
             </CardHeader>
             <CardContent>
-                <DLActions>
-                    <DLTerm>Avatar</DLTerm>
-                    <DLDetails>
+                <DataItem>
+                    <DataItemTitle>Avatar</DataItemTitle>
+                    <DataItemValue>
                         <Avatar className="size-12 rounded-full">
                             {session.user.image && (
                                 <AvatarImage src={session.user.image} alt="User Avatar" />
@@ -31,20 +31,24 @@ export function UserProfile_Card({ session }: { session: AuthSession }) {
                                 {getUserInitials(session.user.name)}
                             </AvatarFallback>
                         </Avatar>
-                    </DLDetails>
+                    </DataItemValue>
+                </DataItem>
 
-                    <DLTerm>Name</DLTerm>
-                    <DLDetails>{session.user.name}</DLDetails>
-                    <DLAction>
+                <DataItem>
+                    <DataItemTitle>Name</DataItemTitle>
+                    <DataItemValue>{session.user.name}</DataItemValue>
+                    <DataItemAction>
                         <UserProfile_UpdateName_Dialog session={session} />
-                    </DLAction>
+                    </DataItemAction>
+                </DataItem>
 
-                    <DLTerm>Email</DLTerm>
-                    <DLDetails>{session.user.email}</DLDetails>
-                    <DLAction>
+                <DataItem>
+                    <DataItemTitle>Email</DataItemTitle>
+                    <DataItemValue>{session.user.email}</DataItemValue>
+                    <DataItemAction>
                         <UserProfile_ChangeEmail_Dialog session={session} />
-                    </DLAction>
-                </DLActions>
+                    </DataItemAction>
+                </DataItem>
             </CardContent>
         </Card>
     );

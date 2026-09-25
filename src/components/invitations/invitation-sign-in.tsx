@@ -19,7 +19,6 @@ import { MutationButton } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { authQueryKeys } from "@/lib/auth-query-keys";
 import { authUrl } from "@/lib/auth-redirect";
 import { route } from "@/lib/routes";
 import type { InvitationId } from "@/lib/schemas/organization-invitation";
@@ -72,7 +71,7 @@ export function InvitationSignIn_Form({
             if (verified) {
                 // The session cookie changed: drop the cached copies that were fetched signed
                 // out, and re-render the server tree that reads it.
-                void queryClient.invalidateQueries({ queryKey: authQueryKeys.session });
+                void queryClient.invalidateQueries(trpc.user.getSession.queryFilter());
                 void queryClient.invalidateQueries(
                     trpc.invitations.getLanding.queryFilter({ invitationId }),
                 );

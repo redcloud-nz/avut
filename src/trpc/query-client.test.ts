@@ -18,12 +18,12 @@ describe("makeQueryClient dehydration", () => {
         const queryClient = makeQueryClient();
 
         await queryClient.ensureQueryData({
-            queryKey: authQueryKeys.session,
+            queryKey: authQueryKeys.linkedAccounts,
             queryFn: async () => ({ user: { id: "abc" } }),
         });
 
         const keys = dehydrate(queryClient).queries.map((q) => q.queryKey);
-        expect(keys).toContainEqual([...authQueryKeys.session]);
+        expect(keys).toContainEqual([...authQueryKeys.linkedAccounts]);
     });
 
     it("still dehydrates in-flight queries for streaming prefetch", () => {
@@ -43,7 +43,7 @@ describe("makeQueryClient dehydration", () => {
 describe("auth query retry policy", () => {
     it("does not retry an unauthenticated response", () => {
         const queryClient = makeQueryClient();
-        const { retry } = queryClient.getQueryDefaults(authQueryKeys.session);
+        const { retry } = queryClient.getQueryDefaults(authQueryKeys.linkedAccounts);
 
         expect(typeof retry).toBe("function");
         expect((retry as (n: number, e: unknown) => boolean)(0, { status: 401 })).toBe(false);
@@ -52,7 +52,7 @@ describe("auth query retry policy", () => {
 
     it("retries transient failures, including network-level ones", () => {
         const queryClient = makeQueryClient();
-        const retry = queryClient.getQueryDefaults(authQueryKeys.session).retry as (
+        const retry = queryClient.getQueryDefaults(authQueryKeys.linkedAccounts).retry as (
             n: number,
             e: unknown,
         ) => boolean;
@@ -64,7 +64,7 @@ describe("auth query retry policy", () => {
 
     it("gives up after three attempts", () => {
         const queryClient = makeQueryClient();
-        const retry = queryClient.getQueryDefaults(authQueryKeys.session).retry as (
+        const retry = queryClient.getQueryDefaults(authQueryKeys.linkedAccounts).retry as (
             n: number,
             e: unknown,
         ) => boolean;
@@ -74,10 +74,8 @@ describe("auth query retry policy", () => {
 
     it("honours Retry-After when the error carries one", () => {
         const queryClient = makeQueryClient();
-        const retryDelay = queryClient.getQueryDefaults(authQueryKeys.session).retryDelay as (
-            n: number,
-            e: unknown,
-        ) => number;
+        const retryDelay = queryClient.getQueryDefaults(authQueryKeys.linkedAccounts)
+            .retryDelay as (n: number, e: unknown) => number;
 
         expect(retryDelay(0, { retryAfterMs: 4200 })).toBe(4200);
         expect(retryDelay(1, {})).toBe(2000);

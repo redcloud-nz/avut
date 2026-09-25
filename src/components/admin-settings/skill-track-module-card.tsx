@@ -9,7 +9,7 @@ import { Control, Controller, useForm, useWatch } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { useOrganizationSettingsMutation } from "@/components/admin-settings/settings-scope";
+import { useOrganizationSettingsMutation } from "@/components/admin-settings/use-organization-settings-mutation";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -55,7 +55,6 @@ export function SkillTrackModule_SettingsCard({
     });
 
     const mutation = useOrganizationSettingsMutation({
-        organizationId,
         errorMessage: "Failed to update Skill Track module settings",
         onSaved: (updated) => form.reset(updated.modules["skill-track"]),
     });
@@ -63,7 +62,7 @@ export function SkillTrackModule_SettingsCard({
     const handleSubmit = form.handleSubmit((formData) => {
         mutation.mutate({
             organizationId,
-            settings: { ...settings, modules: { ...settings.modules, "skill-track": formData } },
+            update: { slice: "modules.skill-track", patch: formData },
         });
     });
 
