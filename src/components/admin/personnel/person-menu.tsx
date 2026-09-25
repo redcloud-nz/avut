@@ -122,7 +122,7 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
     } else {
         actions.push({
             verb: "restore",
-            label: "Restore from trash",
+            label: "Restore from rubbish",
             icon: <ObjectIcons.Restore />,
             onSelect: () => setAction("restore-from-trash", { history: "push" }),
             disabled: !canDelete,
@@ -199,7 +199,7 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
                 }
             />
 
-            {/* Restore Person from Trash dialog */}
+            {/* Restore Person from Rubbish dialog */}
             <AdminModule_RestorePersonFromTrash_Dialog
                 person={person}
                 open={action === "restore-from-trash"}

@@ -806,7 +806,7 @@ describe("Personnel.archive / restoreFromArchive / restoreFromTrash / deleteReco
 
     it("restoreFromTrash rejects an Archived person", async () => {
         await expect(Personnel.restoreFromTrash(ctx(), T.person)).rejects.toThrow(
-            /only a Deleted person can be restored from trash/,
+            /only a Deleted person can be restored from rubbish/,
         );
     });
 

@@ -36,13 +36,13 @@ export function AdminModule_RestorePersonFromTrash_Dialog({
         trpc.personnel.restorePersonFromTrash.mutationOptions({
             meta: { effects: personnelEffects.restorePersonFromTrash },
             onError(error) {
-                console.error("Failed to restore person from trash:", error);
+                console.error("Failed to restore person from rubbish:", error);
                 toast.error(`Failed to restore person: ${error.message}`);
             },
             onSuccess() {
                 toast.success(
                     <>
-                        Person <ObjectName>{person.name}</ObjectName> restored from trash.
+                        Person <ObjectName>{person.name}</ObjectName> restored from rubbish.
                     </>,
                 );
                 props.onOpenChange?.(false);
@@ -61,7 +61,7 @@ export function AdminModule_RestorePersonFromTrash_Dialog({
         <Dialog {...props}>
             <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
-                    <DialogTitle>Restore Person from Trash</DialogTitle>
+                    <DialogTitle>Restore Person from Rubbish</DialogTitle>
                     <DialogDescription>
                         Restore <ObjectName>{person.name}</ObjectName> to Active status.
                     </DialogDescription>

@@ -86,7 +86,7 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     } else {
         actions.push({
             verb: "restore",
-            label: "Restore from trash",
+            label: "Restore from rubbish",
             icon: <ObjectIcons.Restore />,
             onSelect: () => setAction("restore-from-trash", { history: "push" }),
             disabled: !canDelete,

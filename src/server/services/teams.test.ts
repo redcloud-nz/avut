@@ -195,7 +195,7 @@ describe("teams", () => {
 
         it("restoreFromTrash rejects an Archived team", async () => {
             await expect(restoreFromTrash(ctx(), L.team)).rejects.toThrow(
-                /only a Deleted team can be restored from trash/,
+                /only a Deleted team can be restored from rubbish/,
             );
         });
 

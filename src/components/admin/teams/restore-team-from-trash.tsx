@@ -36,13 +36,13 @@ export function AdminModule_RestoreTeamFromTrash_Dialog({
         trpc.teams.restoreTeamFromTrash.mutationOptions({
             meta: { effects: teamsEffects.restoreTeamFromTrash },
             onError(error) {
-                console.error("Failed to restore team from trash:", error);
+                console.error("Failed to restore team from rubbish:", error);
                 toast.error(`Failed to restore team: ${error.message}`);
             },
             onSuccess() {
                 toast.success(
                     <>
-                        Team <ObjectName>{team.name}</ObjectName> restored from trash.
+                        Team <ObjectName>{team.name}</ObjectName> restored from rubbish.
                     </>,
                 );
                 props.onOpenChange?.(false);
@@ -61,7 +61,7 @@ export function AdminModule_RestoreTeamFromTrash_Dialog({
         <Dialog {...props}>
             <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
-                    <DialogTitle>Restore Team from Trash</DialogTitle>
+                    <DialogTitle>Restore Team from Rubbish</DialogTitle>
                     <DialogDescription>
                         Restore <ObjectName>{team.name}</ObjectName> to Active status.
                     </DialogDescription>

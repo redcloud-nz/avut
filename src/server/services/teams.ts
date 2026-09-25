@@ -121,7 +121,7 @@ export async function restoreFromTrash(ctx: OrgServiceContext, teamId: TeamId): 
 
     if (existing.status !== "Deleted") {
         throw new ValidationError(
-            `Team(id=${teamId}) has status ${existing.status}; only a Deleted team can be restored from trash.`,
+            `Team(id=${teamId}) has status ${existing.status}; only a Deleted team can be restored from rubbish.`,
         );
     }
 

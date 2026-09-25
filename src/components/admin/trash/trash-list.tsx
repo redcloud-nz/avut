@@ -47,7 +47,7 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 toast.error(`Failed to restore person: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Person "${row.name}" restored from trash.`);
+                toast.success(`Person "${row.name}" restored from rubbish.`);
             },
         }),
     );
@@ -58,7 +58,7 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 toast.error(`Failed to restore team: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Team "${row.name}" restored from trash.`);
+                toast.success(`Team "${row.name}" restored from rubbish.`);
             },
         }),
     );
@@ -170,7 +170,7 @@ export function AdminModule_Trash_List() {
     return (
         <Saratoga.Root>
             <Saratoga.Header>
-                <Saratoga.Title>Trash</Saratoga.Title>
+                <Saratoga.Title>Rubbish</Saratoga.Title>
                 <Saratoga.Actions></Saratoga.Actions>
             </Saratoga.Header>
             <div>

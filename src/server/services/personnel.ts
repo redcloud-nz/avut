@@ -262,7 +262,7 @@ export async function restoreFromTrash(
 
     if (existing.status !== "Deleted") {
         throw new ValidationError(
-            `Person(id=${personId}) has status ${existing.status}; only a Deleted person can be restored from trash.`,
+            `Person(id=${personId}) has status ${existing.status}; only a Deleted person can be restored from rubbish.`,
         );
     }
 
