@@ -37,18 +37,10 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
-            const existing = await ctx.prisma.person.findUnique({
-                where: { organizationId: ctx.organizationId, id: personId },
-            });
-
-            if (!existing)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.personNotFound(personId),
-                });
+            const existing = await Personnel.requireById(ctx, personId);
 
             if (existing.status === "Archived") {
-                return { updated: PersonData.fromRecord(existing) }; // Already archived
+                return { updated: existing }; // Already archived
             }
 
             const [updated] = await ctx.prisma.$transaction([
@@ -424,18 +416,10 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
-            const existing = await ctx.prisma.person.findUnique({
-                where: { organizationId: ctx.organizationId, id: personId },
-            });
-
-            if (!existing)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.personNotFound(personId),
-                });
+            const existing = await Personnel.requireById(ctx, personId);
 
             if (existing.status == "Active") {
-                return { updated: PersonData.fromRecord(existing) }; // Not restorable
+                return { updated: existing }; // Not restorable
             }
 
             const [updated] = await ctx.prisma.$transaction([
