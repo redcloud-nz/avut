@@ -28,6 +28,10 @@ type SkillPackagePrisma = Pick<PrismaClient, "skillPackage" | "skillGroup" | "sk
 /**
  * Fetch a skill by ID and ensure it belongs to the organization.
  * @throws NotFoundError if the skill does not exist or does not belong to the organization.
+ *
+ * The not-found message is a local literal, not `Messages.skillNotFound` (`src/trpc/messages.ts`)
+ * — a domain service can't depend on `src/trpc/`. The router's other skill call sites still use
+ * `Messages.skillNotFound` for the same entity; keep both in sync by hand.
  */
 export async function requireSkill(ctx: OrgServiceContext, skillId: SkillId): Promise<Skill> {
     const existingSkill = await ctx.prisma.skill.findUnique({
@@ -49,6 +53,9 @@ export async function requireSkill(ctx: OrgServiceContext, skillId: SkillId): Pr
 /**
  * Fetch a skill group by ID and ensure it belongs to the organization.
  * @throws NotFoundError if the skill group does not exist or does not belong to the organization.
+ *
+ * The not-found message is a local literal, not `Messages.skillGroupNotFound` — see
+ * `requireSkill`'s doc comment for why.
  */
 export async function requireGroup(
     ctx: OrgServiceContext,

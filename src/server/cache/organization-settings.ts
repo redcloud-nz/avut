@@ -14,11 +14,6 @@ import * as OrgSettings from "@/server/services/organization-settings";
 import { organizationSettingsCacheTag } from "./organization-settings-revalidate";
 
 export { revalidateOrganizationSettings } from "./organization-settings-revalidate";
-export {
-    read as readOrganizationSettings,
-    write as writeOrganizationSettings,
-    writeSlice as writeOrganizationSettingsSlice,
-} from "@/server/services/organization-settings";
 
 /**
  * Get the organization settings for a given organization ID. This function is cached and will revalidate when settings are updated.

@@ -14,7 +14,7 @@ import type { OrgServiceContext } from "./service-context";
  * Fetch a team by ID, or `null` if it does not exist within the organization. Callers that need
  * the team to exist should use `requireById` instead.
  */
-export async function find(ctx: OrgServiceContext, teamId: TeamId): Promise<TeamData | null> {
+export async function getById(ctx: OrgServiceContext, teamId: TeamId): Promise<TeamData | null> {
     const team = await ctx.prisma.team.findUnique({
         where: {
             id: teamId,
@@ -49,7 +49,7 @@ export async function find(ctx: OrgServiceContext, teamId: TeamId): Promise<Team
  * @throws NotFoundError if the team does not exist within the organization.
  */
 export async function requireById(ctx: OrgServiceContext, teamId: TeamId): Promise<TeamData> {
-    const team = await find(ctx, teamId);
+    const team = await getById(ctx, teamId);
 
     if (!team) {
         throw new NotFoundError(`Team(id=${teamId}) not found.`);

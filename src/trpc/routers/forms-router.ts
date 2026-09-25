@@ -156,7 +156,7 @@ export const formsRouter = createTrpcRouter({
      * @param formKey - The key of the form this instance belongs to.
      * @param formData - The data for the form instance.
      * @returns The saved or updated form instance.
-     * @throws TRPCError(CONFLICT) if the form instance belongs to a different user or organization, or if the form key does not match an existing instance with the same ID.
+     * @throws TRPCError(CONFLICT) if the form instance belongs to a different user or organization, or if the form key does not match an existing instance with the same ID — thrown as `ConflictError` from `Forms.saveInstance` and mapped by `mapDomainErrors`.
      */
     saveFormInstanceData: organizationProcedure()
         .input(
