@@ -59,7 +59,7 @@ export function AdminModule_TeamLinks_Card({ team }: { team: TeamData }) {
                 {teamMembersQuery.data && (
                     <Item className="px-2" size="sm" asChild>
                         <Link
-                            href={route("/orgs/[slug]/admin/teams/[team_id]/personnel", {
+                            href={route("/orgs/[slug]/admin/teams/[team_id]/members", {
                                 slug: organization.slug,
                                 team_id: team.id,
                             })}

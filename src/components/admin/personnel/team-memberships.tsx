@@ -73,14 +73,11 @@ export function AdminModule_Person_TeamMemberships_Card({ person }: { person: Pe
                 {memberships.map((membership) => (
                     <Item key={membership.teamId} className="px-2" asChild>
                         <Link
-                            href={route(
-                                "/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]",
-                                {
-                                    slug: organization.slug,
-                                    team_id: membership.teamId,
-                                    person_id: person.id,
-                                },
-                            )}
+                            href={route("/orgs/[slug]/admin/teams/[team_id]/members/[person_id]", {
+                                slug: organization.slug,
+                                team_id: membership.teamId,
+                                person_id: person.id,
+                            })}
                         >
                             <ItemContent>
                                 <ItemTitle>{membership.team.name}</ItemTitle>

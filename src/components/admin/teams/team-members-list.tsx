@@ -159,14 +159,11 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                     header: "",
                     cell: (ctx) => (
                         <Link
-                            href={route(
-                                "/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]",
-                                {
-                                    slug: organization.slug,
-                                    team_id: teamId,
-                                    person_id: ctx.row.original.person.id,
-                                },
-                            )}
+                            href={route("/orgs/[slug]/admin/teams/[team_id]/members/[person_id]", {
+                                slug: organization.slug,
+                                team_id: teamId,
+                                person_id: ctx.row.original.person.id,
+                            })}
                             aria-label="View membership"
                             className="text-muted-foreground hover:text-foreground flex justify-center"
                         >
