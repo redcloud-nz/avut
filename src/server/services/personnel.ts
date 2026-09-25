@@ -171,12 +171,14 @@ export async function requireById(ctx: OrgServiceContext, personId: PersonId): P
 /**
  * Fetch a person by ID with the given `include`, for a caller that needs relations `PersonData`
  * does not carry (e.g. `deletePerson`'s skill-check references, `getLinkedUser`'s membership).
+ * Takes the same `{ include }` shape as `prisma.person.findUnique`, so it reads as a Prisma call
+ * at the call site rather than an opaque options object.
  * @throws NotFoundError if the person is not found in the organization.
  */
 export async function requireRecordById<Include extends Prisma.PersonInclude>(
     ctx: OrgServiceContext,
     personId: PersonId,
-    include: Include,
+    { include }: { include: Include },
 ): Promise<Prisma.PersonGetPayload<{ include: Include }>> {
     const person = await ctx.prisma.person.findUnique({
         where: { organizationId: ctx.organizationId, id: personId },

@@ -116,8 +116,10 @@ export const personnelRouter = createTrpcRouter({
         )
         .mutation(async ({ ctx, input: { personId } }) => {
             const person = await Personnel.requireRecordById(ctx, personId, {
-                skillChecksAsAssessee: true,
-                skillChecksAsAssessor: true,
+                include: {
+                    skillChecksAsAssessee: true,
+                    skillChecksAsAssessor: true,
+                },
             });
 
             const isReferenced =
@@ -219,7 +221,7 @@ export const personnelRouter = createTrpcRouter({
         )
         .query(async ({ ctx, input: { personId } }) => {
             const person = await Personnel.requireRecordById(ctx, personId, {
-                organizationUser: { select: { id: true } },
+                include: { organizationUser: { select: { id: true } } },
             });
 
             const email = person.email.toLowerCase();
@@ -294,7 +296,7 @@ export const personnelRouter = createTrpcRouter({
         )
         .query(async ({ ctx, input: { personId } }) => {
             const person = await Personnel.requireRecordById(ctx, personId, {
-                organizationUser: { include: { user: true } },
+                include: { organizationUser: { include: { user: true } } },
             });
 
             return person.organizationUser
