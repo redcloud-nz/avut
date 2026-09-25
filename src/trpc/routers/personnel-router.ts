@@ -16,7 +16,6 @@ import * as Personnel from "@/server/services/personnel";
 
 import { FieldConflictError } from "../errors";
 import { createTrpcRouter, organizationProcedure } from "../init";
-import { Messages } from "../messages";
 
 /**
  * Router for personnel management within an organization.
@@ -116,20 +115,10 @@ export const personnelRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { personId } }) => {
-            const person = await ctx.prisma.person.findUnique({
-                where: { organizationId: ctx.organizationId, id: personId },
-                include: {
-                    skillChecksAsAssessee: true,
-                    skillChecksAsAssessor: true,
-                },
+            const person = await Personnel.requireRecordById(ctx, personId, {
+                skillChecksAsAssessee: true,
+                skillChecksAsAssessor: true,
             });
-
-            if (!person) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: `Person(${personId}) not found.`,
-                });
-            }
 
             const isReferenced =
                 person.skillChecksAsAssessee.length > 0 || person.skillChecksAsAssessor.length > 0;
@@ -229,16 +218,9 @@ export const personnelRouter = createTrpcRouter({
             }),
         )
         .query(async ({ ctx, input: { personId } }) => {
-            const person = await ctx.prisma.person.findUnique({
-                where: { organizationId: ctx.organizationId, id: personId },
-                include: { organizationUser: { select: { id: true } } },
+            const person = await Personnel.requireRecordById(ctx, personId, {
+                organizationUser: { select: { id: true } },
             });
-
-            if (!person)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.personNotFound(personId),
-                });
 
             const email = person.email.toLowerCase();
 
@@ -311,16 +293,9 @@ export const personnelRouter = createTrpcRouter({
                 .nullable(),
         )
         .query(async ({ ctx, input: { personId } }) => {
-            const person = await ctx.prisma.person.findUnique({
-                where: { organizationId: ctx.organizationId, id: personId },
-                include: { organizationUser: { include: { user: true } } },
+            const person = await Personnel.requireRecordById(ctx, personId, {
+                organizationUser: { include: { user: true } },
             });
-
-            if (!person)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.personNotFound(personId),
-                });
 
             return person.organizationUser
                 ? {

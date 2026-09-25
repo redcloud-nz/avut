@@ -70,17 +70,23 @@ export const publicProcedure = t.procedure
      * `cause` — the same shape `formatTrpcError` already reads for `FieldConflictError`.
      */
     .use(async function mapDomainErrors(opts) {
-        try {
-            return await opts.next(opts);
-        } catch (error) {
-            if (error instanceof NotFoundError) {
-                throw new TRPCError({ code: "NOT_FOUND", message: error.message, cause: error });
+        /*
+         * `next()` does not reject on a downstream failure — it resolves to
+         * `{ ok: false, error }`, with `error` already `TRPCError`-wrapped by tRPC and the
+         * original thrown value on `error.cause`. So the domain error is inspected there, not
+         * caught with try/catch.
+         */
+        const result = await opts.next(opts);
+        if (!result.ok) {
+            const cause = result.error.cause;
+            if (cause instanceof NotFoundError) {
+                throw new TRPCError({ code: "NOT_FOUND", message: cause.message, cause });
             }
-            if (error instanceof ConflictError) {
-                throw new TRPCError({ code: "CONFLICT", message: error.message, cause: error });
+            if (cause instanceof ConflictError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
             }
-            throw error;
         }
+        return result;
     });
 
 export type AuthenticatedContext = Context & {

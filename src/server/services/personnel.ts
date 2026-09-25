@@ -7,7 +7,7 @@ import "server-only";
 
 import * as z from "zod";
 
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { NotFoundError } from "@/lib/errors";
 import type { OrganizationId } from "@/lib/schemas/organization";
@@ -166,6 +166,28 @@ export async function requireById(ctx: OrgServiceContext, personId: PersonId): P
     }
 
     return PersonData.fromRecord(person);
+}
+
+/**
+ * Fetch a person by ID with the given `include`, for a caller that needs relations `PersonData`
+ * does not carry (e.g. `deletePerson`'s skill-check references, `getLinkedUser`'s membership).
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function requireRecordById<Include extends Prisma.PersonInclude>(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+    include: Include,
+): Promise<Prisma.PersonGetPayload<{ include: Include }>> {
+    const person = await ctx.prisma.person.findUnique({
+        where: { organizationId: ctx.organizationId, id: personId },
+        include,
+    });
+
+    if (!person) {
+        throw new NotFoundError(`Person(id=${personId}) not found.`);
+    }
+
+    return person;
 }
 
 /*
