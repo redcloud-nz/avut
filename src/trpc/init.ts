@@ -21,6 +21,7 @@ import prisma from "@/server/prisma";
 import type { LogEventOptions } from "@/server/services/service-context";
 
 import { formatTrpcError } from "./error-formatter";
+import { FieldConflictError } from "./errors";
 
 export type { LogEventOptions } from "@/server/services/service-context";
 
@@ -67,7 +68,9 @@ export const publicProcedure = t.procedure
      * Domain services (`src/server/services/*.ts`) throw plain `Error` subclasses rather than
      * `TRPCError`, so they stay usable from a Server Component or a test with no tRPC in scope.
      * This is the one place that maps them onto the wire protocol, preserving the original as
-     * `cause` — the same shape `formatTrpcError` already reads for `FieldConflictError`.
+     * `cause` — the same `cause` shape `formatTrpcError` reads to enrich `FieldConflictError`
+     * with `fieldName`. A router may still throw `FieldConflictError` directly (not just from a
+     * service) and rely on this middleware for the `TRPCError` wrapping.
      */
     .use(async function mapDomainErrors(opts) {
         /*
@@ -83,6 +86,9 @@ export const publicProcedure = t.procedure
                 throw new TRPCError({ code: "NOT_FOUND", message: cause.message, cause });
             }
             if (cause instanceof ConflictError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
+            }
+            if (cause instanceof FieldConflictError) {
                 throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
             }
         }

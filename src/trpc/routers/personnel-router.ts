@@ -5,8 +5,6 @@
 
 import * as z from "zod";
 
-import { TRPCError } from "@trpc/server";
-
 import { diffObject } from "@/lib/diff";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
@@ -81,13 +79,10 @@ export const personnelRouter = createTrpcRouter({
             });
 
             if (emailConflict)
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    cause: new FieldConflictError(
-                        "email",
-                        "A person with this email address already exists in this organisation.",
-                    ),
-                });
+                throw new FieldConflictError(
+                    "email",
+                    "A person with this email address already exists in this organisation.",
+                );
 
             // Delegates to the shared service so this path and the D4H team import behave
             // identically — in particular, both auto-link.
@@ -446,13 +441,10 @@ export const personnelRouter = createTrpcRouter({
                     },
                 });
                 if (emailConflict)
-                    throw new TRPCError({
-                        code: "CONFLICT",
-                        cause: new FieldConflictError(
-                            "email",
-                            "A person with this email address already exists in this organisation.",
-                        ),
-                    });
+                    throw new FieldConflictError(
+                        "email",
+                        "A person with this email address already exists in this organisation.",
+                    );
             }
 
             // Calculate changes from existing record
