@@ -13,9 +13,9 @@ import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
-import { buildSkillPackageExport, prepareSkillPackageImport } from "@/server/skill-package-io";
+import * as SkillPackages from "@/server/services/skill-packages";
 
-import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 export const skillPackageBuilderRouter = createTrpcRouter({
@@ -30,7 +30,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillId: SkillId.schema }))
         .output(z.object({ updated: Skill.schema }))
         .mutation(async ({ ctx, input: { skillId } }) => {
-            const existingSkill = await getSkillOrThrow(ctx, skillId);
+            const existingSkill = await SkillPackages.requireSkill(ctx, skillId);
 
             if (existingSkill.status != "Active")
                 throw new TRPCError({
@@ -63,7 +63,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillGroupId: SkillGroupId.schema }))
         .output(z.object({ updated: SkillGroup.schema }))
         .mutation(async ({ ctx, input: { skillGroupId } }) => {
-            const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+            const existingGroup = await SkillPackages.requireGroup(ctx, skillGroupId);
 
             if (existingGroup.status != "Active")
                 throw new TRPCError({
@@ -96,7 +96,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
         .output(z.object({ updated: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId } }) => {
-            const existingPackage = await getSkillPackageOrThrow(ctx, skillPackageId);
+            const existingPackage = await SkillPackages.requirePackage(ctx, skillPackageId);
 
             if (existingPackage.status != "Active")
                 throw new TRPCError({
@@ -306,7 +306,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .output(z.object({ deleted: SkillGroup.schema }))
         .mutation(async ({ ctx, input: { skillGroupId } }) => {
             // Verify the skill group exists and belongs to the organization before attempting deletion
-            const skillGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+            const skillGroup = await SkillPackages.requireGroup(ctx, skillGroupId);
 
             // TODO Check if the group contains skills that have recorded checks. If so only mark as deleted instead of actually deleting.
 
@@ -333,7 +333,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .output(z.object({ deleted: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId } }) => {
             // Verify the skill package exists before attempting deletion
-            const skillPackage = await getSkillPackageOrThrow(ctx, skillPackageId);
+            const skillPackage = await SkillPackages.requirePackage(ctx, skillPackageId);
 
             // TODO Check if the package contains skills that have recorded checks. If so only mark as deleted instead of actually deleting.
 
@@ -360,7 +360,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .output(z.object({ deleted: Skill.schema }))
         .mutation(async ({ ctx, input: { skillId } }) => {
             // Verify the skill exists and belongs to the organization before attempting deletion
-            const skill = await getSkillOrThrow(ctx, skillId);
+            const skill = await SkillPackages.requireSkill(ctx, skillId);
 
             await ctx.prisma.$transaction([
                 ctx.prisma.skill.delete({
@@ -398,7 +398,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                 });
             }
 
-            return buildSkillPackageExport(pkg, pkg.groups, pkg.skills);
+            return SkillPackages.buildExport(pkg, pkg.groups, pkg.skills);
         }),
 
     /**
@@ -442,7 +442,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
         .output(SkillPackage.schema)
         .query(async ({ ctx, input: { skillPackageId } }) =>
-            getSkillPackageOrThrow(ctx, skillPackageId),
+            SkillPackages.requirePackage(ctx, skillPackageId),
         ),
 
     /**
@@ -487,7 +487,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
      * organization, moving a package authored on another AVUT instance across, or re-syncing
      * one already here.
      *
-     * Create-or-sync keyed on the record IDs in the envelope (see `prepareSkillPackageImport`):
+     * Create-or-sync keyed on the record IDs in the envelope (see `SkillPackages.prepareImport`):
      * the tree is created if the package ID is new to this organization, otherwise groups/
      * skills are upserted by ID and anything the envelope omits is **archived** (never
      * deleted — `SkillCheck.skillId` cascades and would take assessment history with it). A
@@ -511,7 +511,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
             z.object({ envelope: SkillPackageExport.schema, dryRun: z.boolean().default(false) }),
         )
         .mutation(async ({ ctx, input: { organizationId, envelope, dryRun } }) => {
-            const { plan, writeItems } = await prepareSkillPackageImport(
+            const { plan, writeItems } = await SkillPackages.prepareImport(
                 ctx.prisma,
                 envelope,
                 organizationId,
@@ -623,8 +623,8 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         )
         .mutation(async ({ ctx, input: { skillId, destinationPackageId, destinationGroupId } }) => {
             const [skill, destinationGroup] = await Promise.all([
-                getSkillOrThrow(ctx, skillId),
-                getSkillGroupOrThrow(ctx, destinationGroupId),
+                SkillPackages.requireSkill(ctx, skillId),
+                SkillPackages.requireGroup(ctx, destinationGroupId),
             ]);
 
             if (destinationGroup.skillPackageId !== destinationPackageId) {
@@ -677,7 +677,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
         .output(z.object({ published: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId } }) => {
-            const existingPackage = await getSkillPackageOrThrow(ctx, skillPackageId);
+            const existingPackage = await SkillPackages.requirePackage(ctx, skillPackageId);
 
             if (existingPackage.status != "Active")
                 throw new TRPCError({
@@ -888,7 +888,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillId: SkillId.schema }))
         .output(z.object({ updated: Skill.schema }))
         .mutation(async ({ ctx, input: { skillId } }) => {
-            const existingSkill = await getSkillOrThrow(ctx, skillId);
+            const existingSkill = await SkillPackages.requireSkill(ctx, skillId);
 
             if (!["Archived", "Deleted"].includes(existingSkill.status))
                 throw new TRPCError({
@@ -921,7 +921,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillGroupId: SkillGroupId.schema }))
         .output(z.object({ updated: SkillGroup.schema }))
         .mutation(async ({ ctx, input: { skillGroupId } }) => {
-            const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+            const existingGroup = await SkillPackages.requireGroup(ctx, skillGroupId);
 
             if (!["Archived", "Deleted"].includes(existingGroup.status))
                 throw new TRPCError({
@@ -954,7 +954,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
         .output(z.object({ updated: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId } }) => {
-            const existingPackage = await getSkillPackageOrThrow(ctx, skillPackageId);
+            const existingPackage = await SkillPackages.requirePackage(ctx, skillPackageId);
 
             if (!["Archived", "Deleted"].includes(existingPackage.status))
                 throw new TRPCError({
@@ -989,7 +989,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
         .output(z.object({ unpublished: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId } }) => {
-            const existingPackage = await getSkillPackageOrThrow(ctx, skillPackageId);
+            const existingPackage = await SkillPackages.requirePackage(ctx, skillPackageId);
 
             if (!existingPackage.published)
                 throw new TRPCError({
@@ -1027,7 +1027,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         )
         .output(z.object({ updated: SkillGroup.schema }))
         .mutation(async ({ ctx, input: { skillGroupId, update } }) => {
-            const existingGroup = await getSkillGroupOrThrow(ctx, skillGroupId);
+            const existingGroup = await SkillPackages.requireGroup(ctx, skillGroupId);
 
             const diff = diffObject(SkillGroup.modifiableSchema.parse(existingGroup), update);
 
@@ -1063,7 +1063,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         )
         .output(z.object({ updated: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId, update } }) => {
-            const existingPackage = await getSkillPackageOrThrow(ctx, skillPackageId);
+            const existingPackage = await SkillPackages.requirePackage(ctx, skillPackageId);
 
             const diff = diffObject(SkillPackage.modifiableSchema.parse(existingPackage), update);
 
@@ -1099,7 +1099,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         )
         .output(z.object({ updated: Skill.schema }))
         .mutation(async ({ ctx, input: { skillId, update } }) => {
-            const existingSkill = await getSkillOrThrow(ctx, skillId);
+            const existingSkill = await SkillPackages.requireSkill(ctx, skillId);
 
             const diff = diffObject(Skill.modifiableSchema.parse(existingSkill), update);
 
@@ -1119,91 +1119,3 @@ export const skillPackageBuilderRouter = createTrpcRouter({
             return { updated: Skill.fromRecord(updated) };
         }),
 });
-
-/**
- * Utility function to retrieve a skill by ID and ensure it belongs to the organization, throwing a TRPCError if not found.
- * @param ctx The authenticated organization context.
- * @param skillId The ID of the skill to retrieve.
- * @returns The skill record if found.
- * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
- */
-async function getSkillOrThrow(
-    ctx: AuthenticatedOrganizationContext,
-    skillId: SkillId,
-): Promise<Skill> {
-    const existingSkill = await ctx.prisma.skill.findUnique({
-        where: {
-            id: skillId,
-            skillPackage: {
-                organizationId: ctx.organizationId,
-            },
-        },
-    });
-
-    if (!existingSkill) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: Messages.skillNotFound(skillId),
-        });
-    }
-
-    return Skill.fromRecord(existingSkill);
-}
-
-/**
- * Utility function to retrieve a skill group by ID and ensure it belongs to the organization, throwing a TRPCError if not found.
- * @param ctx The authenticated organization context.
- * @param skillGroupId The ID of the skill group to retrieve.
- * @returns The skill group record if found.
- * @throws TRPCError(NOT_FOUND) if the skill group does not exist or does not belong to the organization.
- */
-async function getSkillGroupOrThrow(
-    ctx: AuthenticatedOrganizationContext,
-    skillGroupId: SkillGroupId,
-): Promise<SkillGroup> {
-    const existingGroup = await ctx.prisma.skillGroup.findUnique({
-        where: {
-            id: skillGroupId,
-            skillPackage: {
-                organizationId: ctx.organizationId,
-            },
-        },
-    });
-
-    if (!existingGroup) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: Messages.skillGroupNotFound(skillGroupId),
-        });
-    }
-
-    return SkillGroup.fromRecord(existingGroup);
-}
-
-/**
- * Utility function to retrieve a skill package by ID and ensure it belongs to the organization, throwing a TRPCError if not found.
- * @param ctx The authenticated organization context.
- * @param skillPackageId The ID of the skill package to retrieve.
- * @returns The skill package record if found.
- * @throws TRPCError(NOT_FOUND) if the skill package does not exist or does not belong to the organization.
- */
-async function getSkillPackageOrThrow(
-    ctx: AuthenticatedOrganizationContext,
-    skillPackageId: SkillPackageId,
-): Promise<SkillPackage> {
-    const existingPackage = await ctx.prisma.skillPackage.findUnique({
-        where: {
-            id: skillPackageId,
-            organizationId: ctx.organizationId,
-        },
-    });
-
-    if (!existingPackage) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: Messages.skillPackageNotFound(skillPackageId),
-        });
-    }
-
-    return SkillPackage.fromRecord(existingPackage);
-}

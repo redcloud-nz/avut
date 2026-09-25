@@ -5,6 +5,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { ConflictError, ValidationError } from "@/lib/errors";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/schemas/skill-package-export";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
-import { buildSkillPackageExport, prepareSkillPackageImport } from "./skill-package-io";
+import * as SkillPackages from "./skill-packages";
 
 const T = {
     orgA: OrganizationId.create(),
@@ -78,7 +79,7 @@ function envelope(overrides?: Partial<SkillPackageExport["package"]>): SkillPack
     };
 }
 
-describe("prepareSkillPackageImport", () => {
+describe("SkillPackages.prepareImport", () => {
     let db: ReturnType<typeof createMockPrisma>;
 
     beforeEach(async () => {
@@ -92,7 +93,11 @@ describe("prepareSkillPackageImport", () => {
     });
 
     async function apply(env: SkillPackageExport, targetOrganizationId: string) {
-        const { plan, writeItems } = await prepareSkillPackageImport(db, env, targetOrganizationId);
+        const { plan, writeItems } = await SkillPackages.prepareImport(
+            db,
+            env,
+            targetOrganizationId,
+        );
         for (const item of writeItems) {
             await item.write(db);
         }
@@ -198,7 +203,7 @@ describe("prepareSkillPackageImport", () => {
 
     it("reports unchanged rows on an identical re-import", async () => {
         await apply(envelope(), T.orgA);
-        const { plan } = await prepareSkillPackageImport(db, envelope(), T.orgA);
+        const { plan } = await SkillPackages.prepareImport(db, envelope(), T.orgA);
 
         expect(plan.package.action).toBe("unchanged");
         expect(plan.groups.every((g) => g.action === "unchanged")).toBe(true);
@@ -207,19 +212,19 @@ describe("prepareSkillPackageImport", () => {
 
     it("rejects a package ID owned by a different organization", async () => {
         await apply(envelope(), T.orgA);
-        await expect(prepareSkillPackageImport(db, envelope(), T.orgB)).rejects.toThrow(
-            /different organisation/i,
+        await expect(SkillPackages.prepareImport(db, envelope(), T.orgB)).rejects.toThrow(
+            ConflictError,
         );
     });
 
     it("rejects a file that repeats a skill ID", async () => {
         const dup = envelope();
         dup.package.groups[0]!.skills.push(dup.package.groups[0]!.skills[0]!);
-        await expect(prepareSkillPackageImport(db, dup, T.orgA)).rejects.toThrow(/repeats/i);
+        await expect(SkillPackages.prepareImport(db, dup, T.orgA)).rejects.toThrow(ValidationError);
     });
 });
 
-describe("buildSkillPackageExport", () => {
+describe("SkillPackages.buildExport", () => {
     it("nests and sequence-sorts groups and skills", async () => {
         const db = createMockPrisma();
         await db.organization.create({
@@ -286,7 +291,7 @@ describe("buildSkillPackageExport", () => {
             where: { id: T.pkg },
             include: { groups: true, skills: true },
         });
-        const env = buildSkillPackageExport(pkg, pkg.groups, pkg.skills);
+        const env = SkillPackages.buildExport(pkg, pkg.groups, pkg.skills);
 
         expect(env.package.groups.map((g) => g.name)).toEqual(["Foundations", "Advanced"]);
         expect(env.package.groups[0]!.skills.map((s) => s.name)).toEqual(["Safety", "Comms"]);

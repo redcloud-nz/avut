@@ -16,7 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import type { ImportAction, ImportPlan } from "@/server/skill-package-io";
+import type { ImportAction, ImportPlan } from "@/server/services/skill-packages";
 
 const ACTION_BADGE: Record<
     ImportAction,

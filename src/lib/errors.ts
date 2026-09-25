@@ -56,3 +56,15 @@ export class ConflictError extends Error {
         this.name = "ConflictError";
     }
 }
+
+/**
+ * Error thrown by a domain service when the caller-supplied input is malformed in a way no Zod
+ * schema catches (e.g. an import envelope that repeats an ID). Mapped to
+ * `TRPCError({ code: "BAD_REQUEST" })` the same way as `NotFoundError`/`ConflictError`.
+ */
+export class ValidationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "ValidationError";
+    }
+}
