@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]
+ * Paths: /orgs/[slug]/admin/teams/[team_id]/members/[person_id]
  */
 
 import { Metadata } from "next";
@@ -14,7 +14,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-type Props = PageProps<"/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]">;
+type Props = PageProps<"/orgs/[slug]/admin/teams/[team_id]/members/[person_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, team_id, person_id } = await props.params;

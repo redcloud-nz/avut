@@ -73,6 +73,8 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                         <DLDetails>{team.name}</DLDetails>
                                         <DLTerm>Description</DLTerm>
                                         <DLDetails>{team.description}</DLDetails>
+                                        <DLTerm>Status</DLTerm>
+                                        <DLDetails>{team.status}</DLDetails>
                                     </DL>
                                 </CardContent>
                             </Card>

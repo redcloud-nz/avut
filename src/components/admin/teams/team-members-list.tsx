@@ -5,6 +5,7 @@
 "use client";
 
 import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useMemo } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -21,15 +22,16 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { HelpButton } from "@/components/docs/help-button";
-import { ItemLinkActionIcon } from "@/components/icons";
+import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
+import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HMemberStatus, formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { TeamId } from "@/lib/schemas/team";
 import { RouterOutput, trpc } from "@/trpc/client";
 
-import { AdminModule_AddTeamMember_Dialog } from "./add-team-member";
+import { AdminModule_AddTeamMembership_Dialog } from "./add-team-membership";
 import { D4HMemberStatusBadge } from "./d4h-member-status-badge";
 import { MembershipSourceBadge } from "./membership-source-badge";
 
@@ -44,6 +46,11 @@ const hideBelowMd = {
 
 export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
+
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["add-membership"] as const),
+    );
 
     const [{ data: team }, { data: teamMembers }] = useSuspenseQueries({
         queries: [
@@ -152,14 +159,11 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                     header: "",
                     cell: (ctx) => (
                         <Link
-                            href={route(
-                                "/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]",
-                                {
-                                    slug: organization.slug,
-                                    team_id: teamId,
-                                    person_id: ctx.row.original.person.id,
-                                },
-                            )}
+                            href={route("/orgs/[slug]/admin/teams/[team_id]/members/[person_id]", {
+                                slug: organization.slug,
+                                team_id: teamId,
+                                person_id: ctx.row.original.person.id,
+                            })}
                             aria-label="View membership"
                             className="text-muted-foreground hover:text-foreground flex justify-center"
                         >
@@ -217,9 +221,19 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                     <Saratoga.Header>
                         <Saratoga.Title>Members of {team.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect permissions={{ team: ["update"] }}>
-                                <AdminModule_AddTeamMember_Dialog team={team} />
-                            </Protect>
+                            {team.status === "Active" && (
+                                <Protect permissions={{ team: ["update"] }}>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setAction("add-membership", { history: "push" })
+                                        }
+                                    >
+                                        <ObjectIcons.Create />{" "}
+                                        <span className="hidden md:inline">New Member</span>
+                                    </Button>
+                                </Protect>
+                            )}
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div>
@@ -254,6 +268,16 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                     </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>
+
+            <AdminModule_AddTeamMembership_Dialog
+                team={team}
+                open={action === "add-membership"}
+                onOpenChange={(open) =>
+                    setAction(open ? "add-membership" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
         </>
     );
 }

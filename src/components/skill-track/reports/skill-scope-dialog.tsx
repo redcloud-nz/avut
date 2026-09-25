@@ -117,6 +117,9 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
     const { data: teams } = useSuspenseQuery(
         trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
     );
+    // Only Active teams are offered as a new scope; an existing `?team=` naming an
+    // Archived team still validates below so a saved/linked scope keeps resolving.
+    const activeTeams = teams.filter((team) => team.status === "Active");
 
     const {
         data: { skillPackages, skillGroups, skills },
@@ -156,6 +159,11 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
     // matching how the report itself treats an unparseable team id.
     const currentTeamValue =
         teamParam && teams.some((team) => team.id === teamParam) ? teamParam : "all";
+    // A saved/linked scope naming an Archived team still resolves and needs its own option so
+    // the Select can show its name, even though it isn't offered as a new selection.
+    const selectableTeams = activeTeams.some((team) => team.id === currentTeamValue)
+        ? activeTeams
+        : [...activeTeams, ...teams.filter((team) => team.id === currentTeamValue)];
 
     return (
         <>
@@ -177,7 +185,7 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
                     <SelectContent>
                         <SelectItem value="all">Whole Organisation</SelectItem>
                         {R.pipe(
-                            teams,
+                            selectableTeams,
                             R.sortBy((team) => team.name),
                             R.map((team) => (
                                 <SelectItem key={team.id} value={team.id}>

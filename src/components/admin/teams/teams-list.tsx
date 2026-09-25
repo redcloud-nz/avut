@@ -67,6 +67,20 @@ export function AdminModule_Teams_List() {
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
+                columnHelper.accessor("status", {
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
+                    enableColumnFilter: true,
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: [
+                            { label: "Active", value: "Active" },
+                            { label: "Archived", value: "Archived" },
+                        ],
+                    },
+                }),
             ]),
         [organization.slug],
     );
@@ -81,6 +95,7 @@ export function AdminModule_Teams_List() {
         getPaginationRowModel: getPaginationRowModel(),
         globalFilterFn: "includesString",
         initialState: {
+            columnFilters: [{ id: "status", value: ["Active"] }],
             sorting: [{ id: "name", desc: false }],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
         },

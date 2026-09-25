@@ -65,6 +65,12 @@ export const teamsRouter = createTrpcRouter({
             if (!team.d4h) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: "Team is not linked to D4H" });
             }
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is archived and cannot be synced with D4H",
+                });
+            }
 
             const token = await getPersonalD4HAccessTokenForUser(organizationId, ctx.userId);
             if (!token) {
@@ -90,6 +96,37 @@ export const teamsRouter = createTrpcRouter({
                 batchId: batch.id,
                 requireFreshMatch: planToken,
             });
+        }),
+
+    /**
+     * Archives a team in the organization. Idempotent — archiving an already-archived
+     * team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     */
+    archiveTeam: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            const existing = await getTeam(ctx, teamId);
+
+            if (!existing) {
+                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
+            }
+
+            if (existing.status === "Archived") {
+                return { updated: existing };
+            }
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.team.update({
+                    where: { id: teamId, organizationId: ctx.organizationId },
+                    data: { status: "Archived" },
+                }),
+                ctx.logEvent({ action: "Archive", objectType: "Team", objectId: teamId }),
+            ]);
+
+            const updated = await getTeam(ctx, teamId);
+            return { updated: updated! };
         }),
 
     /**
@@ -148,11 +185,15 @@ export const teamsRouter = createTrpcRouter({
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
+                include: { team: { select: { name: true, status: true } } },
             });
             if (duplicate) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That D4H team is already linked to a team in this organisation.",
+                    message:
+                        duplicate.team.status === "Archived"
+                            ? `That D4H team is already linked to archived team "${duplicate.team.name}" — restore it instead.`
+                            : "That D4H team is already linked to a team in this organisation.",
                 });
             }
 
@@ -274,6 +315,13 @@ export const teamsRouter = createTrpcRouter({
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.teamNotFound(teamId),
+                });
+            }
+
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Team(${teamId}) is archived and cannot accept new members.`,
                 });
             }
 
@@ -542,11 +590,15 @@ export const teamsRouter = createTrpcRouter({
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
+                include: { team: { select: { name: true, status: true } } },
             });
             if (duplicate) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That D4H team is already linked to a team in this organisation.",
+                    message:
+                        duplicate.team.status === "Archived"
+                            ? `That D4H team is already linked to archived team "${duplicate.team.name}" — restore it instead.`
+                            : "That D4H team is already linked to a team in this organisation.",
                 });
             }
 
@@ -669,6 +721,12 @@ export const teamsRouter = createTrpcRouter({
             if (!team.d4h) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: "Team is not linked to D4H" });
             }
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is archived and cannot be synced with D4H",
+                });
+            }
 
             const token = await getPersonalD4HAccessTokenForUser(organizationId, ctx.userId);
             if (!token) {
@@ -679,6 +737,37 @@ export const teamsRouter = createTrpcRouter({
             }
 
             return planD4HSync(ctx, { teamD4H: team.d4h, token });
+        }),
+
+    /**
+     * Restores an archived team in the organization. Idempotent — restoring an already-active
+     * team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     */
+    restoreTeam: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            const existing = await getTeam(ctx, teamId);
+
+            if (!existing) {
+                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
+            }
+
+            if (existing.status === "Active") {
+                return { updated: existing };
+            }
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.team.update({
+                    where: { id: teamId, organizationId: ctx.organizationId },
+                    data: { status: "Active" },
+                }),
+                ctx.logEvent({ action: "Restore", objectType: "Team", objectId: teamId }),
+            ]);
+
+            const updated = await getTeam(ctx, teamId);
+            return { updated: updated! };
         }),
 
     /**

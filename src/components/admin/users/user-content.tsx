@@ -6,32 +6,19 @@
 "use client";
 
 import Link from "next/link";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
 import { useSession } from "@/client/auth-queries";
-import { AdminModule_DeleteUser_Dialog } from "@/components/admin/users/delete-user";
-import { AdminModule_LinkPerson_Dialog } from "@/components/admin/users/link-person";
-import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/users/unlink-person";
 import { AdminModule_UpdateUser_Dialog } from "@/components/admin/users/update-user";
+import { AdminModule_User_Menu } from "@/components/admin/users/user-menu";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
@@ -64,11 +51,6 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
         }),
     );
 
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["delete", "link-person", "unlink-person"] as const),
-    );
-
     return (
         <>
             <Std.Navbar
@@ -84,35 +66,12 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                     <Saratoga.Header>
                         <Saratoga.Title>{member.user.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <Protect
-                                            permissions={{ member: ["delete"] }}
-                                            render={(allowed) => (
-                                                <DropdownMenuItem
-                                                    disabled={
-                                                        !allowed ||
-                                                        member.user.id === session?.user.id
-                                                    }
-                                                    onClick={() =>
-                                                        setAction("delete", { history: "push" })
-                                                    }
-                                                    className="text-destructive"
-                                                >
-                                                    <ObjectIcons.Delete /> Delete User
-                                                </DropdownMenuItem>
-                                            )}
-                                        />
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <AdminModule_User_Menu
+                                userId={userId}
+                                member={member}
+                                linkedPerson={linkedPerson}
+                                currentUserId={session?.user.id}
+                            />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
@@ -145,46 +104,12 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                     </DL>
                                 </CardContent>
                             </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Linked Person</CardTitle>
-                                    <CardAction>
-                                        <Protect
-                                            permissions={{
-                                                member: ["update"],
-                                                person: ["update"],
-                                            }}
-                                        >
-                                            {linkedPerson ? (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        setAction("unlink-person", {
-                                                            history: "push",
-                                                        })
-                                                    }
-                                                >
-                                                    <ObjectIcons.Unlink />
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        setAction("link-person", {
-                                                            history: "push",
-                                                        })
-                                                    }
-                                                >
-                                                    <ObjectIcons.Link />
-                                                </Button>
-                                            )}
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
-                                <CardContent>
-                                    {linkedPerson ? (
+                            {linkedPerson && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Linked Person</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
                                         <DL>
                                             <DLTerm>Person ID</DLTerm>
                                             <DLDetails className="font-mono">
@@ -207,13 +132,9 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                             <DLTerm>Status</DLTerm>
                                             <DLDetails>{linkedPerson.status}</DLDetails>
                                         </DL>
-                                    ) : (
-                                        <p className="text-muted-foreground text-sm">
-                                            No linked person.
-                                        </p>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
@@ -228,38 +149,6 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-            <AdminModule_DeleteUser_Dialog
-                organizationUser={member}
-                open={action === "delete"}
-                onOpenChange={(open) =>
-                    setAction(open ? "delete" : null, {
-                        history: open ? "push" : "replace",
-                    })
-                }
-            />
-            <AdminModule_LinkPerson_Dialog
-                userId={userId}
-                userName={member.user.name}
-                open={action === "link-person"}
-                onOpenChange={(open) =>
-                    setAction(open ? "link-person" : null, {
-                        history: open ? "push" : "replace",
-                    })
-                }
-            />
-            {linkedPerson && (
-                <AdminModule_UnlinkPerson_Dialog
-                    userId={userId}
-                    userName={member.user.name}
-                    personName={linkedPerson.name}
-                    open={action === "unlink-person"}
-                    onOpenChange={(open) =>
-                        setAction(open ? "unlink-person" : null, {
-                            history: open ? "push" : "replace",
-                        })
-                    }
-                />
-            )}
         </>
     );
 }

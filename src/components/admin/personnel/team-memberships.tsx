@@ -22,12 +22,13 @@ import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { PersonRef } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_AddPersonToTeam_Dialog } from "./add-person-to-team";
-
 export function AdminModule_Person_TeamMemberships_Card({ person }: { person: PersonRef }) {
     const organization = useOrganization();
 
-    const [, setAction] = useQueryState("action", parseAsStringLiteral(["add-to-team"] as const));
+    const [, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["add-membership"] as const),
+    );
 
     const { data: teamMemberships } = useSuspenseQuery(
         trpc.teams.listTeamMemberships.queryOptions({
@@ -56,7 +57,7 @@ export function AdminModule_Person_TeamMemberships_Card({ person }: { person: Pe
                             variant="ghost"
                             size="icon"
                             aria-label="Add to team"
-                            onClick={() => setAction("add-to-team", { history: "push" })}
+                            onClick={() => setAction("add-membership", { history: "push" })}
                         >
                             <ObjectIcons.Create />
                         </Button>
@@ -72,14 +73,11 @@ export function AdminModule_Person_TeamMemberships_Card({ person }: { person: Pe
                 {memberships.map((membership) => (
                     <Item key={membership.teamId} className="px-2" asChild>
                         <Link
-                            href={route(
-                                "/orgs/[slug]/admin/teams/[team_id]/personnel/[person_id]",
-                                {
-                                    slug: organization.slug,
-                                    team_id: membership.teamId,
-                                    person_id: person.id,
-                                },
-                            )}
+                            href={route("/orgs/[slug]/admin/teams/[team_id]/members/[person_id]", {
+                                slug: organization.slug,
+                                team_id: membership.teamId,
+                                person_id: person.id,
+                            })}
                         >
                             <ItemContent>
                                 <ItemTitle>{membership.team.name}</ItemTitle>
@@ -100,8 +98,6 @@ export function AdminModule_Person_TeamMemberships_Card({ person }: { person: Pe
                     </Item>
                 ))}
             </CardContent>
-
-            <AdminModule_AddPersonToTeam_Dialog person={person} />
         </Card>
     );
 }

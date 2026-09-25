@@ -665,3 +665,174 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
         ).rejects.toThrow(/not found/i);
     });
 });
+
+describe("teamsRouter.archiveTeam / restoreTeam", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        otherOrgTeam: TeamId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.otherOrg, name: "Other", slug: "other", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                description: "First team",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.team.create({
+            data: {
+                id: T.otherOrgTeam,
+                organizationId: T.otherOrg,
+                name: "Bravo",
+                properties: {},
+                tags: [],
+            },
+        });
+    });
+
+    function makeCaller(perms: Record<string, string[]> = { team: ["update"] }) {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("archives an active team and records an Archive log entry", async () => {
+        const { updated } = await makeCaller().archiveTeam({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        expect(updated.status).toBe("Archived");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: T.team, action: "Archive" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("is idempotent — archiving an already-archived team writes no new log entry", async () => {
+        const { updated } = await makeCaller().archiveTeam({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        expect(updated.status).toBe("Archived");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: T.team, action: "Archive" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("restores an archived team and records a Restore log entry", async () => {
+        const { updated } = await makeCaller().restoreTeam({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        expect(updated.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: T.team, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("is idempotent — restoring an already-active team writes no new log entry", async () => {
+        const { updated } = await makeCaller().restoreTeam({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        expect(updated.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: T.team, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("throws NOT_FOUND archiving a team in another organization", async () => {
+        await expect(
+            makeCaller().archiveTeam({ organizationId: T.org, teamId: T.otherOrgTeam }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("is forbidden without team:update permission", async () => {
+        await expect(
+            makeCaller({ team: ["view"] }).archiveTeam({ organizationId: T.org, teamId: T.team }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("teamsRouter.createTeamMembership guards against an archived team", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        person: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                properties: {},
+                tags: [],
+                status: "Archived",
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Alice Anderson",
+                email: "alice@example.com",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+    });
+
+    it("rejects adding a member to an archived team", async () => {
+        const caller = teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["update"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+
+        await expect(
+            caller.createTeamMembership({
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.person,
+                create: { tags: [], properties: {} },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+});

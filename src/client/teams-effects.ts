@@ -32,6 +32,26 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
 
 export const teamsEffects = createEffects<"teams">()({
     applyD4HTeamSync: (vars) => teamCaches(vars),
+    archiveTeam: (vars, { updated }) => [
+        write(
+            trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            updated,
+        ),
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    ],
+    restoreTeam: (vars, { updated }) => [
+        write(
+            trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            updated,
+        ),
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    ],
     createTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],

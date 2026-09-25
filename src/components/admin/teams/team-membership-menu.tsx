@@ -69,7 +69,7 @@ export function AdminModule_TeamMembership_Menu({
                 }
                 onRemoved={() =>
                     router.push(
-                        route("/orgs/[slug]/admin/teams/[team_id]/personnel", {
+                        route("/orgs/[slug]/admin/teams/[team_id]/members", {
                             slug: organization.slug,
                             team_id: team.id,
                         }),

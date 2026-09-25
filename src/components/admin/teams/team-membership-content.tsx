@@ -63,7 +63,7 @@ export function AdminModule_TeamMembership_Content({
                     },
                     {
                         label: "Members",
-                        href: route("/orgs/[slug]/admin/teams/[team_id]/personnel", {
+                        href: route("/orgs/[slug]/admin/teams/[team_id]/members", {
                             slug: organization.slug,
                             team_id: teamId,
                         }),
@@ -75,7 +75,7 @@ export function AdminModule_TeamMembership_Content({
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{membership.person.name}</Saratoga.Title>
+                        <Saratoga.Title>Team Membership</Saratoga.Title>
                         <Saratoga.Actions>
                             <AdminModule_TeamMembership_Menu
                                 team={team}
@@ -88,10 +88,12 @@ export function AdminModule_TeamMembership_Content({
                         <Saratoga.Column slot="main">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Membership</CardTitle>
+                                    <CardTitle>Details</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <DL>
+                                        <DLTerm>Membership ID</DLTerm>
+                                        <DLDetails>{membership.id}</DLDetails>
                                         <DLTerm>Person</DLTerm>
                                         <DLDetails>
                                             <Link
@@ -121,8 +123,6 @@ export function AdminModule_TeamMembership_Content({
                                         </DLDetails>
                                         <DLTerm>Status</DLTerm>
                                         <DLDetails>{membership.status}</DLDetails>
-                                        <DLTerm>Joined</DLTerm>
-                                        <DLDateDetails date={membership.createdAt} />
                                     </DL>
                                 </CardContent>
                             </Card>

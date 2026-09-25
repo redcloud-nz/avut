@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -66,7 +67,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     <Saratoga.Header>
                         <Saratoga.Title>{person.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <AdminModule_PersonMenu person={person} linked={linkedUser !== null} />
+                            <AdminModule_PersonMenu person={person} linkedUser={linkedUser} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
 
@@ -103,7 +104,17 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                                         <DL>
                                             <DLTerm>User ID</DLTerm>
                                             <DLDetails className="font-mono">
-                                                {linkedUser.userId}
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/admin/users/[user_id]",
+                                                        {
+                                                            slug: organization.slug,
+                                                            user_id: linkedUser.userId,
+                                                        },
+                                                    )}
+                                                >
+                                                    {linkedUser.userId}
+                                                </Link>
                                             </DLDetails>
                                             <DLTerm>Name</DLTerm>
                                             <DLDetails>{linkedUser.user.name}</DLDetails>

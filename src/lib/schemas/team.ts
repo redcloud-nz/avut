@@ -9,7 +9,7 @@ import type { Team_D4H as TeamD4HRecord, Team as TeamRecord } from "@/generated/
 
 import { D4HServerCode } from "../d4h-servers";
 import { nanoId16 } from "../id";
-import { propertiesSchema, tagsSchema, zodNanoId16 } from "../validation";
+import { propertiesSchema, recordStatusSchema, tagsSchema, zodNanoId16 } from "../validation";
 
 export type { TeamD4HRecord };
 
@@ -30,6 +30,7 @@ const teamSchema = z.object({
     organizationId: z.string(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime().nullable(),
+    status: recordStatusSchema.default("Active"),
 
     d4h: z
         .object({

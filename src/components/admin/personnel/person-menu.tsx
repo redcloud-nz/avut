@@ -6,94 +6,56 @@
 
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
-
-import { personnelEffects } from "@/client/personnel-effects";
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+import { AdminModule_LinkUser_Dialog } from "@/components/admin/person-user-link/link-user";
+import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/person-user-link/unlink-person";
+import { AdminModule_AddTeamMembership_Dialog } from "@/components/admin/teams/add-team-membership";
+import { ObjectIcons } from "@/components/icons";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    MenuAction,
-    useMenuActionHotkeys,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
-import { trpc } from "@/trpc/client";
+import { UserId } from "@/lib/schemas/user";
 
+import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
 import { AdminModule_InvitePerson_Dialog } from "./invite-person";
+import { AdminModule_RestorePerson_Dialog } from "./restore-person";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
-    /** Whether a user account is already attached — hides the invite action when it is. */
-    linked: boolean;
+    /** The linked user account, if any — governs Invite (hidden when linked) and Link/Unlink. */
+    linkedUser: { userId: UserId; user: { name: string } } | null;
 }
 
-export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMenuProps) {
+export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["update", "delete", "invite"] as const),
+        parseAsStringLiteral([
+            "update",
+            "delete",
+            "invite",
+            "archive",
+            "restore",
+            "link-user",
+            "unlink-user",
+            "add-membership",
+        ] as const),
     );
 
     const canUpdate = useHasPermission({ person: ["update"] });
     const canDelete = useHasPermission({ person: ["delete"] });
     const canInvite = useHasPermission({ invitation: ["create"] });
-
-    const archiveMutation = useMutation(
-        trpc.personnel.archivePerson.mutationOptions({
-            meta: { effects: personnelEffects.archivePerson },
-            onError(error) {
-                toast.error(`Failed to archive person: ${error.message}`);
-                console.error("Failed to archive person:", error);
-            },
-        }),
-    );
-    const restoreMutation = useMutation(
-        trpc.personnel.restorePerson.mutationOptions({
-            meta: { effects: personnelEffects.restorePerson },
-            onError(error) {
-                toast.error(`Failed to restore person: ${error.message}`);
-                console.error("Failed to restore person:", error);
-            },
-        }),
-    );
-
-    function handleArchive() {
-        toast.promise(
-            archiveMutation.mutateAsync({ organizationId: organization.id, personId: person.id }),
-            {
-                loading: "Archiving person record...",
-                success: "Person record archived.",
-                error: (error) => "Failed to archive person record: " + error.message,
-            },
-        );
-    }
-
-    function handleRestore() {
-        toast.promise(
-            restoreMutation.mutateAsync({ organizationId: organization.id, personId: person.id }),
-            {
-                loading: "Restoring person record...",
-                success: "Person record restored.",
-                error: (error) => "Failed to restore person record: " + error.message,
-            },
-        );
-    }
+    const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
+    const canAddMembership = useHasPermission({ team: ["update"] });
 
     const actions: MenuActionProps[] = [
         {
@@ -104,7 +66,16 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             disabled: !canUpdate,
         },
     ];
-    if (person.status === "Active" && !linked) {
+    if (person.status === "Active") {
+        actions.push({
+            verb: "create",
+            label: "Add to team",
+            icon: <ObjectIcons.Create />,
+            onSelect: () => setAction("add-membership", { history: "push" }),
+            disabled: !canAddMembership,
+        });
+    }
+    if (person.status === "Active" && !linkedUser) {
         actions.push({
             verb: "invite",
             label: "Invite to AVUT",
@@ -113,12 +84,29 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             disabled: !canInvite,
         });
     }
+    if (linkedUser) {
+        actions.push({
+            verb: "unlink",
+            label: "Unlink from user",
+            icon: <ObjectIcons.Unlink />,
+            onSelect: () => setAction("unlink-user", { history: "push" }),
+            disabled: !canUpdateLink,
+        });
+    } else {
+        actions.push({
+            verb: "link",
+            label: "Link to user",
+            icon: <ObjectIcons.Link />,
+            onSelect: () => setAction("link-user", { history: "push" }),
+            disabled: !canUpdateLink,
+        });
+    }
     if (person.status === "Active") {
         actions.push({
             verb: "archive",
             label: "Archive",
             icon: <ObjectIcons.Archive />,
-            onSelect: handleArchive,
+            onSelect: () => setAction("archive", { history: "push" }),
             disabled: !canUpdate,
         });
     } else {
@@ -126,7 +114,7 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
-            onSelect: handleRestore,
+            onSelect: () => setAction("restore", { history: "push" }),
             disabled: !canUpdate,
         });
     }
@@ -141,41 +129,32 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
         });
     }
 
-    useMenuActionHotkeys(actions, "Personnel");
-
     return (
         <>
-            {/* Person dropdown menu */}
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="end">
-                    <DropdownMenuGroup>
-                        <DropdownMenuItem disabled asChild>
-                            <Link
-                                href={route("/orgs/[slug]/admin/personnel/[person_id]/history", {
-                                    slug: organization.slug,
-                                    person_id: person.id,
-                                })}
-                            >
-                                <ObjectIcons.History /> History
-                            </Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuGroup>
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuGroup>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {actions.map((a) => (
-                            <MenuAction key={a.verb} {...a} />
-                        ))}
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu
+                actions={actions}
+                category="Personnel"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem disabled asChild>
+                                <Link
+                                    href={route(
+                                        "/orgs/[slug]/admin/personnel/[person_id]/history",
+                                        {
+                                            slug: organization.slug,
+                                            person_id: person.id,
+                                        },
+                                    )}
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
+            />
 
             {/* Invite Person dialog */}
             <AdminModule_InvitePerson_Dialog
@@ -188,12 +167,71 @@ export function AdminModule_PersonMenu({ person, linked }: AdminModule_PersonMen
                 }
             />
 
+            {/* Archive Person dialog */}
+            <AdminModule_ArchivePerson_Dialog
+                person={person}
+                open={action === "archive"}
+                onOpenChange={(open) =>
+                    setAction(open ? "archive" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Restore Person dialog */}
+            <AdminModule_RestorePerson_Dialog
+                person={person}
+                open={action === "restore"}
+                onOpenChange={(open) =>
+                    setAction(open ? "restore" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
             {/* Delete Person dialog*/}
             <AdminModule_DeletePerson_Dialog
                 person={person}
                 open={action === "delete"}
                 onOpenChange={(open) =>
                     setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Link User dialog */}
+            <AdminModule_LinkUser_Dialog
+                person={person}
+                open={action === "link-user"}
+                onOpenChange={(open) =>
+                    setAction(open ? "link-user" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Unlink User dialog */}
+            {linkedUser && (
+                <AdminModule_UnlinkPerson_Dialog
+                    userId={linkedUser.userId}
+                    userName={linkedUser.user.name}
+                    personName={person.name}
+                    open={action === "unlink-user"}
+                    onOpenChange={(open) =>
+                        setAction(open ? "unlink-user" : null, {
+                            history: open ? "push" : "replace",
+                        })
+                    }
+                />
+            )}
+
+            {/* Add Team Membership dialog */}
+            <AdminModule_AddTeamMembership_Dialog
+                person={person}
+                open={action === "add-membership"}
+                onOpenChange={(open) =>
+                    setAction(open ? "add-membership" : null, {
                         history: open ? "push" : "replace",
                     })
                 }
