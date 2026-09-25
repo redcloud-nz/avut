@@ -50,14 +50,19 @@ export default async function AuthenticatedLayout(props: {
     // a still-pending dehydrated snapshot racing the live query client's resolution is exactly
     // what produces a hydration mismatch. Awaiting costs nothing extra: `getSession` only
     // re-reads `ctx.auth`, which is `requireSession()`'s own `cache()`-wrapped lookup.
-    await fetchQuery(trpc.user.getSession.queryOptions());
-
+    //
     // Every authenticated page can render a date, and `DLDateDetails` reads the viewer's format
     // preference through `usePreferences()` — a `useSuspenseQuery` sitting deep inside a card
     // with no Suspense boundary of its own. Awaiting rather than `prefetch`ing is what keeps a
     // still-pending query from suspending whole card subtrees on first paint. Costs little:
     // `settings.getUserSettings` is `"use cache"`-tagged per user.
-    await fetchQuery(trpc.settings.getUserSettings.queryOptions());
+    //
+    // Neither depends on the other's result, so run them concurrently rather than paying for
+    // two sequential round trips.
+    await Promise.all([
+        fetchQuery(trpc.user.getSession.queryOptions()),
+        fetchQuery(trpc.settings.getUserSettings.queryOptions()),
+    ]);
 
     // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
     // prefetching here removes the round trip that would otherwise show as its skeleton.

@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -36,8 +36,15 @@ export function TimeZoneAutoDetect() {
         }),
     );
 
+    // Tracks whether the mutation has already been fired, independent of React render
+    // timing — `mutation.status` alone isn't safe in the effect's deps array (Strict Mode's
+    // double-invoke would otherwise fire it twice before the first `mutate` call flips status
+    // away from "idle").
+    const firedRef = useRef(false);
+
     useEffect(() => {
-        if (hasPreference !== false || mutation.status !== "idle") return;
+        if (hasPreference !== false || firedRef.current) return;
+        firedRef.current = true;
 
         const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
         mutation.mutate({ update: { slice: "display", patch: { timeZone: detected } } });

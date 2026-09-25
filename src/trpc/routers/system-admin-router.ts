@@ -233,6 +233,7 @@ export const systemAdminRouter = createTrpcRouter({
                 }),
                 ctx.prisma.d4HAccessToken.deleteMany({ where: { userId: input.userId } }),
                 ctx.prisma.note.deleteMany({ where: { authorId: input.userId } }),
+                ctx.prisma.userConfig.deleteMany({ where: { userId: input.userId } }),
                 ctx.logEvent({
                     scope: "system",
                     action: "Delete",
