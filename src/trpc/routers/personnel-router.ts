@@ -12,11 +12,10 @@ import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserData } from "@/lib/schemas/user";
-import { readOrganizationSettings } from "@/server/organization-settings-store";
-import { findLinkableMember } from "@/server/person-user-link";
+import * as Personnel from "@/server/services/personnel";
 
 import { FieldConflictError } from "../errors";
-import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 /**
@@ -99,9 +98,9 @@ export const personnelRouter = createTrpcRouter({
                     ),
                 });
 
-            // Delegates to the shared helper so this path and the D4H team import behave
+            // Delegates to the shared service so this path and the D4H team import behave
             // identically — in particular, both auto-link.
-            return await createPerson(ctx, personId, create);
+            return await Personnel.create(ctx, personId, create);
         }),
 
     /**
@@ -354,7 +353,7 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(PersonData.schema)
         .query(async ({ ctx, input: { personId } }) => {
-            const person = await getPersonOrThrow(ctx, personId);
+            const person = await Personnel.requireById(ctx, personId);
 
             return person;
         }),
@@ -475,7 +474,7 @@ export const personnelRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { personId, update } }) => {
-            const existing = await getPersonOrThrow(ctx, personId);
+            const existing = await Personnel.requireById(ctx, personId);
 
             if (update.email != existing.email) {
                 // Check if a person with the new email already exists
@@ -518,158 +517,3 @@ export const personnelRouter = createTrpcRouter({
             };
         }),
 });
-
-export async function createPerson(
-    ctx: AuthenticatedOrganizationContext,
-    personId: PersonId,
-    create: z.infer<typeof PersonData.modifiableSchema>,
-    /** Set when this create is part of a multi-entry operation, so the entries join its batch. */
-    batchId?: string,
-): Promise<{ created: PersonData }> {
-    /*
-     * `personnel.email` is stored lowercased (docs/specs/person-email-normalisation.md).
-     * `PersonData.modifiableSchema` normalises every parsed path, but the D4H import builds its
-     * person object in code and hands it straight to this helper (`teams-router.d4h.ts`), so the
-     * one write site that the schema cannot reach normalises here. Done before `changes`, so the
-     * audit entry records the value actually stored.
-     */
-    create = { ...create, email: create.email.toLowerCase() };
-
-    // Calculate changes from empty record
-    const changes = diffObject({ tags: [], properties: {} }, create);
-
-    /*
-     * Auto-link (spec Part 3): if the organization opted in and an existing *member* holds this
-     * email, attach them as the person is created.
-     *
-     * Only a member. A user with an AVUT account who does not belong to this organization is left
-     * alone — linking them would mean granting membership on the strength of an email address.
-     * They get invited from the person's own page instead.
-     *
-     * Read uncached, and read outside the transaction: the write below re-checks `personId: null`
-     * anyway, so a link landing in between loses the race rather than corrupting anything.
-     */
-    const settings = await readOrganizationSettings(ctx.prisma, ctx.organizationId);
-    const linkable = settings.personnel.autoLinkOnPersonCreate
-        ? await findLinkableMember(ctx.prisma, {
-              organizationId: ctx.organizationId,
-              email: create.email,
-          })
-        : null;
-
-    /*
-     * Interactive rather than `$transaction([...])` because the link is conditional on its own
-     * write succeeding — an array would commit the audit entry even when `updateMany` matched
-     * nothing. `ctx.logEvent` takes the transaction client, so both entries still go through the
-     * one sanctioned path.
-     */
-    const created = await ctx.prisma.$transaction(async (tx) => {
-        const person = await tx.person.create({
-            data: {
-                id: personId,
-                organizationId: ctx.organizationId,
-                name: create.name,
-                email: create.email,
-                tags: create.tags,
-                properties: create.properties,
-                status: "Active",
-            },
-        });
-
-        await ctx.logEvent(
-            {
-                action: "Create",
-                objectType: "Person",
-                objectId: personId,
-                changes,
-                batchId,
-            },
-            tx,
-        );
-
-        if (linkable) {
-            const { count } = await tx.organizationUser.updateMany({
-                where: { id: linkable.organizationUserId, personId: null },
-                data: { personId },
-            });
-
-            if (count === 1) {
-                await ctx.logEvent(
-                    {
-                        action: "Update",
-                        objectType: "OrganizationMembership",
-                        objectId: linkable.organizationUserId,
-                        description: `Linked person (${personId}, ${create.name}) to user (${linkable.user.id}) on creation — matched on email address.`,
-                        refs: [{ objectType: "Person", objectId: personId, role: "context" }],
-                        batchId,
-                    },
-                    tx,
-                );
-            }
-        }
-
-        return person;
-    });
-
-    return {
-        created: PersonData.fromRecord(created),
-    };
-}
-
-/**
- * Utility function to fetch a person by email.
- * @param ctx The authenticated context containing the organization ID and Prisma client.
- * @param email The email address of the person to fetch.
- * @returns The person data if found, or null if not found.
- */
-export async function getPersonByEmail(
-    ctx: AuthenticatedOrganizationContext,
-    email: string,
-): Promise<PersonData | null> {
-    /*
-     * Lowercase the needle and match exactly. The stored column is normalised
-     * (docs/specs/person-email-normalisation.md), so this is index-backed via
-     * `@@unique([organizationId, email])` — and, unlike the `mode: "insensitive"` form it
-     * replaces, it behaves identically in `prisma-mock`, which ignores the whole `{ equals: … }`
-     * filter object on a string field. That is what makes this function testable at all.
-     *
-     * Callers may still pass a mixed-case needle: the D4H sync plan carries the raw address it
-     * got from D4H.
-     */
-    const person = await ctx.prisma.person.findFirst({
-        where: {
-            organizationId: ctx.organizationId,
-            email: email.toLowerCase(),
-        },
-    });
-
-    return person ? PersonData.fromRecord(person) : null;
-}
-
-/**
- * Utility function to fetch a person by ID and throw a TRPCError if not found.
- * @param ctx The authenticated context containing the organization ID and Prisma client.
- * @param personId The ID of the person to fetch.
- * @returns The person data if found.
- * @throws TRPCError(NOT_FOUND) if the person is not found in the organization.
- */
-async function getPersonOrThrow(
-    ctx: AuthenticatedOrganizationContext,
-    personId: PersonId,
-): Promise<PersonData> {
-    const person = await ctx.prisma.person.findUnique({
-        where: {
-            organizationId: ctx.organizationId,
-            id: personId,
-        },
-    });
-
-    if (!person) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: Messages.personNotFound(personId),
-        });
-    }
-
-    return PersonData.fromRecord(person);
-}

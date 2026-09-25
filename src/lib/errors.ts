@@ -30,3 +30,29 @@ export class NotEnabledError extends Error {
         this.name = "NotEnabledError";
     }
 }
+
+/**
+ * Error thrown by a domain service when the requested record does not exist (or is out of the
+ * caller's scope). A base-procedure middleware (`src/trpc/init.ts`) catches this and rethrows a
+ * `TRPCError({ code: "NOT_FOUND" })` with this error as its `cause`, so services stay free of any
+ * tRPC dependency.
+ */
+export class NotFoundError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "NotFoundError";
+    }
+}
+
+/**
+ * Error thrown by a domain service when a write would conflict with existing state (e.g. a
+ * uniqueness rule). Mapped to `TRPCError({ code: "CONFLICT" })` the same way as `NotFoundError`.
+ * For a conflict the UI needs to attribute to one input field, throw `FieldConflictError`
+ * (`src/trpc/errors.ts`) instead — that one already carries `fieldName` through to the client.
+ */
+export class ConflictError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "ConflictError";
+    }
+}

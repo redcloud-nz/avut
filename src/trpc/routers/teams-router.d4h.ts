@@ -25,11 +25,11 @@ import {
 } from "@/server/d4h-api/client";
 import { D4HLinkAction } from "@/server/d4h-link-invariants";
 import { buildSyncPlan, D4HMembershipSnapshot, snapshotFromD4HMember } from "@/server/d4h-sync";
+import * as Personnel from "@/server/services/personnel";
+import { withBatch } from "@/server/services/service-context";
 import { StalePlanError } from "@/trpc/errors";
 
 import { AuthenticatedOrganizationContext } from "../init";
-
-import { createPerson, getPersonByEmail } from "./personnel-router";
 
 const personTeamRefs = (personId: string, teamId: string) => [
     { objectType: "Person" as const, objectId: personId, role: "context" as const },
@@ -343,6 +343,7 @@ export async function planD4HSync(
  * the race to create the row first (see the `P2002` catch below).
  */
 async function adoptExistingMembership(
+    /** Already bound to the sync's batch — see `applyD4HSyncPlan`. */
     ctx: AuthenticatedOrganizationContext,
     args: {
         existing: { id: string; status: string };
@@ -350,10 +351,9 @@ async function adoptExistingMembership(
         teamId: string;
         d4hMemberId: number;
         snap: D4HMembershipSnapshot;
-        batchId: string;
     },
 ): Promise<void> {
-    const { existing, personId, teamId, d4hMemberId, snap, batchId } = args;
+    const { existing, personId, teamId, d4hMemberId, snap } = args;
     await ctx.prisma.$transaction([
         ctx.prisma.teamMembership.update({
             where: { id: existing.id },
@@ -373,18 +373,24 @@ async function adoptExistingMembership(
             objectId: existing.id,
             description: "Adopted a manual membership as D4H-managed.",
             changes: diffObject({ status: existing.status }, { status: "Active" }),
-            batchId,
             refs: personTeamRefs(personId, teamId),
         }),
     ]);
 }
 
-/** Apply an already-computed plan. One `$transaction` per independently-meaningful row. */
+/**
+ * Apply an already-computed plan. One `$transaction` per independently-meaningful row.
+ *
+ * Binds `ctx` to the sync's batch once via `withBatch`, so every `logEvent` below (and every
+ * `Personnel` service call it makes) joins that batch without threading a `batchId` parameter
+ * through each one.
+ */
 async function applyD4HSyncPlan(
     ctx: AuthenticatedOrganizationContext,
     args: { plan: SyncPlan; inputs: SyncInputs; batchId: string },
 ): Promise<void> {
-    const { plan, inputs, batchId } = args;
+    const { plan, inputs } = args;
+    const ctxBatch = withBatch(ctx, args.batchId);
     const teamId = inputs.teamId;
     const now = new Date();
 
@@ -393,15 +399,15 @@ async function applyD4HSyncPlan(
         if (!member) continue;
         const snap = snapshotFromD4HMember(member);
 
-        let person = await getPersonByEmail(ctx, add.email);
+        let person = await Personnel.getByEmail(ctxBatch, add.email);
         if (!person) {
             person = (
-                await createPerson(
-                    ctx,
-                    PersonId.create(),
-                    { name: add.name, email: add.email, tags: [], properties: {} },
-                    batchId,
-                )
+                await Personnel.create(ctxBatch, PersonId.create(), {
+                    name: add.name,
+                    email: add.email,
+                    tags: [],
+                    properties: {},
+                })
             ).created;
         }
 
@@ -411,13 +417,12 @@ async function applyD4HSyncPlan(
         });
 
         if (existing) {
-            await adoptExistingMembership(ctx, {
+            await adoptExistingMembership(ctxBatch, {
                 existing,
                 personId: person.id,
                 teamId,
                 d4hMemberId: add.d4hMemberId,
                 snap,
-                batchId,
             });
         } else {
             const tmId = TeamMembershipId.create();
@@ -433,12 +438,11 @@ async function applyD4HSyncPlan(
                             d4h: { create: { d4hMemberId: add.d4hMemberId, ...snap } },
                         },
                     }),
-                    ctx.logEvent({
+                    ctxBatch.logEvent({
                         action: "Create",
                         objectType: "TeamMembership",
                         objectId: tmId,
                         description: "Added from linked D4H team.",
-                        batchId,
                         refs: personTeamRefs(person.id, teamId),
                     }),
                 ]);
@@ -452,13 +456,12 @@ async function applyD4HSyncPlan(
                     where: { teamId_personId: { teamId, personId: person.id } },
                     select: { id: true, status: true },
                 });
-                await adoptExistingMembership(ctx, {
+                await adoptExistingMembership(ctxBatch, {
                     existing: raced,
                     personId: person.id,
                     teamId,
                     d4hMemberId: add.d4hMemberId,
                     snap,
-                    batchId,
                 });
             }
         }
@@ -472,12 +475,11 @@ async function applyD4HSyncPlan(
                 where: { teamMembershipId: upd.teamMembershipId },
                 data: snapshotFromD4HMember(member),
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "TeamMembership",
                 objectId: upd.teamMembershipId,
                 changes: upd.changes,
-                batchId,
                 refs: personTeamRefs(
                     inputs.membershipPersonIds.get(upd.teamMembershipId) ?? upd.teamMembershipId,
                     teamId,
@@ -498,7 +500,7 @@ async function applyD4HSyncPlan(
                 where: { teamMembershipId: react.teamMembershipId },
                 data: snapshotFromD4HMember(member),
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "TeamMembership",
                 objectId: react.teamMembershipId,
@@ -507,7 +509,6 @@ async function applyD4HSyncPlan(
                     ...diffObject({ status: "Archived" }, { status: "Active" }),
                     ...react.changes,
                 ],
-                batchId,
                 refs: personTeamRefs(
                     inputs.membershipPersonIds.get(react.teamMembershipId) ??
                         react.teamMembershipId,
@@ -523,13 +524,12 @@ async function applyD4HSyncPlan(
                 where: { id: arch.teamMembershipId },
                 data: { status: "Archived" },
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "TeamMembership",
                 objectId: arch.teamMembershipId,
                 description: "Archived — member is no longer in the linked D4H team.",
                 changes: diffObject({ status: "Active" }, { status: "Archived" }),
-                batchId,
                 refs: personTeamRefs(
                     inputs.membershipPersonIds.get(arch.teamMembershipId) ?? arch.teamMembershipId,
                     teamId,
@@ -550,24 +550,22 @@ async function applyD4HSyncPlan(
                 where: { teamId },
                 data: { lastSyncedAt: now, ...inputs.incomingTeamFields },
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "Team",
                 objectId: teamId,
                 description: "Refreshed D4H team metadata.",
                 changes: teamDiff,
-                batchId,
             }),
         ]);
     } else {
         await ctx.prisma.$transaction([
             ctx.prisma.team_D4H.update({ where: { teamId }, data: { lastSyncedAt: now } }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "Team",
                 objectId: teamId,
                 description: "Synced with linked D4H team — no metadata changes.",
-                batchId,
             }),
         ]);
     }
@@ -591,13 +589,12 @@ async function applyD4HSyncPlan(
                     where: { organizationId: ctx.organizationId },
                     data: { lastSyncedAt: now, ...inputs.incomingOrgFields },
                 }),
-                ctx.logEvent({
+                ctxBatch.logEvent({
                     action: "Update",
                     objectType: "Organization",
                     objectId: ctx.organizationId,
                     description: "Refreshed cached D4H organisation attributes.",
                     changes: orgDiff,
-                    batchId,
                 }),
             ]);
         } else {
@@ -606,12 +603,11 @@ async function applyD4HSyncPlan(
                     where: { organizationId: ctx.organizationId },
                     data: { lastSyncedAt: now },
                 }),
-                ctx.logEvent({
+                ctxBatch.logEvent({
                     action: "Update",
                     objectType: "Organization",
                     objectId: ctx.organizationId,
                     description: "Synced cached D4H organisation attributes — no changes.",
-                    batchId,
                 }),
             ]);
         }

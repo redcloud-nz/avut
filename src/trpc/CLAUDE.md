@@ -11,6 +11,33 @@ Loaded when working under `src/trpc/`. The repo-wide rules (always call `ctx.log
 - Use `authenticatedProcedure` for user-scoped procedures
 - Use `publicProcedure` only for truly unauthenticated endpoints
 
+## Domain services
+
+Logic reused across procedures, or across routers, belongs in a domain service under
+`src/server/services/<domain>.ts` (issue #248) rather than as a router-file helper — a router
+importing another router's helper is the symptom that led here. Piloted on
+`src/server/services/personnel.ts`.
+
+- One module per domain, imported as a namespace and called `Namespace.verb(ctx, …)` — e.g.
+  `import * as Personnel from "@/server/services/personnel"`, `Personnel.create(ctx, …)`. No
+  classes, no `services/index.ts` barrel (a barrel loads every service to import one, and breaks
+  per-service `vi.mock`).
+- A service takes `OrgServiceContext` (`src/server/services/service-context.ts`) — `{ prisma,
+organizationId, userId, logEvent }` — not `AuthenticatedOrganizationContext`. The tRPC type
+  structurally satisfies it, so no adapter is needed at call sites; the point is that a service
+  stays callable from a Server Component or a test with no tRPC context to build.
+- A multi-entry operation binds its `LogBatch` once with `withBatch(ctx, batchId)`
+  (`service-context.ts`) rather than threading a `batchId` parameter through every helper it
+  calls — every `ctx.logEvent` made through the returned context joins that batch automatically.
+- Services throw plain `Error` subclasses (`NotFoundError`, `ConflictError` in `src/lib/errors.ts`)
+  instead of `TRPCError`, so they carry no tRPC dependency. A `publicProcedure` middleware in
+  `src/trpc/init.ts` catches these and rethrows the matching `TRPCError`, preserving the domain
+  error as `cause` — the same shape `formatTrpcError` already reads for `FieldConflictError`. A
+  conflict the client needs to attribute to one input field still throws `FieldConflictError`
+  (`src/trpc/errors.ts`) directly from the router, since only that one carries `fieldName` through
+  to the client; `ConflictError` is for a conflict with no single field to blame.
+- Services import each other by specific module path, never through a barrel.
+
 ## Audit logging — which `logEvent` am I holding?
 
 All three procedure factories put a `logEvent` on `ctx`, and they differ only in which log the entry lands in. Each returns the un-awaited `PrismaPromise`, so all three compose into `$transaction([...])`.

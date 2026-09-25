@@ -9,17 +9,20 @@ import * as z from "zod";
 import { initTRPC, TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
-import { DiffChange } from "@/lib/diff";
+import { ConflictError, NotFoundError } from "@/lib/errors";
 import { Permissions } from "@/lib/permissions";
-import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
+import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
-import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-entry";
+import { recordLogEntry, resolveActor } from "@/server/log-entry";
 import prisma from "@/server/prisma";
+import type { LogEventOptions } from "@/server/services/service-context";
 
 import { formatTrpcError } from "./error-formatter";
+
+export type { LogEventOptions } from "@/server/services/service-context";
 
 /**
  * Create the inner tRPC context.
@@ -59,7 +62,26 @@ export const createTrpcRouter = t.router;
 //
 export type PublicContext = Context;
 
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure
+    /**
+     * Domain services (`src/server/services/*.ts`) throw plain `Error` subclasses rather than
+     * `TRPCError`, so they stay usable from a Server Component or a test with no tRPC in scope.
+     * This is the one place that maps them onto the wire protocol, preserving the original as
+     * `cause` — the same shape `formatTrpcError` already reads for `FieldConflictError`.
+     */
+    .use(async function mapDomainErrors(opts) {
+        try {
+            return await opts.next(opts);
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                throw new TRPCError({ code: "NOT_FOUND", message: error.message, cause: error });
+            }
+            if (error instanceof ConflictError) {
+                throw new TRPCError({ code: "CONFLICT", message: error.message, cause: error });
+            }
+            throw error;
+        }
+    });
 
 export type AuthenticatedContext = Context & {
     auth: AuthSession;
@@ -285,18 +307,6 @@ export function organizationProcedure(
                 } satisfies AuthenticatedOrganizationContext,
             });
         });
-}
-
-export interface LogEventOptions {
-    action: LogAction;
-    objectType: LogObjectType;
-    objectId: string;
-    changes?: DiffChange[];
-    description?: string;
-    /** Extra entities this entry is relevant to. The primary is implicit. */
-    refs?: LogEntryRef[];
-    /** An existing `LogBatch.id`, when this entry is part of a multi-entry operation. */
-    batchId?: string;
 }
 
 /**

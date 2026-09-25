@@ -28,8 +28,8 @@ import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
-import { linkPersonOnInvitationAccept } from "./person-user-link";
 import prisma from "./prisma";
+import { linkPersonOnInvitationAccept } from "./services/personnel";
 import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 
 /**
@@ -177,7 +177,7 @@ export const auth = betterAuth({
                      * the one named by the invitation, or (when the organization opted in) one
                      * matching the accepting user's email.
                      *
-                     * All of the logic lives in `person-user-link.ts` rather than here: this
+                     * All of the logic lives in `services/personnel.ts` rather than here: this
                      * module imports `server-only` transitively, so anything written inline
                      * would be unreachable from the test environment.
                      *

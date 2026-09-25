@@ -3,29 +3,185 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import "server-only";
+
+import * as z from "zod";
+
+import type { PrismaClient } from "@/generated/prisma/client";
+import { diffObject } from "@/lib/diff";
+import { NotFoundError } from "@/lib/errors";
+import type { OrganizationId } from "@/lib/schemas/organization";
+import { PersonData, type PersonId } from "@/lib/schemas/person";
+import type { PersonRecord } from "@/lib/schemas/person";
+import type { UserId, UserRecord } from "@/lib/schemas/user";
+import { formatActorLabel, recordLogEntry, type LogEntryPrisma } from "@/server/log-entry";
+import { readOrganizationSettings } from "@/server/organization-settings-store";
+
+import type { OrgServiceContext } from "./service-context";
+
+/**
+ * Creates a new person in the organization.
+ *
+ * Delegates the auto-link check to `findLinkableMember` below, so this one path serves both the
+ * `createPerson` mutation and the D4H team import identically — in particular, both auto-link.
+ * The caller is responsible for any pre-write conflict check (e.g. duplicate email); this
+ * function does not check for one.
+ *
+ * Pass a `ctx` bound with `withBatch` (`service-context.ts`) when this create is part of a
+ * multi-entry operation, so its log entries join that operation's batch.
+ */
+export async function create(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+    data: z.infer<typeof PersonData.modifiableSchema>,
+): Promise<{ created: PersonData }> {
+    /*
+     * `personnel.email` is stored lowercased (docs/specs/person-email-normalisation.md).
+     * `PersonData.modifiableSchema` normalises every parsed path, but the D4H import builds its
+     * person object in code and hands it straight to this function (`teams-router.d4h.ts`), so
+     * the one write site that the schema cannot reach normalises here. Done before `changes`, so
+     * the audit entry records the value actually stored.
+     */
+    data = { ...data, email: data.email.toLowerCase() };
+
+    // Calculate changes from empty record
+    const changes = diffObject({ tags: [], properties: {} }, data);
+
+    /*
+     * Auto-link (spec Part 3): if the organization opted in and an existing *member* holds this
+     * email, attach them as the person is created.
+     *
+     * Only a member. A user with an AVUT account who does not belong to this organization is left
+     * alone — linking them would mean granting membership on the strength of an email address.
+     * They get invited from the person's own page instead.
+     *
+     * Read uncached, and read outside the transaction: the write below re-checks `personId: null`
+     * anyway, so a link landing in between loses the race rather than corrupting anything.
+     */
+    const settings = await readOrganizationSettings(ctx.prisma, ctx.organizationId);
+    const linkable = settings.personnel.autoLinkOnPersonCreate
+        ? await findLinkableMember(ctx.prisma, {
+              organizationId: ctx.organizationId,
+              email: data.email,
+          })
+        : null;
+
+    /*
+     * Interactive rather than `$transaction([...])` because the link is conditional on its own
+     * write succeeding — an array would commit the audit entry even when `updateMany` matched
+     * nothing. `ctx.logEvent` takes the transaction client, so both entries still go through the
+     * one sanctioned path.
+     */
+    const created = await ctx.prisma.$transaction(async (tx) => {
+        const person = await tx.person.create({
+            data: {
+                id: personId,
+                organizationId: ctx.organizationId,
+                name: data.name,
+                email: data.email,
+                tags: data.tags,
+                properties: data.properties,
+                status: "Active",
+            },
+        });
+
+        await ctx.logEvent(
+            {
+                action: "Create",
+                objectType: "Person",
+                objectId: personId,
+                changes,
+            },
+            tx,
+        );
+
+        if (linkable) {
+            const { count } = await tx.organizationUser.updateMany({
+                where: { id: linkable.organizationUserId, personId: null },
+                data: { personId },
+            });
+
+            if (count === 1) {
+                await ctx.logEvent(
+                    {
+                        action: "Update",
+                        objectType: "OrganizationMembership",
+                        objectId: linkable.organizationUserId,
+                        description: `Linked person (${personId}, ${data.name}) to user (${linkable.user.id}) on creation — matched on email address.`,
+                        refs: [{ objectType: "Person", objectId: personId, role: "context" }],
+                    },
+                    tx,
+                );
+            }
+        }
+
+        return person;
+    });
+
+    return {
+        created: PersonData.fromRecord(created),
+    };
+}
+
+/**
+ * Fetch a person by email.
+ *
+ * Lowercase the needle and match exactly. The stored column is normalised
+ * (docs/specs/person-email-normalisation.md), so this is index-backed via
+ * `@@unique([organizationId, email])` — and, unlike the `mode: "insensitive"` form it replaces,
+ * it behaves identically in `prisma-mock`, which ignores the whole `{ equals: … }` filter object
+ * on a string field. That is what makes this function testable at all.
+ *
+ * Callers may still pass a mixed-case needle: the D4H sync plan carries the raw address it got
+ * from D4H.
+ */
+export async function getByEmail(
+    ctx: OrgServiceContext,
+    email: string,
+): Promise<PersonData | null> {
+    const person = await ctx.prisma.person.findFirst({
+        where: {
+            organizationId: ctx.organizationId,
+            email: email.toLowerCase(),
+        },
+    });
+
+    return person ? PersonData.fromRecord(person) : null;
+}
+
+/**
+ * Fetch a person by ID.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function requireById(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+    const person = await ctx.prisma.person.findUnique({
+        where: {
+            organizationId: ctx.organizationId,
+            id: personId,
+        },
+    });
+
+    if (!person) {
+        throw new NotFoundError(`Person(id=${personId}) not found.`);
+    }
+
+    return PersonData.fromRecord(person);
+}
+
 /*
  * Matching and linking a `Person` to a `User` within one organization — the shared half of
  * `docs/specs/person-user-linking.md` Parts 2 and 3.
  *
- * Deliberately free of any `@/server/prisma` import: the Prisma
- * client is injected by the caller, so this is reachable both from a better-auth hook (which runs
- * outside any tRPC procedure) and from the jsdom test environment against `createMockPrisma()`.
- * Keeping the logic here rather than inline in `src/server/auth.ts` is what makes it testable at
- * all — that module pulls in `@/server/prisma` (via the Prisma adapter) and cannot be imported under jsdom.
+ * The four functions below take a narrow `prisma` param rather than `OrgServiceContext`,
+ * deliberately: `linkPersonOnInvitationAccept` runs from a better-auth hook
+ * (`src/server/auth.ts`), which is not a tRPC context and has no `OrgServiceContext` to offer.
+ * Keeping the logic here rather than inline in `auth.ts` is also what makes it testable at all —
+ * that module pulls in `@/server/prisma` (via the Prisma adapter) and cannot be imported under
+ * jsdom.
  *
  * Nothing here grants membership. Both lookups only ever fill in `OrganizationUser.personId` on a
  * membership that already exists; an email match is never an authorisation decision.
  */
-
-import "server-only";
-
-import type { PrismaClient } from "@/generated/prisma/client";
-import type { OrganizationId } from "@/lib/schemas/organization";
-import type { PersonRecord } from "@/lib/schemas/person";
-import type { UserId, UserRecord } from "@/lib/schemas/user";
-
-import { formatActorLabel, recordLogEntry, type LogEntryPrisma } from "./log-entry";
-import { readOrganizationSettings } from "./organization-settings-store";
 
 /** The slice of the Prisma client the lookups need. */
 export type PersonUserLinkPrisma = Pick<PrismaClient, "person" | "organizationUser" | "user">;
