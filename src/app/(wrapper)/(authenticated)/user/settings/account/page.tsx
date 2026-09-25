@@ -20,7 +20,12 @@ export default async function UserSettings_Account_Page() {
                     <Saratoga.Header>
                         <Saratoga.Title>Account</Saratoga.Title>
                     </Saratoga.Header>
-                    <UserAccountSettings />
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <UserAccountSettings />
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary" />
+                    </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>

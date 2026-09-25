@@ -5,8 +5,12 @@
 
 import React from "react";
 
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
+
+// `DLDateDetails` has to be a Client Component (it reads the viewer's format preferences), and
+// this module is imported by Server Components. Re-exported so call sites still take all four
+// pieces from one import.
+export { DLDateDetails } from "./description-list-date";
 
 export function DL({ className, ...props }: React.ComponentPropsWithRef<"dl">) {
     return (
@@ -44,56 +48,5 @@ export function DLDetails({ className, ...props }: React.ComponentPropsWithRef<"
             )}
             {...props}
         />
-    );
-}
-
-/**
- * Like `DL`, but with a third column for a per-row action (e.g. an edit/change button) —
- * use `DLAction` for that third cell alongside the usual `DLTerm`/`DLDetails` pair. A row
- * with nothing to do there can simply omit `DLAction`; the grid just leaves that cell empty.
- */
-export function DLActions({ className, ...props }: React.ComponentPropsWithRef<"dl">) {
-    return (
-        <dl
-            data-component="DLActions"
-            className={cn(
-                "grid text-sm/6 sm:grid-cols-[min(30%,--spacing(80))_auto_auto] sm:text-sm -my-3",
-                className,
-            )}
-            {...props}
-        />
-    );
-}
-
-export function DLAction({ className, ...props }: React.ComponentPropsWithRef<"div">) {
-    return (
-        <div
-            data-component="DLAction"
-            className={cn(
-                "flex items-center justify-end pb-3 pt-1 sm:border-t sm:border-border/50 sm:py-3 sm:nth-3:border-none",
-                className,
-            )}
-            {...props}
-        />
-    );
-}
-
-export function DLDateDetails({
-    className,
-    date,
-    ...props
-}: Omit<React.ComponentPropsWithRef<"dd">, "children"> & { date: Date | string }) {
-    return (
-        <dd
-            data-component="DLDateDetails"
-            className={cn(
-                "pb-3 pt-1 text-foreground sm:border-t sm:border-border/50 sm:py-3 sm:nth-2:border-none",
-                className,
-            )}
-            {...props}
-        >
-            <div>{formatDateTime(date)}</div>
-            <div className="text-muted-foreground">{formatRelativeDateTime(date)}</div>
-        </dd>
     );
 }

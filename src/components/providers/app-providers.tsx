@@ -19,20 +19,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
  * any future public-scope trees. Everything here has no consumers outside that shell: nuqs-driven
  * dialogs/params, hotkeys, tooltips (used by `HelpButton`), the sidebar context, and the `?help=`
  * sheet itself.
- *
- * `defaultSidebarOpen` comes from the `sidebar_state` cookie, read by the layout. `SidebarProvider`
- * writes that cookie itself but never reads it, so without this the sidebar starts expanded on
- * every hard navigation no matter what the user last chose.
  */
-export function AppProviders({
-    children,
-    defaultSidebarOpen,
-}: Readonly<{ children: ReactNode; defaultSidebarOpen: boolean }>) {
+export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
     return (
         <NuqsAdapter>
             <HotkeysProvider>
                 <TooltipProvider>
-                    <SidebarProvider defaultOpen={defaultSidebarOpen}>{children}</SidebarProvider>
+                    <SidebarProvider>{children}</SidebarProvider>
                 </TooltipProvider>
                 <HotkeyHelp />
                 <Suspense fallback={null}>

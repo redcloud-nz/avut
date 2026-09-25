@@ -2,7 +2,6 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -12,20 +11,17 @@ import { useSession } from "@/client/auth-queries";
 import { signInUrl } from "@/lib/auth-redirect";
 
 /**
- * Redirect to sign-in if the session goes away while the user is on the page.
+ * Redirects to sign-in if the session is revoked or expires while the user is already on a
+ * page. Renders nothing itself.
  *
  * The server-side guards (`requireSession` / `requireOrganization`) protect first paint but
  * cannot react after load. This is the other half: nothing polls, but React Query's normal
  * refetch triggers — window focus, reconnect, stale-time expiry on navigation, explicit
- * invalidation — will notice a revoked or expired session and drive the redirect.
- *
- * Returns the full query result so callers can still render a spinner while pending.
+ * invalidation — will notice and drive the redirect.
  */
-export function useAuthenticate() {
+export function SessionWatcher() {
     const router = useRouter();
-    const session = useSession();
-
-    const { data, isPending, error } = session;
+    const { data, isPending, error } = useSession();
 
     useEffect(() => {
         // The `error` guard is deliberate. An errored query has `data === undefined` and
@@ -37,5 +33,5 @@ export function useAuthenticate() {
         router.replace(signInUrl(window.location.pathname + window.location.search));
     }, [data, isPending, error, router]);
 
-    return session;
+    return null;
 }

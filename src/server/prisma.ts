@@ -9,23 +9,15 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
+import { withArtificialLatency } from "@/lib/artificial-latency";
 
 /**
- * Artificial per-query delay in development, simulating the network round trip between the
- * server and the database. Distinct from — and complementary to — the per-procedure delay in
- * `trpc/init.ts`, which represents the client-to-server round trip. That one fires once per
- * tRPC call no matter how many queries it issues, so it can't show the difference between a
- * procedure doing one query and one doing five sequential ones. This one is per query, so it's
- * additive across sequential queries and largely free across `Promise.all`'d ones — the same
- * shape of cost as the real thing, which is the point.
- */
-const DEVELOPMENT_QUERY_DELAY = { min: 5, max: 20 }; // ms
-
-/**
- * Adds the artificial delay above, plus a debug log of each query's real duration, via a
- * client extension. Skips both outside development (a plain env check per query, not a
- * conditional wrapper) so the *type* of the returned client never changes with the
- * environment — only its behaviour.
+ * Wraps a `PrismaClient` instance to introduce artificial query latency in development mode.
+ * The latency is determined by the `AVUT_DB_ARTIFICIAL_LATENCY` environment variable, and
+ * debug logs are printed if `AVUT_DEBUG_DB_QUERIES` is enabled.
+ *
+ * This ensures that the type of the returned client remains consistent across environments,
+ * while only its behavior changes in development.
  *
  * Cast back to `PrismaClient` deliberately: `$extends` return types are typically fine as
  * drop-in replacements, but its `$transaction` result type is not — it stops matching
@@ -38,23 +30,16 @@ function withDevelopmentLatency(client: PrismaClient): PrismaClient {
         name: "development-query-latency",
         query: {
             async $allOperations({ model, operation, args, query }) {
-                if (env.NODE_ENV !== "development") return query(args);
-
-                const delay =
-                    Math.floor(
-                        Math.random() *
-                            (DEVELOPMENT_QUERY_DELAY.max - DEVELOPMENT_QUERY_DELAY.min + 1),
-                    ) + DEVELOPMENT_QUERY_DELAY.min;
-
-                await new Promise((resolve) => setTimeout(resolve, delay));
-
-                const start = performance.now();
-                const result = await query(args);
-                const durationMs = Math.round(performance.now() - start);
-
-                console.debug(
-                    `[prisma] ${model ?? "raw"}.${operation} — ${durationMs}ms (+${delay}ms artificial)`,
+                const { result, inbound, outbound, duration } = await withArtificialLatency(
+                    () => query(args),
+                    env.AVUT_DB_ARTIFICIAL_LATENCY,
                 );
+
+                if (env.AVUT_DEBUG_DB_QUERIES) {
+                    console.debug(
+                        `[prisma] ${model ?? "raw"}.${operation} — ${duration}ms (+${inbound + outbound}ms artificial)`,
+                    );
+                }
 
                 return result;
             },
@@ -67,7 +52,15 @@ const prismaClientSingleton = () => {
         // eslint-disable-next-line avut/no-process-env -- this module also runs under tsx (prisma/seed-demo.ts), where the server-only marker in @/server/env would throw
         connectionString: process.env.POSTGRES_PRISMA_URL,
     });
-    return withDevelopmentLatency(new PrismaClient({ adapter }));
+
+    const prisma = new PrismaClient({ adapter });
+
+    if (env.isDevelopment()) {
+        console.debug("[prisma] Development mode enabled.");
+        return withDevelopmentLatency(prisma);
+    }
+
+    return prisma;
 };
 
 declare const globalThis: {
@@ -78,4 +71,4 @@ const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
 
 export default prisma;
 
-if (env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;
+if (!env.isProduction()) globalThis.prismaGlobal = prisma;

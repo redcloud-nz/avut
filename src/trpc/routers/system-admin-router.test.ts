@@ -7,7 +7,6 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
@@ -26,10 +25,6 @@ import { systemAdminRouter } from "./system-admin-router";
 
 // `revalidateTag` needs a Next.js render/request store, which the test environment has no
 // business standing up — the router's contract here is just that it invalidates the tag.
-vi.mock("@/server/cache/organization-settings-revalidate", () => ({
-    organizationSettingsCacheTag: (id: string) => `organization-settings-${id}`,
-    revalidateOrganizationSettings: vi.fn(async () => {}),
-}));
 vi.mock("@/server/cache/organization-user-revalidate", () => ({
     organizationUserCacheTag: (id: string) => `organization-user-${id}`,
     revalidateOrganizationUser: vi.fn(async () => {}),
@@ -325,165 +320,6 @@ describe("systemAdmin.createOrganization", () => {
     });
 });
 
-describe("systemAdmin organization members", () => {
-    const T = {
-        admin: UserId.create(),
-        owner: UserId.create(),
-        u1: UserId.create(),
-        u2: UserId.create(),
-        org: OrganizationId.create(),
-    };
-    let db: ReturnType<typeof createMockPrisma>;
-
-    // Every case here adds, removes or re-roles a member, so each one gets a fresh dataset
-    // rather than depending on what the cases before it left behind.
-    beforeEach(async () => {
-        db = createMockPrisma();
-
-        for (const id of [T.admin, T.owner, T.u1, T.u2]) {
-            await db.user.create({
-                data: {
-                    id,
-                    name: `U-${id}`,
-                    email: `${id}@x.test`,
-                    emailVerified: true,
-                    createdAt: new Date(),
-                },
-            });
-        }
-        await db.organization.create({
-            data: { id: T.org, name: "Org", slug: "members-org", createdAt: new Date() },
-        });
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.org,
-                userId: T.owner,
-                role: "owner",
-                createdAt: new Date(),
-            },
-        });
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.org,
-                userId: T.u1,
-                role: "member",
-                createdAt: new Date(),
-            },
-        });
-    });
-
-    const call = () =>
-        systemAdminRouter.createCaller(
-            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
-        );
-
-    it("adds an existing user as a member", async () => {
-        await call().addOrganizationMember({
-            organizationId: T.org,
-            userId: T.u2,
-            roles: ["member"],
-        });
-        expect(
-            await db.organizationUser.findFirst({
-                where: { organizationId: T.org, userId: T.u2 },
-            }),
-        ).toMatchObject({ role: "member" });
-    });
-
-    it("rejects adding a user who is already a member", async () => {
-        await expect(
-            call().addOrganizationMember({
-                organizationId: T.org,
-                userId: T.u1,
-                roles: ["member"],
-            }),
-        ).rejects.toMatchObject({ code: "CONFLICT" });
-    });
-
-    it("throws NOT_FOUND for an unknown organization or user", async () => {
-        await expect(
-            call().addOrganizationMember({
-                organizationId: OrganizationId.create(),
-                userId: T.u2,
-                roles: ["member"],
-            }),
-        ).rejects.toMatchObject({ code: "NOT_FOUND" });
-        await expect(
-            call().addOrganizationMember({
-                organizationId: T.org,
-                userId: UserId.create(),
-                roles: ["member"],
-            }),
-        ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    });
-
-    it("refuses to remove the last owner", async () => {
-        await expect(
-            call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-
-    it("refuses to demote the last owner", async () => {
-        await expect(
-            call().setOrganizationMemberRole({
-                organizationId: T.org,
-                userId: T.owner,
-                roles: ["member"],
-            }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-
-    it("removes a non-owner member", async () => {
-        await call().removeOrganizationMember({ organizationId: T.org, userId: T.u1 });
-        expect(
-            await db.organizationUser.findFirst({
-                where: { organizationId: T.org, userId: T.u1 },
-            }),
-        ).toBeNull();
-    });
-
-    it("changes a member's role", async () => {
-        const res = await call().setOrganizationMemberRole({
-            organizationId: T.org,
-            userId: T.u1,
-            roles: ["member", "i3-editor"],
-        });
-        expect(res.roles).toEqual(["member", "i3-editor"]);
-    });
-
-    it("turns a concurrent duplicate add into CONFLICT", async () => {
-        // The pre-check passes (u2 is not a member yet); the insert then loses the race.
-        const uniqueViolation = Object.assign(new Error("Unique constraint failed"), {
-            code: "P2002",
-        });
-        vi.spyOn(db.organizationUser, "create").mockImplementationOnce((() =>
-            Promise.reject(uniqueViolation)) as never);
-
-        await expect(
-            call().addOrganizationMember({
-                organizationId: T.org,
-                userId: T.u2,
-                roles: ["member"],
-            }),
-        ).rejects.toMatchObject({ code: "CONFLICT" });
-    });
-
-    it("does not disguise other insert failures as CONFLICT", async () => {
-        vi.spyOn(db.organizationUser, "create").mockImplementationOnce((() =>
-            Promise.reject(new Error("connection lost"))) as never);
-
-        await expect(
-            call().addOrganizationMember({
-                organizationId: T.org,
-                userId: T.u2,
-                roles: ["member"],
-            }),
-        ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
-    });
-});
-
 describe("systemAdmin multi-role memberships", () => {
     const T = {
         admin: UserId.create(),
@@ -493,7 +329,6 @@ describe("systemAdmin multi-role memberships", () => {
     };
     let db: ReturnType<typeof createMockPrisma>;
 
-    // Each case rewrites the owner's roles or membership, so each starts from a fresh dataset.
     beforeEach(async () => {
         db = createMockPrisma();
 
@@ -532,90 +367,6 @@ describe("systemAdmin multi-role memberships", () => {
         systemAdminRouter.createCaller(
             createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
         );
-
-    const storedRole = async (userId: string) =>
-        (await db.organizationUser.findFirst({ where: { organizationId: T.org, userId } }))?.role;
-
-    it("adds a member with a primary role and secondary roles, primary first", async () => {
-        await call().addOrganizationMember({
-            organizationId: T.org,
-            userId: T.other,
-            roles: ["skills-assessor", "admin", "i3-editor"],
-        });
-
-        expect(await storedRole(T.other)).toBe("admin,skills-assessor,i3-editor");
-    });
-
-    it("replaces a member's whole role set", async () => {
-        const res = await call().setOrganizationMemberRole({
-            organizationId: T.org,
-            userId: T.owner,
-            roles: ["owner", "skills-assessor"],
-        });
-
-        expect(res.roles).toEqual(["owner", "skills-assessor"]);
-        expect(await storedRole(T.owner)).toBe("owner,skills-assessor");
-    });
-
-    it.each([
-        ["no primary role", ["i3-editor"]],
-        ["two primary roles", ["admin", "member"]],
-        ["a repeated role", ["member", "member"]],
-        ["no roles at all", []],
-    ] as const)("rejects a role set with %s", async (_label, roles) => {
-        await expect(
-            call().addOrganizationMember({
-                organizationId: T.org,
-                userId: T.other,
-                roles: [...roles],
-            }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-
-    it("still treats an owner with secondary roles as the last owner when removing them", async () => {
-        await expect(
-            call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-
-    it("refuses to drop the owner role from the last owner even if other roles are kept", async () => {
-        await expect(
-            call().setOrganizationMemberRole({
-                organizationId: T.org,
-                userId: T.owner,
-                roles: ["member", "i3-editor"],
-            }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-        expect(await storedRole(T.owner)).toBe("owner,i3-editor");
-    });
-
-    it("lets the last owner change secondary roles while keeping owner", async () => {
-        await call().setOrganizationMemberRole({
-            organizationId: T.org,
-            userId: T.owner,
-            roles: ["owner"],
-        });
-        expect(await storedRole(T.owner)).toBe("owner");
-    });
-
-    it("allows dropping owner when another owner remains", async () => {
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.org,
-                userId: T.other,
-                role: "owner,skills-assessor",
-                createdAt: new Date(),
-            },
-        });
-
-        await call().setOrganizationMemberRole({
-            organizationId: T.org,
-            userId: T.owner,
-            roles: ["admin"],
-        });
-        expect(await storedRole(T.owner)).toBe("admin");
-    });
 
     it("refuses to delete a user who is the sole owner, whatever other roles they hold", async () => {
         await expect(call().deleteUser({ userId: T.owner })).rejects.toMatchObject({
@@ -698,151 +449,6 @@ describe("systemAdmin.listOrganizations", () => {
         expect(empty.memberCount).toBe(0);
         expect(empty.ownerCount).toBe(0);
         expect(empty.enabledModules).toEqual([]);
-    });
-});
-
-describe("systemAdmin organization settings", () => {
-    const T = {
-        admin: UserId.create(),
-        // An organization with no `OrganizationConfig` rows at all — what the normal
-        // (non-system-admin) org-creation path produces.
-        bareOrg: OrganizationId.create(),
-        // An organization whose default config rows have been fully materialised — what
-        // `systemAdmin.createOrganization` produces.
-        seededOrg: OrganizationId.create(),
-    };
-    const db = createMockPrisma();
-
-    beforeAll(async () => {
-        await db.user.create({
-            data: {
-                id: T.admin,
-                name: "Admin",
-                email: "admin@x.test",
-                emailVerified: true,
-                createdAt: new Date(),
-            },
-        });
-        await db.organization.create({
-            data: { id: T.bareOrg, name: "Bare", slug: "bare", createdAt: new Date() },
-        });
-        await db.organization.create({
-            data: { id: T.seededOrg, name: "Seeded", slug: "seeded", createdAt: new Date() },
-        });
-
-        for (const [key, value] of Object.entries(
-            OrganizationSettings.flatten(OrganizationSettings.default()),
-        )) {
-            await db.organizationConfig.create({
-                data: { organizationId: T.seededOrg, key, value },
-            });
-        }
-    });
-
-    // The admin is deliberately NOT a member of either organization.
-    const call = () =>
-        systemAdminRouter.createCaller(
-            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
-        );
-
-    it("getOrganizationSettings resolves defaults for a config-less organization", async () => {
-        const settings = await call().getOrganizationSettings({ organizationId: T.bareOrg });
-        expect(settings).toEqual(OrganizationSettings.default());
-    });
-
-    it("getOrganizationSettings resolves a fully materialised organization identically", async () => {
-        const settings = await call().getOrganizationSettings({ organizationId: T.seededOrg });
-        expect(settings).toEqual(OrganizationSettings.default());
-    });
-
-    it("enables a module for an org the admin does not belong to", async () => {
-        const next = OrganizationSettings.default();
-        next.modules.notes.enabled = true;
-
-        const result = await call().updateOrganizationSettings({
-            organizationId: T.bareOrg,
-            settings: next,
-        });
-
-        expect(result.modules.notes.enabled).toBe(true);
-
-        // Persisted, and only the changed leaf was materialised.
-        const rows = await db.organizationConfig.findMany({
-            where: { organizationId: T.bareOrg },
-        });
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({ key: "modules.notes.enabled", value: true });
-
-        const reread = await call().getOrganizationSettings({ organizationId: T.bareOrg });
-        expect(reread.modules.notes.enabled).toBe(true);
-    });
-
-    it("updates an existing config row on a fully materialised organization", async () => {
-        const next = OrganizationSettings.default();
-        next.modules.i3.enabled = true;
-        next.modules.i3.storage = "AVUT";
-
-        const result = await call().updateOrganizationSettings({
-            organizationId: T.seededOrg,
-            settings: next,
-        });
-
-        expect(result.modules.i3).toEqual({ enabled: true, storage: "AVUT" });
-
-        const row = await db.organizationConfig.findFirst({
-            where: { organizationId: T.seededOrg, key: "modules.i3.storage" },
-        });
-        expect(row?.value).toBe("AVUT");
-    });
-
-    it("writes an audit entry against the organization", async () => {
-        const next = OrganizationSettings.default();
-        next.modules["skill-track"].enabled = true;
-
-        await call().updateOrganizationSettings({
-            organizationId: T.seededOrg,
-            settings: next,
-        });
-
-        const entries = await db.logEntry.findMany({
-            where: { organizationId: T.seededOrg, objectType: "OrganizationSettings" },
-        });
-        expect(entries.length).toBeGreaterThan(0);
-        expect(entries.at(-1)).toMatchObject({
-            action: "Update",
-            objectType: "OrganizationSettings",
-            objectId: T.seededOrg,
-            userId: T.admin,
-        });
-    });
-
-    it("rejects settings that fail schema validation", async () => {
-        const next = OrganizationSettings.default();
-
-        await expect(
-            call().updateOrganizationSettings({
-                organizationId: T.bareOrg,
-                settings: {
-                    ...next,
-                    modules: {
-                        ...next.modules,
-                        notes: { enabled: 7 as unknown as boolean },
-                    },
-                },
-            }),
-        ).rejects.toBeTruthy();
-    });
-
-    it("rejects a non-admin", async () => {
-        const caller = systemAdminRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: UserId.create(), role: "user" },
-                prisma: db,
-            }),
-        );
-        await expect(
-            caller.getOrganizationSettings({ organizationId: T.bareOrg }),
-        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
 
@@ -1094,54 +700,6 @@ describe("systemAdmin.setUserRole last-admin guard", () => {
 });
 
 describe("systemAdminRouter — audit entries", () => {
-    it("records an organization-scoped entry when adding a member", async () => {
-        const db = createMockPrisma();
-        const orgId = OrganizationId.create();
-        const adminId = UserId.create();
-        const memberId = UserId.create();
-
-        await db.organization.create({
-            data: { id: orgId, name: "Org", slug: `org-${nanoId16()}`, createdAt: new Date() },
-        });
-        await db.user.create({
-            data: { id: adminId, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
-        });
-        await db.user.create({
-            data: { id: memberId, name: "Kim Park", email: "kim@example.com" },
-        });
-
-        const caller = systemAdminRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: {
-                    id: adminId,
-                    name: "Dana Okafor",
-                    email: "dana@example.com",
-                    role: "admin",
-                },
-                prisma: db,
-            }),
-        );
-
-        await caller.addOrganizationMember({
-            organizationId: orgId,
-            userId: memberId,
-            roles: ["member"],
-        });
-
-        const entries = await db.logEntry.findMany({
-            where: { objectType: "OrganizationMembership" },
-        });
-        expect(entries).toHaveLength(1);
-        expect(entries[0]).toMatchObject({
-            scope: "organization",
-            organizationId: orgId,
-            ownerId: null,
-            userId: adminId,
-            action: "Create",
-        });
-        expect(entries[0].actorLabel).toBe("Dana Okafor <dana@example.com>");
-    });
-
     /** A fresh database with an admin caller, an organization, its owner, and a plain member. */
     async function seedOrganizationWithMembers() {
         const db = createMockPrisma();
@@ -1204,51 +762,6 @@ describe("systemAdminRouter — audit entries", () => {
             action: "Create",
             objectId: id,
         });
-    });
-
-    it("records an organization-scoped entry when removing a member", async () => {
-        const { db, caller, orgId, adminId, memberId, membershipId } =
-            await seedOrganizationWithMembers();
-
-        await caller.removeOrganizationMember({ organizationId: orgId, userId: memberId });
-
-        const entries = await db.logEntry.findMany({
-            where: { objectType: "OrganizationMembership" },
-        });
-        expect(entries).toHaveLength(1);
-        expect(entries[0]).toMatchObject({
-            scope: "organization",
-            organizationId: orgId,
-            ownerId: null,
-            userId: adminId,
-            action: "Delete",
-            objectId: membershipId,
-        });
-    });
-
-    it("records an organization-scoped entry when changing a member's role", async () => {
-        const { db, caller, orgId, adminId, memberId, membershipId } =
-            await seedOrganizationWithMembers();
-
-        await caller.setOrganizationMemberRole({
-            organizationId: orgId,
-            userId: memberId,
-            roles: ["admin"],
-        });
-
-        const entries = await db.logEntry.findMany({
-            where: { objectType: "OrganizationMembership" },
-        });
-        expect(entries).toHaveLength(1);
-        expect(entries[0]).toMatchObject({
-            scope: "organization",
-            organizationId: orgId,
-            ownerId: null,
-            userId: adminId,
-            action: "Update",
-            objectId: membershipId,
-        });
-        expect(entries[0].description).toContain("from member to admin");
     });
 
     it("records a user-scoped entry against the subject when changing a global role", async () => {

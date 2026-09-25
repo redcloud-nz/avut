@@ -13,7 +13,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
-import { systemAdminEffects } from "@/client/system-admin-effects";
+import { organizationsEffects } from "@/client/organizations-effects";
 import {
     invitationRoles,
     invitationRolesSchema,
@@ -127,8 +127,8 @@ function AddMember_Body({
     });
 
     const mutation = useMutation(
-        trpc.systemAdmin.addOrganizationMember.mutationOptions({
-            meta: { effects: systemAdminEffects.addOrganizationMember },
+        trpc.organizations.addOrganizationMember.mutationOptions({
+            meta: { effects: organizationsEffects.addOrganizationMember },
             onError(error) {
                 if (error.data?.code === "CONFLICT") {
                     form.setError("userId", { message: error.message });

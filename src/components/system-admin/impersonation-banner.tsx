@@ -9,11 +9,11 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
-import { useSession } from "@/client/auth-queries";
 import { MutationButton } from "@/components/ui/button";
+import { trpc } from "@/trpc/client";
 import { getQueryClient } from "@/trpc/query-client";
 
 /**
@@ -37,7 +37,7 @@ import { getQueryClient } from "@/trpc/query-client";
  */
 export function ImpersonationBanner() {
     const router = useRouter();
-    const { data } = useSession();
+    const { data } = useSuspenseQuery(trpc.user.getSession.queryOptions());
 
     const impersonatedBy = data?.session?.impersonatedBy;
     const user = data?.user;

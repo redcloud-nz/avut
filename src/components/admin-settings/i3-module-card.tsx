@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { useOrganizationSettingsMutation } from "@/components/admin-settings/settings-scope";
+import { useOrganizationSettingsMutation } from "@/components/admin-settings/use-organization-settings-mutation";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -38,16 +38,12 @@ export function I3Module_SettingsCard({
     });
 
     const mutation = useOrganizationSettingsMutation({
-        organizationId,
         errorMessage: "Failed to update I3 module settings",
         onSaved: (updated) => form.reset(updated.modules.i3),
     });
 
     const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId,
-            settings: { ...settings, modules: { ...settings.modules, i3: formData } },
-        });
+        mutation.mutate({ organizationId, update: { slice: "modules.i3", patch: formData } });
     });
 
     return (

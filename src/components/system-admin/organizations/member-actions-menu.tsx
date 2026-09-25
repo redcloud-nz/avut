@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { systemAdminEffects } from "@/client/system-admin-effects";
+import { organizationsEffects } from "@/client/organizations-effects";
 import {
     invitationRoles,
     invitationRolesSchema,
@@ -112,8 +112,8 @@ export function SystemAdmin_MemberActionsMenu({
     }
 
     const setRoleMutation = useMutation(
-        trpc.systemAdmin.setOrganizationMemberRole.mutationOptions({
-            meta: { effects: systemAdminEffects.setOrganizationMemberRole },
+        trpc.organizations.setOrganizationMemberRole.mutationOptions({
+            meta: { effects: organizationsEffects.setOrganizationMemberRole },
             onError(error) {
                 console.error("Failed to change member role:", error);
                 toast.error(`Failed to change role: ${error.message}`);
@@ -126,8 +126,8 @@ export function SystemAdmin_MemberActionsMenu({
     );
 
     const removeMutation = useMutation(
-        trpc.systemAdmin.removeOrganizationMember.mutationOptions({
-            meta: { effects: systemAdminEffects.removeOrganizationMember },
+        trpc.organizations.removeOrganizationMember.mutationOptions({
+            meta: { effects: organizationsEffects.removeOrganizationMember },
             onError(error) {
                 console.error("Failed to remove member:", error);
                 toast.error(`Failed to remove member: ${error.message}`);

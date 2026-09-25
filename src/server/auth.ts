@@ -41,7 +41,14 @@ import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression
  */
 const previousEmailByRequest = new WeakMap<Request, string>();
 
-const DEV_PORTS = ["3000", "3001", "3002", "3100"];
+/*
+ * Ports a local dev server can be reached on: 3000 for the main checkout, 3001 for
+ * `dev-email`, and 3100+ for worktrees, which AGENTS.md tells you to give a port of their
+ * own. An origin missing here is rejected by the `trustedOrigins` check below, which
+ * surfaces as a bare `FORBIDDEN` from `signIn` with the page itself loading fine — so keep
+ * the worktree range ahead of how many worktrees are actually in use.
+ */
+const DEV_PORTS = ["3000", "3001", "3002", "3100", "3101", "3102", "3103"];
 
 /**
  * This machine's LAN IPv4 addresses, so a phone on the same network can sign in
@@ -96,7 +103,7 @@ export const auth = betterAuth({
             ? [`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`]
             : []),
         ...(env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
-        ...(env.NODE_ENV === "development"
+        ...(env.isDevelopment()
             ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
             : []),
     ],

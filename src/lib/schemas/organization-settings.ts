@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
@@ -6,9 +5,9 @@
 
 import * as z from "zod";
 
-import type { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
 
+import { createSettingsSchema, defineSettingsSlices } from "./settings-schema";
 import {
     defaultSkillCheckResultLabel,
     SKILL_CHECK_RESULT_VALUES,
@@ -106,71 +105,29 @@ const organizationSettingsSchema = z.object({
     }),
 });
 
-export const OrganizationSettings = {
-    schema: organizationSettingsSchema,
-
-    default(): OrganizationSettings {
-        return organizationSettingsSchema.parse({
-            general: {},
-            integrations: {
-                d4h: {},
-                email: {},
-            },
-            personnel: {},
-            modules: {
-                "d4h-views": {},
-                forms: {},
-                i3: {},
-                notes: {},
-                "skill-track": {},
-                "skill-package-builder": {},
-            },
-        });
-    },
-
-    flatten(settings: OrganizationSettings) {
-        const result: Record<string, any> = {};
-
-        function recurse(obj: Record<string, any>, prefix: string) {
-            for (const key in obj) {
-                const value = obj[key];
-                const newKey = prefix ? `${prefix}.${key}` : key;
-                if (value && typeof value === "object" && !Array.isArray(value)) {
-                    recurse(value as Record<string, any>, newKey);
-                } else {
-                    result[newKey] = value;
-                }
-            }
-        }
-
-        recurse(settings, "");
-        return result;
-    },
-
-    fromRecords(records: OrganizationConfigRecord[]): OrganizationSettings {
-        // Start from a fully-defaulted settings object rather than an empty skeleton — some
-        // fields (e.g. modules["skill-track"].results) only have a default at the object level,
-        // not per-leaf, so reconstructing from a handful of changed leaf keys on top of `{}` would
-        // leave the rest of that object undefined instead of falling back to its default.
-        const settings = structuredClone(OrganizationSettings.default()) as any;
-
-        for (const record of records) {
-            const parts = record.key.split(".");
-            let current = settings;
-
-            for (let i = 0; i < parts.length - 1; i++) {
-                if (current[parts[i]] == undefined) {
-                    current[parts[i]] = {};
-                }
-                current = current[parts[i]];
-            }
-
-            const lastKey = parts[parts.length - 1];
-            current[lastKey] = record.value;
-        }
-
-        return organizationSettingsSchema.parse(settings);
-    },
-} as const;
+/**
+ * The per-organization settings tree, plus the `default`/`flatten`/`fromRecords` helpers every
+ * settings scope shares — see `createSettingsSchema`.
+ */
+export const OrganizationSettings = createSettingsSchema(organizationSettingsSchema);
 
 export type OrganizationSettings = z.infer<typeof organizationSettingsSchema>;
+
+/**
+ * The editable groups of the organization settings tree — one per settings card. See
+ * `defineSettingsSlices` for why cards save a slice patch rather than the whole tree.
+ */
+export const OrganizationSettingsSlices = defineSettingsSlices(organizationSettingsSchema, [
+    "general",
+    "integrations.d4h",
+    "integrations.email",
+    "personnel",
+    "modules.d4h-views",
+    "modules.forms",
+    "modules.i3",
+    "modules.notes",
+    "modules.skill-track",
+    "modules.skill-package-builder",
+] as const);
+
+export type OrganizationSettingsSliceId = (typeof OrganizationSettingsSlices.ids)[number];

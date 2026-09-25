@@ -11,22 +11,23 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/trpc/client";
 
 /**
  * Prototype dashboard card — per-organization counts of log entries by object type and
  * action over the last 24 hours. Counts only, no entry details, so it carries no
- * permission concerns beyond membership itself (see `users.getActivityStats`).
+ * permission concerns beyond membership itself (see `user.getActivityStats`).
  *
  * Reads via `useSuspenseQuery` behind its own `<Suspense>` boundary (see
- * `ActivityStats_Skeleton` and its usage in `user/page.tsx`) rather than the page's
- * shared one, so a slow activity query doesn't hold up the rest of the dashboard.
+ * `ActivityStats_Skeleton` below and its usage in `user/page.tsx`) rather than the
+ * page's shared one, so a slow activity query doesn't hold up the rest of the dashboard.
  */
 export function ActivityStats_Card() {
     const [{ data: memberships }, { data: stats }] = useSuspenseQueries({
         queries: [
-            trpc.users.listMemberships.queryOptions(),
-            trpc.users.getActivityStats.queryOptions(),
+            trpc.user.listMemberships.queryOptions(),
+            trpc.user.getActivityStats.queryOptions(),
         ],
     });
 
@@ -68,6 +69,32 @@ export function ActivityStats_Card() {
                         </div>
                     ))
                 )}
+            </CardContent>
+        </Card>
+    );
+}
+
+/**
+ * Placeholder for `ActivityStats_Card` while it streams in behind its own `<Suspense>`
+ * boundary — see `user/page.tsx`.
+ */
+export function ActivityStats_Skeleton() {
+    return (
+        <Card aria-busy="true" aria-label="Loading activity">
+            <CardHeader>
+                <Skeleton className="h-6 w-2/3" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {Array.from({ length: 2 }, (_, i) => (
+                    <div key={i} className="space-y-1.5">
+                        <Skeleton className="h-4 w-32" />
+                        <div className="flex flex-wrap gap-2">
+                            <Skeleton className="h-5 w-24" />
+                            <Skeleton className="h-5 w-20" />
+                            <Skeleton className="h-5 w-28" />
+                        </div>
+                    </div>
+                ))}
             </CardContent>
         </Card>
     );

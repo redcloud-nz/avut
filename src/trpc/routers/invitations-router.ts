@@ -18,7 +18,7 @@ import { createTrpcRouter, publicProcedure } from "../init";
 
 /**
  * Router for the public side of organization invitations — the landing page an invitation email
- * links to. Answering an invitation as a signed-in user lives in `usersRouter`.
+ * links to. Answering an invitation as a signed-in user lives in `userRouter`.
  */
 export const invitationsRouter = createTrpcRouter({
     /**
