@@ -740,6 +740,37 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * Restores an archived team in the organization. Idempotent — restoring an already-active
+     * team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     */
+    restoreTeam: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            const existing = await getTeam(ctx, teamId);
+
+            if (!existing) {
+                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
+            }
+
+            if (existing.status === "Active") {
+                return { updated: existing };
+            }
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.team.update({
+                    where: { id: teamId, organizationId: ctx.organizationId },
+                    data: { status: "Active" },
+                }),
+                ctx.logEvent({ action: "Restore", objectType: "Team", objectId: teamId }),
+            ]);
+
+            const updated = await getTeam(ctx, teamId);
+            return { updated: updated! };
+        }),
+
+    /**
      * Refresh the org-level D4H cache (name, timezone, currency, reporting-year
      * start) from D4H. Metadata only — team membership sync stays per-team.
      */
@@ -823,37 +854,6 @@ export const teamsRouter = createTrpcRouter({
                     description: "Unlinked from D4H.",
                 }),
             ]);
-        }),
-
-    /**
-     * Restores an archived team in the organization. Idempotent — restoring an already-active
-     * team returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
-     */
-    restoreTeam: organizationProcedure({ team: ["update"] })
-        .input(z.object({ teamId: TeamId.schema }))
-        .output(z.object({ updated: TeamData.schema }))
-        .mutation(async ({ ctx, input: { teamId } }) => {
-            const existing = await getTeam(ctx, teamId);
-
-            if (!existing) {
-                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
-            }
-
-            if (existing.status === "Active") {
-                return { updated: existing };
-            }
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.team.update({
-                    where: { id: teamId, organizationId: ctx.organizationId },
-                    data: { status: "Active" },
-                }),
-                ctx.logEvent({ action: "Restore", objectType: "Team", objectId: teamId }),
-            ]);
-
-            const updated = await getTeam(ctx, teamId);
-            return { updated: updated! };
         }),
 
     /**
