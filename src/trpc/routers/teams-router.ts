@@ -16,8 +16,9 @@ import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-members
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
+import * as Teams from "@/server/services/teams";
 
-import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 import {
@@ -107,11 +108,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            const existing = await getTeam(ctx, teamId);
-
-            if (!existing) {
-                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
-            }
+            const existing = await Teams.requireById(ctx, teamId);
 
             if (existing.status === "Archived") {
                 return { updated: existing };
@@ -125,8 +122,8 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({ action: "Archive", objectType: "Team", objectId: teamId }),
             ]);
 
-            const updated = await getTeam(ctx, teamId);
-            return { updated: updated! };
+            const updated = await Teams.requireById(ctx, teamId);
+            return { updated };
         }),
 
     /**
@@ -262,8 +259,8 @@ export const teamsRouter = createTrpcRouter({
                 batchId: batch.id,
             });
 
-            const created = await getTeam(ctx, teamId);
-            return { created: created! };
+            const created = await Teams.requireById(ctx, teamId);
+            return { created };
         }),
 
     /**
@@ -522,18 +519,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(TeamData.schema)
         .query(async ({ ctx, input: { teamId } }) => {
-            // `getTeam` here is the module-scoped helper below, not this procedure —
-            // object keys are not in lexical scope.
-            const team = await getTeam(ctx, teamId);
-
-            if (!team) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
-            }
-
-            return team;
+            return Teams.requireById(ctx, teamId);
         }),
 
     /**
@@ -748,11 +734,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            const existing = await getTeam(ctx, teamId);
-
-            if (!existing) {
-                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
-            }
+            const existing = await Teams.requireById(ctx, teamId);
 
             if (existing.status === "Active") {
                 return { updated: existing };
@@ -766,8 +748,8 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({ action: "Restore", objectType: "Team", objectId: teamId }),
             ]);
 
-            const updated = await getTeam(ctx, teamId);
-            return { updated: updated! };
+            const updated = await Teams.requireById(ctx, teamId);
+            return { updated };
         }),
 
     /**
@@ -876,13 +858,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { teamId, update } }) => {
-            const existingTeam = await getTeam(ctx, teamId);
-
-            if (!existingTeam)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
+            const existingTeam = await Teams.requireById(ctx, teamId);
 
             const diff = diffObject(TeamData.modifiableSchema.parse(existingTeam), update);
 
@@ -987,42 +963,3 @@ export const teamsRouter = createTrpcRouter({
             return { updated: TeamMembershipData.fromRecord(updated) };
         }),
 });
-
-/**
- * Utility function to fetch a Team by ID.
- * @param ctx
- * @param teamId
- * @returns
- */
-async function getTeam(
-    ctx: AuthenticatedOrganizationContext,
-    teamId: TeamId,
-): Promise<TeamData | null> {
-    const team = await ctx.prisma.team.findUnique({
-        where: {
-            id: teamId,
-            organizationId: ctx.organizationId,
-        },
-        include: {
-            d4h: true,
-        },
-    });
-
-    if (!team) return null;
-
-    // Resolve the D4H organisation name from the org-level cache (at most one
-    // `Organization_D4H` per org) so the detail view can show it alongside the id.
-    const orgD4H = team.d4h
-        ? await ctx.prisma.organization_D4H.findUnique({
-              where: { organizationId: ctx.organizationId },
-              select: { d4hOrganisationName: true },
-          })
-        : null;
-
-    return TeamData.fromRecord({
-        ...team,
-        d4h: team.d4h
-            ? { ...team.d4h, d4hOrganisationName: orgD4H?.d4hOrganisationName ?? null }
-            : null,
-    });
-}
