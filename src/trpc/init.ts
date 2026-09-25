@@ -9,7 +9,13 @@ import * as z from "zod";
 import { initTRPC, TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import {
+    ConflictError,
+    NotFoundError,
+    PreconditionError,
+    StalePlanError,
+    ValidationError,
+} from "@/lib/errors";
 import { Permissions } from "@/lib/permissions";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -90,6 +96,12 @@ export const publicProcedure = t.procedure
             }
             if (cause instanceof ValidationError) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: cause.message, cause });
+            }
+            if (cause instanceof PreconditionError) {
+                throw new TRPCError({ code: "PRECONDITION_FAILED", message: cause.message, cause });
+            }
+            if (cause instanceof StalePlanError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
             }
             if (cause instanceof FieldConflictError) {
                 throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });

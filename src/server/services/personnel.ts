@@ -38,7 +38,7 @@ export async function create(
     /*
      * `personnel.email` is stored lowercased (docs/specs/person-email-normalisation.md).
      * `PersonData.modifiableSchema` normalises every parsed path, but the D4H import builds its
-     * person object in code and hands it straight to this function (`teams-router.d4h.ts`), so
+     * person object in code and hands it straight to this function (`services/d4h-team-sync.ts`), so
      * the one write site that the schema cannot reach normalises here. Done before `changes`, so
      * the audit entry records the value actually stored.
      */

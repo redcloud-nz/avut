@@ -10,7 +10,7 @@ import { D4HMember } from "@/lib/schemas/d4h/member";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 
-import { buildSyncPlan, BuildSyncPlanInput, SyncMembershipInput } from "./d4h-sync";
+import { buildSyncPlan, BuildSyncPlanInput, SyncMembershipInput } from "./d4h-team-sync";
 
 function member(overrides: Partial<D4HMember> & { id: number }): D4HMember {
     return D4HMember.schema.parse({

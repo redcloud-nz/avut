@@ -16,18 +16,11 @@ import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-members
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
+import * as D4HTeamSync from "@/server/services/d4h-team-sync";
 import * as Teams from "@/server/services/teams";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
-
-import {
-    planD4HSync,
-    resolveD4HTeamForLink,
-    runTeamSync,
-    syncOrganizationD4HCache,
-    upsertOrganizationD4H,
-} from "./teams-router.d4h";
 
 /**
  * A team-membership row as returned by `listTeamMemberships` and
@@ -91,7 +84,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            return runTeamSync(ctx, {
+            return D4HTeamSync.runTeamSync(ctx, {
                 teamD4H: team.d4h,
                 token,
                 batchId: batch.id,
@@ -178,7 +171,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ d4hTeamId: z.number(), name: z.string().optional() }))
         .output(z.object({ created: TeamData.schema }))
         .mutation(async ({ ctx, input: { organizationId, d4hTeamId, name: inputName } }) => {
-            const resolved = await resolveD4HTeamForLink(ctx, d4hTeamId);
+            const resolved = await D4HTeamSync.resolveD4HTeamForLink(ctx, d4hTeamId);
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
@@ -217,7 +210,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            await upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
+            await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const teamId = TeamId.create();
             const [team] = await ctx.prisma.$transaction([
@@ -253,7 +246,7 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            await runTeamSync(ctx, {
+            await D4HTeamSync.runTeamSync(ctx, {
                 teamD4H: team.d4h!,
                 token: resolved.token,
                 batchId: batch.id,
@@ -572,7 +565,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            const resolved = await resolveD4HTeamForLink(ctx, d4hTeamId);
+            const resolved = await D4HTeamSync.resolveD4HTeamForLink(ctx, d4hTeamId);
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
@@ -609,7 +602,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            await upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
+            await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const [teamD4H] = await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.create({
@@ -631,7 +624,11 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return runTeamSync(ctx, { teamD4H, token: resolved.token, batchId: batch.id });
+            return D4HTeamSync.runTeamSync(ctx, {
+                teamD4H,
+                token: resolved.token,
+                batchId: batch.id,
+            });
         }),
 
     /**
@@ -722,7 +719,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            return planD4HSync(ctx, { teamD4H: team.d4h, token });
+            return D4HTeamSync.planD4HSync(ctx, { teamD4H: team.d4h, token });
         }),
 
     /**
@@ -758,7 +755,7 @@ export const teamsRouter = createTrpcRouter({
      */
     syncOrganizationD4H: organizationProcedure({ organization: ["update"] }).mutation(
         async ({ ctx }) => {
-            await syncOrganizationD4HCache(ctx);
+            await D4HTeamSync.syncOrganizationD4HCache(ctx);
         },
     ),
 
