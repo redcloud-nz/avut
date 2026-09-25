@@ -652,3 +652,94 @@ describe("personnel.getLinkedUser", () => {
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 });
+
+describe("personnel.deletePerson / restorePerson / restorePersonFromTrash", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        person: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Grace Hopper",
+                email: "grace-router-lifecycle@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+    });
+
+    function makeCaller(perms: Record<string, string[]>) {
+        return personnelRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("getPersonDeleteImpact reports zero impact before any team/skill-check activity", async () => {
+        const impact = await makeCaller({ person: ["view"] }).getPersonDeleteImpact({
+            organizationId: T.org,
+            personId: T.person,
+        });
+        expect(impact).toEqual({ teamCount: 0, skillCheckCount: 0 });
+    });
+
+    it("deletePerson soft-deletes and records a Delete log entry", async () => {
+        const { person } = await makeCaller({ person: ["delete"] }).deletePerson({
+            organizationId: T.org,
+            personId: T.person,
+        });
+        expect(person.status).toBe("Deleted");
+
+        const row = await db.person.findUnique({ where: { id: T.person } });
+        expect(row).toMatchObject({ status: "Deleted" });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Person", objectId: T.person, action: "Delete" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("restorePerson (archive-restore) refuses a Deleted person", async () => {
+        await expect(
+            makeCaller({ person: ["update"] }).restorePerson({
+                organizationId: T.org,
+                personId: T.person,
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("restorePersonFromTrash requires person:delete, not person:update", async () => {
+        await expect(
+            makeCaller({ person: ["update"] }).restorePersonFromTrash({
+                organizationId: T.org,
+                personId: T.person,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("restorePersonFromTrash restores a Deleted person back to Active", async () => {
+        const { updated } = await makeCaller({ person: ["delete"] }).restorePersonFromTrash({
+            organizationId: T.org,
+            personId: T.person,
+        });
+        expect(updated.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Person", objectId: T.person, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+});

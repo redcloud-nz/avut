@@ -124,6 +124,21 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
+                        <Protect permissions={{ person: ["delete"] }}>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/admin/trash", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Trash</ItemTitle>
+                                        <ItemDescription>
+                                            Restore deleted personnel and teams.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>

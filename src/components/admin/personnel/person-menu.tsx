@@ -27,6 +27,7 @@ import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
 import { AdminModule_InvitePerson_Dialog } from "./invite-person";
 import { AdminModule_RestorePerson_Dialog } from "./restore-person";
+import { AdminModule_RestorePersonFromTrash_Dialog } from "./restore-person-from-trash";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
@@ -45,6 +46,7 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
             "invite",
             "archive",
             "restore",
+            "restore-from-trash",
             "link-user",
             "unlink-user",
             "add-membership",
@@ -109,13 +111,21 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
             onSelect: () => setAction("archive", { history: "push" }),
             disabled: !canUpdate,
         });
-    } else {
+    } else if (person.status === "Archived") {
         actions.push({
             verb: "restore",
             label: "Restore",
             icon: <ObjectIcons.Restore />,
             onSelect: () => setAction("restore", { history: "push" }),
             disabled: !canUpdate,
+        });
+    } else {
+        actions.push({
+            verb: "restore",
+            label: "Restore from trash",
+            icon: <ObjectIcons.Restore />,
+            onSelect: () => setAction("restore-from-trash", { history: "push" }),
+            disabled: !canDelete,
         });
     }
     if (person.status !== "Deleted") {
@@ -184,6 +194,17 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
                 open={action === "restore"}
                 onOpenChange={(open) =>
                     setAction(open ? "restore" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Restore Person from Trash dialog */}
+            <AdminModule_RestorePersonFromTrash_Dialog
+                person={person}
+                open={action === "restore-from-trash"}
+                onOpenChange={(open) =>
+                    setAction(open ? "restore-from-trash" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

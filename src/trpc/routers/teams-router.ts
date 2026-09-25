@@ -101,22 +101,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            const existing = await Teams.requireById(ctx, teamId);
-
-            if (existing.status === "Archived") {
-                return { updated: existing };
-            }
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.team.update({
-                    where: { id: teamId, organizationId: ctx.organizationId },
-                    data: { status: "Archived" },
-                }),
-                ctx.logEvent({ action: "Archive", objectType: "Team", objectId: teamId }),
-            ]);
-
-            const updated = await Teams.requireById(ctx, teamId);
-            return { updated };
+            return { updated: await Teams.archive(ctx, teamId) };
         }),
 
     /**
@@ -378,7 +363,8 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Delete a team from the organization.
+     * Soft-deletes a team from the organization (reversible via `restoreTeamFromTrash`).
+     * `TeamMembership` rows are deliberately left untouched — nothing cascades on a soft delete.
      */
     deleteTeam: organizationProcedure({ team: ["delete"] })
         .input(
@@ -387,29 +373,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input: { teamId }, ctx }) => {
-            const existing = await ctx.prisma.team.findUnique({
-                where: { id: teamId, organizationId: ctx.organizationId },
-                select: { id: true },
-            });
-
-            if (!existing) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
-            }
-
-            await ctx.prisma.$transaction([
-                // TeamConfig / Team_D4H / TeamMembership rows cascade away with the team.
-                ctx.prisma.team.delete({
-                    where: { id: teamId, organizationId: ctx.organizationId },
-                }),
-                ctx.logEvent({
-                    action: "Delete",
-                    objectType: "Team",
-                    objectId: teamId,
-                }),
-            ]);
+            await Teams.deleteRecord(ctx, teamId);
         }),
 
     /**
@@ -513,6 +477,18 @@ export const teamsRouter = createTrpcRouter({
         .output(TeamData.schema)
         .query(async ({ ctx, input: { teamId } }) => {
             return Teams.requireById(ctx, teamId);
+        }),
+
+    /**
+     * Describes what deleting this team would hide from active views, for the delete
+     * confirmation dialog's impact preview.
+     * @throws TRPCError(NOT_FOUND) if the team is not found.
+     */
+    getTeamDeleteImpact: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ memberCount: z.number() }))
+        .query(async ({ ctx, input: { teamId } }) => {
+            return await Teams.getDeleteImpact(ctx, teamId);
         }),
 
     /**
@@ -640,6 +616,7 @@ export const teamsRouter = createTrpcRouter({
             const teamRecords = await ctx.prisma.team.findMany({
                 where: {
                     organizationId: ctx.organizationId,
+                    status: { not: "Deleted" },
                 },
                 include: {
                     d4h: true,
@@ -723,30 +700,29 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Restores an archived team in the organization. Idempotent — restoring an already-active
-     * team returns it unchanged.
+     * Restores an archived team in the organization back to Active. Idempotent — restoring an
+     * already-active team returns it unchanged.
      * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the team is not Archived.
      */
     restoreTeam: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            const existing = await Teams.requireById(ctx, teamId);
+            return { updated: await Teams.restoreFromArchive(ctx, teamId) };
+        }),
 
-            if (existing.status === "Active") {
-                return { updated: existing };
-            }
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.team.update({
-                    where: { id: teamId, organizationId: ctx.organizationId },
-                    data: { status: "Active" },
-                }),
-                ctx.logEvent({ action: "Restore", objectType: "Team", objectId: teamId }),
-            ]);
-
-            const updated = await Teams.requireById(ctx, teamId);
-            return { updated };
+    /**
+     * Restores a deleted team in the organization back to Active. Idempotent — restoring an
+     * already-active team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the team is not Deleted.
+     */
+    restoreTeamFromTrash: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            return { updated: await Teams.restoreFromTrash(ctx, teamId) };
         }),
 
     /**

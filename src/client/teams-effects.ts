@@ -52,6 +52,16 @@ export const teamsEffects = createEffects<"teams">()({
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],
+    restoreTeamFromTrash: (vars, { updated }) => [
+        write(
+            trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            updated,
+        ),
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    ],
     createTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],
