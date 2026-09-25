@@ -15,8 +15,8 @@ import { PersonData, type PersonId } from "@/lib/schemas/person";
 import type { PersonRecord } from "@/lib/schemas/person";
 import type { UserId, UserRecord } from "@/lib/schemas/user";
 import { formatActorLabel, recordLogEntry, type LogEntryPrisma } from "@/server/log-entry";
-import { readOrganizationSettings } from "@/server/organization-settings-store";
 
+import * as OrgSettings from "./organization-settings";
 import type { OrgServiceContext } from "./service-context";
 
 /**
@@ -58,7 +58,7 @@ export async function create(
      * Read uncached, and read outside the transaction: the write below re-checks `personId: null`
      * anyway, so a link landing in between loses the race rather than corrupting anything.
      */
-    const settings = await readOrganizationSettings(ctx.prisma, ctx.organizationId);
+    const settings = await OrgSettings.read(ctx.prisma, ctx.organizationId);
     const linkable = settings.personnel.autoLinkOnPersonCreate
         ? await findLinkableMember(ctx.prisma, {
               organizationId: ctx.organizationId,
@@ -374,7 +374,7 @@ export async function linkPersonOnInvitationAccept(
     let reason = "the invitation named the person";
 
     if (!personId) {
-        const settings = await readOrganizationSettings(prisma, organizationId);
+        const settings = await OrgSettings.read(prisma, organizationId);
         if (!settings.personnel.autoLinkOnInviteAccept) return null;
 
         const person = await findLinkablePerson(prisma, { organizationId, email: actor.email });
