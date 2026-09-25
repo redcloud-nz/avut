@@ -11,7 +11,7 @@ import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
-import { createSession, nextSessionNumber, requireSession } from "./skill-checks";
+import { createSession, nextSessionNumber, requireSessionById } from "./skill-checks";
 
 // The service reaches server-only modules at import time. The functions exercised here use an
 // injected prisma client, so an empty stub is enough to let it import in jsdom.
@@ -64,21 +64,21 @@ describe("skill-checks", () => {
         });
     }
 
-    describe("requireSession", () => {
+    describe("requireSessionById", () => {
         it("returns the session when it exists in the organization", async () => {
-            const session = await requireSession(ctx(), T.session);
+            const session = await requireSessionById(ctx(), T.session);
 
             expect(session.id).toBe(T.session);
         });
 
         it("throws NotFoundError for a session that does not exist", async () => {
-            await expect(requireSession(ctx(), SkillCheckSessionId.create())).rejects.toThrow(
+            await expect(requireSessionById(ctx(), SkillCheckSessionId.create())).rejects.toThrow(
                 "not found",
             );
         });
 
         it("throws NotFoundError for a session belonging to another organization", async () => {
-            await expect(requireSession(ctx(), T.outsiderSession)).rejects.toThrow(
+            await expect(requireSessionById(ctx(), T.outsiderSession)).rejects.toThrow(
                 `SkillCheckSession(id=${T.outsiderSession}) not found.`,
             );
         });

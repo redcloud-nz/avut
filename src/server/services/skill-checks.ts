@@ -15,7 +15,7 @@ import type { OrgServiceContext } from "./service-context";
  * Fetch a skill check session by ID and ensure it belongs to the organization.
  * @throws NotFoundError if the session does not exist or does not belong to the organization.
  */
-export async function requireSession(
+export async function requireSessionById(
     ctx: OrgServiceContext,
     sessionId: SkillCheckSessionId,
 ): Promise<SkillCheckSession> {

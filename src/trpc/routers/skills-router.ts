@@ -126,7 +126,7 @@ export const skillsRouter = createTrpcRouter({
         .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
         .output(z.object({ deleted: SkillCheckSession.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId } }) => {
-            const session = await SkillChecks.requireSession(ctx, skillCheckSessionId);
+            const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
             await ctx.prisma.$transaction([
                 ctx.prisma.skillCheckSession.delete({
@@ -852,7 +852,7 @@ export const skillsRouter = createTrpcRouter({
         )
         .output(z.object({ updated: SkillCheckSession.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
-            const existing = await SkillChecks.requireSession(ctx, skillCheckSessionId);
+            const existing = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
             const changes = diffObject(SkillCheckSession.modifiableSchema.parse(existing), update);
 
@@ -907,7 +907,7 @@ export const skillsRouter = createTrpcRouter({
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
                 // Verify that the session exists and belongs to the organization.
-                await SkillChecks.requireSession(ctx, skillCheckSessionId);
+                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
                 const changes = [
                     ...addedPersonIds.map((id) => ({
@@ -980,7 +980,7 @@ export const skillsRouter = createTrpcRouter({
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
                 // Verify that the session exists and belongs to the organization.
-                await SkillChecks.requireSession(ctx, skillCheckSessionId);
+                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
                 const changes = [
                     ...addedSkillIds.map((id) => ({

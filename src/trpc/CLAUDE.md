@@ -22,6 +22,11 @@ importing another router's helper is the symptom that led here. Piloted on
   `import * as Personnel from "@/server/services/personnel"`, `Personnel.create(ctx, …)`. No
   classes, no `services/index.ts` barrel (a barrel loads every service to import one, and breaks
   per-service `vi.mock`).
+- A lookup-by-id getter always ends in `ById` — `requireById`/`getById` when the module has one
+  entity (`Personnel.requireById`, `Teams.getById`, the namespace alone disambiguates), or
+  `require<Entity>ById`/`get<Entity>ById` when it has several (`SkillPackages.requireSkillById` /
+  `.requireGroupById` / `.requirePackageById`). Never drop the suffix just because the entity name
+  in the function already implies "by id".
 - A service takes `OrgServiceContext` (`src/server/services/service-context.ts`) — `{ prisma,
 organizationId, userId, logEvent }` — not `AuthenticatedOrganizationContext`. The tRPC type
   structurally satisfies it, so no adapter is needed at call sites; the point is that a service

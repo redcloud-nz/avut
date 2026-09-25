@@ -300,7 +300,7 @@ describe("SkillPackages.buildExport", () => {
     });
 });
 
-describe("SkillPackages.requireSkill / requireGroup / requirePackage", () => {
+describe("SkillPackages.requireSkillById / requireGroupById / requirePackageById", () => {
     const U = {
         org: OrganizationId.create(),
         otherOrg: OrganizationId.create(),
@@ -363,19 +363,19 @@ describe("SkillPackages.requireSkill / requireGroup / requirePackage", () => {
     }
 
     it("requireSkill returns the skill when it belongs to the organization", async () => {
-        const skill = await SkillPackages.requireSkill(ctx(), U.skill);
+        const skill = await SkillPackages.requireSkillById(ctx(), U.skill);
         expect(skill.id).toBe(U.skill);
     });
 
     it("requireSkill throws NotFoundError for an unknown skill", async () => {
-        await expect(SkillPackages.requireSkill(ctx(), SkillId.create())).rejects.toThrow(
+        await expect(SkillPackages.requireSkillById(ctx(), SkillId.create())).rejects.toThrow(
             "not found",
         );
     });
 
     it("requireSkill throws NotFoundError for a skill in another organization", async () => {
         await expect(
-            SkillPackages.requireSkill(
+            SkillPackages.requireSkillById(
                 createOrganizationMockContext({
                     organizationId: U.otherOrg,
                     user: { id: U.user },
@@ -388,19 +388,19 @@ describe("SkillPackages.requireSkill / requireGroup / requirePackage", () => {
     });
 
     it("requireGroup returns the group when it belongs to the organization", async () => {
-        const group = await SkillPackages.requireGroup(ctx(), U.group);
+        const group = await SkillPackages.requireGroupById(ctx(), U.group);
         expect(group.id).toBe(U.group);
     });
 
     it("requireGroup throws NotFoundError for an unknown group", async () => {
-        await expect(SkillPackages.requireGroup(ctx(), SkillGroupId.create())).rejects.toThrow(
+        await expect(SkillPackages.requireGroupById(ctx(), SkillGroupId.create())).rejects.toThrow(
             "not found",
         );
     });
 
     it("requireGroup throws NotFoundError for a group in another organization", async () => {
         await expect(
-            SkillPackages.requireGroup(
+            SkillPackages.requireGroupById(
                 createOrganizationMockContext({
                     organizationId: U.otherOrg,
                     user: { id: U.user },
@@ -413,13 +413,13 @@ describe("SkillPackages.requireSkill / requireGroup / requirePackage", () => {
     });
 
     it("requirePackage returns the package when it belongs to the organization", async () => {
-        const pkg = await SkillPackages.requirePackage(ctx(), U.pkg);
+        const pkg = await SkillPackages.requirePackageById(ctx(), U.pkg);
         expect(pkg.id).toBe(U.pkg);
     });
 
     it("requirePackage throws NotFoundError for a package in another organization", async () => {
         await expect(
-            SkillPackages.requirePackage(
+            SkillPackages.requirePackageById(
                 createOrganizationMockContext({
                     organizationId: U.otherOrg,
                     user: { id: U.user },
