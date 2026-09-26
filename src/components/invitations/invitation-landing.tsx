@@ -8,6 +8,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -33,6 +34,7 @@ import type { RouterOutput } from "@/trpc/routers/_app";
 
 import { InvitationSignIn_Form } from "./invitation-sign-in";
 import { InvitationSignUp_Form } from "./invitation-sign-up";
+import { RejectInvitation_Dialog } from "./reject-invitation-dialog";
 
 type Landing = Exclude<RouterOutput["invitations"]["getLanding"], { state: "not-found" }>;
 
@@ -185,6 +187,13 @@ function Respond_Actions({
     const router = useRouter();
     const logger = useLogger("Common", "InvitationLanding");
 
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["reject"] as const));
+    const dialogOpen = action === "reject";
+
+    function handleDialogOpenChange(open: boolean) {
+        void setAction(open ? "reject" : null, { history: open ? "push" : "replace" });
+    }
+
     const acceptMutation = useMutation(
         trpc.user.acceptInvitation.mutationOptions({
             meta: { effects: userEffects.acceptInvitation },
@@ -203,36 +212,28 @@ function Respond_Actions({
         }),
     );
 
-    const rejectMutation = useMutation(
-        trpc.user.rejectInvitation.mutationOptions({
-            meta: { effects: userEffects.rejectInvitation },
-            onError(error) {
-                logger.error("Failed to reject invitation", error);
-                toast.error(`Failed to decline invitation: ${error.message}`);
-            },
-        }),
-    );
-
-    const busy = acceptMutation.isPending || rejectMutation.isPending;
-    const input = { invitationId };
-
     return (
         <>
             <MutationButton
                 type="button"
                 status={acceptMutation.status}
-                disabled={busy}
+                disabled={acceptMutation.isPending}
                 text={{ idle: "Accept", pending: "Accepting", success: "Accepted" }}
-                onClick={() => acceptMutation.mutate(input)}
+                onClick={() => acceptMutation.mutate({ invitationId })}
             />
             <Button
                 type="button"
                 variant="outline"
-                disabled={busy || acceptMutation.isSuccess}
-                onClick={() => rejectMutation.mutate(input)}
+                disabled={acceptMutation.isPending || acceptMutation.isSuccess}
+                onClick={() => handleDialogOpenChange(true)}
             >
                 Decline
             </Button>
+            <RejectInvitation_Dialog
+                invitation={{ id: invitationId, organizationName: landing.organization.name }}
+                open={dialogOpen}
+                onOpenChange={handleDialogOpenChange}
+            />
         </>
     );
 }
