@@ -26,20 +26,24 @@ import { MutationButton } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { TrashableEntities, TrashableEntityId } from "@/lib/trash-registry";
+import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
 
 type TrashRow = {
     id: string;
-    type: "Person" | "Team" | "I3Template";
+    type: "Person" | "Team" | "TeamMembership" | "I3Template";
     name: string;
     deletedAt: string | null;
+    /** Only set for `TeamMembership` rows — its detail page needs both ids. */
+    teamId?: string;
+    personId?: string;
 };
 
 /** Maps a `listTrash` row's `type` to its `TrashableEntities` registry key. */
 const entityIdByType: Record<TrashRow["type"], TrashableEntityId> = {
     Person: "person",
     Team: "team",
+    TeamMembership: "teamMembership",
     I3Template: "i3Template",
 };
 
@@ -68,6 +72,17 @@ function RestoreCell({ row }: { row: TrashRow }) {
             },
             onSuccess() {
                 toast.success(`Team "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restoreTeamMembership = useMutation(
+        trpc.teams.restoreTeamMembershipFromTrash.mutationOptions({
+            meta: { effects: teamsEffects.restoreTeamMembershipFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore team membership: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`"${row.name}" restored from rubbish.`);
             },
         }),
     );
@@ -115,6 +130,27 @@ function RestoreCell({ row }: { row: TrashRow }) {
         );
     }
 
+    if (row.type === "TeamMembership" && row.teamId !== undefined && row.personId !== undefined) {
+        const { teamId, personId } = row;
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreTeam}
+                status={restoreTeamMembership.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreTeamMembership.mutate({
+                        organizationId: organization.id,
+                        teamId,
+                        personId,
+                    })
+                }
+            />
+        );
+    }
+
     return (
         <MutationButton
             type="button"
@@ -155,8 +191,10 @@ export function AdminModule_Trash_List() {
                     cell: (ctx) => {
                         const row = ctx.row.original;
                         const entity = TrashableEntities[entityIdByType[row.type]];
-                        return (
+                        return entity.href ? (
                             <Link href={entity.href(organization.slug, row.id)}>{row.name}</Link>
+                        ) : (
+                            row.name
                         );
                     },
                     enableSorting: true,
