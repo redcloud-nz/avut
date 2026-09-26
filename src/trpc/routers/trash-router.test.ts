@@ -6,6 +6,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
+import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
@@ -31,6 +32,9 @@ describe("trash.listTrash", () => {
         deletedPerson: PersonId.create(),
         activePerson: PersonId.create(),
         deletedTeam: TeamId.create(),
+        membershipTeam: TeamId.create(),
+        deletedMembershipId: nanoId16(),
+        deletedTemplate: I3TemplateId.create(),
         pkg: SkillPackageId.create(),
         deletedGroup: SkillGroupId.create(),
         deletedSkill: SkillId.create(),
@@ -72,6 +76,36 @@ describe("trash.listTrash", () => {
                 name: "Doomed Team",
                 tags: [],
                 properties: {},
+                status: "Deleted",
+            },
+        });
+        await db.team.create({
+            data: {
+                id: T.membershipTeam,
+                organizationId: T.org,
+                name: "Membership Team",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: T.deletedMembershipId,
+                organizationId: T.org,
+                teamId: T.membershipTeam,
+                personId: T.activePerson,
+                tags: [],
+                properties: {},
+                status: "Deleted",
+            },
+        });
+        await db.i3Template.create({
+            data: {
+                id: T.deletedTemplate,
+                organizationId: T.org,
+                name: "Doomed Template",
+                description: "",
                 status: "Deleted",
             },
         });
@@ -134,6 +168,28 @@ describe("trash.listTrash", () => {
                 timestamp: new Date("2026-02-01T00:00:00.000Z"),
             },
         });
+        await db.logEntry.create({
+            data: {
+                id: nanoId16(),
+                scope: "organization",
+                organizationId: T.org,
+                action: "Delete",
+                objectType: "TeamMembership",
+                objectId: T.deletedMembershipId,
+                timestamp: new Date("2026-03-01T00:00:00.000Z"),
+            },
+        });
+        await db.logEntry.create({
+            data: {
+                id: nanoId16(),
+                scope: "organization",
+                organizationId: T.org,
+                action: "Delete",
+                objectType: "I3Template",
+                objectId: T.deletedTemplate,
+                timestamp: new Date("2026-03-02T00:00:00.000Z"),
+            },
+        });
 
         // A role on `organizationUser` for each caller, since `listTrash` reads roles directly
         // rather than through `ctx.hasPermission`.
@@ -174,9 +230,11 @@ describe("trash.listTrash", () => {
     it("lists Deleted records across entity types for an admin, with deletedAt resolved", async () => {
         const rows = await makeCaller(T.adminUser).listTrash({ organizationId: T.org });
 
-        expect(rows).toHaveLength(4);
+        expect(rows).toHaveLength(6);
         const person = rows.find((r) => r.id === T.deletedPerson);
         const team = rows.find((r) => r.id === T.deletedTeam);
+        const membership = rows.find((r) => r.id === T.deletedMembershipId);
+        const template = rows.find((r) => r.id === T.deletedTemplate);
         const group = rows.find((r) => r.id === T.deletedGroup);
         const skill = rows.find((r) => r.id === T.deletedSkill);
 
@@ -184,6 +242,15 @@ describe("trash.listTrash", () => {
         expect(person?.deletedAt).toBe("2026-01-01T00:00:00.000Z");
         expect(team).toMatchObject({ type: "Team", name: "Doomed Team" });
         expect(team?.deletedAt).toBe("2026-02-01T00:00:00.000Z");
+        expect(membership).toMatchObject({
+            type: "TeamMembership",
+            name: "Ada Lovelace in Membership Team",
+            teamId: T.membershipTeam,
+            personId: T.activePerson,
+        });
+        expect(membership?.deletedAt).toBe("2026-03-01T00:00:00.000Z");
+        expect(template).toMatchObject({ type: "I3Template", name: "Doomed Template" });
+        expect(template?.deletedAt).toBe("2026-03-02T00:00:00.000Z");
         expect(group).toMatchObject({
             type: "SkillGroup",
             name: "Doomed Group",

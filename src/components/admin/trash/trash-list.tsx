@@ -17,6 +17,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { i3Effects } from "@/client/i3-effects";
 import { personnelEffects } from "@/client/personnel-effects";
 import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { teamsEffects } from "@/client/teams-effects";
@@ -26,38 +27,43 @@ import { MutationButton } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
+import {
+    TrashableEntities,
+    trashableEntityList,
+    type TrashableEntityId,
+} from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
-
-function entityIdForType(
-    type: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill",
-): TrashableEntityId {
-    switch (type) {
-        case "Person":
-            return "person";
-        case "Team":
-            return "team";
-        case "SkillPackage":
-            return "skillPackage";
-        case "SkillGroup":
-            return "skillGroup";
-        case "Skill":
-            return "skill";
-    }
-}
 
 type TrashRow = {
     id: string;
-    type: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill";
+    type:
+        | "Person"
+        | "Team"
+        | "TeamMembership"
+        | "I3Template"
+        | "SkillPackage"
+        | "SkillGroup"
+        | "Skill";
     name: string;
     deletedAt: string | null;
+    /** Only set for `TeamMembership` rows — its detail page needs both ids. */
+    teamId?: string;
+    personId?: string;
+    /** Only set for `SkillGroup`/`Skill` rows — their detail pages need the parent package id too. */
     skillPackageId?: string;
 };
+
+/** Maps a `listTrash` row's `type` to its `TrashableEntities` registry key, derived from the
+ * registry itself rather than duplicating the type→id mapping by hand. */
+const entityIdByType = Object.fromEntries(
+    trashableEntityList.map((entity) => [entity.objectType, entity.id]),
+) as Record<TrashRow["type"], TrashableEntityId>;
 
 function RestoreCell({ row }: { row: TrashRow }) {
     const organization = useOrganization();
     const canRestorePerson = useHasPermission({ person: ["delete"] });
     const canRestoreTeam = useHasPermission({ team: ["delete"] });
+    const canRestoreI3Template = useHasPermission({ i3Template: ["delete"] });
     const canRestoreSkillPackageBuilder = useHasPermission({ skillPackageBuilder: ["delete"] });
 
     const restorePerson = useMutation(
@@ -79,6 +85,28 @@ function RestoreCell({ row }: { row: TrashRow }) {
             },
             onSuccess() {
                 toast.success(`Team "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restoreTeamMembership = useMutation(
+        trpc.teams.restoreTeamMembershipFromTrash.mutationOptions({
+            meta: { effects: teamsEffects.restoreTeamMembershipFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore team membership: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`"${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restoreI3Template = useMutation(
+        trpc.i3.restoreTemplateFromTrash.mutationOptions({
+            meta: { effects: i3Effects.restoreTemplateFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore template: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Template "${row.name}" restored from rubbish.`);
             },
         }),
     );
@@ -148,6 +176,46 @@ function RestoreCell({ row }: { row: TrashRow }) {
         );
     }
 
+    if (row.type === "TeamMembership" && row.teamId !== undefined && row.personId !== undefined) {
+        const { teamId, personId } = row;
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreTeam}
+                status={restoreTeamMembership.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreTeamMembership.mutate({
+                        organizationId: organization.id,
+                        teamId,
+                        personId,
+                    })
+                }
+            />
+        );
+    }
+
+    if (row.type === "I3Template") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreI3Template}
+                status={restoreI3Template.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreI3Template.mutate({
+                        organizationId: organization.id,
+                        templateId: row.id,
+                    })
+                }
+            />
+        );
+    }
+
     if (row.type === "SkillPackage") {
         return (
             <MutationButton
@@ -211,7 +279,8 @@ export function AdminModule_Trash_List() {
             Kaga.defineColumns<TrashRow>((columnHelper) => [
                 columnHelper.accessor("type", {
                     header: "Type",
-                    cell: (ctx) => TrashableEntities[entityIdForType(ctx.getValue())].label,
+                    cell: (ctx) =>
+                        TrashableEntities[entityIdByType[ctx.getValue() as TrashRow["type"]]].label,
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
@@ -221,7 +290,7 @@ export function AdminModule_Trash_List() {
                     header: "Name",
                     cell: (ctx) => {
                         const row = ctx.row.original;
-                        const entity = TrashableEntities[entityIdForType(row.type)];
+                        const entity = TrashableEntities[entityIdByType[row.type]];
                         return entity.href ? (
                             <Link href={entity.href(organization.slug, row.id)}>{row.name}</Link>
                         ) : (

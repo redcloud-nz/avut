@@ -46,10 +46,12 @@ describe("skillChecks.getCompetencyMatrix", () => {
         person1: PersonId.create(),
         person2: PersonId.create(),
         person3: PersonId.create(),
+        person4: PersonId.create(),
         assessor1: PersonId.create(),
         assessor2: PersonId.create(),
         team1: TeamId.create(),
         team2: TeamId.create(),
+        team3: TeamId.create(),
         pkg1: SkillPackageId.create(),
         pkg2: SkillPackageId.create(),
         grp1: SkillGroupId.create(),
@@ -97,6 +99,14 @@ describe("skillChecks.getCompetencyMatrix", () => {
         });
         await db.person.create({
             data: {
+                id: T.person4,
+                organizationId: T.org,
+                name: "Dana",
+                email: `${T.person4}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
                 id: T.assessor1,
                 organizationId: T.org,
                 name: "Assessor 1",
@@ -115,6 +125,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
         // Teams
         await db.team.create({ data: { id: T.team1, organizationId: T.org, name: "Team A" } });
         await db.team.create({ data: { id: T.team2, organizationId: T.org, name: "Team B" } });
+        await db.team.create({ data: { id: T.team3, organizationId: T.org, name: "Team C" } });
         await db.teamMembership.create({
             data: { id: nanoId16(), organizationId: T.org, teamId: T.team1, personId: T.person1 },
         });
@@ -126,6 +137,17 @@ describe("skillChecks.getCompetencyMatrix", () => {
         }); // archived
         await db.teamMembership.create({
             data: { id: nanoId16(), organizationId: T.org, teamId: T.team2, personId: T.person2 },
+        });
+        // person4 is Active but was removed from team3 — the membership row persists as
+        // Deleted (recoverable-deletion, #293) rather than being hard-deleted.
+        await db.teamMembership.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                teamId: T.team3,
+                personId: T.person4,
+                status: "Deleted",
+            },
         });
 
         // Skill packages
@@ -346,6 +368,16 @@ describe("skillChecks.getCompetencyMatrix", () => {
 
             expect(result.personnel).toHaveLength(1);
             expect(result.personnel[0].id).toBe(T.person2);
+        });
+
+        it("excludes a person whose membership was soft-deleted from that team's scope", async () => {
+            // team3 has only person4, and their sole membership is Deleted.
+            const result = await makeCaller().getCompetencyMatrix({
+                organizationId: T.org,
+                teamId: T.team3,
+            });
+
+            expect(result.personnel).toHaveLength(0);
         });
 
         it("returns the person by id when personId is provided", async () => {

@@ -178,6 +178,63 @@ describe("skills.createSession", () => {
     });
 });
 
+describe("skills.listSessions", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+
+        await db.skillCheckSession.create({
+            data: {
+                id: SkillCheckSessionId.create(),
+                organizationId: T.org,
+                name: "Session A",
+                sessionNumber: 1,
+                status: "Draft",
+                startsAt: new Date(),
+                notes: "",
+            },
+        });
+    });
+
+    function makeCaller(
+        permissions: Parameters<typeof createAuthenticatedMockContext>[0]["permissions"],
+    ) {
+        return skillsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions,
+                prisma: db,
+            }),
+        );
+    }
+
+    it("succeeds with skillCheckSession:view alone", async () => {
+        const sessions = await makeCaller({
+            organization: ["view"],
+            skillCheckSession: ["view"],
+        }).listSessions({ organizationId: T.org });
+
+        expect(sessions).toHaveLength(1);
+    });
+
+    it("throws FORBIDDEN with only skillPackageSubscription:view", async () => {
+        await expect(
+            makeCaller({
+                organization: ["view"],
+                skillPackageSubscription: ["view"],
+            }).listSessions({ organizationId: T.org }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
 describe("skillsRouter.getPackage", () => {
     const T = {
         org: OrganizationId.create(),

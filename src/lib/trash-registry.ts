@@ -12,7 +12,14 @@ import { route } from "@/lib/routes";
  * `src/lib/modules.ts`'s registry shape: a single id-keyed object literal that downstream code
  * derives lists from, rather than a switch statement scattered across call sites.
  */
-export type TrashableEntityId = "person" | "team" | "skillPackage" | "skillGroup" | "skill";
+export type TrashableEntityId =
+    | "person"
+    | "team"
+    | "teamMembership"
+    | "i3Template"
+    | "skillPackage"
+    | "skillGroup"
+    | "skill";
 
 interface TrashableEntityDef {
     id: TrashableEntityId;
@@ -22,13 +29,21 @@ interface TrashableEntityDef {
      * The `LogEntry.objectType` this entity's rows are logged under — used to batch-resolve
      * "deleted on" from `log_entries` rather than a denormalized column.
      */
-    objectType: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill";
+    objectType:
+        | "Person"
+        | "Team"
+        | "TeamMembership"
+        | "I3Template"
+        | "SkillPackage"
+        | "SkillGroup"
+        | "Skill";
     /** The permission resource name — restoring or listing a row gates on `{ [permission]: ["delete"] }`. */
-    permission: "person" | "team" | "skillPackageBuilder";
+    permission: "person" | "team" | "i3Template" | "skillPackageBuilder";
     /**
      * Link to the entity's own detail page, or `null` if it isn't addressable by a single id —
-     * `SkillGroup`/`Skill` detail pages are keyed by (packageId, id), not a single id, so the
-     * Rubbish bin renders their name as plain text instead of calling this.
+     * `TeamMembership`'s detail page is keyed by (teamId, personId) and `SkillGroup`/`Skill`'s by
+     * (packageId, id), not a single id, so the Rubbish bin renders their name as plain text
+     * instead of calling this.
      */
     href: ((slug: string, id: string) => Route) | null;
 }
@@ -48,6 +63,21 @@ export const TrashableEntities = {
         objectType: "Team",
         permission: "team",
         href: (slug, id) => route("/orgs/[slug]/admin/teams/[team_id]", { slug, team_id: id }),
+    },
+    teamMembership: {
+        id: "teamMembership",
+        label: "Team Membership",
+        objectType: "TeamMembership",
+        permission: "team",
+        href: null,
+    },
+    i3Template: {
+        id: "i3Template",
+        label: "I3 Template",
+        objectType: "I3Template",
+        permission: "i3Template",
+        href: (slug, id) =>
+            route("/orgs/[slug]/i3/templates/[template_id]", { slug, template_id: id }),
     },
     skillPackage: {
         id: "skillPackage",

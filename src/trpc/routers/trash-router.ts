@@ -24,9 +24,20 @@ export const trashRouter = createTrpcRouter({
             z.array(
                 z.object({
                     id: z.string(),
-                    type: z.enum(["Person", "Team", "SkillPackage", "SkillGroup", "Skill"]),
+                    type: z.enum([
+                        "Person",
+                        "Team",
+                        "TeamMembership",
+                        "I3Template",
+                        "SkillPackage",
+                        "SkillGroup",
+                        "Skill",
+                    ]),
                     name: z.string(),
                     deletedAt: z.iso.datetime().nullable(),
+                    /** Only set for `TeamMembership` rows — its detail page needs both ids. */
+                    teamId: z.string().optional(),
+                    personId: z.string().optional(),
                     /** Only set for `SkillGroup`/`Skill` rows — their detail pages need the parent package id too. */
                     skillPackageId: z.string().optional(),
                 }),
@@ -55,8 +66,17 @@ export const trashRouter = createTrpcRouter({
 
             const rows: {
                 id: string;
-                type: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill";
+                type:
+                    | "Person"
+                    | "Team"
+                    | "TeamMembership"
+                    | "I3Template"
+                    | "SkillPackage"
+                    | "SkillGroup"
+                    | "Skill";
                 name: string;
+                teamId?: string;
+                personId?: string;
                 skillPackageId?: string;
             }[] = [];
 
@@ -76,6 +96,42 @@ export const trashRouter = createTrpcRouter({
                     select: { id: true, name: true },
                 });
                 rows.push(...teams.map((t) => ({ id: t.id, type: "Team" as const, name: t.name })));
+            }
+
+            if (visibleEntities.includes(TrashableEntities.teamMembership)) {
+                const memberships = await ctx.prisma.teamMembership.findMany({
+                    where: { organizationId: ctx.organizationId, status: "Deleted" },
+                    select: {
+                        id: true,
+                        teamId: true,
+                        personId: true,
+                        team: { select: { name: true } },
+                        person: { select: { name: true } },
+                    },
+                });
+                rows.push(
+                    ...memberships.map((m) => ({
+                        id: m.id,
+                        type: "TeamMembership" as const,
+                        name: `${m.person.name} in ${m.team.name}`,
+                        teamId: m.teamId,
+                        personId: m.personId,
+                    })),
+                );
+            }
+
+            if (visibleEntities.includes(TrashableEntities.i3Template)) {
+                const templates = await ctx.prisma.i3Template.findMany({
+                    where: { organizationId: ctx.organizationId, status: "Deleted" },
+                    select: { id: true, name: true },
+                });
+                rows.push(
+                    ...templates.map((t) => ({
+                        id: t.id,
+                        type: "I3Template" as const,
+                        name: t.name,
+                    })),
+                );
             }
 
             if (visibleEntities.includes(TrashableEntities.skillPackage)) {

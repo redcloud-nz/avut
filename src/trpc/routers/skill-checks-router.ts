@@ -222,6 +222,7 @@ export const skillChecksRouter = createTrpcRouter({
                     where: {
                         organizationId: ctx.organizationId,
                         teamId: input.teamId,
+                        status: { not: "Deleted" },
                         person: { status: "Active" },
                     },
                     include: { person: { select: { id: true, name: true } } },

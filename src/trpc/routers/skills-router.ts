@@ -639,7 +639,7 @@ export const skillsRouter = createTrpcRouter({
      * @returns An array of skill check sessions associated with the organization.
      */
     listSessions: organizationProcedure({
-        skillPackageSubscription: ["view"],
+        skillCheckSession: ["view"],
     })
         .output(z.array(SkillCheckSession.schema.extend({ assessors: z.array(PersonRef.schema) })))
         .query(async ({ ctx, input: { organizationId } }) => {

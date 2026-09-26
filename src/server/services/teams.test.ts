@@ -15,12 +15,16 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
     archive,
+    createMembership,
+    deleteMembership,
     deleteRecord,
     getById,
     getDeleteImpact,
     requireById,
+    requireMembership,
     restoreFromArchive,
     restoreFromTrash,
+    restoreMembershipFromTrash,
 } from "./teams";
 
 // The service reaches server-only modules at import time. The functions exercised here use an
@@ -228,6 +232,152 @@ describe("teams", () => {
 
         it("getDeleteImpact counts active memberships", async () => {
             expect(await getDeleteImpact(ctx(), L.team)).toEqual({ memberCount: 1 });
+        });
+    });
+
+    describe("deleteMembership / restoreMembershipFromTrash", () => {
+        const M = { team: TeamId.create(), member: PersonId.create() };
+
+        beforeAll(async () => {
+            await db.team.create({
+                data: {
+                    id: M.team,
+                    organizationId: T.org,
+                    name: "Membership Lifecycle Team",
+                    tags: [],
+                    properties: {},
+                },
+            });
+            await db.person.create({
+                data: {
+                    id: M.member,
+                    organizationId: T.org,
+                    name: "Ada Lovelace",
+                    email: "ada-teams-lifecycle@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            });
+            await db.teamMembership.create({
+                data: {
+                    id: nanoId16(),
+                    organizationId: T.org,
+                    teamId: M.team,
+                    personId: M.member,
+                    tags: [],
+                    properties: {},
+                },
+            });
+        });
+
+        it("deleteMembership moves an Active membership to Deleted and is idempotent", async () => {
+            const deleted = await deleteMembership(ctx(), M.team, M.member);
+            expect(deleted.status).toBe("Deleted");
+
+            const entries = await db.logEntry.findMany({
+                where: { objectType: "TeamMembership", objectId: deleted.id, action: "Delete" },
+            });
+            expect(entries).toHaveLength(1);
+
+            // Idempotent — no second log entry.
+            await deleteMembership(ctx(), M.team, M.member);
+            expect(
+                await db.logEntry.findMany({
+                    where: {
+                        objectType: "TeamMembership",
+                        objectId: deleted.id,
+                        action: "Delete",
+                    },
+                }),
+            ).toHaveLength(1);
+        });
+
+        it("restoreMembershipFromTrash moves a Deleted membership back to Active and is idempotent", async () => {
+            const restored = await restoreMembershipFromTrash(ctx(), M.team, M.member);
+            expect(restored.status).toBe("Active");
+
+            const entries = await db.logEntry.findMany({
+                where: { objectType: "TeamMembership", action: "Restore" },
+            });
+            expect(entries).toHaveLength(1);
+
+            // Idempotent — no second log entry.
+            await restoreMembershipFromTrash(ctx(), M.team, M.member);
+            expect(
+                await db.logEntry.findMany({
+                    where: { objectType: "TeamMembership", action: "Restore" },
+                }),
+            ).toHaveLength(1);
+        });
+
+        it("requireMembership throws NotFoundError for a non-existent pair", async () => {
+            await expect(requireMembership(ctx(), M.team, PersonId.create())).rejects.toThrow(
+                /not found/,
+            );
+        });
+    });
+
+    describe("createMembership", () => {
+        const C = { team: TeamId.create(), member: PersonId.create() };
+
+        beforeAll(async () => {
+            await db.team.create({
+                data: {
+                    id: C.team,
+                    organizationId: T.org,
+                    name: "Create Membership Team",
+                    tags: [],
+                    properties: {},
+                },
+            });
+            await db.person.create({
+                data: {
+                    id: C.member,
+                    organizationId: T.org,
+                    name: "Katherine Johnson",
+                    email: "katherine-teams-lifecycle@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            });
+        });
+
+        it("creates a new Active membership when none exists for the pair", async () => {
+            const created = await createMembership(ctx(), C.team, C.member, {
+                tags: ["core"],
+                properties: {},
+            });
+
+            expect(created).toMatchObject({ status: "Active", tags: ["core"] });
+
+            const entries = await db.logEntry.findMany({
+                where: { objectType: "TeamMembership", objectId: created.id, action: "Create" },
+            });
+            expect(entries).toHaveLength(1);
+        });
+
+        it("rejects creating a second membership for an already-Active pair", async () => {
+            await expect(
+                createMembership(ctx(), C.team, C.member, { tags: [], properties: {} }),
+            ).rejects.toThrow(/already a member/);
+        });
+
+        it("revives a Deleted membership in place instead of conflicting on the unique pair", async () => {
+            const deleted = await deleteMembership(ctx(), C.team, C.member);
+            expect(deleted.status).toBe("Deleted");
+
+            const revived = await createMembership(ctx(), C.team, C.member, {
+                tags: ["revived"],
+                properties: {},
+            });
+
+            expect(revived.id).toBe(deleted.id);
+            expect(revived).toMatchObject({ status: "Active", tags: ["revived"] });
+
+            // Still one row for the pair — no duplicate inserted.
+            expect(
+                await db.teamMembership.findMany({ where: { teamId: C.team, personId: C.member } }),
+            ).toHaveLength(1);
         });
     });
 });
