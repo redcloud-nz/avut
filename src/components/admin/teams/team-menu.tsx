@@ -22,6 +22,7 @@ import { TeamData } from "@/lib/schemas/team";
 import { AdminModule_ArchiveTeam_Dialog } from "./archive-team";
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
 import { AdminModule_RestoreTeam_Dialog } from "./restore-team";
+import { AdminModule_RestoreTeamFromTrash_Dialog } from "./restore-team-from-trash";
 
 interface AdminModule_TeamMenuProps {
     team: TeamData;
@@ -36,6 +37,7 @@ const ACTIONS = [
     "add-membership",
     "archive",
     "restore",
+    "restore-from-trash",
 ] as const;
 
 export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
@@ -73,7 +75,7 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
             onSelect: () => setAction("archive", { history: "push" }),
             disabled: !canUpdate,
         });
-    } else {
+    } else if (team.status === "Archived") {
         actions.push({
             verb: "restore",
             label: "Restore",
@@ -81,15 +83,25 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
             onSelect: () => setAction("restore", { history: "push" }),
             disabled: !canUpdate,
         });
+    } else {
+        actions.push({
+            verb: "restore",
+            label: "Restore from rubbish",
+            icon: <ObjectIcons.Restore />,
+            onSelect: () => setAction("restore-from-trash", { history: "push" }),
+            disabled: !canDelete,
+        });
     }
-    actions.push({
-        verb: "delete",
-        label: "Delete",
-        icon: <ObjectIcons.Delete />,
-        onSelect: () => setAction("delete", { history: "push" }),
-        disabled: !canDelete,
-        destructive: true,
-    });
+    if (team.status !== "Deleted") {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        });
+    }
 
     return (
         <>
@@ -175,6 +187,16 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                 open={action === "restore"}
                 onOpenChange={(open) =>
                     void setAction(open ? "restore" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            <AdminModule_RestoreTeamFromTrash_Dialog
+                team={team}
+                open={action === "restore-from-trash"}
+                onOpenChange={(open) =>
+                    void setAction(open ? "restore-from-trash" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

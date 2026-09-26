@@ -638,7 +638,7 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
         expect(entries[0]).toMatchObject({ action: "Create", organizationId: T.org });
     });
 
-    it("deletes a team and records a Delete log entry", async () => {
+    it("soft-deletes a team and records a Delete log entry", async () => {
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
             create: { name: "Doomed", description: "", tags: [], properties: {} },
@@ -649,7 +649,8 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
             teamId: created.id,
         });
 
-        expect(await db.team.findUnique({ where: { id: created.id } })).toBeNull();
+        const row = await db.team.findUnique({ where: { id: created.id } });
+        expect(row).toMatchObject({ status: "Deleted" });
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: created.id, action: "Delete" },
         });
@@ -777,6 +778,182 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
         await expect(
             makeCaller({ team: ["view"] }).archiveTeam({ organizationId: T.org, teamId: T.team }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("teamsRouter.deleteTeam / restoreTeamFromTrash", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        member: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.member,
+                organizationId: T.org,
+                name: "Grace Hopper",
+                email: "grace@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.member,
+                tags: [],
+                properties: {},
+            },
+        });
+    });
+
+    function makeCaller(perms: Record<string, string[]>) {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("reports the active member count as the delete impact", async () => {
+        const impact = await makeCaller({ team: ["view"] }).getTeamDeleteImpact({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        expect(impact).toEqual({ memberCount: 1 });
+    });
+
+    it("soft-deletes the team without touching its memberships", async () => {
+        await makeCaller({ team: ["delete"] }).deleteTeam({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+
+        const team = await db.team.findUnique({ where: { id: T.team } });
+        expect(team).toMatchObject({ status: "Deleted" });
+
+        const membership = await db.teamMembership.findFirst({ where: { teamId: T.team } });
+        expect(membership).toMatchObject({ status: "Active" });
+    });
+
+    it("restoreTeam (archive-restore) refuses a Deleted team", async () => {
+        await expect(
+            makeCaller({ team: ["update"] }).restoreTeam({ organizationId: T.org, teamId: T.team }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("restoreTeamFromTrash requires team:delete, not team:update", async () => {
+        await expect(
+            makeCaller({ team: ["update"] }).restoreTeamFromTrash({
+                organizationId: T.org,
+                teamId: T.team,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("restores a deleted team back to Active and records a Restore log entry", async () => {
+        const { updated } = await makeCaller({ team: ["delete"] }).restoreTeamFromTrash({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+        expect(updated.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: T.team, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+});
+
+describe("teamsRouter.listTeams", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        active: TeamId.create(),
+        archived: TeamId.create(),
+        deleted: TeamId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.active,
+                organizationId: T.org,
+                name: "Active Team",
+                description: "",
+                properties: {},
+                tags: [],
+                status: "Active",
+            },
+        });
+        await db.team.create({
+            data: {
+                id: T.archived,
+                organizationId: T.org,
+                name: "Archived Team",
+                description: "",
+                properties: {},
+                tags: [],
+                status: "Archived",
+            },
+        });
+        await db.team.create({
+            data: {
+                id: T.deleted,
+                organizationId: T.org,
+                name: "Deleted Team",
+                description: "",
+                properties: {},
+                tags: [],
+                status: "Deleted",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], team: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("excludes Deleted teams but includes Archived ones", async () => {
+        const teams = await makeCaller().listTeams({ organizationId: T.org });
+        const ids = teams.map((t) => t.id);
+
+        expect(ids).toContain(T.active);
+        expect(ids).toContain(T.archived);
+        expect(ids).not.toContain(T.deleted);
     });
 });
 

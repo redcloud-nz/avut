@@ -15,7 +15,7 @@ const statement = {
     invitation: ["view", "create", "update", "cancel"],
     member: ["view", "create", "update", "delete"],
     organization: ["view", "update", "delete"],
-    person: ["view", "create", "update", "delete", "archive", "restore"],
+    person: ["view", "create", "update", "delete"],
     skillPackageSubscription: ["view", "subscribe"],
     skillCheck: ["view", "create", "update", "delete"],
     skillCheckSession: ["view", "create", "update", "delete"],

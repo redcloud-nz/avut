@@ -683,3 +683,164 @@ describe("Personnel.create during a D4H team import", () => {
         expect(await db.organizationUser.findMany({ where: { personId } })).toHaveLength(0);
     });
 });
+
+describe("Personnel.archive / restoreFromArchive / restoreFromTrash / deleteRecord", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        person: PersonId.create(),
+        team: nanoId16(),
+        assessor: PersonId.create(),
+        pkg: nanoId16(),
+        group: nanoId16(),
+        skill: nanoId16(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Grace Hopper",
+                email: "grace-lifecycle@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessor,
+                organizationId: T.org,
+                name: "Ada Lovelace",
+                email: "ada-lifecycle@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.team.create({
+            data: { id: T.team, organizationId: T.org, name: "Alpha", tags: [], properties: {} },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.person,
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "First Aid",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.group,
+                skillPackageId: T.pkg,
+                name: "Basics",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill,
+                skillPackageId: T.pkg,
+                skillGroupId: T.group,
+                name: "CPR",
+                description: "",
+                properties: {},
+                frequency: 12,
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                assesseeId: T.person,
+                assessorId: T.assessor,
+                skillId: T.skill,
+                result: "Pass",
+                notes: "",
+                status: "Include",
+            },
+        });
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: T.org,
+            user: { id: T.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    it("archive moves an Active person to Archived and is idempotent", async () => {
+        const archived = await Personnel.archive(ctx(), T.person);
+        expect(archived.status).toBe("Archived");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Person", objectId: T.person, action: "Archive" },
+        });
+        expect(entries).toHaveLength(1);
+
+        await Personnel.archive(ctx(), T.person);
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "Person", objectId: T.person, action: "Archive" },
+            }),
+        ).toHaveLength(1);
+    });
+
+    it("restoreFromTrash rejects an Archived person", async () => {
+        await expect(Personnel.restoreFromTrash(ctx(), T.person)).rejects.toThrow(
+            /only a Deleted person can be restored from rubbish/,
+        );
+    });
+
+    it("restoreFromArchive moves an Archived person back to Active", async () => {
+        const restored = await Personnel.restoreFromArchive(ctx(), T.person);
+        expect(restored.status).toBe("Active");
+    });
+
+    it("restoreFromArchive rejects a Deleted person", async () => {
+        await Personnel.deleteRecord(ctx(), T.person);
+        await expect(Personnel.restoreFromArchive(ctx(), T.person)).rejects.toThrow(
+            /only an Archived person can be restored from archive/,
+        );
+    });
+
+    it("deleteRecord does not touch the person's team membership", async () => {
+        const membership = await db.teamMembership.findFirst({ where: { personId: T.person } });
+        expect(membership).toMatchObject({ status: "Active" });
+    });
+
+    it("restoreFromTrash moves a Deleted person back to Active", async () => {
+        const restored = await Personnel.restoreFromTrash(ctx(), T.person);
+        expect(restored.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Person", objectId: T.person, action: "Restore" },
+        });
+        expect(entries.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("getDeleteImpact counts active team memberships and skill checks", async () => {
+        expect(await Personnel.getDeleteImpact(ctx(), T.person)).toEqual({
+            teamCount: 1,
+            skillCheckCount: 1,
+        });
+    });
+});

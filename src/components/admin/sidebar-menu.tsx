@@ -5,6 +5,7 @@
 
 "use client";
 
+import { RubbishNavGate } from "@/components/admin/trash/rubbish-nav-gate";
 import { NavSubItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
 import { useOrganization } from "@/hooks/use-organization";
@@ -33,6 +34,12 @@ export function Admin_Sidebar_Menu() {
                     href={route("/orgs/[slug]/admin/personnel", { slug })}
                 />
             </Protect>
+            <RubbishNavGate>
+                <NavSubItem
+                    label="Rubbish"
+                    href={route("/orgs/[slug]/admin/rubbish-bin", { slug })}
+                />
+            </RubbishNavGate>
             <Protect permissions={{ team: ["view"] }}>
                 <NavSubItem label="Teams" href={route("/orgs/[slug]/admin/teams", { slug })} />
             </Protect>

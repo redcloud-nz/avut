@@ -34,25 +34,7 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
-            const existing = await Personnel.requireById(ctx, personId);
-
-            if (existing.status === "Archived") {
-                return { updated: existing }; // Already archived
-            }
-
-            const [updated] = await ctx.prisma.$transaction([
-                ctx.prisma.person.update({
-                    where: { organizationId: ctx.organizationId, id: personId },
-                    data: { status: "Archived" },
-                }),
-                ctx.logEvent({
-                    action: "Archive",
-                    objectType: "Person",
-                    objectId: personId,
-                }),
-            ]);
-
-            return { updated: PersonData.fromRecord(updated) };
+            return { updated: await Personnel.archive(ctx, personId) };
         }),
 
     /**
@@ -90,7 +72,7 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
-     * Delete a person from the organization.
+     * Soft-deletes a person from the organization (reversible via `restorePersonFromTrash`).
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.
      * @returns The deleted person object.
@@ -103,57 +85,9 @@ export const personnelRouter = createTrpcRouter({
                 personId: PersonId.schema,
             }),
         )
-        .output(
-            z.object({
-                deletionType: z.enum(["Soft", "Hard"]),
-                person: PersonData.schema,
-            }),
-        )
+        .output(z.object({ person: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
-            const person = await Personnel.requireRecordById(ctx, personId, {
-                include: {
-                    skillChecksAsAssessee: true,
-                    skillChecksAsAssessor: true,
-                },
-            });
-
-            const isReferenced =
-                person.skillChecksAsAssessee.length > 0 || person.skillChecksAsAssessor.length > 0;
-
-            if (isReferenced) {
-                // Soft delete the person if they are referenced in skill checks
-                await ctx.prisma.$transaction([
-                    ctx.prisma.person.update({
-                        where: { organizationId: ctx.organizationId, id: personId },
-                        data: { status: "Deleted" },
-                    }),
-                    ctx.logEvent({
-                        action: "Delete",
-                        objectType: "Person",
-                        objectId: person.id,
-                    }),
-                ]);
-            } else {
-                // Hard delete the person if they are not referenced anywhere
-                await ctx.prisma.$transaction([
-                    ctx.prisma.person.delete({
-                        where: { organizationId: ctx.organizationId, id: personId },
-                    }),
-                    ctx.logEvent({
-                        action: "Delete",
-                        objectType: "Person",
-                        objectId: person.id,
-                    }),
-                ]);
-            }
-
-            return {
-                deletionType: isReferenced ? "Soft" : "Hard",
-                person: PersonData.fromRecord({
-                    ...person,
-                    status: "Deleted",
-                }),
-            };
+            return { person: await Personnel.deleteRecord(ctx, personId) };
         }),
 
     /**
@@ -323,6 +257,22 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
+     * Describes what deleting this person would hide from active views, for the delete
+     * confirmation dialog's impact preview.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     */
+    getPersonDeleteImpact: organizationProcedure({ person: ["view"] })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(z.object({ teamCount: z.number(), skillCheckCount: z.number() }))
+        .query(async ({ ctx, input: { personId } }) => {
+            return await Personnel.getDeleteImpact(ctx, personId);
+        }),
+
+    /**
      * Returns the person record linked to the current user within the organization, or null if no link exists.
      */
     getPersonSelf: organizationProcedure()
@@ -374,11 +324,12 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
-     * Restores an archived or deleted person in the organization.
+     * Restores an archived person in the organization back to Active.
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.
      * @returns The restored person object.
      * @throws TRPCError(NOT_FOUND) if the person is not found.
+     * @throws TRPCError(BAD_REQUEST) if the person is not Archived.
      */
     restorePerson: organizationProcedure({ person: ["update"] })
         .input(
@@ -388,25 +339,26 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
-            const existing = await Personnel.requireById(ctx, personId);
+            return { updated: await Personnel.restoreFromArchive(ctx, personId) };
+        }),
 
-            if (existing.status == "Active") {
-                return { updated: existing }; // Not restorable
-            }
-
-            const [updated] = await ctx.prisma.$transaction([
-                ctx.prisma.person.update({
-                    where: { organizationId: ctx.organizationId, id: personId },
-                    data: { status: "Active" },
-                }),
-                ctx.logEvent({
-                    action: "Restore",
-                    objectType: "Person",
-                    objectId: personId,
-                }),
-            ]);
-
-            return { updated: PersonData.fromRecord(updated) };
+    /**
+     * Restores a deleted person in the organization back to Active.
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The restored person object.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     * @throws TRPCError(BAD_REQUEST) if the person is not Deleted.
+     */
+    restorePersonFromTrash: organizationProcedure({ person: ["delete"] })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(z.object({ updated: PersonData.schema }))
+        .mutation(async ({ ctx, input: { personId } }) => {
+            return { updated: await Personnel.restoreFromTrash(ctx, personId) };
         }),
 
     /**

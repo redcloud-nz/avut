@@ -9,7 +9,7 @@ import * as z from "zod";
 
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
-import { NotFoundError } from "@/lib/errors";
+import { NotFoundError, ValidationError } from "@/lib/errors";
 import type { OrganizationId } from "@/lib/schemas/organization";
 import { PersonData, type PersonId } from "@/lib/schemas/person";
 import type { PersonRecord } from "@/lib/schemas/person";
@@ -190,6 +190,155 @@ export async function requireRecordById<Include extends Prisma.PersonInclude>(
     }
 
     return person;
+}
+
+/**
+ * Archive a person (reversible via `restoreFromArchive`). No-op, returning the existing record
+ * unchanged, if the person is already `Archived`.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function archive(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Archived") {
+        return existing;
+    }
+
+    const [updated] = await ctx.prisma.$transaction([
+        ctx.prisma.person.update({
+            where: { organizationId: ctx.organizationId, id: personId },
+            data: { status: "Archived" },
+        }),
+        ctx.logEvent({
+            action: "Archive",
+            objectType: "Person",
+            objectId: personId,
+        }),
+    ]);
+
+    return PersonData.fromRecord(updated);
+}
+
+/**
+ * Restore an `Archived` person back to `Active`. No-op, returning the existing record unchanged,
+ * if the person is already `Active`.
+ * @throws NotFoundError if the person is not found in the organization.
+ * @throws ValidationError if the person is `Deleted` — use `restoreFromTrash` instead.
+ */
+export async function restoreFromArchive(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Archived") {
+        throw new ValidationError(
+            `Person(id=${personId}) has status ${existing.status}; only an Archived person can be restored from archive.`,
+        );
+    }
+
+    return await restoreToActive(ctx, personId);
+}
+
+/**
+ * Restore a `Deleted` person back to `Active`. No-op, returning the existing record unchanged, if
+ * the person is already `Active`.
+ * @throws NotFoundError if the person is not found in the organization.
+ * @throws ValidationError if the person is `Archived` — use `restoreFromArchive` instead.
+ */
+export async function restoreFromTrash(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Deleted") {
+        throw new ValidationError(
+            `Person(id=${personId}) has status ${existing.status}; only a Deleted person can be restored from rubbish.`,
+        );
+    }
+
+    return await restoreToActive(ctx, personId);
+}
+
+async function restoreToActive(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+    const [updated] = await ctx.prisma.$transaction([
+        ctx.prisma.person.update({
+            where: { organizationId: ctx.organizationId, id: personId },
+            data: { status: "Active" },
+        }),
+        ctx.logEvent({
+            action: "Restore",
+            objectType: "Person",
+            objectId: personId,
+        }),
+    ]);
+
+    return PersonData.fromRecord(updated);
+}
+
+/**
+ * Soft-delete a person (reversible via `restoreFromTrash`). No-op, returning the existing record
+ * unchanged, if the person is already `Deleted`.
+ *
+ * Always soft — nothing physically removes the row here. Related rows (team memberships, skill
+ * checks) are left untouched; they are filtered by status at query time instead.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function deleteRecord(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Deleted") {
+        return existing;
+    }
+
+    const [updated] = await ctx.prisma.$transaction([
+        ctx.prisma.person.update({
+            where: { organizationId: ctx.organizationId, id: personId },
+            data: { status: "Deleted" },
+        }),
+        ctx.logEvent({
+            action: "Delete",
+            objectType: "Person",
+            objectId: personId,
+        }),
+    ]);
+
+    return PersonData.fromRecord(updated);
+}
+
+/**
+ * Summarize what becomes hidden from active views if this person is deleted, for the delete
+ * confirmation dialog's impact preview. Not a cascade list — nothing here is destroyed at delete
+ * time.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function getDeleteImpact(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+): Promise<{ teamCount: number; skillCheckCount: number }> {
+    await requireById(ctx, personId);
+
+    const [teamCount, assesseeCount, assessorCount] = await Promise.all([
+        ctx.prisma.teamMembership.count({
+            where: { organizationId: ctx.organizationId, personId, status: "Active" },
+        }),
+        ctx.prisma.skillCheck.count({ where: { assesseeId: personId } }),
+        ctx.prisma.skillCheck.count({ where: { assessorId: personId } }),
+    ]);
+
+    return { teamCount, skillCheckCount: assesseeCount + assessorCount };
 }
 
 /*
