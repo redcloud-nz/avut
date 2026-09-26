@@ -8,6 +8,9 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -28,6 +31,9 @@ describe("trash.listTrash", () => {
         deletedPerson: PersonId.create(),
         activePerson: PersonId.create(),
         deletedTeam: TeamId.create(),
+        pkg: SkillPackageId.create(),
+        deletedGroup: SkillGroupId.create(),
+        deletedSkill: SkillId.create(),
     };
 
     const db = createMockPrisma();
@@ -66,6 +72,42 @@ describe("trash.listTrash", () => {
                 name: "Doomed Team",
                 tags: [],
                 properties: {},
+                status: "Deleted",
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Active Package",
+                description: "",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.deletedGroup,
+                skillPackageId: T.pkg,
+                name: "Doomed Group",
+                description: "",
+                tags: [],
+                properties: {},
+                sequence: 1,
+                status: "Deleted",
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.deletedSkill,
+                skillPackageId: T.pkg,
+                skillGroupId: T.deletedGroup,
+                name: "Doomed Skill",
+                description: "",
+                tags: [],
+                properties: {},
+                sequence: 1,
                 status: "Deleted",
             },
         });
@@ -132,14 +174,26 @@ describe("trash.listTrash", () => {
     it("lists Deleted records across entity types for an admin, with deletedAt resolved", async () => {
         const rows = await makeCaller(T.adminUser).listTrash({ organizationId: T.org });
 
-        expect(rows).toHaveLength(2);
+        expect(rows).toHaveLength(4);
         const person = rows.find((r) => r.id === T.deletedPerson);
         const team = rows.find((r) => r.id === T.deletedTeam);
+        const group = rows.find((r) => r.id === T.deletedGroup);
+        const skill = rows.find((r) => r.id === T.deletedSkill);
 
         expect(person).toMatchObject({ type: "Person", name: "Grace Hopper" });
         expect(person?.deletedAt).toBe("2026-01-01T00:00:00.000Z");
         expect(team).toMatchObject({ type: "Team", name: "Doomed Team" });
         expect(team?.deletedAt).toBe("2026-02-01T00:00:00.000Z");
+        expect(group).toMatchObject({
+            type: "SkillGroup",
+            name: "Doomed Group",
+            skillPackageId: T.pkg,
+        });
+        expect(skill).toMatchObject({
+            type: "Skill",
+            name: "Doomed Skill",
+            skillPackageId: T.pkg,
+        });
     });
 
     it("does not list Active records", async () => {

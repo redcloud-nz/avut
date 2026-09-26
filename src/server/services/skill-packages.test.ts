@@ -7,6 +7,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { ConflictError, ValidationError } from "@/lib/errors";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
@@ -429,5 +430,182 @@ describe("SkillPackages.requireSkillById / requireGroupById / requirePackageById
                 U.pkg,
             ),
         ).rejects.toThrow(`SkillPackage(id=${U.pkg}) not found.`);
+    });
+});
+
+describe("SkillPackages archive / restoreFromArchive / restoreFromTrash / delete", () => {
+    const L = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        pkg: SkillPackageId.create(),
+        group: SkillGroupId.create(),
+        skill: SkillId.create(),
+        assessee: PersonId.create(),
+        assessor: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: L.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: L.pkg,
+                organizationId: L.org,
+                name: "Lifecycle Package",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: L.group,
+                skillPackageId: L.pkg,
+                name: "Lifecycle Group",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: L.skill,
+                skillPackageId: L.pkg,
+                skillGroupId: L.group,
+                name: "Lifecycle Skill",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: L.assessee,
+                organizationId: L.org,
+                name: "Assessee",
+                email: "assessee-skill-packages-lifecycle@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.person.create({
+            data: {
+                id: L.assessor,
+                organizationId: L.org,
+                name: "Assessor",
+                email: "assessor-skill-packages-lifecycle@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: "check-1",
+                organizationId: L.org,
+                assesseeId: L.assessee,
+                assessorId: L.assessor,
+                skillId: L.skill,
+                result: "Pass",
+                notes: "",
+            },
+        });
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: L.org,
+            user: { id: L.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    it("archiveSkill/archiveGroup/archivePackage move Active rows to Archived and are idempotent", async () => {
+        const skill = await SkillPackages.archiveSkill(ctx(), L.skill);
+        expect(skill.status).toBe("Archived");
+        await SkillPackages.archiveSkill(ctx(), L.skill);
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "Skill", objectId: L.skill, action: "Archive" },
+            }),
+        ).toHaveLength(1);
+
+        const group = await SkillPackages.archiveGroup(ctx(), L.group);
+        expect(group.status).toBe("Archived");
+
+        const pkg = await SkillPackages.archivePackage(ctx(), L.pkg);
+        expect(pkg.status).toBe("Archived");
+    });
+
+    it("restoreSkillFromTrash rejects an Archived skill", async () => {
+        await expect(SkillPackages.restoreSkillFromTrash(ctx(), L.skill)).rejects.toThrow(
+            /only a Deleted skill can be restored from rubbish/,
+        );
+    });
+
+    it("restoreSkillFromArchive moves an Archived skill back to Active", async () => {
+        const restored = await SkillPackages.restoreSkillFromArchive(ctx(), L.skill);
+        expect(restored.status).toBe("Active");
+    });
+
+    it("restoreGroupFromArchive moves an Archived group back to Active", async () => {
+        const restored = await SkillPackages.restoreGroupFromArchive(ctx(), L.group);
+        expect(restored.status).toBe("Active");
+    });
+
+    it("restorePackageFromArchive moves an Archived package back to Active", async () => {
+        const restored = await SkillPackages.restorePackageFromArchive(ctx(), L.pkg);
+        expect(restored.status).toBe("Active");
+    });
+
+    it("deleteSkill/deleteGroup/deletePackage soft-delete without cascading between levels", async () => {
+        const skill = await SkillPackages.deleteSkill(ctx(), L.skill);
+        expect(skill.status).toBe("Deleted");
+
+        const group = await SkillPackages.deleteGroup(ctx(), L.group);
+        expect(group.status).toBe("Deleted");
+
+        const pkg = await SkillPackages.deletePackage(ctx(), L.pkg);
+        expect(pkg.status).toBe("Deleted");
+
+        // No cascade — each level's status is independent.
+        expect((await SkillPackages.requireSkillById(ctx(), L.skill)).status).toBe("Deleted");
+        expect((await SkillPackages.requireGroupById(ctx(), L.group)).status).toBe("Deleted");
+    });
+
+    it("restoreSkillFromArchive rejects a Deleted skill", async () => {
+        await expect(SkillPackages.restoreSkillFromArchive(ctx(), L.skill)).rejects.toThrow(
+            /only an Archived skill can be restored from archive/,
+        );
+    });
+
+    it("restoreSkillFromTrash/restoreGroupFromTrash/restorePackageFromTrash move Deleted rows back to Active", async () => {
+        expect((await SkillPackages.restoreSkillFromTrash(ctx(), L.skill)).status).toBe("Active");
+        expect((await SkillPackages.restoreGroupFromTrash(ctx(), L.group)).status).toBe("Active");
+        expect((await SkillPackages.restorePackageFromTrash(ctx(), L.pkg)).status).toBe("Active");
+    });
+
+    it("getSkillDeleteImpact counts recorded skill checks", async () => {
+        expect(await SkillPackages.getSkillDeleteImpact(ctx(), L.skill)).toEqual({
+            skillCheckCount: 1,
+        });
+    });
+
+    it("getGroupDeleteImpact counts active skills in the group", async () => {
+        expect(await SkillPackages.getGroupDeleteImpact(ctx(), L.group)).toEqual({
+            skillCount: 1,
+        });
+    });
+
+    it("getPackageDeleteImpact counts active groups and skills in the package", async () => {
+        expect(await SkillPackages.getPackageDeleteImpact(ctx(), L.pkg)).toEqual({
+            groupCount: 1,
+            skillCount: 1,
+        });
     });
 });

@@ -12,7 +12,7 @@ import { route } from "@/lib/routes";
  * `src/lib/modules.ts`'s registry shape: a single id-keyed object literal that downstream code
  * derives lists from, rather than a switch statement scattered across call sites.
  */
-export type TrashableEntityId = "person" | "team";
+export type TrashableEntityId = "person" | "team" | "skillPackage" | "skillGroup" | "skill";
 
 interface TrashableEntityDef {
     id: TrashableEntityId;
@@ -22,11 +22,15 @@ interface TrashableEntityDef {
      * The `LogEntry.objectType` this entity's rows are logged under — used to batch-resolve
      * "deleted on" from `log_entries` rather than a denormalized column.
      */
-    objectType: "Person" | "Team";
+    objectType: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill";
     /** The permission resource name — restoring or listing a row gates on `{ [permission]: ["delete"] }`. */
-    permission: "person" | "team";
-    /** Link to the entity's own detail page. */
-    href: (slug: string, id: string) => Route;
+    permission: "person" | "team" | "skillPackageBuilder";
+    /**
+     * Link to the entity's own detail page, or `null` if it isn't addressable by a single id —
+     * `SkillGroup`/`Skill` detail pages are keyed by (packageId, id), not a single id, so the
+     * Rubbish bin renders their name as plain text instead of calling this.
+     */
+    href: ((slug: string, id: string) => Route) | null;
 }
 
 export const TrashableEntities = {
@@ -44,6 +48,31 @@ export const TrashableEntities = {
         objectType: "Team",
         permission: "team",
         href: (slug, id) => route("/orgs/[slug]/admin/teams/[team_id]", { slug, team_id: id }),
+    },
+    skillPackage: {
+        id: "skillPackage",
+        label: "Skill Package",
+        objectType: "SkillPackage",
+        permission: "skillPackageBuilder",
+        href: (slug, id) =>
+            route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
+                slug,
+                package_id: id,
+            }),
+    },
+    skillGroup: {
+        id: "skillGroup",
+        label: "Skill Group",
+        objectType: "SkillGroup",
+        permission: "skillPackageBuilder",
+        href: null,
+    },
+    skill: {
+        id: "skill",
+        label: "Skill",
+        objectType: "Skill",
+        permission: "skillPackageBuilder",
+        href: null,
     },
 } satisfies Record<TrashableEntityId, TrashableEntityDef>;
 

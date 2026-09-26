@@ -515,3 +515,149 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
         ]);
     });
 });
+
+describe("skillPackageBuilderRouter.deleteSkill/Group/Package / restore*FromTrash", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        pkg: SkillPackageId.create(),
+        group: SkillGroupId.create(),
+        skill: SkillId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Package",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.group,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill,
+                skillPackageId: T.pkg,
+                skillGroupId: T.group,
+                name: "Skill",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+    });
+
+    function makeCaller(perms: Permissions) {
+        return skillPackageBuilderRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("deleteSkill/deleteGroup/deletePackage require skillPackageBuilder:delete", async () => {
+        await expect(
+            makeCaller({ skillPackageBuilder: ["update"] }).deleteSkill({
+                organizationId: T.org,
+                skillId: T.skill,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackageBuilder: ["update"] }).deleteGroup({
+                organizationId: T.org,
+                skillGroupId: T.group,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackageBuilder: ["update"] }).deletePackage({
+                organizationId: T.org,
+                skillPackageId: T.pkg,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("soft-deletes skill, group, and package without cascading between levels", async () => {
+        await makeCaller({ skillPackageBuilder: ["delete"] }).deleteSkill({
+            organizationId: T.org,
+            skillId: T.skill,
+        });
+        await makeCaller({ skillPackageBuilder: ["delete"] }).deleteGroup({
+            organizationId: T.org,
+            skillGroupId: T.group,
+        });
+        await makeCaller({ skillPackageBuilder: ["delete"] }).deletePackage({
+            organizationId: T.org,
+            skillPackageId: T.pkg,
+        });
+
+        expect(await db.skill.findUnique({ where: { id: T.skill } })).toMatchObject({
+            status: "Deleted",
+        });
+        expect(await db.skillGroup.findUnique({ where: { id: T.group } })).toMatchObject({
+            status: "Deleted",
+        });
+        expect(await db.skillPackage.findUnique({ where: { id: T.pkg } })).toMatchObject({
+            status: "Deleted",
+        });
+    });
+
+    it("restoreSkillFromTrash/restoreGroupFromTrash/restorePackageFromTrash require skillPackageBuilder:delete, not update", async () => {
+        await expect(
+            makeCaller({ skillPackageBuilder: ["update"] }).restoreSkillFromTrash({
+                organizationId: T.org,
+                skillId: T.skill,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackageBuilder: ["update"] }).restoreGroupFromTrash({
+                organizationId: T.org,
+                skillGroupId: T.group,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackageBuilder: ["update"] }).restorePackageFromTrash({
+                organizationId: T.org,
+                skillPackageId: T.pkg,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("restores the deleted skill, group, and package back to Active", async () => {
+        const skill = await makeCaller({ skillPackageBuilder: ["delete"] }).restoreSkillFromTrash({
+            organizationId: T.org,
+            skillId: T.skill,
+        });
+        expect(skill.updated.status).toBe("Active");
+
+        const group = await makeCaller({
+            skillPackageBuilder: ["delete"],
+        }).restoreGroupFromTrash({ organizationId: T.org, skillGroupId: T.group });
+        expect(group.updated.status).toBe("Active");
+
+        const pkg = await makeCaller({
+            skillPackageBuilder: ["delete"],
+        }).restorePackageFromTrash({ organizationId: T.org, skillPackageId: T.pkg });
+        expect(pkg.updated.status).toBe("Active");
+    });
+});

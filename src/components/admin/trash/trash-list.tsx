@@ -18,6 +18,7 @@ import {
 } from "@tanstack/react-table";
 
 import { personnelEffects } from "@/client/personnel-effects";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { teamsEffects } from "@/client/teams-effects";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -25,20 +26,39 @@ import { MutationButton } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { TrashableEntities } from "@/lib/trash-registry";
+import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
+
+function entityIdForType(
+    type: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill",
+): TrashableEntityId {
+    switch (type) {
+        case "Person":
+            return "person";
+        case "Team":
+            return "team";
+        case "SkillPackage":
+            return "skillPackage";
+        case "SkillGroup":
+            return "skillGroup";
+        case "Skill":
+            return "skill";
+    }
+}
 
 type TrashRow = {
     id: string;
-    type: "Person" | "Team";
+    type: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill";
     name: string;
     deletedAt: string | null;
+    skillPackageId?: string;
 };
 
 function RestoreCell({ row }: { row: TrashRow }) {
     const organization = useOrganization();
     const canRestorePerson = useHasPermission({ person: ["delete"] });
     const canRestoreTeam = useHasPermission({ team: ["delete"] });
+    const canRestoreSkillPackageBuilder = useHasPermission({ skillPackageBuilder: ["delete"] });
 
     const restorePerson = useMutation(
         trpc.personnel.restorePersonFromTrash.mutationOptions({
@@ -62,6 +82,39 @@ function RestoreCell({ row }: { row: TrashRow }) {
             },
         }),
     );
+    const restorePackage = useMutation(
+        trpc.skillPackageBuilder.restorePackageFromTrash.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.restorePackageFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore skill package: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Skill package "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restoreGroup = useMutation(
+        trpc.skillPackageBuilder.restoreGroupFromTrash.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.restoreGroupFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore skill group: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Skill group "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restoreSkill = useMutation(
+        trpc.skillPackageBuilder.restoreSkillFromTrash.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.restoreSkillFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore skill: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Skill "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
 
     if (row.type === "Person") {
         return (
@@ -79,15 +132,68 @@ function RestoreCell({ row }: { row: TrashRow }) {
         );
     }
 
+    if (row.type === "Team") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreTeam}
+                status={restoreTeam.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreTeam.mutate({ organizationId: organization.id, teamId: row.id })
+                }
+            />
+        );
+    }
+
+    if (row.type === "SkillPackage") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreSkillPackageBuilder}
+                status={restorePackage.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restorePackage.mutate({
+                        organizationId: organization.id,
+                        skillPackageId: row.id,
+                    })
+                }
+            />
+        );
+    }
+
+    if (row.type === "SkillGroup") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreSkillPackageBuilder}
+                status={restoreGroup.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreGroup.mutate({ organizationId: organization.id, skillGroupId: row.id })
+                }
+            />
+        );
+    }
+
     return (
         <MutationButton
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canRestoreTeam}
-            status={restoreTeam.status}
+            disabled={!canRestoreSkillPackageBuilder}
+            status={restoreSkill.status}
             text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
-            onClick={() => restoreTeam.mutate({ organizationId: organization.id, teamId: row.id })}
+            onClick={() =>
+                restoreSkill.mutate({ organizationId: organization.id, skillId: row.id })
+            }
         />
     );
 }
@@ -105,8 +211,7 @@ export function AdminModule_Trash_List() {
             Kaga.defineColumns<TrashRow>((columnHelper) => [
                 columnHelper.accessor("type", {
                     header: "Type",
-                    cell: (ctx) =>
-                        TrashableEntities[ctx.getValue().toLowerCase() as "person" | "team"].label,
+                    cell: (ctx) => TrashableEntities[entityIdForType(ctx.getValue())].label,
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
@@ -116,10 +221,11 @@ export function AdminModule_Trash_List() {
                     header: "Name",
                     cell: (ctx) => {
                         const row = ctx.row.original;
-                        const entity =
-                            TrashableEntities[row.type.toLowerCase() as "person" | "team"];
-                        return (
+                        const entity = TrashableEntities[entityIdForType(row.type)];
+                        return entity.href ? (
                             <Link href={entity.href(organization.slug, row.id)}>{row.name}</Link>
+                        ) : (
+                            row.name
                         );
                     },
                     enableSorting: true,

@@ -24,9 +24,11 @@ export const trashRouter = createTrpcRouter({
             z.array(
                 z.object({
                     id: z.string(),
-                    type: z.enum(["Person", "Team"]),
+                    type: z.enum(["Person", "Team", "SkillPackage", "SkillGroup", "Skill"]),
                     name: z.string(),
                     deletedAt: z.iso.datetime().nullable(),
+                    /** Only set for `SkillGroup`/`Skill` rows — their detail pages need the parent package id too. */
+                    skillPackageId: z.string().optional(),
                 }),
             ),
         )
@@ -51,7 +53,12 @@ export const trashRouter = createTrpcRouter({
                 hasAnyRoleWithPermissions(roles, { [entity.permission]: ["delete"] }),
             );
 
-            const rows: { id: string; type: "Person" | "Team"; name: string }[] = [];
+            const rows: {
+                id: string;
+                type: "Person" | "Team" | "SkillPackage" | "SkillGroup" | "Skill";
+                name: string;
+                skillPackageId?: string;
+            }[] = [];
 
             if (visibleEntities.includes(TrashableEntities.person)) {
                 const people = await ctx.prisma.person.findMany({
@@ -69,6 +76,56 @@ export const trashRouter = createTrpcRouter({
                     select: { id: true, name: true },
                 });
                 rows.push(...teams.map((t) => ({ id: t.id, type: "Team" as const, name: t.name })));
+            }
+
+            if (visibleEntities.includes(TrashableEntities.skillPackage)) {
+                const packages = await ctx.prisma.skillPackage.findMany({
+                    where: { organizationId: ctx.organizationId, status: "Deleted" },
+                    select: { id: true, name: true },
+                });
+                rows.push(
+                    ...packages.map((p) => ({
+                        id: p.id,
+                        type: "SkillPackage" as const,
+                        name: p.name,
+                    })),
+                );
+            }
+
+            if (visibleEntities.includes(TrashableEntities.skillGroup)) {
+                const groups = await ctx.prisma.skillGroup.findMany({
+                    where: {
+                        skillPackage: { organizationId: ctx.organizationId },
+                        status: "Deleted",
+                    },
+                    select: { id: true, name: true, skillPackageId: true },
+                });
+                rows.push(
+                    ...groups.map((g) => ({
+                        id: g.id,
+                        type: "SkillGroup" as const,
+                        name: g.name,
+                        skillPackageId: g.skillPackageId,
+                    })),
+                );
+            }
+
+            if (visibleEntities.includes(TrashableEntities.skill)) {
+                const skills = await ctx.prisma.skill.findMany({
+                    where: {
+                        skillPackage: { organizationId: ctx.organizationId },
+                        status: "Deleted",
+                    },
+                    select: { id: true, name: true, skillPackageId: true },
+                });
+                rows.push(
+                    ...skills.map((s) => ({
+                        id: s.id,
+                        type: "Skill" as const,
+                        name: s.name,
+                        skillPackageId: s.skillPackageId,
+                    })),
+                );
             }
 
             if (rows.length === 0) return [];
