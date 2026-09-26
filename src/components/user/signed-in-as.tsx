@@ -18,10 +18,10 @@ export function SignedInAs_Card() {
 
     return (
         <Card>
-            <CardContent className="flex gap-2">
-                <div className="font-medium pr-2">Signed in as</div>
-                <div>{session.user.name}</div>
-                <div className="text-muted-foreground">{session.user.email}</div>
+            <CardContent className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-2">
+                <div className="font-medium shrink-0 sm:pr-2">Signed in as</div>
+                <div className="min-w-0 truncate">{session.user.name}</div>
+                <div className="min-w-0 truncate text-muted-foreground">{session.user.email}</div>
             </CardContent>
         </Card>
     );
@@ -34,7 +34,7 @@ export function SignedInAs_Card() {
 export function SignedInAs_Skeleton() {
     return (
         <Card aria-busy="true" aria-label="Loading signed-in user">
-            <CardContent className="flex gap-2">
+            <CardContent className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-2">
                 <Skeleton className="h-5 w-28" />
                 <Skeleton className="h-5 w-32" />
                 <Skeleton className="h-5 w-48" />
