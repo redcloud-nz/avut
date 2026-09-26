@@ -6,11 +6,13 @@
 "use client";
 
 import { SendIcon } from "lucide-react";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { userEffects } from "@/client/user-effects";
+import { RejectInvitation_Dialog } from "@/components/invitations/reject-invitation-dialog";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +36,19 @@ type Invitation = RouterOutput["user"]["listInvitations"][number];
 export function Invitations_Card() {
     const { data: invitations } = useSuspenseQuery(trpc.user.listInvitations.queryOptions());
 
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["reject"] as const));
+    const [invitationId, setInvitationId] = useQueryState("invitationId", parseAsString);
+    const activeInvitation = invitations.find((i) => i.id === invitationId) ?? null;
+
+    function openReject(id: Invitation["id"]) {
+        void setInvitationId(id, { history: "push" });
+        void setAction("reject", { history: "push" });
+    }
+    function closeReject() {
+        void setAction(null, { history: "replace" });
+        void setInvitationId(null, { history: "replace" });
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -55,10 +70,24 @@ export function Invitations_Card() {
                     }
                 >
                     {invitations.map((invitation) => (
-                        <Invitation_Item key={invitation.id} invitation={invitation} />
+                        <Invitation_Item
+                            key={invitation.id}
+                            invitation={invitation}
+                            onDecline={() => openReject(invitation.id)}
+                        />
                     ))}
                 </Show>
             </CardContent>
+            {activeInvitation && (
+                <RejectInvitation_Dialog
+                    invitation={{
+                        id: activeInvitation.id,
+                        organizationName: activeInvitation.organization.name,
+                    }}
+                    open={action === "reject"}
+                    onOpenChange={(open) => (open ? undefined : closeReject())}
+                />
+            )}
         </Card>
     );
 }
@@ -89,7 +118,13 @@ export function Invitations_Skeleton() {
     );
 }
 
-function Invitation_Item({ invitation }: { invitation: Invitation }) {
+function Invitation_Item({
+    invitation,
+    onDecline,
+}: {
+    invitation: Invitation;
+    onDecline: () => void;
+}) {
     const logger = useLogger("Common", "Invitation_Item");
 
     const acceptMutation = useMutation(
@@ -109,27 +144,6 @@ function Invitation_Item({ invitation }: { invitation: Invitation }) {
         }),
     );
 
-    const rejectMutation = useMutation(
-        trpc.user.rejectInvitation.mutationOptions({
-            meta: { effects: userEffects.rejectInvitation },
-            onError(error) {
-                logger.error("Failed to reject invitation", error);
-                toast.error(`Failed to reject invitation: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success(
-                    <>
-                        Rejected invitation to{" "}
-                        <ObjectName>{invitation.organization.name}</ObjectName>
-                    </>,
-                );
-            },
-        }),
-    );
-
-    const busy = acceptMutation.isPending || rejectMutation.isPending;
-    const input = { invitationId: invitation.id };
-
     return (
         <Item>
             <ItemMedia>
@@ -144,16 +158,16 @@ function Invitation_Item({ invitation }: { invitation: Invitation }) {
                     type="button"
                     size="sm"
                     status={acceptMutation.status}
-                    disabled={busy}
+                    disabled={acceptMutation.isPending}
                     text={{ idle: "Accept", pending: "Accepting", success: "Accepted" }}
-                    onClick={() => acceptMutation.mutate(input)}
+                    onClick={() => acceptMutation.mutate({ invitationId: invitation.id })}
                 />
                 <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    disabled={busy || acceptMutation.isSuccess}
-                    onClick={() => rejectMutation.mutate(input)}
+                    disabled={acceptMutation.isPending || acceptMutation.isSuccess}
+                    onClick={onDecline}
                 >
                     Reject
                 </Button>
