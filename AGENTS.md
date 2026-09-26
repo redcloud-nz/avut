@@ -223,6 +223,10 @@ For detail pages use `Saratoga.Columns` with `<Saratoga.Column slot="main">` and
 
 `Saratoga.Root` is a fixed `max-w-5xl`; it has no width variants. Constrain narrower content with `className` on a case-by-case basis.
 
+## Entity Links
+
+Render an entity's name as a link to its detail page with the wrappers in `src/components/entity-links/` (`PersonLink`, `TeamLink`, `TeamMembershipLink`, `UserLink`), not a bare `<Link>` — see [`docs/patterns/entity-link.md`](docs/patterns/entity-link.md) for the prop-typing convention (intersect the entity's `Ref` schema, don't hand-roll the shape) and how to add a new entity type.
+
 ## Scope roots and modules
 
 The app has three real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
