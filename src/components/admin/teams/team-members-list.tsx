@@ -22,6 +22,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
 import { HelpButton } from "@/components/docs/help-button";
+import { PersonLink } from "@/components/entity-links/person-link";
 import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
@@ -71,19 +72,7 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                 columnHelper.accessor((row) => `${row.person.name} ${row.person.email}`, {
                     id: "name",
                     header: "Name",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/admin/personnel/[person_id]", {
-                                slug: organization.slug,
-                                person_id: ctx.row.original.person.id,
-                            })}
-                        >
-                            <div>{ctx.row.original.person.name}</div>
-                            <div className="text-muted-foreground text-xs">
-                                {ctx.row.original.person.email}
-                            </div>
-                        </Link>
-                    ),
+                    cell: (ctx) => <PersonLink person={ctx.row.original.person} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,

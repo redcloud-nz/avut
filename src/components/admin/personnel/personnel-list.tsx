@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -19,8 +18,8 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
+import { PersonLink } from "@/components/entity-links/person-link";
 import { Protect } from "@/components/protect";
-import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
@@ -48,16 +47,7 @@ export function AdminModule_Personnel_List({ organization }: AdminModule_Personn
             Kaga.defineColumns<RowData>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: "Name",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/admin/personnel/[person_id]", {
-                                slug: organization.slug,
-                                person_id: ctx.row.original.id,
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => <PersonLink person={ctx.row.original} />,
                     enableColumnFilter: false,
                     enableGlobalFilter: true,
                     enableSorting: true,
@@ -84,7 +74,7 @@ export function AdminModule_Personnel_List({ organization }: AdminModule_Personn
                     },
                 }),
             ]),
-        [organization.slug],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

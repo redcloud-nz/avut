@@ -12,6 +12,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import type { SecondaryRoleOptions } from "@/components/admin/invitations/invitation-role-fields";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { UserLink } from "@/components/entity-links/user-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { Modules, type ModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 import { SystemAdmin_AddMember_Dialog } from "./add-member-dialog";
@@ -144,15 +146,15 @@ export function SystemAdmin_Organization_Content({
                                                 {organization.members.map((member) => (
                                                     <tr key={member.userId} className="border-t">
                                                         <td className="py-1 pr-4">
-                                                            <Link
-                                                                href={route(
-                                                                    "/system/admin/users/[user_id]",
-                                                                    { user_id: member.userId },
-                                                                )}
-                                                                className="underline-offset-2 hover:underline"
-                                                            >
-                                                                {member.name}
-                                                            </Link>
+                                                            <UserLink
+                                                                user={{
+                                                                    id: UserId.schema.parse(
+                                                                        member.userId,
+                                                                    ),
+                                                                    name: member.name,
+                                                                    email: member.email,
+                                                                }}
+                                                            />
                                                         </td>
                                                         <td className="py-1 pr-4">
                                                             {member.email}
