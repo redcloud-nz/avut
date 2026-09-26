@@ -62,7 +62,7 @@ export function RejectInvitation_Dialog({
             mutation.reset();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
-    }, [props.open]);
+    }, [props.open, invitation.id]);
 
     return (
         <Dialog {...props}>

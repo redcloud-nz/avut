@@ -49,6 +49,12 @@ export function InvitationLanding_Card({ invitationId }: { invitationId: Invitat
         trpc.invitations.getLanding.queryOptions({ invitationId }),
     );
 
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["reject"] as const));
+
+    function handleDialogOpenChange(open: boolean) {
+        void setAction(open ? "reject" : null, { history: open ? "push" : "replace" });
+    }
+
     if (landing.state === "not-found")
         return (
             <Message
@@ -58,11 +64,47 @@ export function InvitationLanding_Card({ invitationId }: { invitationId: Invitat
         );
 
     const { organization, viewer } = landing;
+
+    return (
+        <>
+            <Landing_State
+                invitationId={invitationId}
+                landing={landing}
+                onDecline={() => handleDialogOpenChange(true)}
+            />
+            {viewer.kind === "recipient" && (
+                <RejectInvitation_Dialog
+                    invitation={{ id: invitationId, organizationName: organization.name }}
+                    open={action === "reject"}
+                    onOpenChange={handleDialogOpenChange}
+                />
+            )}
+        </>
+    );
+}
+
+/**
+ * The content that varies with `landing.state`, split out from `InvitationLanding_Card` so the
+ * `RejectInvitation_Dialog` it hosts stays mounted across the `pending` → `rejected` transition
+ * a successful decline causes (see `mutation-dialog.md`'s host-driven recipe).
+ */
+function Landing_State({
+    invitationId,
+    landing,
+    onDecline,
+}: {
+    invitationId: InvitationId;
+    landing: Landing;
+    onDecline: () => void;
+}) {
+    const { organization, viewer } = landing;
     const orgName = <ObjectName>{organization.name}</ObjectName>;
 
     switch (landing.state) {
         case "pending":
-            return <Pending_Card invitationId={invitationId} landing={landing} />;
+            return (
+                <Pending_Card invitationId={invitationId} landing={landing} onDecline={onDecline} />
+            );
         case "expired":
             return (
                 <Message
@@ -128,7 +170,15 @@ function Message({
     );
 }
 
-function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; landing: Landing }) {
+function Pending_Card({
+    invitationId,
+    landing,
+    onDecline,
+}: {
+    invitationId: InvitationId;
+    landing: Landing;
+    onDecline: () => void;
+}) {
     const { organization, inviterName, email, personName, hasAccount, viewer } = landing;
     const returnTo = route("/invitations/[invitation_id]", { invitation_id: invitationId });
     const signedOut = viewer.kind === "anonymous";
@@ -168,7 +218,11 @@ function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; l
             {viewer.kind !== "anonymous" && (
                 <CardFooter className="flex-wrap gap-2">
                     {viewer.kind === "recipient" && (
-                        <Respond_Actions invitationId={invitationId} landing={landing} />
+                        <Respond_Actions
+                            invitationId={invitationId}
+                            landing={landing}
+                            onDecline={onDecline}
+                        />
                     )}
                     {viewer.kind === "other" && <SwitchAccount_Button returnTo={returnTo} />}
                 </CardFooter>
@@ -180,19 +234,14 @@ function Pending_Card({ invitationId, landing }: { invitationId: InvitationId; l
 function Respond_Actions({
     invitationId,
     landing,
+    onDecline,
 }: {
     invitationId: InvitationId;
     landing: Landing;
+    onDecline: () => void;
 }) {
     const router = useRouter();
     const logger = useLogger("Common", "InvitationLanding");
-
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["reject"] as const));
-    const dialogOpen = action === "reject";
-
-    function handleDialogOpenChange(open: boolean) {
-        void setAction(open ? "reject" : null, { history: open ? "push" : "replace" });
-    }
 
     const acceptMutation = useMutation(
         trpc.user.acceptInvitation.mutationOptions({
@@ -225,15 +274,10 @@ function Respond_Actions({
                 type="button"
                 variant="outline"
                 disabled={acceptMutation.isPending || acceptMutation.isSuccess}
-                onClick={() => handleDialogOpenChange(true)}
+                onClick={onDecline}
             >
                 Decline
             </Button>
-            <RejectInvitation_Dialog
-                invitation={{ id: invitationId, organizationName: landing.organization.name }}
-                open={dialogOpen}
-                onOpenChange={handleDialogOpenChange}
-            />
         </>
     );
 }

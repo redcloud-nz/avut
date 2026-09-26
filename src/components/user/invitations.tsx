@@ -169,7 +169,7 @@ function Invitation_Item({
                     disabled={acceptMutation.isPending || acceptMutation.isSuccess}
                     onClick={onDecline}
                 >
-                    Reject
+                    Decline
                 </Button>
             </ItemActions>
         </Item>
