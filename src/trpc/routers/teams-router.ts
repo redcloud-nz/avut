@@ -12,7 +12,7 @@ import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
-import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
@@ -405,6 +405,36 @@ export const teamsRouter = createTrpcRouter({
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.teamMembershipNotFound({ teamId, personId }),
+                });
+            }
+
+            return {
+                ...TeamMembershipData.fromRecord(record),
+                team: record.team,
+                person: record.person,
+            };
+        }),
+
+    /**
+     * Get a single team membership by its own id — the lookup behind the single-id
+     * detail route (`/orgs/[slug]/admin/team-memberships/[team_membership_id]`), which
+     * exists so the Rubbish bin can link to a deleted membership (#307). Prefer
+     * `getTeamMembership` when the (teamId, personId) pair is already known.
+     * @throws TRPCError(NOT_FOUND) if no membership with this id exists in the organization.
+     */
+    getTeamMembershipById: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamMembershipId: TeamMembershipId.schema }))
+        .output(teamMembershipRowSchema)
+        .query(async ({ ctx, input: { organizationId, teamMembershipId } }) => {
+            const record = await ctx.prisma.teamMembership.findUnique({
+                where: { id: teamMembershipId, organizationId },
+                include: teamMembershipRowInclude,
+            });
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamMembershipNotFoundById(teamMembershipId),
                 });
             }
 

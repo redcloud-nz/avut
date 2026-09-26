@@ -41,9 +41,8 @@ interface TrashableEntityDef {
     permission: "person" | "team" | "i3Template" | "skillPackageBuilder";
     /**
      * Link to the entity's own detail page, or `null` if it isn't addressable by a single id —
-     * `TeamMembership`'s detail page is keyed by (teamId, personId) and `SkillGroup`/`Skill`'s by
-     * (packageId, id), not a single id, so the Rubbish bin renders their name as plain text
-     * instead of calling this.
+     * `SkillGroup`/`Skill`'s detail page is keyed by (packageId, id), not a single id, so the
+     * Rubbish bin renders their name as plain text instead of calling this.
      */
     href: ((slug: string, id: string) => Route) | null;
 }
@@ -69,7 +68,11 @@ export const TrashableEntities = {
         label: "Team Membership",
         objectType: "TeamMembership",
         permission: "team",
-        href: null,
+        href: (slug, id) =>
+            route("/orgs/[slug]/admin/team-memberships/[team_membership_id]", {
+                slug,
+                team_membership_id: id,
+            }),
     },
     i3Template: {
         id: "i3Template",
