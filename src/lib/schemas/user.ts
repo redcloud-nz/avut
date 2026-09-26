@@ -39,3 +39,12 @@ export const UserData = {
 } as const;
 
 export type UserData = z.infer<typeof userSchema>;
+
+export const UserRef = {
+    schema: z.object({
+        id: UserId.schema,
+        name: z.string(),
+    }),
+} as const;
+
+export type UserRef = z.infer<typeof UserRef.schema>;
