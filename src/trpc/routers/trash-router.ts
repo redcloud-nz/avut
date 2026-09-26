@@ -24,7 +24,7 @@ export const trashRouter = createTrpcRouter({
             z.array(
                 z.object({
                     id: z.string(),
-                    type: z.enum(["Person", "Team", "TeamMembership"]),
+                    type: z.enum(["Person", "Team", "TeamMembership", "I3Template"]),
                     name: z.string(),
                     deletedAt: z.iso.datetime().nullable(),
                     /** Only set for `TeamMembership` rows — its detail page needs both ids. */
@@ -56,7 +56,7 @@ export const trashRouter = createTrpcRouter({
 
             const rows: {
                 id: string;
-                type: "Person" | "Team" | "TeamMembership";
+                type: "Person" | "Team" | "TeamMembership" | "I3Template";
                 name: string;
                 teamId?: string;
                 personId?: string;
@@ -98,6 +98,20 @@ export const trashRouter = createTrpcRouter({
                         name: `${m.person.name} in ${m.team.name}`,
                         teamId: m.teamId,
                         personId: m.personId,
+                    })),
+                );
+            }
+
+            if (visibleEntities.includes(TrashableEntities.i3Template)) {
+                const templates = await ctx.prisma.i3Template.findMany({
+                    where: { organizationId: ctx.organizationId, status: "Deleted" },
+                    select: { id: true, name: true },
+                });
+                rows.push(
+                    ...templates.map((t) => ({
+                        id: t.id,
+                        type: "I3Template" as const,
+                        name: t.name,
                     })),
                 );
             }

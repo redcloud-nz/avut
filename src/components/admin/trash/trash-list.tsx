@@ -17,6 +17,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { i3Effects } from "@/client/i3-effects";
 import { personnelEffects } from "@/client/personnel-effects";
 import { teamsEffects } from "@/client/teams-effects";
 import { Kaga } from "@/components/blocks/kaga";
@@ -28,23 +29,29 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
 
-function entityIdForType(type: "Person" | "Team" | "TeamMembership"): TrashableEntityId {
-    return type === "Person" ? "person" : type === "Team" ? "team" : "teamMembership";
-}
-
 type TrashRow = {
     id: string;
-    type: "Person" | "Team" | "TeamMembership";
+    type: "Person" | "Team" | "TeamMembership" | "I3Template";
     name: string;
     deletedAt: string | null;
+    /** Only set for `TeamMembership` rows — its detail page needs both ids. */
     teamId?: string;
     personId?: string;
+};
+
+/** Maps a `listTrash` row's `type` to its `TrashableEntities` registry key. */
+const entityIdByType: Record<TrashRow["type"], TrashableEntityId> = {
+    Person: "person",
+    Team: "team",
+    TeamMembership: "teamMembership",
+    I3Template: "i3Template",
 };
 
 function RestoreCell({ row }: { row: TrashRow }) {
     const organization = useOrganization();
     const canRestorePerson = useHasPermission({ person: ["delete"] });
     const canRestoreTeam = useHasPermission({ team: ["delete"] });
+    const canRestoreI3Template = useHasPermission({ i3Template: ["delete"] });
 
     const restorePerson = useMutation(
         trpc.personnel.restorePersonFromTrash.mutationOptions({
@@ -79,6 +86,17 @@ function RestoreCell({ row }: { row: TrashRow }) {
             },
         }),
     );
+    const restoreI3Template = useMutation(
+        trpc.i3.restoreTemplateFromTrash.mutationOptions({
+            meta: { effects: i3Effects.restoreTemplateFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore template: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Template "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
 
     if (row.type === "Person") {
         return (
@@ -96,7 +114,24 @@ function RestoreCell({ row }: { row: TrashRow }) {
         );
     }
 
-    if (row.type === "TeamMembership") {
+    if (row.type === "Team") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreTeam}
+                status={restoreTeam.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreTeam.mutate({ organizationId: organization.id, teamId: row.id })
+                }
+            />
+        );
+    }
+
+    if (row.type === "TeamMembership" && row.teamId !== undefined && row.personId !== undefined) {
+        const { teamId, personId } = row;
         return (
             <MutationButton
                 type="button"
@@ -108,8 +143,8 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 onClick={() =>
                     restoreTeamMembership.mutate({
                         organizationId: organization.id,
-                        teamId: row.teamId!,
-                        personId: row.personId!,
+                        teamId,
+                        personId,
                     })
                 }
             />
@@ -121,10 +156,12 @@ function RestoreCell({ row }: { row: TrashRow }) {
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canRestoreTeam}
-            status={restoreTeam.status}
+            disabled={!canRestoreI3Template}
+            status={restoreI3Template.status}
             text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
-            onClick={() => restoreTeam.mutate({ organizationId: organization.id, teamId: row.id })}
+            onClick={() =>
+                restoreI3Template.mutate({ organizationId: organization.id, templateId: row.id })
+            }
         />
     );
 }
@@ -142,7 +179,8 @@ export function AdminModule_Trash_List() {
             Kaga.defineColumns<TrashRow>((columnHelper) => [
                 columnHelper.accessor("type", {
                     header: "Type",
-                    cell: (ctx) => TrashableEntities[entityIdForType(ctx.getValue())].label,
+                    cell: (ctx) =>
+                        TrashableEntities[entityIdByType[ctx.getValue() as TrashRow["type"]]].label,
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
@@ -152,7 +190,7 @@ export function AdminModule_Trash_List() {
                     header: "Name",
                     cell: (ctx) => {
                         const row = ctx.row.original;
-                        const entity = TrashableEntities[entityIdForType(row.type)];
+                        const entity = TrashableEntities[entityIdByType[row.type]];
                         return entity.href ? (
                             <Link href={entity.href(organization.slug, row.id)}>{row.name}</Link>
                         ) : (

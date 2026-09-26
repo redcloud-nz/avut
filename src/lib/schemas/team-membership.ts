@@ -77,3 +77,13 @@ export const TeamMembershipData = {
 export type TeamMembershipData = z.infer<typeof teamMembershipSchema>;
 
 export type ModifiableTeamMembershipData = z.infer<typeof TeamMembershipData.modifiableSchema>;
+
+export const TeamMembershipRef = {
+    schema: z.object({
+        teamId: TeamId.schema,
+        personId: PersonId.schema,
+        name: z.string(),
+    }),
+} as const;
+
+export type TeamMembershipRef = z.infer<typeof TeamMembershipRef.schema>;

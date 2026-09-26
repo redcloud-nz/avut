@@ -12,7 +12,7 @@ import { route } from "@/lib/routes";
  * `src/lib/modules.ts`'s registry shape: a single id-keyed object literal that downstream code
  * derives lists from, rather than a switch statement scattered across call sites.
  */
-export type TrashableEntityId = "person" | "team" | "teamMembership";
+export type TrashableEntityId = "person" | "team" | "teamMembership" | "i3Template";
 
 interface TrashableEntityDef {
     id: TrashableEntityId;
@@ -22,9 +22,9 @@ interface TrashableEntityDef {
      * The `LogEntry.objectType` this entity's rows are logged under — used to batch-resolve
      * "deleted on" from `log_entries` rather than a denormalized column.
      */
-    objectType: "Person" | "Team" | "TeamMembership";
+    objectType: "Person" | "Team" | "TeamMembership" | "I3Template";
     /** The permission resource name — restoring or listing a row gates on `{ [permission]: ["delete"] }`. */
-    permission: "person" | "team";
+    permission: "person" | "team" | "i3Template";
     /**
      * Link to the entity's own detail page, or `null` if it doesn't have one addressable by a
      * single id — `TeamMembership`'s detail page is keyed by (teamId, personId), not a single id,
@@ -55,6 +55,14 @@ export const TrashableEntities = {
         objectType: "TeamMembership",
         permission: "team",
         href: null,
+    },
+    i3Template: {
+        id: "i3Template",
+        label: "I3 Template",
+        objectType: "I3Template",
+        permission: "i3Template",
+        href: (slug, id) =>
+            route("/orgs/[slug]/i3/templates/[template_id]", { slug, template_id: id }),
     },
 } satisfies Record<TrashableEntityId, TrashableEntityDef>;
 

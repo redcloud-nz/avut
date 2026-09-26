@@ -89,3 +89,170 @@ describe("i3Router.getTemplate", () => {
         ).rejects.toThrow(/not found/i);
     });
 });
+
+describe("i3Router.deleteTemplate / restoreTemplateFromTrash", () => {
+    const T = { org: OrganizationId.create(), user: nanoId16() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+    });
+
+    function makeCaller(perms: Record<string, string[]>) {
+        return i3Router.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("soft-deletes a template and records a Delete log entry", async () => {
+        const { created } = await makeCaller({ i3Template: ["create"] }).createTemplate({
+            organizationId: T.org,
+            templateId: I3TemplateId.create(),
+            create: { name: "Doomed", description: "", d4h: null },
+        });
+
+        await makeCaller({ i3Template: ["delete"] }).deleteTemplate({
+            organizationId: T.org,
+            templateId: created.id,
+        });
+
+        const row = await db.i3Template.findUnique({ where: { id: created.id } });
+        expect(row).toMatchObject({ status: "Deleted" });
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "I3Template", objectId: created.id, action: "Delete" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("deleteTemplate is idempotent — deleting an already-deleted template writes no new log entry", async () => {
+        const { created } = await makeCaller({ i3Template: ["create"] }).createTemplate({
+            organizationId: T.org,
+            templateId: I3TemplateId.create(),
+            create: { name: "Doomed Again", description: "", d4h: null },
+        });
+
+        await makeCaller({ i3Template: ["delete"] }).deleteTemplate({
+            organizationId: T.org,
+            templateId: created.id,
+        });
+        await makeCaller({ i3Template: ["delete"] }).deleteTemplate({
+            organizationId: T.org,
+            templateId: created.id,
+        });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "I3Template", objectId: created.id, action: "Delete" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("deleteTemplate throws NOT_FOUND for an unknown template", async () => {
+        await expect(
+            makeCaller({ i3Template: ["delete"] }).deleteTemplate({
+                organizationId: T.org,
+                templateId: I3TemplateId.create(),
+            }),
+        ).rejects.toThrow(/not found/i);
+    });
+
+    it("restoreTemplateFromTrash requires i3Template:delete, not i3Template:update", async () => {
+        const { created } = await makeCaller({ i3Template: ["create"] }).createTemplate({
+            organizationId: T.org,
+            templateId: I3TemplateId.create(),
+            create: { name: "Gated", description: "", d4h: null },
+        });
+        await makeCaller({ i3Template: ["delete"] }).deleteTemplate({
+            organizationId: T.org,
+            templateId: created.id,
+        });
+
+        await expect(
+            makeCaller({ i3Template: ["update"] }).restoreTemplateFromTrash({
+                organizationId: T.org,
+                templateId: created.id,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("restores a deleted template back to Active and records a Restore log entry", async () => {
+        const { created } = await makeCaller({ i3Template: ["create"] }).createTemplate({
+            organizationId: T.org,
+            templateId: I3TemplateId.create(),
+            create: { name: "Recoverable", description: "", d4h: null },
+        });
+        await makeCaller({ i3Template: ["delete"] }).deleteTemplate({
+            organizationId: T.org,
+            templateId: created.id,
+        });
+
+        const { updated } = await makeCaller({ i3Template: ["delete"] }).restoreTemplateFromTrash({
+            organizationId: T.org,
+            templateId: created.id,
+        });
+        expect(updated.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "I3Template", objectId: created.id, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+});
+
+describe("i3Router.listTemplates", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        active: I3TemplateId.create(),
+        deleted: I3TemplateId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.i3Template.create({
+            data: {
+                id: T.active,
+                organizationId: T.org,
+                name: "Active Template",
+                description: "",
+                status: "Active",
+            },
+        });
+        await db.i3Template.create({
+            data: {
+                id: T.deleted,
+                organizationId: T.org,
+                name: "Deleted Template",
+                description: "",
+                status: "Deleted",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return i3Router.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], i3Template: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("excludes Deleted templates", async () => {
+        const templates = await makeCaller().listTemplates({ organizationId: T.org });
+        const ids = templates.map((t) => t.id);
+
+        expect(ids).toContain(T.active);
+        expect(ids).not.toContain(T.deleted);
+    });
+});

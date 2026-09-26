@@ -4,13 +4,13 @@
  */
 "use client";
 
-import Link from "next/link";
-
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import { PersonLink } from "@/components/entity-links/person-link";
+import { TeamLink } from "@/components/entity-links/team-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { useOrganization } from "@/hooks/use-organization";
@@ -96,30 +96,11 @@ export function AdminModule_TeamMembership_Content({
                                         <DLDetails>{membership.id}</DLDetails>
                                         <DLTerm>Person</DLTerm>
                                         <DLDetails>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/admin/personnel/[person_id]",
-                                                    {
-                                                        slug: organization.slug,
-                                                        person_id: membership.person.id,
-                                                    },
-                                                )}
-                                                className="hover:underline"
-                                            >
-                                                {membership.person.name}
-                                            </Link>
+                                            <PersonLink person={membership.person} />
                                         </DLDetails>
                                         <DLTerm>Team</DLTerm>
                                         <DLDetails>
-                                            <Link
-                                                href={route("/orgs/[slug]/admin/teams/[team_id]", {
-                                                    slug: organization.slug,
-                                                    team_id: teamId,
-                                                })}
-                                                className="hover:underline"
-                                            >
-                                                {team.name}
-                                            </Link>
+                                            <TeamLink team={team} />
                                         </DLDetails>
                                         <DLTerm>Status</DLTerm>
                                         <DLDetails>{membership.status}</DLDetails>
