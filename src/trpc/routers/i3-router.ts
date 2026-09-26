@@ -17,7 +17,7 @@ import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-templat
 import * as Forms from "@/server/services/forms";
 import * as I3Templates from "@/server/services/i3-templates";
 
-import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 export const i3Router = createTrpcRouter({
@@ -83,7 +83,7 @@ export const i3Router = createTrpcRouter({
         .output(z.object({ created: I3TemplateVariant.schema }))
         .mutation(async ({ ctx, input: { templateId, variantId, create } }) => {
             // Ensure the template exists and belongs to the organization
-            await getI3TemplateOrThrow(ctx, templateId);
+            await I3Templates.requireById(ctx, templateId);
 
             const diff = diffObject({}, create);
 
@@ -308,7 +308,7 @@ export const i3Router = createTrpcRouter({
         )
         .output(z.object({ updated: I3Template.schema }))
         .mutation(async ({ ctx, input: { templateId, update } }) => {
-            const existing = await getI3TemplateOrThrow(ctx, templateId);
+            const existing = await I3Templates.requireById(ctx, templateId);
 
             const [updated] = await ctx.prisma.$transaction([
                 ctx.prisma.i3Template.update({
@@ -404,27 +404,3 @@ export const i3Router = createTrpcRouter({
             return { updated: I3TemplateVariant.fromRecord(updated) };
         }),
 });
-
-/**
- * Utility function to fetch an I3 Template by ID and ensure it belongs to the organization. Throws a TRPCError if the template is not found or does not belong to the organization.
- * @param ctx The authenticated organization context.
- * @param templateId The ID of the I3 Template to fetch.
- * @returns The I3 Template record.
- */
-async function getI3TemplateOrThrow(
-    ctx: AuthenticatedOrganizationContext,
-    templateId: I3TemplateId,
-) {
-    const template = await ctx.prisma.i3Template.findUnique({
-        where: { id: templateId, organizationId: ctx.organizationId },
-        include: { d4h: true },
-    });
-
-    if (!template) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: Messages.i3TemplateNotFound(templateId),
-        });
-    }
-    return I3Template.fromRecord(template);
-}

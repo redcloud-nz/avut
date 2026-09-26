@@ -64,15 +64,16 @@ export async function deleteRecord(
         return existing;
     }
 
-    await ctx.prisma.$transaction([
+    const [updated] = await ctx.prisma.$transaction([
         ctx.prisma.i3Template.update({
             where: { id: templateId, organizationId: ctx.organizationId },
             data: { status: "Deleted" },
+            include: { d4h: true },
         }),
         ctx.logEvent({ action: "Delete", objectType: "I3Template", objectId: templateId }),
     ]);
 
-    return await requireById(ctx, templateId);
+    return I3Template.fromRecord(updated);
 }
 
 /**
@@ -98,13 +99,14 @@ export async function restoreFromTrash(
         );
     }
 
-    await ctx.prisma.$transaction([
+    const [updated] = await ctx.prisma.$transaction([
         ctx.prisma.i3Template.update({
             where: { id: templateId, organizationId: ctx.organizationId },
             data: { status: "Active" },
+            include: { d4h: true },
         }),
         ctx.logEvent({ action: "Restore", objectType: "I3Template", objectId: templateId }),
     ]);
 
-    return await requireById(ctx, templateId);
+    return I3Template.fromRecord(updated);
 }
