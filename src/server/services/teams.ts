@@ -5,10 +5,15 @@
 
 import "server-only";
 
-import { NotFoundError, ValidationError } from "@/lib/errors";
+import { diffObject } from "@/lib/diff";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import type { PersonId } from "@/lib/schemas/person";
 import { TeamData, type TeamId } from "@/lib/schemas/team";
-import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import {
+    TeamMembershipData,
+    TeamMembershipId,
+    type ModifiableTeamMembershipData,
+} from "@/lib/schemas/team-membership";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -225,6 +230,76 @@ export async function requireMembership(
     }
 
     return membership;
+}
+
+/**
+ * Create a team membership for a (teamId, personId) pair.
+ *
+ * If a `Deleted` membership already exists for the pair, revives it in place instead of inserting
+ * a second row — `@@unique([teamId, personId])` means a fresh `create` would fail once a row for
+ * that pair exists at all, deleted or not. Mirrors `d4h-team-sync.ts`'s `adoptExistingMembership`,
+ * which revives the same way for the D4H-driven add path.
+ * @throws ConflictError if an Active or Archived membership already exists for this pair.
+ */
+export async function createMembership(
+    ctx: OrgServiceContext,
+    teamId: TeamId,
+    personId: PersonId,
+    data: ModifiableTeamMembershipData,
+): Promise<TeamMembershipData> {
+    const existing = await ctx.prisma.teamMembership.findUnique({
+        where: { organizationId: ctx.organizationId, teamId_personId: { teamId, personId } },
+    });
+
+    if (existing && existing.status !== "Deleted") {
+        throw new ConflictError(`Person(${personId}) is already a member of Team(${teamId}).`);
+    }
+
+    if (existing) {
+        await ctx.prisma.$transaction([
+            ctx.prisma.teamMembership.update({
+                where: { id: existing.id },
+                data: { status: "Active", tags: data.tags, properties: data.properties },
+            }),
+            ctx.logEvent({
+                action: "Create",
+                objectType: "TeamMembership",
+                objectId: existing.id,
+                changes: diffObject({ tags: existing.tags, properties: existing.properties }, data),
+                refs: [
+                    { objectType: "Person", objectId: personId, role: "context" },
+                    { objectType: "Team", objectId: teamId, role: "context" },
+                ],
+            }),
+        ]);
+    } else {
+        const id = TeamMembershipId.create();
+
+        await ctx.prisma.$transaction([
+            ctx.prisma.teamMembership.create({
+                data: {
+                    id,
+                    organizationId: ctx.organizationId,
+                    teamId,
+                    personId,
+                    tags: data.tags,
+                    properties: data.properties,
+                },
+            }),
+            ctx.logEvent({
+                action: "Create",
+                objectType: "TeamMembership",
+                objectId: id,
+                changes: diffObject({ tags: [], properties: {} }, data),
+                refs: [
+                    { objectType: "Person", objectId: personId, role: "context" },
+                    { objectType: "Team", objectId: teamId, role: "context" },
+                ],
+            }),
+        ]);
+    }
+
+    return requireMembership(ctx, teamId, personId);
 }
 
 /**

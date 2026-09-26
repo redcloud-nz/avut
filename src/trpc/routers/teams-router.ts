@@ -12,7 +12,7 @@ import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
-import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
+import { TeamMembershipData } from "@/lib/schemas/team-membership";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
@@ -265,7 +265,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { teamId, personId, create } }) => {
-            const [team, person, existing] = await Promise.all([
+            const [team, person] = await Promise.all([
                 ctx.prisma.team.findUnique({
                     where: {
                         id: teamId,
@@ -276,12 +276,6 @@ export const teamsRouter = createTrpcRouter({
                     where: {
                         id: personId,
                         organizationId: ctx.organizationId,
-                    },
-                }),
-                ctx.prisma.teamMembership.findFirst({
-                    where: {
-                        teamId: teamId,
-                        personId: personId,
                     },
                 }),
             ]);
@@ -307,57 +301,13 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            if (existing) {
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    message: `Person(${personId}) is already a member of Team(${teamId}).`,
-                });
-            }
-
-            const teamMembershipId = TeamMembershipId.create();
-
-            const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.teamMembership.create({
-                    data: {
-                        id: teamMembershipId,
-                        organizationId: ctx.organizationId,
-                        teamId,
-                        personId,
-                        tags: create.tags,
-                        properties: create.properties,
-                    },
-                    include: {
-                        person: {
-                            select: {
-                                id: true,
-                                name: true,
-                            },
-                        },
-                        team: {
-                            select: {
-                                id: true,
-                                name: true,
-                            },
-                        },
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Create",
-                    objectType: "TeamMembership",
-                    objectId: teamMembershipId,
-                    changes: diffObject({ tags: [], properties: {} }, create),
-                    refs: [
-                        { objectType: "Person", objectId: personId, role: "context" },
-                        { objectType: "Team", objectId: teamId, role: "context" },
-                    ],
-                }),
-            ]);
+            const created = await Teams.createMembership(ctx, teamId, personId, create);
 
             return {
                 created: {
-                    ...TeamMembershipData.fromRecord(created),
-                    person: PersonRef.schema.parse(created.person),
-                    team: TeamRef.schema.parse(created.team),
+                    ...created,
+                    person: PersonRef.schema.parse(person),
+                    team: TeamRef.schema.parse(team),
                 },
             };
         }),
