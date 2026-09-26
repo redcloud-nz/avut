@@ -520,6 +520,415 @@ export async function prepareImport(
     return { plan, writeItems };
 }
 
+/**
+ * Archive a skill (reversible via `restoreSkillFromArchive`). No-op, returning the existing
+ * record unchanged, if the skill is already `Archived`.
+ * @throws NotFoundError if the skill does not exist in the organization.
+ * @throws ValidationError if the skill is `Deleted` — use `restoreSkillFromTrash` first.
+ */
+export async function archiveSkill(ctx: OrgServiceContext, skillId: SkillId): Promise<Skill> {
+    const existing = await requireSkillById(ctx, skillId);
+
+    if (existing.status === "Archived") {
+        return existing;
+    }
+
+    if (existing.status !== "Active") {
+        throw new ValidationError(
+            `Skill(id=${skillId}) has status ${existing.status}; only an Active skill can be archived.`,
+        );
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Archived" } }),
+        ctx.logEvent({ action: "Archive", objectType: "Skill", objectId: skillId }),
+    ]);
+
+    return await requireSkillById(ctx, skillId);
+}
+
+/**
+ * Restore an `Archived` skill back to `Active`. No-op, returning the existing record unchanged,
+ * if the skill is already `Active`.
+ * @throws NotFoundError if the skill does not exist in the organization.
+ * @throws ValidationError if the skill is `Deleted` — use `restoreSkillFromTrash` instead.
+ */
+export async function restoreSkillFromArchive(
+    ctx: OrgServiceContext,
+    skillId: SkillId,
+): Promise<Skill> {
+    const existing = await requireSkillById(ctx, skillId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Archived") {
+        throw new ValidationError(
+            `Skill(id=${skillId}) has status ${existing.status}; only an Archived skill can be restored from archive.`,
+        );
+    }
+
+    return await restoreSkillToActive(ctx, skillId);
+}
+
+/**
+ * Restore a `Deleted` skill back to `Active`. No-op, returning the existing record unchanged, if
+ * the skill is already `Active`.
+ * @throws NotFoundError if the skill does not exist in the organization.
+ * @throws ValidationError if the skill is `Archived` — use `restoreSkillFromArchive` instead.
+ */
+export async function restoreSkillFromTrash(
+    ctx: OrgServiceContext,
+    skillId: SkillId,
+): Promise<Skill> {
+    const existing = await requireSkillById(ctx, skillId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Deleted") {
+        throw new ValidationError(
+            `Skill(id=${skillId}) has status ${existing.status}; only a Deleted skill can be restored from rubbish.`,
+        );
+    }
+
+    return await restoreSkillToActive(ctx, skillId);
+}
+
+async function restoreSkillToActive(ctx: OrgServiceContext, skillId: SkillId): Promise<Skill> {
+    await ctx.prisma.$transaction([
+        ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Active" } }),
+        ctx.logEvent({ action: "Restore", objectType: "Skill", objectId: skillId }),
+    ]);
+
+    return await requireSkillById(ctx, skillId);
+}
+
+/**
+ * Soft-delete a skill (reversible via `restoreSkillFromTrash`). No-op, returning the existing
+ * record unchanged, if the skill is already `Deleted`.
+ * @throws NotFoundError if the skill does not exist in the organization.
+ */
+export async function deleteSkill(ctx: OrgServiceContext, skillId: SkillId): Promise<Skill> {
+    const existing = await requireSkillById(ctx, skillId);
+
+    if (existing.status === "Deleted") {
+        return existing;
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Deleted" } }),
+        ctx.logEvent({ action: "Delete", objectType: "Skill", objectId: skillId }),
+    ]);
+
+    return await requireSkillById(ctx, skillId);
+}
+
+/**
+ * Summarize what becomes hidden from active views if this skill is deleted, for the delete
+ * confirmation dialog's impact preview.
+ * @throws NotFoundError if the skill does not exist in the organization.
+ */
+export async function getSkillDeleteImpact(
+    ctx: OrgServiceContext,
+    skillId: SkillId,
+): Promise<{ skillCheckCount: number }> {
+    await requireSkillById(ctx, skillId);
+
+    const skillCheckCount = await ctx.prisma.skillCheck.count({ where: { skillId } });
+
+    return { skillCheckCount };
+}
+
+/**
+ * Archive a skill group (reversible via `restoreGroupFromArchive`). No-op, returning the
+ * existing record unchanged, if the group is already `Archived`.
+ * @throws NotFoundError if the group does not exist in the organization.
+ * @throws ValidationError if the group is `Deleted` — use `restoreGroupFromTrash` first.
+ */
+export async function archiveGroup(
+    ctx: OrgServiceContext,
+    skillGroupId: SkillGroupId,
+): Promise<SkillGroup> {
+    const existing = await requireGroupById(ctx, skillGroupId);
+
+    if (existing.status === "Archived") {
+        return existing;
+    }
+
+    if (existing.status !== "Active") {
+        throw new ValidationError(
+            `SkillGroup(id=${skillGroupId}) has status ${existing.status}; only an Active group can be archived.`,
+        );
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.skillGroup.update({
+            where: { id: skillGroupId },
+            data: { status: "Archived" },
+        }),
+        ctx.logEvent({ action: "Archive", objectType: "SkillGroup", objectId: skillGroupId }),
+    ]);
+
+    return await requireGroupById(ctx, skillGroupId);
+}
+
+/**
+ * Restore an `Archived` skill group back to `Active`. No-op, returning the existing record
+ * unchanged, if the group is already `Active`.
+ * @throws NotFoundError if the group does not exist in the organization.
+ * @throws ValidationError if the group is `Deleted` — use `restoreGroupFromTrash` instead.
+ */
+export async function restoreGroupFromArchive(
+    ctx: OrgServiceContext,
+    skillGroupId: SkillGroupId,
+): Promise<SkillGroup> {
+    const existing = await requireGroupById(ctx, skillGroupId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Archived") {
+        throw new ValidationError(
+            `SkillGroup(id=${skillGroupId}) has status ${existing.status}; only an Archived group can be restored from archive.`,
+        );
+    }
+
+    return await restoreGroupToActive(ctx, skillGroupId);
+}
+
+/**
+ * Restore a `Deleted` skill group back to `Active`. No-op, returning the existing record
+ * unchanged, if the group is already `Active`.
+ * @throws NotFoundError if the group does not exist in the organization.
+ * @throws ValidationError if the group is `Archived` — use `restoreGroupFromArchive` instead.
+ */
+export async function restoreGroupFromTrash(
+    ctx: OrgServiceContext,
+    skillGroupId: SkillGroupId,
+): Promise<SkillGroup> {
+    const existing = await requireGroupById(ctx, skillGroupId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Deleted") {
+        throw new ValidationError(
+            `SkillGroup(id=${skillGroupId}) has status ${existing.status}; only a Deleted group can be restored from rubbish.`,
+        );
+    }
+
+    return await restoreGroupToActive(ctx, skillGroupId);
+}
+
+async function restoreGroupToActive(
+    ctx: OrgServiceContext,
+    skillGroupId: SkillGroupId,
+): Promise<SkillGroup> {
+    await ctx.prisma.$transaction([
+        ctx.prisma.skillGroup.update({ where: { id: skillGroupId }, data: { status: "Active" } }),
+        ctx.logEvent({ action: "Restore", objectType: "SkillGroup", objectId: skillGroupId }),
+    ]);
+
+    return await requireGroupById(ctx, skillGroupId);
+}
+
+/**
+ * Soft-delete a skill group (reversible via `restoreGroupFromTrash`). No-op, returning the
+ * existing record unchanged, if the group is already `Deleted`.
+ *
+ * Always soft — nothing physically removes the row, and the group's skills are left untouched
+ * (no cascade on soft-delete), matching how archive already behaves.
+ * @throws NotFoundError if the group does not exist in the organization.
+ */
+export async function deleteGroup(
+    ctx: OrgServiceContext,
+    skillGroupId: SkillGroupId,
+): Promise<SkillGroup> {
+    const existing = await requireGroupById(ctx, skillGroupId);
+
+    if (existing.status === "Deleted") {
+        return existing;
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.skillGroup.update({ where: { id: skillGroupId }, data: { status: "Deleted" } }),
+        ctx.logEvent({ action: "Delete", objectType: "SkillGroup", objectId: skillGroupId }),
+    ]);
+
+    return await requireGroupById(ctx, skillGroupId);
+}
+
+/**
+ * Summarize what becomes hidden from active views if this group is deleted, for the delete
+ * confirmation dialog's impact preview. Not a cascade list — nothing here is destroyed at delete
+ * time.
+ * @throws NotFoundError if the group does not exist in the organization.
+ */
+export async function getGroupDeleteImpact(
+    ctx: OrgServiceContext,
+    skillGroupId: SkillGroupId,
+): Promise<{ skillCount: number }> {
+    await requireGroupById(ctx, skillGroupId);
+
+    const skillCount = await ctx.prisma.skill.count({
+        where: { skillGroupId, status: "Active" },
+    });
+
+    return { skillCount };
+}
+
+/**
+ * Archive a skill package (reversible via `restorePackageFromArchive`). No-op, returning the
+ * existing record unchanged, if the package is already `Archived`.
+ * @throws NotFoundError if the package does not exist in the organization.
+ * @throws ValidationError if the package is `Deleted` — use `restorePackageFromTrash` first.
+ */
+export async function archivePackage(
+    ctx: OrgServiceContext,
+    skillPackageId: SkillPackageId,
+): Promise<SkillPackage> {
+    const existing = await requirePackageById(ctx, skillPackageId);
+
+    if (existing.status === "Archived") {
+        return existing;
+    }
+
+    if (existing.status !== "Active") {
+        throw new ValidationError(
+            `SkillPackage(id=${skillPackageId}) has status ${existing.status}; only an Active package can be archived.`,
+        );
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.skillPackage.update({
+            where: { id: skillPackageId },
+            data: { status: "Archived" },
+        }),
+        ctx.logEvent({ action: "Archive", objectType: "SkillPackage", objectId: skillPackageId }),
+    ]);
+
+    return await requirePackageById(ctx, skillPackageId);
+}
+
+/**
+ * Restore an `Archived` skill package back to `Active`. No-op, returning the existing record
+ * unchanged, if the package is already `Active`.
+ * @throws NotFoundError if the package does not exist in the organization.
+ * @throws ValidationError if the package is `Deleted` — use `restorePackageFromTrash` instead.
+ */
+export async function restorePackageFromArchive(
+    ctx: OrgServiceContext,
+    skillPackageId: SkillPackageId,
+): Promise<SkillPackage> {
+    const existing = await requirePackageById(ctx, skillPackageId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Archived") {
+        throw new ValidationError(
+            `SkillPackage(id=${skillPackageId}) has status ${existing.status}; only an Archived package can be restored from archive.`,
+        );
+    }
+
+    return await restorePackageToActive(ctx, skillPackageId);
+}
+
+/**
+ * Restore a `Deleted` skill package back to `Active`. No-op, returning the existing record
+ * unchanged, if the package is already `Active`.
+ * @throws NotFoundError if the package does not exist in the organization.
+ * @throws ValidationError if the package is `Archived` — use `restorePackageFromArchive` instead.
+ */
+export async function restorePackageFromTrash(
+    ctx: OrgServiceContext,
+    skillPackageId: SkillPackageId,
+): Promise<SkillPackage> {
+    const existing = await requirePackageById(ctx, skillPackageId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Deleted") {
+        throw new ValidationError(
+            `SkillPackage(id=${skillPackageId}) has status ${existing.status}; only a Deleted package can be restored from rubbish.`,
+        );
+    }
+
+    return await restorePackageToActive(ctx, skillPackageId);
+}
+
+async function restorePackageToActive(
+    ctx: OrgServiceContext,
+    skillPackageId: SkillPackageId,
+): Promise<SkillPackage> {
+    await ctx.prisma.$transaction([
+        ctx.prisma.skillPackage.update({
+            where: { id: skillPackageId },
+            data: { status: "Active" },
+        }),
+        ctx.logEvent({ action: "Restore", objectType: "SkillPackage", objectId: skillPackageId }),
+    ]);
+
+    return await requirePackageById(ctx, skillPackageId);
+}
+
+/**
+ * Soft-delete a skill package (reversible via `restorePackageFromTrash`). No-op, returning the
+ * existing record unchanged, if the package is already `Deleted`.
+ *
+ * Always soft — nothing physically removes the row, and the package's groups/skills are left
+ * untouched (no cascade on soft-delete), matching how archive already behaves.
+ * @throws NotFoundError if the package does not exist in the organization.
+ */
+export async function deletePackage(
+    ctx: OrgServiceContext,
+    skillPackageId: SkillPackageId,
+): Promise<SkillPackage> {
+    const existing = await requirePackageById(ctx, skillPackageId);
+
+    if (existing.status === "Deleted") {
+        return existing;
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.skillPackage.update({
+            where: { id: skillPackageId },
+            data: { status: "Deleted" },
+        }),
+        ctx.logEvent({ action: "Delete", objectType: "SkillPackage", objectId: skillPackageId }),
+    ]);
+
+    return await requirePackageById(ctx, skillPackageId);
+}
+
+/**
+ * Summarize what becomes hidden from active views if this package is deleted, for the delete
+ * confirmation dialog's impact preview. Not a cascade list — nothing here is destroyed at delete
+ * time.
+ * @throws NotFoundError if the package does not exist in the organization.
+ */
+export async function getPackageDeleteImpact(
+    ctx: OrgServiceContext,
+    skillPackageId: SkillPackageId,
+): Promise<{ groupCount: number; skillCount: number }> {
+    await requirePackageById(ctx, skillPackageId);
+
+    const [groupCount, skillCount] = await Promise.all([
+        ctx.prisma.skillGroup.count({ where: { skillPackageId, status: "Active" } }),
+        ctx.prisma.skill.count({ where: { skillPackageId, status: "Active" } }),
+    ]);
+
+    return { groupCount, skillCount };
+}
+
 function assertNoDuplicateIds(groups: ExportedGroup[]) {
     const groupIds = new Set<string>();
     const skillIds = new Set<string>();

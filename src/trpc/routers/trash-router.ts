@@ -24,12 +24,22 @@ export const trashRouter = createTrpcRouter({
             z.array(
                 z.object({
                     id: z.string(),
-                    type: z.enum(["Person", "Team", "TeamMembership", "I3Template"]),
+                    type: z.enum([
+                        "Person",
+                        "Team",
+                        "TeamMembership",
+                        "I3Template",
+                        "SkillPackage",
+                        "SkillGroup",
+                        "Skill",
+                    ]),
                     name: z.string(),
                     deletedAt: z.iso.datetime().nullable(),
                     /** Only set for `TeamMembership` rows — its detail page needs both ids. */
                     teamId: z.string().optional(),
                     personId: z.string().optional(),
+                    /** Only set for `SkillGroup`/`Skill` rows — their detail pages need the parent package id too. */
+                    skillPackageId: z.string().optional(),
                 }),
             ),
         )
@@ -56,10 +66,18 @@ export const trashRouter = createTrpcRouter({
 
             const rows: {
                 id: string;
-                type: "Person" | "Team" | "TeamMembership" | "I3Template";
+                type:
+                    | "Person"
+                    | "Team"
+                    | "TeamMembership"
+                    | "I3Template"
+                    | "SkillPackage"
+                    | "SkillGroup"
+                    | "Skill";
                 name: string;
                 teamId?: string;
                 personId?: string;
+                skillPackageId?: string;
             }[] = [];
 
             if (visibleEntities.includes(TrashableEntities.person)) {
@@ -112,6 +130,56 @@ export const trashRouter = createTrpcRouter({
                         id: t.id,
                         type: "I3Template" as const,
                         name: t.name,
+                    })),
+                );
+            }
+
+            if (visibleEntities.includes(TrashableEntities.skillPackage)) {
+                const packages = await ctx.prisma.skillPackage.findMany({
+                    where: { organizationId: ctx.organizationId, status: "Deleted" },
+                    select: { id: true, name: true },
+                });
+                rows.push(
+                    ...packages.map((p) => ({
+                        id: p.id,
+                        type: "SkillPackage" as const,
+                        name: p.name,
+                    })),
+                );
+            }
+
+            if (visibleEntities.includes(TrashableEntities.skillGroup)) {
+                const groups = await ctx.prisma.skillGroup.findMany({
+                    where: {
+                        skillPackage: { organizationId: ctx.organizationId },
+                        status: "Deleted",
+                    },
+                    select: { id: true, name: true, skillPackageId: true },
+                });
+                rows.push(
+                    ...groups.map((g) => ({
+                        id: g.id,
+                        type: "SkillGroup" as const,
+                        name: g.name,
+                        skillPackageId: g.skillPackageId,
+                    })),
+                );
+            }
+
+            if (visibleEntities.includes(TrashableEntities.skill)) {
+                const skills = await ctx.prisma.skill.findMany({
+                    where: {
+                        skillPackage: { organizationId: ctx.organizationId },
+                        status: "Deleted",
+                    },
+                    select: { id: true, name: true, skillPackageId: true },
+                });
+                rows.push(
+                    ...skills.map((s) => ({
+                        id: s.id,
+                        type: "Skill" as const,
+                        name: s.name,
+                        skillPackageId: s.skillPackageId,
                     })),
                 );
             }

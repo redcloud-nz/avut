@@ -19,6 +19,7 @@ import {
 
 import { i3Effects } from "@/client/i3-effects";
 import { personnelEffects } from "@/client/personnel-effects";
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
 import { teamsEffects } from "@/client/teams-effects";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -26,32 +27,44 @@ import { MutationButton } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
+import {
+    TrashableEntities,
+    trashableEntityList,
+    type TrashableEntityId,
+} from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
 
 type TrashRow = {
     id: string;
-    type: "Person" | "Team" | "TeamMembership" | "I3Template";
+    type:
+        | "Person"
+        | "Team"
+        | "TeamMembership"
+        | "I3Template"
+        | "SkillPackage"
+        | "SkillGroup"
+        | "Skill";
     name: string;
     deletedAt: string | null;
     /** Only set for `TeamMembership` rows — its detail page needs both ids. */
     teamId?: string;
     personId?: string;
+    /** Only set for `SkillGroup`/`Skill` rows — their detail pages need the parent package id too. */
+    skillPackageId?: string;
 };
 
-/** Maps a `listTrash` row's `type` to its `TrashableEntities` registry key. */
-const entityIdByType: Record<TrashRow["type"], TrashableEntityId> = {
-    Person: "person",
-    Team: "team",
-    TeamMembership: "teamMembership",
-    I3Template: "i3Template",
-};
+/** Maps a `listTrash` row's `type` to its `TrashableEntities` registry key, derived from the
+ * registry itself rather than duplicating the type→id mapping by hand. */
+const entityIdByType = Object.fromEntries(
+    trashableEntityList.map((entity) => [entity.objectType, entity.id]),
+) as Record<TrashRow["type"], TrashableEntityId>;
 
 function RestoreCell({ row }: { row: TrashRow }) {
     const organization = useOrganization();
     const canRestorePerson = useHasPermission({ person: ["delete"] });
     const canRestoreTeam = useHasPermission({ team: ["delete"] });
     const canRestoreI3Template = useHasPermission({ i3Template: ["delete"] });
+    const canRestoreSkillPackageBuilder = useHasPermission({ skillPackageBuilder: ["delete"] });
 
     const restorePerson = useMutation(
         trpc.personnel.restorePersonFromTrash.mutationOptions({
@@ -94,6 +107,39 @@ function RestoreCell({ row }: { row: TrashRow }) {
             },
             onSuccess() {
                 toast.success(`Template "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restorePackage = useMutation(
+        trpc.skillPackageBuilder.restorePackageFromTrash.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.restorePackageFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore skill package: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Skill package "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restoreGroup = useMutation(
+        trpc.skillPackageBuilder.restoreGroupFromTrash.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.restoreGroupFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore skill group: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Skill group "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
+    const restoreSkill = useMutation(
+        trpc.skillPackageBuilder.restoreSkillFromTrash.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.restoreSkillFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore skill: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Skill "${row.name}" restored from rubbish.`);
             },
         }),
     );
@@ -151,16 +197,70 @@ function RestoreCell({ row }: { row: TrashRow }) {
         );
     }
 
+    if (row.type === "I3Template") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreI3Template}
+                status={restoreI3Template.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreI3Template.mutate({
+                        organizationId: organization.id,
+                        templateId: row.id,
+                    })
+                }
+            />
+        );
+    }
+
+    if (row.type === "SkillPackage") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreSkillPackageBuilder}
+                status={restorePackage.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restorePackage.mutate({
+                        organizationId: organization.id,
+                        skillPackageId: row.id,
+                    })
+                }
+            />
+        );
+    }
+
+    if (row.type === "SkillGroup") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreSkillPackageBuilder}
+                status={restoreGroup.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreGroup.mutate({ organizationId: organization.id, skillGroupId: row.id })
+                }
+            />
+        );
+    }
+
     return (
         <MutationButton
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canRestoreI3Template}
-            status={restoreI3Template.status}
+            disabled={!canRestoreSkillPackageBuilder}
+            status={restoreSkill.status}
             text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
             onClick={() =>
-                restoreI3Template.mutate({ organizationId: organization.id, templateId: row.id })
+                restoreSkill.mutate({ organizationId: organization.id, skillId: row.id })
             }
         />
     );
