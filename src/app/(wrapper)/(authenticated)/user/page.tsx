@@ -28,7 +28,10 @@ export default function UserDashboard_Page() {
         <HydrateClient>
             <Std.Navbar breadcrumbs={["Dashboard"]} />
             <Std.ScrollContainer>
-                <Saratoga.Root>
+                {/* space-y-4 overrides Saratoga.Root's shared space-y-2 so the gap above and
+                    below the Signed-in-as card matches the 16px gap used everywhere else on
+                    this page (Saratoga.Column's space-y-4, Saratoga.Columns' gap-4). */}
+                <Saratoga.Root className="space-y-4">
                     <Saratoga.Header>
                         <Saratoga.Title>User Dashboard</Saratoga.Title>
                     </Saratoga.Header>
