@@ -28,6 +28,8 @@ describe("trash.listTrash", () => {
         deletedPerson: PersonId.create(),
         activePerson: PersonId.create(),
         deletedTeam: TeamId.create(),
+        membershipTeam: TeamId.create(),
+        deletedMembershipId: nanoId16(),
     };
 
     const db = createMockPrisma();
@@ -69,6 +71,27 @@ describe("trash.listTrash", () => {
                 status: "Deleted",
             },
         });
+        await db.team.create({
+            data: {
+                id: T.membershipTeam,
+                organizationId: T.org,
+                name: "Membership Team",
+                tags: [],
+                properties: {},
+                status: "Active",
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: T.deletedMembershipId,
+                organizationId: T.org,
+                teamId: T.membershipTeam,
+                personId: T.activePerson,
+                tags: [],
+                properties: {},
+                status: "Deleted",
+            },
+        });
 
         await db.logEntry.create({
             data: {
@@ -90,6 +113,17 @@ describe("trash.listTrash", () => {
                 objectType: "Team",
                 objectId: T.deletedTeam,
                 timestamp: new Date("2026-02-01T00:00:00.000Z"),
+            },
+        });
+        await db.logEntry.create({
+            data: {
+                id: nanoId16(),
+                scope: "organization",
+                organizationId: T.org,
+                action: "Delete",
+                objectType: "TeamMembership",
+                objectId: T.deletedMembershipId,
+                timestamp: new Date("2026-03-01T00:00:00.000Z"),
             },
         });
 
@@ -132,14 +166,22 @@ describe("trash.listTrash", () => {
     it("lists Deleted records across entity types for an admin, with deletedAt resolved", async () => {
         const rows = await makeCaller(T.adminUser).listTrash({ organizationId: T.org });
 
-        expect(rows).toHaveLength(2);
+        expect(rows).toHaveLength(3);
         const person = rows.find((r) => r.id === T.deletedPerson);
         const team = rows.find((r) => r.id === T.deletedTeam);
+        const membership = rows.find((r) => r.id === T.deletedMembershipId);
 
         expect(person).toMatchObject({ type: "Person", name: "Grace Hopper" });
         expect(person?.deletedAt).toBe("2026-01-01T00:00:00.000Z");
         expect(team).toMatchObject({ type: "Team", name: "Doomed Team" });
         expect(team?.deletedAt).toBe("2026-02-01T00:00:00.000Z");
+        expect(membership).toMatchObject({
+            type: "TeamMembership",
+            name: "Ada Lovelace in Membership Team",
+            teamId: T.membershipTeam,
+            personId: T.activePerson,
+        });
+        expect(membership?.deletedAt).toBe("2026-03-01T00:00:00.000Z");
     });
 
     it("does not list Active records", async () => {

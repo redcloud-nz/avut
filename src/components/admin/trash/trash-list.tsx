@@ -25,14 +25,20 @@ import { MutationButton } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { TrashableEntities } from "@/lib/trash-registry";
+import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
+
+function entityIdForType(type: "Person" | "Team" | "TeamMembership"): TrashableEntityId {
+    return type === "Person" ? "person" : type === "Team" ? "team" : "teamMembership";
+}
 
 type TrashRow = {
     id: string;
-    type: "Person" | "Team";
+    type: "Person" | "Team" | "TeamMembership";
     name: string;
     deletedAt: string | null;
+    teamId?: string;
+    personId?: string;
 };
 
 function RestoreCell({ row }: { row: TrashRow }) {
@@ -62,6 +68,17 @@ function RestoreCell({ row }: { row: TrashRow }) {
             },
         }),
     );
+    const restoreTeamMembership = useMutation(
+        trpc.teams.restoreTeamMembershipFromTrash.mutationOptions({
+            meta: { effects: teamsEffects.restoreTeamMembershipFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore team membership: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`"${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
 
     if (row.type === "Person") {
         return (
@@ -74,6 +91,26 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
                 onClick={() =>
                     restorePerson.mutate({ organizationId: organization.id, personId: row.id })
+                }
+            />
+        );
+    }
+
+    if (row.type === "TeamMembership") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreTeam}
+                status={restoreTeamMembership.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreTeamMembership.mutate({
+                        organizationId: organization.id,
+                        teamId: row.teamId!,
+                        personId: row.personId!,
+                    })
                 }
             />
         );
@@ -105,8 +142,7 @@ export function AdminModule_Trash_List() {
             Kaga.defineColumns<TrashRow>((columnHelper) => [
                 columnHelper.accessor("type", {
                     header: "Type",
-                    cell: (ctx) =>
-                        TrashableEntities[ctx.getValue().toLowerCase() as "person" | "team"].label,
+                    cell: (ctx) => TrashableEntities[entityIdForType(ctx.getValue())].label,
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
@@ -116,10 +152,11 @@ export function AdminModule_Trash_List() {
                     header: "Name",
                     cell: (ctx) => {
                         const row = ctx.row.original;
-                        const entity =
-                            TrashableEntities[row.type.toLowerCase() as "person" | "team"];
-                        return (
+                        const entity = TrashableEntities[entityIdForType(row.type)];
+                        return entity.href ? (
                             <Link href={entity.href(organization.slug, row.id)}>{row.name}</Link>
+                        ) : (
+                            row.name
                         );
                     },
                     enableSorting: true,

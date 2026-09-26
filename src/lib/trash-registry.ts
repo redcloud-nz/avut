@@ -12,7 +12,7 @@ import { route } from "@/lib/routes";
  * `src/lib/modules.ts`'s registry shape: a single id-keyed object literal that downstream code
  * derives lists from, rather than a switch statement scattered across call sites.
  */
-export type TrashableEntityId = "person" | "team";
+export type TrashableEntityId = "person" | "team" | "teamMembership";
 
 interface TrashableEntityDef {
     id: TrashableEntityId;
@@ -22,11 +22,15 @@ interface TrashableEntityDef {
      * The `LogEntry.objectType` this entity's rows are logged under — used to batch-resolve
      * "deleted on" from `log_entries` rather than a denormalized column.
      */
-    objectType: "Person" | "Team";
+    objectType: "Person" | "Team" | "TeamMembership";
     /** The permission resource name — restoring or listing a row gates on `{ [permission]: ["delete"] }`. */
     permission: "person" | "team";
-    /** Link to the entity's own detail page. */
-    href: (slug: string, id: string) => Route;
+    /**
+     * Link to the entity's own detail page, or `null` if it doesn't have one addressable by a
+     * single id — `TeamMembership`'s detail page is keyed by (teamId, personId), not a single id,
+     * so the Rubbish bin renders its name as plain text instead of calling this.
+     */
+    href: ((slug: string, id: string) => Route) | null;
 }
 
 export const TrashableEntities = {
@@ -44,6 +48,13 @@ export const TrashableEntities = {
         objectType: "Team",
         permission: "team",
         href: (slug, id) => route("/orgs/[slug]/admin/teams/[team_id]", { slug, team_id: id }),
+    },
+    teamMembership: {
+        id: "teamMembership",
+        label: "Team Membership",
+        objectType: "TeamMembership",
+        permission: "team",
+        href: null,
     },
 } satisfies Record<TrashableEntityId, TrashableEntityDef>;
 

@@ -377,13 +377,15 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Delete a team membership, removing a person from a team.
+     * Soft-deletes a team membership, removing a person from a team (reversible via
+     * `restoreTeamMembershipFromTrash`). Idempotent — deleting an already-deleted membership
+     * returns it unchanged.
      * @param ctx The authenticated context.
      * @param personId The ID of the person to remove from the team.
      * @param teamId The ID of the team to remove the person from.
-     * @throws TRPCError(Not_FOUND) If the specified team membership does not exist within the organization.
+     * @throws TRPCError(NOT_FOUND) If the specified team membership does not exist within the organization.
      */
-    deleteTeamMembership: organizationProcedure({ team: ["update"] })
+    deleteTeamMembership: organizationProcedure({ team: ["delete"] })
         .input(
             z.object({
                 personId: PersonId.schema,
@@ -391,63 +393,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { personId, teamId } }) => {
-            const [team, existing] = await Promise.all([
-                ctx.prisma.team.findUnique({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        id: teamId,
-                    },
-                    select: { id: true },
-                }),
-                ctx.prisma.teamMembership.findUnique({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        teamId_personId: {
-                            teamId,
-                            personId,
-                        },
-                    },
-                    select: { id: true },
-                }),
-            ]);
-
-            if (!team) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
-            }
-
-            if (!existing) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamMembershipNotFound({
-                        teamId,
-                        personId,
-                    }),
-                });
-            }
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.teamMembership.delete({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        teamId_personId: {
-                            teamId,
-                            personId,
-                        },
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Delete",
-                    objectType: "TeamMembership",
-                    objectId: existing.id,
-                    refs: [
-                        { objectType: "Person", objectId: personId, role: "context" },
-                        { objectType: "Team", objectId: teamId, role: "context" },
-                    ],
-                }),
-            ]);
+            await Teams.deleteMembership(ctx, teamId, personId);
         }),
 
     /**
@@ -650,6 +596,7 @@ export const teamsRouter = createTrpcRouter({
                     organizationId,
                     personId,
                     teamId,
+                    status: { not: "Deleted" },
                 },
                 include: teamMembershipRowInclude,
                 orderBy: {
@@ -723,6 +670,19 @@ export const teamsRouter = createTrpcRouter({
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
             return { updated: await Teams.restoreFromTrash(ctx, teamId) };
+        }),
+
+    /**
+     * Restores a deleted team membership back to Active. Idempotent — restoring an
+     * already-active membership returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the membership does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the membership is not Deleted.
+     */
+    restoreTeamMembershipFromTrash: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ personId: PersonId.schema, teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamMembershipData.schema }))
+        .mutation(async ({ ctx, input: { personId, teamId } }) => {
+            return { updated: await Teams.restoreMembershipFromTrash(ctx, teamId, personId) };
         }),
 
     /**
