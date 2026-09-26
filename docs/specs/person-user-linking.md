@@ -297,7 +297,7 @@ personId: null` may match nothing), so an array transaction would commit an audi
 - **`personnel.createPerson` (the procedure) duplicated the helper's body** and now calls it,
   so manual creation and D4H import cannot diverge. The procedure keeps its email-conflict
   pre-check.
-- `teams-router.d4h.ts` needed no change; it already calls the helper, so a D4H team import
+- `d4h-team-sync.ts` needed no change; it already calls the helper, so a D4H team import
   auto-links as a side effect and both entries carry the import's `batchId`.
 - `personnelEffects.createPerson` also invalidates `users.listPersonLinks` and the
   better-auth organization-users key, since a create can now change a membership.

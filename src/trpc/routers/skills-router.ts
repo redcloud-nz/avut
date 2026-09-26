@@ -8,9 +8,8 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import type { Prisma } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
-import { OrganizationId, OrganizationRef } from "@/lib/schemas/organization";
+import { OrganizationRef } from "@/lib/schemas/organization";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { Skill, SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -20,8 +19,9 @@ import {
     SkillPackageSubscription,
     SkillPackageSubscriptionId,
 } from "@/lib/schemas/skill-package-subscription";
+import * as SkillChecks from "@/server/services/skill-checks";
 
-import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 /**
@@ -89,21 +89,17 @@ export const skillsRouter = createTrpcRouter({
             }
             const assessorPersonId = orgUser.personId;
 
-            const session = await createSessionWithNextNumber(
-                ctx,
+            const session = await SkillChecks.createSession(ctx, (sessionNumber) => ({
+                id: skillCheckSessionId,
                 organizationId,
-                (sessionNumber) => ({
-                    id: skillCheckSessionId,
-                    organizationId,
-                    name: create.name.trim() || `Session #${sessionNumber}`,
-                    sessionNumber,
-                    startsAt: new Date(create.date),
-                    endsAt: new Date(create.date),
-                    notes: create.notes,
-                    status: create.status,
-                    assessors: { connect: [{ id: assessorPersonId }] },
-                }),
-            );
+                name: create.name.trim() || `Session #${sessionNumber}`,
+                sessionNumber,
+                startsAt: new Date(create.date),
+                endsAt: new Date(create.date),
+                notes: create.notes,
+                status: create.status,
+                assessors: { connect: [{ id: assessorPersonId }] },
+            }));
 
             await ctx.logEvent({
                 action: "Create",
@@ -130,7 +126,7 @@ export const skillsRouter = createTrpcRouter({
         .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
         .output(z.object({ deleted: SkillCheckSession.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId } }) => {
-            const session = await getSessionOrThrow(ctx, skillCheckSessionId);
+            const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
             await ctx.prisma.$transaction([
                 ctx.prisma.skillCheckSession.delete({
@@ -711,8 +707,8 @@ export const skillsRouter = createTrpcRouter({
      */
     nextSessionNumber: organizationProcedure({ skillCheckSession: ["view"] })
         .output(z.object({ nextSessionNumber: z.number().int() }))
-        .query(async ({ ctx, input: { organizationId } }) => ({
-            nextSessionNumber: await getNextSessionNumber(ctx, organizationId),
+        .query(async ({ ctx }) => ({
+            nextSessionNumber: await SkillChecks.nextSessionNumber(ctx),
         })),
 
     /**
@@ -856,7 +852,7 @@ export const skillsRouter = createTrpcRouter({
         )
         .output(z.object({ updated: SkillCheckSession.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
-            const existing = await getSessionOrThrow(ctx, skillCheckSessionId);
+            const existing = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
             const changes = diffObject(SkillCheckSession.modifiableSchema.parse(existing), update);
 
@@ -911,7 +907,7 @@ export const skillsRouter = createTrpcRouter({
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
                 // Verify that the session exists and belongs to the organization.
-                await getSessionOrThrow(ctx, skillCheckSessionId);
+                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
                 const changes = [
                     ...addedPersonIds.map((id) => ({
@@ -984,7 +980,7 @@ export const skillsRouter = createTrpcRouter({
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
                 // Verify that the session exists and belongs to the organization.
-                await getSessionOrThrow(ctx, skillCheckSessionId);
+                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
                 const changes = [
                     ...addedSkillIds.map((id) => ({
@@ -1035,90 +1031,9 @@ export const skillsRouter = createTrpcRouter({
         ),
 });
 
-/**
- * Helper function to retrieve a skill check session by ID and ensure it belongs to the organization.
- * @param ctx The TRPC context containing the organization ID.
- * @param sessionId The ID of the skill check session to retrieve.
- * @returns The skill check session.
- * @throws TRPCError(NOT_FOUND) if the session is not found or does not belong to the organization.
- */
-async function getSessionOrThrow(
-    ctx: AuthenticatedOrganizationContext,
-    sessionId: SkillCheckSessionId,
-): Promise<SkillCheckSession> {
-    const session =
-        (await ctx.prisma.skillCheckSession.findUnique({
-            where: {
-                id: sessionId,
-                organizationId: ctx.organizationId,
-            },
-        })) ?? sessionNotFound(sessionId);
-    return SkillCheckSession.fromRecord(session);
-}
-
 function sessionNotFound(sessionId: SkillCheckSessionId): never {
     throw new TRPCError({
         code: "NOT_FOUND",
         message: Messages.skillCheckSessionNotFound(sessionId),
     });
-}
-
-const MAX_SESSION_NUMBER_ATTEMPTS = 5;
-
-/**
- * Determine the next available session number for an organization, i.e. one greater than the
- * highest `sessionNumber` currently in use (or 1 if the organization has no sessions yet).
- */
-async function getNextSessionNumber(
-    ctx: AuthenticatedOrganizationContext,
-    organizationId: OrganizationId,
-): Promise<number> {
-    const { _max } = await ctx.prisma.skillCheckSession.aggregate({
-        where: { organizationId },
-        _max: { sessionNumber: true },
-    });
-    return (_max.sessionNumber ?? 0) + 1;
-}
-
-/**
- * Create a skill check session, assigning it the next available `sessionNumber` for the
- * organization. Two concurrent creates can race for the same number; if the unique constraint on
- * `[organizationId, sessionNumber]` is violated, retries with the next number instead.
- * @param ctx The TRPC context.
- * @param organizationId The organization to create the session in.
- * @param buildData Builds the full create payload given the session number assigned to it.
- * @returns The created session, including its assessors.
- */
-async function createSessionWithNextNumber(
-    ctx: AuthenticatedOrganizationContext,
-    organizationId: OrganizationId,
-    buildData: (sessionNumber: number) => Prisma.SkillCheckSessionUncheckedCreateInput,
-): Promise<
-    Prisma.SkillCheckSessionGetPayload<{
-        include: { assessors: { select: { id: true; name: true } } };
-    }>
-> {
-    let sessionNumber = await getNextSessionNumber(ctx, organizationId);
-
-    for (let attempt = 1; attempt <= MAX_SESSION_NUMBER_ATTEMPTS; attempt++) {
-        try {
-            return await ctx.prisma.skillCheckSession.create({
-                data: buildData(sessionNumber),
-                include: {
-                    assessors: {
-                        select: { id: true, name: true },
-                    },
-                },
-            });
-        } catch (error) {
-            const isConflict =
-                error instanceof Object &&
-                "code" in error &&
-                error.code === "P2002" &&
-                attempt < MAX_SESSION_NUMBER_ATTEMPTS;
-            if (!isConflict) throw error;
-            sessionNumber++;
-        }
-    }
-    throw new Error("unreachable");
 }

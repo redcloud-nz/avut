@@ -88,7 +88,7 @@ Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec carries a
 
 ## tRPC Routers
 
-Router conventions and the audit-logging guide (which `ctx.logEvent` you hold, `LogBatch`, the `Operations` registry) are in [`src/trpc/CLAUDE.md`](src/trpc/CLAUDE.md), loaded when working under `src/trpc/`. The rules that apply everywhere:
+Router conventions and the audit-logging guide (which `ctx.logEvent` you hold, `LogBatch`, the `Operations` registry) are in [`src/trpc/CLAUDE.md`](src/trpc/CLAUDE.md), loaded when working under `src/trpc/`. Domain-service conventions (the `src/server/services/<domain>.ts` layer routers call into) are in [`src/server/services/CLAUDE.md`](src/server/services/CLAUDE.md) instead. The rules that apply everywhere:
 
 - Always call `ctx.logEvent(...)` after state-changing operations on records — org-scoped, user-scoped, or system-wide. Log rows are never written by hand (lint): every entry goes through `ctx.logEvent`, which delegates to `recordLogEntry` in `src/server/log-entry.ts`
 - Pair a write with `ctx.logEvent(...)` inside `ctx.prisma.$transaction([...])`, not `Promise.all([...])` — see [`docs/patterns/transactional-writes.md`](docs/patterns/transactional-writes.md) for the shape and its gotchas (non-Prisma operations can't join the array)

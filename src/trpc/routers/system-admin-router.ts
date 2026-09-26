@@ -18,7 +18,7 @@ import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
-import { prepareSkillPackageImport } from "@/server/skill-package-io";
+import * as SkillPackages from "@/server/services/skill-packages";
 
 import { assertOrganizationExists, createTrpcRouter, systemAdminProcedure } from "../init";
 
@@ -378,7 +378,7 @@ export const systemAdminRouter = createTrpcRouter({
      * Import a skill-package export envelope (produced by `skillPackageBuilder.exportPackage`)
      * into a target organization, moving a package across AVUT instances.
      *
-     * Create-or-sync keyed on the record IDs in the envelope (see `prepareSkillPackageImport`):
+     * Create-or-sync keyed on the record IDs in the envelope (see `SkillPackages.prepareImport`):
      * the tree is created if new, otherwise groups/skills are upserted and anything the
      * envelope omits is archived. A package ID that already belongs to another organization is
      * rejected. Imported packages always land `published: false`.
@@ -404,7 +404,7 @@ export const systemAdminRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { envelope, targetOrganizationId, dryRun } }) => {
             await assertOrganizationExists(ctx.prisma, targetOrganizationId);
 
-            const { plan, writeItems } = await prepareSkillPackageImport(
+            const { plan, writeItems } = await SkillPackages.prepareImport(
                 ctx.prisma,
                 envelope,
                 targetOrganizationId,

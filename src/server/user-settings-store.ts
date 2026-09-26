@@ -5,7 +5,7 @@
 
 /*
  * Read/write access to the `UserConfig` rows backing a user's settings. The algorithm lives in
- * `settings-store.ts` and is shared with `organization-settings-store.ts`; this file is just its
+ * `settings-store.ts` and is shared with `services/organization-settings.ts`; this file is just its
  * binding to the user scope.
  *
  * Deliberately free of any `@/server/prisma` import — the Prisma client is injected by the

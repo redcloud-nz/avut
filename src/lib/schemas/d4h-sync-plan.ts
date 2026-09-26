@@ -13,7 +13,7 @@ import { TeamMembershipId } from "./team-membership";
 
 /**
  * The preview of a manual D4H team sync, produced by the pure `buildSyncPlan`
- * (`src/server/d4h-sync.ts`). Rendered by the sync dialog; the exact same plan is
+ * (`src/server/services/d4h-team-sync.ts`). Rendered by the sync dialog; the exact same plan is
  * recomputed server-side at apply time and matched against `planToken`.
  *
  * Deviates from spec §7.3: memberships that leave D4H are **archived, not

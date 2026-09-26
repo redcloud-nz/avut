@@ -14,11 +14,10 @@ import { I3IssueItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import * as Forms from "@/server/services/forms";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
-
-import { saveFormInstance } from "./forms-router";
 
 export const i3Router = createTrpcRouter({
     /**
@@ -272,7 +271,7 @@ export const i3Router = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { formInstanceId, formData } }) => {
-            await saveFormInstance(ctx, {
+            await Forms.saveInstance(ctx, {
                 formInstanceId,
                 formKey: I3IssueItemsForm.formKey,
                 formData,

@@ -2,14 +2,22 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- *  D4H linking & team synchronisation helpers for `teams-router.ts`.
- *  See docs/specs/d4h-linking.md and docs/plans/d4h-linking.md.
+ *  D4H linking & team synchronisation. See docs/specs/d4h-linking.md and docs/plans/d4h-linking.md.
  */
 
-import { TRPCError } from "@trpc/server";
+import "server-only";
+
+import { createHash } from "node:crypto";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
+import {
+    ConflictError,
+    NotFoundError,
+    PreconditionError,
+    StalePlanError,
+    ValidationError,
+} from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { D4HMember } from "@/lib/schemas/d4h/member";
@@ -24,17 +32,226 @@ import {
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
 import { D4HLinkAction } from "@/server/d4h-link-invariants";
-import { buildSyncPlan, D4HMembershipSnapshot, snapshotFromD4HMember } from "@/server/d4h-sync";
-import { StalePlanError } from "@/trpc/errors";
+import * as Personnel from "@/server/services/personnel";
 
-import { AuthenticatedOrganizationContext } from "../init";
-
-import { createPerson, getPersonByEmail } from "./personnel-router";
+import type { OrgServiceContext } from "./service-context";
+import { withBatch } from "./service-context";
 
 const personTeamRefs = (personId: string, teamId: string) => [
     { objectType: "Person" as const, objectId: personId, role: "context" as const },
     { objectType: "Team" as const, objectId: teamId, role: "context" as const },
 ];
+
+//
+// Pure, deterministic sync-plan builder — no Prisma, no D4H API. Unit-tested directly
+// (`d4h-team-sync.test.ts`). See docs/specs/d4h-linking.md §7.
+//
+
+/** The `TeamMembership_D4H` snapshot fields, in the shape `diffObject` compares. */
+export type D4HMembershipSnapshot = {
+    d4hStatus: string;
+    d4hPosition: string | null;
+    d4hRef: string | null;
+    d4hRoleId: number | null;
+};
+
+/** One D4H-managed AVUT membership fed to the builder — includes `Archived` ones. */
+export type SyncMembershipInput = {
+    teamMembershipId: string;
+    personName: string;
+    membershipStatus: "Active" | "Archived" | "Deleted";
+    snapshot: D4HMembershipSnapshot & { d4hMemberId: number };
+};
+
+/** `Team_D4H` (+ `Organization_D4H`) cache fields, before and after this sync. */
+export type SyncTeamMetadata = {
+    current: Record<string, string | number | null>;
+    incoming: Record<string, string | number | null>;
+};
+
+export type BuildSyncPlanInput = {
+    teamId: string;
+    /** D4H members already filtered to OPERATIONAL + NON_OPERATIONAL. */
+    d4hMembers: D4HMember[];
+    /** All D4H-managed memberships (those with a `_D4H` row), including archived. */
+    avutMemberships: SyncMembershipInput[];
+    /** Lowercased emails of people that already resolve in the org. */
+    existingPersonEmails: ReadonlySet<string>;
+    /** Lowercased emails of people joined to this team by a *manual* membership. */
+    manualMembershipEmails: ReadonlySet<string>;
+    teamMetadata: SyncTeamMetadata;
+    /** Injected in tests for a stable `generatedAt`. */
+    generatedAt?: Date;
+};
+
+export function snapshotFromD4HMember(member: D4HMember): D4HMembershipSnapshot {
+    return {
+        d4hStatus: member.status,
+        d4hPosition: member.position,
+        d4hRef: member.ref,
+        d4hRoleId: member.role.id,
+    };
+}
+
+function byNameThenId<T extends { personName?: string; name?: string }>(a: T, b: T): number {
+    const an = a.personName ?? a.name ?? "";
+    const bn = b.personName ?? b.name ?? "";
+    return an.localeCompare(bn);
+}
+
+/** sha256 of the normalised D4H input — the value `planToken` carries. */
+export function computePlanToken(input: {
+    d4hMembers: D4HMember[];
+    incomingMetadata: Record<string, string | number | null>;
+}): string {
+    const members = input.d4hMembers
+        .map((m) => ({
+            id: m.id,
+            name: m.name,
+            email: m.email.value.toLowerCase(),
+            status: m.status,
+            position: m.position,
+            ref: m.ref,
+            roleId: m.role.id,
+        }))
+        .sort((a, b) => a.id - b.id);
+
+    const metadata = Object.fromEntries(
+        Object.entries(input.incomingMetadata).sort(([a], [b]) => a.localeCompare(b)),
+    );
+
+    return createHash("sha256").update(JSON.stringify({ members, metadata })).digest("hex");
+}
+
+export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
+    const generatedAt = (input.generatedAt ?? new Date()).toISOString();
+
+    // Deleted memberships are inert — never reconciled.
+    const managed = input.avutMemberships.filter((m) => m.membershipStatus !== "Deleted");
+    const byMemberId = new Map(managed.map((m) => [m.snapshot.d4hMemberId, m]));
+    const seenMemberIds = new Set<number>();
+
+    // Built with plain strings; `SyncPlan.schema.parse` at the end applies the brands.
+    const additions: Array<{
+        d4hMemberId: number;
+        name: string;
+        email: string;
+        status: D4HMember["status"];
+        personMatch: "existing" | "new";
+        adoptsMembership: boolean;
+    }> = [];
+    const updates: Array<{
+        teamMembershipId: string;
+        d4hMemberId: number;
+        personName: string;
+        changes: ReturnType<typeof diffObject>;
+    }> = [];
+    const reactivations: typeof updates = [];
+    const archivals: Array<{ teamMembershipId: string; personName: string }> = [];
+    const skipped: Array<{ d4hMemberId: number; name: string; reason: "missing-email" }> = [];
+
+    for (const member of input.d4hMembers) {
+        seenMemberIds.add(member.id);
+        const existing = byMemberId.get(member.id);
+        const incoming = snapshotFromD4HMember(member);
+
+        if (!existing) {
+            const email = member.email.value.trim().toLowerCase();
+            if (!email) {
+                skipped.push({
+                    d4hMemberId: member.id,
+                    name: member.name,
+                    reason: "missing-email",
+                });
+                continue;
+            }
+            additions.push({
+                d4hMemberId: member.id,
+                name: member.name,
+                email: member.email.value,
+                status: member.status,
+                personMatch: input.existingPersonEmails.has(email) ? "existing" : "new",
+                adoptsMembership: input.manualMembershipEmails.has(email),
+            });
+            continue;
+        }
+
+        const changes = diffObject(
+            {
+                d4hStatus: existing.snapshot.d4hStatus,
+                d4hPosition: existing.snapshot.d4hPosition,
+                d4hRef: existing.snapshot.d4hRef,
+                d4hRoleId: existing.snapshot.d4hRoleId,
+            },
+            { ...incoming },
+        );
+
+        if (existing.membershipStatus === "Archived") {
+            reactivations.push({
+                teamMembershipId: existing.teamMembershipId,
+                d4hMemberId: member.id,
+                personName: existing.personName,
+                changes,
+            });
+        } else if (changes.length > 0) {
+            updates.push({
+                teamMembershipId: existing.teamMembershipId,
+                d4hMemberId: member.id,
+                personName: existing.personName,
+                changes,
+            });
+        }
+    }
+
+    for (const membership of managed) {
+        if (seenMemberIds.has(membership.snapshot.d4hMemberId)) continue;
+        if (membership.membershipStatus !== "Active") continue;
+        archivals.push({
+            teamMembershipId: membership.teamMembershipId,
+            personName: membership.personName,
+        });
+    }
+
+    additions.sort((a, b) => byNameThenId(a, b) || a.d4hMemberId - b.d4hMemberId);
+    updates.sort(
+        (a, b) => byNameThenId(a, b) || a.teamMembershipId.localeCompare(b.teamMembershipId),
+    );
+    reactivations.sort(
+        (a, b) => byNameThenId(a, b) || a.teamMembershipId.localeCompare(b.teamMembershipId),
+    );
+    archivals.sort(
+        (a, b) => byNameThenId(a, b) || a.teamMembershipId.localeCompare(b.teamMembershipId),
+    );
+    skipped.sort((a, b) => byNameThenId(a, b) || a.d4hMemberId - b.d4hMemberId);
+
+    const teamMetadataChanges = diffObject(input.teamMetadata.current, input.teamMetadata.incoming);
+
+    return SyncPlan.schema.parse({
+        teamId: input.teamId,
+        generatedAt,
+        planToken: computePlanToken({
+            d4hMembers: input.d4hMembers,
+            incomingMetadata: input.teamMetadata.incoming,
+        }),
+        additions,
+        skipped,
+        updates,
+        archivals,
+        reactivations,
+        teamMetadataChanges,
+        counts: {
+            additions: additions.length,
+            skipped: skipped.length,
+            updates: updates.length,
+            archivals: archivals.length,
+            reactivations: reactivations.length,
+        },
+    });
+}
+
+//
+// Orchestration — fetches D4H data, applies plans, and writes AVUT records.
+//
 
 /** The D4H team as resolved through the acting user's personal token. */
 export type ResolvedD4HTeam = {
@@ -50,24 +267,20 @@ export type ResolvedD4HTeam = {
  * the token can see it.
  */
 export async function resolveD4HTeamForLink(
-    ctx: AuthenticatedOrganizationContext,
+    ctx: OrgServiceContext,
     d4hTeamId: number,
 ): Promise<ResolvedD4HTeam> {
     const token = await getPersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
     if (!token) {
-        throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "No personal D4H Access Token found for user",
-        });
+        throw new ValidationError("No personal D4H Access Token found for user");
     }
 
     const { d4HTeams } = await getD4HTokenMetadata(token);
     const ref = d4HTeams.find((t) => t.id === d4hTeamId);
     if (!ref) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `D4H Team ${d4hTeamId} not found or not accessible with your token.`,
-        });
+        throw new NotFoundError(
+            `D4H Team ${d4hTeamId} not found or not accessible with your token.`,
+        );
     }
 
     return {
@@ -84,24 +297,22 @@ export async function resolveD4HTeamForLink(
  * nothing when reusing an existing org link.
  */
 export async function upsertOrganizationD4H(
-    ctx: AuthenticatedOrganizationContext,
+    ctx: OrgServiceContext,
     args: { action: D4HLinkAction; resolved: ResolvedD4HTeam; batchId: string },
 ): Promise<void> {
     const { action, resolved, batchId } = args;
     if (action.kind === "reuse") return;
 
     // Two concurrent first-time links race on the unique `organizationId` — surface
-    // the loser as a friendly CONFLICT rather than a raw Prisma P2002 / opaque 500.
+    // the loser as a friendly conflict rather than a raw Prisma P2002 / opaque 500.
     const createOrgLink = async (writes: Prisma.PrismaPromise<unknown>[]) => {
         try {
             await ctx.prisma.$transaction(writes);
         } catch (e) {
             if (e instanceof Object && "code" in e && e.code === "P2002") {
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    message:
-                        "This organisation was just linked to D4H — reload the page and try again.",
-                });
+                throw new ConflictError(
+                    "This organisation was just linked to D4H — reload the page and try again.",
+                );
             }
             throw e;
         }
@@ -187,7 +398,7 @@ type SyncInputs = {
 
 /** Fetch both sides of a linked team and shape them for `buildSyncPlan` + apply. */
 export async function fetchD4HSyncInputs(
-    ctx: AuthenticatedOrganizationContext,
+    ctx: OrgServiceContext,
     args: { teamD4H: TeamD4HRecord; token: D4HAccessToken_ServerOnly },
 ): Promise<SyncInputs> {
     const { teamD4H, token } = args;
@@ -201,10 +412,9 @@ export async function fetchD4HSyncInputs(
 
     const ref = metadata.d4HTeams.find((t) => t.id === teamD4H.d4hTeamId);
     if (!ref) {
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `D4H Team ${teamD4H.d4hTeamId} is no longer accessible with your token.`,
-        });
+        throw new NotFoundError(
+            `D4H Team ${teamD4H.d4hTeamId} is no longer accessible with your token.`,
+        );
     }
     const owningOrgId = ref.owner?.id ?? null;
 
@@ -331,7 +541,7 @@ export function planFromInputs(inputs: SyncInputs): SyncPlan {
 
 /** Build a fresh plan for a linked team, no writes. */
 export async function planD4HSync(
-    ctx: AuthenticatedOrganizationContext,
+    ctx: OrgServiceContext,
     args: { teamD4H: TeamD4HRecord; token: D4HAccessToken_ServerOnly },
 ): Promise<SyncPlan> {
     return planFromInputs(await fetchD4HSyncInputs(ctx, args));
@@ -343,17 +553,17 @@ export async function planD4HSync(
  * the race to create the row first (see the `P2002` catch below).
  */
 async function adoptExistingMembership(
-    ctx: AuthenticatedOrganizationContext,
+    /** Already bound to the sync's batch — see `applyD4HSyncPlan`. */
+    ctx: OrgServiceContext,
     args: {
         existing: { id: string; status: string };
         personId: string;
         teamId: string;
         d4hMemberId: number;
         snap: D4HMembershipSnapshot;
-        batchId: string;
     },
 ): Promise<void> {
-    const { existing, personId, teamId, d4hMemberId, snap, batchId } = args;
+    const { existing, personId, teamId, d4hMemberId, snap } = args;
     await ctx.prisma.$transaction([
         ctx.prisma.teamMembership.update({
             where: { id: existing.id },
@@ -373,18 +583,24 @@ async function adoptExistingMembership(
             objectId: existing.id,
             description: "Adopted a manual membership as D4H-managed.",
             changes: diffObject({ status: existing.status }, { status: "Active" }),
-            batchId,
             refs: personTeamRefs(personId, teamId),
         }),
     ]);
 }
 
-/** Apply an already-computed plan. One `$transaction` per independently-meaningful row. */
+/**
+ * Apply an already-computed plan. One `$transaction` per independently-meaningful row.
+ *
+ * Binds `ctx` to the sync's batch once via `withBatch`, so every `logEvent` below (and every
+ * `Personnel` service call it makes) joins that batch without threading a `batchId` parameter
+ * through each one.
+ */
 async function applyD4HSyncPlan(
-    ctx: AuthenticatedOrganizationContext,
+    ctx: OrgServiceContext,
     args: { plan: SyncPlan; inputs: SyncInputs; batchId: string },
 ): Promise<void> {
-    const { plan, inputs, batchId } = args;
+    const { plan, inputs } = args;
+    const ctxBatch = withBatch(ctx, args.batchId);
     const teamId = inputs.teamId;
     const now = new Date();
 
@@ -393,15 +609,15 @@ async function applyD4HSyncPlan(
         if (!member) continue;
         const snap = snapshotFromD4HMember(member);
 
-        let person = await getPersonByEmail(ctx, add.email);
+        let person = await Personnel.getByEmail(ctxBatch, add.email);
         if (!person) {
             person = (
-                await createPerson(
-                    ctx,
-                    PersonId.create(),
-                    { name: add.name, email: add.email, tags: [], properties: {} },
-                    batchId,
-                )
+                await Personnel.create(ctxBatch, PersonId.create(), {
+                    name: add.name,
+                    email: add.email,
+                    tags: [],
+                    properties: {},
+                })
             ).created;
         }
 
@@ -411,13 +627,12 @@ async function applyD4HSyncPlan(
         });
 
         if (existing) {
-            await adoptExistingMembership(ctx, {
+            await adoptExistingMembership(ctxBatch, {
                 existing,
                 personId: person.id,
                 teamId,
                 d4hMemberId: add.d4hMemberId,
                 snap,
-                batchId,
             });
         } else {
             const tmId = TeamMembershipId.create();
@@ -433,12 +648,11 @@ async function applyD4HSyncPlan(
                             d4h: { create: { d4hMemberId: add.d4hMemberId, ...snap } },
                         },
                     }),
-                    ctx.logEvent({
+                    ctxBatch.logEvent({
                         action: "Create",
                         objectType: "TeamMembership",
                         objectId: tmId,
                         description: "Added from linked D4H team.",
-                        batchId,
                         refs: personTeamRefs(person.id, teamId),
                     }),
                 ]);
@@ -452,13 +666,12 @@ async function applyD4HSyncPlan(
                     where: { teamId_personId: { teamId, personId: person.id } },
                     select: { id: true, status: true },
                 });
-                await adoptExistingMembership(ctx, {
+                await adoptExistingMembership(ctxBatch, {
                     existing: raced,
                     personId: person.id,
                     teamId,
                     d4hMemberId: add.d4hMemberId,
                     snap,
-                    batchId,
                 });
             }
         }
@@ -472,12 +685,11 @@ async function applyD4HSyncPlan(
                 where: { teamMembershipId: upd.teamMembershipId },
                 data: snapshotFromD4HMember(member),
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "TeamMembership",
                 objectId: upd.teamMembershipId,
                 changes: upd.changes,
-                batchId,
                 refs: personTeamRefs(
                     inputs.membershipPersonIds.get(upd.teamMembershipId) ?? upd.teamMembershipId,
                     teamId,
@@ -498,7 +710,7 @@ async function applyD4HSyncPlan(
                 where: { teamMembershipId: react.teamMembershipId },
                 data: snapshotFromD4HMember(member),
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "TeamMembership",
                 objectId: react.teamMembershipId,
@@ -507,7 +719,6 @@ async function applyD4HSyncPlan(
                     ...diffObject({ status: "Archived" }, { status: "Active" }),
                     ...react.changes,
                 ],
-                batchId,
                 refs: personTeamRefs(
                     inputs.membershipPersonIds.get(react.teamMembershipId) ??
                         react.teamMembershipId,
@@ -523,13 +734,12 @@ async function applyD4HSyncPlan(
                 where: { id: arch.teamMembershipId },
                 data: { status: "Archived" },
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "TeamMembership",
                 objectId: arch.teamMembershipId,
                 description: "Archived — member is no longer in the linked D4H team.",
                 changes: diffObject({ status: "Active" }, { status: "Archived" }),
-                batchId,
                 refs: personTeamRefs(
                     inputs.membershipPersonIds.get(arch.teamMembershipId) ?? arch.teamMembershipId,
                     teamId,
@@ -550,24 +760,22 @@ async function applyD4HSyncPlan(
                 where: { teamId },
                 data: { lastSyncedAt: now, ...inputs.incomingTeamFields },
             }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "Team",
                 objectId: teamId,
                 description: "Refreshed D4H team metadata.",
                 changes: teamDiff,
-                batchId,
             }),
         ]);
     } else {
         await ctx.prisma.$transaction([
             ctx.prisma.team_D4H.update({ where: { teamId }, data: { lastSyncedAt: now } }),
-            ctx.logEvent({
+            ctxBatch.logEvent({
                 action: "Update",
                 objectType: "Team",
                 objectId: teamId,
                 description: "Synced with linked D4H team — no metadata changes.",
-                batchId,
             }),
         ]);
     }
@@ -591,13 +799,12 @@ async function applyD4HSyncPlan(
                     where: { organizationId: ctx.organizationId },
                     data: { lastSyncedAt: now, ...inputs.incomingOrgFields },
                 }),
-                ctx.logEvent({
+                ctxBatch.logEvent({
                     action: "Update",
                     objectType: "Organization",
                     objectId: ctx.organizationId,
                     description: "Refreshed cached D4H organisation attributes.",
                     changes: orgDiff,
-                    batchId,
                 }),
             ]);
         } else {
@@ -606,12 +813,11 @@ async function applyD4HSyncPlan(
                     where: { organizationId: ctx.organizationId },
                     data: { lastSyncedAt: now },
                 }),
-                ctx.logEvent({
+                ctxBatch.logEvent({
                     action: "Update",
                     objectType: "Organization",
                     objectId: ctx.organizationId,
                     description: "Synced cached D4H organisation attributes — no changes.",
-                    batchId,
                 }),
             ]);
         }
@@ -627,23 +833,17 @@ async function applyD4HSyncPlan(
  * linked team as the API's `{context}/{contextId}`, so it requires at least one
  * `Team_D4H` and an org-linked (not org-less) `Organization_D4H`.
  */
-export async function syncOrganizationD4HCache(
-    ctx: AuthenticatedOrganizationContext,
-): Promise<void> {
+export async function syncOrganizationD4HCache(ctx: OrgServiceContext): Promise<void> {
     const orgD4H = await ctx.prisma.organization_D4H.findUnique({
         where: { organizationId: ctx.organizationId },
     });
     if (!orgD4H) {
-        throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "This organisation is not linked to D4H.",
-        });
+        throw new ValidationError("This organisation is not linked to D4H.");
     }
     if (orgD4H.d4hOrganisationId == null) {
-        throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "This is an org-less D4H link — there is no D4H organisation to sync.",
-        });
+        throw new ValidationError(
+            "This is an org-less D4H link — there is no D4H organisation to sync.",
+        );
     }
 
     const anyLinkedTeam = await ctx.prisma.team_D4H.findFirst({
@@ -651,18 +851,14 @@ export async function syncOrganizationD4HCache(
         select: { d4hTeamId: true },
     });
     if (!anyLinkedTeam) {
-        throw new TRPCError({
-            code: "PRECONDITION_FAILED",
-            message: "Link at least one team to D4H before syncing organisation details.",
-        });
+        throw new PreconditionError(
+            "Link at least one team to D4H before syncing organisation details.",
+        );
     }
 
     const token = await getPersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
     if (!token) {
-        throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "No personal D4H Access Token found for user",
-        });
+        throw new ValidationError("No personal D4H Access Token found for user");
     }
 
     const d4hOrg = await fetchD4HOrganisationCached(
@@ -724,7 +920,7 @@ export async function syncOrganizationD4HCache(
  * to match) and by `applyD4HTeamSync` (must match the previewed `planToken`).
  */
 export async function runTeamSync(
-    ctx: AuthenticatedOrganizationContext,
+    ctx: OrgServiceContext,
     args: {
         teamD4H: TeamD4HRecord;
         token: D4HAccessToken_ServerOnly;
@@ -736,7 +932,7 @@ export async function runTeamSync(
     const plan = planFromInputs(inputs);
 
     if (args.requireFreshMatch !== undefined && args.requireFreshMatch !== plan.planToken) {
-        throw new TRPCError({ code: "CONFLICT", cause: new StalePlanError() });
+        throw new StalePlanError();
     }
 
     await applyD4HSyncPlan(ctx, { plan, inputs, batchId: args.batchId });

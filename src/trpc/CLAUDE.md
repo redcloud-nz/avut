@@ -1,6 +1,6 @@
 # tRPC routers and audit logging
 
-Loaded when working under `src/trpc/`. The repo-wide rules (always call `ctx.logEvent`, use `$transaction`, never write `logEntry.create` by hand) stay in the root `AGENTS.md`.
+Loaded when working under `src/trpc/`. The repo-wide rules (always call `ctx.logEvent`, use `$transaction`, never write `logEntry.create` by hand) stay in the root `AGENTS.md`. Domain-service conventions (the `src/server/services/<domain>.ts` layer routers call into) are in [`src/server/services/CLAUDE.md`](../server/services/CLAUDE.md), loaded when working there instead.
 
 ## Router conventions
 

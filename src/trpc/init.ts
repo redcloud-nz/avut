@@ -9,17 +9,27 @@ import * as z from "zod";
 import { initTRPC, TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
-import { DiffChange } from "@/lib/diff";
+import {
+    ConflictError,
+    NotFoundError,
+    PreconditionError,
+    StalePlanError,
+    ValidationError,
+} from "@/lib/errors";
 import { Permissions } from "@/lib/permissions";
-import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
+import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
-import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-entry";
+import { recordLogEntry, resolveActor } from "@/server/log-entry";
 import prisma from "@/server/prisma";
+import type { LogEventOptions } from "@/server/services/service-context";
 
 import { formatTrpcError } from "./error-formatter";
+import { FieldConflictError } from "./errors";
+
+export type { LogEventOptions } from "@/server/services/service-context";
 
 /**
  * Create the inner tRPC context.
@@ -59,7 +69,46 @@ export const createTrpcRouter = t.router;
 //
 export type PublicContext = Context;
 
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure
+    /**
+     * Domain services (`src/server/services/*.ts`) throw plain `Error` subclasses rather than
+     * `TRPCError`, so they stay usable from a Server Component or a test with no tRPC in scope.
+     * This is the one place that maps them onto the wire protocol, preserving the original as
+     * `cause` — the same `cause` shape `formatTrpcError` reads to enrich `FieldConflictError`
+     * with `fieldName`. A router may still throw `FieldConflictError` directly (not just from a
+     * service) and rely on this middleware for the `TRPCError` wrapping.
+     */
+    .use(async function mapDomainErrors(opts) {
+        /*
+         * `next()` does not reject on a downstream failure — it resolves to
+         * `{ ok: false, error }`, with `error` already `TRPCError`-wrapped by tRPC and the
+         * original thrown value on `error.cause`. So the domain error is inspected there, not
+         * caught with try/catch.
+         */
+        const result = await opts.next(opts);
+        if (!result.ok) {
+            const cause = result.error.cause;
+            if (cause instanceof NotFoundError) {
+                throw new TRPCError({ code: "NOT_FOUND", message: cause.message, cause });
+            }
+            if (cause instanceof ConflictError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
+            }
+            if (cause instanceof ValidationError) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: cause.message, cause });
+            }
+            if (cause instanceof PreconditionError) {
+                throw new TRPCError({ code: "PRECONDITION_FAILED", message: cause.message, cause });
+            }
+            if (cause instanceof StalePlanError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
+            }
+            if (cause instanceof FieldConflictError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
+            }
+        }
+        return result;
+    });
 
 export type AuthenticatedContext = Context & {
     auth: AuthSession;
@@ -285,18 +334,6 @@ export function organizationProcedure(
                 } satisfies AuthenticatedOrganizationContext,
             });
         });
-}
-
-export interface LogEventOptions {
-    action: LogAction;
-    objectType: LogObjectType;
-    objectId: string;
-    changes?: DiffChange[];
-    description?: string;
-    /** Extra entities this entry is relevant to. The primary is implicit. */
-    refs?: LogEntryRef[];
-    /** An existing `LogBatch.id`, when this entry is part of a multi-entry operation. */
-    batchId?: string;
 }
 
 /**

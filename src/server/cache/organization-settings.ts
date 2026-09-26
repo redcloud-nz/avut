@@ -8,17 +8,12 @@ import { cacheTag } from "next/cache";
 
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
-import { readOrganizationSettings } from "@/server/organization-settings-store";
 import prisma from "@/server/prisma";
+import * as OrgSettings from "@/server/services/organization-settings";
 
 import { organizationSettingsCacheTag } from "./organization-settings-revalidate";
 
 export { revalidateOrganizationSettings } from "./organization-settings-revalidate";
-export {
-    readOrganizationSettings,
-    writeOrganizationSettings,
-    writeOrganizationSettingsSlice,
-} from "@/server/organization-settings-store";
 
 /**
  * Get the organization settings for a given organization ID. This function is cached and will revalidate when settings are updated.
@@ -31,5 +26,5 @@ export async function getOrganizationSettings(
     "use cache";
     cacheTag(organizationSettingsCacheTag(organizationId));
 
-    return await readOrganizationSettings(prisma, organizationId);
+    return await OrgSettings.read(prisma, organizationId);
 }

@@ -64,7 +64,7 @@ Everything that writes `Person.email` is in one file:
 
 A Zod `.toLowerCase()` on `PersonData.modifiableSchema.email` is **not sufficient on its
 own**: the D4H team import builds its object in code and passes it to the `createPerson`
-helper unparsed (`teams-router.d4h.ts:357`), so the helper must normalise too. Doing both is
+helper unparsed (`d4h-team-sync.ts:615`), so the helper must normalise too. Doing both is
 right — the schema catches every parsed path, the helper catches the one that isn't.
 
 Collapsing the duplicated `createPerson` procedure body onto the shared helper (already

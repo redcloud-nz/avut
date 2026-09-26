@@ -3,8 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { ConflictError, ValidationError } from "@/lib/errors";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -13,9 +14,11 @@ import {
     SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
     type SkillPackageExport,
 } from "@/lib/schemas/skill-package-export";
+import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
-import { buildSkillPackageExport, prepareSkillPackageImport } from "./skill-package-io";
+import * as SkillPackages from "./skill-packages";
 
 const T = {
     orgA: OrganizationId.create(),
@@ -78,7 +81,7 @@ function envelope(overrides?: Partial<SkillPackageExport["package"]>): SkillPack
     };
 }
 
-describe("prepareSkillPackageImport", () => {
+describe("SkillPackages.prepareImport", () => {
     let db: ReturnType<typeof createMockPrisma>;
 
     beforeEach(async () => {
@@ -92,7 +95,11 @@ describe("prepareSkillPackageImport", () => {
     });
 
     async function apply(env: SkillPackageExport, targetOrganizationId: string) {
-        const { plan, writeItems } = await prepareSkillPackageImport(db, env, targetOrganizationId);
+        const { plan, writeItems } = await SkillPackages.prepareImport(
+            db,
+            env,
+            targetOrganizationId,
+        );
         for (const item of writeItems) {
             await item.write(db);
         }
@@ -198,7 +205,7 @@ describe("prepareSkillPackageImport", () => {
 
     it("reports unchanged rows on an identical re-import", async () => {
         await apply(envelope(), T.orgA);
-        const { plan } = await prepareSkillPackageImport(db, envelope(), T.orgA);
+        const { plan } = await SkillPackages.prepareImport(db, envelope(), T.orgA);
 
         expect(plan.package.action).toBe("unchanged");
         expect(plan.groups.every((g) => g.action === "unchanged")).toBe(true);
@@ -207,19 +214,19 @@ describe("prepareSkillPackageImport", () => {
 
     it("rejects a package ID owned by a different organization", async () => {
         await apply(envelope(), T.orgA);
-        await expect(prepareSkillPackageImport(db, envelope(), T.orgB)).rejects.toThrow(
-            /different organisation/i,
+        await expect(SkillPackages.prepareImport(db, envelope(), T.orgB)).rejects.toThrow(
+            ConflictError,
         );
     });
 
     it("rejects a file that repeats a skill ID", async () => {
         const dup = envelope();
         dup.package.groups[0]!.skills.push(dup.package.groups[0]!.skills[0]!);
-        await expect(prepareSkillPackageImport(db, dup, T.orgA)).rejects.toThrow(/repeats/i);
+        await expect(SkillPackages.prepareImport(db, dup, T.orgA)).rejects.toThrow(ValidationError);
     });
 });
 
-describe("buildSkillPackageExport", () => {
+describe("SkillPackages.buildExport", () => {
     it("nests and sequence-sorts groups and skills", async () => {
         const db = createMockPrisma();
         await db.organization.create({
@@ -286,9 +293,141 @@ describe("buildSkillPackageExport", () => {
             where: { id: T.pkg },
             include: { groups: true, skills: true },
         });
-        const env = buildSkillPackageExport(pkg, pkg.groups, pkg.skills);
+        const env = SkillPackages.buildExport(pkg, pkg.groups, pkg.skills);
 
         expect(env.package.groups.map((g) => g.name)).toEqual(["Foundations", "Advanced"]);
         expect(env.package.groups[0]!.skills.map((s) => s.name)).toEqual(["Safety", "Comms"]);
+    });
+});
+
+describe("SkillPackages.requireSkillById / requireGroupById / requirePackageById", () => {
+    const U = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        pkg: SkillPackageId.create(),
+        group: SkillGroupId.create(),
+        skill: SkillId.create(),
+        user: UserId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [U.org, U.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: U.pkg,
+                organizationId: U.org,
+                name: "P",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: U.group,
+                skillPackageId: U.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: U.skill,
+                skillPackageId: U.pkg,
+                skillGroupId: U.group,
+                name: "Skill",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: U.org,
+            user: { id: U.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    it("requireSkill returns the skill when it belongs to the organization", async () => {
+        const skill = await SkillPackages.requireSkillById(ctx(), U.skill);
+        expect(skill.id).toBe(U.skill);
+    });
+
+    it("requireSkill throws NotFoundError for an unknown skill", async () => {
+        await expect(SkillPackages.requireSkillById(ctx(), SkillId.create())).rejects.toThrow(
+            "not found",
+        );
+    });
+
+    it("requireSkill throws NotFoundError for a skill in another organization", async () => {
+        await expect(
+            SkillPackages.requireSkillById(
+                createOrganizationMockContext({
+                    organizationId: U.otherOrg,
+                    user: { id: U.user },
+                    permissions: {},
+                    prisma: db,
+                }),
+                U.skill,
+            ),
+        ).rejects.toThrow(`Skill(id=${U.skill}) not found.`);
+    });
+
+    it("requireGroup returns the group when it belongs to the organization", async () => {
+        const group = await SkillPackages.requireGroupById(ctx(), U.group);
+        expect(group.id).toBe(U.group);
+    });
+
+    it("requireGroup throws NotFoundError for an unknown group", async () => {
+        await expect(SkillPackages.requireGroupById(ctx(), SkillGroupId.create())).rejects.toThrow(
+            "not found",
+        );
+    });
+
+    it("requireGroup throws NotFoundError for a group in another organization", async () => {
+        await expect(
+            SkillPackages.requireGroupById(
+                createOrganizationMockContext({
+                    organizationId: U.otherOrg,
+                    user: { id: U.user },
+                    permissions: {},
+                    prisma: db,
+                }),
+                U.group,
+            ),
+        ).rejects.toThrow(`SkillGroup(id=${U.group}) not found.`);
+    });
+
+    it("requirePackage returns the package when it belongs to the organization", async () => {
+        const pkg = await SkillPackages.requirePackageById(ctx(), U.pkg);
+        expect(pkg.id).toBe(U.pkg);
+    });
+
+    it("requirePackage throws NotFoundError for a package in another organization", async () => {
+        await expect(
+            SkillPackages.requirePackageById(
+                createOrganizationMockContext({
+                    organizationId: U.otherOrg,
+                    user: { id: U.user },
+                    permissions: {},
+                    prisma: db,
+                }),
+                U.pkg,
+            ),
+        ).rejects.toThrow(`SkillPackage(id=${U.pkg}) not found.`);
     });
 });

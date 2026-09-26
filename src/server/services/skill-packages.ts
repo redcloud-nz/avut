@@ -5,14 +5,13 @@
 
 import "server-only";
 
-import { TRPCError } from "@trpc/server";
-
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { DiffChange, diffObject } from "@/lib/diff";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { LogAction, LogObjectType } from "@/lib/schemas/log-entry";
-import type { SkillId, SkillRecord } from "@/lib/schemas/skill";
-import type { SkillGroupId, SkillGroupRecord } from "@/lib/schemas/skill-group";
-import type { SkillPackageRecord } from "@/lib/schemas/skill-package";
+import { Skill, SkillId, type SkillRecord } from "@/lib/schemas/skill";
+import { SkillGroup, SkillGroupId, type SkillGroupRecord } from "@/lib/schemas/skill-group";
+import { SkillPackage, SkillPackageId, type SkillPackageRecord } from "@/lib/schemas/skill-package";
 import {
     SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
     SkillPackageExport,
@@ -21,14 +20,90 @@ import {
     type SkillPackageExport as SkillPackageExportType,
 } from "@/lib/schemas/skill-package-export";
 
+import type { OrgServiceContext } from "./service-context";
+
 /** Just the tables this module touches. */
 type SkillPackagePrisma = Pick<PrismaClient, "skillPackage" | "skillGroup" | "skill">;
+
+/**
+ * Fetch a skill by ID and ensure it belongs to the organization.
+ * @throws NotFoundError if the skill does not exist or does not belong to the organization.
+ *
+ * The not-found message is a local literal, not `Messages.skillNotFound` (`src/trpc/messages.ts`)
+ * — a domain service can't depend on `src/trpc/`. The router's other skill call sites still use
+ * `Messages.skillNotFound` for the same entity; keep both in sync by hand.
+ */
+export async function requireSkillById(ctx: OrgServiceContext, skillId: SkillId): Promise<Skill> {
+    const existingSkill = await ctx.prisma.skill.findUnique({
+        where: {
+            id: skillId,
+            skillPackage: {
+                organizationId: ctx.organizationId,
+            },
+        },
+    });
+
+    if (!existingSkill) {
+        throw new NotFoundError(`Skill(id=${skillId}) not found.`);
+    }
+
+    return Skill.fromRecord(existingSkill);
+}
+
+/**
+ * Fetch a skill group by ID and ensure it belongs to the organization.
+ * @throws NotFoundError if the skill group does not exist or does not belong to the organization.
+ *
+ * The not-found message is a local literal, not `Messages.skillGroupNotFound` — see
+ * `requireSkillById`'s doc comment for why.
+ */
+export async function requireGroupById(
+    ctx: OrgServiceContext,
+    skillGroupId: SkillGroupId,
+): Promise<SkillGroup> {
+    const existingGroup = await ctx.prisma.skillGroup.findUnique({
+        where: {
+            id: skillGroupId,
+            skillPackage: {
+                organizationId: ctx.organizationId,
+            },
+        },
+    });
+
+    if (!existingGroup) {
+        throw new NotFoundError(`SkillGroup(id=${skillGroupId}) not found.`);
+    }
+
+    return SkillGroup.fromRecord(existingGroup);
+}
+
+/**
+ * Fetch a skill package by ID and ensure it belongs to the organization.
+ * @throws NotFoundError if the skill package does not exist or does not belong to the organization.
+ */
+export async function requirePackageById(
+    ctx: OrgServiceContext,
+    skillPackageId: SkillPackageId,
+): Promise<SkillPackage> {
+    const existingPackage = await ctx.prisma.skillPackage.findUnique({
+        where: {
+            id: skillPackageId,
+            organizationId: ctx.organizationId,
+        },
+    });
+
+    if (!existingPackage) {
+        throw new NotFoundError(`SkillPackage(id=${skillPackageId}) not found.`);
+    }
+
+    return SkillPackage.fromRecord(existingPackage);
+}
 
 /**
  * Build a portable export envelope for a skill-package authoring tree. Pure — the caller
  * supplies the already-loaded records.
  */
-export function buildSkillPackageExport(
+export function buildExport(
     pkg: SkillPackageRecord,
     groups: SkillGroupRecord[],
     skills: SkillRecord[],
@@ -172,10 +247,10 @@ function pick<K extends string>(obj: object, keys: readonly K[]): Record<string,
  *
  * An imported package always lands `published: false` / `status: Active`.
  *
- * @throws TRPCError(BAD_REQUEST) if the envelope repeats a group or skill ID.
- * @throws TRPCError(CONFLICT) if the package ID belongs to another organization.
+ * @throws ValidationError if the envelope repeats a group or skill ID.
+ * @throws ConflictError if the package ID belongs to another organization.
  */
-export async function prepareSkillPackageImport(
+export async function prepareImport(
     prisma: SkillPackagePrisma,
     envelope: SkillPackageExportType,
     targetOrganizationId: string,
@@ -190,10 +265,9 @@ export async function prepareSkillPackageImport(
     });
 
     if (existing && existing.organizationId !== targetOrganizationId) {
-        throw new TRPCError({
-            code: "CONFLICT",
-            message: `Skill package ${incoming.id} already exists under a different organisation. A package ID belongs to exactly one organisation per instance.`,
-        });
+        throw new ConflictError(
+            `Skill package ${incoming.id} already exists under a different organisation. A package ID belongs to exactly one organisation per instance.`,
+        );
     }
 
     const packageAction: "Create" | "Update" = existing ? "Update" : "Create";
@@ -450,10 +524,7 @@ function assertNoDuplicateIds(groups: ExportedGroup[]) {
     const groupIds = new Set<string>();
     const skillIds = new Set<string>();
     const dupe = (kind: string, id: string): never => {
-        throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Import file repeats ${kind} ID ${id}.`,
-        });
+        throw new ValidationError(`Import file repeats ${kind} ID ${id}.`);
     };
     for (const group of groups) {
         if (groupIds.has(group.id)) dupe("group", group.id);

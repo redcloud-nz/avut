@@ -16,10 +16,7 @@ import {
     revalidateUserSettings,
     writeUserSettingsSlice,
 } from "@/server/cache/user-settings";
-import {
-    readOrganizationSettings,
-    writeOrganizationSettingsSlice,
-} from "@/server/organization-settings-store";
+import * as OrgSettings from "@/server/services/organization-settings";
 import { hasExplicitUserTimeZone } from "@/server/user-settings-store";
 
 import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
@@ -50,7 +47,7 @@ export const settingsRouter = createTrpcRouter({
     )
         .output(OrganizationSettings.schema)
         .query(async ({ ctx }) => {
-            return await readOrganizationSettings(ctx.prisma, ctx.organizationId);
+            return await OrgSettings.read(ctx.prisma, ctx.organizationId);
         }),
 
     /**
@@ -104,7 +101,7 @@ export const settingsRouter = createTrpcRouter({
         .input(z.object({ update: OrganizationSettingsSlices.input }))
         .output(OrganizationSettings.schema)
         .mutation(async ({ ctx, input }) => {
-            const settings = await writeOrganizationSettingsSlice(
+            const settings = await OrgSettings.writeSlice(
                 ctx.prisma,
                 ctx.organizationId,
                 OrganizationSettingsSlices.pathOf(input.update.slice),

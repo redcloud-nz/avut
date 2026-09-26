@@ -10,9 +10,9 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
-import { writeOrganizationSettings } from "./organization-settings-store";
+import * as OrgSettings from "./organization-settings";
 
-describe("writeOrganizationSettings", () => {
+describe("OrgSettings.write", () => {
     it("records settings changes with segmented paths", async () => {
         const db = createMockPrisma();
         const orgId = OrganizationId.create();
@@ -32,7 +32,7 @@ describe("writeOrganizationSettings", () => {
 
         let recorded: DiffChange[] = [];
 
-        await writeOrganizationSettings(db, orgId, next, (changes) => {
+        await OrgSettings.write(db, orgId, next, (changes) => {
             recorded = changes;
             return db.organizationConfig.findMany({ where: { organizationId: orgId } });
         });
@@ -61,14 +61,14 @@ describe("writeOrganizationSettings", () => {
             modules: { ...defaults.modules, i3: { ...defaults.modules.i3, enabled } },
         });
 
-        await writeOrganizationSettings(db, orgId, withI3(true));
+        await OrgSettings.write(db, orgId, withI3(true));
         expect(
             (await db.organizationConfig.findMany({ where: { organizationId: orgId } })).map(
                 (r) => r.key,
             ),
         ).toEqual(["modules.i3.enabled"]);
 
-        const reverted = await writeOrganizationSettings(db, orgId, withI3(false));
+        const reverted = await OrgSettings.write(db, orgId, withI3(false));
 
         expect(await db.organizationConfig.findMany({ where: { organizationId: orgId } })).toEqual(
             [],
@@ -91,8 +91,8 @@ describe("writeOrganizationSettings", () => {
             personnel: { ...defaults.personnel, autoLinkOnPersonCreate: personnel },
         });
 
-        await writeOrganizationSettings(db, orgId, settings(true, true));
-        await writeOrganizationSettings(db, orgId, settings(false, true));
+        await OrgSettings.write(db, orgId, settings(true, true));
+        await OrgSettings.write(db, orgId, settings(false, true));
 
         const records = await db.organizationConfig.findMany({ where: { organizationId: orgId } });
         expect(records.map((r) => r.key)).toEqual(["personnel.autoLinkOnPersonCreate"]);
@@ -118,7 +118,7 @@ describe("writeOrganizationSettings", () => {
         });
 
         let recorded: DiffChange[] = [];
-        const settings = await writeOrganizationSettings(
+        const settings = await OrgSettings.write(
             db,
             orgId,
             { ...defaults, personnel: { ...defaults.personnel, autoLinkOnPersonCreate: true } },

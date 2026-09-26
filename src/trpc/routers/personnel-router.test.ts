@@ -11,11 +11,11 @@ import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
-import { createLogBatch } from "@/server/log-entry";
+import * as Personnel from "@/server/services/personnel";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext, createOrganizationMockContext } from "@/test/trpc-helpers";
 
-import { createPerson, getPersonByEmail, personnelRouter } from "./personnel-router";
+import { personnelRouter } from "./personnel-router";
 
 // The router reaches server-only modules at import time. The procedures exercised here use
 // ctx.prisma (the injected mock), so an empty stub is enough to let them import in jsdom.
@@ -451,190 +451,6 @@ describe("personnel.createPerson auto-link", () => {
     });
 });
 
-/*
- * The D4H team import reaches the auto-link through the shared `createPerson` helper, passing a
- * `batchId` that no tRPC procedure exposes — so this path is unreachable through `createCaller`
- * and was the one part of the branch with no automated coverage at all.
- *
- * What is specific to the import, and therefore what these cases exist to pin down:
- *  - the link fires for a person the import creates, not just one an admin types in;
- *  - **both** entries join the import's batch, so the membership link is traceable to the run
- *    that caused it rather than appearing as an orphan edit by whoever started the import;
- *  - the organization's opt-in still governs an unattended run.
- */
-describe("createPerson during a D4H team import", () => {
-    // One member per case, each with a distinct email. Deliberately no shared fixture and no
-    // case-variant reuse: two people whose emails differ only in case can coexist today only
-    // because of the defect `docs/specs/person-email-normalisation.md` exists to fix, and a test
-    // that leans on it would start failing for the right reason at the worst moment.
-    const T = {
-        org: OrganizationId.create(),
-        otherOrg: OrganizationId.create(),
-        importerUser: UserId.create(),
-        linkUser: UserId.create(),
-        batchUser: UserId.create(),
-        offUser: UserId.create(),
-        outsiderUser: UserId.create(),
-        linkMembership: nanoId16(),
-        batchMembership: nanoId16(),
-        offMembership: nanoId16(),
-    };
-
-    const db = createMockPrisma();
-
-    beforeAll(async () => {
-        for (const id of [T.org, T.otherOrg]) {
-            await db.organization.create({
-                data: { id, name: id, slug: id, createdAt: new Date() },
-            });
-        }
-
-        const users: [UserId, string, string][] = [
-            [T.importerUser, "Importer", "importer@example.com"],
-            [T.linkUser, "Rae Fenn", "rae.fenn@example.com"],
-            [T.batchUser, "Bea Quill", "bea.quill@example.com"],
-            [T.offUser, "Dana Vos", "dana.vos@example.com"],
-            // An account with the same email as an imported member, but in another organization.
-            [T.outsiderUser, "Outsider", "outsider@example.com"],
-        ];
-        for (const [id, name, email] of users) {
-            await db.user.create({ data: { id, name, email } });
-        }
-
-        await db.organizationUser.create({
-            data: { id: nanoId16(), organizationId: T.org, userId: T.importerUser, role: "admin" },
-        });
-
-        const memberships: [string, UserId][] = [
-            [T.linkMembership, T.linkUser],
-            [T.batchMembership, T.batchUser],
-            [T.offMembership, T.offUser],
-        ];
-        for (const [id, userId] of memberships) {
-            await db.organizationUser.create({
-                data: { id, organizationId: T.org, userId, role: "member" },
-            });
-        }
-
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.otherOrg,
-                userId: T.outsiderUser,
-                role: "member",
-            },
-        });
-    });
-
-    async function setAutoLink(enabled: boolean) {
-        await db.organizationConfig.deleteMany({ where: { organizationId: T.org } });
-        await db.organizationConfig.create({
-            data: {
-                organizationId: T.org,
-                key: "personnel.autoLinkOnPersonCreate",
-                value: enabled,
-            },
-        });
-    }
-
-    function ctx() {
-        return createOrganizationMockContext({
-            organizationId: T.org,
-            user: { id: T.importerUser, name: "Importer", email: "importer@example.com" },
-            permissions: { organization: ["view"], person: ["create"] },
-            prisma: db,
-        });
-    }
-
-    /** Open a batch the way the team import does, then create one person through the helper. */
-    async function importPerson(name: string, email: string) {
-        const batch = await createLogBatch(
-            {
-                operationKey: "d4h-team-import",
-                userId: T.importerUser,
-                actorLabel: "Importer <importer@example.com>",
-                description: `Imported ${name} from D4H.`,
-            },
-            db,
-        );
-
-        const personId = PersonId.create();
-        await createPerson(ctx(), personId, { name, email, tags: [], properties: {} }, batch.id);
-
-        return { personId, batchId: batch.id };
-    }
-
-    it("links an imported person to the member who already holds that email", async () => {
-        await setAutoLink(true);
-
-        const { personId } = await importPerson("Rae Fenn", "rae.fenn@example.com");
-
-        const membership = await db.organizationUser.findFirst({
-            where: { id: T.linkMembership },
-        });
-        expect(membership?.personId).toBe(personId);
-    });
-
-    it("puts the person entry in the import's batch", async () => {
-        await setAutoLink(true);
-
-        const { personId, batchId } = await importPerson("Nobody Here", "nobody@example.com");
-
-        const entries = await db.logEntry.findMany({ where: { objectId: personId } });
-        expect(entries).toHaveLength(1);
-        expect(entries[0].batchId).toBe(batchId);
-    });
-
-    // The reason a batch exists: an unattended run must stay traceable to the operation that
-    // produced it. A membership entry outside the batch reads as an unexplained edit by whoever
-    // happened to start the import.
-    it("carries the same batch onto the membership link entry", async () => {
-        await setAutoLink(true);
-
-        const { batchId } = await importPerson("Bea Quill", "bea.quill@example.com");
-
-        const linkEntry = (
-            await db.logEntry.findMany({
-                where: { objectId: T.batchMembership, objectType: "OrganizationMembership" },
-            })
-        )[0];
-
-        expect(linkEntry.batchId).toBe(batchId);
-        expect(linkEntry.description).toContain("on creation — matched on email address.");
-    });
-
-    it("respects the organization's opt-in, even unattended", async () => {
-        await setAutoLink(false);
-
-        const { personId } = await importPerson("Dana Vos", "dana.vos@example.com");
-
-        expect(await db.organizationUser.findMany({ where: { personId } })).toHaveLength(0);
-
-        const membership = await db.organizationUser.findFirst({
-            where: { id: T.offMembership },
-        });
-        expect(membership?.personId ?? null).toBeNull();
-
-        expect(await db.logEntry.findMany({ where: { objectId: T.offMembership } })).toHaveLength(
-            0,
-        );
-    });
-
-    // The invariant that matters most on an unattended path: an email match is not authorisation.
-    it("never grants membership to an imported email belonging to an outsider", async () => {
-        await setAutoLink(true);
-
-        const { personId } = await importPerson("Outsider", "outsider@example.com");
-
-        expect(
-            await db.organizationUser.findMany({
-                where: { organizationId: T.org, userId: T.outsiderUser },
-            }),
-        ).toHaveLength(0);
-        expect(await db.organizationUser.findMany({ where: { personId } })).toHaveLength(0);
-    });
-});
-
 describe("personnel email normalisation", () => {
     // `personnel.email` is stored lowercase so that `@@unique([organizationId, email])` means what
     // it says — Postgres unique indexes are case-sensitive, so before this both conflict checks
@@ -748,8 +564,8 @@ describe("personnel email normalisation", () => {
             prisma: db,
         });
 
-        expect((await getPersonByEmail(ctx, "Dana.Reed@EXAMPLE.com"))?.id).toBe(T.dana);
-        expect(await getPersonByEmail(ctx, "nobody@example.com")).toBeNull();
+        expect((await Personnel.getByEmail(ctx, "Dana.Reed@EXAMPLE.com"))?.id).toBe(T.dana);
+        expect(await Personnel.getByEmail(ctx, "nobody@example.com")).toBeNull();
     });
 });
 

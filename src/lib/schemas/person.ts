@@ -30,7 +30,7 @@ const personSchema = z.object({
      * See docs/specs/person-email-normalisation.md.
      *
      * This covers every parsed path. The D4H import builds its person object in code and never
-     * parses it, so the shared `createPerson` helper normalises as well.
+     * parses it, so `Personnel.create` normalises as well.
      */
     email: z.email().toLowerCase(),
     tags: tagsSchema,

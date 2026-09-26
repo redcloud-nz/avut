@@ -89,13 +89,10 @@ export const usersRouter = createTrpcRouter({
                 });
 
             if (person.organizationUser && person.organizationUser.userId !== input.userId)
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    cause: new FieldConflictError(
-                        "person",
-                        "This person is already linked to another user.",
-                    ),
-                });
+                throw new FieldConflictError(
+                    "person",
+                    "This person is already linked to another user.",
+                );
 
             /*
              * The mirror guard. Without it the update below overwrites `personId`, silently
@@ -104,13 +101,10 @@ export const usersRouter = createTrpcRouter({
              * person is taken.
              */
             if (orgUser.personId && orgUser.personId !== input.personId)
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    cause: new FieldConflictError(
-                        "user",
-                        "This user is already linked to another person.",
-                    ),
-                });
+                throw new FieldConflictError(
+                    "user",
+                    "This user is already linked to another person.",
+                );
 
             await ctx.prisma.$transaction([
                 ctx.prisma.organizationUser.update({

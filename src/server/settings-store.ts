@@ -4,7 +4,7 @@
  */
 
 /*
- * The read/write machinery behind every settings scope. `organization-settings-store.ts` and
+ * The read/write machinery behind every settings scope. `services/organization-settings.ts` and
  * `user-settings-store.ts` are both thin bindings of this factory — see either for the concrete
  * signatures.
  *

@@ -16,17 +16,11 @@ import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-members
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
+import * as D4HTeamSync from "@/server/services/d4h-team-sync";
+import * as Teams from "@/server/services/teams";
 
-import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
-
-import {
-    planD4HSync,
-    resolveD4HTeamForLink,
-    runTeamSync,
-    syncOrganizationD4HCache,
-    upsertOrganizationD4H,
-} from "./teams-router.d4h";
 
 /**
  * A team-membership row as returned by `listTeamMemberships` and
@@ -90,7 +84,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            return runTeamSync(ctx, {
+            return D4HTeamSync.runTeamSync(ctx, {
                 teamD4H: team.d4h,
                 token,
                 batchId: batch.id,
@@ -107,11 +101,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            const existing = await getTeam(ctx, teamId);
-
-            if (!existing) {
-                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
-            }
+            const existing = await Teams.requireById(ctx, teamId);
 
             if (existing.status === "Archived") {
                 return { updated: existing };
@@ -125,8 +115,8 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({ action: "Archive", objectType: "Team", objectId: teamId }),
             ]);
 
-            const updated = await getTeam(ctx, teamId);
-            return { updated: updated! };
+            const updated = await Teams.requireById(ctx, teamId);
+            return { updated };
         }),
 
     /**
@@ -181,7 +171,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ d4hTeamId: z.number(), name: z.string().optional() }))
         .output(z.object({ created: TeamData.schema }))
         .mutation(async ({ ctx, input: { organizationId, d4hTeamId, name: inputName } }) => {
-            const resolved = await resolveD4HTeamForLink(ctx, d4hTeamId);
+            const resolved = await D4HTeamSync.resolveD4HTeamForLink(ctx, d4hTeamId);
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
@@ -220,7 +210,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            await upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
+            await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const teamId = TeamId.create();
             const [team] = await ctx.prisma.$transaction([
@@ -256,14 +246,14 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            await runTeamSync(ctx, {
+            await D4HTeamSync.runTeamSync(ctx, {
                 teamD4H: team.d4h!,
                 token: resolved.token,
                 batchId: batch.id,
             });
 
-            const created = await getTeam(ctx, teamId);
-            return { created: created! };
+            const created = await Teams.requireById(ctx, teamId);
+            return { created };
         }),
 
     /**
@@ -522,18 +512,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(TeamData.schema)
         .query(async ({ ctx, input: { teamId } }) => {
-            // `getTeam` here is the module-scoped helper below, not this procedure —
-            // object keys are not in lexical scope.
-            const team = await getTeam(ctx, teamId);
-
-            if (!team) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
-            }
-
-            return team;
+            return Teams.requireById(ctx, teamId);
         }),
 
     /**
@@ -586,7 +565,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            const resolved = await resolveD4HTeamForLink(ctx, d4hTeamId);
+            const resolved = await D4HTeamSync.resolveD4HTeamForLink(ctx, d4hTeamId);
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
@@ -623,7 +602,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            await upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
+            await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const [teamD4H] = await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.create({
@@ -645,7 +624,11 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return runTeamSync(ctx, { teamD4H, token: resolved.token, batchId: batch.id });
+            return D4HTeamSync.runTeamSync(ctx, {
+                teamD4H,
+                token: resolved.token,
+                batchId: batch.id,
+            });
         }),
 
     /**
@@ -736,7 +719,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            return planD4HSync(ctx, { teamD4H: team.d4h, token });
+            return D4HTeamSync.planD4HSync(ctx, { teamD4H: team.d4h, token });
         }),
 
     /**
@@ -748,11 +731,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            const existing = await getTeam(ctx, teamId);
-
-            if (!existing) {
-                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
-            }
+            const existing = await Teams.requireById(ctx, teamId);
 
             if (existing.status === "Active") {
                 return { updated: existing };
@@ -766,8 +745,8 @@ export const teamsRouter = createTrpcRouter({
                 ctx.logEvent({ action: "Restore", objectType: "Team", objectId: teamId }),
             ]);
 
-            const updated = await getTeam(ctx, teamId);
-            return { updated: updated! };
+            const updated = await Teams.requireById(ctx, teamId);
+            return { updated };
         }),
 
     /**
@@ -776,7 +755,7 @@ export const teamsRouter = createTrpcRouter({
      */
     syncOrganizationD4H: organizationProcedure({ organization: ["update"] }).mutation(
         async ({ ctx }) => {
-            await syncOrganizationD4HCache(ctx);
+            await D4HTeamSync.syncOrganizationD4HCache(ctx);
         },
     ),
 
@@ -876,13 +855,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { teamId, update } }) => {
-            const existingTeam = await getTeam(ctx, teamId);
-
-            if (!existingTeam)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
+            const existingTeam = await Teams.requireById(ctx, teamId);
 
             const diff = diffObject(TeamData.modifiableSchema.parse(existingTeam), update);
 
@@ -987,42 +960,3 @@ export const teamsRouter = createTrpcRouter({
             return { updated: TeamMembershipData.fromRecord(updated) };
         }),
 });
-
-/**
- * Utility function to fetch a Team by ID.
- * @param ctx
- * @param teamId
- * @returns
- */
-async function getTeam(
-    ctx: AuthenticatedOrganizationContext,
-    teamId: TeamId,
-): Promise<TeamData | null> {
-    const team = await ctx.prisma.team.findUnique({
-        where: {
-            id: teamId,
-            organizationId: ctx.organizationId,
-        },
-        include: {
-            d4h: true,
-        },
-    });
-
-    if (!team) return null;
-
-    // Resolve the D4H organisation name from the org-level cache (at most one
-    // `Organization_D4H` per org) so the detail view can show it alongside the id.
-    const orgD4H = team.d4h
-        ? await ctx.prisma.organization_D4H.findUnique({
-              where: { organizationId: ctx.organizationId },
-              select: { d4hOrganisationName: true },
-          })
-        : null;
-
-    return TeamData.fromRecord({
-        ...team,
-        d4h: team.d4h
-            ? { ...team.d4h, d4hOrganisationName: orgD4H?.d4hOrganisationName ?? null }
-            : null,
-    });
-}

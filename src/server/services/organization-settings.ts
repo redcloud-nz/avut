@@ -39,7 +39,7 @@ const store = createSettingsStore<
  * returns an identical result for a config-less organization and for one whose defaults have
  * been fully materialised.
  */
-export const readOrganizationSettings = store.read;
+export const read = store.read;
 
 /**
  * Persist an organization's settings, writing only the `OrganizationConfig` rows whose value
@@ -54,11 +54,11 @@ export const readOrganizationSettings = store.read;
  *
  * No tRPC procedure exposes this: a whole-tree write built from a client's snapshot reverts any
  * leaf another writer changed in the meantime, which is why the settings cards go through
- * `writeOrganizationSettingsSlice` instead. Kept as the primitive that slice writes are built on.
+ * `writeSlice` instead. Kept as the primitive that slice writes are built on.
  *
  * @returns the organization's settings as they stand after the write.
  */
-export const writeOrganizationSettings = store.write;
+export const write = store.write;
 
 /**
  * Persist a patch to a single slice of the organization's settings — the fields of one settings group
@@ -66,9 +66,8 @@ export const writeOrganizationSettings = store.write;
  *
  * The patch is merged onto the settings as they stand in the database, not onto the snapshot the
  * caller was holding, so a concurrent edit to a different group survives. Everything else
- * (leaf-level diffing, revert-to-default deletes, the in-transaction audit entry) is
- * `writeOrganizationSettings`.
+ * (leaf-level diffing, revert-to-default deletes, the in-transaction audit entry) is `write`.
  *
  * @returns the organization's settings as they stand after the write.
  */
-export const writeOrganizationSettingsSlice = store.writeSlice;
+export const writeSlice = store.writeSlice;

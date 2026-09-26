@@ -84,10 +84,10 @@ export const createAuthenticatedMockContext = ({
  * A context as `organizationProcedure` builds it — the authenticated context plus the
  * `organizationId` and `logEvent` that the middleware injects.
  *
- * Use this to call an exported router helper directly, rather than through `createCaller`, when
- * the helper takes arguments the procedure does not expose. The D4H team import is the case that
- * needs it: it calls `createPerson(ctx, id, create, batchId)` with a `batchId` that no procedure
- * ever passes, so the batched path is unreachable through a caller.
+ * Use this to call an exported domain-service function directly, rather than through
+ * `createCaller`, when it takes arguments no procedure exposes. The D4H team import is the case
+ * that needs it: it calls `Personnel.create(withBatch(ctx, batchId), id, data)` with a batch that
+ * no procedure ever passes, so the batched path is unreachable through a caller.
  *
  * `logEvent` shares `resolveActor` with `src/trpc/init.ts` rather than restating it, so the
  * impersonation rule — an action taken while impersonating is attributed to the impersonator —
