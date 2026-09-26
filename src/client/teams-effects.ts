@@ -61,6 +61,7 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     createTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
@@ -70,6 +71,7 @@ export const teamsEffects = createEffects<"teams">()({
     ],
     deleteTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     linkTeamToD4H: (vars) => teamCaches(vars),
     unlinkTeamFromD4H: (vars) => teamCaches(vars),

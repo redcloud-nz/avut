@@ -92,14 +92,16 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
             disabled: !canDelete,
         });
     }
-    actions.push({
-        verb: "delete",
-        label: "Delete",
-        icon: <ObjectIcons.Delete />,
-        onSelect: () => setAction("delete", { history: "push" }),
-        disabled: !canDelete,
-        destructive: true,
-    });
+    if (team.status !== "Deleted") {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        });
+    }
 
     return (
         <>

@@ -8,6 +8,7 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
+import { RubbishNavGate } from "@/components/admin/trash/rubbish-nav-gate";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
@@ -124,7 +125,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect permissions={{ person: ["delete"] }}>
+                        <RubbishNavGate>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/admin/rubbish-bin", { slug })}>
                                     <ItemContent>
@@ -138,7 +139,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                     </ItemActions>
                                 </Link>
                             </Item>
-                        </Protect>
+                        </RubbishNavGate>
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>

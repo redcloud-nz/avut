@@ -44,6 +44,7 @@ export const personnelEffects = createEffects<"personnel">()({
         invalidate(
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     restorePerson: (vars, { updated }) => [
         write(
@@ -68,6 +69,7 @@ export const personnelEffects = createEffects<"personnel">()({
         invalidate(
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     updatePerson: (vars, { updated }) => [
         write(
