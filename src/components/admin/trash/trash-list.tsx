@@ -17,6 +17,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
+import { i3Effects } from "@/client/i3-effects";
 import { personnelEffects } from "@/client/personnel-effects";
 import { teamsEffects } from "@/client/teams-effects";
 import { Kaga } from "@/components/blocks/kaga";
@@ -25,20 +26,28 @@ import { MutationButton } from "@/components/ui/button";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import { TrashableEntities } from "@/lib/trash-registry";
+import { TrashableEntities, TrashableEntityId } from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
 
 type TrashRow = {
     id: string;
-    type: "Person" | "Team";
+    type: "Person" | "Team" | "I3Template";
     name: string;
     deletedAt: string | null;
+};
+
+/** Maps a `listTrash` row's `type` to its `TrashableEntities` registry key. */
+const entityIdByType: Record<TrashRow["type"], TrashableEntityId> = {
+    Person: "person",
+    Team: "team",
+    I3Template: "i3Template",
 };
 
 function RestoreCell({ row }: { row: TrashRow }) {
     const organization = useOrganization();
     const canRestorePerson = useHasPermission({ person: ["delete"] });
     const canRestoreTeam = useHasPermission({ team: ["delete"] });
+    const canRestoreI3Template = useHasPermission({ i3Template: ["delete"] });
 
     const restorePerson = useMutation(
         trpc.personnel.restorePersonFromTrash.mutationOptions({
@@ -62,6 +71,17 @@ function RestoreCell({ row }: { row: TrashRow }) {
             },
         }),
     );
+    const restoreI3Template = useMutation(
+        trpc.i3.restoreTemplateFromTrash.mutationOptions({
+            meta: { effects: i3Effects.restoreTemplateFromTrash },
+            onError(error) {
+                toast.error(`Failed to restore template: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(`Template "${row.name}" restored from rubbish.`);
+            },
+        }),
+    );
 
     if (row.type === "Person") {
         return (
@@ -79,15 +99,33 @@ function RestoreCell({ row }: { row: TrashRow }) {
         );
     }
 
+    if (row.type === "Team") {
+        return (
+            <MutationButton
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRestoreTeam}
+                status={restoreTeam.status}
+                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                onClick={() =>
+                    restoreTeam.mutate({ organizationId: organization.id, teamId: row.id })
+                }
+            />
+        );
+    }
+
     return (
         <MutationButton
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canRestoreTeam}
-            status={restoreTeam.status}
+            disabled={!canRestoreI3Template}
+            status={restoreI3Template.status}
             text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
-            onClick={() => restoreTeam.mutate({ organizationId: organization.id, teamId: row.id })}
+            onClick={() =>
+                restoreI3Template.mutate({ organizationId: organization.id, templateId: row.id })
+            }
         />
     );
 }
@@ -106,7 +144,7 @@ export function AdminModule_Trash_List() {
                 columnHelper.accessor("type", {
                     header: "Type",
                     cell: (ctx) =>
-                        TrashableEntities[ctx.getValue().toLowerCase() as "person" | "team"].label,
+                        TrashableEntities[entityIdByType[ctx.getValue() as TrashRow["type"]]].label,
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
@@ -116,8 +154,7 @@ export function AdminModule_Trash_List() {
                     header: "Name",
                     cell: (ctx) => {
                         const row = ctx.row.original;
-                        const entity =
-                            TrashableEntities[row.type.toLowerCase() as "person" | "team"];
+                        const entity = TrashableEntities[entityIdByType[row.type]];
                         return (
                             <Link href={entity.href(organization.slug, row.id)}>{row.name}</Link>
                         );

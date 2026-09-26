@@ -15,6 +15,7 @@ import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 import * as Forms from "@/server/services/forms";
+import * as I3Templates from "@/server/services/i3-templates";
 
 import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -116,26 +117,15 @@ export const i3Router = createTrpcRouter({
         }),
 
     /**
-     * Delete a D4H PPE Template. This is a hard delete and cannot be undone.
+     * Soft-deletes an I3 Template (reversible via `restoreTemplateFromTrash`). Idempotent —
+     * deleting an already-deleted template returns it unchanged. `I3TemplateVariant` rows are
+     * left untouched — out of scope for #295.
      */
     deleteTemplate: organizationProcedure({ i3Template: ["delete"] })
         .input(z.object({ templateId: I3TemplateId.schema }))
         .output(z.object({ deleted: I3Template.schema }))
         .mutation(async ({ ctx, input: { templateId } }) => {
-            const existing = await getI3TemplateOrThrow(ctx, templateId);
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.i3Template.delete({
-                    where: { id: templateId },
-                }),
-                ctx.logEvent({
-                    action: "Delete",
-                    objectType: "I3Template",
-                    objectId: templateId,
-                }),
-            ]);
-
-            return { deleted: existing };
+            return { deleted: await I3Templates.deleteRecord(ctx, templateId) };
         }),
 
     /**
@@ -217,7 +207,7 @@ export const i3Router = createTrpcRouter({
         )
         .query(async ({ ctx }) => {
             const templates = await ctx.prisma.i3Template.findMany({
-                where: { organizationId: ctx.organizationId },
+                where: { organizationId: ctx.organizationId, status: { not: "Deleted" } },
                 include: {
                     d4h: true,
                     variants: {
@@ -258,6 +248,19 @@ export const i3Router = createTrpcRouter({
             });
 
             return variants.map(I3TemplateVariant.fromRecord);
+        }),
+
+    /**
+     * Restores a deleted I3 Template in the organization back to Active. Idempotent — restoring
+     * an already-active template returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the template does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the template is not Deleted.
+     */
+    restoreTemplateFromTrash: organizationProcedure({ i3Template: ["delete"] })
+        .input(z.object({ templateId: I3TemplateId.schema }))
+        .output(z.object({ updated: I3Template.schema }))
+        .mutation(async ({ ctx, input: { templateId } }) => {
+            return { updated: await I3Templates.restoreFromTrash(ctx, templateId) };
         }),
 
     /**

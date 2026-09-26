@@ -6,6 +6,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
+import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
@@ -28,6 +29,7 @@ describe("trash.listTrash", () => {
         deletedPerson: PersonId.create(),
         activePerson: PersonId.create(),
         deletedTeam: TeamId.create(),
+        deletedTemplate: I3TemplateId.create(),
     };
 
     const db = createMockPrisma();
@@ -69,6 +71,15 @@ describe("trash.listTrash", () => {
                 status: "Deleted",
             },
         });
+        await db.i3Template.create({
+            data: {
+                id: T.deletedTemplate,
+                organizationId: T.org,
+                name: "Doomed Template",
+                description: "",
+                status: "Deleted",
+            },
+        });
 
         await db.logEntry.create({
             data: {
@@ -90,6 +101,17 @@ describe("trash.listTrash", () => {
                 objectType: "Team",
                 objectId: T.deletedTeam,
                 timestamp: new Date("2026-02-01T00:00:00.000Z"),
+            },
+        });
+        await db.logEntry.create({
+            data: {
+                id: nanoId16(),
+                scope: "organization",
+                organizationId: T.org,
+                action: "Delete",
+                objectType: "I3Template",
+                objectId: T.deletedTemplate,
+                timestamp: new Date("2026-03-01T00:00:00.000Z"),
             },
         });
 
@@ -132,14 +154,17 @@ describe("trash.listTrash", () => {
     it("lists Deleted records across entity types for an admin, with deletedAt resolved", async () => {
         const rows = await makeCaller(T.adminUser).listTrash({ organizationId: T.org });
 
-        expect(rows).toHaveLength(2);
+        expect(rows).toHaveLength(3);
         const person = rows.find((r) => r.id === T.deletedPerson);
         const team = rows.find((r) => r.id === T.deletedTeam);
+        const template = rows.find((r) => r.id === T.deletedTemplate);
 
         expect(person).toMatchObject({ type: "Person", name: "Grace Hopper" });
         expect(person?.deletedAt).toBe("2026-01-01T00:00:00.000Z");
         expect(team).toMatchObject({ type: "Team", name: "Doomed Team" });
         expect(team?.deletedAt).toBe("2026-02-01T00:00:00.000Z");
+        expect(template).toMatchObject({ type: "I3Template", name: "Doomed Template" });
+        expect(template?.deletedAt).toBe("2026-03-01T00:00:00.000Z");
     });
 
     it("does not list Active records", async () => {

@@ -70,8 +70,7 @@ export function I3Module_DeleteTemplate_Dialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete I3 Template</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm deletion of template <ObjectName>{template.name}</ObjectName>. This
-                        action cannot be undone.
+                        Confirm deletion of template <ObjectName>{template.name}</ObjectName>.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
