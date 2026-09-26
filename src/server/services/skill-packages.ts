@@ -524,12 +524,19 @@ export async function prepareImport(
  * Archive a skill (reversible via `restoreSkillFromArchive`). No-op, returning the existing
  * record unchanged, if the skill is already `Archived`.
  * @throws NotFoundError if the skill does not exist in the organization.
+ * @throws ValidationError if the skill is `Deleted` — use `restoreSkillFromTrash` first.
  */
 export async function archiveSkill(ctx: OrgServiceContext, skillId: SkillId): Promise<Skill> {
     const existing = await requireSkillById(ctx, skillId);
 
     if (existing.status === "Archived") {
         return existing;
+    }
+
+    if (existing.status !== "Active") {
+        throw new ValidationError(
+            `Skill(id=${skillId}) has status ${existing.status}; only an Active skill can be archived.`,
+        );
     }
 
     await ctx.prisma.$transaction([
@@ -639,6 +646,7 @@ export async function getSkillDeleteImpact(
  * Archive a skill group (reversible via `restoreGroupFromArchive`). No-op, returning the
  * existing record unchanged, if the group is already `Archived`.
  * @throws NotFoundError if the group does not exist in the organization.
+ * @throws ValidationError if the group is `Deleted` — use `restoreGroupFromTrash` first.
  */
 export async function archiveGroup(
     ctx: OrgServiceContext,
@@ -648,6 +656,12 @@ export async function archiveGroup(
 
     if (existing.status === "Archived") {
         return existing;
+    }
+
+    if (existing.status !== "Active") {
+        throw new ValidationError(
+            `SkillGroup(id=${skillGroupId}) has status ${existing.status}; only an Active group can be archived.`,
+        );
     }
 
     await ctx.prisma.$transaction([
@@ -772,6 +786,7 @@ export async function getGroupDeleteImpact(
  * Archive a skill package (reversible via `restorePackageFromArchive`). No-op, returning the
  * existing record unchanged, if the package is already `Archived`.
  * @throws NotFoundError if the package does not exist in the organization.
+ * @throws ValidationError if the package is `Deleted` — use `restorePackageFromTrash` first.
  */
 export async function archivePackage(
     ctx: OrgServiceContext,
@@ -781,6 +796,12 @@ export async function archivePackage(
 
     if (existing.status === "Archived") {
         return existing;
+    }
+
+    if (existing.status !== "Active") {
+        throw new ValidationError(
+            `SkillPackage(id=${skillPackageId}) has status ${existing.status}; only an Active package can be archived.`,
+        );
     }
 
     await ctx.prisma.$transaction([

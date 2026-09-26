@@ -578,6 +578,23 @@ describe("SkillPackages archive / restoreFromArchive / restoreFromTrash / delete
         expect((await SkillPackages.requireGroupById(ctx(), L.group)).status).toBe("Deleted");
     });
 
+    it("archiveSkill/archiveGroup/archivePackage reject a Deleted row", async () => {
+        await expect(SkillPackages.archiveSkill(ctx(), L.skill)).rejects.toThrow(
+            /only an Active skill can be archived/,
+        );
+        await expect(SkillPackages.archiveGroup(ctx(), L.group)).rejects.toThrow(
+            /only an Active group can be archived/,
+        );
+        await expect(SkillPackages.archivePackage(ctx(), L.pkg)).rejects.toThrow(
+            /only an Active package can be archived/,
+        );
+
+        // Rejected archive attempts must not have mutated status out of Deleted.
+        expect((await SkillPackages.requireSkillById(ctx(), L.skill)).status).toBe("Deleted");
+        expect((await SkillPackages.requireGroupById(ctx(), L.group)).status).toBe("Deleted");
+        expect((await SkillPackages.requirePackageById(ctx(), L.pkg)).status).toBe("Deleted");
+    });
+
     it("restoreSkillFromArchive rejects a Deleted skill", async () => {
         await expect(SkillPackages.restoreSkillFromArchive(ctx(), L.skill)).rejects.toThrow(
             /only an Archived skill can be restored from archive/,
