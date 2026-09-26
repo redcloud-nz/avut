@@ -29,6 +29,8 @@ export function Organization_Dashboard_SkillTrackStats() {
                 >
                     <Organization_Dashboard_SkillPackageAndSkillStats />
                 </Suspense>
+            </Protect>
+            <Protect permissions={{ skillCheckSession: ["view"] }}>
                 <Suspense fallback={<StatCardSkeleton />}>
                     <Organization_Dashboard_SkillCheckSessionsStat />
                 </Suspense>
