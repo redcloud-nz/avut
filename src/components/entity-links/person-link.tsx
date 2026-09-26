@@ -7,12 +7,12 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { PersonData } from "@/lib/schemas/person";
+import { PersonData, PersonRef } from "@/lib/schemas/person";
 
 import { EntityLink } from "./entity-link";
 
 export type PersonLinkProps = {
-    person: Pick<PersonData, "id" | "name"> & Partial<Pick<PersonData, "email">>;
+    person: PersonRef & Partial<Pick<PersonData, "email">>;
 };
 
 export function PersonLink({ person }: PersonLinkProps) {

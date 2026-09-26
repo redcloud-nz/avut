@@ -7,12 +7,12 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { TeamData } from "@/lib/schemas/team";
+import { TeamData, TeamRef } from "@/lib/schemas/team";
 
 import { EntityLink } from "./entity-link";
 
 export type TeamLinkProps = {
-    team: Pick<TeamData, "id" | "name"> & Partial<Pick<TeamData, "description">>;
+    team: TeamRef & Partial<Pick<TeamData, "description">>;
 };
 
 export function TeamLink({ team }: TeamLinkProps) {

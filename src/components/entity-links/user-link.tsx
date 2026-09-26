@@ -6,12 +6,12 @@
 "use client";
 
 import { route } from "@/lib/routes";
-import { UserData } from "@/lib/schemas/user";
+import { UserData, UserRef } from "@/lib/schemas/user";
 
 import { EntityLink } from "./entity-link";
 
 export type UserLinkProps = {
-    user: Pick<UserData, "id" | "name"> & Partial<Pick<UserData, "email">>;
+    user: UserRef & Partial<Pick<UserData, "email">>;
 };
 
 export function UserLink({ user }: UserLinkProps) {

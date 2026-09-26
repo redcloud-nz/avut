@@ -5,19 +5,18 @@
  */
 "use client";
 
-import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { MembershipSourceBadge } from "@/components/admin/teams/membership-source-badge";
-import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
+import { TeamMembershipLink } from "@/components/entity-links/team-membership-link";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { PersonRef } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
@@ -71,30 +70,29 @@ export function AdminModule_Person_TeamMemberships_Card({ person }: { person: Pe
                     </p>
                 )}
                 {memberships.map((membership) => (
-                    <Item key={membership.teamId} className="px-2" asChild>
-                        <Link
-                            href={route("/orgs/[slug]/admin/teams/[team_id]/members/[person_id]", {
-                                slug: organization.slug,
-                                team_id: membership.teamId,
-                                person_id: person.id,
-                            })}
-                        >
-                            <ItemContent>
-                                <ItemTitle>{membership.team.name}</ItemTitle>
-                                {membership.d4h && (
-                                    <ItemDescription>
-                                        {formatD4HMemberStatus(membership.d4h.d4hStatus)}
-                                        {membership.d4h.d4hPosition
-                                            ? ` · ${membership.d4h.d4hPosition}`
-                                            : ""}
-                                    </ItemDescription>
-                                )}
-                            </ItemContent>
-                            <ItemActions>
-                                <MembershipSourceBadge membership={membership} />
-                                <ItemLinkActionIcon className="size-4" />
-                            </ItemActions>
-                        </Link>
+                    <Item key={membership.teamId} className="px-2">
+                        <ItemContent>
+                            <ItemTitle>
+                                <TeamMembershipLink
+                                    teamMembership={{
+                                        teamId: membership.teamId,
+                                        personId: person.id,
+                                        name: membership.team.name,
+                                    }}
+                                />
+                            </ItemTitle>
+                            {membership.d4h && (
+                                <ItemDescription>
+                                    {formatD4HMemberStatus(membership.d4h.d4hStatus)}
+                                    {membership.d4h.d4hPosition
+                                        ? ` · ${membership.d4h.d4hPosition}`
+                                        : ""}
+                                </ItemDescription>
+                            )}
+                        </ItemContent>
+                        <ItemActions>
+                            <MembershipSourceBadge membership={membership} />
+                        </ItemActions>
                     </Item>
                 ))}
             </CardContent>

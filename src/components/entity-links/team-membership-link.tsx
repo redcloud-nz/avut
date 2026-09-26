@@ -7,17 +7,12 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { PersonId } from "@/lib/schemas/person";
-import { TeamId } from "@/lib/schemas/team";
+import { TeamMembershipRef } from "@/lib/schemas/team-membership";
 
 import { EntityLink } from "./entity-link";
 
 export type TeamMembershipLinkProps = {
-    teamMembership: {
-        teamId: TeamId;
-        personId: PersonId;
-        name: string;
-    };
+    teamMembership: TeamMembershipRef;
 };
 
 export function TeamMembershipLink({ teamMembership }: TeamMembershipLinkProps) {
