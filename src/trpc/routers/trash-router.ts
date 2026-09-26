@@ -24,7 +24,7 @@ export const trashRouter = createTrpcRouter({
             z.array(
                 z.object({
                     id: z.string(),
-                    type: z.enum(["Person", "Team"]),
+                    type: z.enum(["Person", "Team", "I3Template"]),
                     name: z.string(),
                     deletedAt: z.iso.datetime().nullable(),
                 }),
@@ -51,7 +51,7 @@ export const trashRouter = createTrpcRouter({
                 hasAnyRoleWithPermissions(roles, { [entity.permission]: ["delete"] }),
             );
 
-            const rows: { id: string; type: "Person" | "Team"; name: string }[] = [];
+            const rows: { id: string; type: "Person" | "Team" | "I3Template"; name: string }[] = [];
 
             if (visibleEntities.includes(TrashableEntities.person)) {
                 const people = await ctx.prisma.person.findMany({
@@ -69,6 +69,20 @@ export const trashRouter = createTrpcRouter({
                     select: { id: true, name: true },
                 });
                 rows.push(...teams.map((t) => ({ id: t.id, type: "Team" as const, name: t.name })));
+            }
+
+            if (visibleEntities.includes(TrashableEntities.i3Template)) {
+                const templates = await ctx.prisma.i3Template.findMany({
+                    where: { organizationId: ctx.organizationId, status: "Deleted" },
+                    select: { id: true, name: true },
+                });
+                rows.push(
+                    ...templates.map((t) => ({
+                        id: t.id,
+                        type: "I3Template" as const,
+                        name: t.name,
+                    })),
+                );
             }
 
             if (rows.length === 0) return [];
