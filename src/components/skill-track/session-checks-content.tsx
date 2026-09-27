@@ -127,14 +127,21 @@ export function SkillTrack_SessionChecks_Content({
                         columnOptions: resultOptions,
                     },
                 }),
-                col.accessor((row) => assessorById.get(row.assessorId)?.name ?? row.assessorId, {
-                    id: "assessor",
-                    header: "Assessor",
-                    enableColumnFilter: false,
-                    enableGlobalFilter: true,
-                    enableHiding: true,
-                    enableSorting: true,
-                }),
+                col.accessor(
+                    (row) =>
+                        (row.assessorId ? assessorById.get(row.assessorId)?.name : undefined) ??
+                        row.assessorLabel ??
+                        row.assessorId ??
+                        "Deleted person",
+                    {
+                        id: "assessor",
+                        header: "Assessor",
+                        enableColumnFilter: false,
+                        enableGlobalFilter: true,
+                        enableHiding: true,
+                        enableSorting: true,
+                    },
+                ),
                 col.accessor("status", {
                     header: "Status",
                     cell: (ctx) => SKILL_CHECK_STATUS_LABELS[ctx.getValue()] ?? ctx.getValue(),

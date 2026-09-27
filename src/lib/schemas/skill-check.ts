@@ -44,7 +44,10 @@ export const SkillCheck = {
         organizationId: OrganizationId.schema,
         sessionId: SkillCheckSessionId.schema.nullable(),
         assesseeId: PersonId.schema,
-        assessorId: PersonId.schema,
+        /** Null once the assessor was purged from the Rubbish bin — see `assessorLabel`. */
+        assessorId: PersonId.schema.nullable(),
+        /** The purged assessor's name; only set when `assessorId` is null. */
+        assessorLabel: z.string().nullable(),
         skillId: SkillId.schema,
         result: SkillCheckResultValue.schema,
         notes: z.string(),
@@ -60,6 +63,17 @@ export const SkillCheck = {
 } as const;
 
 export type SkillCheck = z.infer<typeof SkillCheck.schema>;
+
+/**
+ * Display name for a check's assessor: the live person, else the name kept when they were
+ * purged from the Rubbish bin.
+ */
+export function assessorDisplayName(check: {
+    assessor: { name: string } | null;
+    assessorLabel: string | null;
+}): string {
+    return check.assessor?.name ?? check.assessorLabel ?? "Deleted person";
+}
 
 export const SKILL_CHECK_STATUS_LABELS: Record<string, string> = {
     Draft: "Draft",
