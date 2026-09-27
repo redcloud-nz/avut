@@ -76,7 +76,7 @@ export type LogScope = (typeof logScopeValues)[number];
 const logActionValues = [
     "Approve",
     "Archive",
-    "Ban", // DORMANT — reverted databaseHooks wire
+    "Ban",
     "Create",
     "Delete",
     "Impersonate", // DORMANT — reverted databaseHooks wire
@@ -85,7 +85,7 @@ const logActionValues = [
     "Restore",
     "Revoke",
     "Subscribe",
-    "Unban", // DORMANT — reverted databaseHooks wire
+    "Unban",
     "Unpublish",
     "Unsubscribe",
     "Update",

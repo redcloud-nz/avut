@@ -12,6 +12,10 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const systemAdminEffects = createEffects<"systemAdmin">()({
+    banUser: (vars) => [
+        invalidate(trpc.systemAdmin.listUsers.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+    ],
     createOrganization: () => [invalidate(trpc.systemAdmin.listOrganizations.queryFilter())],
     deleteUser: () => [
         invalidate(trpc.systemAdmin.listUsers.queryFilter()),
@@ -19,6 +23,10 @@ export const systemAdminEffects = createEffects<"systemAdmin">()({
         invalidate(trpc.systemAdmin.getOrganization.queryFilter()),
     ],
     setUserRole: (vars) => [
+        invalidate(trpc.systemAdmin.listUsers.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+    ],
+    unbanUser: (vars) => [
         invalidate(trpc.systemAdmin.listUsers.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],

@@ -7,9 +7,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { systemAdminEffects } from "@/client/system-admin-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -33,12 +33,9 @@ import { trpc } from "@/trpc/client";
  * Host-driven (`open` / `onOpenChange` come from `SystemAdmin_UserActions_Menu`, which also
  * picks `action` from the current `user.banned`).
  *
- * Ban/unban is a Better Auth session action, not an app write — there is no tRPC procedure and
- * no `ctx.logEvent`. We call `authClient.admin.banUser` / `unbanUser` directly so Better Auth
- * revokes the banned user's sessions server-side. Because these aren't tRPC mutations,
- * `meta.effects` doesn't apply — `onSuccess` invalidates the `systemAdmin` user queries
- * explicitly (mirroring `src/components/admin/users/users-list.tsx`). The ban is permanent
- * (no `banExpiresIn`). `onSuccess` stays on the page and only closes the dialog.
+ * Routes through `systemAdmin.banUser`/`unbanUser`, which enforce the self-ban guard
+ * server-side (#86) and log a `Ban`/`Unban` entry on the target's own timeline. The ban is
+ * permanent (no `banExpiresIn`).
  */
 export function SystemAdmin_BanUser_Dialog({
     user,
@@ -49,45 +46,43 @@ export function SystemAdmin_BanUser_Dialog({
     action: "ban" | "unban";
 }) {
     const ban = action === "ban";
-    const queryClient = useQueryClient();
     const [reason, setReason] = useState("");
 
-    const mutation = useMutation({
-        mutationFn: async () => {
-            const trimmed = reason.trim();
-            const { error } = ban
-                ? await authClient.admin.banUser({
-                      userId: user.id,
-                      ...(trimmed ? { banReason: trimmed } : {}),
-                  })
-                : await authClient.admin.unbanUser({ userId: user.id });
-            if (error) throw new Error(error.message ?? (ban ? "Ban failed" : "Unban failed"));
-        },
-        onError(error: unknown) {
-            console.error(`Failed to ${action} user:`, error);
-            const message = error instanceof Error ? error.message : "Unknown error";
-            toast.error(`Failed to ${action} user: ${message}`);
-        },
-        async onSuccess() {
-            toast.success(
-                <>
-                    User <ObjectName>{user.name}</ObjectName> {ban ? "banned" : "unbanned"}.
-                </>,
-            );
-            await Promise.all([
-                queryClient.invalidateQueries(trpc.systemAdmin.listUsers.queryFilter()),
-                queryClient.invalidateQueries(
-                    trpc.systemAdmin.getUser.queryFilter({ userId: user.id }),
-                ),
-            ]);
-            props.onOpenChange?.(false);
-        },
-    });
+    function onError(error: { message: string }) {
+        console.error(`Failed to ${action} user:`, error);
+        toast.error(`Failed to ${action} user: ${error.message}`);
+    }
+
+    function onSuccess() {
+        toast.success(
+            <>
+                User <ObjectName>{user.name}</ObjectName> {ban ? "banned" : "unbanned"}.
+            </>,
+        );
+        props.onOpenChange?.(false);
+    }
+
+    const banMutation = useMutation(
+        trpc.systemAdmin.banUser.mutationOptions({
+            meta: { effects: systemAdminEffects.banUser },
+            onError,
+            onSuccess,
+        }),
+    );
+    const unbanMutation = useMutation(
+        trpc.systemAdmin.unbanUser.mutationOptions({
+            meta: { effects: systemAdminEffects.unbanUser },
+            onError,
+            onSuccess,
+        }),
+    );
+    const mutation = ban ? banMutation : unbanMutation;
 
     useEffect(() => {
         if (props.open) {
             setReason("");
-            mutation.reset();
+            banMutation.reset();
+            unbanMutation.reset();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [props.open, action]);
@@ -137,7 +132,17 @@ export function SystemAdmin_BanUser_Dialog({
                                 ? { idle: "Ban user", pending: "Banning", success: "Banned" }
                                 : { idle: "Unban user", pending: "Unbanning", success: "Unbanned" }
                         }
-                        onClick={() => mutation.mutate()}
+                        onClick={() => {
+                            const trimmed = reason.trim();
+                            if (ban) {
+                                banMutation.mutate({
+                                    userId: user.id,
+                                    ...(trimmed ? { banReason: trimmed } : {}),
+                                });
+                            } else {
+                                unbanMutation.mutate({ userId: user.id });
+                            }
+                        }}
                     />
                 </DialogFooter>
             </DialogContent>

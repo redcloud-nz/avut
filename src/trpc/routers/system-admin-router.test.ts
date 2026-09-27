@@ -30,6 +30,19 @@ vi.mock("@/server/cache/organization-user-revalidate", () => ({
     revalidateOrganizationUser: vi.fn(async () => {}),
 }));
 
+// `banUser`/`unbanUser` delegate to Better Auth. The tests assert on that delegation — and on
+// what surrounds it — rather than standing up a real auth instance.
+const banUserMock = vi.fn().mockResolvedValue({});
+const unbanUserMock = vi.fn().mockResolvedValue({});
+vi.mock("@/server/auth", () => ({
+    auth: {
+        api: {
+            banUser: (...args: unknown[]) => banUserMock(...args),
+            unbanUser: (...args: unknown[]) => unbanUserMock(...args),
+        },
+    },
+}));
+
 describe("systemAdminProcedure gate", () => {
     const db = createMockPrisma();
 
@@ -696,6 +709,110 @@ describe("systemAdmin.setUserRole last-admin guard", () => {
         await expect(caller.setUserRole({ userId: soloAdmin, role: "user" })).rejects.toMatchObject(
             { code: "BAD_REQUEST" },
         );
+    });
+});
+
+describe("systemAdmin.banUser / unbanUser", () => {
+    const T = { admin: UserId.create(), target: UserId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: T.admin,
+                name: "Dana Okafor",
+                email: "dana@example.com",
+                emailVerified: true,
+                role: "admin",
+                createdAt: new Date(),
+            },
+        });
+        await db.user.create({
+            data: {
+                id: T.target,
+                name: "Kim Park",
+                email: "kim@example.com",
+                emailVerified: true,
+                role: null,
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    beforeEach(() => vi.clearAllMocks());
+
+    const call = () =>
+        systemAdminRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("bans a user via better-auth and logs a Ban entry with the reason", async () => {
+        const res = await call().banUser({ userId: T.target, banReason: "spam" });
+        expect(res).toEqual({ id: T.target });
+
+        expect(banUserMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { userId: T.target, banReason: "spam" } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { objectType: "User" } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "user",
+            ownerId: T.target,
+            organizationId: null,
+            userId: T.admin,
+            action: "Ban",
+            objectId: T.target,
+        });
+        expect(entries[0].changes).toContainEqual({
+            type: "obj_add",
+            path: ["banReason"],
+            curr: "spam",
+        });
+    });
+
+    it("bans without a reason when none is given", async () => {
+        await call().banUser({ userId: T.target });
+        expect(banUserMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { userId: T.target } }),
+        );
+    });
+
+    it("unbans a user via better-auth and logs an Unban entry", async () => {
+        const res = await call().unbanUser({ userId: T.target });
+        expect(res).toEqual({ id: T.target });
+        expect(unbanUserMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { userId: T.target } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { action: "Unban" } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "user",
+            ownerId: T.target,
+            action: "Unban",
+            objectId: T.target,
+        });
+    });
+
+    it("refuses to ban yourself", async () => {
+        await expect(call().banUser({ userId: T.admin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+        expect(banUserMock).not.toHaveBeenCalled();
+    });
+
+    it("refuses to unban yourself", async () => {
+        await expect(call().unbanUser({ userId: T.admin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+        expect(unbanUserMock).not.toHaveBeenCalled();
+    });
+
+    it("throws NOT_FOUND for an unknown user", async () => {
+        await expect(call().banUser({ userId: UserId.create() })).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
     });
 });
 
