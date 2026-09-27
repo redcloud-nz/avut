@@ -7,11 +7,15 @@ import "server-only";
 
 import prisma from "@/server/prisma";
 import * as Trash from "@/server/services/trash";
+import * as UserAccounts from "@/server/services/user-accounts";
 
 /**
- * Binds the Rubbish bin auto-purge to the real Prisma client for `/api/cron/purge-rubbish`. The
- * logic lives in `Trash.runAutoPurge`, which takes the client so it stays testable.
+ * Binds the Rubbish bin auto-purge to the real Prisma client for `/api/cron/purge-rubbish`: every
+ * organization's bin, then the system bin's accounts. The logic lives in the services, which
+ * take the client so they stay testable.
  */
-export function purgeRubbish(now: Date = new Date()): Promise<Trash.AutoPurgeResult[]> {
-    return Trash.runAutoPurge(prisma, now);
+export async function purgeRubbish(now: Date = new Date()) {
+    const organizations = await Trash.runAutoPurge(prisma, now);
+    const users = await UserAccounts.runAutoPurge(prisma, now);
+    return { organizations, users };
 }

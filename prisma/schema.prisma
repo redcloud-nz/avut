@@ -31,6 +31,9 @@ model User {
   banned            Boolean?                 @default(false)
   banReason         String?
   banExpires        DateTime?
+  /// `Deleted` = in the system Rubbish bin: can't sign in, purged after a fixed 14 days (#296).
+  /// Distinct from `banned`, which blocks access but keeps the account indefinitely.
+  status            RecordStatus             @default(Active)
   sessions          Session[]                @relation("session_to_user")
   accounts          Account[]                @relation("account_to_user")
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")

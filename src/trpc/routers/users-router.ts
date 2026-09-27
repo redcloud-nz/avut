@@ -69,9 +69,10 @@ export const usersRouter = createTrpcRouter({
                         userId: input.userId,
                     },
                 },
+                include: { user: { select: { status: true } } },
             });
 
-            if (!orgUser)
+            if (!orgUser || orgUser.user.status === "Deleted")
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.userNotFound(input.userId),
@@ -139,6 +140,7 @@ export const usersRouter = createTrpcRouter({
                 where: {
                     organizationId: ctx.organizationId,
                     personId: { not: null },
+                    user: { status: { not: "Deleted" } },
                 },
                 include: { person: true },
             });
@@ -166,6 +168,7 @@ export const usersRouter = createTrpcRouter({
                 where: {
                     organizationId: ctx.organizationId,
                     personId: null,
+                    user: { status: { not: "Deleted" } },
                 },
                 include: { user: true },
             });
