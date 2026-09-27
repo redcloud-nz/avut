@@ -53,8 +53,6 @@ const skillCheckResultsConfigSchema = z
 
 export const RUBBISH_BIN_DEFAULT_RETENTION_DAYS = 30;
 export const RUBBISH_BIN_MAX_RETENTION_DAYS = 90;
-/** Retention beyond this exceeds the privacy policy's 30-day deletion promise. */
-export const RUBBISH_BIN_POLICY_RETENTION_DAYS = 30;
 
 const organizationSettingsSchema = z.object({
     general: z.object({
@@ -88,8 +86,10 @@ const organizationSettingsSchema = z.object({
     }),
     /*
      * How long a Deleted record stays in the org's Rubbish bin before the daily purge removes it
-     * for good (#298). One number for every entity type the org owns. Above 30 days exceeds the
-     * privacy policy's 30-day deletion promise, which the settings card warns about.
+     * for good (#298). One number for every entity type the org owns. This is routine deletion of
+     * the org's own records, so the window is the org's call — the privacy policy's deletion
+     * promises cover an organisation leaving AVUT and account closure, which use the fixed 14-day
+     * system window instead.
      */
     rubbishBin: z.object({
         retentionDays: z

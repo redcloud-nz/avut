@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -30,7 +30,6 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import {
     OrganizationSettings,
     RUBBISH_BIN_MAX_RETENTION_DAYS,
-    RUBBISH_BIN_POLICY_RETENTION_DAYS,
 } from "@/lib/schemas/organization-settings";
 
 /**
@@ -48,7 +47,6 @@ export function RubbishBin_SettingsCard({
         resolver: zodResolver(OrganizationSettings.schema.shape.rubbishBin),
         defaultValues: settings.rubbishBin,
     });
-    const retentionDays = useWatch({ control: form.control, name: "retentionDays" });
 
     const mutation = useOrganizationSettingsMutation({
         errorMessage: "Failed to update Rubbish bin settings",
@@ -99,14 +97,6 @@ export function RubbishBin_SettingsCard({
                                         </InputGroupAddon>
                                     </InputGroup>
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                    {(retentionDays ?? 0) > RUBBISH_BIN_POLICY_RETENTION_DAYS && (
-                                        <FieldDescription className="text-amber-900 dark:text-amber-100">
-                                            More than {RUBBISH_BIN_POLICY_RETENTION_DAYS} days keeps
-                                            personal information longer than the AVUT privacy policy
-                                            promises. Check with whoever is responsible for your
-                                            organisation&rsquo;s privacy obligations first.
-                                        </FieldDescription>
-                                    )}
                                 </Field>
                             )}
                         />
