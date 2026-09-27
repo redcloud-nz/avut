@@ -63,18 +63,18 @@ async function findOwnPendingInvitation(
 }
 
 /**
- * Records that the caller answered an invitation, on both timelines it belongs to: their own
+ * Records a self-service membership change on both timelines it belongs to: the caller's own
  * (`ctx.logEvent` is user-scoped for an `authenticatedProcedure`) and the organization's, which
- * would otherwise never learn that a member joined or an invitation was turned down.
+ * would otherwise never learn that a member joined, turned down an invitation, or left.
  *
  * Two independently meaningful events, so they share a `LogBatch`. Written in one interactive
  * transaction — the batch has to exist before the entries that reference it, and its id is only
  * known once it is created.
  */
-async function logInvitationAnswer(
+async function logMembershipEvent(
     ctx: AuthenticatedContext,
     input: {
-        operationKey: "invitation-accept" | "invitation-reject";
+        operationKey: "invitation-accept" | "invitation-reject" | "organization-leave";
         organizationId: string;
         action: LogAction;
         objectType: LogObjectType;
@@ -179,7 +179,7 @@ export const userRouter = createTrpcRouter({
                 );
             }
 
-            await logInvitationAnswer(ctx, {
+            await logMembershipEvent(ctx, {
                 operationKey: "invitation-accept",
                 organizationId: invitation.organizationId,
                 action: "Create",
@@ -307,6 +307,47 @@ export const userRouter = createTrpcRouter({
     }),
 
     /**
+     * Leaves an organization the caller is a member of. Better Auth itself refuses this
+     * (`BAD_REQUEST`) when the caller is the organization's only owner — nothing here
+     * re-checks that.
+     *
+     * @param ctx The authenticated context.
+     * @param input The organization to leave.
+     * @throws TRPCError(NOT_FOUND) if the caller is not a member of that organization.
+     */
+    leaveOrganization: authenticatedProcedure
+        .input(z.object({ organizationId: OrganizationId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            const membership = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId: input.organizationId, userId: ctx.userId },
+                select: { id: true, organization: { select: { name: true } } },
+            });
+            if (!membership) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "You are not a member of that organisation.",
+                });
+            }
+
+            // Not a Prisma operation, so it can't join a $transaction with the log entries.
+            await auth.api.leaveOrganization({
+                body: { organizationId: input.organizationId },
+                headers: await ctx.getHeaders(),
+            });
+
+            await logMembershipEvent(ctx, {
+                operationKey: "organization-leave",
+                organizationId: input.organizationId,
+                action: "Delete",
+                objectType: "OrganizationMembership",
+                objectId: membership.id,
+                description: `Left ${membership.organization.name} (${input.organizationId}).`,
+            });
+
+            return { ok: true as const };
+        }),
+
+    /**
      * Lists the authenticated user's pending organization invitations, for the dashboard's
      * invitations card.
      *
@@ -418,7 +459,7 @@ export const userRouter = createTrpcRouter({
                 headers: await ctx.getHeaders(),
             });
 
-            await logInvitationAnswer(ctx, {
+            await logMembershipEvent(ctx, {
                 operationKey: "invitation-reject",
                 organizationId: invitation.organizationId,
                 action: "Update",

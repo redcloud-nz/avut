@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 import { ComponentProps } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { userEffects } from "@/client/user-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -32,28 +32,23 @@ export function UserSettings_LeaveOrganization_Dialog({
     ...props
 }: ComponentProps<typeof AlertDialog> & { membership: Membership }) {
     const router = useRouter();
-    const queryClient = useQueryClient();
 
-    const mutation = useMutation({
-        mutationFn: async () => {
-            await authClient.organization.leave(
-                { organizationId: membership.organization.id },
-                { throw: true },
-            );
-        },
-        onError(error) {
-            toast.error(`Failed to leave organisation: ${error.message}`);
-        },
-        async onSuccess() {
-            await queryClient.invalidateQueries(trpc.user.listMemberships.queryFilter());
-            toast.success(
-                <>
-                    Left <ObjectName>{membership.organization.name}</ObjectName>
-                </>,
-            );
-            router.push("/user/settings/organizations");
-        },
-    });
+    const mutation = useMutation(
+        trpc.user.leaveOrganization.mutationOptions({
+            meta: { effects: userEffects.leaveOrganization },
+            onError(error) {
+                toast.error(`Failed to leave organisation: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        Left <ObjectName>{membership.organization.name}</ObjectName>
+                    </>,
+                );
+                router.push("/user/settings/organizations");
+            },
+        }),
+    );
 
     return (
         <AlertDialog {...props}>
@@ -71,7 +66,9 @@ export function UserSettings_LeaveOrganization_Dialog({
                         variant="destructive"
                         status={mutation.status}
                         text={{ idle: "Leave", pending: "Leaving", success: "Left" }}
-                        onClick={() => mutation.mutate()}
+                        onClick={() =>
+                            mutation.mutate({ organizationId: membership.organization.id })
+                        }
                     />
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                 </AlertDialogFooter>

@@ -26,11 +26,13 @@ vi.mock("server-only", () => ({}));
 // standing up a real auth instance.
 const acceptInvitationMock = vi.fn();
 const rejectInvitationMock = vi.fn();
+const leaveOrganizationMock = vi.fn();
 vi.mock("@/server/auth", () => ({
     auth: {
         api: {
             acceptInvitation: (...args: unknown[]) => acceptInvitationMock(...args),
             rejectInvitation: (...args: unknown[]) => rejectInvitationMock(...args),
+            leaveOrganization: (...args: unknown[]) => leaveOrganizationMock(...args),
         },
     },
 }));
@@ -526,5 +528,79 @@ describe("userRouter invitations", () => {
         });
         expect(acceptInvitationMock).not.toHaveBeenCalled();
         expect(rejectInvitationMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("userRouter.leaveOrganization", () => {
+    const T = {
+        org: OrganizationId.create(),
+        caller: UserId.create(),
+        outsider: UserId.create(),
+        membership: OrganizationUserId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Leave Org", slug: "leave-org", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: T.caller, name: "Caller", email: "caller@example.com" },
+        });
+        await db.user.create({
+            data: { id: T.outsider, name: "Outsider", email: "outsider@example.com" },
+        });
+        await db.organizationUser.create({
+            data: { id: T.membership, organizationId: T.org, userId: T.caller, role: "member" },
+        });
+    });
+
+    function user(id = T.caller) {
+        return userRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id }, prisma: db }),
+        );
+    }
+
+    it("leaves through Better Auth and logs it on both the caller's and the organization's timeline", async () => {
+        leaveOrganizationMock.mockResolvedValueOnce({});
+
+        const result = await user().leaveOrganization({ organizationId: T.org });
+
+        expect(result).toEqual({ ok: true });
+        expect(leaveOrganizationMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { organizationId: T.org } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.membership } });
+        expect(entries).toHaveLength(2);
+
+        const userEntry = entries.find((e) => e.scope === "user");
+        const orgEntry = entries.find((e) => e.scope === "organization");
+        expect(userEntry).toMatchObject({
+            ownerId: T.caller,
+            action: "Delete",
+            objectType: "OrganizationMembership",
+        });
+        expect(orgEntry).toMatchObject({
+            organizationId: T.org,
+            userId: T.caller,
+            action: "Delete",
+            objectType: "OrganizationMembership",
+        });
+
+        expect(orgEntry?.batchId).toBe(userEntry?.batchId);
+        const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
+        expect(batch).toMatchObject({ operationKey: "organization-leave", userId: T.caller });
+    });
+
+    it("refuses to leave an organization you're not a member of", async () => {
+        leaveOrganizationMock.mockClear();
+
+        await expect(
+            user(T.outsider).leaveOrganization({ organizationId: T.org }),
+        ).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+        expect(leaveOrganizationMock).not.toHaveBeenCalled();
     });
 });
