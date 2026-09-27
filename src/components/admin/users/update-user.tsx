@@ -11,9 +11,9 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { organizationsEffects } from "@/client/organizations-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -43,6 +43,7 @@ import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { type AuthOrganizationMember } from "@/server/auth";
+import { trpc } from "@/trpc/client";
 
 export function AdminModule_UpdateUser_Dialog({
     organizationUser,
@@ -50,7 +51,6 @@ export function AdminModule_UpdateUser_Dialog({
     organizationUser: AuthOrganizationMember;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
@@ -74,31 +74,24 @@ export function AdminModule_UpdateUser_Dialog({
         defaultValues: roleDefaults,
     });
 
-    const mutation = useMutation({
-        async mutationFn(roles: OrganizationRole[]) {
-            await authClient.organization.updateMemberRole({
-                role: roles,
-                memberId: organizationUser.id,
-                organizationId: organizationUser.organizationId,
-            });
-        },
-        onError(error) {
-            console.error("Failed to update user roles:", error);
-        },
-        onSuccess() {
-            toast.success(
-                <>
-                    User <ObjectName>{organizationUser.user.name}</ObjectName> roles updated.
-                </>,
-            );
+    const mutation = useMutation(
+        trpc.organizations.setOrganizationMemberRole.mutationOptions({
+            meta: { effects: organizationsEffects.setOrganizationMemberRole },
+            onError(error) {
+                console.error("Failed to update user roles:", error);
+                toast.error(`Failed to update user roles: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        User <ObjectName>{organizationUser.user.name}</ObjectName> roles updated.
+                    </>,
+                );
 
-            queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-users", organizationUser.organizationId],
-            });
-
-            handleOpenChange(false);
-        },
-    });
+                handleOpenChange(false);
+            },
+        }),
+    );
 
     function handleOpenChange(open: boolean) {
         void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
@@ -132,7 +125,11 @@ export function AdminModule_UpdateUser_Dialog({
                         id="update-user-form"
                         onSubmit={form.handleSubmit(
                             (data) => {
-                                mutation.mutate([data.primaryRole, ...data.secondaryRoles]);
+                                mutation.mutate({
+                                    organizationId: organization.id,
+                                    userId: organizationUser.userId,
+                                    roles: [data.primaryRole, ...data.secondaryRoles],
+                                });
                             },
                             (errors) => {
                                 console.error("Form validation errors:", errors);
