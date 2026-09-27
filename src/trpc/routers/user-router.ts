@@ -20,6 +20,7 @@ import * as UserAccounts from "@/server/services/user-accounts";
 
 import {
     authenticatedProcedure,
+    closedAccountProcedure,
     createTrpcRouter,
     publicProcedure,
     type AuthenticatedContext,
@@ -183,6 +184,29 @@ export const userRouter = createTrpcRouter({
                 "self",
             );
             await revalidateOrganizationUser(ctx.userId);
+        }),
+
+    /**
+     * What `/auth/account-closed` shows a closed account: whether its owner may restore it
+     * (only if they closed it themselves) and when it will be purged.
+     */
+    getAccountClosure: closedAccountProcedure
+        .output(
+            z.object({
+                closed: z.boolean(),
+                canRestore: z.boolean(),
+                purgeAt: z.iso.datetime().nullable(),
+            }),
+        )
+        .query(async ({ ctx }) => {
+            const [deleted] = (await UserAccounts.listDeleted(ctx.prisma)).filter(
+                (u) => u.id === ctx.userId,
+            );
+            return {
+                closed: deleted !== undefined,
+                canRestore: deleted !== undefined && ctx.auth.user.deletedBy === "Self",
+                purgeAt: deleted?.purgeAt?.toISOString() ?? null,
+            };
         }),
 
     /**
@@ -421,4 +445,20 @@ export const userRouter = createTrpcRouter({
                 description: `Rejected invitation to join ${invitation.organization.name} (${invitation.organizationId}).`,
             });
         }),
+
+    /**
+     * The owner restoring an account they closed, from `/auth/account-closed`. An account a
+     * system administrator deleted is refused — that's the administrator's call to undo.
+     */
+    restoreMyAccount: closedAccountProcedure.mutation(async ({ ctx }) => {
+        await UserAccounts.restoreOwn(
+            {
+                prisma: ctx.prisma,
+                logSystemEvent: (options, tx = ctx.prisma) =>
+                    recordLogEntry({ scope: "system", ...resolveActor(ctx.auth), ...options }, tx),
+            },
+            ctx.userId,
+        );
+        await revalidateOrganizationUser(ctx.userId);
+    }),
 });

@@ -40,7 +40,14 @@ export interface SystemServiceContext {
 async function requireUser(ctx: SystemServiceContext, userId: UserId) {
     const user = await ctx.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, email: true, role: true, status: true },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            status: true,
+            deletedBy: true,
+        },
     });
     if (!user) throw new NotFoundError(`User(${userId}) not found.`);
     return user;
@@ -129,7 +136,10 @@ export async function softDelete(
 
     const subject = formatActorLabel(user.name, user.email);
     await ctx.prisma.$transaction([
-        ctx.prisma.user.update({ where: { id: userId }, data: { status: "Deleted" } }),
+        ctx.prisma.user.update({
+            where: { id: userId },
+            data: { status: "Deleted", deletedBy: closedBy === "self" ? "Self" : "Admin" },
+        }),
         ctx.prisma.session.deleteMany({ where: { userId } }),
         ctx.logSystemEvent({
             action: "Delete",
@@ -144,8 +154,8 @@ export async function softDelete(
 }
 
 /**
- * Recover a `Deleted` account back to `Active`. The account comes back exactly as it was —
- * memberships included — and signs in again from scratch (its sessions were revoked).
+ * Recover a `Deleted` account back to `Active` (a system administrator, from the system bin).
+ * The account comes back exactly as it was — memberships included.
  * @throws ValidationError if the account isn't `Deleted`.
  */
 export async function recover(ctx: SystemServiceContext, userId: UserId): Promise<void> {
@@ -153,14 +163,42 @@ export async function recover(ctx: SystemServiceContext, userId: UserId): Promis
     if (user.status !== "Deleted") {
         throw new ValidationError(`User(${userId}) isn't in the Rubbish bin.`);
     }
+    await setActive(ctx, user, "recovered from the Rubbish bin");
+}
 
+/**
+ * The account holder restoring their own account from the sign-in screen. Only an account they
+ * closed themselves — one a system administrator deleted stays that administrator's call.
+ * @throws ValidationError if the account isn't `Deleted`, or wasn't closed by its owner.
+ */
+export async function restoreOwn(ctx: SystemServiceContext, userId: UserId): Promise<void> {
+    const user = await requireUser(ctx, userId);
+    if (user.status !== "Deleted") {
+        throw new ValidationError("This account isn't closed.");
+    }
+    if (user.deletedBy !== "Self") {
+        throw new ValidationError(
+            "This account was deleted by an administrator. Contact them to have it restored.",
+        );
+    }
+    await setActive(ctx, user, "restored by its owner");
+}
+
+async function setActive(
+    ctx: SystemServiceContext,
+    user: { id: string; name: string; email: string },
+    how: string,
+) {
     await ctx.prisma.$transaction([
-        ctx.prisma.user.update({ where: { id: userId }, data: { status: "Active" } }),
+        ctx.prisma.user.update({
+            where: { id: user.id },
+            data: { status: "Active", deletedBy: null },
+        }),
         ctx.logSystemEvent({
             action: "Recover",
             objectType: "User",
-            objectId: userId,
-            description: `Account ${formatActorLabel(user.name, user.email)} recovered from the Rubbish bin.`,
+            objectId: user.id,
+            description: `Account ${formatActorLabel(user.name, user.email)} ${how}.`,
         }),
     ]);
 }

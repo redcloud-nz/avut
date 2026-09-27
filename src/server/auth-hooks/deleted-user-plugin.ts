@@ -11,21 +11,25 @@
 import "server-only";
 
 import type { BetterAuthPlugin } from "better-auth";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 
 /** Of the given user ids, the ones whose account is in the system Rubbish bin (#296). */
 export type FindDeletedUserIds = (userIds: string[]) => Promise<Set<string>>;
 
-export const ACCOUNT_DELETED_MESSAGE =
-    "This account has been deleted. Contact a system administrator if you need it back.";
+export const ACCOUNT_CLOSED_MESSAGE =
+    "This account is closed. Restore it, or contact a system administrator, to use it again.";
 
 /**
- * Keeps a soft-deleted account (`User.status: Deleted`) out of Better Auth:
+ * Keeps a soft-deleted account (`User.status: Deleted`) inert inside Better Auth.
  *
- * - **No new sessions.** A `session.create.before` database hook — the same place the admin
- *   plugin blocks a banned user — so it covers every sign-in route (password, OTP, OAuth,
- *   impersonation). Existing sessions are revoked by the soft delete itself; with the 5-minute
- *   session cookie cache, one can outlive that by up to the cache window, as with a role change.
+ * A Deleted account can still sign in — it lands on `/auth/account-closed`, where its owner can
+ * restore it — so this doesn't touch sessions. The app-side gate (`requireSession`,
+ * `authenticatedProcedure`) keeps it out of everything else; this covers what that gate can't
+ * see, Better Auth's own endpoints:
+ *
+ * - **No organization actions.** Every `/organization/*` endpoint (accepting an invitation,
+ *   creating or leaving an org, …) is refused for a Deleted caller, so the client can't route
+ *   around the tRPC gate by calling Better Auth directly.
  * - **Not listed as a member.** `/organization/list-members` backs the org member list and
  *   dashboard stats; the membership row is kept (recovery restores it), so its response is
  *   filtered here instead.
@@ -33,28 +37,23 @@ export const ACCOUNT_DELETED_MESSAGE =
 export function deletedUserPlugin(findDeletedUserIds: FindDeletedUserIds): BetterAuthPlugin {
     return {
         id: "avut-deleted-users",
-        init() {
-            return {
-                options: {
-                    databaseHooks: {
-                        session: {
-                            create: {
-                                async before(session) {
-                                    const deleted = await findDeletedUserIds([session.userId]);
-                                    if (deleted.has(session.userId)) {
-                                        throw new APIError("FORBIDDEN", {
-                                            message: ACCOUNT_DELETED_MESSAGE,
-                                            code: "ACCOUNT_DELETED",
-                                        });
-                                    }
-                                },
-                            },
-                        },
-                    },
-                },
-            };
-        },
         hooks: {
+            before: [
+                {
+                    matcher: (context) => context.path?.startsWith("/organization/") ?? false,
+                    handler: createAuthMiddleware(async (ctx) => {
+                        const session = await getSessionFromCtx(ctx);
+                        if (!session) return;
+                        const deleted = await findDeletedUserIds([session.user.id]);
+                        if (deleted.has(session.user.id)) {
+                            throw new APIError("FORBIDDEN", {
+                                message: ACCOUNT_CLOSED_MESSAGE,
+                                code: "ACCOUNT_CLOSED",
+                            });
+                        }
+                    }),
+                },
+            ],
             after: [
                 {
                     matcher: (context) => context.path === "/organization/list-members",

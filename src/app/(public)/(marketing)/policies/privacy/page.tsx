@@ -235,8 +235,8 @@ export default function PrivacyPolicy_Page() {
                     <p className="mb-4">
                         <strong>Account information</strong> is deleted when you close your account,
                         from your account settings or by asking us at the address in section 1. A
-                        closed account can no longer sign in, and is permanently deleted 14 days
-                        later; until then it can be restored if you ask.
+                        closed account can no longer be used, and is permanently deleted 14 days
+                        later; until then you can restore it by signing in.
                     </p>
                     <p className="mb-4">
                         <strong>

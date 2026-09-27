@@ -82,10 +82,10 @@ export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Close Account</AlertDialogTitle>
                     <AlertDialogDescription>
-                        You&rsquo;ll be signed out everywhere and won&rsquo;t be able to sign in.
+                        You&rsquo;ll be signed out everywhere and lose access to your organisations.
                         Your account is permanently deleted after {USER_RETENTION_DAYS} days; until
-                        then a system administrator can restore it if you ask. Person records your
-                        organisations keep about you are theirs and aren&rsquo;t removed.
+                        then you can sign in again to restore it. Person records your organisations
+                        keep about you are theirs and aren&rsquo;t removed.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <Field>

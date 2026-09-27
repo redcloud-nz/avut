@@ -20,28 +20,38 @@ describe("deletedUserPlugin", () => {
         return { auth, deleted, signInWithTestUser };
     }
 
-    it("refuses to create a session for a deleted account", async () => {
+    it("lets a closed account sign in — the app gate sends it to /auth/account-closed", async () => {
         const { auth, deleted } = await setup();
         const { user } = await auth.api.signUpEmail({
             body: { name: "Gone", email: "gone@test.com", password: "test123456" },
         });
         deleted.add(user.id);
 
-        await expect(
-            auth.api.signInEmail({ body: { email: "gone@test.com", password: "test123456" } }),
-        ).rejects.toMatchObject({ body: { code: "ACCOUNT_DELETED" } });
-    });
-
-    it("still signs in an account that isn't deleted", async () => {
-        const { auth } = await setup();
-        await auth.api.signUpEmail({
-            body: { name: "Here", email: "here@test.com", password: "test123456" },
-        });
-
         const result = await auth.api.signInEmail({
-            body: { email: "here@test.com", password: "test123456" },
+            body: { email: "gone@test.com", password: "test123456" },
         });
         expect(result.token).toBeTruthy();
+    });
+
+    it("refuses Better Auth's organization endpoints to a closed account", async () => {
+        const { auth, deleted, signInWithTestUser } = await setup();
+        const { headers, user } = await signInWithTestUser();
+        deleted.add(user.id);
+
+        await expect(
+            auth.api.createOrganization({ headers, body: { name: "Nope", slug: "nope" } }),
+        ).rejects.toMatchObject({ body: { code: "ACCOUNT_CLOSED" } });
+    });
+
+    it("leaves an open account's organization endpoints alone", async () => {
+        const { auth, signInWithTestUser } = await setup();
+        const { headers } = await signInWithTestUser();
+
+        const org = await auth.api.createOrganization({
+            headers,
+            body: { name: "Fine", slug: "fine" },
+        });
+        expect(org?.slug).toBe("fine");
     });
 
     it("leaves a deleted account's membership out of list-members", async () => {

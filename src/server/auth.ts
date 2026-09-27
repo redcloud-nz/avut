@@ -311,6 +311,16 @@ export const auth = betterAuth({
 
     user: {
         modelName: "user",
+        /*
+         * Read-only on the session so the closed-account gate (`requireSession`,
+         * `authenticatedProcedure`) costs no extra query. Fresh where it matters: deleting an
+         * account revokes every session, so the next one is minted with `Deleted`; restoring
+         * refetches the session past the cookie cache (see `account-closed-content.tsx`).
+         */
+        additionalFields: {
+            status: { type: "string", input: false, required: false },
+            deletedBy: { type: "string", input: false, required: false },
+        },
     },
     verification: {
         modelName: "verification",

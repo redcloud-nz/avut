@@ -520,3 +520,64 @@ describe("userRouter.closeMyAccount", () => {
         expect(entry.description).toMatch(/closed by its owner/);
     });
 });
+
+describe("userRouter closed-account gate", () => {
+    const T = { selfClosed: UserId.create(), adminDeleted: UserId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, deletedBy] of [
+            [T.selfClosed, "Self"],
+            [T.adminDeleted, "Admin"],
+        ] as const) {
+            await db.user.create({
+                data: { id, name: id, email: `${id}@example.com`, status: "Deleted", deletedBy },
+            });
+        }
+    });
+
+    // The session carries the account's status (Better Auth `additionalFields`).
+    function caller(id: string, deletedBy: "Self" | "Admin") {
+        return userRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id, email: `${id}@example.com`, status: "Deleted", deletedBy },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("refuses ordinary procedures to a closed account", async () => {
+        await expect(caller(T.selfClosed, "Self").listMemberships()).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+    });
+
+    it("reports whether the owner may restore it", async () => {
+        expect(await caller(T.selfClosed, "Self").getAccountClosure()).toMatchObject({
+            closed: true,
+            canRestore: true,
+        });
+        expect(await caller(T.adminDeleted, "Admin").getAccountClosure()).toMatchObject({
+            closed: true,
+            canRestore: false,
+        });
+    });
+
+    it("refuses to self-restore an account an administrator deleted", async () => {
+        await expect(caller(T.adminDeleted, "Admin").restoreMyAccount()).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: expect.stringMatching(/deleted by an administrator/),
+        });
+        expect((await db.user.findUnique({ where: { id: T.adminDeleted } }))?.status).toBe(
+            "Deleted",
+        );
+    });
+
+    it("restores an account its owner closed", async () => {
+        await caller(T.selfClosed, "Self").restoreMyAccount();
+        expect(await db.user.findUnique({ where: { id: T.selfClosed } })).toMatchObject({
+            status: "Active",
+            deletedBy: null,
+        });
+    });
+});
