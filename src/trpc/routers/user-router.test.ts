@@ -286,6 +286,12 @@ describe("userRouter invitations", () => {
         expired: InvitationId.create(),
         accepted: InvitationId.create(),
         someoneElses: InvitationId.create(),
+        // A named-person invitation, kept on its own user/membership so this test can write
+        // freely without disturbing the accept/reject fixtures above.
+        namingCaller: UserId.create(),
+        namedPerson: PersonId.create(),
+        naming: InvitationId.create(),
+        namingMembership: OrganizationUserId.create(),
     };
 
     const db = createMockPrisma();
@@ -300,6 +306,33 @@ describe("userRouter invitations", () => {
         ] as const) {
             await db.user.create({ data: { id, name: email, email, emailVerified: true } });
         }
+        await db.user.create({
+            data: {
+                id: T.namingCaller,
+                name: "Naming Caller",
+                email: "naming-caller@example.com",
+                emailVerified: true,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.namedPerson,
+                organizationId: T.org,
+                name: "Named Person",
+                email: "named-person@example.com",
+                status: "Active",
+                tags: [],
+                properties: {},
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: T.namingMembership,
+                organizationId: T.org,
+                userId: T.namingCaller,
+                role: "member",
+            },
+        });
 
         const base = { organizationId: T.org, inviterId: T.inviter, role: "member" };
         const future = new Date("2099-01-01T00:00:00Z");
@@ -308,6 +341,16 @@ describe("userRouter invitations", () => {
                 ...base,
                 id: T.pending,
                 email: "caller@example.com",
+                status: "pending",
+                expiresAt: future,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                ...base,
+                id: T.naming,
+                email: "naming-caller@example.com",
+                personId: T.namedPerson,
                 status: "pending",
                 expiresAt: future,
             },
@@ -359,6 +402,19 @@ describe("userRouter invitations", () => {
         );
     }
 
+    function namingCallerUser() {
+        return userRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.namingCaller,
+                    name: "Naming Caller",
+                    email: "naming-caller@example.com",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
     it("lists only the caller's pending, unexpired invitations", async () => {
         const result = await user().listInvitations();
 
@@ -397,6 +453,30 @@ describe("userRouter invitations", () => {
         expect(orgEntry?.batchId).toBe(userEntry?.batchId);
         const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
         expect(batch).toMatchObject({ operationKey: "invitation-accept", userId: T.caller });
+    });
+
+    it("links the invitation's named person onto the new membership", async () => {
+        acceptInvitationMock.mockResolvedValueOnce({ member: { id: T.namingMembership } });
+
+        await namingCallerUser().acceptInvitation({ invitationId: T.naming });
+
+        const membership = await db.organizationUser.findFirst({
+            where: { id: T.namingMembership },
+        });
+        expect(membership?.personId).toBe(T.namedPerson);
+
+        // The invitation-accept batch's two entries, plus the person-link entry.
+        const entries = await db.logEntry.findMany({ where: { objectId: T.namingMembership } });
+        expect(entries).toHaveLength(3);
+        const linkEntry = entries.find((e) => e.description?.includes("Linked person"));
+        expect(linkEntry).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            userId: T.namingCaller,
+            action: "Update",
+            objectType: "OrganizationMembership",
+        });
+        expect(linkEntry?.description).toContain("the invitation named the person");
     });
 
     it("rejects through Better Auth and logs it on both timelines", async () => {

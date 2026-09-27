@@ -15,6 +15,8 @@ import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData } from "@/lib/schemas/user-session";
 import { auth } from "@/server/auth";
 import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
+import * as Personnel from "@/server/services/personnel";
+import type { OrgServiceContext } from "@/server/services/service-context";
 
 import {
     authenticatedProcedure,
@@ -128,13 +130,54 @@ export const userRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             const invitation = await findOwnPendingInvitation(ctx, input.invitationId);
 
-            // Better Auth creates the membership and runs `afterAcceptInvitation` (person link,
-            // role cache revalidation). It isn't a Prisma operation, so it can't join a
-            // $transaction with the log entries — log only once it has succeeded.
+            // Better Auth creates the membership and runs `afterAcceptInvitation` (role cache
+            // revalidation only — person-linking happens below, not in that hook). It isn't a
+            // Prisma operation, so it can't join a $transaction with the log entries — log only
+            // once it has succeeded.
             const { member } = await auth.api.acceptInvitation({
                 body: { invitationId: invitation.id },
                 headers: await ctx.getHeaders(),
             });
+
+            // Attach a person record to the membership just created — the one named by the
+            // invitation, or (when the organization opted in) one matching the accepting user's
+            // email. Never allowed to fail the accept: the membership is already committed by
+            // this point, so throwing would leave the user staring at an error for an invitation
+            // that did in fact work.
+            try {
+                const organizationId = OrganizationId.schema.parse(invitation.organizationId);
+                const orgCtx: OrgServiceContext = {
+                    prisma: ctx.prisma,
+                    organizationId,
+                    userId: ctx.userId,
+                    logEvent: (options, tx = ctx.prisma) =>
+                        recordLogEntry(
+                            {
+                                scope: "organization",
+                                organizationId,
+                                ...resolveActor(ctx.auth),
+                                ...options,
+                            },
+                            tx,
+                        ),
+                };
+
+                const linked = await Personnel.linkPersonOnInvitationAccept(orgCtx, {
+                    invitationPersonId: invitation.personId ?? null,
+                    email: ctx.auth.user.email,
+                });
+
+                if (linked) {
+                    console.log(
+                        `Attached User(${ctx.userId}) to Person(${linked.personId}) in Organization(${invitation.organizationId})`,
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    `Failed to link a person to User(${ctx.userId}) in Organization(${invitation.organizationId}) on invitation accept:`,
+                    error,
+                );
+            }
 
             await logInvitationAnswer(ctx, {
                 operationKey: "invitation-accept",

@@ -10,11 +10,9 @@ import * as z from "zod";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { NotFoundError, ValidationError } from "@/lib/errors";
-import type { OrganizationId } from "@/lib/schemas/organization";
 import { PersonData, type PersonId } from "@/lib/schemas/person";
 import type { PersonRecord } from "@/lib/schemas/person";
-import type { UserId, UserRecord } from "@/lib/schemas/user";
-import { formatActorLabel, recordLogEntry, type LogEntryPrisma } from "@/server/log-entry";
+import type { UserRecord } from "@/lib/schemas/user";
 
 import * as OrgSettings from "./organization-settings";
 import type { OrgServiceContext } from "./service-context";
@@ -60,10 +58,7 @@ export async function create(
      */
     const settings = await OrgSettings.read(ctx.prisma, ctx.organizationId);
     const linkable = settings.personnel.autoLinkOnPersonCreate
-        ? await findLinkableMember(ctx.prisma, {
-              organizationId: ctx.organizationId,
-              email: data.email,
-          })
+        ? await findLinkableMember(ctx, { email: data.email })
         : null;
 
     /*
@@ -345,31 +340,20 @@ export async function getDeleteImpact(
  * Matching and linking a `Person` to a `User` within one organization — the shared half of
  * `docs/specs/person-user-linking.md` Parts 2 and 3.
  *
- * The four functions below take a narrow `prisma` param rather than `OrgServiceContext`,
- * deliberately: `linkPersonOnInvitationAccept` runs from a better-auth hook
- * (`src/server/auth.ts`), which is not a tRPC context and has no `OrgServiceContext` to offer.
- * Keeping the logic here rather than inline in `auth.ts` is also what makes it testable at all —
- * that module pulls in `@/server/prisma` (via the Prisma adapter) and cannot be imported under
- * jsdom.
+ * `findLinkablePerson`/`findLinkableMember` take `OrgServiceContext` like any other service
+ * function — both are pure reads run only against `ctx.prisma`, never a transaction client.
+ * `tryLinkPersonToMember` can't follow suit: its one caller, `linkPersonOnInvitationAccept`,
+ * passes it the interactive-transaction client from inside `ctx.prisma.$transaction(async (tx) =>
+ * …)`, so the link and its audit entry can't diverge. `OrgServiceContext.prisma` is typed as the
+ * full `PrismaClient`, which `Prisma.TransactionClient` doesn't satisfy, so it keeps the narrow
+ * `PersonUserLinkPrisma` slice instead.
  *
  * Nothing here grants membership. Both lookups only ever fill in `OrganizationUser.personId` on a
  * membership that already exists; an email match is never an authorisation decision.
  */
 
-/** The slice of the Prisma client the lookups need. */
-export type PersonUserLinkPrisma = Pick<PrismaClient, "person" | "organizationUser" | "user">;
-
-/** Additionally what writing a link and its audit entry needs. */
-export type PersonUserLinkWritePrisma = PersonUserLinkPrisma &
-    LogEntryPrisma &
-    Pick<PrismaClient, "organizationConfig" | "$transaction">;
-
-/** The person who caused the link, denormalised onto the audit entry. */
-export interface LinkActor {
-    id: UserId;
-    name: string;
-    email: string;
-}
+/** The slice of the Prisma client `tryLinkPersonToMember` needs to run inside a transaction. */
+export type PersonUserLinkPrisma = Pick<PrismaClient, "person" | "organizationUser">;
 
 /**
  * A person is **linkable** to a user when all of:
@@ -402,12 +386,12 @@ export interface LinkActor {
  * `@@unique([organizationId, email])` means at most one row can match.
  */
 export async function findLinkablePerson(
-    prisma: PersonUserLinkPrisma,
-    { organizationId, email }: { organizationId: string; email: string },
+    ctx: OrgServiceContext,
+    { email }: { email: string },
 ): Promise<PersonRecord | null> {
-    return await prisma.person.findFirst({
+    return await ctx.prisma.person.findFirst({
         where: {
-            organizationId,
+            organizationId: ctx.organizationId,
             status: "Active",
             organizationUser: { is: null },
             email: email.toLowerCase(),
@@ -429,14 +413,14 @@ export async function findLinkablePerson(
  * index-backed, unlike the direction above.
  */
 export async function findLinkableMember(
-    prisma: PersonUserLinkPrisma,
-    { organizationId, email }: { organizationId: string; email: string },
+    ctx: OrgServiceContext,
+    { email }: { email: string },
 ): Promise<{ user: UserRecord; organizationUserId: string } | null> {
-    const user = await prisma.user.findFirst({
+    const user = await ctx.prisma.user.findFirst({
         where: { email: email.toLowerCase() },
         include: {
             organizationUsers: {
-                where: { organizationId, personId: null },
+                where: { organizationId: ctx.organizationId, personId: null },
                 select: { id: true },
             },
         },
@@ -503,30 +487,32 @@ export async function tryLinkPersonToMember(
  * Settings are read uncached: an admin who turns the switch on and immediately has someone accept
  * should get the new behaviour, and this runs once per accepted invitation.
  *
+ * `email` is a separate parameter rather than read off `ctx` because `OrgServiceContext` carries
+ * no user profile fields, only `userId` — and the email-match fallback needs the accepting user's
+ * address, not just their id.
+ *
  * @returns what was linked, or null if nothing was.
  */
 export async function linkPersonOnInvitationAccept(
-    prisma: PersonUserLinkWritePrisma,
+    ctx: OrgServiceContext,
     {
-        organizationId,
-        actor,
         invitationPersonId,
+        email,
     }: {
-        organizationId: OrganizationId;
-        /** The user accepting the invitation — also the actor on the audit entry. */
-        actor: LinkActor;
         /** `OrganizationInvitation.personId`, when the invitation named one. */
         invitationPersonId: string | null;
+        /** The accepting user's email, for the auto-link-by-email fallback. */
+        email: string;
     },
 ): Promise<{ personId: string; organizationUserId: string } | null> {
     let personId = invitationPersonId;
     let reason = "the invitation named the person";
 
     if (!personId) {
-        const settings = await OrgSettings.read(prisma, organizationId);
+        const settings = await OrgSettings.read(ctx.prisma, ctx.organizationId);
         if (!settings.personnel.autoLinkOnInviteAccept) return null;
 
-        const person = await findLinkablePerson(prisma, { organizationId, email: actor.email });
+        const person = await findLinkablePerson(ctx, { email });
         if (!person) return null;
 
         personId = person.id;
@@ -535,10 +521,10 @@ export async function linkPersonOnInvitationAccept(
 
     const resolvedPersonId = personId;
 
-    return prisma.$transaction(async (tx) => {
+    return ctx.prisma.$transaction(async (tx) => {
         const organizationUserId = await tryLinkPersonToMember(tx, {
-            organizationId,
-            userId: actor.id,
+            organizationId: ctx.organizationId,
+            userId: ctx.userId,
             personId: resolvedPersonId,
         });
 
@@ -547,16 +533,12 @@ export async function linkPersonOnInvitationAccept(
 
         const person = await tx.person.findFirst({ where: { id: resolvedPersonId } });
 
-        await recordLogEntry(
+        await ctx.logEvent(
             {
-                scope: "organization",
-                organizationId,
-                actor: { userId: actor.id },
-                actorLabel: formatActorLabel(actor.name, actor.email),
                 action: "Update",
                 objectType: "OrganizationMembership",
                 objectId: organizationUserId,
-                description: `Linked person (${resolvedPersonId}${person ? `, ${person.name}` : ""}) to user (${actor.id}) on invitation accept — ${reason}.`,
+                description: `Linked person (${resolvedPersonId}${person ? `, ${person.name}` : ""}) to user (${ctx.userId}) on invitation accept — ${reason}.`,
                 refs: [{ objectType: "Person", objectId: resolvedPersonId, role: "context" }],
             },
             tx,

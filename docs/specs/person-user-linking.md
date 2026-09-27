@@ -22,7 +22,7 @@ The link is `OrganizationUser.personId` — nullable, `@unique`, `onDelete: SetN
 | ------------------ | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Manual link/unlink | `users.linkPerson` / `users.unlinkPerson` (`src/trpc/routers/users-router.ts:63,252`) | Admin picks a person from `personnel.listUnlinkedPersonnel` on the **user** detail page. The only way to create a link today. |
 | Invite creation    | `src/components/admin/invitations/create-invitation.tsx`                              | Calls `authClient.organization.inviteMember` directly — no tRPC, no audit entry. Email + roles only.                          |
-| Invite accept      | `organizationHooks.afterAcceptInvitation` (`src/server/auth.ts:130-145`)              | **Already copies `invitation.personId` onto the new `OrganizationUser`.** Unguarded `updateMany`, no audit entry.             |
+| Invite accept      | `userRouter.acceptInvitation` (`src/trpc/routers/user-router.ts`)                     | **Already copies `invitation.personId` onto the new `OrganizationUser`.** Unguarded `updateMany`, no audit entry.             |
 | Person detail page | `src/components/admin/personnel/person-content.tsx`                                   | Renders a read-only "Linked User Account" card when `personnel.getLinkedUser` returns a row. No action to create the link.    |
 | Person dropdown    | `src/components/admin/personnel/person-menu.tsx`                                      | Edit / Archive / Restore / Delete.                                                                                            |
 
@@ -171,10 +171,10 @@ Every automatic link is a state change on `OrganizationMembership` and gets an e
 automations have a real human actor, so **no `LogBatch` is needed** (the idea file guessed
 otherwise):
 
-| Automation             | Actor                         | Written via                                                                    |
-| ---------------------- | ----------------------------- | ------------------------------------------------------------------------------ |
-| Part 2 — invite accept | the accepting user            | `recordLogEntry` directly (the better-auth hook is outside any tRPC procedure) |
-| Part 3 — person create | the admin creating the person | `ctx.logEvent` inside the existing `$transaction`                              |
+| Automation             | Actor                         | Written via                                                                                          |
+| ---------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Part 2 — invite accept | the accepting user            | `ctx.logEvent` inside `userRouter.acceptInvitation` (moved off the better-auth hook — see §5 update) |
+| Part 3 — person create | the admin creating the person | `ctx.logEvent` inside the existing `$transaction`                                                    |
 
 Entries use `action: "Update"`, `objectType: "OrganizationMembership"`, `objectId` the
 `OrganizationUser.id`, and a description naming the person and the trigger, e.g.
@@ -234,6 +234,17 @@ No change to the accept side — `afterAcceptInvitation` already applies `person
 
 **Goal:** an invitation sent the ordinary way (from the Invitations page, with no person
 attached) still links up if the org already has a person with that email.
+
+> **2026-09-27 update:** the design below (`afterAcceptInvitation`, `recordLogEntry` directly)
+> was the original shape. It has since moved into `userRouter.acceptInvitation`
+> (`src/trpc/routers/user-router.ts`), the only caller of `auth.api.acceptInvitation` — that
+> gives `linkPersonOnInvitationAccept` a real `OrgServiceContext` (built from `ctx` there) and a
+> genuine `AuthSession` to resolve the actor from, rather than the bare `user` object the
+> better-auth hook receives. `linkPersonOnInvitationAccept` (`src/server/services/personnel.ts`)
+> now takes `OrgServiceContext` and calls `ctx.logEvent`, not `recordLogEntry` directly. The
+> better-auth hook keeps only `revalidateOrganizationUser`, which must still run there since it's
+> the one membership-creating path outside our own tRPC mutations. Behaviour, no-op rules, and
+> the "never fails the accept" guarantee below are unchanged — only where the code runs moved.
 
 ### Behaviour
 
