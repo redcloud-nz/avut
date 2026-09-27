@@ -238,28 +238,33 @@ describe("trash.listTrash", () => {
         const group = rows.find((r) => r.id === T.deletedGroup);
         const skill = rows.find((r) => r.id === T.deletedSkill);
 
-        expect(person).toMatchObject({ type: "Person", name: "Grace Hopper" });
+        expect(person).toMatchObject({ type: "person", name: "Grace Hopper" });
         expect(person?.deletedAt).toBe("2026-01-01T00:00:00.000Z");
-        expect(team).toMatchObject({ type: "Team", name: "Doomed Team" });
+        // Default 30-day retention.
+        expect(person?.purgeAt).toBe("2026-01-31T00:00:00.000Z");
+        expect(team).toMatchObject({ type: "team", name: "Doomed Team" });
         expect(team?.deletedAt).toBe("2026-02-01T00:00:00.000Z");
         expect(membership).toMatchObject({
-            type: "TeamMembership",
+            type: "teamMembership",
             name: "Ada Lovelace in Membership Team",
             teamId: T.membershipTeam,
             personId: T.activePerson,
         });
         expect(membership?.deletedAt).toBe("2026-03-01T00:00:00.000Z");
-        expect(template).toMatchObject({ type: "I3Template", name: "Doomed Template" });
+        expect(template).toMatchObject({ type: "i3Template", name: "Doomed Template" });
         expect(template?.deletedAt).toBe("2026-03-02T00:00:00.000Z");
         expect(group).toMatchObject({
-            type: "SkillGroup",
+            type: "skillGroup",
             name: "Doomed Group",
             skillPackageId: T.pkg,
         });
         expect(skill).toMatchObject({
-            type: "Skill",
+            type: "skill",
             name: "Doomed Skill",
             skillPackageId: T.pkg,
+            // No Delete log entry — never auto-purged.
+            deletedAt: null,
+            purgeAt: null,
         });
     });
 
@@ -278,5 +283,90 @@ describe("trash.listTrash", () => {
         await expect(
             makeCaller(T.outsiderUser, {}).listTrash({ organizationId: T.org }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("trash.recoverRecord / trash.purgeRecord", () => {
+    const T = {
+        org: OrganizationId.create(),
+        adminUser: UserId.create(),
+        assessorUser: UserId.create(),
+        recoverTeam: TeamId.create(),
+        purgeTeam: TeamId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme-2", createdAt: new Date() },
+        });
+        for (const id of [T.recoverTeam, T.purgeTeam]) {
+            await db.team.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: id,
+                    tags: [],
+                    properties: {},
+                    status: "Deleted",
+                },
+            });
+        }
+        for (const [userId, role] of [
+            [T.adminUser, "admin"],
+            [T.assessorUser, "skills-assessor"],
+        ] as const) {
+            await db.organizationUser.create({
+                data: { id: nanoId16(), organizationId: T.org, userId, role },
+            });
+        }
+    });
+
+    function makeCaller(userId: string) {
+        return trashRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: userId },
+                permissions: { organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("refuses both without the entity's delete permission", async () => {
+        const input = { organizationId: T.org, type: "team" as const, id: T.purgeTeam };
+        await expect(makeCaller(T.assessorUser).purgeRecord(input)).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+        await expect(makeCaller(T.assessorUser).recoverRecord(input)).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+        expect(await db.team.findUnique({ where: { id: T.purgeTeam } })).not.toBeNull();
+    });
+
+    it("recoverRecord brings a Deleted team back to Active", async () => {
+        await makeCaller(T.adminUser).recoverRecord({
+            organizationId: T.org,
+            type: "team",
+            id: T.recoverTeam,
+        });
+        expect((await db.team.findUnique({ where: { id: T.recoverTeam } }))?.status).toBe("Active");
+    });
+
+    it("purgeRecord permanently deletes a Deleted team, and rejects an Active one", async () => {
+        await makeCaller(T.adminUser).purgeRecord({
+            organizationId: T.org,
+            type: "team",
+            id: T.purgeTeam,
+        });
+        expect(await db.team.findUnique({ where: { id: T.purgeTeam } })).toBeNull();
+
+        await expect(
+            makeCaller(T.adminUser).purgeRecord({
+                organizationId: T.org,
+                type: "team",
+                id: T.recoverTeam,
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 });

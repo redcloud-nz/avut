@@ -5,11 +5,54 @@
 
 import * as z from "zod";
 
+import { TRPCError } from "@trpc/server";
+
 import { hasAnyRoleWithPermissions } from "@/lib/permissions";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { TrashableEntities, trashableEntityList } from "@/lib/trash-registry";
+import {
+    TrashableEntities,
+    TrashableEntityIdSchema,
+    trashableEntityList,
+    type TrashableEntityId,
+} from "@/lib/trash-registry";
+import * as Trash from "@/server/services/trash";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import {
+    createTrpcRouter,
+    organizationProcedure,
+    type AuthenticatedOrganizationContext,
+} from "../init";
+
+/**
+ * The caller's roles, read through `ctx.prisma` (rather than the cached
+ * `getOrganizationUserRolesOrNull`, which reaches the real Prisma singleton) so the router stays
+ * testable against the injected mock db like every other procedure.
+ */
+async function callerRoles(ctx: AuthenticatedOrganizationContext) {
+    const orgUser = await ctx.prisma.organizationUser.findUnique({
+        where: {
+            organizationId_userId: { organizationId: ctx.organizationId, userId: ctx.userId },
+        },
+        select: { role: true },
+    });
+    return orgUser ? z.array(OrganizationRole.schema).parse(orgUser.role.split(",")) : [];
+}
+
+/** Recover and purge both ride on the entity's `delete` permission (#258). */
+async function requireDeletePermission(
+    ctx: AuthenticatedOrganizationContext,
+    type: TrashableEntityId,
+) {
+    const { permission } = TrashableEntities[type];
+    if (!hasAnyRoleWithPermissions(await callerRoles(ctx), { [permission]: ["delete"] })) {
+        throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `You need ${permission}:delete to do that.`,
+        });
+    }
+}
+
+const trashRecordInput = z.object({ type: TrashableEntityIdSchema, id: z.string() });
 
 export const trashRouter = createTrpcRouter({
     /**
@@ -24,189 +67,53 @@ export const trashRouter = createTrpcRouter({
             z.array(
                 z.object({
                     id: z.string(),
-                    type: z.enum([
-                        "Person",
-                        "Team",
-                        "TeamMembership",
-                        "I3Template",
-                        "SkillPackage",
-                        "SkillGroup",
-                        "Skill",
-                    ]),
+                    type: TrashableEntityIdSchema,
                     name: z.string(),
                     deletedAt: z.iso.datetime().nullable(),
-                    /** Only set for `TeamMembership` rows — its detail page needs both ids. */
+                    /** When the daily auto-purge will remove it; null if `deletedAt` is unknown. */
+                    purgeAt: z.iso.datetime().nullable(),
+                    /** Only set for `teamMembership` rows. */
                     teamId: z.string().optional(),
                     personId: z.string().optional(),
-                    /** Only set for `SkillGroup`/`Skill` rows — their detail pages need the parent package id too. */
+                    /** Only set for `skillGroup`/`skill` rows — their detail pages need the parent package id too. */
                     skillPackageId: z.string().optional(),
                 }),
             ),
         )
         .query(async ({ ctx }) => {
-            // Read the caller's roles through `ctx.prisma` (rather than the cached
-            // `getOrganizationUserRolesOrNull`, which reaches the real Prisma singleton) so this
-            // stays testable against the injected mock db like every other procedure.
-            const orgUser = await ctx.prisma.organizationUser.findUnique({
-                where: {
-                    organizationId_userId: {
-                        organizationId: ctx.organizationId,
-                        userId: ctx.userId,
-                    },
-                },
-                select: { role: true },
-            });
-            const roles = orgUser
-                ? z.array(OrganizationRole.schema).parse(orgUser.role.split(","))
-                : [];
+            const roles = await callerRoles(ctx);
+            const types = trashableEntityList
+                .filter((entity) =>
+                    hasAnyRoleWithPermissions(roles, { [entity.permission]: ["delete"] }),
+                )
+                .map((entity) => entity.id);
 
-            const visibleEntities = trashableEntityList.filter((entity) =>
-                hasAnyRoleWithPermissions(roles, { [entity.permission]: ["delete"] }),
-            );
-
-            const rows: {
-                id: string;
-                type:
-                    | "Person"
-                    | "Team"
-                    | "TeamMembership"
-                    | "I3Template"
-                    | "SkillPackage"
-                    | "SkillGroup"
-                    | "Skill";
-                name: string;
-                teamId?: string;
-                personId?: string;
-                skillPackageId?: string;
-            }[] = [];
-
-            if (visibleEntities.includes(TrashableEntities.person)) {
-                const people = await ctx.prisma.person.findMany({
-                    where: { organizationId: ctx.organizationId, status: "Deleted" },
-                    select: { id: true, name: true },
-                });
-                rows.push(
-                    ...people.map((p) => ({ id: p.id, type: "Person" as const, name: p.name })),
-                );
-            }
-
-            if (visibleEntities.includes(TrashableEntities.team)) {
-                const teams = await ctx.prisma.team.findMany({
-                    where: { organizationId: ctx.organizationId, status: "Deleted" },
-                    select: { id: true, name: true },
-                });
-                rows.push(...teams.map((t) => ({ id: t.id, type: "Team" as const, name: t.name })));
-            }
-
-            if (visibleEntities.includes(TrashableEntities.teamMembership)) {
-                const memberships = await ctx.prisma.teamMembership.findMany({
-                    where: { organizationId: ctx.organizationId, status: "Deleted" },
-                    select: {
-                        id: true,
-                        teamId: true,
-                        personId: true,
-                        team: { select: { name: true } },
-                        person: { select: { name: true } },
-                    },
-                });
-                rows.push(
-                    ...memberships.map((m) => ({
-                        id: m.id,
-                        type: "TeamMembership" as const,
-                        name: `${m.person.name} in ${m.team.name}`,
-                        teamId: m.teamId,
-                        personId: m.personId,
-                    })),
-                );
-            }
-
-            if (visibleEntities.includes(TrashableEntities.i3Template)) {
-                const templates = await ctx.prisma.i3Template.findMany({
-                    where: { organizationId: ctx.organizationId, status: "Deleted" },
-                    select: { id: true, name: true },
-                });
-                rows.push(
-                    ...templates.map((t) => ({
-                        id: t.id,
-                        type: "I3Template" as const,
-                        name: t.name,
-                    })),
-                );
-            }
-
-            if (visibleEntities.includes(TrashableEntities.skillPackage)) {
-                const packages = await ctx.prisma.skillPackage.findMany({
-                    where: { organizationId: ctx.organizationId, status: "Deleted" },
-                    select: { id: true, name: true },
-                });
-                rows.push(
-                    ...packages.map((p) => ({
-                        id: p.id,
-                        type: "SkillPackage" as const,
-                        name: p.name,
-                    })),
-                );
-            }
-
-            if (visibleEntities.includes(TrashableEntities.skillGroup)) {
-                const groups = await ctx.prisma.skillGroup.findMany({
-                    where: {
-                        skillPackage: { organizationId: ctx.organizationId },
-                        status: "Deleted",
-                    },
-                    select: { id: true, name: true, skillPackageId: true },
-                });
-                rows.push(
-                    ...groups.map((g) => ({
-                        id: g.id,
-                        type: "SkillGroup" as const,
-                        name: g.name,
-                        skillPackageId: g.skillPackageId,
-                    })),
-                );
-            }
-
-            if (visibleEntities.includes(TrashableEntities.skill)) {
-                const skills = await ctx.prisma.skill.findMany({
-                    where: {
-                        skillPackage: { organizationId: ctx.organizationId },
-                        status: "Deleted",
-                    },
-                    select: { id: true, name: true, skillPackageId: true },
-                });
-                rows.push(
-                    ...skills.map((s) => ({
-                        id: s.id,
-                        type: "Skill" as const,
-                        name: s.name,
-                        skillPackageId: s.skillPackageId,
-                    })),
-                );
-            }
-
-            if (rows.length === 0) return [];
-
-            // Batch-resolve "deleted at" with one query, reduced to the latest Delete entry per
-            // (objectType, objectId) — never per row.
-            const deleteEntries = await ctx.prisma.logEntry.findMany({
-                where: {
-                    objectType: { in: [...new Set(rows.map((r) => r.type))] },
-                    objectId: { in: rows.map((r) => r.id) },
-                    action: "Delete",
-                },
-                orderBy: { sequence: "desc" },
-                select: { objectType: true, objectId: true, timestamp: true },
-            });
-
-            const deletedAtByKey = new Map<string, Date>();
-            for (const entry of deleteEntries) {
-                const key = `${entry.objectType}:${entry.objectId}`;
-                if (!deletedAtByKey.has(key)) deletedAtByKey.set(key, entry.timestamp);
-            }
-
+            const rows = await Trash.list(ctx, types);
             return rows.map((row) => ({
                 ...row,
-                deletedAt: deletedAtByKey.get(`${row.type}:${row.id}`)?.toISOString() ?? null,
+                deletedAt: row.deletedAt?.toISOString() ?? null,
+                purgeAt: row.purgeAt?.toISOString() ?? null,
             }));
+        }),
+
+    /**
+     * Permanently deletes a record from the Rubbish bin ("Delete forever"), ahead of the daily
+     * auto-purge. Same `delete` permission as the soft delete — no separate surface (#258).
+     * @throws TRPCError(BAD_REQUEST) if the record isn't `Deleted`, or another organisation's
+     *   skill checks hold it back.
+     */
+    purgeRecord: organizationProcedure()
+        .input(trashRecordInput)
+        .mutation(async ({ ctx, input: { type, id } }) => {
+            await requireDeletePermission(ctx, type);
+            await Trash.purge(ctx, type, id);
+        }),
+
+    /** Recovers a record from the Rubbish bin back to `Active`, via the entity's own service. */
+    recoverRecord: organizationProcedure()
+        .input(trashRecordInput)
+        .mutation(async ({ ctx, input: { type, id } }) => {
+            await requireDeletePermission(ctx, type);
+            await Trash.recover(ctx, type, id);
         }),
 });

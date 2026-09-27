@@ -11,6 +11,7 @@ import { EmailIntegration_SettingsCard } from "@/components/admin-settings/email
 import { General_SettingsCard } from "@/components/admin-settings/general-settings-card";
 import { I3Module_SettingsCard } from "@/components/admin-settings/i3-module-card";
 import { Personnel_SettingsCard } from "@/components/admin-settings/personnel-card";
+import { RubbishBin_SettingsCard } from "@/components/admin-settings/rubbish-bin-card";
 import { SkillPackageBuilderModule_SettingsCard } from "@/components/admin-settings/skill-package-builder-module-card";
 import { SkillTrackModule_SettingsCard } from "@/components/admin-settings/skill-track-module-card";
 import type { SaratogaContentsItem } from "@/components/blocks/saratoga-contents";
@@ -46,6 +47,11 @@ export function OrganizationSettingsForm({
             <div id="personnel" className="space-y-4 pt-6 scroll-mt-4">
                 <h3 className="text-lg font-semibold tracking-tight">Personnel</h3>
                 <Personnel_SettingsCard organizationId={organizationId} settings={settings} />
+            </div>
+
+            <div id="rubbish-bin" className="space-y-4 pt-6 scroll-mt-4">
+                <h3 className="text-lg font-semibold tracking-tight">Rubbish Bin</h3>
+                <RubbishBin_SettingsCard organizationId={organizationId} settings={settings} />
             </div>
 
             <div id="integrations" className="space-y-4 pt-6 scroll-mt-4">
@@ -101,6 +107,7 @@ export function getOrganizationSettingsFormSections(
     return [
         { id: "general", label: "General" },
         { id: "personnel", label: "Personnel" },
+        { id: "rubbish-bin", label: "Rubbish Bin" },
         { id: "integrations", label: "Integrations" },
         {
             id: "modules",

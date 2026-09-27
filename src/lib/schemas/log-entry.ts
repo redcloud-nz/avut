@@ -74,7 +74,8 @@ export type LogScope = (typeof logScopeValues)[number];
  * which half is live.
  *
  * `Restore` and `Recover` distinguish the two soft-delete return paths: `Restore`
- * is Archived → Active, `Recover` is Deleted (trash) → Active.
+ * is Archived → Active, `Recover` is Deleted (trash) → Active. `Purge` is the permanent removal
+ * of a Deleted record from the Rubbish bin, by hand or by the daily auto-purge.
  */
 const logActionValues = [
     "Approve",
@@ -85,6 +86,7 @@ const logActionValues = [
     "Impersonate", // DORMANT — reverted databaseHooks wire
     "Move", // DORMANT — moveSkill logs "Update"
     "Publish",
+    "Purge",
     "Recover",
     "Restore",
     "Subscribe",
