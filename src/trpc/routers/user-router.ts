@@ -152,7 +152,7 @@ export const userRouter = createTrpcRouter({
 
     /**
      * Close the caller's own account (#150): the same soft delete a system administrator does,
-     * into the system Rubbish bin for `UserAccounts.USER_RETENTION_DAYS`, with the same guards —
+     * into the system Rubbish bin for `USER_RETENTION_DAYS`, with the same guards —
      * the sole owner of an organization is refused with its name. Every session is revoked, this
      * one included, so the client signs out afterwards. Person records in each organization are
      * the organization's and are kept.

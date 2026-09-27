@@ -145,7 +145,7 @@ export const systemAdminRouter = createTrpcRouter({
     /**
      * Soft-delete a user account into the system Rubbish bin (#296): it can't sign in, every
      * session is revoked, and the daily auto-purge removes it for good after
-     * `UserAccounts.USER_RETENTION_DAYS`. Recover with `recoverUser`; purge early with `purgeUser`.
+     * `USER_RETENTION_DAYS`. Recover with `recoverUser`; purge early with `purgeUser`.
      *
      * Guards: you cannot delete your own account (close it from your settings instead); the
      * service refuses the last system administrator and the sole owner of any organization.

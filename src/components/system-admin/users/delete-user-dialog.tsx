@@ -25,11 +25,12 @@ import { MutationButton } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ObjectName } from "@/components/ui/typography";
-import { UserId } from "@/lib/schemas/user";
+import { USER_RETENTION_DAYS, UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 /**
- * `?action=delete` type-to-confirm dialog for hard-deleting a user account. Host-driven
+ * `?action=delete` type-to-confirm dialog for deleting a user account into the system Rubbish bin
+ * (#296). Host-driven
  * (`open` / `onOpenChange` come from `SystemAdmin_UserActions_Menu`). The destructive button
  * stays disabled until the operator types the user's exact email address.
  *
@@ -55,7 +56,7 @@ export function SystemAdmin_DeleteUser_Dialog({
             onSuccess() {
                 toast.success(
                     <>
-                        User <ObjectName>{user.name}</ObjectName> deleted.
+                        User <ObjectName>{user.name}</ObjectName> moved to the Rubbish bin.
                     </>,
                 );
                 router.push("/system/admin/users");
@@ -77,9 +78,11 @@ export function SystemAdmin_DeleteUser_Dialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete user</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Permanently delete <ObjectName>{user.name}</ObjectName> along with their
-                        sessions, credentials, organisation memberships, D4H access tokens, authored
-                        notes, and audit-log entries. This cannot be undone.
+                        <ObjectName>{user.name}</ObjectName> is signed out everywhere and
+                        can&rsquo;t sign in. The account moves to the system Rubbish bin, where it
+                        can be recovered for {USER_RETENTION_DAYS} days before it is permanently
+                        deleted along with its credentials, memberships, D4H access tokens and
+                        notes.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <Field>

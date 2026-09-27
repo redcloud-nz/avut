@@ -12,6 +12,12 @@ import { zodNanoId16 } from "../validation";
 
 export type { UserRecord };
 
+/**
+ * A deleted account sits in the system Rubbish bin this long, then is purged (#296). Fixed —
+ * the privacy policy's account-closure promise depends on it, so it isn't a setting.
+ */
+export const USER_RETENTION_DAYS = 14;
+
 export const UserId = {
     schema: zodNanoId16("UserId expected").brand<"UserId">(),
 

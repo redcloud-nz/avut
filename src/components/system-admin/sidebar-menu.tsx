@@ -14,6 +14,7 @@ export function SystemAdmin_Sidebar_Menu() {
             <NavSubItem label="Organisations" href="/system/admin/organizations" />
             <NavSubItem label="Users" href="/system/admin/users" />
             <NavSubItem label="Skill Packages" href="/system/admin/skill-packages" />
+            <NavSubItem label="Rubbish" href="/system/admin/rubbish-bin" />
         </>
     );
 }

@@ -23,13 +23,10 @@ import { NotFoundError, ValidationError } from "@/lib/errors";
 import { Operations } from "@/lib/operations";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import type { UserId } from "@/lib/schemas/user";
+import { USER_RETENTION_DAYS, type UserId } from "@/lib/schemas/user";
 import { createLogBatch, formatActorLabel, recordLogEntry } from "@/server/log-entry";
 
 import type { LogEventOptions } from "./service-context";
-
-/** A deleted account is purged this long after deletion. Fixed; not an org setting. */
-export const USER_RETENTION_DAYS = 14;
 
 export interface SystemServiceContext {
     prisma: PrismaClient;

@@ -17,7 +17,7 @@ export default function PrivacyPolicy_Page() {
             <Argus.Column width="md" className="max-w-3xl">
                 <main className="mt-8">
                     <h1 className="text-3xl md:text-4xl font-bold mb-6">Privacy Policy</h1>
-                    <p className="text-lg mb-4">Last updated: 14 September 2026</p>
+                    <p className="text-lg mb-4">Last updated: 27 September 2026</p>
                     <p className="mb-4">
                         This policy explains how personal information is handled in AVUT. It is
                         written to meet the information privacy principles (IPPs) in the{" "}
@@ -233,9 +233,10 @@ export default function PrivacyPolicy_Page() {
                         address and we will action it.
                     </p>
                     <p className="mb-4">
-                        <strong>Account information</strong> is deleted when you ask us to close
-                        your account. There is no self-service account closure yet — email us at the
-                        address in section 1 and we will action it.
+                        <strong>Account information</strong> is deleted when you close your account,
+                        from your account settings or by asking us at the address in section 1. A
+                        closed account can no longer sign in, and is permanently deleted 14 days
+                        later; until then it can be restored if you ask.
                     </p>
                     <p className="mb-4">
                         <strong>
