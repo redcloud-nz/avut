@@ -15,8 +15,13 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
-import { type SessionData } from "@/client/auth-queries";
+import {
+    changeEmailMutationOptions,
+    requestEmailChangeMutationOptions,
+    sendEmailVerificationOtp,
+    sendEmailVerificationOtpMutationOptions,
+    type SessionData,
+} from "@/client/auth-queries";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -77,23 +82,15 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
     });
 
     const sendCurrentOtpMutation = useMutation({
-        async mutationFn() {
-            await authClient.emailOtp.sendVerificationOtp(
-                { email: session.user.email!, type: "email-verification" },
-                { throw: true },
-            );
-        },
+        ...sendEmailVerificationOtpMutationOptions(),
         onSuccess() {
             setStep({ name: "verify-current" });
         },
     });
 
     const requestEmailChangeMutation = useMutation({
-        async mutationFn({ newEmail, otp }: { newEmail: string; otp: string }) {
-            await authClient.emailOtp.requestEmailChange({ newEmail, otp }, { throw: true });
-            return newEmail;
-        },
-        onSuccess(newEmail) {
+        ...requestEmailChangeMutationOptions(),
+        onSuccess(_, { newEmail }) {
             // Don't reset changeEmailForm here - the code/new-email fields stay visible
             // (disabled) as a record of what was already confirmed.
             setStep({ name: "verify-new", newEmail });
@@ -101,10 +98,7 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
     });
 
     const changeEmailMutation = useMutation({
-        async mutationFn({ newEmail, otp }: { newEmail: string; otp: string }) {
-            await authClient.emailOtp.changeEmail({ newEmail, otp }, { throw: true });
-            return newEmail;
-        },
+        ...changeEmailMutationOptions(),
         async onSuccess() {
             // /email-otp/change-email isn't in the client's atomListeners, so the shared
             // session store won't auto-refresh on its own - explicitly invalidate it so this
@@ -126,10 +120,7 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
     }
 
     function resendCurrentOtp() {
-        authClient.emailOtp.sendVerificationOtp({
-            email: session.user.email!,
-            type: "email-verification",
-        });
+        void sendEmailVerificationOtp(session.user.email!);
         toast("Verification code resent to your current email.");
     }
 
@@ -326,7 +317,7 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                         <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                         <MutationButton
                             type="button"
-                            onClick={() => sendCurrentOtpMutation.mutate()}
+                            onClick={() => sendCurrentOtpMutation.mutate(session.user.email!)}
                             status={sendCurrentOtpMutation.status}
                             text={{
                                 idle: "Send code",

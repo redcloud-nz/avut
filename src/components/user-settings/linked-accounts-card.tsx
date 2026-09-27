@@ -9,8 +9,13 @@ import { toast } from "sonner";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
-import { LinkedAccount, linkedAccountsQueryOptions } from "@/client/auth-queries";
+import {
+    LinkedAccount,
+    linkedAccountsQueryOptions,
+    linkSocialMutationOptions,
+    SessionNotFreshError,
+    unlinkAccountMutationOptions,
+} from "@/client/auth-queries";
 import { SocialProvider, SocialProviders } from "@/components/auth/social-providers";
 import { Alert } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
@@ -26,13 +31,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLogger } from "@/hooks/use-logger";
 import { authQueryKeys } from "@/lib/auth-query-keys";
-
-/**
- * Better Auth guards `/unlink-account` with a session-freshness check and reports a stale
- * session as a 403 carrying this code. Match on the code, never on the message: the
- * client's `message` is the HTTP status text, which on HTTP/2 is the empty string.
- */
-const SessionNotFreshCode = "SESSION_NOT_FRESH";
 
 export function LinkedAccounts_Card() {
     const accountsQuery = useQuery(linkedAccountsQueryOptions());
@@ -95,37 +93,21 @@ function LinkedAccount_Item({
     const queryClient = useQueryClient();
 
     const linkMutation = useMutation({
-        async mutationFn() {
-            const { data, error } = await authClient.linkSocial({
-                provider: provider.id,
-                callbackURL: window.location.href,
-            });
-            if (error) throw new Error(error.message ?? `Could not link ${provider.name}.`);
-
+        ...linkSocialMutationOptions(),
+        onError(error: Error) {
+            logger.error(`Failed to link ${provider.name} account`, error);
+            toast.error(error.message);
+        },
+        onSuccess(data) {
             // The client navigates on its own when it can; fall back to a manual redirect.
             if (data && "url" in data && typeof data.url === "string") {
                 window.location.href = data.url;
             }
         },
-        onError(error: Error) {
-            logger.error(`Failed to link ${provider.name} account`, error);
-            toast.error(error.message);
-        },
     });
 
     const unlinkMutation = useMutation({
-        async mutationFn(accountId: string) {
-            const { error } = await authClient.unlinkAccount({
-                // Better Auth 1.7 identifies the link by its own account row id and dropped
-                // `providerId` from the body — this is `account.id`, not `account.accountId`
-                // (the provider's own id for the user), which no longer resolves.
-                accountId,
-            });
-            if (error) {
-                if (error.code === SessionNotFreshCode) throw new SessionNotFreshError();
-                throw new Error(error.message ?? `Could not unlink ${provider.name}.`);
-            }
-        },
+        ...unlinkAccountMutationOptions(),
         onError(error: Error) {
             // A stale session is expected and explained inline, not shouted about.
             if (error instanceof SessionNotFreshError) return;
@@ -165,14 +147,25 @@ function LinkedAccount_Item({
                                     ? undefined
                                     : "You can't unlink your only sign-in method. Set a password or link another provider first."
                             }
-                            onClick={() => unlinkMutation.mutate(account.id)}
+                            onClick={() =>
+                                unlinkMutation.mutate({
+                                    accountId: account.id,
+                                    providerName: provider.name,
+                                })
+                            }
                         />
                     ) : (
                         <MutationButton
                             variant="outline"
                             status={linkMutation.status}
                             text={{ idle: "Link", pending: "Redirecting", success: "Redirecting" }}
-                            onClick={() => linkMutation.mutate()}
+                            onClick={() =>
+                                linkMutation.mutate({
+                                    provider: provider.id,
+                                    providerName: provider.name,
+                                    callbackURL: window.location.href,
+                                })
+                            }
                         />
                     )}
                 </ItemActions>
@@ -185,12 +178,4 @@ function LinkedAccount_Item({
             )}
         </>
     );
-}
-
-/** Marks the one unlink failure the card explains inline rather than reporting as an error. */
-class SessionNotFreshError extends Error {
-    constructor() {
-        super("Session is not fresh");
-        this.name = "SessionNotFreshError";
-    }
 }

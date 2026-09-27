@@ -15,7 +15,10 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import {
+    requestPasswordResetMutationOptions,
+    resetPasswordMutationOptions,
+} from "@/client/auth-queries";
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -27,8 +30,9 @@ import { ConfirmPasswordSchema, PasswordSchema } from "@/lib/schemas/password";
 
 /**
  * Single-card forgot/reset-password flow: an email step that sends a 6-digit code, then a
- * code + new-password step, both against `authClient.emailOtp`. Kept as one component (rather
- * than a page per step) so the in-flight email never has to round-trip through a URL param.
+ * code + new-password step, both against the `emailOtp`-backed mutations in `@/client/auth-queries`.
+ * Kept as one component (rather than a page per step) so the in-flight email never has to
+ * round-trip through a URL param.
  *
  * @param email Optional email to pre-fill in the first step.
  * @param redirectTo Optional path to carry through to the sign-in page after the reset.
@@ -86,24 +90,16 @@ function RequestCode_Form({ email, onSent }: { email?: string; onSent: (email: s
     });
 
     const mutation = useMutation({
-        async mutationFn(formData: { email: string }) {
-            const { data, error } = await authClient.forgetPassword.emailOtp({
-                email: formData.email,
-            });
-            if (error) {
-                throw new Error(error.message ?? "Unable to send reset code.");
-            }
-            return data;
-        },
-        onSuccess(_, variables) {
-            onSent(variables.email);
+        ...requestPasswordResetMutationOptions(),
+        onSuccess(_, email) {
+            onSent(email);
         },
     });
 
     return (
         <form
             id="forgot-password-form"
-            onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+            onSubmit={form.handleSubmit((data) => mutation.mutate(data.email))}
         >
             <FieldGroup>
                 <Controller
@@ -169,29 +165,14 @@ function ResetPassword_Form({
     });
 
     const resetPassword = useMutation({
-        async mutationFn(formData: { code: string; newPassword: string }) {
-            const { data, error } = await authClient.emailOtp.resetPassword({
-                email,
-                otp: formData.code,
-                password: formData.newPassword,
-            });
-            if (error) {
-                throw new Error(error.message ?? "Unable to reset password.");
-            }
-            return data;
-        },
+        ...resetPasswordMutationOptions(),
         onSuccess() {
             router.push(authUrl(SIGN_IN_PATH, { email, returnTo: redirectTo }));
         },
     });
 
     const resendCode = useMutation({
-        async mutationFn() {
-            const { error } = await authClient.forgetPassword.emailOtp({ email });
-            if (error) {
-                throw new Error(error.message ?? "Unable to resend reset code.");
-            }
-        },
+        ...requestPasswordResetMutationOptions(),
         onSuccess() {
             toast.success("We sent a new code to your email.");
         },
@@ -200,8 +181,8 @@ function ResetPassword_Form({
     return (
         <form
             id="reset-password-form"
-            onSubmit={form.handleSubmit(({ confirmNewPassword: _confirmNewPassword, ...data }) =>
-                resetPassword.mutate(data),
+            onSubmit={form.handleSubmit((data) =>
+                resetPassword.mutate({ email, otp: data.code, password: data.newPassword }),
             )}
         >
             <FieldGroup>
@@ -291,7 +272,7 @@ function ResetPassword_Form({
                         className="cursor-pointer underline-offset-4 hover:underline aria-disabled:pointer-events-none aria-disabled:opacity-50"
                         onClick={() => {
                             if (!resendCode.isPending && !resetPassword.isSuccess) {
-                                resendCode.mutate();
+                                resendCode.mutate(email);
                             }
                         }}
                     >

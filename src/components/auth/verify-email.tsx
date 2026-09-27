@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { sendEmailVerificationOtp, verifyEmailMutationOptions } from "@/client/auth-queries";
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -29,23 +29,14 @@ export function VerifyEmail_Card({ email, redirectTo }: { email: string; redirec
     const [code, setCode] = useState<string>("");
 
     const mutation = useMutation({
-        async mutationFn(otp: string) {
-            const { data, error } = await authClient.emailOtp.verifyEmail({ email, otp });
-            if (error) {
-                throw new Error(error.message ?? "Unable to verify email.");
-            }
-            return data;
-        },
+        ...verifyEmailMutationOptions(),
         onSuccess() {
             router.push(postSignInUrl(redirectTo));
         },
     });
 
     function handleResend() {
-        authClient.emailOtp.sendVerificationOtp({
-            email,
-            type: "email-verification",
-        });
+        void sendEmailVerificationOtp(email);
         toast("Verification code resent to your email.");
     }
 
@@ -82,7 +73,7 @@ export function VerifyEmail_Card({ email, redirectTo }: { email: string; redirec
                     <Field>
                         <MutationButton
                             type="button"
-                            onClick={() => mutation.mutate(code)}
+                            onClick={() => mutation.mutate({ email, otp: code })}
                             disabled={code.length < 6}
                             status={mutation.status}
                             text={{ idle: "Verify", pending: "Verifying...", success: "Verified!" }}

@@ -15,8 +15,13 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
-import { linkedAccountsQueryOptions, useSession } from "@/client/auth-queries";
+import {
+    changePasswordMutationOptions,
+    linkedAccountsQueryOptions,
+    requestPasswordResetMutationOptions,
+    resetPasswordMutationOptions,
+    useSession,
+} from "@/client/auth-queries";
 import { Alert } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -97,9 +102,9 @@ function Password_DialogBody({ onDone }: { onDone: () => void }) {
 
 /**
  * For users signed in only through a social provider: there is no current password to
- * verify, so a password is set via an email OTP. `authClient.emailOtp.resetPassword`
- * creates the `credential` account when the user has none, so no server-only endpoint is
- * needed — the same client calls that back `/auth/forgot-password`.
+ * verify, so a password is set via an email OTP. `resetPasswordMutationOptions`
+ * (`authClient.emailOtp.resetPassword`) creates the `credential` account when the user has
+ * none, so no server-only endpoint is needed — the same mutation that backs `/auth/forgot-password`.
  */
 function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
     const sessionQuery = useSession();
@@ -109,9 +114,7 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
     const email = sessionQuery.data?.user.email;
 
     const sendCode = useMutation({
-        async mutationFn(address: string) {
-            await authClient.forgetPassword.emailOtp({ email: address }, { throw: true });
-        },
+        ...requestPasswordResetMutationOptions(),
         onSuccess() {
             setCodeSent(true);
             toast.success("We sent a 6-digit code to your email.");
@@ -135,16 +138,7 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
     });
 
     const setPassword = useMutation({
-        async mutationFn(formData: { code: string; newPassword: string }) {
-            await authClient.emailOtp.resetPassword(
-                {
-                    email: email!,
-                    otp: formData.code,
-                    password: formData.newPassword,
-                },
-                { throw: true },
-            );
-        },
+        ...resetPasswordMutationOptions(),
         onSuccess() {
             toast.success("Your password has been set. You can now sign in with it.");
             void queryClient.invalidateQueries({ queryKey: authQueryKeys.linkedAccounts });
@@ -191,9 +185,12 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                     ) : (
                         <form
                             id="set-password-form"
-                            onSubmit={form.handleSubmit(
-                                ({ confirmNewPassword: _confirmNewPassword, ...data }) =>
-                                    setPassword.mutate(data),
+                            onSubmit={form.handleSubmit((data) =>
+                                setPassword.mutate({
+                                    email: email!,
+                                    otp: data.code,
+                                    password: data.newPassword,
+                                }),
                             )}
                         >
                             <FieldGroup>
@@ -331,20 +328,7 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
     });
 
     const mutation = useMutation({
-        async mutationFn(formData: {
-            currentPassword: string;
-            newPassword: string;
-            revokeOtherSessions: boolean;
-        }) {
-            const { error } = await authClient.changePassword({
-                currentPassword: formData.currentPassword,
-                newPassword: formData.newPassword,
-                revokeOtherSessions: formData.revokeOtherSessions,
-            });
-            if (error) {
-                throw new Error(error.message ?? "Could not change your password.");
-            }
-        },
+        ...changePasswordMutationOptions(),
         onSuccess() {
             toast.success("Your password has been changed.");
             onDone();

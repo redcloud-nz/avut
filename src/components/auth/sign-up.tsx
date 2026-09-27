@@ -12,7 +12,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { signUpMutationOptions } from "@/client/auth-queries";
 import { MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -108,13 +108,7 @@ function Auth_EmailPasswordSignUp_Form({
     });
 
     const mutation = useMutation({
-        async mutationFn(formData: { name: string; email: string; password: string }) {
-            const { data, error } = await authClient.signUp.email(formData);
-            if (error) {
-                throw new Error(error.message ?? "Unable to create account.");
-            }
-            return data;
-        },
+        ...signUpMutationOptions(),
         onSuccess(_, variables) {
             router.push(
                 authUrl(
