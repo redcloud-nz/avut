@@ -454,6 +454,8 @@ describe("teamsRouter.getTeamMembership", () => {
         d4hPerson: PersonId.create(),
         manualPerson: PersonId.create(),
         strangerPerson: PersonId.create(),
+        d4hMembership: TeamMembershipId.create(),
+        manualMembership: TeamMembershipId.create(),
     };
 
     const db = createMockPrisma();
@@ -509,7 +511,7 @@ describe("teamsRouter.getTeamMembership", () => {
         });
         await db.teamMembership.create({
             data: {
-                id: TeamMembershipId.create(),
+                id: T.d4hMembership,
                 organizationId: T.org,
                 teamId: T.team,
                 personId: T.d4hPerson,
@@ -529,7 +531,7 @@ describe("teamsRouter.getTeamMembership", () => {
         });
         await db.teamMembership.create({
             data: {
-                id: TeamMembershipId.create(),
+                id: T.manualMembership,
                 organizationId: T.org,
                 teamId: T.team,
                 personId: T.manualPerson,
@@ -596,6 +598,38 @@ describe("teamsRouter.getTeamMembership", () => {
                 personId: T.d4hPerson,
             }),
         ).rejects.toThrow(/not found/i);
+    });
+
+    describe("getTeamMembershipById", () => {
+        it("returns the row for the membership's own id", async () => {
+            const row = await makeCaller().getTeamMembershipById({
+                organizationId: T.org,
+                teamMembershipId: T.d4hMembership,
+            });
+
+            expect(row.id).toBe(T.d4hMembership);
+            expect(row.person).toMatchObject({ name: "Dana D4H", email: "dana@example.com" });
+            expect(row.team).toMatchObject({ id: T.team, name: "Alpha" });
+            expect(row.d4h).toMatchObject({ d4hMemberId: 12 });
+        });
+
+        it("throws NOT_FOUND for an id with no membership", async () => {
+            await expect(
+                makeCaller().getTeamMembershipById({
+                    organizationId: T.org,
+                    teamMembershipId: TeamMembershipId.create(),
+                }),
+            ).rejects.toThrow(/not found/i);
+        });
+
+        it("is organization-scoped", async () => {
+            await expect(
+                makeCaller().getTeamMembershipById({
+                    organizationId: T.otherOrg,
+                    teamMembershipId: T.d4hMembership,
+                }),
+            ).rejects.toThrow(/not found/i);
+        });
     });
 });
 
