@@ -815,7 +815,7 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
     });
 });
 
-describe("teamsRouter.deleteTeam / restoreTeamFromTrash", () => {
+describe("teamsRouter.deleteTeam / recoverTeam", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
@@ -898,30 +898,30 @@ describe("teamsRouter.deleteTeam / restoreTeamFromTrash", () => {
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("restoreTeamFromTrash requires team:delete, not team:update", async () => {
+    it("recoverTeam requires team:delete, not team:update", async () => {
         await expect(
-            makeCaller({ team: ["update"] }).restoreTeamFromTrash({
+            makeCaller({ team: ["update"] }).recoverTeam({
                 organizationId: T.org,
                 teamId: T.team,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("restores a deleted team back to Active and records a Restore log entry", async () => {
-        const { updated } = await makeCaller({ team: ["delete"] }).restoreTeamFromTrash({
+    it("recovers a deleted team back to Active and records a Recover log entry", async () => {
+        const { updated } = await makeCaller({ team: ["delete"] }).recoverTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Active");
 
         const entries = await db.logEntry.findMany({
-            where: { objectType: "Team", objectId: T.team, action: "Restore" },
+            where: { objectType: "Team", objectId: T.team, action: "Recover" },
         });
         expect(entries).toHaveLength(1);
     });
 });
 
-describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", () => {
+describe("teamsRouter.deleteTeamMembership / recoverTeamMembership", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
@@ -1004,9 +1004,9 @@ describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", ()
         expect(listed).toHaveLength(0);
     });
 
-    it("restoreTeamMembershipFromTrash requires team:delete, not team:update", async () => {
+    it("recoverTeamMembership requires team:delete, not team:update", async () => {
         await expect(
-            makeCaller({ team: ["update"] }).restoreTeamMembershipFromTrash({
+            makeCaller({ team: ["update"] }).recoverTeamMembership({
                 organizationId: T.org,
                 teamId: T.team,
                 personId: T.member,
@@ -1014,8 +1014,8 @@ describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", ()
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("restores a deleted membership back to Active and records a Restore log entry", async () => {
-        const { updated } = await makeCaller({ team: ["delete"] }).restoreTeamMembershipFromTrash({
+    it("recovers a deleted membership back to Active and records a Recover log entry", async () => {
+        const { updated } = await makeCaller({ team: ["delete"] }).recoverTeamMembership({
             organizationId: T.org,
             teamId: T.team,
             personId: T.member,
@@ -1023,7 +1023,7 @@ describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", ()
         expect(updated.status).toBe("Active");
 
         const entries = await db.logEntry.findMany({
-            where: { objectType: "TeamMembership", action: "Restore" },
+            where: { objectType: "TeamMembership", action: "Recover" },
         });
         expect(entries).toHaveLength(1);
 

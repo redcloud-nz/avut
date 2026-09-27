@@ -59,87 +59,87 @@ const entityIdByType = Object.fromEntries(
     trashableEntityList.map((entity) => [entity.objectType, entity.id]),
 ) as Record<TrashRow["type"], TrashableEntityId>;
 
-function RestoreCell({ row }: { row: TrashRow }) {
+function RecoverCell({ row }: { row: TrashRow }) {
     const organization = useOrganization();
-    const canRestorePerson = useHasPermission({ person: ["delete"] });
-    const canRestoreTeam = useHasPermission({ team: ["delete"] });
-    const canRestoreI3Template = useHasPermission({ i3Template: ["delete"] });
-    const canRestoreSkillPackageBuilder = useHasPermission({ skillPackageBuilder: ["delete"] });
+    const canRecoverPerson = useHasPermission({ person: ["delete"] });
+    const canRecoverTeam = useHasPermission({ team: ["delete"] });
+    const canRecoverI3Template = useHasPermission({ i3Template: ["delete"] });
+    const canRecoverSkillPackageBuilder = useHasPermission({ skillPackageBuilder: ["delete"] });
 
-    const restorePerson = useMutation(
-        trpc.personnel.restorePersonFromTrash.mutationOptions({
-            meta: { effects: personnelEffects.restorePersonFromTrash },
+    const recoverPerson = useMutation(
+        trpc.personnel.recoverPerson.mutationOptions({
+            meta: { effects: personnelEffects.recoverPerson },
             onError(error) {
-                toast.error(`Failed to restore person: ${error.message}`);
+                toast.error(`Failed to recover person: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Person "${row.name}" restored from rubbish.`);
+                toast.success(`Person "${row.name}" recovered from rubbish.`);
             },
         }),
     );
-    const restoreTeam = useMutation(
-        trpc.teams.restoreTeamFromTrash.mutationOptions({
-            meta: { effects: teamsEffects.restoreTeamFromTrash },
+    const recoverTeam = useMutation(
+        trpc.teams.recoverTeam.mutationOptions({
+            meta: { effects: teamsEffects.recoverTeam },
             onError(error) {
-                toast.error(`Failed to restore team: ${error.message}`);
+                toast.error(`Failed to recover team: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Team "${row.name}" restored from rubbish.`);
+                toast.success(`Team "${row.name}" recovered from rubbish.`);
             },
         }),
     );
-    const restoreTeamMembership = useMutation(
-        trpc.teams.restoreTeamMembershipFromTrash.mutationOptions({
-            meta: { effects: teamsEffects.restoreTeamMembershipFromTrash },
+    const recoverTeamMembership = useMutation(
+        trpc.teams.recoverTeamMembership.mutationOptions({
+            meta: { effects: teamsEffects.recoverTeamMembership },
             onError(error) {
-                toast.error(`Failed to restore team membership: ${error.message}`);
+                toast.error(`Failed to recover team membership: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`"${row.name}" restored from rubbish.`);
+                toast.success(`"${row.name}" recovered from rubbish.`);
             },
         }),
     );
-    const restoreI3Template = useMutation(
-        trpc.i3.restoreTemplateFromTrash.mutationOptions({
-            meta: { effects: i3Effects.restoreTemplateFromTrash },
+    const recoverI3Template = useMutation(
+        trpc.i3.recoverTemplate.mutationOptions({
+            meta: { effects: i3Effects.recoverTemplate },
             onError(error) {
-                toast.error(`Failed to restore template: ${error.message}`);
+                toast.error(`Failed to recover template: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Template "${row.name}" restored from rubbish.`);
+                toast.success(`Template "${row.name}" recovered from rubbish.`);
             },
         }),
     );
-    const restorePackage = useMutation(
-        trpc.skillPackageBuilder.restorePackageFromTrash.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.restorePackageFromTrash },
+    const recoverPackage = useMutation(
+        trpc.skillPackageBuilder.recoverPackage.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.recoverPackage },
             onError(error) {
-                toast.error(`Failed to restore skill package: ${error.message}`);
+                toast.error(`Failed to recover skill package: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Skill package "${row.name}" restored from rubbish.`);
+                toast.success(`Skill package "${row.name}" recovered from rubbish.`);
             },
         }),
     );
-    const restoreGroup = useMutation(
-        trpc.skillPackageBuilder.restoreGroupFromTrash.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.restoreGroupFromTrash },
+    const recoverGroup = useMutation(
+        trpc.skillPackageBuilder.recoverGroup.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.recoverGroup },
             onError(error) {
-                toast.error(`Failed to restore skill group: ${error.message}`);
+                toast.error(`Failed to recover skill group: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Skill group "${row.name}" restored from rubbish.`);
+                toast.success(`Skill group "${row.name}" recovered from rubbish.`);
             },
         }),
     );
-    const restoreSkill = useMutation(
-        trpc.skillPackageBuilder.restoreSkillFromTrash.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.restoreSkillFromTrash },
+    const recoverSkill = useMutation(
+        trpc.skillPackageBuilder.recoverSkill.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.recoverSkill },
             onError(error) {
-                toast.error(`Failed to restore skill: ${error.message}`);
+                toast.error(`Failed to recover skill: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Skill "${row.name}" restored from rubbish.`);
+                toast.success(`Skill "${row.name}" recovered from rubbish.`);
             },
         }),
     );
@@ -150,11 +150,11 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!canRestorePerson}
-                status={restorePerson.status}
-                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                disabled={!canRecoverPerson}
+                status={recoverPerson.status}
+                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
                 onClick={() =>
-                    restorePerson.mutate({ organizationId: organization.id, personId: row.id })
+                    recoverPerson.mutate({ organizationId: organization.id, personId: row.id })
                 }
             />
         );
@@ -166,11 +166,11 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!canRestoreTeam}
-                status={restoreTeam.status}
-                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                disabled={!canRecoverTeam}
+                status={recoverTeam.status}
+                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
                 onClick={() =>
-                    restoreTeam.mutate({ organizationId: organization.id, teamId: row.id })
+                    recoverTeam.mutate({ organizationId: organization.id, teamId: row.id })
                 }
             />
         );
@@ -183,11 +183,11 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!canRestoreTeam}
-                status={restoreTeamMembership.status}
-                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                disabled={!canRecoverTeam}
+                status={recoverTeamMembership.status}
+                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
                 onClick={() =>
-                    restoreTeamMembership.mutate({
+                    recoverTeamMembership.mutate({
                         organizationId: organization.id,
                         teamId,
                         personId,
@@ -203,11 +203,11 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!canRestoreI3Template}
-                status={restoreI3Template.status}
-                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                disabled={!canRecoverI3Template}
+                status={recoverI3Template.status}
+                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
                 onClick={() =>
-                    restoreI3Template.mutate({
+                    recoverI3Template.mutate({
                         organizationId: organization.id,
                         templateId: row.id,
                     })
@@ -222,11 +222,11 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!canRestoreSkillPackageBuilder}
-                status={restorePackage.status}
-                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                disabled={!canRecoverSkillPackageBuilder}
+                status={recoverPackage.status}
+                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
                 onClick={() =>
-                    restorePackage.mutate({
+                    recoverPackage.mutate({
                         organizationId: organization.id,
                         skillPackageId: row.id,
                     })
@@ -241,11 +241,11 @@ function RestoreCell({ row }: { row: TrashRow }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={!canRestoreSkillPackageBuilder}
-                status={restoreGroup.status}
-                text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+                disabled={!canRecoverSkillPackageBuilder}
+                status={recoverGroup.status}
+                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
                 onClick={() =>
-                    restoreGroup.mutate({ organizationId: organization.id, skillGroupId: row.id })
+                    recoverGroup.mutate({ organizationId: organization.id, skillGroupId: row.id })
                 }
             />
         );
@@ -256,11 +256,11 @@ function RestoreCell({ row }: { row: TrashRow }) {
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canRestoreSkillPackageBuilder}
-            status={restoreSkill.status}
-            text={{ idle: "Restore", pending: "Restoring", success: "Restored" }}
+            disabled={!canRecoverSkillPackageBuilder}
+            status={recoverSkill.status}
+            text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
             onClick={() =>
-                restoreSkill.mutate({ organizationId: organization.id, skillId: row.id })
+                recoverSkill.mutate({ organizationId: organization.id, skillId: row.id })
             }
         />
     );
@@ -318,9 +318,9 @@ export function AdminModule_Trash_List() {
                     enableHiding: false,
                 }),
                 columnHelper.display({
-                    id: "restore",
+                    id: "recover",
                     header: "",
-                    cell: (ctx) => <RestoreCell row={ctx.row.original} />,
+                    cell: (ctx) => <RecoverCell row={ctx.row.original} />,
                     enableHiding: false,
                 }),
             ]),

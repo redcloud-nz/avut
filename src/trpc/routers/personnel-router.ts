@@ -72,7 +72,7 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
-     * Soft-deletes a person from the organization (reversible via `restorePersonFromTrash`).
+     * Soft-deletes a person from the organization (reversible via `recoverPerson`).
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.
      * @returns The deleted person object.
@@ -324,6 +324,25 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
+     * Recovers a deleted person in the organization back to Active.
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The recovered person object.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     * @throws TRPCError(BAD_REQUEST) if the person is not Deleted.
+     */
+    recoverPerson: organizationProcedure({ person: ["delete"] })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(z.object({ updated: PersonData.schema }))
+        .mutation(async ({ ctx, input: { personId } }) => {
+            return { updated: await Personnel.recover(ctx, personId) };
+        }),
+
+    /**
      * Restores an archived person in the organization back to Active.
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.
@@ -339,26 +358,7 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
-            return { updated: await Personnel.restoreFromArchive(ctx, personId) };
-        }),
-
-    /**
-     * Restores a deleted person in the organization back to Active.
-     * @param ctx The authenticated context.
-     * @param input The input object containing the personId.
-     * @returns The restored person object.
-     * @throws TRPCError(NOT_FOUND) if the person is not found.
-     * @throws TRPCError(BAD_REQUEST) if the person is not Deleted.
-     */
-    restorePersonFromTrash: organizationProcedure({ person: ["delete"] })
-        .input(
-            z.object({
-                personId: PersonId.schema,
-            }),
-        )
-        .output(z.object({ updated: PersonData.schema }))
-        .mutation(async ({ ctx, input: { personId } }) => {
-            return { updated: await Personnel.restoreFromTrash(ctx, personId) };
+            return { updated: await Personnel.restore(ctx, personId) };
         }),
 
     /**

@@ -684,7 +684,7 @@ describe("Personnel.create during a D4H team import", () => {
     });
 });
 
-describe("Personnel.archive / restoreFromArchive / restoreFromTrash / deleteRecord", () => {
+describe("Personnel.archive / restore / recover / deleteRecord", () => {
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -804,20 +804,25 @@ describe("Personnel.archive / restoreFromArchive / restoreFromTrash / deleteReco
         ).toHaveLength(1);
     });
 
-    it("restoreFromTrash rejects an Archived person", async () => {
-        await expect(Personnel.restoreFromTrash(ctx(), T.person)).rejects.toThrow(
-            /only a Deleted person can be restored from rubbish/,
+    it("recover rejects an Archived person", async () => {
+        await expect(Personnel.recover(ctx(), T.person)).rejects.toThrow(
+            /only a Deleted person can be recovered from rubbish/,
         );
     });
 
-    it("restoreFromArchive moves an Archived person back to Active", async () => {
-        const restored = await Personnel.restoreFromArchive(ctx(), T.person);
+    it("restore moves an Archived person back to Active", async () => {
+        const restored = await Personnel.restore(ctx(), T.person);
         expect(restored.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Person", objectId: T.person, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
     });
 
-    it("restoreFromArchive rejects a Deleted person", async () => {
+    it("restore rejects a Deleted person", async () => {
         await Personnel.deleteRecord(ctx(), T.person);
-        await expect(Personnel.restoreFromArchive(ctx(), T.person)).rejects.toThrow(
+        await expect(Personnel.restore(ctx(), T.person)).rejects.toThrow(
             /only an Archived person can be restored from archive/,
         );
     });
@@ -827,14 +832,14 @@ describe("Personnel.archive / restoreFromArchive / restoreFromTrash / deleteReco
         expect(membership).toMatchObject({ status: "Active" });
     });
 
-    it("restoreFromTrash moves a Deleted person back to Active", async () => {
-        const restored = await Personnel.restoreFromTrash(ctx(), T.person);
+    it("recover moves a Deleted person back to Active", async () => {
+        const restored = await Personnel.recover(ctx(), T.person);
         expect(restored.status).toBe("Active");
 
         const entries = await db.logEntry.findMany({
-            where: { objectType: "Person", objectId: T.person, action: "Restore" },
+            where: { objectType: "Person", objectId: T.person, action: "Recover" },
         });
-        expect(entries.length).toBeGreaterThanOrEqual(1);
+        expect(entries).toHaveLength(1);
     });
 
     it("getDeleteImpact counts active team memberships and skill checks", async () => {

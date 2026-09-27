@@ -21,8 +21,8 @@ import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_ArchiveTeam_Dialog } from "./archive-team";
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
+import { AdminModule_RecoverTeam_Dialog } from "./recover-team";
 import { AdminModule_RestoreTeam_Dialog } from "./restore-team";
-import { AdminModule_RestoreTeamFromTrash_Dialog } from "./restore-team-from-trash";
 
 interface AdminModule_TeamMenuProps {
     team: TeamData;
@@ -37,7 +37,7 @@ const ACTIONS = [
     "add-membership",
     "archive",
     "restore",
-    "restore-from-trash",
+    "recover",
 ] as const;
 
 export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
@@ -85,10 +85,10 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
         });
     } else {
         actions.push({
-            verb: "restore",
-            label: "Restore from rubbish",
-            icon: <ObjectIcons.Restore />,
-            onSelect: () => setAction("restore-from-trash", { history: "push" }),
+            verb: "recover",
+            label: "Recover from rubbish",
+            icon: <ObjectIcons.Recover />,
+            onSelect: () => setAction("recover", { history: "push" }),
             disabled: !canDelete,
         });
     }
@@ -192,11 +192,11 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                 }
             />
 
-            <AdminModule_RestoreTeamFromTrash_Dialog
+            <AdminModule_RecoverTeam_Dialog
                 team={team}
-                open={action === "restore-from-trash"}
+                open={action === "recover"}
                 onOpenChange={(open) =>
-                    void setAction(open ? "restore-from-trash" : null, {
+                    void setAction(open ? "recover" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

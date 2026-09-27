@@ -90,7 +90,7 @@ describe("i3Router.getTemplate", () => {
     });
 });
 
-describe("i3Router.deleteTemplate / restoreTemplateFromTrash", () => {
+describe("i3Router.deleteTemplate / recoverTemplate", () => {
     const T = { org: OrganizationId.create(), user: nanoId16() };
     const db = createMockPrisma();
 
@@ -161,7 +161,7 @@ describe("i3Router.deleteTemplate / restoreTemplateFromTrash", () => {
         ).rejects.toThrow(/not found/i);
     });
 
-    it("restoreTemplateFromTrash requires i3Template:delete, not i3Template:update", async () => {
+    it("recoverTemplate requires i3Template:delete, not i3Template:update", async () => {
         const { created } = await makeCaller({ i3Template: ["create"] }).createTemplate({
             organizationId: T.org,
             templateId: I3TemplateId.create(),
@@ -173,14 +173,14 @@ describe("i3Router.deleteTemplate / restoreTemplateFromTrash", () => {
         });
 
         await expect(
-            makeCaller({ i3Template: ["update"] }).restoreTemplateFromTrash({
+            makeCaller({ i3Template: ["update"] }).recoverTemplate({
                 organizationId: T.org,
                 templateId: created.id,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("restores a deleted template back to Active and records a Restore log entry", async () => {
+    it("recovers a deleted template back to Active and records a Recover log entry", async () => {
         const { created } = await makeCaller({ i3Template: ["create"] }).createTemplate({
             organizationId: T.org,
             templateId: I3TemplateId.create(),
@@ -191,14 +191,14 @@ describe("i3Router.deleteTemplate / restoreTemplateFromTrash", () => {
             templateId: created.id,
         });
 
-        const { updated } = await makeCaller({ i3Template: ["delete"] }).restoreTemplateFromTrash({
+        const { updated } = await makeCaller({ i3Template: ["delete"] }).recoverTemplate({
             organizationId: T.org,
             templateId: created.id,
         });
         expect(updated.status).toBe("Active");
 
         const entries = await db.logEntry.findMany({
-            where: { objectType: "I3Template", objectId: created.id, action: "Restore" },
+            where: { objectType: "I3Template", objectId: created.id, action: "Recover" },
         });
         expect(entries).toHaveLength(1);
     });

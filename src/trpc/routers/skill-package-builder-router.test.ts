@@ -516,7 +516,7 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
     });
 });
 
-describe("skillPackageBuilderRouter.deleteSkill/Group/Package / restore*FromTrash", () => {
+describe("skillPackageBuilderRouter.deleteSkill/Group/Package / recover*", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
@@ -622,29 +622,29 @@ describe("skillPackageBuilderRouter.deleteSkill/Group/Package / restore*FromTras
         });
     });
 
-    it("restoreSkillFromTrash/restoreGroupFromTrash/restorePackageFromTrash require skillPackageBuilder:delete, not update", async () => {
+    it("recoverSkill/recoverGroup/recoverPackage require skillPackageBuilder:delete, not update", async () => {
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).restoreSkillFromTrash({
+            makeCaller({ skillPackageBuilder: ["update"] }).recoverSkill({
                 organizationId: T.org,
                 skillId: T.skill,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).restoreGroupFromTrash({
+            makeCaller({ skillPackageBuilder: ["update"] }).recoverGroup({
                 organizationId: T.org,
                 skillGroupId: T.group,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).restorePackageFromTrash({
+            makeCaller({ skillPackageBuilder: ["update"] }).recoverPackage({
                 organizationId: T.org,
                 skillPackageId: T.pkg,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("restores the deleted skill, group, and package back to Active", async () => {
-        const skill = await makeCaller({ skillPackageBuilder: ["delete"] }).restoreSkillFromTrash({
+    it("recovers the deleted skill, group, and package back to Active", async () => {
+        const skill = await makeCaller({ skillPackageBuilder: ["delete"] }).recoverSkill({
             organizationId: T.org,
             skillId: T.skill,
         });
@@ -652,12 +652,12 @@ describe("skillPackageBuilderRouter.deleteSkill/Group/Package / restore*FromTras
 
         const group = await makeCaller({
             skillPackageBuilder: ["delete"],
-        }).restoreGroupFromTrash({ organizationId: T.org, skillGroupId: T.group });
+        }).recoverGroup({ organizationId: T.org, skillGroupId: T.group });
         expect(group.updated.status).toBe("Active");
 
         const pkg = await makeCaller({
             skillPackageBuilder: ["delete"],
-        }).restorePackageFromTrash({ organizationId: T.org, skillPackageId: T.pkg });
+        }).recoverPackage({ organizationId: T.org, skillPackageId: T.pkg });
         expect(pkg.updated.status).toBe("Active");
     });
 });

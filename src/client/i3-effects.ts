@@ -19,7 +19,7 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
-    restoreTemplateFromTrash: (vars, { updated }) => [
+    recoverTemplate: (vars, { updated }) => [
         write(
             trpc.i3.getTemplate.queryKey({
                 organizationId: vars.organizationId,

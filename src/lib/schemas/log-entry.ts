@@ -72,6 +72,9 @@ export type LogScope = (typeof logScopeValues)[number];
  * still logs `Update`. They are kept because the vocabulary is the design, not
  * a census of the current call sites — but a reader should be able to tell
  * which half is live.
+ *
+ * `Restore` and `Recover` distinguish the two soft-delete return paths: `Restore`
+ * is Archived → Active, `Recover` is Deleted (trash) → Active.
  */
 const logActionValues = [
     "Approve",
@@ -82,6 +85,7 @@ const logActionValues = [
     "Impersonate", // DORMANT — reverted databaseHooks wire
     "Move", // DORMANT — moveSkill logs "Update"
     "Publish",
+    "Recover",
     "Restore",
     "Subscribe",
     "Unban", // DORMANT — reverted databaseHooks wire
