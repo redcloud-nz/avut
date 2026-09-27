@@ -16,7 +16,6 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { authClient } from "@/client/auth-client";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { useOrganization } from "@/hooks/use-organization";
@@ -28,16 +27,9 @@ import { trpc } from "@/trpc/client";
 export function AdminModule_Users_List() {
     const organization = useOrganization();
 
-    const {
-        data: { members },
-    } = useSuspenseQuery({
-        queryKey: ["auth", "organization-users", organization.id],
-        queryFn: () =>
-            authClient.organization.listMembers(
-                { query: { organizationId: organization.id } },
-                { throw: true },
-            ),
-    });
+    const { data: members } = useSuspenseQuery(
+        trpc.organizations.listMembers.queryOptions({ organizationId: organization.id }),
+    );
 
     const { data: personLinks } = useSuspenseQuery(
         trpc.users.listPersonLinks.queryOptions({ organizationId: organization.id }),

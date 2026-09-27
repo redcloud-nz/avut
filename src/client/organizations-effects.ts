@@ -13,10 +13,7 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * The membership mutations (`allowSystemAdmin`) were originally only called from the system-admin
  * console, so they invalidate `systemAdmin`'s own org/user queries. `removeOrganizationMember`/
  * `setOrganizationMemberRole` are now also called from the org-admin users pages
- * (`update-user.tsx`/`delete-user.tsx`), which still read the member list via the untagged
- * `authClient.organization.listMembers` query key `["auth", "organization-users", organizationId]`
- * — invalidate that raw key too until that list moves to a real tRPC query, at which point this
- * entry should be replaced with a normal `invalidate(trpc...queryFilter(...))`.
+ * (`update-user.tsx`/`delete-user.tsx`), which read the member list via `listMembers`.
  */
 export const organizationsEffects = createEffects<"organizations">()({
     addOrganizationMember: (vars) => [
@@ -32,7 +29,9 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     setOrganizationMemberRole: (vars) => [
         invalidate(
@@ -40,6 +39,8 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
 });

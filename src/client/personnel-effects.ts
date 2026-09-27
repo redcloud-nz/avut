@@ -38,7 +38,9 @@ export const personnelEffects = createEffects<"personnel">()({
             }),
         ),
         invalidate(trpc.users.listPersonLinks.queryFilter({ organizationId: vars.organizationId })),
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     deletePerson: (vars) => [
         invalidate(

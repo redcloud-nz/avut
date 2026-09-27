@@ -13,7 +13,7 @@ import { OrganizationData } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { UserId } from "@/lib/schemas/user";
-import { auth } from "@/server/auth";
+import { auth, type AuthOrganizationMember } from "@/server/auth";
 import { revalidateOrganization } from "@/server/cache/organization";
 import { getOrganizationUserRoles } from "@/server/cache/organization-user";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
@@ -172,6 +172,33 @@ export const organizationsRouter = createTrpcRouter({
 
             return OrganizationData.fromRecord(organization);
         }),
+
+    /**
+     * Lists every member of the organization, shaped like Better Auth's own
+     * `authClient.organization.listMembers` — a plain Prisma read of the same
+     * `organization_users` table Better Auth's organization plugin already writes to.
+     */
+    listMembers: organizationProcedure({ member: ["view"] }).query(
+        async ({ ctx }): Promise<AuthOrganizationMember[]> => {
+            const members = await ctx.prisma.organizationUser.findMany({
+                where: { organizationId: ctx.organizationId },
+                include: { user: { select: { id: true, name: true, email: true, image: true } } },
+            });
+
+            return members.map((member) => ({
+                id: member.id,
+                organizationId: member.organizationId,
+                userId: member.userId,
+                // Stored comma-joined ("member,i3-editor") for a multi-role membership — Better
+                // Auth's own inferred type claims a single literal role, same as it already did
+                // when this came straight from `authClient.organization.listMembers`.
+                role: member.role as AuthOrganizationMember["role"],
+                createdAt: member.createdAt,
+                personId: member.personId ?? undefined,
+                user: { ...member.user, image: member.user.image ?? undefined },
+            }));
+        },
+    ),
 
     /**
      * Remove a member from the organization. `BAD_REQUEST` if this would remove the

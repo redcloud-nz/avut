@@ -9,7 +9,6 @@ import { Suspense } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
 import { Protect } from "@/components/protect";
 import { StatCard, StatCardGrid, StatCardSkeleton } from "@/components/ui/stat-card";
 import { useOrganization } from "@/hooks/use-organization";
@@ -86,16 +85,9 @@ function Organization_Dashboard_UsersStat() {
     const organization = useOrganization();
     const { slug } = organization;
 
-    const {
-        data: { members },
-    } = useSuspenseQuery({
-        queryKey: ["auth", "organization-users", organization.id],
-        queryFn: () =>
-            authClient.organization.listMembers(
-                { query: { organizationId: organization.id } },
-                { throw: true },
-            ),
-    });
+    const { data: members } = useSuspenseQuery(
+        trpc.organizations.listMembers.queryOptions({ organizationId: organization.id }),
+    );
 
     return (
         <StatCard
@@ -111,14 +103,9 @@ function Organization_Dashboard_PendingInvitationsStat() {
     const organization = useOrganization();
     const { slug } = organization;
 
-    const { data: invitations } = useSuspenseQuery({
-        queryKey: ["auth", "organization-invitations", organization.id],
-        queryFn: () =>
-            authClient.organization.listInvitations(
-                { query: { organizationId: organization.id } },
-                { throw: true },
-            ),
-    });
+    const { data: invitations } = useSuspenseQuery(
+        trpc.invitations.listInvitations.queryOptions({ organizationId: organization.id }),
+    );
 
     const pendingCount = invitations.filter((invitation) => invitation.status === "pending").length;
 

@@ -9,7 +9,6 @@ import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
 import { useSession } from "@/client/auth-queries";
 import { AdminModule_UpdateUser_Dialog } from "@/components/admin/users/update-user";
 import { AdminModule_User_Menu } from "@/components/admin/users/user-menu";
@@ -30,16 +29,9 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
     const slug = organization.slug;
     const { data: session } = useSession();
 
-    const {
-        data: { members },
-    } = useSuspenseQuery({
-        queryKey: ["auth", "organization-users", organization.id],
-        queryFn: () =>
-            authClient.organization.listMembers(
-                { query: { organizationId: organization.id } },
-                { throw: true },
-            ),
-    });
+    const { data: members } = useSuspenseQuery(
+        trpc.organizations.listMembers.queryOptions({ organizationId: organization.id }),
+    );
     const member = members.find((m) => m.user.id === userId);
     if (!member)
         throw new Error(`User with ID ${userId} not found in organization ${organization.id}`);
