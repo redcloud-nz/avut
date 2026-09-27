@@ -137,28 +137,30 @@ All procedures live in `skillPackageBuilderRouter` registered as `skillPackageBu
 
 ### Package procedures
 
-| Procedure                              | Permission | Description                                                         |
-| -------------------------------------- | ---------- | ------------------------------------------------------------------- |
-| `skillPackageBuilder.listPackages`     | view       | List all packages owned by the organisation                         |
-| `skillPackageBuilder.createPackage`    | create     | Create a new package                                                |
-| `skillPackageBuilder.updatePackage`    | update     | Update name, description, tags, properties                          |
-| `skillPackageBuilder.deletePackage`    | delete     | Hard-delete a package and all its groups and skills                 |
-| `skillPackageBuilder.archivePackage`   | update     | Set status to `Archived` (must be `Active`)                         |
-| `skillPackageBuilder.restorePackage`   | update     | Set status back to `Active` (must be `Archived` or `Deleted`)       |
-| `skillPackageBuilder.publishPackage`   | publish    | Set `published = true` (must be `Active` and not already published) |
-| `skillPackageBuilder.unpublishPackage` | publish    | Set `published = false` (must be currently published)               |
+| Procedure                              | Permission | Description                                                                                                           |
+| -------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| `skillPackageBuilder.listPackages`     | view       | List all packages owned by the organisation                                                                           |
+| `skillPackageBuilder.createPackage`    | create     | Create a new package                                                                                                  |
+| `skillPackageBuilder.updatePackage`    | update     | Update name, description, tags, properties                                                                            |
+| `skillPackageBuilder.deletePackage`    | delete     | Soft-delete (status `Deleted`, into the Rubbish bin). Nothing cascades to groups/skills. Also unpublishes the package |
+| `skillPackageBuilder.archivePackage`   | update     | Set status to `Archived` (must be `Active`)                                                                           |
+| `skillPackageBuilder.restorePackage`   | update     | Set status back to `Active` (must be `Archived`)                                                                      |
+| `skillPackageBuilder.recoverPackage`   | delete     | Recover from the Rubbish bin back to `Active` (must be `Deleted`)                                                     |
+| `skillPackageBuilder.publishPackage`   | publish    | Set `published = true` (must be `Active` and not already published)                                                   |
+| `skillPackageBuilder.unpublishPackage` | publish    | Set `published = false` (must be currently published)                                                                 |
 
 ### Group procedures
 
-| Procedure                           | Permission | Description                                                   |
-| ----------------------------------- | ---------- | ------------------------------------------------------------- |
-| `skillPackageBuilder.listGroups`    | view       | List all groups within a package                              |
-| `skillPackageBuilder.createGroup`   | update     | Create a group; appended at end of current sequence           |
-| `skillPackageBuilder.updateGroup`   | update     | Update name, description, tags, properties                    |
-| `skillPackageBuilder.deleteGroup`   | update     | Hard-delete a group and all its skills                        |
-| `skillPackageBuilder.archiveGroup`  | update     | Set status to `Archived` (must be `Active`)                   |
-| `skillPackageBuilder.restoreGroup`  | update     | Set status back to `Active` (must be `Archived` or `Deleted`) |
-| `skillPackageBuilder.reorderGroups` | update     | Reassign `sequence` values for groups within a package        |
+| Procedure                           | Permission | Description                                                                          |
+| ----------------------------------- | ---------- | ------------------------------------------------------------------------------------ |
+| `skillPackageBuilder.listGroups`    | view       | List all groups within a package                                                     |
+| `skillPackageBuilder.createGroup`   | update     | Create a group; appended at end of current sequence                                  |
+| `skillPackageBuilder.updateGroup`   | update     | Update name, description, tags, properties                                           |
+| `skillPackageBuilder.deleteGroup`   | delete     | Soft-delete (status `Deleted`, into the Rubbish bin). Nothing cascades to its skills |
+| `skillPackageBuilder.archiveGroup`  | update     | Set status to `Archived` (must be `Active`)                                          |
+| `skillPackageBuilder.restoreGroup`  | update     | Set status back to `Active` (must be `Archived`)                                     |
+| `skillPackageBuilder.recoverGroup`  | delete     | Recover from the Rubbish bin back to `Active` (must be `Deleted`)                    |
+| `skillPackageBuilder.reorderGroups` | update     | Reassign `sequence` values for groups within a package                               |
 
 ### Skill procedures
 
@@ -167,13 +169,14 @@ All procedures live in `skillPackageBuilderRouter` registered as `skillPackageBu
 | `skillPackageBuilder.listSkills`         | view       | List all skills within a package                                                                            |
 | `skillPackageBuilder.createSkill`        | update     | Create a skill within a group; appended at end of current sequence                                          |
 | `skillPackageBuilder.updateSkill`        | update     | Update name, description, tags, properties, frequency, defaultInclude, defaultRequired                      |
-| `skillPackageBuilder.deleteSkill`        | update     | Hard-delete a skill                                                                                         |
+| `skillPackageBuilder.deleteSkill`        | delete     | Soft-delete (status `Deleted`, into the Rubbish bin)                                                        |
 | `skillPackageBuilder.archiveSkill`       | update     | Set status to `Archived` (must be `Active`)                                                                 |
-| `skillPackageBuilder.restoreSkill`       | update     | Set status back to `Active` (must be `Archived` or `Deleted`)                                               |
+| `skillPackageBuilder.restoreSkill`       | update     | Set status back to `Active` (must be `Archived`)                                                            |
+| `skillPackageBuilder.recoverSkill`       | delete     | Recover from the Rubbish bin back to `Active` (must be `Deleted`)                                           |
 | `skillPackageBuilder.moveSkill`          | update     | Move a skill to a different group within the same package (cross-package move is not yet exposed in the UI) |
 | `skillPackageBuilder.reorderGroupSkills` | update     | Reassign `sequence` values for skills within a group                                                        |
 
-> **Note:** Delete procedures must check whether any skill checks have been recorded against the affected skills before deleting. If recorded checks exist, the record must be soft-deleted (status set to `Deleted`) rather than hard-deleted, so that existing `SkillCheck` and `SkillCheckSession` records continue to reference valid skill records. This applies to `deleteSkill`, `deleteGroup` (and by extension all skills within it), and `deletePackage` (and all groups and skills within it). This check is not yet implemented.
+> **Note:** Delete is always a soft delete into the org's Rubbish bin (#258/#294), so existing `SkillCheck` and `SkillCheckSession` records keep valid references. Nothing is physically removed until the record is purged from the Rubbish bin.
 
 ---
 

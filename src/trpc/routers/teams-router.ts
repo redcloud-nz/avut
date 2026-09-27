@@ -294,7 +294,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            if (!person) {
+            if (!person || person.status === "Deleted") {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.personNotFound(personId),
@@ -397,7 +397,11 @@ export const teamsRouter = createTrpcRouter({
         .output(teamMembershipRowSchema)
         .query(async ({ ctx, input: { organizationId, teamId, personId } }) => {
             const record = await ctx.prisma.teamMembership.findUnique({
-                where: { organizationId, teamId_personId: { teamId, personId } },
+                where: {
+                    organizationId,
+                    teamId_personId: { teamId, personId },
+                    status: { not: "Deleted" },
+                },
                 include: teamMembershipRowInclude,
             });
 
@@ -822,13 +826,15 @@ export const teamsRouter = createTrpcRouter({
                 updated: TeamMembershipData.schema,
             }),
         )
-        .mutation(async ({ ctx, input: { teamId, personId, update } }) => {
+        .mutation(async ({ ctx, input: { organizationId, teamId, personId, update } }) => {
             const existing = await ctx.prisma.teamMembership.findUnique({
                 where: {
+                    organizationId,
                     teamId_personId: {
                         teamId,
                         personId,
                     },
+                    status: { not: "Deleted" },
                 },
             });
 
@@ -852,12 +858,7 @@ export const teamsRouter = createTrpcRouter({
             const [updated] = await ctx.prisma.$transaction([
                 // Apply the changes
                 ctx.prisma.teamMembership.update({
-                    where: {
-                        teamId_personId: {
-                            teamId,
-                            personId,
-                        },
-                    },
+                    where: { id: existing.id },
                     data: { ...update },
                 }),
                 // Record an event for the update

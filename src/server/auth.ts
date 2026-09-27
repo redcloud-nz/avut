@@ -84,8 +84,12 @@ export const auth = betterAuth({
      * not our schema's `users` / `invitations`. This endpoint is the only better-auth path
      * that joins Organization to those, so it 500s with a PrismaClientValidationError. The
      * app never calls it; keep it off until upstream fixes the key naming (#97).
+     *
+     * `/organization/delete` would hard-delete the org and cascade everything under it,
+     * bypassing the audit log and the Rubbish bin's retention window (#297). Org deletion
+     * goes through our own procedure instead.
      */
-    disabledPaths: ["/organization/get-full-organization"],
+    disabledPaths: ["/organization/get-full-organization", "/organization/delete"],
     hooks: {
         // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
         after: revalidateRolesAfterLeave(revalidateOrganizationUser),

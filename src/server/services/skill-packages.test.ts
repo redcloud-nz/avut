@@ -656,4 +656,19 @@ describe("SkillPackages archive / restore / recover / delete", () => {
             skillCount: 1,
         });
     });
+
+    it("deletePackage unpublishes a published package and recoverPackage leaves it unpublished", async () => {
+        await db.skillPackage.update({ where: { id: L.pkg }, data: { published: true } });
+
+        const deleted = await SkillPackages.deletePackage(ctx(), L.pkg);
+        expect(deleted).toMatchObject({ status: "Deleted", published: false });
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "SkillPackage", objectId: L.pkg, action: "Unpublish" },
+            }),
+        ).toHaveLength(1);
+
+        const recovered = await SkillPackages.recoverPackage(ctx(), L.pkg);
+        expect(recovered).toMatchObject({ status: "Active", published: false });
+    });
 });
