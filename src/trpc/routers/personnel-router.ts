@@ -60,11 +60,7 @@ export const personnelRouter = createTrpcRouter({
                 },
             });
 
-            if (emailConflict)
-                throw new FieldConflictError(
-                    "email",
-                    "A person with this email address already exists in this organisation.",
-                );
+            if (emailConflict) throw emailConflictError(emailConflict.status);
 
             // Delegates to the shared service so this path and the D4H team import behave
             // identically — in particular, both auto-link.
@@ -392,11 +388,7 @@ export const personnelRouter = createTrpcRouter({
                         organizationId: ctx.organizationId,
                     },
                 });
-                if (emailConflict)
-                    throw new FieldConflictError(
-                        "email",
-                        "A person with this email address already exists in this organisation.",
-                    );
+                if (emailConflict) throw emailConflictError(emailConflict.status);
             }
 
             // Calculate changes from existing record
@@ -422,3 +414,16 @@ export const personnelRouter = createTrpcRouter({
             };
         }),
 });
+
+/**
+ * Person emails stay unique across the Rubbish bin (deliberately — no partial index), so a
+ * clash with a `Deleted` person tells the user how to free the address rather than just "exists".
+ */
+function emailConflictError(conflictStatus: PersonData["status"]): FieldConflictError {
+    return new FieldConflictError(
+        "email",
+        conflictStatus === "Deleted"
+            ? "A person with this email address is in the Rubbish bin. Recover them, or delete them forever from the Rubbish bin, to use this address."
+            : "A person with this email address already exists in this organisation.",
+    );
+}

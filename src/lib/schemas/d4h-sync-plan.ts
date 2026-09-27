@@ -38,12 +38,16 @@ const syncPlanSchema = z.object({
         }),
     ),
 
-    /** D4H member with no D4H-managed AVUT membership yet, excluded as bad data. */
+    /**
+     * D4H member with no D4H-managed AVUT membership yet, not imported: either bad data
+     * (`missing-email`), or their email belongs to a person in the Rubbish bin
+     * (`person-in-rubbish-bin`) — recover that person or delete them forever to import (#183).
+     */
     skipped: z.array(
         z.object({
             d4hMemberId: z.number(),
             name: z.string(),
-            reason: z.literal("missing-email"),
+            reason: z.enum(["missing-email", "person-in-rubbish-bin"]),
         }),
     ),
 

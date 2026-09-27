@@ -205,7 +205,7 @@ function LinkDialog({
             onError: (error) => toast.error(error.message),
             onSuccess: ({ plan }) => {
                 const skippedSuffix =
-                    plan.counts.skipped > 0 ? `, ${plan.counts.skipped} skipped (no email)` : "";
+                    plan.counts.skipped > 0 ? `, ${plan.counts.skipped} skipped` : "";
                 toast.success(
                     `Linked to D4H — ${plan.counts.additions} member(s) imported${skippedSuffix}`,
                 );
@@ -373,7 +373,18 @@ function SyncDialog({
 
 function SyncPlanView({ plan }: { plan: SyncPlan }) {
     const skippedGroup = (
-        <Group title="Skipped (no email in D4H)" rows={plan.skipped.map((s) => s.name)} />
+        <>
+            <Group
+                title="Skipped (no email in D4H)"
+                rows={plan.skipped.filter((s) => s.reason === "missing-email").map((s) => s.name)}
+            />
+            <Group
+                title="Skipped (email belongs to a person in the Rubbish bin — recover or delete them forever to import)"
+                rows={plan.skipped
+                    .filter((s) => s.reason === "person-in-rubbish-bin")
+                    .map((s) => s.name)}
+            />
+        </>
     );
     if (isSyncPlanEmpty(plan)) {
         return (

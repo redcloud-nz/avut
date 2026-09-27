@@ -75,8 +75,13 @@ export type BuildSyncPlanInput = {
     d4hMembers: D4HMember[];
     /** All D4H-managed memberships (those with a `_D4H` row), including archived. */
     avutMemberships: SyncMembershipInput[];
-    /** Lowercased emails of people that already resolve in the org. */
+    /** Lowercased emails of people that already resolve in the org (not `Deleted`). */
     existingPersonEmails: ReadonlySet<string>;
+    /**
+     * Lowercased emails of `Deleted` people. Email stays unique across the Rubbish bin, so these
+     * members are skipped rather than adopting (or colliding with) the deleted person (#183).
+     */
+    deletedPersonEmails: ReadonlySet<string>;
     /** Lowercased emails of people joined to this team by a *manual* membership. */
     manualMembershipEmails: ReadonlySet<string>;
     teamMetadata: SyncTeamMetadata;
@@ -148,7 +153,11 @@ export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
     }> = [];
     const reactivations: typeof updates = [];
     const archivals: Array<{ teamMembershipId: string; personName: string }> = [];
-    const skipped: Array<{ d4hMemberId: number; name: string; reason: "missing-email" }> = [];
+    const skipped: Array<{
+        d4hMemberId: number;
+        name: string;
+        reason: "missing-email" | "person-in-rubbish-bin";
+    }> = [];
 
     for (const member of input.d4hMembers) {
         seenMemberIds.add(member.id);
@@ -162,6 +171,14 @@ export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
                     d4hMemberId: member.id,
                     name: member.name,
                     reason: "missing-email",
+                });
+                continue;
+            }
+            if (input.deletedPersonEmails.has(email)) {
+                skipped.push({
+                    d4hMemberId: member.id,
+                    name: member.name,
+                    reason: "person-in-rubbish-bin",
                 });
                 continue;
             }
@@ -377,6 +394,7 @@ type SyncInputs = {
     avutMemberships: Parameters<typeof buildSyncPlan>[0]["avutMemberships"];
     membershipPersonIds: Map<string, string>;
     existingPersonEmails: Set<string>;
+    deletedPersonEmails: Set<string>;
     manualMembershipEmails: Set<string>;
     /** Flat metadata for the diff — Team_D4H fields plus, when org-bearing, org cache fields. */
     currentMeta: TeamMetaRecord;
@@ -425,7 +443,7 @@ export async function fetchD4HSyncInputs(
         }),
         ctx.prisma.person.findMany({
             where: { organizationId: ctx.organizationId },
-            select: { email: true },
+            select: { email: true, status: true },
         }),
         ctx.prisma.teamMembership.findMany({
             where: { teamId, organizationId: ctx.organizationId, d4h: { is: null } },
@@ -519,7 +537,12 @@ export async function fetchD4HSyncInputs(
         d4hMembersById,
         avutMemberships,
         membershipPersonIds,
-        existingPersonEmails: new Set(allPeople.map((p) => p.email.toLowerCase())),
+        existingPersonEmails: new Set(
+            allPeople.filter((p) => p.status !== "Deleted").map((p) => p.email.toLowerCase()),
+        ),
+        deletedPersonEmails: new Set(
+            allPeople.filter((p) => p.status === "Deleted").map((p) => p.email.toLowerCase()),
+        ),
         manualMembershipEmails: new Set(manualRows.map((r) => r.person.email.toLowerCase())),
         currentMeta,
         incomingMeta,
@@ -534,6 +557,7 @@ export function planFromInputs(inputs: SyncInputs): SyncPlan {
         d4hMembers: inputs.d4hMembers,
         avutMemberships: inputs.avutMemberships,
         existingPersonEmails: inputs.existingPersonEmails,
+        deletedPersonEmails: inputs.deletedPersonEmails,
         manualMembershipEmails: inputs.manualMembershipEmails,
         teamMetadata: { current: inputs.currentMeta, incoming: inputs.incomingMeta },
     });
