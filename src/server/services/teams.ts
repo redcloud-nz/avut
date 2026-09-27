@@ -66,7 +66,7 @@ export async function requireById(ctx: OrgServiceContext, teamId: TeamId): Promi
 }
 
 /**
- * Archive a team (reversible via `restoreFromArchive`). No-op, returning the existing record
+ * Archive a team (reversible via `restore`). No-op, returning the existing record
  * unchanged, if the team is already `Archived`.
  * @throws NotFoundError if the team is not found in the organization.
  */
@@ -92,12 +92,9 @@ export async function archive(ctx: OrgServiceContext, teamId: TeamId): Promise<T
  * Restore an `Archived` team back to `Active`. No-op, returning the existing record unchanged, if
  * the team is already `Active`.
  * @throws NotFoundError if the team is not found in the organization.
- * @throws ValidationError if the team is `Deleted` — use `restoreFromTrash` instead.
+ * @throws ValidationError if the team is `Deleted` — use `recover` instead.
  */
-export async function restoreFromArchive(
-    ctx: OrgServiceContext,
-    teamId: TeamId,
-): Promise<TeamData> {
+export async function restore(ctx: OrgServiceContext, teamId: TeamId): Promise<TeamData> {
     const existing = await requireById(ctx, teamId);
 
     if (existing.status === "Active") {
@@ -110,16 +107,16 @@ export async function restoreFromArchive(
         );
     }
 
-    return await restoreToActive(ctx, teamId);
+    return await setActive(ctx, teamId, "Restore");
 }
 
 /**
- * Restore a `Deleted` team back to `Active`. No-op, returning the existing record unchanged, if
+ * Recover a `Deleted` team back to `Active`. No-op, returning the existing record unchanged, if
  * the team is already `Active`.
  * @throws NotFoundError if the team is not found in the organization.
- * @throws ValidationError if the team is `Archived` — use `restoreFromArchive` instead.
+ * @throws ValidationError if the team is `Archived` — use `restore` instead.
  */
-export async function restoreFromTrash(ctx: OrgServiceContext, teamId: TeamId): Promise<TeamData> {
+export async function recover(ctx: OrgServiceContext, teamId: TeamId): Promise<TeamData> {
     const existing = await requireById(ctx, teamId);
 
     if (existing.status === "Active") {
@@ -128,27 +125,31 @@ export async function restoreFromTrash(ctx: OrgServiceContext, teamId: TeamId): 
 
     if (existing.status !== "Deleted") {
         throw new ValidationError(
-            `Team(id=${teamId}) has status ${existing.status}; only a Deleted team can be restored from rubbish.`,
+            `Team(id=${teamId}) has status ${existing.status}; only a Deleted team can be recovered from rubbish.`,
         );
     }
 
-    return await restoreToActive(ctx, teamId);
+    return await setActive(ctx, teamId, "Recover");
 }
 
-async function restoreToActive(ctx: OrgServiceContext, teamId: TeamId): Promise<TeamData> {
+async function setActive(
+    ctx: OrgServiceContext,
+    teamId: TeamId,
+    action: "Restore" | "Recover",
+): Promise<TeamData> {
     await ctx.prisma.$transaction([
         ctx.prisma.team.update({
             where: { id: teamId, organizationId: ctx.organizationId },
             data: { status: "Active" },
         }),
-        ctx.logEvent({ action: "Restore", objectType: "Team", objectId: teamId }),
+        ctx.logEvent({ action, objectType: "Team", objectId: teamId }),
     ]);
 
     return await requireById(ctx, teamId);
 }
 
 /**
- * Soft-delete a team (reversible via `restoreFromTrash`). No-op, returning the existing record
+ * Soft-delete a team (reversible via `recover`). No-op, returning the existing record
  * unchanged, if the team is already `Deleted`.
  *
  * Always soft — nothing physically removes the row here. `TeamMembership` rows are deliberately
@@ -303,7 +304,7 @@ export async function createMembership(
 }
 
 /**
- * Soft-delete a team membership (reversible via `restoreMembershipFromTrash`). No-op, returning
+ * Soft-delete a team membership (reversible via `recoverMembership`). No-op, returning
  * the existing record unchanged, if the membership is already `Deleted`.
  *
  * Unlike Team/Person, a membership has no archive pair — there is no intermediate "hidden but
@@ -341,12 +342,12 @@ export async function deleteMembership(
 }
 
 /**
- * Restore a `Deleted` team membership back to `Active`. No-op, returning the existing record
+ * Recover a `Deleted` team membership back to `Active`. No-op, returning the existing record
  * unchanged, if the membership is already `Active`.
  * @throws NotFoundError if no membership exists for that pair within the organization.
  * @throws ValidationError if the membership is not `Deleted`.
  */
-export async function restoreMembershipFromTrash(
+export async function recoverMembership(
     ctx: OrgServiceContext,
     teamId: TeamId,
     personId: PersonId,
@@ -359,7 +360,7 @@ export async function restoreMembershipFromTrash(
 
     if (existing.status !== "Deleted") {
         throw new ValidationError(
-            `TeamMembership(teamId=${teamId}, personId=${personId}) has status ${existing.status}; only a Deleted membership can be restored from rubbish.`,
+            `TeamMembership(teamId=${teamId}, personId=${personId}) has status ${existing.status}; only a Deleted membership can be recovered from rubbish.`,
         );
     }
 
@@ -369,7 +370,7 @@ export async function restoreMembershipFromTrash(
             data: { status: "Active" },
         }),
         ctx.logEvent({
-            action: "Restore",
+            action: "Recover",
             objectType: "TeamMembership",
             objectId: existing.id,
             refs: [

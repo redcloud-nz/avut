@@ -193,7 +193,7 @@ export async function requireRecordById<Include extends Prisma.PersonInclude>(
 }
 
 /**
- * Archive a person (reversible via `restoreFromArchive`). No-op, returning the existing record
+ * Archive a person (reversible via `restore`). No-op, returning the existing record
  * unchanged, if the person is already `Archived`.
  * @throws NotFoundError if the person is not found in the organization.
  */
@@ -223,12 +223,9 @@ export async function archive(ctx: OrgServiceContext, personId: PersonId): Promi
  * Restore an `Archived` person back to `Active`. No-op, returning the existing record unchanged,
  * if the person is already `Active`.
  * @throws NotFoundError if the person is not found in the organization.
- * @throws ValidationError if the person is `Deleted` — use `restoreFromTrash` instead.
+ * @throws ValidationError if the person is `Deleted` — use `recover` instead.
  */
-export async function restoreFromArchive(
-    ctx: OrgServiceContext,
-    personId: PersonId,
-): Promise<PersonData> {
+export async function restore(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
     const existing = await requireById(ctx, personId);
 
     if (existing.status === "Active") {
@@ -241,19 +238,16 @@ export async function restoreFromArchive(
         );
     }
 
-    return await restoreToActive(ctx, personId);
+    return await setActive(ctx, personId, "Restore");
 }
 
 /**
- * Restore a `Deleted` person back to `Active`. No-op, returning the existing record unchanged, if
+ * Recover a `Deleted` person back to `Active`. No-op, returning the existing record unchanged, if
  * the person is already `Active`.
  * @throws NotFoundError if the person is not found in the organization.
- * @throws ValidationError if the person is `Archived` — use `restoreFromArchive` instead.
+ * @throws ValidationError if the person is `Archived` — use `restore` instead.
  */
-export async function restoreFromTrash(
-    ctx: OrgServiceContext,
-    personId: PersonId,
-): Promise<PersonData> {
+export async function recover(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
     const existing = await requireById(ctx, personId);
 
     if (existing.status === "Active") {
@@ -262,21 +256,25 @@ export async function restoreFromTrash(
 
     if (existing.status !== "Deleted") {
         throw new ValidationError(
-            `Person(id=${personId}) has status ${existing.status}; only a Deleted person can be restored from rubbish.`,
+            `Person(id=${personId}) has status ${existing.status}; only a Deleted person can be recovered from rubbish.`,
         );
     }
 
-    return await restoreToActive(ctx, personId);
+    return await setActive(ctx, personId, "Recover");
 }
 
-async function restoreToActive(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+async function setActive(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+    action: "Restore" | "Recover",
+): Promise<PersonData> {
     const [updated] = await ctx.prisma.$transaction([
         ctx.prisma.person.update({
             where: { organizationId: ctx.organizationId, id: personId },
             data: { status: "Active" },
         }),
         ctx.logEvent({
-            action: "Restore",
+            action,
             objectType: "Person",
             objectId: personId,
         }),
@@ -286,7 +284,7 @@ async function restoreToActive(ctx: OrgServiceContext, personId: PersonId): Prom
 }
 
 /**
- * Soft-delete a person (reversible via `restoreFromTrash`). No-op, returning the existing record
+ * Soft-delete a person (reversible via `recover`). No-op, returning the existing record
  * unchanged, if the person is already `Deleted`.
  *
  * Always soft — nothing physically removes the row here. Related rows (team memberships, skill

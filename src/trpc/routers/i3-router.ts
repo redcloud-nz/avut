@@ -117,7 +117,7 @@ export const i3Router = createTrpcRouter({
         }),
 
     /**
-     * Soft-deletes an I3 Template (reversible via `restoreTemplateFromTrash`). Idempotent —
+     * Soft-deletes an I3 Template (reversible via `recoverTemplate`). Idempotent —
      * deleting an already-deleted template returns it unchanged. `I3TemplateVariant` rows are
      * left untouched — out of scope for #295.
      */
@@ -251,16 +251,16 @@ export const i3Router = createTrpcRouter({
         }),
 
     /**
-     * Restores a deleted I3 Template in the organization back to Active. Idempotent — restoring
+     * Recovers a deleted I3 Template in the organization back to Active. Idempotent — recovering
      * an already-active template returns it unchanged.
      * @throws TRPCError(NOT_FOUND) if the template does not exist within the organization.
      * @throws TRPCError(BAD_REQUEST) if the template is not Deleted.
      */
-    restoreTemplateFromTrash: organizationProcedure({ i3Template: ["delete"] })
+    recoverTemplate: organizationProcedure({ i3Template: ["delete"] })
         .input(z.object({ templateId: I3TemplateId.schema }))
         .output(z.object({ updated: I3Template.schema }))
         .mutation(async ({ ctx, input: { templateId } }) => {
-            return { updated: await I3Templates.restoreFromTrash(ctx, templateId) };
+            return { updated: await I3Templates.recover(ctx, templateId) };
         }),
 
     /**

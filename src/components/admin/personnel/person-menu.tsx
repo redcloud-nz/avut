@@ -26,8 +26,8 @@ import { UserId } from "@/lib/schemas/user";
 import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
 import { AdminModule_InvitePerson_Dialog } from "./invite-person";
+import { AdminModule_RecoverPerson_Dialog } from "./recover-person";
 import { AdminModule_RestorePerson_Dialog } from "./restore-person";
-import { AdminModule_RestorePersonFromTrash_Dialog } from "./restore-person-from-trash";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
@@ -46,7 +46,7 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
             "invite",
             "archive",
             "restore",
-            "restore-from-trash",
+            "recover",
             "link-user",
             "unlink-user",
             "add-membership",
@@ -121,10 +121,10 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
         });
     } else {
         actions.push({
-            verb: "restore",
-            label: "Restore from rubbish",
-            icon: <ObjectIcons.Restore />,
-            onSelect: () => setAction("restore-from-trash", { history: "push" }),
+            verb: "recover",
+            label: "Recover from rubbish",
+            icon: <ObjectIcons.Recover />,
+            onSelect: () => setAction("recover", { history: "push" }),
             disabled: !canDelete,
         });
     }
@@ -199,12 +199,12 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
                 }
             />
 
-            {/* Restore Person from Rubbish dialog */}
-            <AdminModule_RestorePersonFromTrash_Dialog
+            {/* Recover Person from Rubbish dialog */}
+            <AdminModule_RecoverPerson_Dialog
                 person={person}
-                open={action === "restore-from-trash"}
+                open={action === "recover"}
                 onOpenChange={(open) =>
-                    setAction(open ? "restore-from-trash" : null, {
+                    setAction(open ? "recover" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

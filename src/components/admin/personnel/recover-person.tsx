@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { teamsEffects } from "@/client/teams-effects";
+import { personnelEffects } from "@/client/personnel-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -23,26 +23,26 @@ import {
 } from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
-import { TeamData } from "@/lib/schemas/team";
+import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_RestoreTeamFromTrash_Dialog({
-    team,
+export function AdminModule_RecoverPerson_Dialog({
+    person,
     ...props
-}: DialogProps & { team: TeamData }) {
+}: DialogProps & { person: PersonData }) {
     const organization = useOrganization();
 
     const mutation = useMutation(
-        trpc.teams.restoreTeamFromTrash.mutationOptions({
-            meta: { effects: teamsEffects.restoreTeamFromTrash },
+        trpc.personnel.recoverPerson.mutationOptions({
+            meta: { effects: personnelEffects.recoverPerson },
             onError(error) {
-                console.error("Failed to restore team from rubbish:", error);
-                toast.error(`Failed to restore team: ${error.message}`);
+                console.error("Failed to recover person from rubbish:", error);
+                toast.error(`Failed to recover person: ${error.message}`);
             },
             onSuccess() {
                 toast.success(
                     <>
-                        Team <ObjectName>{team.name}</ObjectName> restored from rubbish.
+                        Person <ObjectName>{person.name}</ObjectName> recovered from rubbish.
                     </>,
                 );
                 props.onOpenChange?.(false);
@@ -61,9 +61,9 @@ export function AdminModule_RestoreTeamFromTrash_Dialog({
         <Dialog {...props}>
             <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DialogHeader>
-                    <DialogTitle>Restore Team from Rubbish</DialogTitle>
+                    <DialogTitle>Recover Person from Rubbish</DialogTitle>
                     <DialogDescription>
-                        Restore <ObjectName>{team.name}</ObjectName> to Active status.
+                        Recover <ObjectName>{person.name}</ObjectName> to Active status.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -72,14 +72,14 @@ export function AdminModule_RestoreTeamFromTrash_Dialog({
                         type="button"
                         status={mutation.status}
                         text={{
-                            idle: "Restore",
-                            pending: "Restoring",
-                            success: "Restored",
+                            idle: "Recover",
+                            pending: "Recovering",
+                            success: "Recovered",
                         }}
                         onClick={() =>
                             mutation.mutate({
                                 organizationId: organization.id,
-                                teamId: team.id,
+                                personId: person.id,
                             })
                         }
                     />

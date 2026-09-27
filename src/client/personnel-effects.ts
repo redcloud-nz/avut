@@ -58,7 +58,7 @@ export const personnelEffects = createEffects<"personnel">()({
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
     ],
-    restorePersonFromTrash: (vars, { updated }) => [
+    recoverPerson: (vars, { updated }) => [
         write(
             trpc.personnel.getPerson.queryKey({
                 organizationId: vars.organizationId,

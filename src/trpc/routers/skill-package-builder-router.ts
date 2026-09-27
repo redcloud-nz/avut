@@ -252,7 +252,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         }),
 
     /**
-     * Soft-deletes the specified skill package (reversible via `restorePackageFromTrash`).
+     * Soft-deletes the specified skill package (reversible via `recoverPackage`).
      * Its groups and skills are left untouched — no cascade on a soft delete.
      * @param skillPackageId The ID of the skill package to delete.
      * @throws TRPCError(NOT_FOUND) if the skill package does not exist.
@@ -265,7 +265,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         }),
 
     /**
-     * Soft-deletes the specified skill (reversible via `restoreSkillFromTrash`).
+     * Soft-deletes the specified skill (reversible via `recoverSkill`).
      * @param skillId The ID of the skill to delete.
      * @throws TRPCError(NOT_FOUND) if the skill does not exist.
      */
@@ -646,6 +646,45 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         }),
 
     /**
+     * Recovers a deleted skill group in the organization back to Active. Idempotent — recovering
+     * an already-active group returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the group does not exist.
+     * @throws TRPCError(BAD_REQUEST) if the group is not Deleted.
+     */
+    recoverGroup: organizationProcedure({ skillPackageBuilder: ["delete"] })
+        .input(z.object({ skillGroupId: SkillGroupId.schema }))
+        .output(z.object({ updated: SkillGroup.schema }))
+        .mutation(async ({ ctx, input: { skillGroupId } }) => {
+            return { updated: await SkillPackages.recoverGroup(ctx, skillGroupId) };
+        }),
+
+    /**
+     * Recovers a deleted skill package in the organization back to Active. Idempotent —
+     * recovering an already-active package returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the package does not exist.
+     * @throws TRPCError(BAD_REQUEST) if the package is not Deleted.
+     */
+    recoverPackage: organizationProcedure({ skillPackageBuilder: ["delete"] })
+        .input(z.object({ skillPackageId: SkillPackageId.schema }))
+        .output(z.object({ updated: SkillPackage.schema }))
+        .mutation(async ({ ctx, input: { skillPackageId } }) => {
+            return { updated: await SkillPackages.recoverPackage(ctx, skillPackageId) };
+        }),
+
+    /**
+     * Recovers a deleted skill in the organization back to Active. Idempotent — recovering an
+     * already-active skill returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the skill does not exist.
+     * @throws TRPCError(BAD_REQUEST) if the skill is not Deleted.
+     */
+    recoverSkill: organizationProcedure({ skillPackageBuilder: ["delete"] })
+        .input(z.object({ skillId: SkillId.schema }))
+        .output(z.object({ updated: Skill.schema }))
+        .mutation(async ({ ctx, input: { skillId } }) => {
+            return { updated: await SkillPackages.recoverSkill(ctx, skillId) };
+        }),
+
+    /**
      * Reorder skill groups within a skill package.
      * @param skillPackageId The ID of the skill package.
      * @param newOrder An array of skill group IDs representing the new order.
@@ -828,20 +867,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillGroupId: SkillGroupId.schema }))
         .output(z.object({ updated: SkillGroup.schema }))
         .mutation(async ({ ctx, input: { skillGroupId } }) => {
-            return { updated: await SkillPackages.restoreGroupFromArchive(ctx, skillGroupId) };
-        }),
-
-    /**
-     * Restores a deleted skill group in the organization back to Active. Idempotent — restoring
-     * an already-active group returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the group does not exist.
-     * @throws TRPCError(BAD_REQUEST) if the group is not Deleted.
-     */
-    restoreGroupFromTrash: organizationProcedure({ skillPackageBuilder: ["delete"] })
-        .input(z.object({ skillGroupId: SkillGroupId.schema }))
-        .output(z.object({ updated: SkillGroup.schema }))
-        .mutation(async ({ ctx, input: { skillGroupId } }) => {
-            return { updated: await SkillPackages.restoreGroupFromTrash(ctx, skillGroupId) };
+            return { updated: await SkillPackages.restoreGroup(ctx, skillGroupId) };
         }),
 
     /**
@@ -855,47 +881,21 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         .input(z.object({ skillPackageId: SkillPackageId.schema }))
         .output(z.object({ updated: SkillPackage.schema }))
         .mutation(async ({ ctx, input: { skillPackageId } }) => {
-            return { updated: await SkillPackages.restorePackageFromArchive(ctx, skillPackageId) };
+            return { updated: await SkillPackages.restorePackage(ctx, skillPackageId) };
         }),
 
     /**
-     * Restores a deleted skill package in the organization back to Active. Idempotent —
-     * restoring an already-active package returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the package does not exist.
-     * @throws TRPCError(BAD_REQUEST) if the package is not Deleted.
-     */
-    restorePackageFromTrash: organizationProcedure({ skillPackageBuilder: ["delete"] })
-        .input(z.object({ skillPackageId: SkillPackageId.schema }))
-        .output(z.object({ updated: SkillPackage.schema }))
-        .mutation(async ({ ctx, input: { skillPackageId } }) => {
-            return { updated: await SkillPackages.restorePackageFromTrash(ctx, skillPackageId) };
-        }),
-
-    /**
-     * Restore the specified skill, changing its status from "Archived" or "Deleted" back to "Active". Only skills with status "Archived" or "Deleted" can be restored.
+     * Restore the specified skill, changing its status from "Archived" back to "Active". Only skills with status "Archived" can be restored.
      * @param skillId The ID of the skill to restore.
      * @return The updated skill with status "Active".
      * @throws TRPCError(NOT_FOUND) if the skill does not exist or does not belong to the organization.
-     * @throws TRPCError(BAD_REQUEST) if the skill is not in "Archived" or "Deleted" status.
+     * @throws TRPCError(BAD_REQUEST) if the skill is not in "Archived" status.
      */
     restoreSkill: organizationProcedure({ skillPackageBuilder: ["update"] })
         .input(z.object({ skillId: SkillId.schema }))
         .output(z.object({ updated: Skill.schema }))
         .mutation(async ({ ctx, input: { skillId } }) => {
-            return { updated: await SkillPackages.restoreSkillFromArchive(ctx, skillId) };
-        }),
-
-    /**
-     * Restores a deleted skill in the organization back to Active. Idempotent — restoring an
-     * already-active skill returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the skill does not exist.
-     * @throws TRPCError(BAD_REQUEST) if the skill is not Deleted.
-     */
-    restoreSkillFromTrash: organizationProcedure({ skillPackageBuilder: ["delete"] })
-        .input(z.object({ skillId: SkillId.schema }))
-        .output(z.object({ updated: Skill.schema }))
-        .mutation(async ({ ctx, input: { skillId } }) => {
-            return { updated: await SkillPackages.restoreSkillFromTrash(ctx, skillId) };
+            return { updated: await SkillPackages.restoreSkill(ctx, skillId) };
         }),
 
     /**

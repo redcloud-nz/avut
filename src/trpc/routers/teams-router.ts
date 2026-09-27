@@ -313,7 +313,7 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Soft-deletes a team from the organization (reversible via `restoreTeamFromTrash`).
+     * Soft-deletes a team from the organization (reversible via `recoverTeam`).
      * `TeamMembership` rows are deliberately left untouched — nothing cascades on a soft delete.
      */
     deleteTeam: organizationProcedure({ team: ["delete"] })
@@ -328,7 +328,7 @@ export const teamsRouter = createTrpcRouter({
 
     /**
      * Soft-deletes a team membership, removing a person from a team (reversible via
-     * `restoreTeamMembershipFromTrash`). Idempotent — deleting an already-deleted membership
+     * `recoverTeamMembership`). Idempotent — deleting an already-deleted membership
      * returns it unchanged.
      * @param ctx The authenticated context.
      * @param personId The ID of the person to remove from the team.
@@ -597,6 +597,32 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * Recovers a deleted team in the organization back to Active. Idempotent — recovering an
+     * already-active team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the team is not Deleted.
+     */
+    recoverTeam: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            return { updated: await Teams.recover(ctx, teamId) };
+        }),
+
+    /**
+     * Recovers a deleted team membership back to Active. Idempotent — recovering an
+     * already-active membership returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the membership does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the membership is not Deleted.
+     */
+    recoverTeamMembership: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ personId: PersonId.schema, teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamMembershipData.schema }))
+        .mutation(async ({ ctx, input: { personId, teamId } }) => {
+            return { updated: await Teams.recoverMembership(ctx, teamId, personId) };
+        }),
+
+    /**
      * Restores an archived team in the organization back to Active. Idempotent — restoring an
      * already-active team returns it unchanged.
      * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
@@ -606,33 +632,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.restoreFromArchive(ctx, teamId) };
-        }),
-
-    /**
-     * Restores a deleted team in the organization back to Active. Idempotent — restoring an
-     * already-active team returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
-     * @throws TRPCError(BAD_REQUEST) if the team is not Deleted.
-     */
-    restoreTeamFromTrash: organizationProcedure({ team: ["delete"] })
-        .input(z.object({ teamId: TeamId.schema }))
-        .output(z.object({ updated: TeamData.schema }))
-        .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.restoreFromTrash(ctx, teamId) };
-        }),
-
-    /**
-     * Restores a deleted team membership back to Active. Idempotent — restoring an
-     * already-active membership returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the membership does not exist within the organization.
-     * @throws TRPCError(BAD_REQUEST) if the membership is not Deleted.
-     */
-    restoreTeamMembershipFromTrash: organizationProcedure({ team: ["delete"] })
-        .input(z.object({ personId: PersonId.schema, teamId: TeamId.schema }))
-        .output(z.object({ updated: TeamMembershipData.schema }))
-        .mutation(async ({ ctx, input: { personId, teamId } }) => {
-            return { updated: await Teams.restoreMembershipFromTrash(ctx, teamId, personId) };
+            return { updated: await Teams.restore(ctx, teamId) };
         }),
 
     /**

@@ -20,11 +20,11 @@ import {
     deleteRecord,
     getById,
     getDeleteImpact,
+    recover,
+    recoverMembership,
     requireById,
     requireMembership,
-    restoreFromArchive,
-    restoreFromTrash,
-    restoreMembershipFromTrash,
+    restore,
 } from "./teams";
 
 // The service reaches server-only modules at import time. The functions exercised here use an
@@ -144,7 +144,7 @@ describe("teams", () => {
         });
     });
 
-    describe("archive / restoreFromArchive / restoreFromTrash / deleteRecord", () => {
+    describe("archive / restore / recover / deleteRecord", () => {
         const L = { team: TeamId.create(), member: PersonId.create() };
 
         beforeAll(async () => {
@@ -197,20 +197,25 @@ describe("teams", () => {
             ).toHaveLength(1);
         });
 
-        it("restoreFromTrash rejects an Archived team", async () => {
-            await expect(restoreFromTrash(ctx(), L.team)).rejects.toThrow(
-                /only a Deleted team can be restored from rubbish/,
+        it("recover rejects an Archived team", async () => {
+            await expect(recover(ctx(), L.team)).rejects.toThrow(
+                /only a Deleted team can be recovered from rubbish/,
             );
         });
 
-        it("restoreFromArchive moves an Archived team back to Active", async () => {
-            const restored = await restoreFromArchive(ctx(), L.team);
+        it("restore moves an Archived team back to Active", async () => {
+            const restored = await restore(ctx(), L.team);
             expect(restored.status).toBe("Active");
+
+            const entries = await db.logEntry.findMany({
+                where: { objectType: "Team", objectId: L.team, action: "Restore" },
+            });
+            expect(entries).toHaveLength(1);
         });
 
-        it("restoreFromArchive rejects a Deleted team", async () => {
+        it("restore rejects a Deleted team", async () => {
             await deleteRecord(ctx(), L.team);
-            await expect(restoreFromArchive(ctx(), L.team)).rejects.toThrow(
+            await expect(restore(ctx(), L.team)).rejects.toThrow(
                 /only an Archived team can be restored from archive/,
             );
         });
@@ -220,14 +225,14 @@ describe("teams", () => {
             expect(membership).toMatchObject({ status: "Active" });
         });
 
-        it("restoreFromTrash moves a Deleted team back to Active", async () => {
-            const restored = await restoreFromTrash(ctx(), L.team);
+        it("recover moves a Deleted team back to Active", async () => {
+            const restored = await recover(ctx(), L.team);
             expect(restored.status).toBe("Active");
 
             const entries = await db.logEntry.findMany({
-                where: { objectType: "Team", objectId: L.team, action: "Restore" },
+                where: { objectType: "Team", objectId: L.team, action: "Recover" },
             });
-            expect(entries.length).toBeGreaterThanOrEqual(1);
+            expect(entries).toHaveLength(1);
         });
 
         it("getDeleteImpact counts active memberships", async () => {
@@ -235,7 +240,7 @@ describe("teams", () => {
         });
     });
 
-    describe("deleteMembership / restoreMembershipFromTrash", () => {
+    describe("deleteMembership / recoverMembership", () => {
         const M = { team: TeamId.create(), member: PersonId.create() };
 
         beforeAll(async () => {
@@ -292,20 +297,20 @@ describe("teams", () => {
             ).toHaveLength(1);
         });
 
-        it("restoreMembershipFromTrash moves a Deleted membership back to Active and is idempotent", async () => {
-            const restored = await restoreMembershipFromTrash(ctx(), M.team, M.member);
+        it("recoverMembership moves a Deleted membership back to Active and is idempotent", async () => {
+            const restored = await recoverMembership(ctx(), M.team, M.member);
             expect(restored.status).toBe("Active");
 
             const entries = await db.logEntry.findMany({
-                where: { objectType: "TeamMembership", action: "Restore" },
+                where: { objectType: "TeamMembership", action: "Recover" },
             });
             expect(entries).toHaveLength(1);
 
             // Idempotent — no second log entry.
-            await restoreMembershipFromTrash(ctx(), M.team, M.member);
+            await recoverMembership(ctx(), M.team, M.member);
             expect(
                 await db.logEntry.findMany({
-                    where: { objectType: "TeamMembership", action: "Restore" },
+                    where: { objectType: "TeamMembership", action: "Recover" },
                 }),
             ).toHaveLength(1);
         });

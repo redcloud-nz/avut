@@ -102,6 +102,7 @@ export const ObjectIcons = {
     Link: LinkIcon,
     Move: MoveIcon,
     Publish: BookUpIcon,
+    Recover: ArchiveRestoreIcon,
     Restore: ArchiveRestoreIcon,
     Unlink: Link2OffIcon,
     Unpublish: BookXIcon,

@@ -11,7 +11,7 @@ import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
-import { deleteRecord, getById, requireById, restoreFromTrash } from "./i3-templates";
+import { deleteRecord, getById, recover, requireById } from "./i3-templates";
 
 // The service reaches server-only modules at import time. The functions exercised here use an
 // injected prisma client, so an empty stub is enough to let it import in jsdom.
@@ -92,7 +92,7 @@ describe("i3-templates", () => {
         });
     });
 
-    describe("deleteRecord / restoreFromTrash", () => {
+    describe("deleteRecord / recover", () => {
         const L = { template: I3TemplateId.create() };
 
         beforeAll(async () => {
@@ -106,11 +106,11 @@ describe("i3-templates", () => {
             });
         });
 
-        it("restoreFromTrash rejects an Active template", async () => {
+        it("recover no-ops on an Active template", async () => {
             const active = await requireById(ctx(), L.template);
             expect(active.status).toBe("Active");
 
-            await expect(restoreFromTrash(ctx(), L.template)).resolves.toMatchObject({
+            await expect(recover(ctx(), L.template)).resolves.toMatchObject({
                 status: "Active",
             });
         });
@@ -133,20 +133,20 @@ describe("i3-templates", () => {
             ).toHaveLength(1);
         });
 
-        it("restoreFromTrash moves a Deleted template back to Active and is idempotent", async () => {
-            const restored = await restoreFromTrash(ctx(), L.template);
+        it("recover moves a Deleted template back to Active and is idempotent", async () => {
+            const restored = await recover(ctx(), L.template);
             expect(restored.status).toBe("Active");
 
             const entries = await db.logEntry.findMany({
-                where: { objectType: "I3Template", objectId: L.template, action: "Restore" },
+                where: { objectType: "I3Template", objectId: L.template, action: "Recover" },
             });
             expect(entries).toHaveLength(1);
 
             // Idempotent — no second log entry.
-            await restoreFromTrash(ctx(), L.template);
+            await recover(ctx(), L.template);
             expect(
                 await db.logEntry.findMany({
-                    where: { objectType: "I3Template", objectId: L.template, action: "Restore" },
+                    where: { objectType: "I3Template", objectId: L.template, action: "Recover" },
                 }),
             ).toHaveLength(1);
         });

@@ -25,6 +25,8 @@ export const ActionHotkey = {
     delete: "Alt+Backspace",
     archive: "Alt+A",
     restore: "Alt+R",
+    // O for recOver — Alt+R is already `restore`.
+    recover: "Alt+O",
     publish: "Alt+P",
     unpublish: "Alt+U",
     move: "Alt+M",
