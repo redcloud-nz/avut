@@ -29,7 +29,7 @@ export const OrganizationInvitationData = {
         personId: PersonId.schema.nullable(),
         email: z.email(),
         roles: z.array(OrganizationRole.schema),
-        status: z.string(),
+        status: z.enum(["pending", "accepted", "rejected", "canceled"]),
         inviterId: UserId.schema,
         createdAt: z.iso.datetime(),
         expiresAt: z.iso.datetime(),

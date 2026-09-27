@@ -7,20 +7,88 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { InvitationId, InvitationLandingData } from "@/lib/schemas/organization-invitation";
+import {
+    InvitationId,
+    InvitationLandingData,
+    OrganizationInvitationData,
+} from "@/lib/schemas/organization-invitation";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PasswordSchema } from "@/lib/schemas/password";
+import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { auth } from "@/server/auth";
 import { formatActorLabel, recordLogEntry } from "@/server/log-entry";
 import { withoutVerificationOtpEmail } from "@/server/verification-otp-suppression";
 
-import { createTrpcRouter, publicProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure, publicProcedure } from "../init";
 
 /**
- * Router for the public side of organization invitations — the landing page an invitation email
- * links to. Answering an invitation as a signed-in user lives in `userRouter`.
+ * Router for organization invitations — both the public landing page an invitation email links to
+ * (`getLanding`, `signUp`; answering an invitation as a signed-in user lives in `userRouter`), and
+ * the org-admin invitation management procedures (`createInvitation`, `cancelInvitation`,
+ * `listInvitations`).
  */
 export const invitationsRouter = createTrpcRouter({
+    /**
+     * Cancels a pending invitation. Better Auth flips `status` to `canceled` — the row is never
+     * deleted, so it stays visible in `listInvitations`'s history.
+     */
+    cancelInvitation: organizationProcedure({ invitation: ["cancel"] })
+        .input(z.object({ invitationId: InvitationId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            await auth.api.cancelInvitation({
+                headers: await ctx.getHeaders(),
+                body: { invitationId: input.invitationId },
+            });
+
+            await ctx.logEvent({
+                action: "Revoke",
+                objectType: "OrganizationInvitation",
+                objectId: input.invitationId,
+                changes: [],
+                description: `Revoked invitation ${input.invitationId}`,
+            });
+        }),
+
+    /**
+     * Sends (or, with `resend`, replaces) an invitation to join the organization. `personId`
+     * carries through to the membership `afterAcceptInvitation` creates, linking the new account
+     * back to an existing personnel record.
+     */
+    createInvitation: organizationProcedure({ invitation: ["create"] })
+        .input(
+            z.object({
+                email: z.email(),
+                roles: OrganizationRole.assignmentSchema,
+                personId: PersonId.schema.optional(),
+                resend: z.boolean().optional(),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const email = input.email.toLowerCase();
+
+            const invitation = await auth.api.createInvitation({
+                headers: await ctx.getHeaders(),
+                body: {
+                    email,
+                    role: input.roles,
+                    organizationId: ctx.organizationId,
+                    resend: input.resend ?? false,
+                    ...(input.personId ? { personId: input.personId } : {}),
+                },
+            });
+
+            await ctx.logEvent({
+                action: "Create",
+                objectType: "OrganizationInvitation",
+                objectId: invitation.id,
+                changes: [],
+                description: `Invited ${email} to join as ${OrganizationRole.serialize(input.roles)}`,
+            });
+
+            return { invitation };
+        }),
+
     /**
      * Describes an invitation for its landing page, from the point of view of whoever is viewing
      * it. Unauthenticated: the invitation id is an unguessable secret delivered by email, and
@@ -80,6 +148,21 @@ export const invitationsRouter = createTrpcRouter({
                 hasAccount: account != null,
                 viewer,
             };
+        }),
+
+    /**
+     * Lists every invitation ever sent by the organization, any status — the admin invitations
+     * table shows the full history (pending/accepted/rejected/canceled), not just what's pending.
+     */
+    listInvitations: organizationProcedure({ invitation: ["view"] })
+        .output(z.array(OrganizationInvitationData.schema))
+        .query(async ({ ctx }) => {
+            const invitations = await ctx.prisma.organizationInvitation.findMany({
+                where: { organizationId: ctx.organizationId },
+                orderBy: { createdAt: "desc" },
+            });
+
+            return invitations.map(OrganizationInvitationData.fromRecord);
         }),
 
     /**

@@ -8,9 +8,9 @@ import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { invitationsEffects } from "@/client/invitations-effects";
 import { usersEffects } from "@/client/users-effects";
 import {
     InvitationRoleFields,
@@ -34,7 +34,6 @@ import { FieldDescription, FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatRelativeDateTime } from "@/lib/datetime";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonData } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
@@ -86,7 +85,6 @@ export function AdminModule_InvitePerson_Dialog({
 
 function InvitePerson_Body({ person, close }: { person: PersonData; close: () => void }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const inviteStateQueryOptions = trpc.personnel.getInviteState.queryOptions({
         organizationId: organization.id,
@@ -100,45 +98,24 @@ function InvitePerson_Body({ person, close }: { person: PersonData; close: () =>
         defaultValues: { primaryRole: "member", secondaryRoles: [] } as const,
     });
 
-    function invalidateInviteState() {
-        void queryClient.invalidateQueries({ queryKey: inviteStateQueryOptions.queryKey });
-    }
+    const inviteMutation = useMutation(
+        trpc.invitations.createInvitation.mutationOptions({
+            meta: { effects: invitationsEffects.createInvitation },
+            onError(error) {
+                console.error("Failed to send invitation:", error);
+                toast.error(`Failed to send invitation: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        Invitation sent to <ObjectName>{person.email}</ObjectName>.
+                    </>,
+                );
 
-    const inviteMutation = useMutation({
-        mutationFn: async (roles: OrganizationRole[]) =>
-            await authClient.organization.inviteMember(
-                {
-                    // Lowercased to match how better-auth stores `User.email` at sign-up. An
-                    // invitation kept at the person record's own casing would never be found by
-                    // the dashboard's invitation lookup, which looks invitations up by the
-                    // session user's (lowercase) email.
-                    email: person.email.toLowerCase(),
-                    role: roles,
-                    organizationId: organization.id,
-                    personId: person.id,
-                    resend: false,
-                },
-                { throw: true },
-            ),
-        onError(error) {
-            console.error("Failed to send invitation:", error);
-            toast.error(`Failed to send invitation: ${error.message}`);
-        },
-        onSuccess() {
-            toast.success(
-                <>
-                    Invitation sent to <ObjectName>{person.email}</ObjectName>.
-                </>,
-            );
-
-            void queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-invitations", organization.id],
-            });
-            invalidateInviteState();
-
-            close();
-        },
-    });
+                close();
+            },
+        }),
+    );
 
     const linkMutation = useMutation(
         trpc.users.linkPerson.mutationOptions({
@@ -211,7 +188,19 @@ function InvitePerson_Body({ person, close }: { person: PersonData; close: () =>
                         <form
                             id="invite-person-form"
                             onSubmit={form.handleSubmit(
-                                (data) => inviteMutation.mutate(invitationRoles(data)),
+                                (data) =>
+                                    inviteMutation.mutate({
+                                        organizationId: organization.id,
+                                        // Lowercased to match how better-auth stores `User.email`
+                                        // at sign-up. An invitation kept at the person record's
+                                        // own casing would never be found by the dashboard's
+                                        // invitation lookup, which looks invitations up by the
+                                        // session user's (lowercase) email.
+                                        email: person.email.toLowerCase(),
+                                        roles: invitationRoles(data),
+                                        personId: person.id,
+                                        resend: false,
+                                    }),
                                 (errors) => console.error("Form validation errors:", errors),
                             )}
                         >

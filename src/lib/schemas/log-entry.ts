@@ -83,6 +83,7 @@ const logActionValues = [
     "Move", // DORMANT — moveSkill logs "Update"
     "Publish",
     "Restore",
+    "Revoke",
     "Subscribe",
     "Unban", // DORMANT — reverted databaseHooks wire
     "Unpublish",
