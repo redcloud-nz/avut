@@ -79,12 +79,12 @@ function PurgeDialog({
     open,
     onOpenChange,
 }: {
-    row: TrashRow | undefined;
+    row: TrashRow;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
     const organization = useOrganization();
-    const label = row ? TrashableEntities[row.type].label : "";
+    const label = TrashableEntities[row.type].label;
 
     const mutation = useMutation(
         trpc.trash.purgeRecord.mutationOptions({
@@ -95,7 +95,7 @@ function PurgeDialog({
             onSuccess() {
                 toast.success(
                     <>
-                        {label} <ObjectName>{row?.name}</ObjectName> permanently deleted.
+                        {label} <ObjectName>{row.name}</ObjectName> permanently deleted.
                     </>,
                 );
                 onOpenChange(false);
@@ -104,14 +104,13 @@ function PurgeDialog({
     );
 
     return (
-        <AlertDialog open={open && row !== undefined} onOpenChange={onOpenChange}>
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Forever</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Permanently delete {label.toLowerCase()}{" "}
-                        <ObjectName>{row?.name}</ObjectName> and everything that belongs to it. This
-                        can&rsquo;t be undone.
+                        Permanently delete {label.toLowerCase()} <ObjectName>{row.name}</ObjectName>{" "}
+                        and everything that belongs to it. This can&rsquo;t be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -121,7 +120,6 @@ function PurgeDialog({
                         status={mutation.status}
                         text={{ idle: "Delete forever", pending: "Deleting", success: "Deleted" }}
                         onClick={() =>
-                            row &&
                             mutation.mutate({
                                 organizationId: organization.id,
                                 type: row.type,
@@ -263,13 +261,16 @@ export function AdminModule_Trash_List() {
                 <Kaga.Table table={table} />
                 <Kaga.TablePagination table={table} />
             </div>
-            <PurgeDialog
-                row={purgeRow}
-                open={action === "purge"}
-                onOpenChange={(open) => {
-                    if (!open) setPurgeTarget(null);
-                }}
-            />
+            {purgeRow && (
+                <PurgeDialog
+                    key={purgeRow.id}
+                    row={purgeRow}
+                    open={action === "purge"}
+                    onOpenChange={(open) => {
+                        if (!open) setPurgeTarget(null);
+                    }}
+                />
+            )}
         </Saratoga.Root>
     );
 }
