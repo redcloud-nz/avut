@@ -24,7 +24,7 @@ provider will copy whatever that layer does.
 | ----- | --- | --------------------------------------------------------------------------------------------------- |
 | 1     | 1   | Revocation, page permission checks, caching, ownership checks, explicit token stripping, tag length |
 | 2     | 2   | Cached D4H API functions keyed by a credential reference instead of the credential object           |
-| 3     | —   | React taint. **Decision needed** before any work (§3)                                               |
+| 3     | —   | React taint. **Skipped for now** (§3)                                                               |
 
 Phase 1 can land alone. Phase 2 is independent of Phase 1 in code, but it's larger, so
 it's a separate PR.
@@ -125,8 +125,18 @@ then load the org credential:
   `requireOrganization(slug)` so membership is at least checked. Also check whether the
   rest of `d4h-views/**` has the same gap. They load data through `d4h-api-router`,
   which is already an `organizationProcedure`, so they're probably fine; confirm.
-- **`[token_id]/*` pages marked `DEVELOPMENT ONLY`:** also call `notFound()` when
-  `VERCEL_ENV === "production"`, or remove them. **Decision needed** (open question 1).
+- **`[token_id]/*` pages marked `DEVELOPMENT ONLY`** (whoami, members,
+  organisation, and the four equipment pages): as the first line of each page, call
+  `if (!env.isDevelopment()) notFound();`, using `env` from `@/lib/env`.
+  - Gating on `NODE_ENV === "development"` hides them on preview deployments as well
+    as production. Vercel builds every deployment with `NODE_ENV=production`, so they
+    only exist under `next dev`.
+  - Keep the permission check too, because members of the shared dev database
+    shouldn't be able to use the organization's credential locally either.
+  - Nothing links to these subpages except their own breadcrumbs, so no navigation
+    needs hiding.
+  - The token list, detail and create pages aren't development-only and stay
+    available everywhere, with permission checks.
 
 **Lower risk, still fix:** `i3/members` and `i3/equipment-kinds` use the _session
 user's own_ personal token via `getConfiguredD4HAccessToken`, so they don't hand out
@@ -174,7 +184,8 @@ export async function getPersonalProviderCredential(provider, organizationId, us
   - **This changes behaviour:** admins lose that ability.
   - Personal tokens are still removed by the owner themselves, by account purge, and
     by organization deletion (cascade).
-  - **Confirm** nobody relies on admin cleanup (open question 2).
+  - Agreed 2026-09-29. If admins later need to remove a departing member's token,
+    that belongs in the remove-member flow (see Deferred), not here.
 - **`getOrganizationProviderCredential`** (`src/server/provider-credential.ts`):
   - Return `null` when `record.groupId !== null`. Group-owned credentials (#198) must
     never come back from an organization lookup.
@@ -233,7 +244,7 @@ legacy path now.
 ### Phase 1 checklist
 
 - [ ] 1.1 revalidate on delete/refresh; `organizationConfig` delete checked or fixed; tests
-- [ ] 1.2 page checks (permission object per roles-reorg status); dev-page decision applied; browser check as `member`
+- [ ] 1.2 page checks (permission object per roles-reorg status); dev-only pages 404 outside `next dev`; browser check as `member`
 - [ ] 1.3 personal credential cache holds the record
 - [ ] 1.4 `userId: null` on refresh/delete; `groupId` and organization checks; tests
 - [ ] 1.5 explicit `token` removal; no-`token` output tests
@@ -326,7 +337,10 @@ Each converts with `toD4HCredentialRef(token)` at the point it gets the token:
 
 ---
 
-## Phase 3: React taint (decision needed)
+## Phase 3: React taint (skipped)
+
+**Decided 2026-09-29: not doing this for now.** The reasoning is kept below for when it
+comes up again.
 
 `experimental_taintUniqueValue` on the decrypted token in
 `toServerOnlyProviderCredential` would make React refuse to serialize it into a Client
@@ -364,11 +378,10 @@ plus the config flag, after Phase 2 has landed.
 - **`fromRecord` for `ProviderCredential`:** once a second provider exists, check that
   the generic client schema is actually used, and consider removing it until then.
 
-## Open questions
+## Decisions
 
-1. **`DEVELOPMENT ONLY` token pages (§1.2):** permission-check and keep, hide in
-   production, or delete?
-2. **Admins deleting members' personal tokens (§1.4):** is losing that intended? If
-   admins need to remove a departing member's token, that belongs in the remove-member
-   flow (see Deferred), not in `deleteOrganizationAccessToken`.
-3. **Phase 3:** agree to skip for now?
+| Question                                        | Decision (2026-09-29)                                                                       |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `DEVELOPMENT ONLY` token pages (§1.2)           | Keep them, but `notFound()` unless `NODE_ENV === "development"`, plus the permission check. |
+| Admins deleting members' personal tokens (§1.4) | Removed. `deleteOrganizationAccessToken` only deletes organization credentials.             |
+| React taint (Phase 3)                           | Skipped for now.                                                                            |
