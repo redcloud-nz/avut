@@ -144,6 +144,8 @@ anyone else's credential. They don't check membership either, though (`getOrgani
 
 - `requireSession`). A user removed from an organization whose personal token
   lingers (see Deferred) can still load them. Move both to `requireOrganization(slug)`.
+- `d4h-today/page.tsx` (not in the table above) has the same gap: it reads the session user's
+  own personal token to decide what to show. It also moved to `requireOrganization(slug)`.
 
 **Verify** in the browser with `avut-test-in-browser`: impersonate a plain `member`,
 load `…/admin/d4h-access-tokens/<sync token id>/whoami`, and expect the forbidden page.
@@ -244,12 +246,12 @@ legacy path now.
 ### Phase 1 checklist
 
 - [x] 1.1 revalidate on delete/refresh; `organizationConfig` delete checked or fixed; tests
-- [ ] 1.2 page checks (permission object per roles-reorg status); dev-only pages 404 outside `next dev`; browser check as `member`
+- [x] 1.2 page checks (permission object per roles-reorg status); dev-only pages 404 outside `next dev`; browser check as `member`
 - [x] 1.3 personal credential cache holds the record
 - [x] 1.4 `userId: null` on refresh/delete; `groupId` and organization checks; tests
 - [x] 1.5 explicit `token` removal; no-`token` output tests
 - [x] 1.6 tag length and minimum payload; tests
-- [ ] `npm run check`
+- [x] `npm run check`
 
 ---
 
