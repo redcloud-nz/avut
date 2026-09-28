@@ -1,6 +1,6 @@
 ---
 name: avut-explore
-description: Explore a half-formed idea by building it live in the main checkout — a short conversation, then small visible changes with the user's feedback after each, then keep (hand off to /avut-ship or /avut-develop-feature), park, or drop. Trigger only when the user types /avut-explore.
+description: Explore a half-formed idea by building it live in the main checkout (or a named worktree) — a short conversation, then small visible changes with the user's feedback after each, then keep (finish in place, plan the rest in a worktree, or rebuild), park, or drop. Trigger only when the user types /avut-explore.
 effort: high
 manual: true
 ---
@@ -9,7 +9,7 @@ manual: true
 
 For an idea the user wants to try now, before it's an issue or a plan. `$ARGUMENTS` is the rough idea. The aim is to find out what the user actually wants by showing them, fast, in the real app. It ends when the user decides to keep the idea, park it, or drop it.
 
-It runs in the **main checkout**, not a worktree. The user's dev server there hot-reloads each change, and the user can read the code as it stands in their editor.
+It runs in the **main checkout** by default. The dev server there hot-reloads each change, and the user can read the code as it stands in their editor. With `in:<name>` in the arguments (or "in worktree <name>"), it runs in that worktree instead, as AGENTS.md → Worktrees describes; "the checkout" below then means the worktree.
 
 Between rounds, keep it cheap: no commits, no review subagent, no `npm run check`. The ceremony comes at the end, and only on Keep.
 
@@ -17,8 +17,9 @@ Between rounds, keep it cheap: no commits, no review subagent, no `npm run check
 
 1. `git status --short` and `git branch --show-current`. Remember both; the Park and Drop exits restore them.
    - Uncommitted changes, or a feature branch with unpushed commits: ask whether to **stash** them, **build on top** of them (explore from the current branch, changes and all), or **cancel**.
+   - The stash stack is shared by every checkout and session, so never a bare `git stash`/`pop`: `git stash push -u -m "explore-<slug>"`, note its SHA from `git stash list --format='%H %gs'`, and later restore with `git stash apply <sha>`, then drop that entry (found again by its message).
 2. Create `explore/<slug>` from `origin/integration` (`git fetch origin integration` first), or from the current branch when the idea builds on it. Say which.
-3. Check for the dev server: `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000`. If nothing answers, ask the user to start it. Don't start one yourself.
+3. Find the dev server (AGENTS.md → Dev servers). In the main checkout, use the user's 3000 if it answers (`curl -s -o /dev/null -w '%{http_code}' http://localhost:3000`). Otherwise, start `PORT=3100 npm run dev` in the background yourself, and stop it when the exploration ends. In a worktree, `npm run dev` there serves on its `.dev-port`.
 
 ## Step 2 — A short conversation
 
@@ -54,7 +55,7 @@ Don't commit variants. When one wins, fold it back: an in-situ winner overwrites
 
 ### Guardrails
 
-- Editing `prisma/schema.prisma` and running `npx prisma generate` is fine. **Needing a migration ends the exploration**: a migration needs `db:branch`, which needs the dev server stopped. Say so and go to Keep.
+- Editing `prisma/schema.prisma` and running `npx prisma generate` is fine. **Needing a migration ends the exploration**: a migration needs `db:branch`, which needs every dev server on `avut` stopped. Say so and go to Keep, which will choose Plan the rest.
 - No seeding or database writes to get data to look at. Fake data goes inline in the component or scratch page, marked as such.
 - Nothing that sends email.
 
@@ -62,24 +63,38 @@ Don't commit variants. When one wins, fold it back: an in-situ winner overwrites
 
 The user says when. Or, once the idea has stopped changing, ask once whether to keep, park or drop it. Show the Decisions list either way.
 
-### Keep
+### Keep — "I like this, let's build it properly"
 
-1. Fold back or delete any variants and scratch pages.
-2. Commit in sensible units. Squash the exploration into commits that make sense on their own, not one per round.
-3. List what was skipped (tests, `logEvent`, edge cases, the migration) and choose the next step:
-   - **Small, and the skips are few:** do them now, run `npm run check`, then `/avut-ship`.
-   - **Big, or it needs a migration:** `/avut-develop-feature` with the branch and the Decisions list as the starting point. Its plan covers what's left. It usually takes the long path, which will move the work to a worktree.
+The idea is settled, so don't clarify it again. What's left to judge is the **gap** between the exploration and shippable code.
+
+1. **Tidy.** Fold the winning variant back in, delete the losing copies and scratch pages, and `git branch -m explore/<slug> <type>/<slug>`.
+2. **List the gaps.** Read `git diff origin/integration...` against the Decisions list, and group what's missing:
+   - **Data:** inline fake data to replace with real queries, schema changes, a migration.
+   - **Server:** the right permission on each procedure, `ctx.logEvent` inside `$transaction`, the no-D4H-token case, a service-layer home for the logic.
+   - **UI:** loading, empty and error states; `<Protect>` on actions; the mutation-dialog pattern.
+   - **Tests.**
+   - **Wiring:** `modules.ts`, typegen, entity links, pattern docs.
+3. **Checkpoint: pick the route.** Show the gap list, recommend one route, and wait:
+   - **Finish in place** (the usual one): the gaps fit the quick-path criteria in `/avut-develop-feature` Step 3. Work stays here.
+   - **Plan the rest:** the gaps are big by those criteria, or a migration is needed. The work moves to a worktree, so the user can do something else in the main checkout.
+   - **Rebuild:** the exploration wandered, and its code is shaped by turns that were reversed. Start a fresh branch from `origin/integration` with the Decisions list as the spec. Keep the explore branch as a reference until the new one merges.
+4. **Commit the exploration** in one to three commits by layer (not one per round), so the history shows what came from exploring and what came from finishing. Put the Decisions list in the body of the last one.
+5. **Hand off** to `/avut-develop-feature` as an exploration, with the branch, the Decisions list, the gap list and the route (its Step 1 describes each route). **Plan the rest** moves the branch to a worktree, and this session moves with it, keeping the exploration's context. Tell the user the main checkout is free for a new session. **Rebuild** goes to `/avut-develop-feature` as a plain description, with the Decisions list attached.
+
+The Decisions list ends up in the PR body too; `/avut-ship` picks it up from the commit.
+
+If this session started a server on 3100, stop it once the work leaves the main checkout.
 
 ### Park
 
 1. Commit the work as it stands on `explore/<slug>` as `wip(explore): <idea>`, with the Decisions list in the body. Don't push.
 2. Offer to file it with `/avut-idea`, passing the idea, the Decisions list and the branch name, so the issue follows the usual idea format.
-3. Switch back to the branch from Step 1 and `git stash pop` if you stashed.
+3. Switch back to the branch from Step 1, and restore your stash (by its SHA) if you made one. Stop your 3100 server if you started one.
 
 ### Drop
 
 1. Confirm first: this discards the work.
-2. `git restore` and remove any new files (scratch pages are gitignored, so remove those by hand), switch back to the branch from Step 1, `git branch -D explore/<slug>`, and `git stash pop` if you stashed.
+2. `git restore` and remove any new files (scratch pages are gitignored, so remove those by hand), switch back to the branch from Step 1, `git branch -D explore/<slug>`, and restore your stash (by its SHA) if you made one. Stop your 3100 server if you started one.
 
 ## Common mistakes
 
@@ -89,4 +104,7 @@ The user says when. Or, once the idea has stopped changing, ask once whether to 
 - A round with no URL, or a URL without the state to see it in.
 - An in-situ variant with renamed exports, so the swap touches more than one import.
 - Leaving `.explore-*` copies or scratch pages behind after Keep.
-- Starting a dev server, or running a migration against shared `avut`.
+- Starting a server on 3000, or leaving your 3100 server running after the exploration ends (it blocks the user's `npm run dev`).
+- Running a migration against shared `avut`.
+- Re-asking clarifying questions at Keep. Judge the gap, not the idea.
+- A bare `git stash pop`, which can take another session's stash.

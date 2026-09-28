@@ -67,6 +67,10 @@ Title: conventional-commit style, matching the branch's main commit (`feat(scope
 
 Worth a close look: <files where a human's attention pays off most, if any>
 
+## Decisions
+
+- <from an exploration or plan: what was settled, and what was tried and rejected, one line each>
+
 ## Pre-merge review
 
 Fresh-context review (correctness + AVUT conventions) before push.
@@ -86,7 +90,7 @@ Fresh-context review (correctness + AVUT conventions) before push.
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
-Leave out any section with nothing in it.
+Leave out any section with nothing in it. _Decisions_ comes from a `Decisions` list in a commit body (`/avut-explore` writes one) or the plan doc's Decisions.
 
 ## Step 6 — The one confirmation
 

@@ -15,6 +15,9 @@ The checkpoints are deliberate, and there are few of them. Clarify only when the
 
 - **Issue:** `gh issue view <n> --repo redcloud-nz/avut --json number,title,url,body,labels,comments`. Read the body and the comments. Brainstorm issues carry `## Idea`/`## Options considered`/`## Open questions` and often a `## Review` comment. Bug issues carry What happened / Steps to reproduce / Expected. Feature issues carry Proposed solution / Alternatives considered.
 - **Description:** use it as given. If it names an existing issue or looks like one (`gh issue list --repo redcloud-nz/avut --search "<text>"`), mention the match and ask whether to build from that instead.
+- **An exploration,** handed over by `/avut-explore`'s Keep step: its branch, its Decisions list, its gap list and the route chosen there. Skip Steps 2 and 3, since the exploration settled the idea and Keep chose the route:
+  - **Finish in place:** the quick path from step 3, on the exploration's branch in the current checkout.
+  - **Plan the rest:** the long path from L2, with the exploration's branch moved to a worktree (see L2). In L3, the exploration is **Task 0**, already done and ticked with its commits, and the gaps are the remaining tasks. The Decisions list goes into the plan's Decisions. L1 is covered by Keep's checkpoint.
 - **Nothing given:** ask what to build and stop.
 
 ## Step 2 — Is it clear enough?
@@ -54,9 +57,11 @@ Tell the user why you think this needs the long path (which of the Step 3 criter
 
 Derive a kebab-case slug. Run `git worktree list`. If `.claude/worktrees/<slug>` exists, resume it with `EnterWorktree` and `path`. Otherwise call `EnterWorktree` with `name: "<slug>"`, which branches off `origin/integration`. Then run `npm run worktree:setup` in it.
 
-Don't start a dev server. If the plan has visual tasks, ask the user to start one for this worktree on its own port (`npm run dev -- -p 3100`) before the first visual checkpoint.
+**From an exploration,** the branch already exists and is checked out in the main checkout. Commit everything on it, switch the main checkout back to the branch the exploration started from (and restore its stash, if it made one), then `git worktree add .claude/worktrees/<slug> <branch>`, `EnterWorktree` with `path`, and `npm run worktree:setup`. The main checkout is free again, and the user can start something else there in a new session.
 
-If a migration is involved, `npm run db:branch <slug>` comes before the first `migrate dev`, as in the Database section of `AGENTS.md`. The user has to stop the dev server and Prisma Studio for it. The `migrate dev` itself still needs permission. Do this when the migration task comes up, not upfront.
+If the plan has visual tasks, start the worktree's dev server in the background before the first visual checkpoint: `npm run dev` serves on the worktree's `.dev-port` (AGENTS.md → Dev servers).
+
+If a migration is involved, `npm run db:branch <slug>` comes before the first `migrate dev`, as in the Database section of `AGENTS.md`. It needs every connection to `avut` closed: stop your own server, and ask the user to stop theirs and Prisma Studio. The `migrate dev` itself still needs permission. Do this when the migration task comes up, not upfront.
 
 ### L3 — Write the plan
 
@@ -109,7 +114,7 @@ The user wants to see UI work and steer it before it's final.
 3. **Iterate on feedback.** Apply changes in this session, even on the long path. Small visual tweaks aren't worth an implementer round-trip. **Don't commit after each round.** Keep the changes uncommitted until the user says it looks right, then commit once.
 4. **Resume.** Continue with the next task, or finish.
 
-If there's no dev server running for the checkout, ask the user to start one. Don't start it yourself.
+If there's no dev server running for the checkout, start one as AGENTS.md → Dev servers says: `npm run dev` in a worktree, `PORT=3100 npm run dev` in the main checkout when the user's 3000 isn't up.
 
 ## Common mistakes
 
