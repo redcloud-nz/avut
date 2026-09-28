@@ -38,17 +38,9 @@ If the branch adds a Prisma migration, confirm the checkout is on a branch datab
 
 ## Step 3 — Fresh-context review
 
-Spawn **one** `general-purpose` subagent (`run_in_background: false` — the next step depends on it). It must not inherit the authoring session's reasoning; give it only the base and what the change is meant to do:
+Run the `avut-code-reviewer` subagent (`run_in_background: false`, because the next step depends on it). Its brief, two-pass checklist and output format live in `.claude/agents/avut-code-reviewer.md`. Give it only the diff range and the intent, not the authoring session's reasoning:
 
-> Review the changes on the current branch against `origin/<base>` in the AVUT repo (`git diff origin/<base>...HEAD`, and `git log origin/<base>..HEAD` for intent). The change is meant to: <one or two sentences, plus the issue number if there is one>.
->
-> Do two passes:
-> 1. Correctness — real bugs, broken edge cases, missing permission checks, race conditions, missing error handling; plus reuse/simplification cleanups only where clearly worth it. Read the full current version of any non-trivially-changed file, not just the hunks, and read files in parallel batches.
-> 2. House conventions — invoke the `avut-conventions-review` skill and apply its checklist to the diff.
->
-> Scope findings to what the diff touches. Don't run tsc/eslint/tests — that's already done. Don't edit files.
->
-> Return a list of findings, each with: severity (`blocking` / `non-blocking` / `nit`), `file:line`, what's wrong, the concrete fix. Blocking means a bug, a security or permission gap, data loss, or a convention violation with real consequences (missing `ctx.logEvent`, `Promise.all` instead of `$transaction`, unhandled no-D4H-token case). Then list notable things done well. Return an empty findings list if nothing survives scrutiny — don't invent findings.
+> Diff range: `origin/<base>...HEAD`. The change is meant to: <one or two sentences, plus the issue number if there is one>.
 
 ## Step 4 — Act on the findings
 
@@ -58,7 +50,7 @@ Spawn **one** `general-purpose` subagent (`run_in_background: false` — the nex
 
 Re-run `npm run check` after fixing and commit (one `fix: address pre-merge review findings` commit is fine; don't make one per finding).
 
-If a blocking fix was substantial (new logic, not a one-liner), send the **fix commit's diff only** to a second subagent with the same brief. Don't re-review the whole branch. A single round is the norm.
+If a blocking fix was substantial (new logic, not a one-liner), send the **fix commit's diff only** to `avut-code-reviewer` again. Don't re-review the whole branch. A single round is the norm.
 
 ## Step 5 — Draft the PR
 
