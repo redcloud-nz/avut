@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import type { ModuleFlagState } from "@/lib/module-flags";
 import { Modules, type ModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -38,17 +39,20 @@ const RECORD_COUNT_LABELS: Record<string, string> = {
 
 export function SystemAdmin_Organization_Content({
     organizationId,
+    moduleFlags,
 }: {
     organizationId: OrganizationId;
+    moduleFlags: ModuleFlagState;
 }) {
     const { data: organization } = useSuspenseQuery(
         trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
     );
 
     // Which specialty roles are offered follows the organization's enabled modules, as it does
-    // for the organization's own admins.
-    const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
-        organization.enabledModules.includes(id),
+    // for the organization's own admins — and, like `OrganizationClient.isModuleEnabled`, also
+    // requires the module's Vercel flag to be on for this deployment.
+    const moduleGatedRoles = OrganizationRole.moduleGatedOptions(
+        (id) => moduleFlags[id] !== false && organization.enabledModules.includes(id),
     );
 
     return (

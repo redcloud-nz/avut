@@ -87,8 +87,9 @@ export function AdminModule_UpdateUser_Dialog({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [dialogOpen]);
 
-    const moduleGatedRoles = OrganizationRole.moduleGatedOptions(
-        (id) => organization.settings.modules[id].enabled,
+    // `isModuleEnabled` accounts for the module's Vercel flag as well as the org's own setting.
+    const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
+        organization.isModuleEnabled(id),
     );
 
     return (

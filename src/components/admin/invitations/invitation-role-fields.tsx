@@ -44,15 +44,17 @@ export function invitationRoles(values: InvitationRolesFormValues): Organization
  * without generic plumbing — the caller wraps its `useForm` in a `<FormProvider>`.
  *
  * The specialty roles are gated on the module that grants them being enabled, so an org that
- * does not run I3, Skill Track or the Skill Package Builder never offers their roles.
+ * does not run I3, Skill Track or the Skill Package Builder never offers their roles — via
+ * `organization.isModuleEnabled`, which also accounts for the module's Vercel flag (a module an
+ * org has toggled on in its settings can still be unavailable for the deployment).
  */
 export function InvitationRoleFields() {
     const organization = useOrganization();
 
     return (
         <RoleFields
-            moduleGatedRoles={OrganizationRole.moduleGatedOptions(
-                (id) => organization.settings.modules[id].enabled,
+            moduleGatedRoles={OrganizationRole.moduleGatedOptions((id) =>
+                organization.isModuleEnabled(id),
             )}
         />
     );
