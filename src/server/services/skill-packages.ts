@@ -886,6 +886,9 @@ async function setPackageActive(
  *
  * Always soft — nothing physically removes the row, and the package's groups/skills are left
  * untouched (no cascade on soft-delete), matching how archive already behaves.
+ *
+ * A published package is also unpublished, so other organizations lose it from the catalogue
+ * now rather than when the Rubbish bin purges it. Recovering it leaves it unpublished.
  * @throws NotFoundError if the package does not exist in the organization.
  */
 export async function deletePackage(
@@ -901,8 +904,17 @@ export async function deletePackage(
     await ctx.prisma.$transaction([
         ctx.prisma.skillPackage.update({
             where: { id: skillPackageId },
-            data: { status: "Deleted" },
+            data: { status: "Deleted", published: false },
         }),
+        ...(existing.published
+            ? [
+                  ctx.logEvent({
+                      action: "Unpublish",
+                      objectType: "SkillPackage",
+                      objectId: skillPackageId,
+                  }),
+              ]
+            : []),
         ctx.logEvent({ action: "Delete", objectType: "SkillPackage", objectId: skillPackageId }),
     ]);
 

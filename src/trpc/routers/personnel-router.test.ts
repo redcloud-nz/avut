@@ -461,6 +461,7 @@ describe("personnel email normalisation", () => {
         adminUser: UserId.create(),
         dana: PersonId.create(),
         evan: PersonId.create(),
+        gwen: PersonId.create(),
     };
 
     const db = createMockPrisma();
@@ -493,6 +494,18 @@ describe("personnel email normalisation", () => {
                 },
             });
         }
+        // In the Rubbish bin — still holds her email (#183: no partial unique index).
+        await db.person.create({
+            data: {
+                id: T.gwen,
+                organizationId: T.org,
+                name: "Gwen Hale",
+                email: "gwen.hale@example.com",
+                status: "Deleted",
+                tags: [],
+                properties: {},
+            },
+        });
     });
 
     function caller() {
@@ -553,6 +566,36 @@ describe("personnel email normalisation", () => {
                 },
             }),
         ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("tells the user to recover or purge when the email belongs to a person in the Rubbish bin", async () => {
+        const inBin = { code: "CONFLICT", message: expect.stringMatching(/Rubbish bin/) };
+
+        await expect(
+            caller().createPerson({
+                organizationId: T.org,
+                personId: PersonId.create(),
+                create: {
+                    name: "Gwen H",
+                    email: "Gwen.Hale@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject(inBin);
+
+        await expect(
+            caller().updatePerson({
+                organizationId: T.org,
+                personId: T.evan,
+                update: {
+                    name: "Evan Stone",
+                    email: "gwen.hale@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject(inBin);
     });
 
     it("finds a person by a mixed-case needle", async () => {

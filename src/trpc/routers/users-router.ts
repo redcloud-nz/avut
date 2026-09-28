@@ -82,7 +82,7 @@ export const usersRouter = createTrpcRouter({
                 include: { organizationUser: true },
             });
 
-            if (!person)
+            if (!person || person.status === "Deleted")
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.personNotFound(input.personId),

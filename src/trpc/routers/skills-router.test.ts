@@ -481,3 +481,98 @@ describe("skillsRouter.getPackage", () => {
         ).rejects.toThrow(/not found/i);
     });
 });
+
+describe("skillsRouter catalogue hides a Deleted package", () => {
+    const T = {
+        org: OrganizationId.create(),
+        publisherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        livePkg: SkillPackageId.create(),
+        // Deleted before deletePackage unpublished on delete, so still `published: true`.
+        deletedPkg: SkillPackageId.create(),
+        unsubscribedDeletedPkg: SkillPackageId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, slug] of [
+            [T.org, "acme"],
+            [T.publisherOrg, "publisher"],
+        ] as const) {
+            await db.organization.create({
+                data: { id, name: slug, slug, createdAt: new Date() },
+            });
+        }
+        for (const [id, status] of [
+            [T.livePkg, "Active"],
+            [T.deletedPkg, "Deleted"],
+            [T.unsubscribedDeletedPkg, "Deleted"],
+        ] as const) {
+            await db.skillPackage.create({
+                data: {
+                    id,
+                    organizationId: T.publisherOrg,
+                    name: id,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    published: true,
+                    status,
+                },
+            });
+        }
+        for (const skillPackageId of [T.livePkg, T.deletedPkg]) {
+            await db.skillPackageSubscription.create({
+                data: {
+                    id: SkillPackageSubscriptionId.create(),
+                    organizationId: T.org,
+                    skillPackageId,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: {
+                    skillPackageSubscription: ["view", "subscribe"],
+                    organization: ["view"],
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("getPackage throws NOT_FOUND", async () => {
+        await expect(
+            makeCaller().getPackage({ organizationId: T.org, skillPackageId: T.deletedPkg }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("listPackages leaves it out", async () => {
+        const ids = (await makeCaller().listPackages({ organizationId: T.org })).map((p) => p.id);
+        expect(ids).toEqual([T.livePkg]);
+    });
+
+    it("listSubscribedPackages and listAssessableSkills leave it out", async () => {
+        const subscribed = await makeCaller().listSubscribedPackages({ organizationId: T.org });
+        expect(subscribed.map((p) => p.id)).toEqual([T.livePkg]);
+
+        const { skillPackages } = await makeCaller().listAssessableSkills({
+            organizationId: T.org,
+        });
+        expect(skillPackages.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("subscribeToPackage throws NOT_FOUND", async () => {
+        await expect(
+            makeCaller().subscribeToPackage({
+                organizationId: T.org,
+                skillPackageId: T.unsubscribedDeletedPkg,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});

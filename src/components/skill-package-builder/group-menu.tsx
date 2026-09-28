@@ -26,6 +26,7 @@ import { SkillPackage } from "@/lib/schemas/skill-package";
 
 import { SkillPackageBuilder_ArchiveGroup_Dialog } from "./archive-group";
 import { SkillPackageBuilder_DeleteSkillGroup_Dialog } from "./delete-group";
+import { SkillPackageBuilder_RecoverGroup_Dialog } from "./recover-group";
 import { SkillPackageBuilder_RestoreGroup_Dialog } from "./restore-group";
 
 interface SkillPackageBuilder_Group_MenuProps {
@@ -37,10 +38,11 @@ export function SkillPackageBuilder_Group_Menu({
 }: SkillPackageBuilder_Group_MenuProps) {
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["delete", "archive", "restore"] as const),
+        parseAsStringLiteral(["delete", "archive", "restore", "recover"] as const),
     );
 
     const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
+    const canDelete = useHasPermission({ skillPackageBuilder: ["delete"] });
 
     const actions: MenuActionProps[] = [];
     if (skillGroup.status == "Active") {
@@ -61,14 +63,25 @@ export function SkillPackageBuilder_Group_Menu({
             disabled: !canUpdate,
         });
     }
-    actions.push({
-        verb: "delete",
-        label: "Delete",
-        icon: <ObjectIcons.Delete />,
-        onSelect: () => setAction("delete", { history: "push" }),
-        disabled: !canUpdate,
-        destructive: true,
-    });
+    if (skillGroup.status == "Deleted") {
+        actions.push({
+            verb: "recover",
+            label: "Recover from rubbish",
+            icon: <ObjectIcons.Recover />,
+            onSelect: () => setAction("recover", { history: "push" }),
+            disabled: !canDelete,
+        });
+    }
+    if (skillGroup.status != "Deleted") {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        });
+    }
 
     useMenuActionHotkeys(actions, "Groups");
 
@@ -95,6 +108,15 @@ export function SkillPackageBuilder_Group_Menu({
                 open={action === "delete"}
                 onOpenChange={(open) =>
                     setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+            <SkillPackageBuilder_RecoverGroup_Dialog
+                skillGroup={skillGroup}
+                open={action === "recover"}
+                onOpenChange={(open) =>
+                    setAction(open ? "recover" : null, {
                         history: open ? "push" : "replace",
                     })
                 }
