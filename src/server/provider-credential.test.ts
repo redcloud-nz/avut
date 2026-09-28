@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { cacheTag, revalidateTag } from "next/cache";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
@@ -10,7 +11,10 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
-import { getOrganizationProviderCredential } from "./provider-credential";
+import {
+    getOrganizationProviderCredential,
+    revalidateProviderCredential,
+} from "./provider-credential";
 
 // provider-credential imports the real Prisma client; swap in the in-memory one. `vi.hoisted`
 // because vi.mock factories run before the module's own imports.
@@ -111,5 +115,24 @@ describe("getOrganizationProviderCredential", () => {
                 credentialId: T.orgCredential,
             }),
         ).toBeNull();
+    });
+});
+
+describe("revalidateProviderCredential", () => {
+    it("expires the exact tag the cached lookup is stored under, immediately", async () => {
+        const credentialId = ProviderCredentialId.create();
+
+        await getOrganizationProviderCredential({
+            provider: "D4H",
+            organizationId: OrganizationId.create(),
+            credentialId,
+        });
+        const [tag] = vi.mocked(cacheTag).mock.lastCall!;
+
+        revalidateProviderCredential(credentialId);
+
+        // `expire: 0`: the next read is a blocking cache miss, so a deleted credential stops
+        // working on the next request rather than after the stale window.
+        expect(revalidateTag).toHaveBeenCalledWith(tag, { expire: 0 });
     });
 });
