@@ -31,6 +31,20 @@ export const getSession = cache(async (): Promise<AuthSession | null> => {
  * everything downstream.
  */
 export async function requireSession(): Promise<AuthSession> {
+    const session = await requireSessionAllowingClosed();
+
+    // A closed (soft-deleted) account can sign in, but only to reach the screen where its owner
+    // can restore it (#296) — every other authenticated route sends it there.
+    if (isAccountClosed(session)) redirect("/auth/account-closed");
+
+    return session;
+}
+
+/**
+ * `requireSession` without the closed-account redirect — only for `/auth/account-closed` itself,
+ * which a closed account must be able to reach.
+ */
+export async function requireSessionAllowingClosed(): Promise<AuthSession> {
     const session = await getSession();
 
     if (!session) {
@@ -39,6 +53,11 @@ export async function requireSession(): Promise<AuthSession> {
     }
 
     return session;
+}
+
+/** Whether the session belongs to an account in the system Rubbish bin. */
+export function isAccountClosed(session: AuthSession): boolean {
+    return session.user.status === "Deleted";
 }
 
 /**

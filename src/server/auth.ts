@@ -25,6 +25,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
+import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
 import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
@@ -146,6 +147,13 @@ export const auth = betterAuth({
     },
     plugins: [
         admin(),
+        deletedUserPlugin(async (userIds) => {
+            const rows = await prisma.user.findMany({
+                where: { id: { in: userIds }, status: "Deleted" },
+                select: { id: true },
+            });
+            return new Set(rows.map((r) => r.id));
+        }),
         emailOTP({
             changeEmail: {
                 enabled: true,
@@ -303,6 +311,16 @@ export const auth = betterAuth({
 
     user: {
         modelName: "user",
+        /*
+         * Read-only on the session so the closed-account gate (`requireSession`,
+         * `authenticatedProcedure`) costs no extra query. Fresh where it matters: deleting an
+         * account revokes every session, so the next one is minted with `Deleted`; restoring
+         * refetches the session past the cookie cache (see `account-closed-content.tsx`).
+         */
+        additionalFields: {
+            status: { type: "string", input: false, required: false },
+            deletedBy: { type: "string", input: false, required: false },
+        },
     },
     verification: {
         modelName: "verification",

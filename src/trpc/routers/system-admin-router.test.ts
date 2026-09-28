@@ -506,21 +506,32 @@ describe("systemAdmin.deleteUser", () => {
             createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
         );
 
-    it("deletes a user and their memberships", async () => {
+    it("soft-deletes a user into the Rubbish bin, keeping their memberships for recovery", async () => {
+        const memberships = await db.organizationUser.count({ where: { userId: T.plain } });
         const res = await call().deleteUser({ userId: T.plain });
         expect(res).toEqual({ id: T.plain });
-        expect(await db.user.findUnique({ where: { id: T.plain } })).toBeNull();
-        expect(await db.organizationUser.count({ where: { userId: T.plain } })).toBe(0);
+        expect((await db.user.findUnique({ where: { id: T.plain } }))?.status).toBe("Deleted");
+        expect(await db.organizationUser.count({ where: { userId: T.plain } })).toBe(memberships);
+
+        const { users } = await call().listUsers();
+        expect(users.map((u) => u.id)).not.toContain(T.plain);
+        expect((await call().listDeletedUsers()).map((u) => u.id)).toContain(T.plain);
     });
 
     it("deletes an org owner when another owner remains", async () => {
         await call().deleteUser({ userId: T.coOwnerA });
-        expect(await db.user.findUnique({ where: { id: T.coOwnerA } })).toBeNull();
-        expect(
-            await db.organizationUser.count({
-                where: { organizationId: T.coOwnedOrg, role: "owner" },
-            }),
-        ).toBe(1);
+        expect((await db.user.findUnique({ where: { id: T.coOwnerA } }))?.status).toBe("Deleted");
+    });
+
+    it("then refuses the remaining co-owner, since a deleted owner can't act for the org", async () => {
+        await expect(call().deleteUser({ userId: T.coOwnerB })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+
+    it("recoverUser brings a deleted user back", async () => {
+        await call().recoverUser({ userId: T.plain });
+        expect((await db.user.findUnique({ where: { id: T.plain } }))?.status).toBe("Active");
     });
 
     it("refuses to delete a sole organization owner", async () => {
@@ -808,7 +819,7 @@ describe("systemAdminRouter — audit entries", () => {
         });
     });
 
-    it("no longer deletes a deleted user's entries elsewhere — the FK policy keeps them", async () => {
+    it("purging a deleted user keeps their entries elsewhere — the FK policy keeps them", async () => {
         const db = createMockPrisma();
         const orgId = OrganizationId.create();
         const adminId = UserId.create();
@@ -852,6 +863,8 @@ describe("systemAdminRouter — audit entries", () => {
         );
 
         await caller.deleteUser({ userId: subjectId });
+        await caller.purgeUser({ userId: subjectId });
+        expect(await db.user.findUnique({ where: { id: subjectId } })).toBeNull();
 
         const survivors = await db.logEntry.findMany({ where: { objectId: "person_1" } });
         expect(survivors).toHaveLength(1);

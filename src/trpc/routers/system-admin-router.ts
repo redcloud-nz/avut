@@ -19,10 +19,15 @@ import { UserId } from "@/lib/schemas/user";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 import * as SkillPackages from "@/server/services/skill-packages";
+import * as UserAccounts from "@/server/services/user-accounts";
 
-import { assertOrganizationExists, createTrpcRouter, systemAdminProcedure } from "../init";
+import {
+    assertOrganizationExists,
+    createTrpcRouter,
+    systemAdminProcedure,
+    type SystemAdminContext,
+} from "../init";
 
-import { findOwnerMemberships } from "./organizations-router";
 import { settingsRouter } from "./settings-router";
 
 /**
@@ -39,6 +44,17 @@ function isUniqueViolation(error: unknown): boolean {
  *
  * Procedures must be kept in alphabetical order.
  */
+/** A membership whose account isn't in the Rubbish bin — the row is kept for recovery. */
+const activeMember = { user: { status: { not: "Deleted" as const } } };
+
+/** A system admin's context, as the account service takes it: every entry system-scoped. */
+function systemServiceContext(ctx: SystemAdminContext): UserAccounts.SystemServiceContext {
+    return {
+        prisma: ctx.prisma,
+        logSystemEvent: (options, tx) => ctx.logEvent({ scope: "system", ...options }, tx),
+    };
+}
+
 export const systemAdminRouter = createTrpcRouter({
     /**
      * Provision a new organization site-wide. Seeds the same default `OrganizationConfig` rows a
@@ -127,28 +143,12 @@ export const systemAdminRouter = createTrpcRouter({
         }),
 
     /**
-     * Hard-delete a user account and everything that hangs off it.
+     * Soft-delete a user account into the system Rubbish bin (#296): it can't sign in, every
+     * session is revoked, and the daily auto-purge removes it for good after
+     * `USER_RETENTION_DAYS`. Recover with `recoverUser`; purge early with `purgeUser`.
      *
-     * Guards, in order: (a) you cannot delete your own account; (b) you cannot delete the last
-     * remaining system administrator; (c) you cannot delete a user who is the sole `owner` of any
-     * organization — the operator must transfer ownership (`setOrganizationMemberRole` /
-     * `removeOrganizationMember`) or delete the organization first.
-     *
-     * Every FK into `User` in the schema is `onDelete: Cascade` or `SetNull`, so no migration is
-     * needed — but the dependent rows are still cleared explicitly inside the `$transaction`
-     * (mirroring the schema's referential actions) so the behaviour is pinned here and doesn't
-     * silently depend on the database's cascade config.
-     *
-     * Log entries are deliberately *not* cleared here: `LogEntry.userId` is `SetNull` and
-     * `LogEntry.ownerId` is `Cascade`, so the FKs already implement the policy — the user's own
-     * log goes with them, their actions elsewhere survive, anonymised.
-     *
-     * The deletion's own entry is therefore `scope: "system"`, not user-scoped. A user-scoped
-     * entry would carry `ownerId: input.userId`, which is `onDelete: Cascade` — it would be
-     * inserted and cascaded away inside this same `$transaction`, giving it a zero-length
-     * lifetime. A system-scoped entry has neither owner FK, so nothing can cascade it; the
-     * subject is named by `objectId` and by the denormalized label in `description`, which is
-     * what keeps it readable once the `User` row is gone.
+     * Guards: you cannot delete your own account (close it from your settings instead); the
+     * service refuses the last system administrator and the sole owner of any organization.
      */
     deleteUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
@@ -160,91 +160,7 @@ export const systemAdminRouter = createTrpcRouter({
                 });
             }
 
-            // `name`/`email` are read for the audit entry's description: the entry outlives
-            // the `User` row, so the subject has to be denormalized into it here.
-            // `formatActorLabel` is reused for the subject rather than the actor — it is the
-            // one place the `Name <email>` form lives, and a second format would read oddly
-            // next to `actorLabel` in the same log.
-            const target = await ctx.prisma.user.findUnique({
-                where: { id: input.userId },
-                select: { id: true, name: true, email: true },
-            });
-            if (!target) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: `User ${input.userId} not found.`,
-                });
-            }
-
-            const otherAdmins = await ctx.prisma.user.count({
-                where: { role: "admin", id: { not: input.userId } },
-            });
-            if (otherAdmins === 0) {
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "Cannot delete the last system administrator.",
-                });
-            }
-
-            const ownerships = await findOwnerMemberships(ctx.prisma, { userId: input.userId });
-            const ownedOrgIds = ownerships.map((o) => o.organizationId);
-
-            // One query for every owner row across the orgs this user owns; the target is
-            // an owner of each, so an org with a single owner row is one they solely own.
-            const soleOwnerOrgIds: string[] = [];
-            if (ownedOrgIds.length > 0) {
-                const ownerRows = await findOwnerMemberships(ctx.prisma, {
-                    organizationId: { in: ownedOrgIds },
-                });
-                const ownerCountByOrg = new Map<string, number>();
-                for (const { organizationId } of ownerRows) {
-                    ownerCountByOrg.set(
-                        organizationId,
-                        (ownerCountByOrg.get(organizationId) ?? 0) + 1,
-                    );
-                }
-                for (const orgId of ownedOrgIds) {
-                    if ((ownerCountByOrg.get(orgId) ?? 0) <= 1) soleOwnerOrgIds.push(orgId);
-                }
-            }
-            if (soleOwnerOrgIds.length > 0) {
-                const orgs = await ctx.prisma.organization.findMany({
-                    where: { id: { in: soleOwnerOrgIds } },
-                    select: { name: true },
-                });
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: `Cannot delete a user who is the sole owner of ${orgs
-                        .map((o) => o.name)
-                        .join(", ")}. Transfer ownership or delete the organization first.`,
-                });
-            }
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.formInstance.updateMany({
-                    where: { userId: input.userId },
-                    data: { userId: null },
-                }),
-                ctx.prisma.session.deleteMany({ where: { userId: input.userId } }),
-                ctx.prisma.account.deleteMany({ where: { userId: input.userId } }),
-                ctx.prisma.organizationUser.deleteMany({ where: { userId: input.userId } }),
-                ctx.prisma.organizationInvitation.deleteMany({
-                    where: { inviterId: input.userId },
-                }),
-                ctx.prisma.d4HAccessToken.deleteMany({ where: { userId: input.userId } }),
-                ctx.prisma.note.deleteMany({ where: { authorId: input.userId } }),
-                ctx.prisma.userConfig.deleteMany({ where: { userId: input.userId } }),
-                ctx.logEvent({
-                    scope: "system",
-                    action: "Delete",
-                    objectType: "User",
-                    objectId: input.userId,
-                    changes: [],
-                    description: `Account ${formatActorLabel(target.name, target.email)} deleted by a system administrator`,
-                }),
-                ctx.prisma.user.delete({ where: { id: input.userId } }),
-            ]);
-
+            await UserAccounts.softDelete(systemServiceContext(ctx), input.userId, "admin");
             await revalidateOrganizationUser(input.userId);
 
             return { id: input.userId };
@@ -257,6 +173,7 @@ export const systemAdminRouter = createTrpcRouter({
                 where: { id: input.organizationId },
                 include: {
                     users: {
+                        where: activeMember,
                         include: {
                             user: { select: { id: true, name: true, email: true } },
                         },
@@ -438,6 +355,29 @@ export const systemAdminRouter = createTrpcRouter({
             return { plan, applied: true as const };
         }),
 
+    /** Every account in the system Rubbish bin, with its deletion and purge dates. */
+    listDeletedUsers: systemAdminProcedure
+        .output(
+            z.array(
+                z.object({
+                    id: UserId.schema,
+                    name: z.string(),
+                    email: z.string(),
+                    deletedAt: z.iso.datetime().nullable(),
+                    purgeAt: z.iso.datetime().nullable(),
+                }),
+            ),
+        )
+        .query(async ({ ctx }) => {
+            const users = await UserAccounts.listDeleted(ctx.prisma);
+            return users.map((u) => ({
+                ...u,
+                id: UserId.schema.parse(u.id),
+                deletedAt: u.deletedAt?.toISOString() ?? null,
+                purgeAt: u.purgeAt?.toISOString() ?? null,
+            }));
+        }),
+
     listOrganizations: systemAdminProcedure.query(async ({ ctx }) => {
         const rows = await ctx.prisma.organization.findMany({
             select: {
@@ -447,8 +387,11 @@ export const systemAdminRouter = createTrpcRouter({
                 logo: true,
                 createdAt: true,
                 configs: true,
-                _count: { select: { users: true } },
-                users: { where: { role: { contains: "owner" } }, select: { role: true } },
+                _count: { select: { users: { where: activeMember } } },
+                users: {
+                    where: { role: { contains: "owner" }, ...activeMember },
+                    select: { role: true },
+                },
             },
             orderBy: { createdAt: "asc" },
         });
@@ -466,7 +409,9 @@ export const systemAdminRouter = createTrpcRouter({
     }),
 
     listUsers: systemAdminProcedure.query(async ({ ctx }) => {
+        // Deleted accounts live in the system Rubbish bin (`listDeletedUsers`) instead.
         const rows = await ctx.prisma.user.findMany({
+            where: { status: { not: "Deleted" } },
             select: {
                 id: true,
                 name: true,
@@ -489,6 +434,25 @@ export const systemAdminRouter = createTrpcRouter({
             })),
         };
     }),
+
+    /**
+     * Permanently delete an account from the system Rubbish bin, ahead of the auto-purge.
+     * @throws TRPCError(BAD_REQUEST) if it isn't deleted, or it's now the sole owner of an org.
+     */
+    purgeUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            await UserAccounts.purge(systemServiceContext(ctx), input.userId);
+            await revalidateOrganizationUser(input.userId);
+        }),
+
+    /** Recover an account from the system Rubbish bin; it signs in again from scratch. */
+    recoverUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            await UserAccounts.recover(systemServiceContext(ctx), input.userId);
+            await revalidateOrganizationUser(input.userId);
+        }),
 
     /**
      * Promote a user to the global `admin` role, or demote them to `user`.
@@ -535,7 +499,7 @@ export const systemAdminRouter = createTrpcRouter({
 
             if (input.role === "user") {
                 const otherAdmins = await ctx.prisma.user.count({
-                    where: { role: "admin", id: { not: input.userId } },
+                    where: { role: "admin", id: { not: input.userId }, status: { not: "Deleted" } },
                 });
                 if (otherAdmins === 0) {
                     throw new TRPCError({

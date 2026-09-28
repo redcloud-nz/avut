@@ -431,7 +431,7 @@ export async function findLinkableMember(
     { organizationId, email }: { organizationId: string; email: string },
 ): Promise<{ user: UserRecord; organizationUserId: string } | null> {
     const user = await prisma.user.findFirst({
-        where: { email: email.toLowerCase() },
+        where: { email: email.toLowerCase(), status: { not: "Deleted" } },
         include: {
             organizationUsers: {
                 where: { organizationId, personId: null },

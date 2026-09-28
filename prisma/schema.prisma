@@ -31,6 +31,12 @@ model User {
   banned            Boolean?                 @default(false)
   banReason         String?
   banExpires        DateTime?
+  /// `Deleted` = in the system Rubbish bin: can't sign in, purged after a fixed 14 days (#296).
+  /// Distinct from `banned`, which blocks access but keeps the account indefinitely.
+  status            RecordStatus             @default(Active)
+  /// Who put a `Deleted` account in the bin: `Self` (closed it) may restore it on sign-in;
+  /// `Admin` has to ask an administrator. Null while the account isn't deleted.
+  deletedBy         AccountDeletedBy?
   sessions          Session[]                @relation("session_to_user")
   accounts          Account[]                @relation("account_to_user")
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
@@ -370,6 +376,11 @@ model LogBatch {
 
   @@index([operationKey, startedAt])
   @@map("log_batches")
+}
+
+enum AccountDeletedBy {
+  Self
+  Admin
 }
 
 enum RecordStatus {

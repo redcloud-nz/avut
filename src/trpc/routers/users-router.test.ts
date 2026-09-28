@@ -93,6 +93,10 @@ describe("user↔person linking", () => {
             },
         });
 
+        // The membership's user must exist: the link paths now filter on `user.status`.
+        for (const id of [T.user1, T.user2]) {
+            await db.user.create({ data: { id, name: id, email: `${id}@example.com` } });
+        }
         await db.organizationUser.create({
             data: { id: T.orgUser1, organizationId: T.org, userId: T.user1, role: "member" },
         });

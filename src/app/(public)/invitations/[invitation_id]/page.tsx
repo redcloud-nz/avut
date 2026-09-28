@@ -5,13 +5,14 @@
  * Path: /invitations/[invitation_id]
  */
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { Argus } from "@/components/blocks/argus";
 import { InvitationLanding_Card } from "@/components/invitations/invitation-landing";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
+import { getSession, isAccountClosed } from "@/server/session";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = { title: "Invitation" };
@@ -40,6 +41,11 @@ async function Invitation_LandingFromParams({
     // "not found" card.
     const parsed = InvitationId.schema.safeParse(invitation_id);
     if (!parsed.success) notFound();
+
+    // A closed account can't accept anything until it's restored — send it to that screen
+    // rather than letting Accept fail.
+    const session = await getSession();
+    if (session && isAccountClosed(session)) redirect("/auth/account-closed");
 
     prefetch(trpc.invitations.getLanding.queryOptions({ invitationId: parsed.data }));
 

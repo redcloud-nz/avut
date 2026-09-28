@@ -125,39 +125,62 @@ export type AuthenticatedContext = Context & {
 };
 
 /**
- * Procedure that requires the user to be authenticated.
- * @throws TRPCError with code 'UNAUTHORIZED' if not authenticated.
+ * The authentication check behind `authenticatedProcedure` and `closedAccountProcedure`. They
+ * differ only in whether a closed (soft-deleted, #296) account gets through.
  */
-export const authenticatedProcedure = publicProcedure.use((opts) => {
-    const { ctx } = opts;
-    if (ctx.auth == null) {
-        throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User is not authenticated.",
+function requireAuth(allowClosed: boolean) {
+    return t.middleware((opts) => {
+        const { ctx } = opts;
+        if (ctx.auth == null) {
+            throw new TRPCError({
+                code: "UNAUTHORIZED",
+                message: "User is not authenticated.",
+            });
+        }
+
+        const auth = ctx.auth;
+
+        if (!allowClosed && auth.user.status === "Deleted") {
+            throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "This account is closed. Restore it to use AVUT again.",
+            });
+        }
+
+        const userId = UserId.schema.parse(auth.user.id);
+
+        const enhancedCtx: AuthenticatedContext = {
+            ...ctx,
+            auth,
+            userId,
+            logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
+                const { actor, actorLabel } = resolveActor(auth);
+
+                return recordLogEntry(
+                    { scope: "user", ownerId: userId, actor, actorLabel, ...options },
+                    tx,
+                );
+            },
+        };
+
+        return opts.next({
+            ctx: enhancedCtx,
         });
-    }
-
-    const auth = ctx.auth;
-    const userId = UserId.schema.parse(auth.user.id);
-
-    const enhancedCtx: AuthenticatedContext = {
-        ...ctx,
-        auth,
-        userId,
-        logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
-            const { actor, actorLabel } = resolveActor(auth);
-
-            return recordLogEntry(
-                { scope: "user", ownerId: userId, actor, actorLabel, ...options },
-                tx,
-            );
-        },
-    };
-
-    return opts.next({
-        ctx: enhancedCtx,
     });
-});
+}
+
+/**
+ * Procedure that requires the user to be authenticated, with an account that isn't closed.
+ * @throws TRPCError with code 'UNAUTHORIZED' if not authenticated.
+ * @throws TRPCError with code 'FORBIDDEN' if the account is closed (in the system Rubbish bin).
+ */
+export const authenticatedProcedure = publicProcedure.use(requireAuth(false));
+
+/**
+ * `authenticatedProcedure` that also admits a closed account — only for what
+ * `/auth/account-closed` offers it (restoring the account). Nothing else uses this.
+ */
+export const closedAccountProcedure = publicProcedure.use(requireAuth(true));
 
 /**
  * `Omit<…, "logEvent">` is load-bearing. A plain intersection would merge the inherited

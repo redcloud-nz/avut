@@ -31,8 +31,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const results = await purgeRubbish();
 
-    const failed = results.some((r) => r.error || (r.summary?.failed.length ?? 0) > 0);
+    const failed =
+        results.users.failed.length > 0 ||
+        results.organizations.some((r) => r.error || (r.summary?.failed.length ?? 0) > 0);
     if (failed) console.error("Rubbish bin auto-purge had failures:", JSON.stringify(results));
 
-    return NextResponse.json({ results }, { status: failed ? 500 : 200 });
+    return NextResponse.json(results, { status: failed ? 500 : 200 });
 }

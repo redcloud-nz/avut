@@ -21,6 +21,12 @@ import { userRouter } from "./user-router";
 // them import in jsdom.
 vi.mock("server-only", () => ({}));
 
+// `closeMyAccount` drops the cached org roles, which needs Next's request store.
+vi.mock("@/server/cache/organization-user-revalidate", () => ({
+    organizationUserCacheTag: (id: string) => `organization-user-${id}`,
+    revalidateOrganizationUser: vi.fn(async () => {}),
+}));
+
 // `acceptInvitation`/`rejectInvitation` delegate to Better Auth so its role cache and
 // membership creation stay in sync. The tests assert on that delegation rather than
 // standing up a real auth instance.
@@ -446,5 +452,132 @@ describe("userRouter invitations", () => {
         });
         expect(acceptInvitationMock).not.toHaveBeenCalled();
         expect(rejectInvitationMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("userRouter.closeMyAccount", () => {
+    const T = {
+        closer: UserId.create(),
+        soleOwner: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, email] of [
+            [T.closer, "closer@example.com"],
+            [T.soleOwner, "owner@example.com"],
+        ] as const) {
+            await db.user.create({ data: { id, name: email, email } });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Only Mine SAR", slug: "only-mine", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: OrganizationUserId.create(),
+                organizationId: T.org,
+                userId: T.soleOwner,
+                role: "owner",
+            },
+        });
+    });
+
+    function caller(id: string, email: string) {
+        return userRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id, email }, prisma: db }),
+        );
+    }
+
+    it("refuses without the caller's own email typed to confirm", async () => {
+        await expect(
+            caller(T.closer, "closer@example.com").closeMyAccount({ confirmEmail: "nope" }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        expect((await db.user.findUnique({ where: { id: T.closer } }))?.status).toBe("Active");
+    });
+
+    it("refuses the sole owner of an organisation, naming it", async () => {
+        await expect(
+            caller(T.soleOwner, "owner@example.com").closeMyAccount({
+                confirmEmail: "owner@example.com",
+            }),
+        ).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: expect.stringMatching(/only owner of Only Mine SAR/),
+        });
+    });
+
+    it("moves the account to the Rubbish bin with a system-scoped entry", async () => {
+        await caller(T.closer, "closer@example.com").closeMyAccount({
+            confirmEmail: " Closer@Example.com ",
+        });
+
+        expect((await db.user.findUnique({ where: { id: T.closer } }))?.status).toBe("Deleted");
+        const [entry] = await db.logEntry.findMany({
+            where: { objectType: "User", objectId: T.closer, action: "Delete" },
+        });
+        expect(entry).toMatchObject({ scope: "system", ownerId: null, userId: T.closer });
+        expect(entry.description).toMatch(/closed by its owner/);
+    });
+});
+
+describe("userRouter closed-account gate", () => {
+    const T = { selfClosed: UserId.create(), adminDeleted: UserId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, deletedBy] of [
+            [T.selfClosed, "Self"],
+            [T.adminDeleted, "Admin"],
+        ] as const) {
+            await db.user.create({
+                data: { id, name: id, email: `${id}@example.com`, status: "Deleted", deletedBy },
+            });
+        }
+    });
+
+    // The session carries the account's status (Better Auth `additionalFields`).
+    function caller(id: string, deletedBy: "Self" | "Admin") {
+        return userRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id, email: `${id}@example.com`, status: "Deleted", deletedBy },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("refuses ordinary procedures to a closed account", async () => {
+        await expect(caller(T.selfClosed, "Self").listMemberships()).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+    });
+
+    it("reports whether the owner may restore it", async () => {
+        expect(await caller(T.selfClosed, "Self").getAccountClosure()).toMatchObject({
+            closed: true,
+            canRestore: true,
+        });
+        expect(await caller(T.adminDeleted, "Admin").getAccountClosure()).toMatchObject({
+            closed: true,
+            canRestore: false,
+        });
+    });
+
+    it("refuses to self-restore an account an administrator deleted", async () => {
+        await expect(caller(T.adminDeleted, "Admin").restoreMyAccount()).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: expect.stringMatching(/deleted by an administrator/),
+        });
+        expect((await db.user.findUnique({ where: { id: T.adminDeleted } }))?.status).toBe(
+            "Deleted",
+        );
+    });
+
+    it("restores an account its owner closed", async () => {
+        await caller(T.selfClosed, "Self").restoreMyAccount();
+        expect(await db.user.findUnique({ where: { id: T.selfClosed } })).toMatchObject({
+            status: "Active",
+            deletedBy: null,
+        });
     });
 });
