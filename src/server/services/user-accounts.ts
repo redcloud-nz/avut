@@ -22,11 +22,19 @@ import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import { Operations } from "@/lib/operations";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { USER_RETENTION_DAYS, type UserId } from "@/lib/schemas/user";
 import { createLogBatch, formatActorLabel, recordLogEntry } from "@/server/log-entry";
 
 import type { LogEventOptions } from "./service-context";
+
+/**
+ * Whether a stored (comma-joined) `OrganizationUser.role` value includes `owner`. `owner` sits
+ * outside `OrganizationRole` entirely (see `organizations-router.ts`'s `makeOwner`/
+ * `removeOwner`), so this checks the raw string rather than going through `OrganizationRole`.
+ */
+function hasOwnerRole(role: string): boolean {
+    return role.split(",").includes("owner");
+}
 
 export interface SystemServiceContext {
     prisma: PrismaClient;
@@ -66,7 +74,7 @@ async function soleOwnedOrganizationNames(
             where: { userId, role: { contains: "owner" } },
             select: { organizationId: true, role: true },
         })
-    ).filter((row) => OrganizationRole.includes(row.role, "owner"));
+    ).filter((row) => hasOwnerRole(row.role));
     if (owned.length === 0) return [];
 
     const otherOwners = (
@@ -79,7 +87,7 @@ async function soleOwnedOrganizationNames(
             },
             select: { organizationId: true, role: true },
         })
-    ).filter((row) => OrganizationRole.includes(row.role, "owner"));
+    ).filter((row) => hasOwnerRole(row.role));
     const covered = new Set(otherOwners.map((o) => o.organizationId));
 
     const soleIds = owned.map((o) => o.organizationId).filter((id) => !covered.has(id));

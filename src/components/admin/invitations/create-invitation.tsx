@@ -66,8 +66,7 @@ export function AdminModule_CreateInvitation_Dialog() {
         ),
         defaultValues: {
             email: "",
-            primaryRole: "member",
-            secondaryRoles: [],
+            roles: ["member"],
         } as const,
     });
 

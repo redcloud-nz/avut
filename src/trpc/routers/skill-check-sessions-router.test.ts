@@ -172,7 +172,7 @@ describe("skillCheckSessions.upsertSessionSkillChecks", () => {
         return skillCheckSessionsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: userId },
-                permissions: { organization: ["view"], skillCheck: ["create", "update"] },
+                permissions: { organization: ["view"], skillCheckSession: ["update"] },
                 prisma: db,
             }),
         );

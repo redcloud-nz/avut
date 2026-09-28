@@ -19,7 +19,7 @@ import {
     invitationRolesSchema,
     RoleFields,
     type InvitationRolesFormValues,
-    type SecondaryRoleOptions,
+    type ModuleGatedRoleOptions,
 } from "@/components/admin/invitations/invitation-role-fields";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import {
@@ -61,14 +61,12 @@ interface Member {
     role: string;
 }
 
-/** The role form's values for a stored role set; a legacy set with no primary role reads as `member`. */
+/**
+ * The role form's values for a stored role set. `owner` sits outside this schema (granted and
+ * revoked separately), so it's dropped here — the form only ever edits the non-owner roles.
+ */
 function roleFormValues(stored: string): InvitationRolesFormValues {
-    const roles = OrganizationRole.parseStored(stored);
-    const primary = roles.find((role) => OrganizationRole.roles[role].isPrimary);
-    return {
-        primaryRole: OrganizationRole.primaryRoleSchema.catch("member").parse(primary),
-        secondaryRoles: OrganizationRole.getSecondaryRoles(roles),
-    };
+    return { roles: OrganizationRole.parseStored(stored) };
 }
 
 /**
@@ -80,12 +78,12 @@ function roleFormValues(stored: string): InvitationRolesFormValues {
 export function SystemAdmin_MemberActionsMenu({
     organizationId,
     member,
-    secondaryRoles,
+    moduleGatedRoles,
 }: {
     organizationId: OrganizationId;
     member: Member;
     /** The secondary roles this organization's enabled modules make available. */
-    secondaryRoles: SecondaryRoleOptions;
+    moduleGatedRoles: ModuleGatedRoleOptions;
 }) {
     const [action, setAction] = useQueryState(
         "action",
@@ -181,7 +179,7 @@ export function SystemAdmin_MemberActionsMenu({
                     </DialogHeader>
                     <DialogBody>
                         <FormProvider {...roleForm}>
-                            <RoleFields secondaryRoles={secondaryRoles} />
+                            <RoleFields moduleGatedRoles={moduleGatedRoles} />
                         </FormProvider>
                     </DialogBody>
                     <DialogFooter>

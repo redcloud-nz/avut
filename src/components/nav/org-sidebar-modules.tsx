@@ -32,6 +32,7 @@ import { D4HViews_Sidebar_Menu } from "@/components/d4h-views/sidebar-menu";
 import { I3_Sidebar_Menu } from "@/components/i3/sidebar-menu";
 import { NavCollapsible, NavItem, NavSection } from "@/components/nav/nav-section";
 import { SkillTrack_Sidebar_Menu } from "@/components/skill-track/sidebar-menu";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { orgModules, type OrganizationModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
@@ -51,6 +52,10 @@ const MODULE_SIDEBAR: Partial<Record<OrganizationModuleId, ReactNode>> = {
 
 export function OrgSidebar_Modules() {
     const organization = useOrganization();
+    // Skill Track's every entry is `<Protect>`-gated already (Catalogue, Checks/Reports,
+    // Sessions), so this mostly documents/enforces what's already true — every role holds
+    // `skillPackageSubscription: ["view"]` — but future-proofs a role that somehow lacks it.
+    const canViewSkillTrack = useHasPermission({ skillPackageSubscription: ["view"] });
 
     return (
         <NavSection>
@@ -61,6 +66,7 @@ export function OrgSidebar_Modules() {
             />
             {orgModules
                 .filter((mod) => organization.isModuleEnabled(mod.id))
+                .filter((mod) => mod.id !== "skill-track" || canViewSkillTrack)
                 .map((mod) => {
                     const Icon = mod.icon;
                     const href = mod.href(organization.slug);

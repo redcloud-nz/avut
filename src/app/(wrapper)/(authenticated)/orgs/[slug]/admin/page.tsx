@@ -31,7 +31,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
-                        {/* <Protect permissions={{ d4hAccessToken: ["view"] }}>
+                        {/* <Protect permissions={{ organization: ["update"] }}>
                         <Item asChild>
                             <Link
                                 href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}

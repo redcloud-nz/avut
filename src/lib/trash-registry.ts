@@ -49,7 +49,7 @@ interface TrashableEntityDef {
         | "SkillGroup"
         | "Skill";
     /** The permission resource name — restoring or listing a row gates on `{ [permission]: ["delete"] }`. */
-    permission: "person" | "team" | "i3Template" | "skillPackageBuilder";
+    permission: "person" | "team" | "i3Template" | "skillPackage";
     /**
      * Link to the entity's own detail page, or `null` if it isn't addressable by a single id —
      * `SkillGroup`/`Skill`'s detail page is keyed by (packageId, id), not a single id, so the
@@ -97,7 +97,7 @@ export const TrashableEntities = {
         id: "skillPackage",
         label: "Skill Package",
         objectType: "SkillPackage",
-        permission: "skillPackageBuilder",
+        permission: "skillPackage",
         href: (slug, id) =>
             route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
                 slug,
@@ -108,14 +108,14 @@ export const TrashableEntities = {
         id: "skillGroup",
         label: "Skill Group",
         objectType: "SkillGroup",
-        permission: "skillPackageBuilder",
+        permission: "skillPackage",
         href: null,
     },
     skill: {
         id: "skill",
         label: "Skill",
         objectType: "Skill",
-        permission: "skillPackageBuilder",
+        permission: "skillPackage",
         href: null,
     },
 } satisfies Record<TrashableEntityId, TrashableEntityDef>;

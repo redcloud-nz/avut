@@ -74,7 +74,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
 
-    const canCreateSkill = useHasPermission({ skillPackageBuilder: ["create"] });
+    const canCreateSkill = useHasPermission({ skillPackage: ["create"] });
     useActionHotkeys([
         {
             verb: "create",

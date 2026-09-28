@@ -17,27 +17,33 @@ import {
     FieldLabel,
     FieldLegend,
 } from "@/components/ui/field";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 
 /**
- * The role half of any invitation form. Every invitation carries exactly one primary role plus
- * any number of secondary roles, so both dialogs that send invitations share this shape.
+ * The role half of any invitation/role-assignment form. Every membership carries a freely
+ * combinable, non-empty set of roles (`owner` excluded — see `makeOwner`/`removeOwner`), so
+ * every dialog that assigns roles shares this shape.
  */
 export const invitationRolesSchema = z.object({
-    primaryRole: OrganizationRole.primaryRoleSchema,
-    secondaryRoles: z.array(OrganizationRole.secondaryRoleSchema),
+    roles: OrganizationRole.assignmentSchema,
 });
 
 export type InvitationRolesFormValues = z.infer<typeof invitationRolesSchema>;
 
-/** The roles an invitation form submits: the primary first, then the secondaries. */
+/** The roles a role-assignment form submits. */
 export function invitationRoles(values: InvitationRolesFormValues): OrganizationRole[] {
-    return [values.primaryRole, ...values.secondaryRoles];
+    return values.roles;
 }
 
-const PRIMARY_ROLES = ["owner", "admin", "member"] as const;
+/**
+ * The roles gated on an organization module being enabled, and whether each is currently
+ * available. `admin`/`member` are always available and don't appear here.
+ */
+export type ModuleGatedRoleOptions = readonly {
+    role: OrganizationRole;
+    enabled: boolean;
+}[];
 
 /**
  * Primary-role radios and secondary-role checkboxes for an invitation form.
@@ -46,22 +52,30 @@ const PRIMARY_ROLES = ["owner", "admin", "member"] as const;
  * different overall shapes (the Invitations page adds an email field; the person page does not)
  * without generic plumbing — the caller wraps its `useForm` in a `<FormProvider>`.
  *
- * Secondary roles are gated on the module that grants them being enabled, so an org that does not
- * run I3, Skill Track or the Skill Package Builder never offers their roles.
+ * The specialty roles are gated on the module that grants them being enabled, so an org that
+ * does not run I3, Skill Track or the Skill Package Builder never offers their roles.
  */
 export function InvitationRoleFields() {
     const organization = useOrganization();
 
     return (
         <RoleFields
-            secondaryRoles={[
+            moduleGatedRoles={[
                 { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
                 {
                     role: "skills-assessor",
                     enabled: organization.settings.modules["skill-track"].enabled,
                 },
                 {
-                    role: "skill-package-author",
+                    role: "skills-admin",
+                    enabled: organization.settings.modules["skill-track"].enabled,
+                },
+                {
+                    role: "skills-reporter",
+                    enabled: organization.settings.modules["skill-track"].enabled,
+                },
+                {
+                    role: "skills-author",
                     enabled: organization.settings.modules["skill-package-builder"].enabled,
                 },
             ]}
@@ -69,38 +83,45 @@ export function InvitationRoleFields() {
     );
 }
 
-/** The secondary roles a role form offers, and whether each is currently available. */
-export type SecondaryRoleOptions = readonly {
-    role: z.infer<typeof OrganizationRole.secondaryRoleSchema>;
-    enabled: boolean;
-}[];
-
 /**
  * The role fields themselves, with no dependency on an organization provider — the caller says
- * which secondary roles are available. `InvitationRoleFields` supplies them from the current
+ * which module-gated roles are available. `InvitationRoleFields` supplies them from the current
  * organization's settings; the system-admin screens, which sit outside any one organization,
  * supply them from the organization they are acting on.
+ *
+ * A single flat multi-select over every role — `admin` and `member` are no longer mutually
+ * exclusive, so both can be checked at once; the only invariant is at least one role checked
+ * (`OrganizationRole.assignmentSchema`'s non-empty refinement). `owner` is never offered here —
+ * it's granted/revoked separately (see `makeOwner`/`removeOwner`).
  */
-export function RoleFields({ secondaryRoles }: { secondaryRoles: SecondaryRoleOptions }) {
+export function RoleFields({ moduleGatedRoles }: { moduleGatedRoles: ModuleGatedRoleOptions }) {
     const { control } = useFormContext<InvitationRolesFormValues>();
 
+    const gated = new Map(moduleGatedRoles.map(({ role, enabled }) => [role, enabled]));
+
     return (
-        <>
-            <Controller
-                name="primaryRole"
-                control={control}
-                render={({ field, fieldState }) => (
-                    <RadioGroup
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        className="w-fit"
-                    >
-                        <FieldLegend variant="label">Primary Role</FieldLegend>
-                        {PRIMARY_ROLES.map((role) => (
-                            <Field key={role} orientation="horizontal">
-                                <RadioGroupItem value={role} id={`primary-role-${role}`} />
+        <Controller
+            name="roles"
+            control={control}
+            render={({ field, fieldState }) => (
+                <>
+                    <FieldLegend variant="label">Roles</FieldLegend>
+                    {OrganizationRole.values.map((role) => (
+                        <Show key={role} when={gated.get(role) ?? true}>
+                            <Field orientation="horizontal">
+                                <Checkbox
+                                    id={`role-${role}`}
+                                    checked={field.value.includes(role)}
+                                    onCheckedChange={(checked) =>
+                                        field.onChange(
+                                            checked
+                                                ? [...field.value, role]
+                                                : field.value.filter((r) => r !== role),
+                                        )
+                                    }
+                                />
                                 <FieldContent>
-                                    <FieldLabel htmlFor={`primary-role-${role}`}>
+                                    <FieldLabel htmlFor={`role-${role}`}>
                                         {OrganizationRole.roles[role].displayName}
                                     </FieldLabel>
                                     <FieldDescription>
@@ -108,46 +129,11 @@ export function RoleFields({ secondaryRoles }: { secondaryRoles: SecondaryRoleOp
                                     </FieldDescription>
                                 </FieldContent>
                             </Field>
-                        ))}
-                        {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                    </RadioGroup>
-                )}
-            />
-            <Controller
-                name="secondaryRoles"
-                control={control}
-                render={({ field, fieldState }) => (
-                    <>
-                        <FieldLegend variant="label">Secondary Roles</FieldLegend>
-                        {secondaryRoles.map(({ role, enabled }) => (
-                            <Show key={role} when={enabled}>
-                                <Field orientation="horizontal">
-                                    <Checkbox
-                                        id={`secondary-role-${role}`}
-                                        checked={field.value.includes(role)}
-                                        onCheckedChange={(checked) =>
-                                            field.onChange(
-                                                checked
-                                                    ? [...field.value, role]
-                                                    : field.value.filter((r) => r !== role),
-                                            )
-                                        }
-                                    />
-                                    <FieldContent>
-                                        <FieldLabel htmlFor={`secondary-role-${role}`}>
-                                            {OrganizationRole.roles[role].displayName}
-                                        </FieldLabel>
-                                        <FieldDescription>
-                                            {OrganizationRole.roles[role].description}
-                                        </FieldDescription>
-                                    </FieldContent>
-                                </Field>
-                            </Show>
-                        ))}
-                        {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                    </>
-                )}
-            />
-        </>
+                        </Show>
+                    ))}
+                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                </>
+            )}
+        />
     );
 }

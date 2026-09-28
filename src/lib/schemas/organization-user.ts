@@ -38,13 +38,19 @@ export const OrganizationUser = {
         updatedAt: z.iso.datetime(),
     }),
 
+    /**
+     * `roles` drops anything `OrganizationRole.parseStored` doesn't recognise — in particular
+     * `owner`, which sits outside `OrganizationRole` entirely (see `makeOwner`/`removeOwner`) and
+     * so is never part of this list. A caller that needs to know whether a member is an owner
+     * checks the raw `role` string directly rather than through this schema.
+     */
     fromRecord: (record: OrganizationUserRecord) =>
         OrganizationUser.schema.parse({
             userId: record.userId,
             organizationId: record.organizationId,
             organizationUserId: record.id,
             personId: record.personId,
-            roles: record.role.split(","),
+            roles: OrganizationRole.parseStored(record.role),
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
         }),

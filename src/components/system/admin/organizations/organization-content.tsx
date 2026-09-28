@@ -9,7 +9,7 @@ import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import type { SecondaryRoleOptions } from "@/components/admin/invitations/invitation-role-fields";
+import type { ModuleGatedRoleOptions } from "@/components/admin/invitations/invitation-role-fields";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { UserLink } from "@/components/entity-links/user-link";
@@ -46,13 +46,15 @@ export function SystemAdmin_Organization_Content({
         trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
     );
 
-    // Which secondary roles are offered follows the organization's enabled modules, as it does
+    // Which specialty roles are offered follows the organization's enabled modules, as it does
     // for the organization's own admins.
-    const secondaryRoles: SecondaryRoleOptions = [
+    const moduleGatedRoles: ModuleGatedRoleOptions = [
         { role: "i3-editor", enabled: organization.enabledModules.includes("i3") },
         { role: "skills-assessor", enabled: organization.enabledModules.includes("skill-track") },
+        { role: "skills-admin", enabled: organization.enabledModules.includes("skill-track") },
+        { role: "skills-reporter", enabled: organization.enabledModules.includes("skill-track") },
         {
-            role: "skill-package-author",
+            role: "skills-author",
             enabled: organization.enabledModules.includes("skill-package-builder"),
         },
     ];
@@ -125,7 +127,7 @@ export function SystemAdmin_Organization_Content({
                                             memberUserIds={organization.members.map(
                                                 (m) => m.userId,
                                             )}
-                                            secondaryRoles={secondaryRoles}
+                                            moduleGatedRoles={moduleGatedRoles}
                                         />
                                     </div>
                                 </CardHeader>
@@ -179,7 +181,7 @@ export function SystemAdmin_Organization_Content({
                                                             <SystemAdmin_MemberActionsMenu
                                                                 organizationId={organizationId}
                                                                 member={member}
-                                                                secondaryRoles={secondaryRoles}
+                                                                moduleGatedRoles={moduleGatedRoles}
                                                             />
                                                         </td>
                                                     </tr>

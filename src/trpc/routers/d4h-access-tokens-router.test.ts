@@ -54,7 +54,7 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
         return d4hAccessTokensRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { d4hAccessToken: ["create"], organization: ["view"] },
+                permissions: { organization: ["update", "view"] },
                 prisma: db,
             }),
         );

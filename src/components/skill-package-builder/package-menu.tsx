@@ -65,10 +65,10 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
         ] as const),
     );
 
-    const canView = useHasPermission({ skillPackageBuilder: ["view"] });
-    const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
-    const canPublish = useHasPermission({ skillPackageBuilder: ["publish"] });
-    const canDelete = useHasPermission({ skillPackageBuilder: ["delete"] });
+    const canView = useHasPermission({ skillPackage: ["view"] });
+    const canUpdate = useHasPermission({ skillPackage: ["update"] });
+    const canPublish = useHasPermission({ skillPackage: ["publish"] });
+    const canDelete = useHasPermission({ skillPackage: ["delete"] });
 
     const [exporting, setExporting] = useState(false);
 

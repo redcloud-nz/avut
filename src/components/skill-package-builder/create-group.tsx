@@ -51,7 +51,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
 
-    const canCreateGroup = useHasPermission({ skillPackageBuilder: ["create"] });
+    const canCreateGroup = useHasPermission({ skillPackage: ["create"] });
     useActionHotkeys([
         {
             verb: "create",

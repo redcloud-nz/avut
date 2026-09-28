@@ -31,7 +31,31 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
     ],
     createOrganization: () => [invalidate(trpc.organizations.listOrganizations.queryFilter())],
+    makeOwner: (vars) => [
+        invalidate(
+            trpc.organizations.getOrganizationAsAdmin.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(trpc.organizations.listOrganizations.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+    ],
     removeOrganizationMember: (vars) => [
+        invalidate(
+            trpc.organizations.getOrganizationAsAdmin.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(trpc.organizations.listOrganizations.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+    ],
+    removeOwner: (vars) => [
         invalidate(
             trpc.organizations.getOrganizationAsAdmin.queryFilter({
                 organizationId: vars.organizationId,

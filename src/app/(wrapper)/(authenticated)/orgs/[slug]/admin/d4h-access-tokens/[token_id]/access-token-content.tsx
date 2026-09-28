@@ -85,7 +85,7 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAc
                             {accessToken.label || `Access Token: ${accessToken.id}`}
                         </Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect permissions={{ d4hAccessToken: ["update"] }}>
+                            <Protect permissions={{ organization: ["update"] }}>
                                 <Button variant="ghost" size="icon" onClick={handleRefresh}>
                                     <RefreshCwIcon />
                                 </Button>

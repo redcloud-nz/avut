@@ -44,8 +44,8 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
         parseAsStringLiteral(["delete", "archive", "restore", "recover", "move"] as const),
     );
 
-    const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
-    const canDelete = useHasPermission({ skillPackageBuilder: ["delete"] });
+    const canUpdate = useHasPermission({ skillPackage: ["update"] });
+    const canDelete = useHasPermission({ skillPackage: ["delete"] });
 
     const actions: MenuActionProps[] = [];
     if (skill.status == "Active") {

@@ -22,7 +22,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
     /**
      * Approves a session by stamping each skill check as Include or Exclude and moving the session to Include status.
      */
-    approveSession: organizationProcedure({ skillCheckSession: ["update"], skillCheck: ["update"] })
+    approveSession: organizationProcedure({ skillCheckSession: ["approve"] })
         .input(
             z.object({
                 sessionId: SkillCheckSessionId.schema,
@@ -681,7 +681,11 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * - If there is an existing skill check for the assessee, skill, and session, it will be updated with the provided result and notes.
      * - If there is no existing skill check for the assessee, skill, and session, a new skill check will be created with the provided result and notes.
      */
-    upsertSessionSkillChecks: organizationProcedure({ skillCheck: ["update"] })
+    // Recording/clearing checks within a session the caller assesses is gated as a session
+    // update (which `skills-assessor` holds) rather than on `skillCheck` — that resource no
+    // longer has an `"update"` action, and every write below is already scoped to the caller's
+    // own `assessorId`, so no separate ownership check is needed here.
+    upsertSessionSkillChecks: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
             z.object({
                 sessionId: SkillCheckSessionId.schema,

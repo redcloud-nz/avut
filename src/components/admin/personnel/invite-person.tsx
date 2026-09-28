@@ -95,7 +95,7 @@ function InvitePerson_Body({ person, close }: { person: PersonData; close: () =>
 
     const form = useForm({
         resolver: zodResolver(invitationRolesSchema),
-        defaultValues: { primaryRole: "member", secondaryRoles: [] } as const,
+        defaultValues: { roles: ["member"] } as const,
     });
 
     const inviteMutation = useMutation(

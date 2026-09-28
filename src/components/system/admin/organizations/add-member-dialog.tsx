@@ -19,7 +19,7 @@ import {
     invitationRolesSchema,
     RoleFields,
     type InvitationRolesFormValues,
-    type SecondaryRoleOptions,
+    type ModuleGatedRoleOptions,
 } from "@/components/admin/invitations/invitation-role-fields";
 import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -47,7 +47,7 @@ const addMemberFormSchema = z.object({
 });
 
 function defaultRoles(): InvitationRolesFormValues {
-    return { primaryRole: "member", secondaryRoles: [] };
+    return { roles: ["member"] };
 }
 
 /**
@@ -58,12 +58,12 @@ function defaultRoles(): InvitationRolesFormValues {
 export function SystemAdmin_AddMember_Dialog({
     organizationId,
     memberUserIds,
-    secondaryRoles,
+    moduleGatedRoles,
 }: {
     organizationId: OrganizationId;
     memberUserIds: string[];
     /** The secondary roles this organization's enabled modules make available. */
-    secondaryRoles: SecondaryRoleOptions;
+    moduleGatedRoles: ModuleGatedRoleOptions;
 }) {
     const [action, setAction] = useQueryState(
         "action",
@@ -94,7 +94,7 @@ export function SystemAdmin_AddMember_Dialog({
                     <AddMember_Body
                         organizationId={organizationId}
                         memberUserIds={memberUserIds}
-                        secondaryRoles={secondaryRoles}
+                        moduleGatedRoles={moduleGatedRoles}
                         onDone={() => handleOpenChange(false)}
                     />
                 </DialogBoundary>
@@ -106,12 +106,12 @@ export function SystemAdmin_AddMember_Dialog({
 function AddMember_Body({
     organizationId,
     memberUserIds,
-    secondaryRoles,
+    moduleGatedRoles,
     onDone,
 }: {
     organizationId: OrganizationId;
     memberUserIds: string[];
-    secondaryRoles: SecondaryRoleOptions;
+    moduleGatedRoles: ModuleGatedRoleOptions;
     onDone: () => void;
 }) {
     const { data: usersData } = useSuspenseQuery(trpc.users.listUsers.queryOptions());
@@ -181,7 +181,7 @@ function AddMember_Body({
                                     </Field>
                                 )}
                             />
-                            <RoleFields secondaryRoles={secondaryRoles} />
+                            <RoleFields moduleGatedRoles={moduleGatedRoles} />
                         </FieldGroup>
                     </form>
                 </FormProvider>

@@ -14,7 +14,8 @@ function can(role: keyof typeof Roles, permissions: Permissions): boolean {
 describe("Roles", () => {
     // `organizationProcedure` forces `organization: ["view"]` into every requirement, and
     // the organization layout gates on it too. A role without it cannot reach anything —
-    // which is exactly how `skill-package-author` ended up non-functional.
+    // which is exactly how `skill-package-author` (now `skills-author`) once ended up
+    // non-functional.
     it.each(roles)("%s can view the organization", (role) => {
         expect(can(role, { organization: ["view"] })).toBe(true);
     });
@@ -33,35 +34,76 @@ describe("Roles", () => {
     });
 
     describe("skills-assessor", () => {
-        it("can record and amend skill checks", () => {
+        it("can record skill checks, but never update or delete one through the permission system", () => {
             expect(can("skills-assessor", { skillCheck: ["create"] })).toBe(true);
-            expect(can("skills-assessor", { skillCheck: ["update"] })).toBe(true);
-            expect(can("skills-assessor", { skillCheck: ["delete"] })).toBe(true);
+            // `skillCheck` has no `"update"` action at all any more — editing an existing check
+            // is a row-ownership check in the router (`assessorId === current user`), not a
+            // permission gate.
+            expect(can("skills-assessor", { skillCheck: ["delete"] })).toBe(false);
         });
 
-        it("can read personnel to pick assessee and assessor", () => {
+        it("can read personnel and teams to pick assessee and assessor", () => {
             expect(can("skills-assessor", { person: ["view"] })).toBe(true);
+            expect(can("skills-assessor", { team: ["view"] })).toBe(true);
         });
 
-        // approveSession requires both halves.
-        it("can approve a session", () => {
-            expect(
-                can("skills-assessor", {
-                    skillCheckSession: ["update"],
-                    skillCheck: ["update"],
-                }),
-            ).toBe(true);
+        it("can create and update sessions, but not delete or approve them", () => {
+            expect(can("skills-assessor", { skillCheckSession: ["create"] })).toBe(true);
+            expect(can("skills-assessor", { skillCheckSession: ["update"] })).toBe(true);
+            expect(can("skills-assessor", { skillCheckSession: ["delete"] })).toBe(false);
+            expect(can("skills-assessor", { skillCheckSession: ["approve"] })).toBe(false);
+        });
+
+        it("cannot subscribe to skill packages", () => {
+            expect(can("skills-assessor", { skillPackageSubscription: ["view"] })).toBe(true);
+            expect(can("skills-assessor", { skillPackageSubscription: ["subscribe"] })).toBe(false);
         });
     });
 
-    describe("skill-package-author", () => {
+    describe("skills-admin", () => {
+        it("approves and cleans up sessions and deletes erroneous checks", () => {
+            expect(can("skills-admin", { skillCheckSession: ["approve"] })).toBe(true);
+            expect(can("skills-admin", { skillCheckSession: ["delete"] })).toBe(true);
+            expect(can("skills-admin", { skillCheck: ["delete"] })).toBe(true);
+        });
+
+        it("is the only role that can subscribe to skill packages", () => {
+            expect(can("skills-admin", { skillPackageSubscription: ["subscribe"] })).toBe(true);
+            for (const role of roles.filter((r) => r !== "skills-admin")) {
+                expect(can(role, { skillPackageSubscription: ["subscribe"] })).toBe(false);
+            }
+        });
+
+        it("does not itself record checks, though it can create/manage the session shell", () => {
+            expect(can("skills-admin", { skillCheck: ["create"] })).toBe(false);
+        });
+    });
+
+    describe("skills-author", () => {
         it("can author packages", () => {
-            expect(can("skill-package-author", { skillPackageBuilder: ["publish"] })).toBe(true);
+            expect(can("skills-author", { skillPackage: ["publish"] })).toBe(true);
         });
 
         it("cannot administer the organization", () => {
-            expect(can("skill-package-author", { organization: ["update"] })).toBe(false);
-            expect(can("skill-package-author", { person: ["create"] })).toBe(false);
+            expect(can("skills-author", { organization: ["update"] })).toBe(false);
+            expect(can("skills-author", { person: ["create"] })).toBe(false);
+        });
+    });
+
+    describe("skills-reporter", () => {
+        it("is read-only across the skills surface", () => {
+            expect(can("skills-reporter", { skillCheck: ["view"] })).toBe(true);
+            expect(can("skills-reporter", { skillCheckSession: ["view"] })).toBe(true);
+            expect(can("skills-reporter", { skillPackageSubscription: ["view"] })).toBe(true);
+            expect(can("skills-reporter", { person: ["view"] })).toBe(true);
+            expect(can("skills-reporter", { team: ["view"] })).toBe(true);
+        });
+
+        it("cannot create, update, delete, or approve anything", () => {
+            expect(can("skills-reporter", { skillCheck: ["create"] })).toBe(false);
+            expect(can("skills-reporter", { skillCheckSession: ["create"] })).toBe(false);
+            expect(can("skills-reporter", { skillCheckSession: ["approve"] })).toBe(false);
+            expect(can("skills-reporter", { skillPackageSubscription: ["subscribe"] })).toBe(false);
         });
     });
 
@@ -74,18 +116,44 @@ describe("Roles", () => {
             expect(can("member", { team: ["update"] })).toBe(false);
             expect(can("member", { skillCheck: ["view"] })).toBe(false);
         });
+
+        it("no longer holds member:view", () => {
+            expect(can("member", { member: ["view"] })).toBe(false);
+        });
+
+        it("keeps the baseline skillPackageSubscription:view", () => {
+            expect(can("member", { skillPackageSubscription: ["view"] })).toBe(true);
+            expect(can("member", { skillPackageSubscription: ["subscribe"] })).toBe(false);
+        });
     });
 
     describe("owner and admin", () => {
-        it("hold every statement, except that only the owner may delete the org", () => {
+        it("hold admin CRUD, except that only the owner may delete the org or grant ownership", () => {
             expect(can("owner", { organization: ["delete"] })).toBe(true);
             expect(can("admin", { organization: ["delete"] })).toBe(false);
             expect(can("admin", { organization: ["update"] })).toBe(true);
 
+            expect(can("owner", { member: ["owner"] })).toBe(true);
+            expect(can("admin", { member: ["owner"] })).toBe(false);
+
             for (const role of ["owner", "admin"] as const) {
+                expect(can(role, { member: ["create", "update", "delete"] })).toBe(true);
+                expect(can(role, { invitation: ["create", "update", "cancel"] })).toBe(true);
                 expect(can(role, { person: ["create", "delete"] })).toBe(true);
-                expect(can(role, { skillPackageBuilder: ["publish"] })).toBe(true);
-                expect(can(role, { i3Template: ["create"] })).toBe(true);
+                expect(can(role, { team: ["create", "delete"] })).toBe(true);
+                expect(can(role, { skillPackageSubscription: ["view"] })).toBe(true);
+            }
+        });
+
+        it("get zero access to the specialty resources — narrowed to actual admin functions", () => {
+            for (const role of ["owner", "admin"] as const) {
+                expect(can(role, { d4hEquipment: ["view"] })).toBe(false);
+                expect(can(role, { i3Item: ["view"] })).toBe(false);
+                expect(can(role, { i3Template: ["view"] })).toBe(false);
+                expect(can(role, { skillCheck: ["view"] })).toBe(false);
+                expect(can(role, { skillCheckSession: ["view"] })).toBe(false);
+                expect(can(role, { skillPackage: ["view"] })).toBe(false);
+                expect(can(role, { skillPackageSubscription: ["subscribe"] })).toBe(false);
             }
         });
     });
@@ -118,5 +186,12 @@ describe("hasAnyRoleWithPermissions", () => {
                 skillCheck: ["create"],
             }),
         ).toBe(false);
+    });
+
+    it("lets admin and member be held simultaneously — the primary/secondary split is gone", () => {
+        expect(hasAnyRoleWithPermissions(["admin", "member"], { member: ["create"] })).toBe(true);
+        expect(
+            hasAnyRoleWithPermissions(["admin", "member"], { skillPackageSubscription: ["view"] }),
+        ).toBe(true);
     });
 });
