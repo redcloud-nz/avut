@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { CURRENT_PATH_HEADER } from "@/lib/constants";
+import { authCookiePrefix } from "@/lib/dev-server";
 
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
@@ -38,7 +39,7 @@ export async function proxy(request: NextRequest) {
         // NOTE: this is a cookie *presence* check only — it does not validate the session.
         // It is an optimistic gate to save a round trip; the real check is `requireSession()`
         // in the layouts and pages themselves.
-        const sessionCookie = getSessionCookie(request);
+        const sessionCookie = getSessionCookie(request, { cookiePrefix: authCookiePrefix() });
 
         if (sessionCookie) {
             // Session cookie exists

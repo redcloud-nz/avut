@@ -25,7 +25,7 @@ Each function does a full navigation afterward (`signIn`/`signOut` follow the sa
 
 ## Prerequisites
 
-1. **A running local dev server** — check with the user before starting one yourself; they usually already have one up (`curl -s -o /dev/null -w "%{http_code}" http://localhost:3000` to check).
+1. **A running local dev server** on this checkout's port (AGENTS.md → Dev servers): in a worktree, `npm run dev:port`; in the main checkout, the user's 3000, or 3100 if an agent started one. Check with `curl -s -o /dev/null -w "%{http_code}" http://localhost:<port>`. If nothing answers, start one yourself in the background — `npm run dev` in a worktree, `PORT=3100 npm run dev` in the main checkout — and stop it when you're done. Never start 3000.
 2. **A test account to sign in as**, and its password. For most testing any existing account works. Only impersonation additionally needs a global admin account (`User.role = "admin"`) — there should already be one at `delivered+admin-test@resend.dev`, confirmable with:
    ```
    psql "$POSTGRES_URL_NON_POOLING" -c "SELECT id, email, role FROM users WHERE role = 'admin';"

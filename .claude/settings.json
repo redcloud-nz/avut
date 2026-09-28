@@ -5,6 +5,8 @@
       "Bash(git add *)",
       "Bash(npx next *)",
       "Bash(npm run dev)",
+      "Bash(PORT=3100 npm run dev)",
+      "Bash(npm run dev:port)",
       "Bash(npm run clean)",
       "Bash(npm run lint)",
       "Bash(npm run lint:fix)",

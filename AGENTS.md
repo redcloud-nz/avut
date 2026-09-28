@@ -76,7 +76,24 @@ The dev database holds records for **real people with their real email addresses
 - All git worktrees go under `.claude/worktrees/<name>` inside the repo (gitignored). Don't create them as siblings of the repo or anywhere else — a single location keeps `git worktree list` and cleanup predictable.
 - Remove a worktree with `npm run worktree:remove <name>` — it drops the worktree's `db:branch` database copy first (a branch DB must never outlive its worktree), then runs `git worktree remove` + `prune`. Pass `git worktree remove` flags after `--` (e.g. `npm run worktree:remove <name> -- --force` when the tree has uncommitted changes). Plain `git worktree remove` still works but leaks the branch DB.
 - If a worktree directory was deleted by hand, run `git worktree prune` — and `npm run db:unbranch` from wherever `.env.local` was last pointed, or `dropdb avut_<slug>` directly, to clean up its branch DB.
-- Set up a fresh worktree with `npm run worktree:setup` (from inside it, or pass its name) — it copies `.env.local`, links `.vercel`, installs dependencies (on macOS by cloning the main checkout's `node_modules`, otherwise `npm ci`) and generates route types, and is safe to re-run — a re-run also regenerates the Prisma client, so use it after a schema change. It doesn't start a dev server: run one on its own port (`npm run dev -- -p 3100`; the main checkout uses 3000 and `dev-email` 3001), and ask first since the user may already have one up. `.claude/settings.local.json` (the personal permission allowlist) isn't copied, so expect more permission prompts until you re-add entries.
+- Set up a fresh worktree with `npm run worktree:setup` (from inside it, or pass its name) — it copies `.env.local`, links `.vercel`, installs dependencies (on macOS by cloning the main checkout's `node_modules`, otherwise `npm ci`), generates route types and allocates the worktree's dev-server port (see [Dev servers](#dev-servers)), and is safe to re-run — a re-run also regenerates the Prisma client, so use it after a schema change. `.claude/settings.local.json` (the personal permission allowlist) isn't copied, so expect more permission prompts until you re-add entries.
+- **"Run <skill> in worktree x"** (or `in:x` in a skill's arguments): if `.claude/worktrees/x` exists, enter it (`EnterWorktree` with `path`); otherwise create it (`EnterWorktree` with `name: "x"`, which branches from `origin/integration`) and run `npm run worktree:setup`. When the work is an existing branch, `git worktree add .claude/worktrees/x <branch>` first, then enter it. Then run the skill as usual: whatever it says about "the main checkout" or "the current checkout" means that worktree — its dev server, its branch, its `db:branch`. Stay there until the skill ends; removal is the user's call (`npm run worktree:remove`).
+
+## Dev servers
+
+Every checkout gets its own port, and Next allows only one `next dev` per checkout (a second one exits with "Another next dev server is already running").
+
+| Port  | Whose                                                                                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3000  | The user's server in the main checkout. Agents may use it but never start it.                                                                                   |
+| 3001  | The user's `dev-email`. Agents don't run it.                                                                                                                    |
+| 3100  | An agent's server in the main checkout, only when the user's 3000 isn't running: `PORT=3100 npm run dev`. Stop it when you're done, since it blocks the user's. |
+| 3101+ | One fixed port per worktree, in its `.dev-port` (gitignored). `npm run dev` there serves on it.                                                                 |
+
+- Agents may start and stop servers on 3100 and up without asking. Never touch 3000 or 3001.
+- `npm run dev:port` prints the checkout's port: 3000 in the main checkout, the `.dev-port` in a worktree (allocating one on first use — the lowest free port from 3101).
+- `npm run dev` always passes the port explicitly, so a busy port fails instead of drifting onto 3001. Off 3000, the inspector moves too (port + 6229).
+- All the servers share `localhost` cookies, so auth uses a per-port cookie prefix off 3000 (`src/lib/dev-server.ts`): signing in on a worktree's server doesn't sign the user out on 3000. It also points better-auth's `baseURL` at the server's own port. Google and GitHub sign-in still only work on ports registered with the provider, so sign in with an email code on the others.
 
 ---
 
