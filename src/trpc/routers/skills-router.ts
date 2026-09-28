@@ -563,7 +563,10 @@ export const skillsRouter = createTrpcRouter({
                     distinct: ["assessorId"],
                 });
 
-                const assessors = checks.map((check) => check.assessor);
+                // A purged assessor (null) has no Person to list.
+                const assessors = checks.flatMap((check) =>
+                    check.assessor ? [check.assessor] : [],
+                );
 
                 const uniqueAssessors = R.uniqueBy(assessors, (a) => a.id);
 

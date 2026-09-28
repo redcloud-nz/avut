@@ -5,6 +5,7 @@
 "use client";
 
 import Link from "next/link";
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useMemo } from "react";
 import { toast } from "sonner";
 
@@ -17,252 +18,119 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { i3Effects } from "@/client/i3-effects";
-import { personnelEffects } from "@/client/personnel-effects";
-import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
-import { teamsEffects } from "@/client/teams-effects";
+import { trashEffects } from "@/client/trash-effects";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { MutationButton } from "@/components/ui/button";
-import { useHasPermission } from "@/hooks/use-has-permission";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button, MutationButton } from "@/components/ui/button";
+import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
-import {
-    TrashableEntities,
-    trashableEntityList,
-    type TrashableEntityId,
-} from "@/lib/trash-registry";
+import { TrashableEntities } from "@/lib/trash-registry";
 import { trpc } from "@/trpc/client";
+import type { RouterOutput } from "@/trpc/routers/_app";
 
-type TrashRow = {
-    id: string;
-    type:
-        | "Person"
-        | "Team"
-        | "TeamMembership"
-        | "I3Template"
-        | "SkillPackage"
-        | "SkillGroup"
-        | "Skill";
-    name: string;
-    deletedAt: string | null;
-    /** Only set for `TeamMembership` rows — its detail page needs both ids. */
-    teamId?: string;
-    personId?: string;
-    /** Only set for `SkillGroup`/`Skill` rows — their detail pages need the parent package id too. */
-    skillPackageId?: string;
-};
+type TrashRow = RouterOutput["trash"]["listTrash"][number];
 
-/** Maps a `listTrash` row's `type` to its `TrashableEntities` registry key, derived from the
- * registry itself rather than duplicating the type→id mapping by hand. */
-const entityIdByType = Object.fromEntries(
-    trashableEntityList.map((entity) => [entity.objectType, entity.id]),
-) as Record<TrashRow["type"], TrashableEntityId>;
-
-function RecoverCell({ row }: { row: TrashRow }) {
+/**
+ * `listTrash` only returns rows the caller holds `delete` on, so every row here is one they can
+ * recover or purge — no per-row permission check needed.
+ */
+function RecoverButton({ row }: { row: TrashRow }) {
     const organization = useOrganization();
-    const canRecoverPerson = useHasPermission({ person: ["delete"] });
-    const canRecoverTeam = useHasPermission({ team: ["delete"] });
-    const canRecoverI3Template = useHasPermission({ i3Template: ["delete"] });
-    const canRecoverSkillPackageBuilder = useHasPermission({ skillPackageBuilder: ["delete"] });
+    const label = TrashableEntities[row.type].label;
 
-    const recoverPerson = useMutation(
-        trpc.personnel.recoverPerson.mutationOptions({
-            meta: { effects: personnelEffects.recoverPerson },
+    const mutation = useMutation(
+        trpc.trash.recoverRecord.mutationOptions({
+            meta: { effects: trashEffects.recoverRecord },
             onError(error) {
-                toast.error(`Failed to recover person: ${error.message}`);
+                toast.error(`Failed to recover ${label.toLowerCase()}: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Person "${row.name}" recovered from rubbish.`);
+                toast.success(`${label} "${row.name}" recovered from rubbish.`);
             },
         }),
     );
-    const recoverTeam = useMutation(
-        trpc.teams.recoverTeam.mutationOptions({
-            meta: { effects: teamsEffects.recoverTeam },
-            onError(error) {
-                toast.error(`Failed to recover team: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success(`Team "${row.name}" recovered from rubbish.`);
-            },
-        }),
-    );
-    const recoverTeamMembership = useMutation(
-        trpc.teams.recoverTeamMembership.mutationOptions({
-            meta: { effects: teamsEffects.recoverTeamMembership },
-            onError(error) {
-                toast.error(`Failed to recover team membership: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success(`"${row.name}" recovered from rubbish.`);
-            },
-        }),
-    );
-    const recoverI3Template = useMutation(
-        trpc.i3.recoverTemplate.mutationOptions({
-            meta: { effects: i3Effects.recoverTemplate },
-            onError(error) {
-                toast.error(`Failed to recover template: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success(`Template "${row.name}" recovered from rubbish.`);
-            },
-        }),
-    );
-    const recoverPackage = useMutation(
-        trpc.skillPackageBuilder.recoverPackage.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.recoverPackage },
-            onError(error) {
-                toast.error(`Failed to recover skill package: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success(`Skill package "${row.name}" recovered from rubbish.`);
-            },
-        }),
-    );
-    const recoverGroup = useMutation(
-        trpc.skillPackageBuilder.recoverGroup.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.recoverGroup },
-            onError(error) {
-                toast.error(`Failed to recover skill group: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success(`Skill group "${row.name}" recovered from rubbish.`);
-            },
-        }),
-    );
-    const recoverSkill = useMutation(
-        trpc.skillPackageBuilder.recoverSkill.mutationOptions({
-            meta: { effects: skillPackageBuilderEffects.recoverSkill },
-            onError(error) {
-                toast.error(`Failed to recover skill: ${error.message}`);
-            },
-            onSuccess() {
-                toast.success(`Skill "${row.name}" recovered from rubbish.`);
-            },
-        }),
-    );
-
-    if (row.type === "Person") {
-        return (
-            <MutationButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canRecoverPerson}
-                status={recoverPerson.status}
-                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
-                onClick={() =>
-                    recoverPerson.mutate({ organizationId: organization.id, personId: row.id })
-                }
-            />
-        );
-    }
-
-    if (row.type === "Team") {
-        return (
-            <MutationButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canRecoverTeam}
-                status={recoverTeam.status}
-                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
-                onClick={() =>
-                    recoverTeam.mutate({ organizationId: organization.id, teamId: row.id })
-                }
-            />
-        );
-    }
-
-    if (row.type === "TeamMembership" && row.teamId !== undefined && row.personId !== undefined) {
-        const { teamId, personId } = row;
-        return (
-            <MutationButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canRecoverTeam}
-                status={recoverTeamMembership.status}
-                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
-                onClick={() =>
-                    recoverTeamMembership.mutate({
-                        organizationId: organization.id,
-                        teamId,
-                        personId,
-                    })
-                }
-            />
-        );
-    }
-
-    if (row.type === "I3Template") {
-        return (
-            <MutationButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canRecoverI3Template}
-                status={recoverI3Template.status}
-                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
-                onClick={() =>
-                    recoverI3Template.mutate({
-                        organizationId: organization.id,
-                        templateId: row.id,
-                    })
-                }
-            />
-        );
-    }
-
-    if (row.type === "SkillPackage") {
-        return (
-            <MutationButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canRecoverSkillPackageBuilder}
-                status={recoverPackage.status}
-                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
-                onClick={() =>
-                    recoverPackage.mutate({
-                        organizationId: organization.id,
-                        skillPackageId: row.id,
-                    })
-                }
-            />
-        );
-    }
-
-    if (row.type === "SkillGroup") {
-        return (
-            <MutationButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={!canRecoverSkillPackageBuilder}
-                status={recoverGroup.status}
-                text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
-                onClick={() =>
-                    recoverGroup.mutate({ organizationId: organization.id, skillGroupId: row.id })
-                }
-            />
-        );
-    }
 
     return (
         <MutationButton
             type="button"
             variant="outline"
             size="sm"
-            disabled={!canRecoverSkillPackageBuilder}
-            status={recoverSkill.status}
+            status={mutation.status}
             text={{ idle: "Recover", pending: "Recovering", success: "Recovered" }}
             onClick={() =>
-                recoverSkill.mutate({ organizationId: organization.id, skillId: row.id })
+                mutation.mutate({ organizationId: organization.id, type: row.type, id: row.id })
             }
         />
+    );
+}
+
+function PurgeDialog({
+    row,
+    open,
+    onOpenChange,
+}: {
+    row: TrashRow;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const organization = useOrganization();
+    const label = TrashableEntities[row.type].label;
+
+    const mutation = useMutation(
+        trpc.trash.purgeRecord.mutationOptions({
+            meta: { effects: trashEffects.purgeRecord },
+            onError(error) {
+                toast.error(`Failed to delete ${label.toLowerCase()} forever: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        {label} <ObjectName>{row.name}</ObjectName> permanently deleted.
+                    </>,
+                );
+                onOpenChange(false);
+            },
+        }),
+    );
+
+    return (
+        <AlertDialog open={open} onOpenChange={onOpenChange}>
+            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Forever</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Permanently delete {label.toLowerCase()} <ObjectName>{row.name}</ObjectName>{" "}
+                        and everything that belongs to it. This can&rsquo;t be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <MutationButton
+                        type="button"
+                        variant="destructive"
+                        status={mutation.status}
+                        text={{ idle: "Delete forever", pending: "Deleting", success: "Deleted" }}
+                        onClick={() =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                type: row.type,
+                                id: row.id,
+                            })
+                        }
+                    />
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 
@@ -274,13 +142,23 @@ export function AdminModule_Trash_List() {
         trpc.trash.listTrash.queryOptions({ organizationId: organization.id }),
     );
 
+    // `?action=purge&trashId=…` — the row is resolved from the list above.
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["purge"] as const));
+    const [trashId, setTrashId] = useQueryState("trashId", parseAsString);
+    const purgeRow = rows.find((row) => row.id === trashId);
+
+    function setPurgeTarget(id: string | null) {
+        const history = id ? "push" : "replace";
+        void setAction(id ? "purge" : null, { history });
+        void setTrashId(id, { history });
+    }
+
     const columns = useMemo(
         () =>
             Kaga.defineColumns<TrashRow>((columnHelper) => [
                 columnHelper.accessor("type", {
                     header: "Type",
-                    cell: (ctx) =>
-                        TrashableEntities[entityIdByType[ctx.getValue() as TrashRow["type"]]].label,
+                    cell: (ctx) => TrashableEntities[ctx.row.original.type].label,
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: true,
@@ -290,7 +168,7 @@ export function AdminModule_Trash_List() {
                     header: "Name",
                     cell: (ctx) => {
                         const row = ctx.row.original;
-                        const entity = TrashableEntities[entityIdByType[row.type]];
+                        const entity = TrashableEntities[row.type];
                         return entity.href ? (
                             <Link href={entity.href(organization.slug, row.id)}>{row.name}</Link>
                         ) : (
@@ -317,17 +195,47 @@ export function AdminModule_Trash_List() {
                     enableColumnFilter: false,
                     enableHiding: false,
                 }),
+                columnHelper.accessor("purgeAt", {
+                    header: "Purges",
+                    cell: (ctx) => {
+                        const value = ctx.getValue();
+                        if (!value) {
+                            // No Delete log entry, so no known date — never auto-purged.
+                            return <span className="text-muted-foreground">Not scheduled</span>;
+                        }
+                        return new Date(value) <= new Date()
+                            ? "Next purge run"
+                            : formatRelativeDateTime(value);
+                    },
+                    enableSorting: true,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
+                    enableHiding: true,
+                }),
                 columnHelper.display({
-                    id: "recover",
+                    id: "actions",
                     header: "",
-                    cell: (ctx) => <RecoverCell row={ctx.row.original} />,
+                    cell: (ctx) => (
+                        <div className="flex justify-end gap-2">
+                            <RecoverButton row={ctx.row.original} />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive"
+                                onClick={() => setPurgeTarget(ctx.row.original.id)}
+                            >
+                                Delete forever
+                            </Button>
+                        </div>
+                    ),
                     enableHiding: false,
                 }),
             ]),
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- setPurgeTarget only closes over stable nuqs setters
         [organization.slug, formatRelativeDateTime],
     );
 
-    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
         columns,
         data: rows,
@@ -353,6 +261,16 @@ export function AdminModule_Trash_List() {
                 <Kaga.Table table={table} />
                 <Kaga.TablePagination table={table} />
             </div>
+            {purgeRow && (
+                <PurgeDialog
+                    key={purgeRow.id}
+                    row={purgeRow}
+                    open={action === "purge"}
+                    onOpenChange={(open) => {
+                        if (!open) setPurgeTarget(null);
+                    }}
+                />
+            )}
         </Saratoga.Root>
     );
 }

@@ -10,7 +10,7 @@ import type { DiffChange } from "@/lib/diff";
 import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
 import type { OrganizationId } from "@/lib/schemas/organization";
 import type { UserId } from "@/lib/schemas/user";
-import type { LogEntryRef } from "@/server/log-entry";
+import { recordLogEntry, type LogEntryRef } from "@/server/log-entry";
 
 export interface LogEventOptions {
     action: LogAction;
@@ -48,5 +48,33 @@ export function withBatch<C extends OrgServiceContext>(ctx: C, batchId: string):
     return {
         ...ctx,
         logEvent: (options, tx) => ctx.logEvent({ ...options, batchId }, tx),
+    };
+}
+
+/**
+ * The context for an unattended run inside one organization (the Rubbish bin auto-purge): no
+ * user, so there is no `userId`, and every entry is actor-less and joins `batch` — the only
+ * provenance `recordLogEntry` accepts for an entry with no actor.
+ */
+export function unattendedOrgContext(
+    prisma: PrismaClient,
+    organizationId: OrganizationId,
+    batch: { id: string; actorLabel: string },
+): Pick<OrgServiceContext, "prisma" | "organizationId" | "logEvent"> {
+    return {
+        prisma,
+        organizationId,
+        logEvent: (options, tx = prisma) =>
+            recordLogEntry(
+                {
+                    scope: "organization",
+                    organizationId,
+                    actor: null,
+                    actorLabel: batch.actorLabel,
+                    ...options,
+                    batchId: batch.id,
+                },
+                tx,
+            ),
     };
 }

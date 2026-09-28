@@ -371,7 +371,7 @@ export const skillChecksRouter = createTrpcRouter({
      */
     getSkillCheck: organizationProcedure({ skillCheck: ["view"] })
         .input(z.object({ skillCheckId: SkillCheckId.schema }))
-        .output(SkillCheck.schema.extend({ assessor: PersonRef.schema }))
+        .output(SkillCheck.schema.extend({ assessor: PersonRef.schema.nullable() }))
         .query(async ({ ctx, input }) => {
             const check = await ctx.prisma.skillCheck.findFirst({
                 where: { id: input.skillCheckId, organizationId: ctx.organizationId },
@@ -387,7 +387,7 @@ export const skillChecksRouter = createTrpcRouter({
 
             return {
                 ...SkillCheck.fromRecord(check),
-                assessor: PersonRef.schema.parse(check.assessor),
+                assessor: check.assessor ? PersonRef.schema.parse(check.assessor) : null,
             };
         }),
 
@@ -400,7 +400,7 @@ export const skillChecksRouter = createTrpcRouter({
             z.array(
                 SkillCheck.schema.extend({
                     assessee: PersonRef.schema,
-                    assessor: PersonRef.schema,
+                    assessor: PersonRef.schema.nullable(),
                     skill: SkillRef.schema,
                     session: z
                         .object({ id: SkillCheckSessionId.schema, name: z.string() })
@@ -429,7 +429,7 @@ export const skillChecksRouter = createTrpcRouter({
             return checks.map((check) => ({
                 ...SkillCheck.fromRecord(check),
                 assessee: PersonRef.schema.parse(check.assessee),
-                assessor: PersonRef.schema.parse(check.assessor),
+                assessor: check.assessor ? PersonRef.schema.parse(check.assessor) : null,
                 skill: SkillRef.schema.parse(check.skill),
                 session: check.session
                     ? {

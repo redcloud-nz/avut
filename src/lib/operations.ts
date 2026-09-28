@@ -23,6 +23,7 @@ export const Operations = {
     "d4h-team-sync": { label: "D4H team sync" },
     "invitation-accept": { label: "Invitation accepted" },
     "invitation-reject": { label: "Invitation rejected" },
+    "rubbish-purge": { label: "Rubbish bin auto-purge" },
     "skill-package-import": { label: "Skill package import" },
 } as const;
 

@@ -607,8 +607,12 @@ model SkillCheck {
   sessionId      String?
   session        SkillCheckSession? @relation("skill_check_session_checks", fields: [sessionId], references: [id], onDelete: SetNull)
   assessee       Person             @relation("skill_check_assessee", fields: [assesseeId], references: [id], onDelete: Cascade)
-  assessorId     String
-  assessor       Person             @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
+  /// Null once the assessor's Person is purged from the Rubbish bin — the check is the assessee's
+  /// record and survives, with `assessorLabel` keeping the assessor's name.
+  assessorId     String?
+  assessor       Person?            @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: SetNull)
+  /// The assessor's name, written by the Person purge just before `assessorId` is nulled.
+  assessorLabel  String?
   skillId        String
   skill          Skill              @relation("skill_check_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
   result         SkillCheckResult

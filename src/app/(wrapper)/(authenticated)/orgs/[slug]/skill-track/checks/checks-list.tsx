@@ -28,6 +28,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import {
+    assessorDisplayName,
     getEnabledSkillCheckResultOptions,
     getSkillCheckResultLabel,
 } from "@/lib/schemas/skill-check";
@@ -101,7 +102,7 @@ export default function SkillTrack_ChecksList() {
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
-                col.accessor((row) => row.assessor.name, {
+                col.accessor((row) => assessorDisplayName(row), {
                     id: "assessor",
                     header: "Assessor",
                     enableSorting: true,

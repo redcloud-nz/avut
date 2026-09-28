@@ -4,6 +4,7 @@
  */
 
 import { Route } from "next";
+import * as z from "zod";
 
 import { route } from "@/lib/routes";
 
@@ -20,6 +21,16 @@ export type TrashableEntityId =
     | "skillPackage"
     | "skillGroup"
     | "skill";
+
+export const TrashableEntityIdSchema = z.enum([
+    "person",
+    "team",
+    "teamMembership",
+    "i3Template",
+    "skillPackage",
+    "skillGroup",
+    "skill",
+] satisfies TrashableEntityId[]);
 
 interface TrashableEntityDef {
     id: TrashableEntityId;
