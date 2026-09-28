@@ -10,14 +10,22 @@
  * `/api`), so the secret is the whole guard.
  */
 
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { purgeRubbish } from "@/server/cron/purge-rubbish";
 import { serverEnv } from "@/server/env";
 
+function safeCompare(a: string, b: string): boolean {
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
+
 export async function GET(request: Request): Promise<NextResponse> {
     const secret = serverEnv.CRON_SECRET;
-    if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+    const authorization = request.headers.get("authorization");
+    if (!secret || !authorization || !safeCompare(authorization, `Bearer ${secret}`)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
