@@ -7,7 +7,7 @@
  * renders a framed figure with light/dark sources art-directed via `<picture>`
  * (a `prefers-color-scheme` `<source>`, so the browser fetches only the variant
  * it needs), and opens the image full-size in a dialog on click (it is often
- * shown in the narrow `?help=` sheet). See `docs/specs/docs-screenshots.md`.
+ * shown in the narrow `?help=` sheet). See `docs/specs/2026-09-13-docs-screenshots.md`.
  */
 
 "use client";

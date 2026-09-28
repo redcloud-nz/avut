@@ -1,5 +1,7 @@
 # Implementation plan: Organization roles reorganisation
 
+**Date:** 2026-09-28
+
 Reworks `src/lib/permissions.ts` and `src/lib/schemas/organization-role.ts` to narrow
 admin/owner down to actual admin functions, split ownership out of the general role
 picker, flatten the primary/secondary role split into one freely-combinable set, and

@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- *  D4H linking & team synchronisation. See docs/specs/d4h-linking.md and docs/plans/d4h-linking.md.
+ *  D4H linking & team synchronisation. See docs/specs/2026-09-10-d4h-linking.md and docs/plans/2026-09-10-d4h-linking.md.
  */
 
 import "server-only";
@@ -44,7 +44,7 @@ const personTeamRefs = (personId: string, teamId: string) => [
 
 //
 // Pure, deterministic sync-plan builder — no Prisma, no D4H API. Unit-tested directly
-// (`d4h-team-sync.test.ts`). See docs/specs/d4h-linking.md §7.
+// (`d4h-team-sync.test.ts`). See docs/specs/2026-09-10-d4h-linking.md §7.
 //
 
 /** The `TeamMembership_D4H` snapshot fields, in the shape `diffObject` compares. */

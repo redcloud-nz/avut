@@ -83,7 +83,7 @@ test.
 
 > **Updated 2026-09-15.** This section used to carry a two-row table, because `Person.email`
 > was stored unnormalised and so the _column_ could be mixed case in one of the two
-> directions. [`person-email-normalisation.md`](person-email-normalisation.md) has since
+> directions. [`person-email-normalisation.md`](2026-09-14-person-email-normalisation.md) has since
 > landed, and both columns are now lowercase in the database. One rule covers both:
 
 **Lowercase the needle, match the column exactly, in both directions.** The needle is folded
@@ -350,7 +350,7 @@ Every row is a no-op-and-move-on, never an error shown to an end user.
   gets linked the moment an admin invites them (Part 1) or the org's data catches up
   (Part 2). Revisit if orgs actually ask for self-service joining.
 - Normalising `Person.email` at write time — specced separately in
-  [`person-email-normalisation.md`](person-email-normalisation.md) and **landed on
+  [`person-email-normalisation.md`](2026-09-14-person-email-normalisation.md) and **landed on
   2026-09-15**, after this branch. It made the `@@unique([organizationId, email])` invariant
   true, collapsed §3.1's two-row strategy table to a single rule, and removed
   `findLinkablePerson`'s scan. `User.email` needed nothing; better-auth already normalises it.
@@ -387,7 +387,7 @@ every no-op branch of the linker) and a `personnel` round-trip case in
 `organization-settings-store.test.ts` that also pins both switches defaulting off.
 
 The end-to-end path Part 1 serves is not reachable from unit tests at all — see
-[`docs/plans/person-user-linking-testing.md`](../plans/person-user-linking-testing.md).
+[`docs/plans/2026-09-14-person-user-linking-testing.md`](../plans/2026-09-14-person-user-linking-testing.md).
 
 `auth.ts`'s hook is not directly testable (it imports `server-only` transitively), which is
 the argument for keeping its logic entirely in `person-user-link.ts` and leaving the hook as

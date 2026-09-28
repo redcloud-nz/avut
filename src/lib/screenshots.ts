@@ -9,7 +9,7 @@
  * text. It is regenerated wholesale by the capture helper
  * (`scripts/screenshots/`) and never hand-edited.
  *
- * See `docs/specs/docs-screenshots.md`.
+ * See `docs/specs/2026-09-13-docs-screenshots.md`.
  */
 
 import indexJson from "./screenshots.generated.json";
@@ -38,7 +38,7 @@ export const screenshotIndex = indexJson as Record<string, ScreenshotEntry>;
  * components, so this actually fails `next build` only where the caller is
  * statically rendered (`<ProductShot>` on the home page); on the dynamically-
  * rendered `/docs/*` routes (`<Screenshot>`) a bad id instead throws in the
- * browser at request time. See `docs/specs/docs-screenshots.md` for the Phase 2
+ * browser at request time. See `docs/specs/2026-09-13-docs-screenshots.md` for the Phase 2
  * plan to catch that case with a build-time coverage lint check.
  */
 export function getScreenshot(id: string): ScreenshotEntry {

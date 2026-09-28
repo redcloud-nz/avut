@@ -7,7 +7,7 @@ Store `personnel.email` lowercased, so that "one person per email address per
 organization" — an invariant the schema already claims — becomes true.
 
 Motivated by, but independent of,
-[`docs/specs/person-user-linking.md`](person-user-linking.md), whose §3.1 currently
+[`docs/specs/2026-09-14-person-user-linking.md`](2026-09-14-person-user-linking.md), whose §3.1 currently
 carries a two-row table of email-matching strategies that this change collapses to one.
 
 ---
@@ -127,7 +127,7 @@ BEGIN
   ) d;
   IF dupes > 0 THEN
     RAISE EXCEPTION
-      'Cannot normalise personnel.email: % organization/email group(s) would collide. Resolve the duplicates first (see docs/specs/person-email-normalisation.md §5).', dupes;
+      'Cannot normalise personnel.email: % organization/email group(s) would collide. Resolve the duplicates first (see docs/specs/2026-09-14-person-email-normalisation.md §5).', dupes;
   END IF;
 END $$;
 

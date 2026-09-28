@@ -1,5 +1,7 @@
 # Research: `better-auth-ui` session hydration — `ensureSession`, `useAuth`, `useAuthenticate`
 
+**Date:** 2026-08-11
+
 Investigation of how `better-auth-ui` models the current session: the `ensureSession` family of query helpers, the `useAuth` config context, the `useAuthenticate` route guard, and the server→client hydration path — to inform how avut should handle session state.
 
 **Method**: created a throwaway worktree, then `npm pack`'d `@better-auth-ui/react@1.6.44` and `@better-auth-ui/core@1.6.44` into a scratchpad. Both tarballs ship full `src/` alongside `dist/`, so everything below is read from real source, not decompiled bundles. Docs and example wiring were read from `github.com/better-auth-ui/better-auth-ui` (`apps/docs/content/docs/`, `examples/next-shadcn-example/`). Nothing was installed into avut's `package.json`.

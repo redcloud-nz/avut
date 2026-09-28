@@ -10,7 +10,7 @@
  * This has to stay out of the render path. `new Date()` is an unstable value under Cache
  * Components: called while rendering, it makes the output unprerenderable, and in a Client
  * Component it's a hard build error. That error was invisible for as long as a `<Suspense>`
- * boundary sat above the landing page absorbing it — see docs/reviews/suspense-boundaries.md §3.
+ * boundary sat above the landing page absorbing it — see docs/reviews/2026-09-12-suspense-boundaries.md §3.
  *
  * A copyright footer only needs the year of the deployment, so build time is the right moment.
  */

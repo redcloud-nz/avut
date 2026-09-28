@@ -1,5 +1,7 @@
 # Research: `better-auth-ui` security settings components
 
+**Date:** 2026-08-11
+
 Investigation of how `better-auth-ui` (https://better-auth-ui.com) implements its `ChangePassword`, `LinkedAccounts`, and `ActiveSessions` security-settings components, to inform hand-rolling equivalents in avut without taking the dependency.
 
 **Method**: created a throwaway git worktree + branch (`research/better-auth-ui`, deleted after this report was written), ran `npx shadcn@latest add @better-auth-ui/all` to pull the real component source (not just compiled JS) into `src/components/auth/settings/security/`, and read it alongside `node_modules/@better-auth-ui/react/src` for the underlying data hooks. No `better-auth-ui` dependency was ever installed into `avut`'s own `package.json`.

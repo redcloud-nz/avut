@@ -455,7 +455,7 @@ describe("personnel email normalisation", () => {
     // `personnel.email` is stored lowercase so that `@@unique([organizationId, email])` means what
     // it says — Postgres unique indexes are case-sensitive, so before this both conflict checks
     // below let a case-variant through and one human ended up split across two person records.
-    // See docs/specs/person-email-normalisation.md.
+    // See docs/specs/2026-09-14-person-email-normalisation.md.
     const T = {
         org: OrganizationId.create(),
         adminUser: UserId.create(),

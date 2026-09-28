@@ -19,7 +19,7 @@ This spec is about display. It does **not** add a native "role within team"
 concept — the only role/position/status data shown is D4H's, surfaced read-only
 and only when the team (or the specific membership) is D4H-linked.
 
-**Dependency:** this builds on `docs/specs/d4h-linking.md` landing first. It
+**Dependency:** this builds on `docs/specs/2026-09-10-d4h-linking.md` landing first. It
 assumes:
 
 - `TeamMembership_D4H` exists (spec §3.3): `d4hMemberId`, `d4hStatus`,
@@ -430,4 +430,4 @@ Phase 1 adds no migration and no permission changes. Phase 2 adds the
 | Roster → membership affordance    | Right-chevron link in the actions column, replacing the delete button.                                                                                                 |
 | Person card row target            | Retargets from the team page to the membership page.                                                                                                                   |
 | "Remove from team" location       | Membership-page `⋯` menu only — removed from the roster.                                                                                                               |
-| Dependency                        | Assumes `docs/specs/d4h-linking.md` (`TeamMembership_D4H`, `TeamMembershipData.d4h`) lands first.                                                                      |
+| Dependency                        | Assumes `docs/specs/2026-09-10-d4h-linking.md` (`TeamMembership_D4H`, `TeamMembershipData.d4h`) lands first.                                                           |

@@ -23,7 +23,7 @@ import { getVisibleDocsNav } from "@/server/docs";
 // Not `async`. `getVisibleDocsNav()` resolves module flags, which read headers, so awaiting it
 // here would block the whole `/docs` subtree — the chrome below would never reach the static
 // shell. The read lives in `<DocsNav>` behind a boundary instead, leaving the sub-bar and main
-// frame prerenderable. See docs/reviews/suspense-boundaries.md §3.
+// frame prerenderable. See docs/reviews/2026-09-12-suspense-boundaries.md §3.
 export default function DocsLayout({ children }: { children: ReactNode }) {
     return (
         <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4">

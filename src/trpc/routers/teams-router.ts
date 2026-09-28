@@ -43,7 +43,7 @@ export const teamsRouter = createTrpcRouter({
     /**
      * Apply a previewed D4H team sync. Re-fetches and re-plans server-side; if the
      * fresh plan no longer matches `planToken` it rejects with a `StalePlanError`
-     * cause and writes nothing. See docs/specs/d4h-linking.md §7.
+     * cause and writes nothing. See docs/specs/2026-09-10-d4h-linking.md §7.
      */
     applyD4HTeamSync: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema, planToken: z.string() }))
@@ -349,7 +349,7 @@ export const teamsRouter = createTrpcRouter({
     /**
      * The org-level D4H link (`Organization_D4H`) for the current org, or `null`
      * if the org has never linked a team to D4H. Read model for the admin
-     * organisation page's D4H card. See docs/specs/d4h-linking.md §3.1.
+     * organisation page's D4H card. See docs/specs/2026-09-10-d4h-linking.md §3.1.
      */
     getOrganizationD4H: organizationProcedure({ organization: ["view"] })
         .output(OrganizationD4HData.schema.nullable())
@@ -389,7 +389,7 @@ export const teamsRouter = createTrpcRouter({
 
     /**
      * Get a single team membership by (teamId, personId). See
-     * docs/specs/team-membership-display.md §8.4.
+     * docs/specs/2026-09-10-team-membership-display.md §8.4.
      * @throws TRPCError(NOT_FOUND) if the pair has no membership in the organization.
      */
     getTeamMembership: organizationProcedure({ team: ["view"] })
@@ -451,7 +451,7 @@ export const teamsRouter = createTrpcRouter({
 
     /**
      * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level
-     * D4H link and running the first membership sync. See docs/specs/d4h-linking.md §6.1.
+     * D4H link and running the first membership sync. See docs/specs/2026-09-10-d4h-linking.md §6.1.
      */
     linkTeamToD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema, d4hTeamId: z.number() }))
@@ -681,7 +681,7 @@ export const teamsRouter = createTrpcRouter({
 
     /**
      * Remove the org-level D4H link. Refuses while any team in the org is still
-     * linked. See docs/specs/d4h-linking.md §6.4.
+     * linked. See docs/specs/2026-09-10-d4h-linking.md §6.4.
      */
     unlinkOrganizationFromD4H: organizationProcedure({ organization: ["update"] }).mutation(
         async ({ ctx, input: { organizationId } }) => {
@@ -720,7 +720,7 @@ export const teamsRouter = createTrpcRouter({
     /**
      * Unlink a team from D4H. `TeamMembership_D4H` rows cascade away; the
      * `TeamMembership` rows stay (they become manually-managed). In org-less mode
-     * this also removes the org-level link. See docs/specs/d4h-linking.md §6.3.
+     * this also removes the org-level link. See docs/specs/2026-09-10-d4h-linking.md §6.3.
      */
     unlinkTeamFromD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema }))

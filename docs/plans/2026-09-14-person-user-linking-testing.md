@@ -1,7 +1,7 @@
 # Testing plan: person ↔ user linking
 
 **Date:** 2026-09-14
-**Covers:** the whole of [`docs/specs/person-user-linking.md`](../specs/person-user-linking.md)
+**Covers:** the whole of [`docs/specs/2026-09-14-person-user-linking.md`](../specs/2026-09-14-person-user-linking.md)
 — the §2 constraint fix, and Parts 1, 2 and 3 — plus the incidental changes the branch made
 along the way.
 **Branch:** `feat/person-user-linking`, worktree `.claude/worktrees/person-user-linking`.
@@ -586,7 +586,7 @@ and its off defaults); `email.test.ts` (20 — the delivery guard rail).
 - `prisma-mock` ignores the `{ equals: … }` filter object on string fields, so queries written
   that way return `null` in tests while working in Postgres. The branch avoids that shape;
   `getPersonByEmail` still uses it and is therefore untestable. See
-  [`person-email-normalisation.md`](../specs/person-email-normalisation.md).
+  [`person-email-normalisation.md`](../specs/2026-09-14-person-email-normalisation.md).
 - `prisma-mock` reports an unset optional column as `undefined` rather than `null`, so assert
   on _what is linked_ rather than on a column's empty value.
 

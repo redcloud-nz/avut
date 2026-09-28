@@ -24,7 +24,7 @@ import { PageLoadingSpinner } from "@/components/ui/loading";
  * nothing in the URL while bounding the boundary.
  *
  * Removing this file fails the build: every `/orgs/[slug]/…` route then reports uncached data
- * during prerendering. See docs/reviews/suspense-boundaries.md §1 and §3.
+ * during prerendering. See docs/reviews/2026-09-12-suspense-boundaries.md §1 and §3.
  */
 export default function RootLoadingPage() {
     return <PageLoadingSpinner />;

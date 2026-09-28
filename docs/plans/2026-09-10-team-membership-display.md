@@ -1,6 +1,8 @@
 # Implementation plan: Team membership display
 
-Implements [`docs/specs/team-membership-display.md`](../specs/team-membership-display.md).
+**Date:** 2026-09-10
+
+Implements [`docs/specs/2026-09-10-team-membership-display.md`](../specs/2026-09-10-team-membership-display.md).
 
 **Branch:** worktree `team-membership-display` (branch
 `worktree-team-membership-display`), based on `worktree-d4h-linking`.

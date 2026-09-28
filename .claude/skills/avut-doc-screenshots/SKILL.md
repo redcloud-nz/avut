@@ -12,7 +12,7 @@ only `src/lib/screenshots.generated.json`, an index mapping a screenshot `id` to
 intrinsic size, and alt text. MDX references an id via `<Screenshot id="…" />`.
 
 The design and the reasoning behind every rule here is in
-[`docs/specs/docs-screenshots.md`](../../../docs/specs/docs-screenshots.md) — read it if something
+[`docs/specs/2026-09-13-docs-screenshots.md`](../../../docs/specs/2026-09-13-docs-screenshots.md) — read it if something
 below seems arbitrary. This skill is the operational loop: Phase 1 is manual capture, so a human or
 agent drives a browser and runs the upload helper. Phase 2 (a Playwright script + `manifest.ts`)
 isn't built yet; when it is, it should encode exactly what follows.

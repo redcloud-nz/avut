@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * The real nav depends on module flags, which read headers — so it can't be part of the static
  * shell and sits behind a `<Suspense>` in the docs layout. Mirrors `DocsSidebar`'s structure
  * (an overview link, then sections of pages) at plausible section sizes so the swap doesn't
- * shift the page. See docs/reviews/suspense-boundaries.md §3.
+ * shift the page. See docs/reviews/2026-09-12-suspense-boundaries.md §3.
  */
 export function DocsNav_Skeleton() {
     return (

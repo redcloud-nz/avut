@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- *  Pure enforcement of the link-time invariants in docs/specs/d4h-linking.md §4.
+ *  Pure enforcement of the link-time invariants in docs/specs/2026-09-10-d4h-linking.md §4.
  *  Unit-tested in `d4h-link-invariants.test.ts`.
  */
 

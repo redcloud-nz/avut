@@ -182,7 +182,7 @@ model Team {
 // The resolved D4H-organisation identity for an AVUT organisation, plus a cache of
 // that org's D4H attributes. Distinct from `integrations.d4h` settings (policy);
 // this is resolved foreign identity + fetched data. Created lazily on the first
-// `linkTeamToD4H`. See docs/specs/d4h-linking.md §3.1.
+// `linkTeamToD4H`. See docs/specs/2026-09-10-d4h-linking.md §3.1.
 model Organization_D4H {
   organizationId String
   organization   Organization @relation("organization_d4h_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
@@ -462,7 +462,7 @@ model TeamMembership {
 }
 
 // Presence of this row marks a membership as D4H-managed. Memberships without it
-// were added manually and are never touched by sync. See docs/specs/d4h-linking.md §3.3.
+// were added manually and are never touched by sync. See docs/specs/2026-09-10-d4h-linking.md §3.3.
 model TeamMembership_D4H {
   teamMembershipId String
   teamMembership   TeamMembership @relation("team_membership_d4h_to_team_membership", fields: [teamMembershipId], references: [id], onDelete: Cascade)
