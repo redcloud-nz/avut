@@ -248,7 +248,7 @@ legacy path now.
 - [x] 1.3 personal credential cache holds the record
 - [x] 1.4 `userId: null` on refresh/delete; `groupId` and organization checks; tests
 - [x] 1.5 explicit `token` removal; no-`token` output tests
-- [ ] 1.6 tag length and minimum payload; tests
+- [x] 1.6 tag length and minimum payload; tests
 - [ ] `npm run check`
 
 ---
