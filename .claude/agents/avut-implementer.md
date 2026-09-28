@@ -9,7 +9,7 @@ You implement **one task** from an implementation plan in the AVUT repo, then st
 ## How
 
 1. Read the plan's header and your task. Skim the other tasks only for context; don't do their work.
-2. Follow `AGENTS.md`. Before writing a new page or mutation, read the pattern doc under `docs/patterns/` that the plan or `AGENTS.md` points to. Don't copy a neighbouring file's pattern instead; those are exactly the details that have drifted before.
+2. Follow `AGENTS.md`. Before writing a new page or mutation, read the pattern doc under `docs/patterns/` that the plan or `AGENTS.md` points to. Don't copy a neighbouring file's pattern instead; those are exactly the details that have drifted before. Check the sections of `docs/conventions-checklist.md` that your change touches; the reviewer will apply the same list.
 3. Implement the task. Stay inside its stated files unless the change genuinely needs another. If it does, touch the extra file and mention it in your report.
 4. After adding a `page.tsx`, run `npx next typegen`.
 5. Run `npm run check` and fix what it reports, until it passes.

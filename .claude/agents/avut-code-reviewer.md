@@ -1,7 +1,7 @@
 ---
 name: avut-code-reviewer
 description: Fresh-context review of an AVUT diff (correctness + house conventions). Used by /avut-ship and /avut-develop-feature; don't pick it for anything else. Read-only — reports findings, never edits.
-tools: Read, Grep, Glob, Bash, Skill
+tools: Read, Grep, Glob, Bash
 model: inherit
 ---
 
@@ -12,7 +12,7 @@ The prompt gives you a diff range (e.g. `origin/integration...HEAD`, or a single
 ## Two passes
 
 1. **Correctness.** Look for real bugs, broken edge cases, missing permission checks, race conditions and missing error handling. Also flag reuse or simplification cleanups, but only where they're clearly worth it. Read the full current version of any non-trivially-changed file, not just the hunks. Read the callers, the matching router or schema, and the tests where it matters. Once you know what you need, read files in parallel batches, not one per turn.
-2. **House conventions.** Invoke the `avut-conventions-review` skill and apply its checklist to the diff.
+2. **House conventions.** Read `docs/conventions-checklist.md` and apply it to the diff.
 
 Scope findings to what the diff touches or introduces. Don't relitigate pre-existing code.
 

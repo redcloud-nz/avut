@@ -82,7 +82,7 @@ The dev database holds records for **real people with their real email addresses
 
 # Codebase Conventions
 
-How the code is written. Read the linked pattern doc before writing a new page or mutation rather than inferring the pattern from a neighbouring file.
+How the code is written. Read the linked pattern doc before writing a new page or mutation rather than inferring the pattern from a neighbouring file. [`docs/conventions-checklist.md`](docs/conventions-checklist.md) is the checklist of the rules below that lint doesn't enforce. Apply it when reviewing any diff here, alongside the correctness pass.
 
 Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec, plan, research doc, and review under `docs/` carries a `**Date:**` line in its header _and_ the same date as a filename prefix (`YYYY-MM-DD-subject.md`) — see that folder's README before adding or renaming one.
 

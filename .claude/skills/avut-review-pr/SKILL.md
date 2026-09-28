@@ -59,7 +59,7 @@ Read the full current version of any non-trivially-changed file from the working
 Run two passes over the diff:
 
 1. **General correctness & quality** — real bugs, broken edge cases, race conditions, missing error handling, plus reuse / simplification / efficiency cleanups. Scope findings to what the diff touches; don't relitigate unrelated pre-existing code.
-2. **AVUT house conventions** — invoke the `avut-conventions-review` skill and apply its checklist against this diff (tRPC router ordering/permissions/`ctx.logEvent`, `$transaction` vs `Promise.all`, D4H optionality + server-only boundaries, `nanoId16()`, Zod placement, `route()`, generated files, server/client data-fetching boundaries, `Protect`/UI blocks, test structure).
+2. **AVUT house conventions** — read `docs/conventions-checklist.md` and apply it to this diff (tRPC router ordering/permissions/`ctx.logEvent`, `$transaction` vs `Promise.all`, D4H optionality + server-only boundaries, `nanoId16()`, Zod placement, `route()`, generated files, server/client data-fetching boundaries, `Protect`/UI blocks, test structure).
 
 For each finding note: severity, `file:line`, what's wrong, and the concrete fix.
 
