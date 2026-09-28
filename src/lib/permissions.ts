@@ -62,6 +62,15 @@ export const Roles = {
         organization: ["view"],
         person: ["view"],
     }),
+    // Manages I3 templates — creation, editing and deletion (incl. trash/restore/purge).
+    // Everyday issue/inspect/return work stays on `i3-editor`; this is the specialty role
+    // for maintaining the templates themselves.
+    "i3-admin": ac.newRole({
+        d4hEquipment: ["view"],
+        i3Item: ["view"],
+        i3Template: ["view", "create", "update", "delete"],
+        organization: ["view"],
+    }),
     "skills-assessor": ac.newRole({
         organization: ["view"],
         skillPackageSubscription: ["view"],

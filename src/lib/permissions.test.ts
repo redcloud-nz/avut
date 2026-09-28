@@ -33,6 +33,19 @@ describe("Roles", () => {
         });
     });
 
+    describe("i3-admin", () => {
+        it("can author and delete templates, including through trash", () => {
+            expect(can("i3-admin", { i3Template: ["view", "create", "update", "delete"] })).toBe(
+                true,
+            );
+        });
+
+        it("can view items but not issue/inspect/return them", () => {
+            expect(can("i3-admin", { i3Item: ["view"] })).toBe(true);
+            expect(can("i3-admin", { i3Item: ["issue"] })).toBe(false);
+        });
+    });
+
     describe("skills-assessor", () => {
         it("can record skill checks, but never update or delete one through the permission system", () => {
             expect(can("skills-assessor", { skillCheck: ["create"] })).toBe(true);

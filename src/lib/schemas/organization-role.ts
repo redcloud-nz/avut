@@ -9,6 +9,7 @@ const organizationRoleSchema = z.enum([
     "admin",
     "member",
     "i3-editor",
+    "i3-admin",
     "skills-assessor",
     "skills-admin",
     "skills-author",
@@ -36,6 +37,12 @@ const organizationRoles = {
     "i3-editor": {
         displayName: "I3 Editor",
         description: "Can edit I3 content within the organisation.",
+        isAdminAssignable: true,
+    },
+    "i3-admin": {
+        displayName: "I3 Admin",
+        description:
+            "Manages I3 templates — creating, editing and deleting them, including trash/restore/purge. Not needed for everyday issue/inspect/return work, which is covered by I3 Editor.",
         isAdminAssignable: true,
     },
     "skills-assessor": {

@@ -195,8 +195,9 @@ describe("trash.listTrash", () => {
         // rather than through `ctx.hasPermission`. `admin` alone no longer reaches
         // `skillPackage` (narrowed to actual admin functions) — this caller also grants
         // themselves `skills-author`, the same way a real admin would, to see that entity type
-        // too. `i3Template` stays unreachable by any role (`i3-editor` is unchanged — view-only,
-        // no delete), so this test's i3Template row is expected to be absent, not present.
+        // too. `admin` also doesn't reach `i3Template` any more (that's `i3-admin`'s job) and
+        // this caller doesn't hold `i3-admin` either, so this test's i3Template row is expected
+        // to be absent, not present.
         await db.organizationUser.create({
             data: {
                 id: nanoId16(),
@@ -234,10 +235,8 @@ describe("trash.listTrash", () => {
     it("lists Deleted records across entity types for an admin, with deletedAt resolved", async () => {
         const rows = await makeCaller(T.adminUser).listTrash({ organizationId: T.org });
 
-        // Not 7 — `i3Template` is omitted. Admin/owner were narrowed off it entirely, and
-        // `i3-editor` (the only other role that touches `i3Template`) is view-only, so no role
-        // holds `i3Template: ["delete"]` any more; that entity type is unreachable through
-        // `listTrash` until some role is granted it.
+        // Not 7 — `i3Template` is omitted. Admin/owner were narrowed off it entirely; deleting
+        // I3 templates is now `i3-admin`'s job, and this caller doesn't hold that role.
         expect(rows).toHaveLength(5);
         const person = rows.find((r) => r.id === T.deletedPerson);
         const team = rows.find((r) => r.id === T.deletedTeam);

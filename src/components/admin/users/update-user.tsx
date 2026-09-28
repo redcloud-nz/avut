@@ -90,6 +90,7 @@ export function AdminModule_UpdateUser_Dialog({
 
     const moduleGatedRoles: ModuleGatedRoleOptions = [
         { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
+        { role: "i3-admin", enabled: organization.settings.modules.i3.enabled },
         {
             role: "skills-assessor",
             enabled: organization.settings.modules["skill-track"].enabled,

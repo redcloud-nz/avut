@@ -46,7 +46,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Role",
         shortDefinition: "What a user is allowed to do within an organisation.",
         longDefinition:
-            "Decides what a signed-in user can do inside an organisation. `owner` (granted and revoked separately from the rest) and `admin` can manage the organisation itself; `member` has everyday access; `i3-editor`, `skills-assessor`, `skills-admin`, `skills-author`, and `skills-reporter` grant extra rights scoped to one module each. A member can freely combine any number of these roles.",
+            "Decides what a signed-in user can do inside an organisation. `owner` (granted and revoked separately from the rest) and `admin` can manage the organisation itself; `member` has everyday access; `i3-editor`, `i3-admin`, `skills-assessor`, `skills-admin`, `skills-author`, and `skills-reporter` grant extra rights scoped to one module each. A member can freely combine any number of these roles.",
         modules: ["org-admin"],
         relatedTerms: ["organization", "user", "person"],
     },

@@ -50,6 +50,7 @@ export function SystemAdmin_Organization_Content({
     // for the organization's own admins.
     const moduleGatedRoles: ModuleGatedRoleOptions = [
         { role: "i3-editor", enabled: organization.enabledModules.includes("i3") },
+        { role: "i3-admin", enabled: organization.enabledModules.includes("i3") },
         { role: "skills-assessor", enabled: organization.enabledModules.includes("skill-track") },
         { role: "skills-admin", enabled: organization.enabledModules.includes("skill-track") },
         { role: "skills-reporter", enabled: organization.enabledModules.includes("skill-track") },
