@@ -243,7 +243,7 @@ legacy path now.
 
 ### Phase 1 checklist
 
-- [ ] 1.1 revalidate on delete/refresh; `organizationConfig` delete checked or fixed; tests
+- [x] 1.1 revalidate on delete/refresh; `organizationConfig` delete checked or fixed; tests
 - [ ] 1.2 page checks (permission object per roles-reorg status); dev-only pages 404 outside `next dev`; browser check as `member`
 - [ ] 1.3 personal credential cache holds the record
 - [ ] 1.4 `userId: null` on refresh/delete; `groupId` and organization checks; tests

@@ -21,6 +21,7 @@ import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings";
 import {
+    revalidateD4HAccessToken,
     revalidatePersonalD4HAccessTokenForUser,
     toServerOnlyD4HAccessToken,
 } from "@/server/d4h-access-token";
@@ -200,20 +201,22 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     objectType: "D4HAccessToken",
                     objectId: existing.id,
                 }),
-                // Delete any organization config entries that reference this token
-                ctx.prisma.organizationConfig.delete({
+                // Delete any organization config entries that reference this token. `deleteMany`,
+                // not `delete`: most tokens aren't the sync token, and `delete` throws when nothing
+                // matches, which would roll back the whole transaction.
+                ctx.prisma.organizationConfig.deleteMany({
                     where: {
-                        organizationId_key: {
-                            organizationId: ctx.organizationId,
-                            key: `integrations.d4h.syncToken`,
-                        },
+                        organizationId: ctx.organizationId,
+                        key: `integrations.d4h.syncToken`,
                         value: { equals: input.tokenId },
                     },
                 }),
             ]);
 
+            // Neither is a Prisma operation, so they can't join the $transaction above.
+            // Drop the cached credential so the deleted token stops working immediately.
+            revalidateD4HAccessToken(input.tokenId);
             // Revalidate organization settings in case this token was being used.
-            // Not a Prisma operation, so it can't join the $transaction above.
             await revalidateOrganizationSettings(ctx.organizationId);
         }),
 
@@ -403,5 +406,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     description: "Refreshed D4H access token metadata.",
                 }),
             ]);
+
+            revalidateD4HAccessToken(input.tokenId);
         }),
 });

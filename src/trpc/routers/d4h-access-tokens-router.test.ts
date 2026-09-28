@@ -9,10 +9,38 @@ import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { revalidateD4HAccessToken } from "@/server/d4h-access-token";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
+
+/** A `ProviderCredential` row for seeding. `expiresAt` is a `Date` because prisma-mock stores
+ * DateTime values verbatim. */
+function credentialData({
+    id,
+    organizationId,
+    userId,
+    groupId = null,
+}: {
+    id: string;
+    organizationId: string;
+    userId: string | null;
+    groupId?: string | null;
+}) {
+    return {
+        id,
+        provider: "D4H" as const,
+        organizationId,
+        userId,
+        groupId,
+        label: "Seeded token",
+        token: "encrypted:seeded-secret",
+        status: "OK",
+        expiresAt: new Date("2036-01-01T00:00:00Z"),
+        metadata: { provider: "D4H", serverCode: "us", d4HTeams: [], d4HOrganisations: [] },
+    };
+}
 
 // d4h-access-tokens-router reaches @/server/auth at import time via ../init. It also imports
 // @/server/d4h-api/client and @/server/d4h-access-token, both of which pull in next/cache and
@@ -28,7 +56,17 @@ vi.mock("@/server/d4h-api/client", () => ({
 }));
 
 vi.mock("@/server/d4h-access-token", () => ({
+    revalidateD4HAccessToken: vi.fn(),
     revalidatePersonalD4HAccessTokenForUser: vi.fn(),
+    toServerOnlyD4HAccessToken: vi.fn((record: { id: string }) => ({
+        id: record.id,
+        serverCode: "us",
+        token: "seeded-secret",
+    })),
+}));
+
+vi.mock("@/server/cache/organization-settings", () => ({
+    revalidateOrganizationSettings: vi.fn(),
 }));
 
 vi.mock("@/server/encrypt", () => ({
@@ -160,5 +198,113 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
 
         expect(JSON.stringify(changes)).not.toContain("another-super-secret-key");
         expect(changes).toContainEqual({ type: "obj_mask", path: ["token"] });
+    });
+});
+
+describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        syncToken: D4HAccessTokenId.create(),
+        otherToken: D4HAccessTokenId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        for (const id of [T.syncToken, T.otherToken]) {
+            await db.providerCredential.create({
+                data: credentialData({ id, organizationId: T.org, userId: null }),
+            });
+        }
+        await db.organizationConfig.create({
+            data: { organizationId: T.org, key: "integrations.d4h.syncToken", value: T.syncToken },
+        });
+    });
+
+    function makeCaller() {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { d4hAccessToken: ["delete"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("deletes a token that isn't the configured sync token", async () => {
+        await makeCaller().deleteOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.otherToken,
+        });
+
+        expect(await db.providerCredential.findUnique({ where: { id: T.otherToken } })).toBeNull();
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.otherToken);
+
+        // The sync token's config entry is untouched.
+        const config = await db.organizationConfig.findUnique({
+            where: {
+                organizationId_key: { organizationId: T.org, key: "integrations.d4h.syncToken" },
+            },
+        });
+        expect(config?.value).toBe(T.syncToken);
+    });
+
+    it("deletes the sync token and its config entry", async () => {
+        await makeCaller().deleteOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.syncToken,
+        });
+
+        expect(await db.providerCredential.findUnique({ where: { id: T.syncToken } })).toBeNull();
+        expect(
+            await db.organizationConfig.findUnique({
+                where: {
+                    organizationId_key: {
+                        organizationId: T.org,
+                        key: "integrations.d4h.syncToken",
+                    },
+                },
+            }),
+        ).toBeNull();
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.syncToken);
+    });
+});
+
+describe("d4hAccessTokensRouter.refreshToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        orgToken: D4HAccessTokenId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.orgToken, organizationId: T.org, userId: null }),
+        });
+    });
+
+    function makeCaller() {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { d4hAccessToken: ["update"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("revalidates the cached credential", async () => {
+        await makeCaller().refreshToken({ organizationId: T.org, tokenId: T.orgToken });
+
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.orgToken);
     });
 });
