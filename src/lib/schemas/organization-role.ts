@@ -5,72 +5,117 @@
 
 import * as z from "zod";
 
+import type { OrganizationModuleId } from "@/lib/modules";
+import type { Role } from "@/lib/permissions";
+
+/**
+ * Module ids that can actually gate a role. Excludes `org-admin` — it's `alwaysOn` and has no
+ * `OrganizationSettings.modules` entry of its own, so it could never be the `moduleId` a role
+ * picker checks against.
+ */
+type RoleGatingModuleId = Exclude<OrganizationModuleId, "org-admin">;
+
 const organizationRoleSchema = z.enum([
-    "owner",
     "admin",
     "member",
     "i3-editor",
+    "i3-admin",
     "skills-assessor",
-    "skill-package-author",
+    "skills-admin",
+    "skills-author",
+    "skills-reporter",
 ]);
 
 interface OrganizationRoleInfo {
     displayName: string;
     description?: string;
     isAdminAssignable: boolean;
-    isPrimary: boolean;
+    /**
+     * The organization module that must be enabled for a role picker to offer this role.
+     * Omitted for roles that are always available (`admin`, `member`) — the single source of
+     * truth for which specialty role belongs to which module, so a picker can never drift out
+     * of sync with another (see `OrganizationRole.moduleGatedOptions`).
+     */
+    moduleId?: RoleGatingModuleId;
 }
 
 const organizationRoles = {
-    owner: {
-        displayName: "Owner",
-        description:
-            "Has full access to all organisation settings and data. Can even delete the organisation. This role is not assignable by admins.",
-        isAdminAssignable: false,
-        isPrimary: true,
-    },
     admin: {
         displayName: "Admin",
         description:
-            "Has full access to all organisation settings and data. Can manage users and roles.",
+            "Has full access to organisation settings, users and roster management. Can manage users and roles.",
         isAdminAssignable: true,
-        isPrimary: true,
     },
     member: {
         displayName: "Member",
         description: "Can view and interact with organisation resources.",
         isAdminAssignable: true,
-        isPrimary: true,
     },
     "i3-editor": {
         displayName: "I3 Editor",
         description: "Can edit I3 content within the organisation.",
         isAdminAssignable: true,
-        isPrimary: false,
+        moduleId: "i3",
+    },
+    "i3-admin": {
+        displayName: "I3 Admin",
+        description:
+            "Manages I3 templates — creating, editing and deleting them, including trash/restore/purge. Not needed for everyday issue/inspect/return work, which is covered by I3 Editor.",
+        isAdminAssignable: true,
+        moduleId: "i3",
     },
     "skills-assessor": {
         displayName: "Skills Assessor",
-        description: "Can assess skills and provide feedback.",
+        description: "Can record and manage skill checks and skill check sessions.",
         isAdminAssignable: true,
-        isPrimary: false,
+        moduleId: "skill-track",
     },
-    "skill-package-author": {
-        displayName: "Skill Package Author",
-        description: "Can create and manage skill packages.",
+    "skills-admin": {
+        displayName: "Skills Admin",
+        description:
+            "Approves and manages skill check sessions org-wide; can delete erroneous checks and sessions, but doesn't perform assessments itself.",
         isAdminAssignable: true,
-        isPrimary: false,
+        moduleId: "skill-track",
+    },
+    "skills-author": {
+        displayName: "Skills Author",
+        description:
+            "Creates and publishes skill packages (assessment templates) for the org to subscribe to — not to be confused with performing assessments.",
+        isAdminAssignable: true,
+        moduleId: "skill-package-builder",
+    },
+    "skills-reporter": {
+        displayName: "Skills Reporter",
+        description: "Read-only access to skill check and skill check session reporting.",
+        isAdminAssignable: true,
+        moduleId: "skill-track",
     },
 } satisfies Record<z.infer<typeof organizationRoleSchema>, OrganizationRoleInfo>;
+
+/**
+ * A role offered by a role picker, and whether it's currently available. Roles gated on a
+ * module (see `OrganizationRoleInfo.moduleId`) are only `enabled` when that module is; `admin`/
+ * `member` are always enabled.
+ */
+export type ModuleGatedRoleOptions = readonly {
+    role: OrganizationRole;
+    enabled: boolean;
+}[];
 
 export const OrganizationRole = {
     schema: organizationRoleSchema,
 
-    primaryRoleSchema: z.enum(["owner", "admin", "member"]),
-    secondaryRoleSchema: z.enum(["i3-editor", "skills-assessor", "skill-package-author"]),
-
-    displayNames: Object.fromEntries(
-        Object.entries(organizationRoles).map(([role, info]) => [role, info.displayName]),
-    ) as Record<OrganizationRole, string>,
+    /**
+     * Display names for every role a stored membership can hold — the assignable roles plus
+     * `owner`, which no picker offers (see `makeOwner`/`removeOwner`) but which still has to
+     * read as "Owner" wherever a member's roles are listed.
+     */
+    displayNames: {
+        owner: "Owner",
+        ...Object.fromEntries(
+            Object.entries(organizationRoles).map(([role, info]) => [role, info.displayName]),
+        ),
+    } as Record<Role, string>,
 
     roles: organizationRoles as Record<OrganizationRole, OrganizationRoleInfo>,
 
@@ -82,25 +127,40 @@ export const OrganizationRole = {
     values: Object.keys(organizationRoles) as OrganizationRole[],
 
     /**
-     * A member's complete role set as submitted from a form: exactly one primary role plus any
-     * secondary roles, no repeats. Membership rows store this comma-joined — see `serialize`.
+     * Every role gated on a module (see `moduleId`), resolved against `isModuleEnabled` — the
+     * single place a role picker gets its module-gated options from, so every picker (the
+     * invitation form, the org-admin edit-roles dialog, the system-admin screens) stays in sync
+     * with which specialty role belongs to which module without re-deriving the list itself.
+     * `admin`/`member` never appear here — they have no `moduleId` and are always offered.
+     */
+    moduleGatedOptions(
+        isModuleEnabled: (id: RoleGatingModuleId) => boolean,
+    ): ModuleGatedRoleOptions {
+        return Object.entries(organizationRoles as Record<OrganizationRole, OrganizationRoleInfo>)
+            .filter(
+                (
+                    entry,
+                ): entry is [
+                    OrganizationRole,
+                    OrganizationRoleInfo & { moduleId: RoleGatingModuleId },
+                ] => Boolean(entry[1].moduleId),
+            )
+            .map(([role, info]) => ({ role, enabled: isModuleEnabled(info.moduleId) }));
+    },
+
+    /**
+     * A member's complete role set as submitted from a form: at least one role, no repeats.
+     * `owner` is handled entirely outside this schema (see `makeOwner`/`removeOwner`).
+     * Membership rows store this comma-joined — see `serialize`.
      */
     assignmentSchema: z
         .array(organizationRoleSchema)
         .refine((roles) => new Set(roles).size === roles.length, "Roles must not repeat.")
-        .refine(
-            (roles) => roles.filter((role) => organizationRoles[role].isPrimary).length === 1,
-            "Choose exactly one primary role (owner, admin or member).",
-        ),
+        .refine((roles) => roles.length > 0, "Choose at least one role."),
 
-    /** The stored `OrganizationUser.role` value for a role set: comma-joined, primary role first. */
+    /** The stored `OrganizationUser.role` value for a role set: comma-joined. */
     serialize(roles: OrganizationRole[]): string {
-        return [...roles]
-            .sort(
-                (a, b) =>
-                    Number(organizationRoles[b].isPrimary) - Number(organizationRoles[a].isPrimary),
-            )
-            .join(",");
+        return roles.join(",");
     },
 
     /** Whether a stored (comma-joined) `OrganizationUser.role` value includes `role`. */
@@ -120,27 +180,11 @@ export const OrganizationRole = {
     },
 
     /** Display names for a role list; an unrecognised stored role is shown as-is. */
-    formatList(roles: OrganizationRole[] | string) {
+    formatList(roles: Role[] | string) {
         const list = typeof roles === "string" ? roles.split(",").map((r) => r.trim()) : roles;
         return list
             .map((role) => (this.displayNames as Record<string, string>)[role] ?? role)
             .join(", ");
-    },
-
-    getPrimaryRole(roles: OrganizationRole[]): "owner" | "admin" | "member" {
-        const primaryRole = roles.find(
-            (role) => role === "owner" || role === "admin" || role === "member",
-        );
-        if (!primaryRole) throw new Error("No primary role found in roles array");
-
-        return primaryRole;
-    },
-    getSecondaryRoles(
-        roles: OrganizationRole[],
-    ): Exclude<OrganizationRole, "owner" | "admin" | "member">[] {
-        return roles.filter(
-            (role) => role !== "owner" && role !== "admin" && role !== "member",
-        ) as Exclude<OrganizationRole, "owner" | "admin" | "member">[];
     },
 } as const;
 

@@ -40,7 +40,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
      * Create a new D4H access token for the organization.
      */
     createOrganizationAccessToken: organizationProcedure({
-        d4hAccessToken: ["create"],
+        organization: ["update"],
     })
         .input(
             z.object({
@@ -174,7 +174,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
      * Delete a saved organization access token. This does not revoke the token in D4H, but removes it from AVUT.
      */
     deleteOrganizationAccessToken: organizationProcedure({
-        d4hAccessToken: ["delete"],
+        organization: ["update"],
     })
         .input(
             z.object({
@@ -264,7 +264,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
      * Get a specific D4H access token by ID. Only returns tokens that belong to the organization.
      */
     getOrganizationAccessToken: organizationProcedure({
-        d4hAccessToken: ["view"],
+        organization: ["update"],
     })
         .input(
             z.object({
@@ -325,7 +325,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
      * List all D4H access tokens that have been saved for the organization.
      */
     listOrganizationAccessTokens: organizationProcedure({
-        d4hAccessToken: ["view"],
+        organization: ["update"],
     })
         .output(z.array(D4HAccessToken.schema))
         .query(async ({ ctx }) => {
@@ -364,7 +364,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         }),
 
     refreshToken: organizationProcedure({
-        d4hAccessToken: ["update"],
+        organization: ["update"],
     })
         .input(
             z.object({

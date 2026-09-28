@@ -41,8 +41,8 @@ export function SkillPackageBuilder_Group_Menu({
         parseAsStringLiteral(["delete", "archive", "restore", "recover"] as const),
     );
 
-    const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
-    const canDelete = useHasPermission({ skillPackageBuilder: ["delete"] });
+    const canUpdate = useHasPermission({ skillPackage: ["update"] });
+    const canDelete = useHasPermission({ skillPackage: ["delete"] });
 
     const actions: MenuActionProps[] = [];
     if (skillGroup.status == "Active") {

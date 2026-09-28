@@ -17,7 +17,8 @@ import type { RawHotkey } from "@tanstack/react-hotkeys";
  *
  * `link` and `unlink` deliberately share `Alt+L` — they're mutually exclusive on
  * any one page (a linked entity shows Unlink, an unlinked one shows Link), like a
- * toggle, so registering both at once never happens.
+ * toggle, so registering both at once never happens. `make-owner`/`remove-owner`
+ * share `Alt+W` for the same reason — a member's menu shows exactly one of them.
  */
 export const ActionHotkey = {
     create: "Alt+N",
@@ -36,6 +37,9 @@ export const ActionHotkey = {
     invite: "Alt+V",
     link: "Alt+L",
     unlink: "Alt+L",
+    // W for oWner — O is already `recover`.
+    "make-owner": "Alt+W",
+    "remove-owner": "Alt+W",
 } as const satisfies Record<string, string>;
 
 export type ActionVerb = keyof typeof ActionHotkey;

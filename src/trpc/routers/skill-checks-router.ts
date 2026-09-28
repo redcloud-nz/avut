@@ -420,8 +420,13 @@ export const skillChecksRouter = createTrpcRouter({
 
     /**
      * Updates a skill check's result and notes. The skill check must belong to the organization.
+     *
+     * `skillCheck` no longer has an `"update"` action at all — editing an existing check is a
+     * row-ownership check below (`assessorId === current user`), not a permission gate. The gate
+     * here is `["create"]`, the same broad "records checks" grant a `skills-assessor` already
+     * holds; it's the ownership check that stops one assessor editing another's check.
      */
-    updateSkillCheck: organizationProcedure({ skillCheck: ["update"] })
+    updateSkillCheck: organizationProcedure({ skillCheck: ["create"] })
         .input(
             z.object({
                 skillCheckId: SkillCheckId.schema,

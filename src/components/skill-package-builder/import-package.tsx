@@ -43,7 +43,7 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["import"] as const));
     const dialogOpen = action === "import";
 
-    const canImport = useHasPermission({ skillPackageBuilder: ["create"] });
+    const canImport = useHasPermission({ skillPackage: ["create"] });
     useActionHotkeys([
         {
             verb: "import",

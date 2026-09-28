@@ -9,7 +9,6 @@ import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import type { SecondaryRoleOptions } from "@/components/admin/invitations/invitation-role-fields";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { UserLink } from "@/components/entity-links/user-link";
@@ -17,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
 import { Modules, type ModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -39,23 +39,20 @@ const RECORD_COUNT_LABELS: Record<string, string> = {
 
 export function SystemAdmin_Organization_Content({
     organizationId,
+    moduleFlags,
 }: {
     organizationId: OrganizationId;
+    moduleFlags: ModuleFlagState;
 }) {
     const { data: organization } = useSuspenseQuery(
         trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
     );
 
-    // Which secondary roles are offered follows the organization's enabled modules, as it does
-    // for the organization's own admins.
-    const secondaryRoles: SecondaryRoleOptions = [
-        { role: "i3-editor", enabled: organization.enabledModules.includes("i3") },
-        { role: "skills-assessor", enabled: organization.enabledModules.includes("skill-track") },
-        {
-            role: "skill-package-author",
-            enabled: organization.enabledModules.includes("skill-package-builder"),
-        },
-    ];
+    // Which specialty roles are offered follows the organization's enabled modules and the
+    // modules' Vercel flags, as it does for the organization's own admins.
+    const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
+        isModuleUsable(moduleFlags, id, organization.enabledModules.includes(id)),
+    );
 
     return (
         <>
@@ -125,7 +122,7 @@ export function SystemAdmin_Organization_Content({
                                             memberUserIds={organization.members.map(
                                                 (m) => m.userId,
                                             )}
-                                            secondaryRoles={secondaryRoles}
+                                            moduleGatedRoles={moduleGatedRoles}
                                         />
                                     </div>
                                 </CardHeader>
@@ -179,7 +176,7 @@ export function SystemAdmin_Organization_Content({
                                                             <SystemAdmin_MemberActionsMenu
                                                                 organizationId={organizationId}
                                                                 member={member}
-                                                                secondaryRoles={secondaryRoles}
+                                                                moduleGatedRoles={moduleGatedRoles}
                                                             />
                                                         </td>
                                                     </tr>

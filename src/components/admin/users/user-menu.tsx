@@ -4,14 +4,18 @@
  */
 "use client";
 
+import { CrownIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { AdminModule_LinkPerson_Dialog } from "@/components/admin/person-user-link/link-person";
 import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/person-user-link/unlink-person";
 import { AdminModule_DeleteUser_Dialog } from "@/components/admin/users/delete-user";
+import { AdminModule_MakeOwner_Dialog } from "@/components/admin/users/make-owner";
+import { AdminModule_RemoveOwner_Dialog } from "@/components/admin/users/remove-owner";
 import { ObjectIcons } from "@/components/icons";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { hasOwnerRole } from "@/lib/permissions";
 import { PersonData } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { type AuthOrganizationMember } from "@/server/auth";
@@ -32,12 +36,25 @@ export function AdminModule_User_Menu({
 }: AdminModule_UserMenuProps) {
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["update", "delete", "link-person", "unlink-person"] as const),
+        parseAsStringLiteral([
+            "update",
+            "delete",
+            "link-person",
+            "unlink-person",
+            "make-owner",
+            "remove-owner",
+        ] as const),
     );
 
     const canUpdateMember = useHasPermission({ member: ["update"] });
     const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
     const canDelete = useHasPermission({ member: ["delete"] });
+
+    // `owner` is granted/revoked through dedicated mutations, not the general role picker — the
+    // menu items below always show (the permission check surfaces as the mutation's own error
+    // inside the dialog), but which one shows follows the member's current ownership. Remove is
+    // disabled on your own row, since `removeOwner` always refuses self-removal.
+    const isOwner = hasOwnerRole(member.role);
 
     const actions: MenuActionProps[] = [
         {
@@ -63,6 +80,23 @@ export function AdminModule_User_Menu({
             icon: <ObjectIcons.Link />,
             onSelect: () => setAction("link-person", { history: "push" }),
             disabled: !canUpdateLink,
+        });
+    }
+    if (isOwner) {
+        actions.push({
+            verb: "remove-owner",
+            label: "Remove owner",
+            icon: <CrownIcon />,
+            onSelect: () => setAction("remove-owner", { history: "push" }),
+            destructive: true,
+            disabled: userId === currentUserId,
+        });
+    } else {
+        actions.push({
+            verb: "make-owner",
+            label: "Make owner",
+            icon: <CrownIcon />,
+            onSelect: () => setAction("make-owner", { history: "push" }),
         });
     }
     actions.push({
@@ -115,6 +149,28 @@ export function AdminModule_User_Menu({
                     }
                 />
             )}
+
+            {/* Make Owner dialog */}
+            <AdminModule_MakeOwner_Dialog
+                organizationUser={member}
+                open={action === "make-owner"}
+                onOpenChange={(open) =>
+                    setAction(open ? "make-owner" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Remove Owner dialog */}
+            <AdminModule_RemoveOwner_Dialog
+                organizationUser={member}
+                open={action === "remove-owner"}
+                onOpenChange={(open) =>
+                    setAction(open ? "remove-owner" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
         </>
     );
 }

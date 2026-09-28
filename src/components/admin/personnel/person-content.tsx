@@ -4,11 +4,11 @@
  */
 "use client";
 
-import Link from "next/link";
 import { Suspense } from "react";
 
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { AdminModule_Person_LinkedUser_Card } from "@/components/admin/personnel/linked-user-card";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -25,7 +25,6 @@ import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
@@ -36,15 +35,9 @@ import { AdminModule_UpdatePerson_Dialog } from "./update-person";
 export function AdminModule_Person_Content({ personId }: { personId: PersonId }) {
     const organization = useOrganization();
 
-    const [{ data: person }, { data: linkedUser }] = useSuspenseQueries({
-        queries: [
-            trpc.personnel.getPerson.queryOptions({ organizationId: organization.id, personId }),
-            trpc.personnel.getLinkedUser.queryOptions({
-                organizationId: organization.id,
-                personId,
-            }),
-        ],
-    });
+    const { data: person } = useSuspenseQuery(
+        trpc.personnel.getPerson.queryOptions({ organizationId: organization.id, personId }),
+    );
 
     return (
         <>
@@ -67,7 +60,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     <Saratoga.Header>
                         <Saratoga.Title>{person.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <AdminModule_PersonMenu person={person} linkedUser={linkedUser} />
+                            <AdminModule_PersonMenu person={person} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
 
@@ -95,44 +88,11 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                                     </DL>
                                 </CardContent>
                             </Card>
-                            {linkedUser && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Linked User Account</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <DL>
-                                            <DLTerm>User ID</DLTerm>
-                                            <DLDetails className="font-mono">
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/admin/users/[user_id]",
-                                                        {
-                                                            slug: organization.slug,
-                                                            user_id: linkedUser.userId,
-                                                        },
-                                                    )}
-                                                >
-                                                    {linkedUser.userId}
-                                                </Link>
-                                            </DLDetails>
-                                            <DLTerm>Name</DLTerm>
-                                            <DLDetails>{linkedUser.user.name}</DLDetails>
-                                            <DLTerm>Email</DLTerm>
-                                            <DLDetails>{linkedUser.user.email}</DLDetails>
-                                            <DLTerm>Roles</DLTerm>
-                                            <DLDetails>
-                                                {linkedUser.roles
-                                                    .map(
-                                                        (role) =>
-                                                            OrganizationRole.displayNames[role],
-                                                    )
-                                                    .join(", ")}
-                                            </DLDetails>
-                                        </DL>
-                                    </CardContent>
-                                </Card>
-                            )}
+                            <Protect permissions={{ member: ["view"] }}>
+                                <Suspense fallback={<CardLoadingFallback />}>
+                                    <AdminModule_Person_LinkedUser_Card personId={person.id} />
+                                </Suspense>
+                            </Protect>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Suspense fallback={<CardLoadingFallback />}>

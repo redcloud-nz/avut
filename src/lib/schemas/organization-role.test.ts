@@ -31,6 +31,10 @@ describe("OrganizationRole.formatList", () => {
         );
     });
 
+    it("shows owner by its display name, though no picker offers it", () => {
+        expect(OrganizationRole.formatList("owner,member")).toBe("Owner, Member");
+    });
+
     it("shows an unrecognised role as stored rather than 'undefined'", () => {
         expect(OrganizationRole.formatList("member,retired-role")).toBe(
             `${OrganizationRole.displayNames.member}, retired-role`,

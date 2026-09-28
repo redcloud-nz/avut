@@ -21,8 +21,8 @@ import "server-only";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import { Operations } from "@/lib/operations";
+import { hasOwnerRole } from "@/lib/permissions";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { USER_RETENTION_DAYS, type UserId } from "@/lib/schemas/user";
 import { createLogBatch, formatActorLabel, recordLogEntry } from "@/server/log-entry";
 
@@ -66,7 +66,7 @@ async function soleOwnedOrganizationNames(
             where: { userId, role: { contains: "owner" } },
             select: { organizationId: true, role: true },
         })
-    ).filter((row) => OrganizationRole.includes(row.role, "owner"));
+    ).filter((row) => hasOwnerRole(row.role));
     if (owned.length === 0) return [];
 
     const otherOwners = (
@@ -79,7 +79,7 @@ async function soleOwnedOrganizationNames(
             },
             select: { organizationId: true, role: true },
         })
-    ).filter((row) => OrganizationRole.includes(row.role, "owner"));
+    ).filter((row) => hasOwnerRole(row.role));
     const covered = new Set(otherOwners.map((o) => o.organizationId));
 
     const soleIds = owned.map((o) => o.organizationId).filter((id) => !covered.has(id));

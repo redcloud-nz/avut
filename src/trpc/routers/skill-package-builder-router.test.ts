@@ -95,7 +95,7 @@ describe("skillPackageBuilderRouter.getPackage / getGroup / getSkill", () => {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { skillPackageBuilder: ["view"], organization: ["view"] },
+                permissions: { skillPackage: ["view"], organization: ["view"] },
                 prisma: db,
             }),
         );
@@ -210,7 +210,7 @@ describe("skillPackageBuilderRouter.importPackage", () => {
     });
 
     function makeCaller(
-        permissions: Permissions = { skillPackageBuilder: ["create"], organization: ["view"] },
+        permissions: Permissions = { skillPackage: ["create"], organization: ["view"] },
     ) {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
@@ -347,7 +347,7 @@ describe("skillPackageBuilderRouter.reorderGroups", () => {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { skillPackageBuilder: ["update"], organization: ["view"] },
+                permissions: { skillPackage: ["update"], organization: ["view"] },
                 prisma: db,
             }),
         );
@@ -476,7 +476,7 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { skillPackageBuilder: ["update"], organization: ["view"] },
+                permissions: { skillPackage: ["update"], organization: ["view"] },
                 prisma: db,
             }),
         );
@@ -577,21 +577,21 @@ describe("skillPackageBuilderRouter.deleteSkill/Group/Package / recover*", () =>
         );
     }
 
-    it("deleteSkill/deleteGroup/deletePackage require skillPackageBuilder:delete", async () => {
+    it("deleteSkill/deleteGroup/deletePackage require skillPackage:delete", async () => {
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).deleteSkill({
+            makeCaller({ skillPackage: ["update"] }).deleteSkill({
                 organizationId: T.org,
                 skillId: T.skill,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).deleteGroup({
+            makeCaller({ skillPackage: ["update"] }).deleteGroup({
                 organizationId: T.org,
                 skillGroupId: T.group,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).deletePackage({
+            makeCaller({ skillPackage: ["update"] }).deletePackage({
                 organizationId: T.org,
                 skillPackageId: T.pkg,
             }),
@@ -599,15 +599,15 @@ describe("skillPackageBuilderRouter.deleteSkill/Group/Package / recover*", () =>
     });
 
     it("soft-deletes skill, group, and package without cascading between levels", async () => {
-        await makeCaller({ skillPackageBuilder: ["delete"] }).deleteSkill({
+        await makeCaller({ skillPackage: ["delete"] }).deleteSkill({
             organizationId: T.org,
             skillId: T.skill,
         });
-        await makeCaller({ skillPackageBuilder: ["delete"] }).deleteGroup({
+        await makeCaller({ skillPackage: ["delete"] }).deleteGroup({
             organizationId: T.org,
             skillGroupId: T.group,
         });
-        await makeCaller({ skillPackageBuilder: ["delete"] }).deletePackage({
+        await makeCaller({ skillPackage: ["delete"] }).deletePackage({
             organizationId: T.org,
             skillPackageId: T.pkg,
         });
@@ -623,21 +623,21 @@ describe("skillPackageBuilderRouter.deleteSkill/Group/Package / recover*", () =>
         });
     });
 
-    it("recoverSkill/recoverGroup/recoverPackage require skillPackageBuilder:delete, not update", async () => {
+    it("recoverSkill/recoverGroup/recoverPackage require skillPackage:delete, not update", async () => {
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).recoverSkill({
+            makeCaller({ skillPackage: ["update"] }).recoverSkill({
                 organizationId: T.org,
                 skillId: T.skill,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).recoverGroup({
+            makeCaller({ skillPackage: ["update"] }).recoverGroup({
                 organizationId: T.org,
                 skillGroupId: T.group,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
         await expect(
-            makeCaller({ skillPackageBuilder: ["update"] }).recoverPackage({
+            makeCaller({ skillPackage: ["update"] }).recoverPackage({
                 organizationId: T.org,
                 skillPackageId: T.pkg,
             }),
@@ -645,19 +645,19 @@ describe("skillPackageBuilderRouter.deleteSkill/Group/Package / recover*", () =>
     });
 
     it("recovers the deleted skill, group, and package back to Active", async () => {
-        const skill = await makeCaller({ skillPackageBuilder: ["delete"] }).recoverSkill({
+        const skill = await makeCaller({ skillPackage: ["delete"] }).recoverSkill({
             organizationId: T.org,
             skillId: T.skill,
         });
         expect(skill.updated.status).toBe("Active");
 
         const group = await makeCaller({
-            skillPackageBuilder: ["delete"],
+            skillPackage: ["delete"],
         }).recoverGroup({ organizationId: T.org, skillGroupId: T.group });
         expect(group.updated.status).toBe("Active");
 
         const pkg = await makeCaller({
-            skillPackageBuilder: ["delete"],
+            skillPackage: ["delete"],
         }).recoverPackage({ organizationId: T.org, skillPackageId: T.pkg });
         expect(pkg.updated.status).toBe("Active");
     });

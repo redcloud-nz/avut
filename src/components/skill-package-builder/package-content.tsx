@@ -62,7 +62,7 @@ export function SkillPackageBuilder_Package_Content({
                                 <CardHeader>
                                     <CardTitle>Package Details</CardTitle>
                                     <CardAction>
-                                        <Protect permissions={{ skillPackageBuilder: ["update"] }}>
+                                        <Protect permissions={{ skillPackage: ["update"] }}>
                                             <SkillPackageBuilder_UpdatePackage_Dialog
                                                 skillPackage={skillPackage}
                                             />

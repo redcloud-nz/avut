@@ -192,13 +192,18 @@ describe("trash.listTrash", () => {
         });
 
         // A role on `organizationUser` for each caller, since `listTrash` reads roles directly
-        // rather than through `ctx.hasPermission`.
+        // rather than through `ctx.hasPermission`. `admin` alone no longer reaches
+        // `skillPackage` (narrowed to actual admin functions) — this caller also grants
+        // themselves `skills-author`, the same way a real admin would, to see that entity type
+        // too. `admin` also doesn't reach `i3Template` any more (that's `i3-admin`'s job) and
+        // this caller doesn't hold `i3-admin` either, so this test's i3Template row is expected
+        // to be absent, not present.
         await db.organizationUser.create({
             data: {
                 id: nanoId16(),
                 organizationId: T.org,
                 userId: T.adminUser,
-                role: "admin",
+                role: "admin,skills-author",
             },
         });
         await db.organizationUser.create({
@@ -230,13 +235,16 @@ describe("trash.listTrash", () => {
     it("lists Deleted records across entity types for an admin, with deletedAt resolved", async () => {
         const rows = await makeCaller(T.adminUser).listTrash({ organizationId: T.org });
 
-        expect(rows).toHaveLength(6);
+        // Not 7 — `i3Template` is omitted. Admin/owner were narrowed off it entirely; deleting
+        // I3 templates is now `i3-admin`'s job, and this caller doesn't hold that role.
+        expect(rows).toHaveLength(5);
         const person = rows.find((r) => r.id === T.deletedPerson);
         const team = rows.find((r) => r.id === T.deletedTeam);
         const membership = rows.find((r) => r.id === T.deletedMembershipId);
-        const template = rows.find((r) => r.id === T.deletedTemplate);
         const group = rows.find((r) => r.id === T.deletedGroup);
         const skill = rows.find((r) => r.id === T.deletedSkill);
+
+        expect(rows.find((r) => r.id === T.deletedTemplate)).toBeUndefined();
 
         expect(person).toMatchObject({ type: "person", name: "Grace Hopper" });
         expect(person?.deletedAt).toBe("2026-01-01T00:00:00.000Z");
@@ -251,8 +259,6 @@ describe("trash.listTrash", () => {
             personId: T.activePerson,
         });
         expect(membership?.deletedAt).toBe("2026-03-01T00:00:00.000Z");
-        expect(template).toMatchObject({ type: "i3Template", name: "Doomed Template" });
-        expect(template?.deletedAt).toBe("2026-03-02T00:00:00.000Z");
         expect(group).toMatchObject({
             type: "skillGroup",
             name: "Doomed Group",

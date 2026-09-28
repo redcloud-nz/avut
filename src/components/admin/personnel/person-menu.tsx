@@ -7,6 +7,8 @@
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
+import { useQuery } from "@tanstack/react-query";
+
 import { AdminModule_LinkUser_Dialog } from "@/components/admin/person-user-link/link-user";
 import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/person-user-link/unlink-person";
 import { AdminModule_AddTeamMembership_Dialog } from "@/components/admin/teams/add-team-membership";
@@ -21,7 +23,7 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
-import { UserId } from "@/lib/schemas/user";
+import { trpc } from "@/trpc/client";
 
 import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
 import { AdminModule_DeletePerson_Dialog } from "./delete-person";
@@ -31,11 +33,9 @@ import { AdminModule_RestorePerson_Dialog } from "./restore-person";
 
 interface AdminModule_PersonMenuProps {
     person: PersonData;
-    /** The linked user account, if any — governs Invite (hidden when linked) and Link/Unlink. */
-    linkedUser: { userId: UserId; user: { name: string } } | null;
 }
 
-export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_PersonMenuProps) {
+export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState(
@@ -56,8 +56,22 @@ export function AdminModule_PersonMenu({ person, linkedUser }: AdminModule_Perso
     const canUpdate = useHasPermission({ person: ["update"] });
     const canDelete = useHasPermission({ person: ["delete"] });
     const canInvite = useHasPermission({ invitation: ["create"] });
+    const canViewMember = useHasPermission({ member: ["view"] });
     const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
     const canAddMembership = useHasPermission({ team: ["update"] });
+
+    // Non-suspense and permission-gated — a caller without `member: ["view"]` (what the
+    // procedure itself requires alongside `person: ["view"]`) never issues this query at all.
+    // While it's loading, or the caller lacks the permission, `linkedUser` is treated as
+    // unknown and the menu defaults to the "not linked" branch (Invite/Link, not Unlink) — the
+    // underlying invite/link/unlink mutations enforce their own permissions regardless of what
+    // the menu displays, so a wrong default here is a UX nit, not a security gap.
+    const { data: linkedUser } = useQuery(
+        trpc.personnel.getLinkedUser.queryOptions(
+            { organizationId: organization.id, personId: person.id },
+            { enabled: canViewMember },
+        ),
+    );
 
     const actions: MenuActionProps[] = [
         {

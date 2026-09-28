@@ -15,6 +15,7 @@ import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
+import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -802,5 +803,115 @@ describe("skillChecks.getSkillCheck", () => {
                 skillCheckId: T.check,
             }),
         ).rejects.toThrow(TRPCError);
+    });
+});
+
+describe("skillChecks.updateSkillCheck", () => {
+    // `skillCheck` has no `"update"` action at all any more — the gate below is `["create"]`
+    // (the same broad "records checks" grant a `skills-assessor` holds); it's the row-ownership
+    // check inside the procedure (`assessorId === current user`) that stops one assessor editing
+    // another's check.
+    const T = {
+        org: OrganizationId.create(),
+        assessorUser: UserId.create(),
+        otherUser: UserId.create(),
+        assessorPerson: PersonId.create(),
+        otherPerson: PersonId.create(),
+        assessee: PersonId.create(),
+        skill: SkillId.create(),
+        check: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: "update-check-org", createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessorPerson,
+                organizationId: T.org,
+                name: "Dana Assessor",
+                email: `${T.assessorPerson}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.otherPerson,
+                organizationId: T.org,
+                name: "Sam Other",
+                email: `${T.otherPerson}@example.com`,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.assessee,
+                organizationId: T.org,
+                name: "Pat Assessee",
+                email: `${T.assessee}@example.com`,
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.assessorUser,
+                role: "skills-assessor",
+                personId: T.assessorPerson,
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.otherUser,
+                role: "skills-assessor",
+                personId: T.otherPerson,
+            },
+        });
+        await db.skillCheck.create({
+            data: {
+                id: T.check,
+                organizationId: T.org,
+                assesseeId: T.assessee,
+                assessorId: T.assessorPerson,
+                skillId: T.skill,
+                result: "Pass",
+                notes: "Initial notes",
+                status: "Include",
+            },
+        });
+    });
+
+    function makeCaller(userId: UserId) {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: userId },
+                permissions: { skillCheck: ["create"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("lets the check's own assessor amend it", async () => {
+        const result = await makeCaller(T.assessorUser).updateSkillCheck({
+            organizationId: T.org,
+            skillCheckId: T.check,
+            update: { result: "Fail", notes: "Revised" },
+        });
+
+        expect(result.result).toBe("Fail");
+        expect(result.notes).toBe("Revised");
+    });
+
+    it("refuses a different assessor — row-ownership, not a permission gate", async () => {
+        await expect(
+            makeCaller(T.otherUser).updateSkillCheck({
+                organizationId: T.org,
+                skillCheckId: T.check,
+                update: { result: "Pass", notes: "Not mine to change" },
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });

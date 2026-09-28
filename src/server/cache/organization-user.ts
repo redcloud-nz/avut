@@ -6,10 +6,9 @@ import "server-only";
 
 import { cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
-import * as z from "zod";
 
+import { parseStoredRoles, type Role } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import prisma from "@/server/prisma";
 
 import { organizationUserCacheTag } from "./organization-user-revalidate";
@@ -34,7 +33,7 @@ import { organizationUserCacheTag } from "./organization-user-revalidate";
 export async function getOrganizationUserRolesOrNull(
     organizationId: OrganizationId,
     user_id: string,
-): Promise<OrganizationRole[] | null> {
+): Promise<Role[] | null> {
     "use cache";
     cacheTag(organizationUserCacheTag(user_id));
 
@@ -44,7 +43,7 @@ export async function getOrganizationUserRolesOrNull(
     });
 
     if (!orgUser) return null;
-    return z.array(OrganizationRole.schema).parse(orgUser.role.split(","));
+    return parseStoredRoles(orgUser.role);
 }
 
 /**
@@ -59,7 +58,7 @@ export async function getOrganizationUserRolesOrNull(
 export async function getOrganizationUserRoles(
     organizationId: OrganizationId,
     user_id: string,
-): Promise<OrganizationRole[]> {
+): Promise<Role[]> {
     const roles = await getOrganizationUserRolesOrNull(organizationId, user_id);
     if (!roles) return notFound();
     return roles;

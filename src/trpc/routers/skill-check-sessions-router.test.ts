@@ -172,7 +172,11 @@ describe("skillCheckSessions.upsertSessionSkillChecks", () => {
         return skillCheckSessionsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: userId },
-                permissions: { organization: ["view"], skillCheck: ["create", "update"] },
+                permissions: {
+                    organization: ["view"],
+                    skillCheckSession: ["update"],
+                    skillCheck: ["create"],
+                },
                 prisma: db,
             }),
         );
@@ -187,6 +191,24 @@ describe("skillCheckSessions.upsertSessionSkillChecks", () => {
 
         expect(result.created).toHaveLength(1);
         expect(result.created[0].assessorId).toBe(T.assessorPerson);
+    });
+
+    it("rejects an assigned assessor holding only session update, as skills-admin does", async () => {
+        const caller = skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.assessorUser },
+                permissions: { organization: ["view"], skillCheckSession: ["update"] },
+                prisma: db,
+            }),
+        );
+
+        await expect(
+            caller.upsertSessionSkillChecks({
+                organizationId: T.org,
+                sessionId: T.session,
+                updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
     it("rejects a person who is not an assigned assessor for the session", async () => {

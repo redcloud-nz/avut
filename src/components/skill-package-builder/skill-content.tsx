@@ -67,7 +67,7 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
                                 <CardHeader>
                                     <CardTitle>Skill Details</CardTitle>
                                     <CardAction>
-                                        <Protect permissions={{ skillPackageBuilder: ["update"] }}>
+                                        <Protect permissions={{ skillPackage: ["update"] }}>
                                             <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} />
                                         </Protect>
                                     </CardAction>
