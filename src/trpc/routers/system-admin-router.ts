@@ -436,21 +436,6 @@ export const systemAdminRouter = createTrpcRouter({
     }),
 
     /**
-     * Promote a user to the global `admin` role, or demote them to `user`.
-     *
-     * Guards, in order: (a) you cannot change your own role; (b) demoting the last remaining
-     * system administrator is refused (mirrors `deleteUser`'s last-admin guard). Promotion needs
-     * no guard. A call that doesn't change the role returns early — no guard, no session churn.
-     *
-     * On a demotion (`role === "user"`) the target's `session` rows are deleted in the same
-     * `$transaction` as the `user.update` — `session.cookieCache` lasts 5 minutes, so without
-     * this a just-demoted admin keeps `systemAdmin` access until it expires (mirrors
-     * `deleteUser`). Promotion is a plain `user.update` — nothing to atomically pair.
-     *
-     * The audit entry is user-scoped and owned by the subject (`ownerId: input.userId`), so it
-     * cascades away if that user is later deleted.
-     */
-    /**
      * Permanently delete an account from the system Rubbish bin, ahead of the auto-purge.
      * @throws TRPCError(BAD_REQUEST) if it isn't deleted, or it's now the sole owner of an org.
      */
@@ -469,6 +454,21 @@ export const systemAdminRouter = createTrpcRouter({
             await revalidateOrganizationUser(input.userId);
         }),
 
+    /**
+     * Promote a user to the global `admin` role, or demote them to `user`.
+     *
+     * Guards, in order: (a) you cannot change your own role; (b) demoting the last remaining
+     * system administrator is refused (mirrors `deleteUser`'s last-admin guard). Promotion needs
+     * no guard. A call that doesn't change the role returns early — no guard, no session churn.
+     *
+     * On a demotion (`role === "user"`) the target's `session` rows are deleted in the same
+     * `$transaction` as the `user.update` — `session.cookieCache` lasts 5 minutes, so without
+     * this a just-demoted admin keeps `systemAdmin` access until it expires (mirrors
+     * `deleteUser`). Promotion is a plain `user.update` — nothing to atomically pair.
+     *
+     * The audit entry is user-scoped and owned by the subject (`ownerId: input.userId`), so it
+     * cascades away if that user is later deleted.
+     */
     setUserRole: systemAdminProcedure
         .input(z.object({ userId: UserId.schema, role: z.enum(["admin", "user"]) }))
         .mutation(async ({ ctx, input }) => {
