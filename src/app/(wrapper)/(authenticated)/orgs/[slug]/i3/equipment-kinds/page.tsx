@@ -14,20 +14,16 @@ import { ItemLinkActionIcon } from "@/components/icons";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
-import { getOrganizationBySlug } from "@/server/cache/organization";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTokenMetadata } from "@/server/d4h-api/client";
-import { requireSession } from "@/server/session";
+import { requireOrganization } from "@/server/organization-access";
 
 export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
     props: PageProps<"/orgs/[slug]/i3/equipment-kinds">,
 ) {
     const { slug } = await props.params;
 
-    const [organization, session] = await Promise.all([
-        getOrganizationBySlug(slug),
-        requireSession(),
-    ]);
+    const { organization, session } = await requireOrganization(slug);
 
     const accessToken = await getConfiguredD4HAccessToken(
         organization.id,
