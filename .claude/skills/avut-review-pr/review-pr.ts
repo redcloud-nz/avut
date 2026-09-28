@@ -167,7 +167,8 @@ function prep(arg: string | undefined) {
     const mode: Mode = arg ? "specific" : "queue";
     let prs: PrInfo[];
     if (arg) {
-        const n = arg.replace(/^#/, "").replace(/^.*\/pull\//, "");
+        const n = /^#?(\d+)$/.exec(arg)?.[1] ?? /\/pull\/(\d+)/.exec(arg)?.[1];
+        if (!n) fail(`not a PR number or URL: ${arg}`);
         prs = [JSON.parse(run("gh", ["pr", "view", n, "--repo", REPO, "--json", PR_FIELDS])) as PrInfo];
     } else {
         prs = JSON.parse(
@@ -234,11 +235,11 @@ function post(n: string | undefined, verdict: string | undefined, bodyFile: stri
     const env = { ...process.env, GH_TOKEN: token };
     run("gh", ["pr", "review", n, "--repo", REPO, VERDICTS[verdict as keyof typeof VERDICTS], "--body-file", bodyFile], env);
 
-    const reviews = JSON.parse(run("gh", ["api", `repos/${REPO}/pulls/${n}/reviews?per_page=100`], env)) as Array<{
-        user: { login: string } | null;
-        html_url: string;
-    }>;
-    const url = reviews.filter((r) => r.user?.login === BOT).at(-1)?.html_url;
+    // --paginate --slurp: every page, as one array of pages. Reviews come oldest first.
+    const pages = JSON.parse(
+        run("gh", ["api", "--paginate", "--slurp", `repos/${REPO}/pulls/${n}/reviews?per_page=100`], env),
+    ) as Array<Array<{ user: { login: string } | null; html_url: string }>>;
+    const url = pages.flat().filter((r) => r.user?.login === BOT).at(-1)?.html_url;
     process.stdout.write((url ?? `posted; see https://github.com/${REPO}/pull/${n}`) + "\n");
 }
 

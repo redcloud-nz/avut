@@ -13,8 +13,8 @@
  * once on 3000 signs you in on every server on the same database. The flip side is that signing
  * in as someone else on any of them replaces that session everywhere.
  *
- * `next dev` sets `PORT` to the port it bound, so this reads the real port at request time.
- * Outside development it changes nothing.
+ * `scripts/dev.sh` sets `PORT` before starting Next (and Next sets it to the bound port too), so
+ * this reads the real port when `auth.ts` loads. Outside development it changes nothing.
  */
 import { env } from "@/lib/env";
 

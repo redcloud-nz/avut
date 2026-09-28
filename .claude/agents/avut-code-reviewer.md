@@ -1,6 +1,6 @@
 ---
 name: avut-code-reviewer
-description: Fresh-context review of an AVUT diff (correctness + house conventions). Used by /avut-ship and /avut-develop-feature; don't pick it for anything else. Read-only — reports findings, never edits.
+description: Fresh-context review of an AVUT diff (correctness + house conventions). Used by /avut-ship, /avut-develop-feature, /avut-explore's hand-off and /avut-review-pr; don't pick it for anything else. Read-only — reports findings, never edits.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---

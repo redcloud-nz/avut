@@ -11,6 +11,8 @@
 #         PORT=3100 npm run dev       # an agent in the main checkout
 #         npm run dev                 # anyone in a worktree → its .dev-port
 #
+# Set the port with PORT=, not `npm run dev -- -p`: the inspector port is worked out from PORT.
+#
 set -euo pipefail
 
 port="${PORT:-$(bash "$(dirname "${BASH_SOURCE[0]}")/dev-port.sh")}"

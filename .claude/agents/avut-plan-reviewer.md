@@ -13,7 +13,6 @@ Read the plan, then the code it touches. Check:
 - **It covers the source.** Is everything the issue or description asks for covered? Does the plan add scope nobody asked for?
 - **Order and dependencies.** Does each task only depend on earlier ones? Is the data layer (schema, service, router) before the UI? Are `visual` tasks late and grouped?
 - **Task size.** Each task should be one reviewable commit: a few files, with acceptance criteria and a check that could actually fail. Split tasks that are too big. Merge tasks too small to review on their own.
-- **Parallel claims.** Tasks marked as parallel must not touch the same files.
 - **Repo requirements the plan must name.** A migration means `db:branch` first, and asking permission before `migrate dev`. A new `page.tsx` means `npx next typegen`. A new module means `src/lib/modules.ts`. Also check the plan names the pattern doc for each new page or mutation (`docs/patterns/`). It must also say how the no-D4H-token case is handled, and say that permissions and `ctx.logEvent` are needed on new mutations. `docs/conventions-checklist.md` has the full list.
 - **Plan conventions.** Check the `**Date:**` header matches the filename prefix, and that branch and DB notes are up front (`docs/plans/README.md`).
 

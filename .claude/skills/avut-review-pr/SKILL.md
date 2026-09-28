@@ -119,7 +119,7 @@ Write each body to its own file in the scratchpad, then:
 node .claude/skills/avut-review-pr/review-pr.ts post <N> <approve|request-changes|comment> <body-file>
 ```
 
-It posts as `claude-avut`, with that account's token scoped to the one call, and prints the review URL. Don't post with `gh pr review` directly. Posting a review clears the review request, so the queue doesn't pick the same PR up again.
+It posts as `claude-avut`, with that account's token scoped to the one call, and prints the review URL. The project allowlist covers every `review-pr.ts` command, `post` included, so it runs without a prompt; that is deliberate, and it is why only this skill should call `post`. Don't post with `gh pr review` directly. Posting a review clears the review request, so the queue doesn't pick the same PR up again.
 
 If posting fails, report it and leave the other PRs alone. Don't retry under the default account.
 

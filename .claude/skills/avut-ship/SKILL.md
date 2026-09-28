@@ -11,7 +11,7 @@ Takes a finished feature branch to a merged PR with one human checkpoint. The re
 
 `$ARGUMENTS` is optional free text: extra context for the PR description, or `--no-merge` to open the PR without auto-merge (e.g. something you want to look at in the Vercel preview first).
 
-For a PR that deserves a second, independent pass after it's open — auth, credentials, migrations, someone else's code — use `/avut-review-pr` instead of, or as well as, this.
+For a PR that deserves a second, independent pass after it's open — auth, credentials, migrations, someone else's code — use `/avut-review-pr` instead of, or as well as, this. When you plan to run it as well, pass `--no-merge`. `integration` needs no approval, so auto-merge would merge on green CI before that review runs, or despite a "request changes".
 
 ## Step 1 — Preflight
 
@@ -99,7 +99,7 @@ Show the user, compactly:
 - the branch, base and commit list (`git log --oneline origin/<base>..HEAD`)
 - what the review found and what you did about it — especially any blocking finding you left alone
 - the PR title and body
-- what happens next: "Push, open PR, auto-merge (merge commit) when CI is green" — or without auto-merge if `--no-merge` was given or the change needs a look in the preview first (UI change not yet checked in a browser, or a migration)
+- what happens next: "Push, open PR, auto-merge (merge commit) when CI is green; if CI fails, fix it and push the fix" — or without auto-merge if `--no-merge` was given or the change needs a look in the preview first (UI change not yet checked in a browser, or a migration). Say the CI-fix part: the user's yes is what covers those later pushes.
 
 Then wait. This is the only prompt in the flow — pushing is publishing, so it needs an explicit yes. If the user wants changes, make them and show the diff again. Don't restart the review for small edits.
 
@@ -113,7 +113,7 @@ gh pr merge <n> --repo redcloud-nz/avut --auto --merge   # skip with --no-merge
 
 Use `--body-file` (write the body to a file in the scratchpad), never inline `--body`. For a stacked PR, don't auto-merge; it merges after its parent.
 
-Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. No new confirmation is needed for a CI fix that only touches the failure.
+Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
 ## Common mistakes
 

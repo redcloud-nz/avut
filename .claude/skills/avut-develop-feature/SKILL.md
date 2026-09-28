@@ -57,7 +57,7 @@ Tell the user why you think this needs the long path (which of the Step 3 criter
 
 Derive a kebab-case slug. Run `git worktree list`. If `.claude/worktrees/<slug>` exists, resume it with `EnterWorktree` and `path`. Otherwise call `EnterWorktree` with `name: "<slug>"`, which branches off `origin/integration`. Then run `npm run worktree:setup` in it.
 
-**From an exploration,** the branch already exists and is checked out in the main checkout. Commit everything on it, switch the main checkout back to the branch the exploration started from (and restore its stash, if it made one), then `git worktree add .claude/worktrees/<slug> <branch>`, `EnterWorktree` with `path`, and `npm run worktree:setup`. The main checkout is free again, and the user can start something else there in a new session.
+**From an exploration,** the branch already exists and is checked out in the main checkout. Commit everything on it, switch the main checkout back to the branch the exploration started from, and restore the stash `/avut-explore` made (by its SHA, never a bare `pop`), which gives the user their own uncommitted changes back. Then `git worktree add .claude/worktrees/<slug> <branch>`, `EnterWorktree` with `path`, and `npm run worktree:setup`. The main checkout is free again, and the user can start something else there in a new session.
 
 If the plan has visual tasks, start the worktree's dev server in the background before the first visual checkpoint: `npm run dev` serves on the worktree's `.dev-port` (AGENTS.md → Dev servers).
 
@@ -73,7 +73,6 @@ Write `docs/plans/YYYY-MM-DD-<slug>.md`, following `docs/plans/README.md`: a `**
   - **Do:** what to build, specific enough for someone with no session context. Name the pattern doc it follows.
   - **Done when:** acceptance criteria, plus the check that proves it (a test, `npm run check`, a query).
   - **`visual`:** marks a task that changes UI.
-  - **`parallel with N`:** only when two tasks don't touch the same files.
 
   Order the data layer first (schema → service → router → tests), then UI. Group visual tasks late, so there are one or two visual checkpoints and not one per task.
 - **Out of scope:** what this deliberately doesn't do.
@@ -90,11 +89,11 @@ Show the user the plan: the task list with one line per task, the decisions, and
 
 For each task, in order:
 
-1. **Implement.** Run the `avut-implementer` subagent (`run_in_background: false`) with the plan path and task number. Tasks marked `parallel with` may run as background subagents, but only with `isolation: "worktree"`. Two agents in one tree will collide. If that setup costs more than it saves, run them in sequence.
+1. **Implement.** Run the `avut-implementer` subagent (`run_in_background: false`) with the plan path and task number. Run tasks one at a time, in this worktree. Two implementers in one tree collide, and a separate worktree per implementer would need its own `worktree:setup` and a merge back, which costs more than it saves at this size.
 2. **Blocked?** If the implementer reports the plan wrong for the code, or needs a decision, fix the plan if the fix is mechanical. If it needs a decision, ask the user. Then re-run the task.
 3. **Review.** Run the `avut-code-reviewer` subagent on that task's commit (`git diff <sha>~1..<sha>`), saying what the task was meant to do.
 4. **Fix.** If there are blocking findings, or non-blocking ones worth fixing, re-run `avut-implementer` for the same task with the findings. It commits the fixes as a follow-up commit. One fix round is the norm. If a second review still shows blocking problems, bring it to the user.
-5. **Tick** the task in the plan: `- [x]`, with the commit sha. Commit the tick with the next task's work, not on its own.
+5. **Tick** the task in the plan: `- [x]` and the commit's subject line (not its sha, which the amend changes). Fold the tick into that task's last commit: `git commit --amend --no-edit docs/plans/<plan>.md`.
 6. **Visual checkpoint** after the last task of each visual group. See below.
 
 Keep the main session as the orchestrator. Read the reports, not the full diffs; the reviewer reads the diffs. That keeps this context small over a long feature.
@@ -122,7 +121,6 @@ If there's no dev server running for the checkout, start one as AGENTS.md → De
 - Taking the long path without the L1 approval, or starting to build before the L5 approval.
 - Waiting for approval on the quick path. Say what you'll do and do it.
 - Letting an implementer's "the plan is wrong here" turn into a quiet reinterpretation.
-- Running parallel implementers in one worktree.
 - A visual checkpoint that hands the user a crash, or one checkpoint per UI task instead of per group.
 - Committing every round of visual feedback.
 - Running a separate final review. `/avut-ship` does that.

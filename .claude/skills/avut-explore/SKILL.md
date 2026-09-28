@@ -16,9 +16,10 @@ Between rounds, keep it cheap: no commits, no review subagent, no `npm run check
 ## Step 1 — Set up
 
 1. `git status --short` and `git branch --show-current`. Remember both; the Park and Drop exits restore them.
-   - Uncommitted changes, or a feature branch with unpushed commits: ask whether to **stash** them, **build on top** of them (explore from the current branch, changes and all), or **cancel**.
+   - Uncommitted changes: ask whether to **set them aside** (explore without them), **build on top** of them, or **cancel**. Either way, stash them first, so every exit can give them back to the user's own branch untouched.
    - The stash stack is shared by every checkout and session, so never a bare `git stash`/`pop`: `git stash push -u -m "explore-<slug>"`, note its SHA from `git stash list --format='%H %gs'`, and later restore with `git stash apply <sha>`, then drop that entry (found again by its message).
-2. Create `explore/<slug>` from `origin/integration` (`git fetch origin integration` first), or from the current branch when the idea builds on it. Say which.
+2. Create `explore/<slug>` from `origin/integration` (`git fetch origin integration` first), or from the current branch when the idea builds on it (a feature branch with unpushed commits, say). Say which.
+   - **Build on top:** `git stash apply <sha>` on the new branch and commit it straight away as `wip(explore): carried over from <branch>`. **Keep the stash entry**: it's the user's copy, and the exits restore it to their branch. The explore branch's copy is only for building on.
 3. Find the dev server (AGENTS.md → Dev servers). In the main checkout, use the user's 3000 if it answers (`curl -s -o /dev/null -w '%{http_code}' http://localhost:3000`). Otherwise, start `PORT=3100 npm run dev` in the background yourself, and stop it when the exploration ends. In a worktree, `npm run dev` there serves on its `.dev-port`.
 
 ## Step 2 — A short conversation
@@ -67,7 +68,7 @@ The user says when. Or, once the idea has stopped changing, ask once whether to 
 
 The idea is settled, so don't clarify it again. What's left to judge is the **gap** between the exploration and shippable code.
 
-1. **Tidy.** Fold the winning variant back in, delete the losing copies and scratch pages, and `git branch -m explore/<slug> <type>/<slug>`.
+1. **Tidy.** Fold the winning variant back in, and delete the losing copies and scratch pages.
 2. **List the gaps.** Read `git diff origin/integration...` against the Decisions list, and group what's missing:
    - **Data:** inline fake data to replace with real queries, schema changes, a migration.
    - **Server:** the right permission on each procedure, `ctx.logEvent` inside `$transaction`, the no-D4H-token case, a service-layer home for the logic.
@@ -77,9 +78,10 @@ The idea is settled, so don't clarify it again. What's left to judge is the **ga
 3. **Checkpoint: pick the route.** Show the gap list, recommend one route, and wait:
    - **Finish in place** (the usual one): the gaps fit the quick-path criteria in `/avut-develop-feature` Step 3. Work stays here.
    - **Plan the rest:** the gaps are big by those criteria, or a migration is needed. The work moves to a worktree, so the user can do something else in the main checkout.
-   - **Rebuild:** the exploration wandered, and its code is shaped by turns that were reversed. Start a fresh branch from `origin/integration` with the Decisions list as the spec. Keep the explore branch as a reference until the new one merges.
-4. **Commit the exploration** in one to three commits by layer (not one per round), so the history shows what came from exploring and what came from finishing. Put the Decisions list in the body of the last one.
-5. **Hand off** to `/avut-develop-feature` as an exploration, with the branch, the Decisions list, the gap list and the route (its Step 1 describes each route). **Plan the rest** moves the branch to a worktree, and this session moves with it, keeping the exploration's context. Tell the user the main checkout is free for a new session. **Rebuild** goes to `/avut-develop-feature` as a plain description, with the Decisions list attached.
+   - **Rebuild:** the exploration wandered, and its code is shaped by turns that were reversed. Start a fresh branch from `origin/integration` with the Decisions list as the spec. Keep `explore/<slug>`, under that name, as a reference until the new one merges.
+4. **Rename** (Finish in place and Plan the rest only): `git branch -m explore/<slug> <type>/<slug>`. If the exploration carried over the user's changes, ask whether they belong in the feature. If not, drop that commit (`git rebase --onto <it>~1 <it>`). Either way, the user's own branch gets them back from the stash when they return to it: give them the stash SHA, or restore it yourself when the work leaves the main checkout.
+5. **Commit the exploration** in one to three commits by layer (not one per round), so the history shows what came from exploring and what came from finishing. Put the Decisions list in the body of the last one.
+6. **Hand off** to `/avut-develop-feature` as an exploration, with the branch, the Decisions list, the gap list and the route (its Step 1 describes each route). **Plan the rest** moves the branch to a worktree, and this session moves with it, keeping the exploration's context. Tell the user the main checkout is free for a new session. **Rebuild** goes to `/avut-develop-feature` as a plain description, with the Decisions list attached.
 
 The Decisions list ends up in the PR body too; `/avut-ship` picks it up from the commit.
 
@@ -89,12 +91,12 @@ If this session started a server on 3100, stop it once the work leaves the main 
 
 1. Commit the work as it stands on `explore/<slug>` as `wip(explore): <idea>`, with the Decisions list in the body. Don't push.
 2. Offer to file it with `/avut-idea`, passing the idea, the Decisions list and the branch name, so the issue follows the usual idea format.
-3. Switch back to the branch from Step 1, and restore your stash (by its SHA) if you made one. Stop your 3100 server if you started one.
+3. Switch back to the branch from Step 1, and restore the stash (by its SHA) if you made one: the user's uncommitted changes return exactly as they were, whatever the WIP commit holds. Stop your 3100 server if you started one.
 
 ### Drop
 
 1. Confirm first: this discards the work.
-2. `git restore` and remove any new files (scratch pages are gitignored, so remove those by hand), switch back to the branch from Step 1, `git branch -D explore/<slug>`, and restore your stash (by its SHA) if you made one. Stop your 3100 server if you started one.
+2. `git restore` and remove any new files (scratch pages are gitignored, so remove those by hand), switch back to the branch from Step 1, `git branch -D explore/<slug>`, and restore the stash (by its SHA) if you made one: that's the user's work, and it's the one thing Drop must not lose. Stop your 3100 server if you started one.
 
 ## Common mistakes
 
@@ -108,3 +110,4 @@ If this session started a server on 3100, stop it once the work leaves the main 
 - Running a migration against shared `avut`.
 - Re-asking clarifying questions at Keep. Judge the gap, not the idea.
 - A bare `git stash pop`, which can take another session's stash.
+- Building on top of the user's uncommitted changes without a stash to give them back from. Drop and Park would lose them.
