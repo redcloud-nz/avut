@@ -36,8 +36,9 @@ export function VerifyEmail_Card({ email, redirectTo }: { email: string; redirec
     });
 
     function handleResend() {
-        void sendEmailVerificationOtp(email);
-        toast("Verification code resent to your email.");
+        void sendEmailVerificationOtp(email)
+            .then(() => toast("Verification code resent to your email."))
+            .catch((error: Error) => toast.error(error.message));
     }
 
     return (

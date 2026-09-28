@@ -120,8 +120,9 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
     }
 
     function resendCurrentOtp() {
-        void sendEmailVerificationOtp(session.user.email!);
-        toast("Verification code resent to your current email.");
+        void sendEmailVerificationOtp(session.user.email!)
+            .then(() => toast("Verification code resent to your current email."))
+            .catch((error: Error) => toast.error(error.message));
     }
 
     function handleDialogOpenChange(open: boolean) {
