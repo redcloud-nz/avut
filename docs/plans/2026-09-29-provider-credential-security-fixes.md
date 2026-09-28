@@ -247,7 +247,7 @@ legacy path now.
 - [ ] 1.2 page checks (permission object per roles-reorg status); dev-only pages 404 outside `next dev`; browser check as `member`
 - [x] 1.3 personal credential cache holds the record
 - [x] 1.4 `userId: null` on refresh/delete; `groupId` and organization checks; tests
-- [ ] 1.5 explicit `token` removal; no-`token` output tests
+- [x] 1.5 explicit `token` removal; no-`token` output tests
 - [ ] 1.6 tag length and minimum payload; tests
 - [ ] `npm run check`
 

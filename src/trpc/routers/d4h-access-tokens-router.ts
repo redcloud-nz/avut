@@ -87,7 +87,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         label: create.label,
                         token: encryptDBValue(create.token),
                         status: response.statusText,
-                        expiresAt: addYears(new Date(), 10).toISOString(),
+                        expiresAt: addYears(new Date(), 10),
                         metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
                 }),
@@ -115,6 +115,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 }),
             }),
         )
+        .output(z.object({ created: D4HAccessToken.schema }))
         .mutation(async ({ ctx, input: { tokenId, create } }) => {
             const label = `Personal token for ${ctx.auth.user.name}`;
 
@@ -152,7 +153,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         label,
                         token: encryptDBValue(create.token),
                         status: response.statusText,
-                        expiresAt: addYears(new Date(), 10).toISOString(),
+                        expiresAt: addYears(new Date(), 10),
                         metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
                 }),

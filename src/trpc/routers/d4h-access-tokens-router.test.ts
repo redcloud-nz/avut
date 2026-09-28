@@ -98,28 +98,20 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
         );
     }
 
-    it("never records the raw token in the audit log", async () => {
+    it("never records the raw token in the audit log or returns it", async () => {
         const tokenId = D4HAccessTokenId.create();
 
-        // prisma-mock stores DateTime fields verbatim instead of coercing a written ISO
-        // string to a Date the way real Prisma does, so `D4HAccessToken.fromRecord`'s
-        // `record.expiresAt.toISOString()` can throw once the mutation reaches its output
-        // shaping — after the $transaction (token create + logEvent) has already
-        // committed. That's an unrelated mock limitation, not part of the behaviour under
-        // test, so it's swallowed here; what we assert on is what was actually written.
-        try {
-            await makeCaller().createOrganizationAccessToken({
-                organizationId: T.org,
-                tokenId,
-                create: {
-                    serverCode: "us" as D4HServerCode,
-                    label: "Test token",
-                    token: "super-secret-d4h-key",
-                },
-            });
-        } catch (err) {
-            if (!(err instanceof Error) || !/toISOString/.test(err.message)) throw err;
-        }
+        const result = await makeCaller().createOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId,
+            create: {
+                serverCode: "us" as D4HServerCode,
+                label: "Test token",
+                token: "super-secret-d4h-key",
+            },
+        });
+
+        expect(result.created).not.toHaveProperty("token");
 
         const entries = await db.logEntry.findMany({
             where: { organizationId: T.org },
@@ -171,23 +163,19 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
         );
     }
 
-    it("never records the raw token in the audit log", async () => {
+    it("never records the raw token in the audit log or returns it", async () => {
         const tokenId = D4HAccessTokenId.create();
 
-        // See the comment in the sibling describe block above: prisma-mock's lack of
-        // DateTime coercion can throw a mock-only error after the transaction commits.
-        try {
-            await makeCaller().createPersonalAccessToken({
-                organizationId: T.org,
-                tokenId,
-                create: {
-                    serverCode: "us" as D4HServerCode,
-                    token: "another-super-secret-key",
-                },
-            });
-        } catch (err) {
-            if (!(err instanceof Error) || !/toISOString/.test(err.message)) throw err;
-        }
+        const result = await makeCaller().createPersonalAccessToken({
+            organizationId: T.org,
+            tokenId,
+            create: {
+                serverCode: "us" as D4HServerCode,
+                token: "another-super-secret-key",
+            },
+        });
+
+        expect(result.created).not.toHaveProperty("token");
 
         const entries = await db.logEntry.findMany({
             where: { organizationId: T.org },
@@ -335,5 +323,69 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         await expect(
             makeCaller().refreshToken({ organizationId: T.org, tokenId: T.personalToken }),
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});
+
+describe("d4hAccessTokensRouter queries never return the token", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        orgToken: D4HAccessTokenId.create(),
+        personalToken: D4HAccessTokenId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme Rescue", slug: "acme", createdAt: new Date() },
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.orgToken, organizationId: T.org, userId: null }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.user }),
+        });
+    });
+
+    function makeCaller() {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { d4hAccessToken: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("getOrganizationAccessToken", async () => {
+        const result = await makeCaller().getOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.orgToken,
+        });
+
+        expect(result.id).toBe(T.orgToken);
+        expect(result).not.toHaveProperty("token");
+    });
+
+    it("getPersonalAccessToken", async () => {
+        const result = await makeCaller().getPersonalAccessToken({ organizationId: T.org });
+
+        expect(result?.id).toBe(T.personalToken);
+        expect(result).not.toHaveProperty("token");
+    });
+
+    it("listOrganizationAccessTokens", async () => {
+        const result = await makeCaller().listOrganizationAccessTokens({ organizationId: T.org });
+
+        expect(result.map((token) => token.id)).toEqual([T.orgToken]);
+        for (const token of result) expect(token).not.toHaveProperty("token");
+    });
+
+    it("listPersonalAccessTokens", async () => {
+        const result = await makeCaller().listPersonalAccessTokens();
+
+        expect(result.map((token) => token.id)).toEqual([T.personalToken]);
+        for (const token of result) expect(token).not.toHaveProperty("token");
     });
 });

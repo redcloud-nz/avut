@@ -82,7 +82,9 @@ export const ProviderCredential = {
         metadata: ProviderCredentialMetadata.schema,
     }),
 
-    fromRecord: (record: ProviderCredentialRecord) =>
+    /** Drops the encrypted `token` explicitly rather than relying on `z.object` stripping unknown
+     * keys, so it can't reach the client if the schema is ever loosened. */
+    fromRecord: ({ token: _token, ...record }: ProviderCredentialRecord) =>
         ProviderCredential.schema.parse({
             ...record,
             expiresAt: record.expiresAt.toISOString(),

@@ -93,7 +93,9 @@ export const D4HAccessToken = {
         metadata: D4HAccessTokenMetadata.schema,
     }),
 
-    fromRecord: (record: ProviderCredentialRecord) => {
+    /** Drops the encrypted `token` explicitly rather than relying on `z.object` stripping unknown
+     * keys, so it can't reach the client if the schema is ever loosened. */
+    fromRecord: ({ token: _token, ...record }: ProviderCredentialRecord) => {
         const { serverCode, d4HTeams, d4HOrganisations } = D4HProviderMetadata.schema.parse(
             record.metadata,
         );
