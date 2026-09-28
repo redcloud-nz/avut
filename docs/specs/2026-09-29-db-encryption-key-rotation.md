@@ -69,7 +69,7 @@ Every encrypted value goes through two functions:
 - **Envelope encryption or a managed KMS.** Vercel KMS offers signing keys, not
   encryption keys. An external KMS (AWS KMS, GCP KMS) would be a bigger change
   than the problem warrants at current scale. The format below leaves room for
-  it: a key ID could later name a wrapped data key.
+  it: a later format version can carry a wrapped data key (§3.7).
 - **Per-organization keys.** There is one keyring per deployment environment.
 - **Encrypting anything other than `ProviderCredential.token`.** The API is
   general, but moving other columns onto it is separate work.
@@ -116,15 +116,50 @@ allowed.
 v2.<keyId>.<base64(iv[12] | ciphertext | tag[16])>
 ```
 
-- `.` is the separator because it can't appear in a key ID or in standard base64.
-- A value beginning `v2.` is v2. Any other value is legacy, because legacy
-  base64 can never contain `.`.
-- The `v2` version marker describes the whole construction: algorithm, IV and
-  tag layout, and how the additional authenticated data (AAD, §3.3) is encoded.
-  Changing any of these means a `v3`, not a new key ID.
-- Decryption creates the decipher with `{ authTagLength: 16 }` and rejects any
-  payload shorter than 28 bytes before touching the cipher. The legacy path
-  gets the same two checks.
+The whole string is stored in the existing `token` column. There is **no schema
+change**: no version or key-ID column. The value describes itself, so the
+version and key can never disagree with the bytes they describe, and
+re-encryption rewrites a single field.
+
+**Parsing.** Only the version segment is fixed across versions:
+
+- A value containing no `.` is **legacy**. Legacy values are plain standard
+  base64, which never contains `.`.
+- A value matching `^v(\d+)\.` has format version `N`. Everything after
+  `v<N>.` is passed unparsed to that version's decoder (§3.7), which defines its
+  own layout. `v2` happens to be `<keyId>.<payload>`. A later version is free to
+  use more segments, e.g. `v3.<kmsKeyId>.<wrappedKey>.<payload>`, without
+  changing the top-level parser.
+- A value that contains `.` but doesn't match, or names a version this
+  deployment doesn't know, fails with `DecryptionError` reason `malformed` or
+  `unsupported-version`. It is **never** treated as legacy. Otherwise a
+  deployment reading a newer format, e.g. after a rollback, would try the
+  legacy key and report a misleading authentication failure.
+
+**What `v2` means.** The version marker describes the whole construction: the
+algorithm, the IV and tag layout, how the key is derived, and how the
+additional authenticated data (AAD, §3.3) is encoded. Changing any of these
+means a `v3`, not a new key ID (§3.7). `.` separates segments because it can't
+appear in a key ID or in standard base64.
+
+**Key derivation.** Keyring keys (§3.1) are never used directly as cipher keys.
+Each format version derives its own key:
+
+```
+versionKey = HKDF-SHA256(keyringKey, salt = empty, info = "avut/db-encryption/v2", length = 32)
+```
+
+- **No key reuse across algorithms.** The same keyring key can serve `v2` and a
+  future `v3` without being used under two algorithms, because each version
+  derives an independent key.
+- **Any key size.** A future algorithm needing a different key size derives
+  that length.
+- The legacy path is the only exception. It uses `DB_ENCRYPTION_SECRET`'s bytes
+  directly, as today.
+
+**Tag and length checks.** `v2` creates the decipher with `{ authTagLength: 16 }`
+and rejects any payload shorter than 28 bytes before touching the cipher. The
+legacy path gets the same two checks.
 
 ### 3.3 Binding ciphertext to its row
 
@@ -143,10 +178,14 @@ type EncryptionContext = {
 };
 ```
 
-The AAD is `JSON.stringify` of the context, with keys in exactly the order
-declared above. Serialization lives in one function, `encodeAad(context)`, with
-a unit test pinning its exact output. Reordering the keys would silently break
-every row.
+For `v2`, the AAD is `JSON.stringify` of the context, with keys in exactly the
+order declared above. Serialization lives in `v2Format.encodeAad(context)`,
+with a unit test pinning its exact output. Reordering the keys would silently
+break every row.
+
+AAD encoding belongs to the format version, not to `encrypt.ts` as a whole. A
+future change to the context, such as a new field, gets a new version with its
+own encoder, and `v2` rows keep being checked against the `v2` encoding.
 
 **What goes in the AAD, and why:**
 
@@ -170,7 +209,12 @@ Legacy values have no AAD, and the legacy path ignores the context.
 // src/server/encrypt.ts
 export function encryptDBValue(plaintext: string, context: EncryptionContext): string;
 export function decryptDBValue(stored: string, context: EncryptionContext): string;
-export function storedKeyId(stored: string): string | "legacy";
+export function describeStored(stored: string): StoredDescriptor;
+
+type StoredDescriptor =
+  | { format: "legacy" }
+  | { format: number; keyId: string } // keyId as the version's decoder reports it
+  | { format: "unreadable"; reason: "malformed" | "unsupported-version" };
 ```
 
 - **Required context.** Both functions take `context`, so no call site can
@@ -183,9 +227,16 @@ export function storedKeyId(stored: string): string | "legacy";
 - **Create mutations.** Both already know `tokenId` and the owner before they
   encrypt, so they pass the same values they write to the row.
 - **Errors.** Decryption failures throw a single `DecryptionError` whose message
-  names the key ID and credential ID. It never includes ciphertext or plaintext.
-  An unknown key ID and an authentication failure are separate `reason` values,
-  because they need different fixes.
+  names the format version, key ID and credential ID. It never includes
+  ciphertext or plaintext. Each cause has its own `reason`, because each needs a
+  different fix:
+
+  | `reason`              | Meaning                                                     | Usual fix                                      |
+  | --------------------- | ----------------------------------------------------------- | ---------------------------------------------- |
+  | `unknown-key`         | The value names a key ID that isn't in the keyring          | A key was retired too early; restore it        |
+  | `unsupported-version` | The value names a format version this deployment can't read | A newer deployment wrote it; roll forward      |
+  | `malformed`           | The value can't be parsed, or its payload is too short      | Corrupt row; re-enter the credential           |
+  | `auth`                | The authentication tag doesn't verify                       | Wrong key, tampered value, or context mismatch |
 
 ### 3.5 Legacy values
 
@@ -212,6 +263,67 @@ refreshed. For that reason:
   would leave plaintext in the cache under the old entry, and nothing would
   re-encrypt it.
 
+### 3.7 Changing the format
+
+Two independent things can change over time, and each has its own mechanism:
+
+- **The key** changes by adding a key ID. That is the rotation runbook (§5).
+- **The method** changes by adding a format version. That covers the algorithm,
+  layout, key derivation and AAD encoding.
+
+**Structure in `encrypt.ts`.** Each version is one entry in a registry and owns
+everything about its format:
+
+```ts
+type Format = {
+  /** Returns everything after "v<N>.". */
+  encrypt(plaintext: string, keyring: Keyring, keyId: string, context: EncryptionContext): string;
+  /** Receives everything after "v<N>.". */
+  decrypt(rest: string, keyring: Keyring, context: EncryptionContext): string;
+  /** Key ID (or equivalent) named by the value, for describeStored and re-encryption. */
+  keyIdOf(rest: string): string;
+};
+
+const FORMATS = { 2: v2Format } satisfies Record<number, Format>;
+const WRITE_VERSION = 2;
+```
+
+- `encryptDBValue` always writes `WRITE_VERSION` with the current key, or the
+  legacy format while `DB_ENCRYPTION_KEY_CURRENT` is unset (§3.5).
+- `decryptDBValue` dispatches on the parsed version to `FORMATS[N]`.
+- **`WRITE_VERSION` is a code constant, not an environment variable.** A format
+  change always ships with code, so a variable would add a way to get it wrong
+  without adding any flexibility.
+
+**What needs a new version:**
+
+| Change                                               | New version? | Notes                                                                         |
+| ---------------------------------------------------- | ------------ | ----------------------------------------------------------------------------- |
+| New algorithm (e.g. XChaCha20-Poly1305, AES-GCM-SIV) | Yes          | Usually a new nonce size and layout as well.                                  |
+| Layout change (nonce length, header byte, base64url) | Yes          |                                                                               |
+| Adding, removing or reordering an AAD context field  | Yes          | Existing rows were bound with the old encoding.                               |
+| Algorithm needing a different key size               | Yes          | HKDF derives the new length from the same keyring key.                        |
+| Envelope encryption (KMS-wrapped data keys)          | Yes          | The version defines extra segments, e.g. `v3.<kmsKeyId>.<wrapped>.<payload>`. |
+| New key, same method                                 | No           | New key ID; rotation runbook (§5).                                            |
+
+**Rolling out a new version** follows the same two-deploy rule as a key change:
+
+1. Add `v3Format` to `FORMATS`, leave `WRITE_VERSION = 2`, and deploy. Every live
+   deployment can now read `v3`.
+2. Set `WRITE_VERSION = 3` and deploy.
+3. Re-encrypt (§4), which rewrites every row not on `WRITE_VERSION`.
+4. Dry run again and confirm no rows remain on `v2`.
+5. In a later release, once no rollback target writes `v2`, delete `v2Format`.
+
+Steps 1 and 2 have to be separate releases for the same reason as keys: a
+deployment that has never seen `v3` can't read what a `v3` writer produces,
+and would fail with `unsupported-version`.
+
+**Retention rule.** The code reads at most two versions at once: `WRITE_VERSION`
+and the one before it. Legacy counts as the version before `v2`. Adding `v3`
+therefore requires that `v2`'s legacy predecessor is already gone. This stops
+old decoders accumulating indefinitely.
+
 ---
 
 ## 4. Re-encryption
@@ -224,7 +336,7 @@ input: {
   dryRun: boolean;
 }
 output: {
-  byKeyBefore: Record<string, number>; // "legacy" | keyId → row count
+  byFormatBefore: Record<string, number>; // "legacy" | "v2.k1" | "unreadable" … → row count
   rewritten: number;
   skipped: number; // concurrent change; picked up on the next run
   failed: {
@@ -232,16 +344,18 @@ output: {
     reason: DecryptionError["reason"];
   }
   [];
-  byKeyAfter: Record<string, number>;
+  byFormatAfter: Record<string, number>;
 }
 ```
 
 **Behaviour:**
 
-1. Load every `ProviderCredential` whose `storedKeyId(token)` isn't the current
-   key.
-2. For each row, decrypt with its own key, then encrypt with the current key and
-   the row's context.
+1. Load every `ProviderCredential` whose `describeStored(token)` isn't
+   `{ format: WRITE_VERSION, keyId: <current key> }`. That covers rows on an old
+   key, rows on an old format version, and legacy rows. Unreadable values go
+   straight to `failed`.
+2. For each row, decrypt with its own version and key, then encrypt with
+   `WRITE_VERSION`, the current key and the row's context.
 3. Write each row with a conditional update:
    `updateMany({ where: { id, token: <old ciphertext> }, data: { token: <new> } })`.
    A count of 0 means the row changed concurrently. It is counted as skipped,
@@ -250,9 +364,9 @@ output: {
    than one transaction for the whole run. One bad row doesn't stop the others,
    and a partial run is safe to repeat.
 5. Revalidate each rewritten row's cache tags (§3.6).
-6. Log a single `ctx.logSystemEvent` summarizing the run, with counts by key
-   before and after and the IDs of failed rows. A key ID change isn't
-   user-meaningful, so there is no event per row.
+6. Log a single `ctx.logSystemEvent` summarizing the run, with counts by format
+   and key before and after, and the IDs of failed rows. A change of key or
+   format isn't user-meaningful, so there is no event per row.
 7. With `dryRun`, do only step 1 and report the counts.
 
 **Why a mutation and not a script:** the job needs the database URL and the old
@@ -320,8 +434,17 @@ the replacement in AVUT.
 
 ## 6. Testing
 
-- `encodeAad`: a fixed context produces an exact expected string. This pins the
-  key order.
+- `v2Format.encodeAad`: a fixed context produces an exact expected string. This
+  pins the key order.
+- HKDF derivation: a fixed keyring key produces a pinned `v2` key, and the
+  derived key differs from the keyring key.
+- A `v2` fixture value, produced once and committed, still decrypts. This catches
+  accidental changes to the `v2` construction.
+- Parsing: no `.` → legacy; `v2.…` → v2; `v9.…` → `unsupported-version`;
+  `x.y` and `v2.` → `malformed`. None of the last three is ever tried as legacy.
+- With a stub `v3Format` registered in a test, `v2` values still decrypt, new
+  writes use `WRITE_VERSION`, and re-encryption upgrades `v2` rows that are
+  already on the current key.
 - A value round-trips with the right context and fails with `reason: "auth"`
   when any context field differs, for each field.
 - A value from key `k1` decrypts after rotation to `k2` while `k1` is still in
@@ -337,7 +460,8 @@ the replacement in AVUT.
   against the test fixtures' values.
 - `reencryptCredentials` in prisma-mock:
   - Dry run reports counts and writes nothing.
-  - A real run rewrites only the rows not on the current key.
+  - A real run rewrites only the rows not on the current key and format
+    version.
   - A row whose `token` changes between read and write is counted as skipped.
   - One corrupt row lands in `failed` without stopping the others.
   - Exactly one system log entry is written per run.
@@ -346,13 +470,16 @@ the replacement in AVUT.
 
 ## 7. Risks
 
-| Risk                                                                    | Mitigation                                                                        |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `CURRENT` is switched before every live deployment can read the new key | Separate-deploy rule (§5). The runbook table states why.                          |
-| AAD serialization drifts, so every row fails authentication             | One `encodeAad`, with an exact-output test.                                       |
-| A key is removed while cached records still carry its ciphertext        | Re-encryption revalidates cache tags (§3.6). Verify with a dry run before step 5. |
-| Keyring parse error takes down every credential-reading path            | Fail loudly with the variable name. Preview gets the change first.                |
-| Owner binding blocks a future "transfer credential" feature             | That feature re-encrypts as part of the transfer. Noted in §3.3.                  |
+| Risk                                                                     | Mitigation                                                                        |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `CURRENT` is switched before every live deployment can read the new key  | Separate-deploy rule (§5). The runbook table states why.                          |
+| AAD serialization drifts, so every row fails authentication              | One `encodeAad` per version, with an exact-output test.                           |
+| A new format version is written before every live deployment can read it | Same two-release rule as keys (§3.7). `WRITE_VERSION` is a reviewed code change.  |
+| A newer value is misread as legacy after a rollback                      | Anything containing `.` is never legacy; it fails as `unsupported-version`.       |
+| Old decoders pile up                                                     | Retention rule: at most the write version and the one before (§3.7).              |
+| A key is removed while cached records still carry its ciphertext         | Re-encryption revalidates cache tags (§3.6). Verify with a dry run before step 5. |
+| Keyring parse error takes down every credential-reading path             | Fail loudly with the variable name. Preview gets the change first.                |
+| Owner binding blocks a future "transfer credential" feature              | That feature re-encrypts as part of the transfer. Noted in §3.3.                  |
 
 ---
 
@@ -360,8 +487,8 @@ the replacement in AVUT.
 
 1. Prerequisite review fixes on `feat/provider-credential`: cache the record,
    not plaintext; revalidate on delete.
-2. `encrypt.ts`: keyring, v2 format, AAD, `DecryptionError`, legacy path, plus
-   tests.
+2. `encrypt.ts`: keyring, `FORMATS` registry with `v2Format` (HKDF, AAD),
+   parser, `DecryptionError`, legacy path, plus tests.
 3. `providerCredentialContext` and the four call sites.
 4. `system.reencryptCredentials` and its system-admin page control.
 5. Runbook copied into `docs/` as a standalone operator page, linked from
@@ -373,16 +500,22 @@ the replacement in AVUT.
 
 ## 9. Decisions
 
-| Question               | Decision                                                                                                       |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Where keys live        | Vercel environment variables, one keyring per environment. No external KMS for now.                            |
-| Keyring shape          | One `DB_ENCRYPTION_KEYS` list plus `DB_ENCRYPTION_KEY_CURRENT`, not one variable per key.                      |
-| Key format             | Base64 of exactly 32 random bytes, checked when the keyring loads.                                             |
-| Stored format          | `v2.<keyId>.<base64(iv\|ct\|tag)>`. Unprefixed means legacy.                                                   |
-| What `v2` versions     | The construction: algorithm, layout and AAD encoding. Key changes use a new key ID, not a new version.         |
-| AAD contents           | Purpose, credential ID, provider and all three owner columns.                                                  |
-| Unset `CURRENT`        | Write legacy. This gives the safe first-rollout state.                                                         |
-| How re-encryption runs | A system-admin tRPC mutation inside the deployment, not a local script, so no production secrets leave Vercel. |
-| Audit granularity      | One system event per re-encryption run.                                                                        |
-| Tag length             | Pinned to 16 on both the v2 and legacy paths, with a minimum payload length.                                   |
-| Leaked key             | Rotate the key and revoke and re-issue the provider tokens. Rotation alone isn't enough.                       |
+| Question                      | Decision                                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Where keys live               | Vercel environment variables, one keyring per environment. No external KMS for now.                                                        |
+| Keyring shape                 | One `DB_ENCRYPTION_KEYS` list plus `DB_ENCRYPTION_KEY_CURRENT`, not one variable per key.                                                  |
+| Key format                    | Base64 of exactly 32 random bytes, checked when the keyring loads.                                                                         |
+| Stored format                 | `v2.<keyId>.<base64(iv\|ct\|tag)>`, stored whole in the existing `token` column. No schema change.                                         |
+| Where version and key ID live | In the value's prefix, not in separate columns, so they can't disagree with the ciphertext.                                                |
+| What `v2` versions            | The construction: algorithm, layout, key derivation and AAD encoding. Key changes use a new key ID, not a new version.                     |
+| Parsing                       | Only `v<N>.` is fixed; the rest belongs to that version's decoder. No `.` means legacy; any other unknown value is an error, never legacy. |
+| Cipher keys                   | Derived per version with HKDF-SHA256 from the keyring key; keyring keys are never used directly (except by the legacy path).               |
+| Adding a format version       | `FORMATS` registry entry plus a `WRITE_VERSION` code constant; rolled out read-first, write-second, like keys.                             |
+| Old versions                  | At most two readable at once: `WRITE_VERSION` and the one before.                                                                          |
+| Re-encryption target          | Every row not on both `WRITE_VERSION` and the current key.                                                                                 |
+| AAD contents                  | Purpose, credential ID, provider and all three owner columns.                                                                              |
+| Unset `CURRENT`               | Write legacy. This gives the safe first-rollout state.                                                                                     |
+| How re-encryption runs        | A system-admin tRPC mutation inside the deployment, not a local script, so no production secrets leave Vercel.                             |
+| Audit granularity             | One system event per re-encryption run.                                                                                                    |
+| Tag length                    | Pinned to 16 on both the v2 and legacy paths, with a minimum payload length.                                                               |
+| Leaked key                    | Rotate the key and revoke and re-issue the provider tokens. Rotation alone isn't enough.                                                   |
