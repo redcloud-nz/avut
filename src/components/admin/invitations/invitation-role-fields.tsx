@@ -18,7 +18,7 @@ import {
     FieldLegend,
 } from "@/components/ui/field";
 import { useOrganization } from "@/hooks/use-organization";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { OrganizationRole, type ModuleGatedRoleOptions } from "@/lib/schemas/organization-role";
 
 /**
  * The role half of any invitation/role-assignment form. Every membership carries a freely
@@ -37,15 +37,6 @@ export function invitationRoles(values: InvitationRolesFormValues): Organization
 }
 
 /**
- * The roles gated on an organization module being enabled, and whether each is currently
- * available. `admin`/`member` are always available and don't appear here.
- */
-export type ModuleGatedRoleOptions = readonly {
-    role: OrganizationRole;
-    enabled: boolean;
-}[];
-
-/**
  * Primary-role radios and secondary-role checkboxes for an invitation form.
  *
  * Reached through `useFormContext` rather than a `control` prop so it can sit inside forms with
@@ -60,26 +51,9 @@ export function InvitationRoleFields() {
 
     return (
         <RoleFields
-            moduleGatedRoles={[
-                { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
-                { role: "i3-admin", enabled: organization.settings.modules.i3.enabled },
-                {
-                    role: "skills-assessor",
-                    enabled: organization.settings.modules["skill-track"].enabled,
-                },
-                {
-                    role: "skills-admin",
-                    enabled: organization.settings.modules["skill-track"].enabled,
-                },
-                {
-                    role: "skills-reporter",
-                    enabled: organization.settings.modules["skill-track"].enabled,
-                },
-                {
-                    role: "skills-author",
-                    enabled: organization.settings.modules["skill-package-builder"].enabled,
-                },
-            ]}
+            moduleGatedRoles={OrganizationRole.moduleGatedOptions(
+                (id) => organization.settings.modules[id].enabled,
+            )}
         />
     );
 }

@@ -16,7 +16,6 @@ import { organizationsEffects } from "@/client/organizations-effects";
 import {
     invitationRolesSchema,
     RoleFields,
-    type ModuleGatedRoleOptions,
 } from "@/components/admin/invitations/invitation-role-fields";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -88,26 +87,9 @@ export function AdminModule_UpdateUser_Dialog({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [dialogOpen]);
 
-    const moduleGatedRoles: ModuleGatedRoleOptions = [
-        { role: "i3-editor", enabled: organization.settings.modules.i3.enabled },
-        { role: "i3-admin", enabled: organization.settings.modules.i3.enabled },
-        {
-            role: "skills-assessor",
-            enabled: organization.settings.modules["skill-track"].enabled,
-        },
-        {
-            role: "skills-admin",
-            enabled: organization.settings.modules["skill-track"].enabled,
-        },
-        {
-            role: "skills-reporter",
-            enabled: organization.settings.modules["skill-track"].enabled,
-        },
-        {
-            role: "skills-author",
-            enabled: organization.settings.modules["skill-package-builder"].enabled,
-        },
-    ];
+    const moduleGatedRoles = OrganizationRole.moduleGatedOptions(
+        (id) => organization.settings.modules[id].enabled,
+    );
 
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>

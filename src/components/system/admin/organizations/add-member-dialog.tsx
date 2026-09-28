@@ -19,7 +19,6 @@ import {
     invitationRolesSchema,
     RoleFields,
     type InvitationRolesFormValues,
-    type ModuleGatedRoleOptions,
 } from "@/components/admin/invitations/invitation-role-fields";
 import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -38,6 +37,7 @@ import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { OrganizationId } from "@/lib/schemas/organization";
+import type { ModuleGatedRoleOptions } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 

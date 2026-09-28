@@ -19,7 +19,6 @@ import {
     invitationRolesSchema,
     RoleFields,
     type InvitationRolesFormValues,
-    type ModuleGatedRoleOptions,
 } from "@/components/admin/invitations/invitation-role-fields";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import {
@@ -50,7 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ObjectName } from "@/components/ui/typography";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { OrganizationRole, type ModuleGatedRoleOptions } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
 
 interface Member {
