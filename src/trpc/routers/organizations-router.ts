@@ -297,7 +297,7 @@ export const organizationsRouter = createTrpcRouter({
                     configs: true,
                     _count: {
                         select: {
-                            d4hAccessTokens: true,
+                            providerCredentials: { where: { provider: "D4H" } },
                             personnel: true,
                             skillChecks: true,
                             skillCheckSessions: true,
@@ -339,7 +339,7 @@ export const organizationsRouter = createTrpcRouter({
                 )
                     .filter(([, v]) => v.enabled)
                     .map(([k]) => k as ModuleId),
-                d4hTokenCount: org._count.d4hAccessTokens,
+                d4hTokenCount: org._count.providerCredentials,
                 recordCounts: {
                     personnel: org._count.personnel,
                     skillChecks: org._count.skillChecks,

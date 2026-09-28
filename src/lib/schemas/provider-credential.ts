@@ -10,9 +10,10 @@ import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
 
-import { D4HTeamPermissions } from "./d4h-access-token";
-
 export type { ProviderCredentialRecord };
+
+/** Record<D4H permission group, Record<D4H permission key, granted>> — same shape D4H's whoami response uses. */
+const d4hTeamPermissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()));
 
 export const ProviderCredentialId = {
     schema: zodNanoId16("ProviderCredentialId expected").brand<"ProviderCredentialId">(),
@@ -48,7 +49,7 @@ const providerCredentialMetadataSchema = z.discriminatedUnion("provider", [
                         title: z.string(),
                     })
                     .optional(),
-                permissions: D4HTeamPermissions.schema,
+                permissions: d4hTeamPermissionsSchema,
             }),
         ),
         d4HOrganisations: z.array(

@@ -32,6 +32,7 @@ import { Messages } from "../messages";
 
 /**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
+ * Stored in the shared `ProviderCredential` table (#286), filtered/tagged with `provider: "D4H"`.
  */
 export const d4hAccessTokensRouter = createTrpcRouter({
     /**
@@ -64,7 +65,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             const fetchClient = getD4HFetchClient(token);
             const { data, response } = await fetchClient.GET("/v3/whoami");
 
-            const metadata = data
+            const metadata: D4HAccessTokenMetadata = data
                 ? await getD4HTokenMetadata(token, {
                       whoami: D4HWhoami.schema.parse(data),
                   })
@@ -76,13 +77,17 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             ];
 
             const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.d4HAccessToken.create({
+                ctx.prisma.providerCredential.create({
                     data: {
-                        ...token,
-                        token: encryptDBValue(token.token),
+                        provider: "D4H",
+                        id: tokenId,
+                        organizationId: ctx.organizationId,
+                        userId: null,
+                        label: create.label,
+                        token: encryptDBValue(create.token),
                         status: response.statusText,
                         expiresAt: addYears(new Date(), 10).toISOString(),
-                        metadata,
+                        metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
                 }),
                 ctx.logEvent({
@@ -110,12 +115,14 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { tokenId, create } }) => {
+            const label = `Personal token for ${ctx.auth.user.name}`;
+
             const token = {
                 ...create,
                 id: tokenId,
                 organizationId: ctx.organizationId,
                 userId: ctx.userId,
-                label: `Personal token for ${ctx.auth.user.name}`,
+                label,
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
@@ -123,11 +130,11 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             const fetchClient = getD4HFetchClient(token);
             const { data, response } = await fetchClient.GET("/v3/whoami");
 
-            const metadata = data
+            const metadata: D4HAccessTokenMetadata = data
                 ? await getD4HTokenMetadata(token, {
                       whoami: D4HWhoami.schema.parse(data),
                   })
-                : { d4HTeams: [], d4HOrganizations: [] };
+                : { d4HTeams: [], d4HOrganisations: [] };
 
             const changes: DiffChange[] = [
                 ...diffObject({}, R.omit(create, ["token"])),
@@ -135,13 +142,17 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             ];
 
             const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.d4HAccessToken.create({
+                ctx.prisma.providerCredential.create({
                     data: {
-                        ...token,
-                        token: encryptDBValue(token.token),
+                        provider: "D4H",
+                        id: tokenId,
+                        organizationId: ctx.organizationId,
+                        userId: ctx.userId,
+                        label,
+                        token: encryptDBValue(create.token),
                         status: response.statusText,
                         expiresAt: addYears(new Date(), 10).toISOString(),
-                        metadata,
+                        metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
                 }),
                 ctx.logEvent({
@@ -169,8 +180,8 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input, ctx }) => {
-            const existing = await ctx.prisma.d4HAccessToken.findUnique({
-                where: { id: input.tokenId },
+            const existing = await ctx.prisma.providerCredential.findUnique({
+                where: { id: input.tokenId, provider: "D4H" },
             });
 
             if (!existing || existing.organizationId !== ctx.organizationId) {
@@ -181,7 +192,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }
 
             await ctx.prisma.$transaction([
-                ctx.prisma.d4HAccessToken.delete({
+                ctx.prisma.providerCredential.delete({
                     where: { id: input.tokenId },
                 }),
                 ctx.logEvent({
@@ -209,8 +220,9 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     deletePersonalAccessToken: organizationProcedure({
         organization: ["view"],
     }).mutation(async ({ ctx }) => {
-        const existing = await ctx.prisma.d4HAccessToken.findFirst({
+        const existing = await ctx.prisma.providerCredential.findFirst({
             where: {
+                provider: "D4H",
                 organizationId: ctx.organizationId,
                 userId: ctx.auth.user.id,
             },
@@ -224,7 +236,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         }
 
         await ctx.prisma.$transaction([
-            ctx.prisma.d4HAccessToken.delete({
+            ctx.prisma.providerCredential.delete({
                 where: { id: existing.id },
             }),
 
@@ -251,9 +263,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         )
         .output(D4HAccessToken.schema)
         .query(async ({ input, ctx }) => {
-            const record = await ctx.prisma.d4HAccessToken.findUnique({
+            const record = await ctx.prisma.providerCredential.findUnique({
                 where: {
                     id: input.tokenId,
+                    provider: "D4H",
                     organizationId: ctx.organizationId,
                     userId: null,
                 },
@@ -274,8 +287,9 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     getPersonalAccessToken: organizationProcedure({})
         .output(D4HAccessToken.schema.nullable())
         .query(async ({ ctx }) => {
-            const record = await ctx.prisma.d4HAccessToken.findFirst({
+            const record = await ctx.prisma.providerCredential.findFirst({
                 where: {
+                    provider: "D4H",
                     organizationId: ctx.organizationId,
                     userId: ctx.auth.user.id,
                 },
@@ -305,8 +319,8 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .output(z.array(D4HAccessToken.schema))
         .query(async ({ ctx }) => {
-            const records = await ctx.prisma.d4HAccessToken.findMany({
-                where: { organizationId: ctx.organizationId, userId: null },
+            const records = await ctx.prisma.providerCredential.findMany({
+                where: { provider: "D4H", organizationId: ctx.organizationId, userId: null },
             });
 
             return records.map(D4HAccessToken.fromRecord);
@@ -328,8 +342,8 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             ),
         )
         .query(async ({ ctx }) => {
-            const records = await ctx.prisma.d4HAccessToken.findMany({
-                where: { userId: ctx.auth.user.id },
+            const records = await ctx.prisma.providerCredential.findMany({
+                where: { provider: "D4H", userId: ctx.auth.user.id },
                 include: { organization: true },
             });
 
@@ -348,9 +362,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input, ctx }) => {
-            const record = await ctx.prisma.d4HAccessToken.findUnique({
+            const record = await ctx.prisma.providerCredential.findUnique({
                 where: {
                     id: input.tokenId,
+                    provider: "D4H",
                     organizationId: ctx.organizationId,
                 },
             });
@@ -373,10 +388,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 : { d4HTeams: [], d4HOrganisations: [] };
 
             await ctx.prisma.$transaction([
-                ctx.prisma.d4HAccessToken.update({
+                ctx.prisma.providerCredential.update({
                     where: { id: input.tokenId },
                     data: {
-                        metadata,
+                        metadata: { provider: "D4H", serverCode: token.serverCode, ...metadata },
                         status: response.statusText,
                     },
                 }),

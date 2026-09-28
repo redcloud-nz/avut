@@ -41,7 +41,6 @@ model User {
   accounts          Account[]                @relation("account_to_user")
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
   invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
-  d4hAccessTokens   D4HAccessToken[]         @relation("d4h_access_token_to_user")
   providerCredentials ProviderCredential[]   @relation("provider_credential_to_user")
   configs           UserConfig[]             @relation("user_config_to_user")
 
@@ -129,7 +128,6 @@ model Organization {
   skillPackages             SkillPackage[]             @relation("skill_package_to_organization")
   skillPackageSubscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_organization")
   personnel                 Person[]                   @relation("person_to_organization")
-  d4hAccessTokens           D4HAccessToken[]           @relation("d4h_access_token_to_organization")
   providerCredentials       ProviderCredential[]       @relation("provider_credential_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
@@ -202,7 +200,7 @@ model Organization_D4H {
 
   // The organisation access token a scheduled sync should use (Phase 2).
   syncTokenId String?
-  syncToken   D4HAccessToken? @relation("organization_d4h_sync_token", fields: [syncTokenId], references: [id], onDelete: SetNull)
+  syncToken   ProviderCredential? @relation("organization_d4h_sync_token", fields: [syncTokenId], references: [id], onDelete: SetNull)
 
   // Pure sync bookkeeping — last refresh of the cached attributes above. Not a D4H value.
   lastSyncedAt DateTime?
@@ -223,7 +221,7 @@ model Team_D4H {
 
   // Informational — the token that created the link.
   linkTokenId String?
-  linkToken   D4HAccessToken? @relation("team_d4h_link_token", fields: [linkTokenId], references: [id], onDelete: SetNull)
+  linkToken   ProviderCredential? @relation("team_d4h_link_token", fields: [linkTokenId], references: [id], onDelete: SetNull)
 
   // Pure sync bookkeeping — set on every apply and on the first pull at link time.
   lastSyncedAt DateTime?
@@ -391,35 +389,12 @@ enum RecordStatus {
   Deleted
 }
 
-model D4HAccessToken {
-  id             String        @id
-  organizationId String?
-  organization   Organization? @relation("d4h_access_token_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  userId         String?
-  user           User?         @relation("d4h_access_token_to_user", fields: [userId], references: [id], onDelete: Cascade)
-  label          String
-  token          String
-  serverCode     String
-  status         String
-  expiresAt      DateTime
-  metadata       Json          @default("{}")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  linkedTeams          Team_D4H[]         @relation("team_d4h_link_token")
-  syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")
-
-  @@index([organizationId])
-  @@map("d4h_access_tokens")
-}
-
 enum Provider {
   D4H
 }
 
-/// Generalizes D4HAccessToken's encrypted-credential storage across every external-service
-/// integration (see #286). D4H itself still runs on D4HAccessToken above until it's migrated
-/// onto this table in a follow-up phase.
+/// Generalizes D4HAccessToken's former encrypted-credential storage across every
+/// external-service integration (see #286). D4H itself now runs on this table.
 model ProviderCredential {
   id             String        @id
   provider       Provider
@@ -437,6 +412,9 @@ model ProviderCredential {
   metadata       Json          @default("{}")
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  linkedTeams          Team_D4H[]         @relation("team_d4h_link_token")
+  syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")
 
   @@index([organizationId])
   @@index([groupId])
