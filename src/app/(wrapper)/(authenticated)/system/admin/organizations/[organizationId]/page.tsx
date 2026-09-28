@@ -7,7 +7,7 @@
 
 import { Metadata } from "next";
 
-import { SystemAdmin_Organization_Content } from "@/components/system-admin/organizations/organization-content";
+import { SystemAdmin_Organization_Content } from "@/components/system/admin/organizations/organization-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { requireSystemAdmin } from "@/server/system-admin-access";

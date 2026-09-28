@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 
 import { NavCollapsible, NavItem, NavSection } from "@/components/nav/nav-section";
-import { SystemAdmin_Sidebar_Menu } from "@/components/system-admin/sidebar-menu";
+import { SystemAdmin_Sidebar_Menu } from "@/components/system/admin/sidebar-menu";
 import { Profile_Sidebar_Menu } from "@/components/user/profile-sidebar-menu";
 import { systemModules, userModules, type UserModuleId } from "@/lib/modules";
 
