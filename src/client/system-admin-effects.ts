@@ -21,11 +21,19 @@ const userBinCaches = (vars: { userId: string }) => [
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const systemAdminEffects = createEffects<"systemAdmin">()({
+    banUser: (vars) => [
+        invalidate(trpc.systemAdmin.listUsers.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+    ],
     createOrganization: () => [invalidate(trpc.systemAdmin.listOrganizations.queryFilter())],
     deleteUser: (vars) => userBinCaches(vars),
     purgeUser: (vars) => userBinCaches(vars),
     recoverUser: (vars) => userBinCaches(vars),
     setUserRole: (vars) => [
+        invalidate(trpc.systemAdmin.listUsers.queryFilter()),
+        invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+    ],
+    unbanUser: (vars) => [
         invalidate(trpc.systemAdmin.listUsers.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],

@@ -93,6 +93,7 @@ describe("Operations", () => {
             "d4h-team-sync",
             "invitation-accept",
             "invitation-reject",
+            "organization-leave",
             "rubbish-purge",
             "skill-package-import",
         ]);

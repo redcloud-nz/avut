@@ -10,9 +10,10 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * Cache effects for `organizations` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
- * The membership mutations (`allowSystemAdmin`) are currently only called from the system-admin
- * console, so they invalidate `systemAdmin`'s own org/user queries rather than any org-scoped
- * ones — update this once the organization side calls them too.
+ * The membership mutations (`allowSystemAdmin`) were originally only called from the system-admin
+ * console, so they invalidate `systemAdmin`'s own org/user queries. `removeOrganizationMember`/
+ * `setOrganizationMemberRole` are now also called from the org-admin users pages
+ * (`update-user.tsx`/`delete-user.tsx`), which read the member list via `listMembers`.
  */
 export const organizationsEffects = createEffects<"organizations">()({
     addOrganizationMember: (vars) => [
@@ -28,6 +29,9 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     setOrganizationMemberRole: (vars) => [
         invalidate(
@@ -35,5 +39,8 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
         invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
 });

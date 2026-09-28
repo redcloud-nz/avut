@@ -23,8 +23,6 @@ vi.mock("@/client/auth-client", () => ({
     authClient: {
         admin: {
             impersonateUser: vi.fn().mockResolvedValue({ error: null }),
-            banUser: vi.fn().mockResolvedValue({ error: null }),
-            unbanUser: vi.fn().mockResolvedValue({ error: null }),
         },
     },
 }));

@@ -21,8 +21,6 @@ import OrganizationInviteTemplate from "@/emails/organization-invite";
 // eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
-import { OrganizationId } from "@/lib/schemas/organization";
-import { UserId } from "@/lib/schemas/user";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
 import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
@@ -30,7 +28,6 @@ import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks"
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
 import prisma from "./prisma";
-import { linkPersonOnInvitationAccept } from "./services/personnel";
 import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 
 /**
@@ -183,42 +180,10 @@ export const auth = betterAuth({
             ac,
             cancelPendingInvitationsOnReInvite: true,
             organizationHooks: {
-                async afterAcceptInvitation({ invitation, organization, user }) {
-                    /*
-                     * Attach a person record to the membership Better Auth has just created —
-                     * the one named by the invitation, or (when the organization opted in) one
-                     * matching the accepting user's email.
-                     *
-                     * All of the logic lives in `services/personnel.ts` rather than here: this
-                     * module imports `server-only` transitively, so anything written inline
-                     * would be unreachable from the test environment.
-                     *
-                     * Never allowed to fail the accept. The membership itself is already
-                     * committed by this point, so throwing would leave the user staring at an
-                     * error for an invitation that did in fact work.
-                     */
-                    try {
-                        const linked = await linkPersonOnInvitationAccept(prisma, {
-                            organizationId: OrganizationId.schema.parse(organization.id),
-                            actor: {
-                                id: UserId.schema.parse(user.id),
-                                name: user.name,
-                                email: user.email,
-                            },
-                            invitationPersonId: invitation.personId ?? null,
-                        });
-
-                        if (linked) {
-                            console.log(
-                                `Attached User(${user.id}) to Person(${linked.personId}) in Organization(${organization.id})`,
-                            );
-                        }
-                    } catch (error) {
-                        console.error(
-                            `Failed to link a person to User(${user.id}) in Organization(${organization.id}) on invitation accept:`,
-                            error,
-                        );
-                    }
+                async afterAcceptInvitation({ user }) {
+                    // Person-linking now runs in `userRouter.acceptInvitation`, alongside the
+                    // rest of the accept — that mutation is the only caller of
+                    // `auth.api.acceptInvitation`, so nothing bypasses it here.
 
                     // Better Auth creates the membership (and its initial role) internally as
                     // part of accepting the invitation, before this hook runs — this is the one

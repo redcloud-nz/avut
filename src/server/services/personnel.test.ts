@@ -106,12 +106,19 @@ describe("person↔user link matching", () => {
         });
     });
 
+    // A throwaway actor per call: these two are pure reads that never touch `ctx.logEvent`, so
+    // the actor identity is irrelevant — only `ctx.organizationId`/`ctx.prisma` matter here.
+    function ctxFor(organizationId: OrganizationId) {
+        return createOrganizationMockContext({
+            organizationId,
+            user: { id: UserId.create() },
+            prisma: db,
+        });
+    }
+
     describe("findLinkablePerson", () => {
         it("finds the Active, unlinked person with a matching email", async () => {
-            const person = await findLinkablePerson(db, {
-                organizationId: T.org,
-                email: "alice@example.com",
-            });
+            const person = await findLinkablePerson(ctxFor(T.org), { email: "alice@example.com" });
 
             expect(person?.id).toBe(T.alice);
         });
@@ -119,70 +126,50 @@ describe("person↔user link matching", () => {
         it("matches whatever casing the caller passes", async () => {
             // `personnel.email` is stored lowercase now, so the stored side can no longer vary.
             // The needle still can: it arrives from a form, from better-auth, or from D4H.
-            const person = await findLinkablePerson(db, {
-                organizationId: T.org,
-                email: "Bruno@Example.COM",
-            });
+            const person = await findLinkablePerson(ctxFor(T.org), { email: "Bruno@Example.COM" });
 
             expect(person?.id).toBe(T.bruno);
         });
 
         it("skips a person already linked to a user", async () => {
             expect(
-                await findLinkablePerson(db, {
-                    organizationId: T.org,
-                    email: "cara@example.com",
-                }),
+                await findLinkablePerson(ctxFor(T.org), { email: "cara@example.com" }),
             ).toBeNull();
         });
 
         it("skips an archived person", async () => {
             expect(
-                await findLinkablePerson(db, { organizationId: T.org, email: "dev@example.com" }),
+                await findLinkablePerson(ctxFor(T.org), { email: "dev@example.com" }),
             ).toBeNull();
         });
 
         it("does not reach across organizations", async () => {
             expect(
-                await findLinkablePerson(db, { organizationId: T.org, email: "erin@example.com" }),
+                await findLinkablePerson(ctxFor(T.org), { email: "erin@example.com" }),
             ).toBeNull();
 
             expect(
-                (
-                    await findLinkablePerson(db, {
-                        organizationId: T.otherOrg,
-                        email: "erin@example.com",
-                    })
-                )?.id,
+                (await findLinkablePerson(ctxFor(T.otherOrg), { email: "erin@example.com" }))?.id,
             ).toBe(T.erin);
         });
 
         it("returns null when nobody matches", async () => {
             expect(
-                await findLinkablePerson(db, {
-                    organizationId: T.org,
-                    email: "nobody@example.com",
-                }),
+                await findLinkablePerson(ctxFor(T.org), { email: "nobody@example.com" }),
             ).toBeNull();
         });
     });
 
     describe("findLinkableMember", () => {
         it("finds an existing member with a matching email", async () => {
-            const match = await findLinkableMember(db, {
-                organizationId: T.org,
-                email: "alice@example.com",
-            });
+            const match = await findLinkableMember(ctxFor(T.org), { email: "alice@example.com" });
 
             expect(match?.user.id).toBe(T.aliceUser);
             expect(match?.organizationUserId).toBe(T.aliceMembership);
         });
 
         it("lowercases the needle, since User.email is stored lowercase", async () => {
-            const match = await findLinkableMember(db, {
-                organizationId: T.org,
-                email: "Bruno@Example.com",
-            });
+            const match = await findLinkableMember(ctxFor(T.org), { email: "Bruno@Example.com" });
 
             expect(match?.user.id).toBe(T.brunoUser);
         });
@@ -191,22 +178,19 @@ describe("person↔user link matching", () => {
             // Erin has an account, but only belongs to the other org. Linking her here would mean
             // granting membership on an email match, which this never does.
             expect(
-                await findLinkableMember(db, { organizationId: T.org, email: "erin@example.com" }),
+                await findLinkableMember(ctxFor(T.org), { email: "erin@example.com" }),
             ).toBeNull();
         });
 
         it("ignores a member already linked to another person", async () => {
             expect(
-                await findLinkableMember(db, { organizationId: T.org, email: "cara@example.com" }),
+                await findLinkableMember(ctxFor(T.org), { email: "cara@example.com" }),
             ).toBeNull();
         });
 
         it("returns null when no account exists", async () => {
             expect(
-                await findLinkableMember(db, {
-                    organizationId: T.org,
-                    email: "nobody@example.com",
-                }),
+                await findLinkableMember(ctxFor(T.org), { email: "nobody@example.com" }),
             ).toBeNull();
         });
     });
@@ -367,7 +351,9 @@ describe("person↔user link matching", () => {
             }
         });
 
-        const actor = (id: UserId, name: string, email: string) => ({ id, name, email });
+        function ctxFor(user: { id: UserId; name: string; email: string }) {
+            return createOrganizationMockContext({ organizationId: A.org, user, prisma: db });
+        }
 
         async function setAutoLink(enabled: boolean) {
             await db.organizationConfig.deleteMany({ where: { organizationId: A.org } });
@@ -384,11 +370,10 @@ describe("person↔user link matching", () => {
             // Off — an explicit invitation is an admin's decision, not an automation.
             await setAutoLink(false);
 
-            const result = await linkPersonOnInvitationAccept(db, {
-                organizationId: A.org,
-                actor: actor(A.namedUser, "Nadia", "nadia.work@example.com"),
-                invitationPersonId: A.named,
-            });
+            const result = await linkPersonOnInvitationAccept(
+                ctxFor({ id: A.namedUser, name: "Nadia", email: "nadia.work@example.com" }),
+                { invitationPersonId: A.named, email: "nadia.work@example.com" },
+            );
 
             expect(result).toEqual({
                 personId: A.named,
@@ -422,11 +407,10 @@ describe("person↔user link matching", () => {
             await setAutoLink(false);
 
             expect(
-                await linkPersonOnInvitationAccept(db, {
-                    organizationId: A.org,
-                    actor: actor(A.byEmailUser, "Mika", "mika@example.com"),
-                    invitationPersonId: null,
-                }),
+                await linkPersonOnInvitationAccept(
+                    ctxFor({ id: A.byEmailUser, name: "Mika", email: "mika@example.com" }),
+                    { invitationPersonId: null, email: "mika@example.com" },
+                ),
             ).toBeNull();
 
             const membership = await db.organizationUser.findFirst({
@@ -438,11 +422,10 @@ describe("person↔user link matching", () => {
         it("links on an email match once the setting is on", async () => {
             await setAutoLink(true);
 
-            const result = await linkPersonOnInvitationAccept(db, {
-                organizationId: A.org,
-                actor: actor(A.byEmailUser, "Mika", "mika@example.com"),
-                invitationPersonId: null,
-            });
+            const result = await linkPersonOnInvitationAccept(
+                ctxFor({ id: A.byEmailUser, name: "Mika", email: "mika@example.com" }),
+                { invitationPersonId: null, email: "mika@example.com" },
+            );
 
             // Matched on email alone — this invitation carried no personId.
             expect(result).toEqual({
@@ -461,11 +444,10 @@ describe("person↔user link matching", () => {
             await setAutoLink(true);
 
             expect(
-                await linkPersonOnInvitationAccept(db, {
-                    organizationId: A.org,
-                    actor: actor(A.unmatchedUser, "Nobody", "nobody@example.com"),
-                    invitationPersonId: null,
-                }),
+                await linkPersonOnInvitationAccept(
+                    ctxFor({ id: A.unmatchedUser, name: "Nobody", email: "nobody@example.com" }),
+                    { invitationPersonId: null, email: "nobody@example.com" },
+                ),
             ).toBeNull();
         });
 
@@ -480,11 +462,10 @@ describe("person↔user link matching", () => {
 
             // Uli's membership is still unlinked, but Nadia's person record is taken.
             expect(
-                await linkPersonOnInvitationAccept(db, {
-                    organizationId: A.org,
-                    actor: actor(A.unmatchedUser, "Nobody", "nobody@example.com"),
-                    invitationPersonId: A.named,
-                }),
+                await linkPersonOnInvitationAccept(
+                    ctxFor({ id: A.unmatchedUser, name: "Nobody", email: "nobody@example.com" }),
+                    { invitationPersonId: A.named, email: "nobody@example.com" },
+                ),
             ).toBeNull();
 
             expect(

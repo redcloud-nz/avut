@@ -16,6 +16,7 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { UserId } from "@/lib/schemas/user";
+import { auth } from "@/server/auth";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 import * as SkillPackages from "@/server/services/skill-packages";
@@ -56,6 +57,59 @@ function systemServiceContext(ctx: SystemAdminContext): UserAccounts.SystemServi
 }
 
 export const systemAdminRouter = createTrpcRouter({
+    /**
+     * Ban a user account, revoking their active sessions and blocking sign-in until unbanned.
+     * `BAD_REQUEST` if the target is the caller — mirrors `deleteUser`'s/`setUserRole`'s
+     * self-target guard; the client-side menu already hides this action for the caller's own
+     * row, but a crafted call must be refused server-side too (#86).
+     *
+     * `auth.api.banUser` isn't a Prisma operation, so it can't join a `$transaction` with the
+     * log entry — ban first, then log. The entry is `ownerId`-scoped (the banned user's own
+     * timeline), not `scope: "system"`: unlike `deleteUser`, a ban doesn't remove the `User`
+     * row, so there's nothing for the entry to outlive.
+     */
+    banUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema, banReason: z.string().min(1).optional() }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot ban your own account.",
+                });
+            }
+
+            const target = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { id: true },
+            });
+            if (!target) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            await auth.api.banUser({
+                headers: await ctx.getHeaders(),
+                body: {
+                    userId: input.userId,
+                    ...(input.banReason ? { banReason: input.banReason } : {}),
+                },
+            });
+
+            await ctx.logEvent({
+                ownerId: input.userId,
+                action: "Ban",
+                objectType: "User",
+                objectId: input.userId,
+                changes: input.banReason
+                    ? [{ type: "obj_add", path: ["banReason"], curr: input.banReason }]
+                    : [],
+            });
+
+            return { id: input.userId };
+        }),
+
     /**
      * Provision a new organization site-wide. Seeds the same default `OrganizationConfig` rows a
      * user-created org would resolve to (`OrganizationSettings.default()` flattened to
@@ -543,6 +597,48 @@ export const systemAdminRouter = createTrpcRouter({
             ]);
 
             return { id: updated.id, role: updated.role };
+        }),
+
+    /**
+     * Lift a ban on a user account, allowing them to sign in again. `BAD_REQUEST` if the target
+     * is the caller — see `banUser`; unreachable in practice since a banned caller can't hold a
+     * session to invoke this, but kept for symmetry with `banUser`'s guard.
+     */
+    unbanUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot unban your own account.",
+                });
+            }
+
+            const target = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { id: true },
+            });
+            if (!target) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            await auth.api.unbanUser({
+                headers: await ctx.getHeaders(),
+                body: { userId: input.userId },
+            });
+
+            await ctx.logEvent({
+                ownerId: input.userId,
+                action: "Unban",
+                objectType: "User",
+                objectId: input.userId,
+                changes: [],
+            });
+
+            return { id: input.userId };
         }),
 
     /** Reused directly from `settingsRouter` — see `getOrganizationSettings` above. */

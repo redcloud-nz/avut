@@ -6,8 +6,8 @@
 
 import { ReactNode, useMemo } from "react";
 
-import { authClient } from "@/client/auth-client";
 import { useOrganization } from "@/hooks/use-organization";
+import { hasAnyRoleWithPermissions } from "@/lib/permissions";
 import { trashableEntityList } from "@/lib/trash-registry";
 
 /**
@@ -22,13 +22,8 @@ export function RubbishNavGate({ children }: { children: ReactNode }) {
 
     const canDeleteAny = useMemo(
         () =>
-            roles.some((role) =>
-                trashableEntityList.some((entity) =>
-                    authClient.organization.checkRolePermission({
-                        role,
-                        permissions: { [entity.permission]: ["delete"] },
-                    }),
-                ),
+            trashableEntityList.some((entity) =>
+                hasAnyRoleWithPermissions(roles, { [entity.permission]: ["delete"] }),
             ),
         [roles],
     );

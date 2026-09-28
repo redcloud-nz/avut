@@ -9,7 +9,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
-import { authClient } from "@/client/auth-client";
+import { signOut } from "@/client/auth-queries";
 import { SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { getQueryClient } from "@/trpc/query-client";
 
@@ -30,7 +30,7 @@ export function useSignOut(destination: Route = SIGN_IN_PATH) {
     const router = useRouter();
 
     return useCallback(async () => {
-        await authClient.signOut();
+        await signOut();
 
         getQueryClient().clear();
 

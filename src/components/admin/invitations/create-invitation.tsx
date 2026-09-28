@@ -11,9 +11,9 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { invitationsEffects } from "@/client/invitations-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -33,7 +33,7 @@ import { ObjectName } from "@/components/ui/typography";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { trpc } from "@/trpc/client";
 
 import {
     InvitationRoleFields,
@@ -43,7 +43,6 @@ import {
 
 export function AdminModule_CreateInvitation_Dialog() {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const open = action === "create";
@@ -72,32 +71,20 @@ export function AdminModule_CreateInvitation_Dialog() {
         } as const,
     });
 
-    const mutation = useMutation({
-        mutationFn: async (data: { email: string; roles: OrganizationRole[] }) => {
-            return await authClient.organization.inviteMember(
-                {
-                    email: data.email,
-                    role: data.roles,
-                    organizationId: organization.id,
-                    resend: false,
-                },
-                { throw: true },
-            );
-        },
-        onError(error) {
-            toast.error(`Failed to send invitation: ${error.message}`);
-            console.error("Failed to send invitation:", error);
-        },
-        onSuccess(invitation) {
-            toast.success(`Invitation sent to ${invitation.email}`);
+    const mutation = useMutation(
+        trpc.invitations.createInvitation.mutationOptions({
+            meta: { effects: invitationsEffects.createInvitation },
+            onError(error) {
+                toast.error(`Failed to send invitation: ${error.message}`);
+                console.error("Failed to send invitation:", error);
+            },
+            onSuccess({ invitation }) {
+                toast.success(`Invitation sent to ${invitation.email}`);
 
-            queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-invitations", organization.id],
-            });
-
-            handleOpenChange(false);
-        },
-    });
+                handleOpenChange(false);
+            },
+        }),
+    );
 
     function handleOpenChange(open: boolean) {
         void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
@@ -133,8 +120,10 @@ export function AdminModule_CreateInvitation_Dialog() {
                             onSubmit={form.handleSubmit(
                                 (data) =>
                                     mutation.mutate({
+                                        organizationId: organization.id,
                                         email: data.email,
                                         roles: invitationRoles(data),
+                                        resend: false,
                                     }),
                                 (errors) => {
                                     console.error("Form validation errors:", errors);

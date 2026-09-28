@@ -6,9 +6,8 @@
 
 import { useMemo } from "react";
 
-import { authClient } from "@/client/auth-client";
 import { useOrganization } from "@/hooks/use-organization";
-import { Permissions } from "@/lib/permissions";
+import { hasAnyRoleWithPermissions, Permissions } from "@/lib/permissions";
 
 /**
  * Returns whether the current user has all of the given permissions in the
@@ -19,11 +18,5 @@ import { Permissions } from "@/lib/permissions";
 export function useHasPermission(permissions: Permissions): boolean {
     const { roles } = useOrganization();
 
-    return useMemo(
-        () =>
-            roles.some((role) =>
-                authClient.organization.checkRolePermission({ role, permissions }),
-            ),
-        [roles, permissions],
-    );
+    return useMemo(() => hasAnyRoleWithPermissions(roles, permissions), [roles, permissions]);
 }

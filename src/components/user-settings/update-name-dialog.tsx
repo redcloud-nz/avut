@@ -14,8 +14,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
-import { type SessionData } from "@/client/auth-queries";
+import { updateUserMutationOptions, type SessionData } from "@/client/auth-queries";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -48,9 +47,7 @@ export function UserProfile_UpdateName_Dialog({ session }: { session: SessionDat
     });
 
     const mutation = useMutation({
-        async mutationFn(formData: { name: string }) {
-            await authClient.updateUser({ name: formData.name }, { throw: true });
-        },
+        ...updateUserMutationOptions(),
         onError(error) {
             console.error("Failed to update name:", error);
             toast.error(`Failed to update name: ${error.message}`);

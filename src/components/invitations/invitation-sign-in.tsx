@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { sendEmailVerificationOtp } from "@/client/auth-queries";
 import { SocialSignInButtons_Field } from "@/components/auth/sign-in";
 import { MutationButton } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
@@ -57,10 +58,7 @@ export function InvitationSignIn_Form({
 
             if (error?.code === "EMAIL_NOT_VERIFIED") {
                 // Nothing sends this code on an unverified sign-in, so it has to be requested here.
-                await authClient.emailOtp.sendVerificationOtp({
-                    email,
-                    type: "email-verification",
-                });
+                await sendEmailVerificationOtp(email);
                 return { verified: false };
             }
             if (error) throw new Error(error.message ?? "Invalid email or password.");

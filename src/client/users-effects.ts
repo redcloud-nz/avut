@@ -16,7 +16,9 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  */
 export const usersEffects = createEffects<"users">()({
     linkPerson: (vars) => [
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(
             trpc.users.getLinkedPerson.queryFilter({
                 organizationId: vars.organizationId,
@@ -48,7 +50,9 @@ export const usersEffects = createEffects<"users">()({
     // `unlinkPerson`'s input only carries `userId` — the `personId` being unlinked comes back
     // in the response instead, since the server already knows it from the existing link.
     unlinkPerson: (vars, data) => [
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(
             trpc.users.getLinkedPerson.queryFilter({
                 organizationId: vars.organizationId,

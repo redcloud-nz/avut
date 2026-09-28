@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { refetchSessionPastCookieCache } from "@/client/auth-queries";
 import { useSignOut } from "@/client/use-sign-out";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -48,7 +48,7 @@ export function AccountClosed_Content({
             async onSuccess() {
                 // The session cookie cache still says `Deleted` for up to its 5-minute window;
                 // refetch past it so the app lets the restored account straight back in.
-                await authClient.getSession({ query: { disableCookieCache: true } });
+                await refetchSessionPastCookieCache();
                 getQueryClient().clear();
                 toast.success("Welcome back — your account has been restored.");
                 router.replace("/auth/post-sign-in");
