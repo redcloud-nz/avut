@@ -67,31 +67,39 @@ export async function getOrganizationProviderCredential({
     return toServerOnlyProviderCredential(record);
 }
 
-/**
- * Get the personal credential for the given provider, user, and organization, if it exists.
- * @returns The personal credential, or null if it doesn't exist.
- * @remarks Cached, tagged with the provider/organization/user. Invalidate with
- * `revalidatePersonalProviderCredential`.
- */
-export async function getPersonalProviderCredential(
+/** Cached separately from decryption so the cache holds the encrypted record, never the
+ * plaintext token. */
+async function fetchPersonalProviderCredentialRecord(
     provider: Provider,
     organizationId: OrganizationId,
     userId: UserId,
-): Promise<ProviderCredential_ServerOnly | null> {
+): Promise<ProviderCredentialRecord | null> {
     "use cache";
     cacheTag(`provider-credential-personal-${provider}-${organizationId}-${userId}`);
 
-    const record = await prisma.providerCredential.findFirst({
+    return await prisma.providerCredential.findFirst({
         where: {
             provider,
             organizationId,
             userId,
         },
     });
+}
 
-    if (!record) return null;
+/**
+ * Get the personal credential for the given provider, user, and organization, if it exists.
+ * @returns The personal credential, or null if it doesn't exist.
+ * @remarks The record is cached, tagged with the provider/organization/user, and decrypted on
+ * every call. Invalidate with `revalidatePersonalProviderCredential`.
+ */
+export async function getPersonalProviderCredential(
+    provider: Provider,
+    organizationId: OrganizationId,
+    userId: UserId,
+): Promise<ProviderCredential_ServerOnly | null> {
+    const record = await fetchPersonalProviderCredentialRecord(provider, organizationId, userId);
 
-    return toServerOnlyProviderCredential(record);
+    return record ? toServerOnlyProviderCredential(record) : null;
 }
 
 export function revalidatePersonalProviderCredential(
