@@ -11,6 +11,10 @@ import crypto from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const CIPHERTEXT_ENCODING = "base64";
+/** 96 bits, the recommended IV size for GCM. */
+const IV_LENGTH = 12;
+/** 128 bits. Pinned on decrypt so a truncated tag can't be accepted. */
+const AUTH_TAG_LENGTH = 16;
 
 /**
  * Encrypt the given text using AES-256-GCM with the provided secret. The secret must be 32 characters long (256 bits) for AES-256. The function generates a random initialization vector (IV) for each encryption operation, which is recommended for security. The IV, encrypted data, and authentication tag are concatenated and returned as a Base64 string.
@@ -25,8 +29,8 @@ export function encryptValue(text: string, secret: string): string {
     }
 
     // Generate a random 96-bit (12-byte) initialization vector. This is the recommended size for GCM mode.
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv(ALGORITHM, secret, iv);
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(ALGORITHM, secret, iv, { authTagLength: AUTH_TAG_LENGTH });
 
     const encrypted = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
 
@@ -51,12 +55,20 @@ export function decryptValue(ciphertext: string, secret: string): string {
 
     const data = Buffer.from(ciphertext, CIPHERTEXT_ENCODING);
 
-    // Extract the initialization vector (IV), encrypted data, and authentication tag from the input
-    const iv = data.subarray(0, 12); // First 12 bytes for IV
-    const authTag = data.subarray(data.length - 16); // Last 16 bytes for auth tag
-    const encrypted = data.subarray(12, data.length - 16); // Middle part is the encrypted text
+    // Anything shorter can't hold a full IV and tag. Without this check, the slicing below would
+    // hand setAuthTag a shorter tag, which is much easier to forge.
+    if (data.length < IV_LENGTH + AUTH_TAG_LENGTH) {
+        throw new Error("Invalid ciphertext: too short.");
+    }
 
-    const decipher = crypto.createDecipheriv(ALGORITHM, secret, iv);
+    // Extract the initialization vector (IV), encrypted data, and authentication tag from the input
+    const iv = data.subarray(0, IV_LENGTH);
+    const authTag = data.subarray(data.length - AUTH_TAG_LENGTH);
+    const encrypted = data.subarray(IV_LENGTH, data.length - AUTH_TAG_LENGTH);
+
+    const decipher = crypto.createDecipheriv(ALGORITHM, secret, iv, {
+        authTagLength: AUTH_TAG_LENGTH,
+    });
     decipher.setAuthTag(authTag);
 
     const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);

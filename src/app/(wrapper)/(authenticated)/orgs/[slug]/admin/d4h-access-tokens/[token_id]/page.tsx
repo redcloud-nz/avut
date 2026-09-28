@@ -8,7 +8,7 @@
 import { Metadata } from "next";
 
 import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
-import { getOrganizationBySlug } from "@/server/cache/organization";
+import { requireOrganizationWith } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import { AdminModule_D4HAccessToken_Content } from "./access-token-content";
@@ -17,7 +17,7 @@ type Props = PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]`>;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
 
     const tokenId = D4HAccessTokenId.schema.parse(token_id);
     const accessToken = await fetchQuery(
@@ -32,7 +32,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_D4HAccessToken_Page(props: Props) {
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
 
     const tokenId = D4HAccessTokenId.schema.parse(token_id);
 

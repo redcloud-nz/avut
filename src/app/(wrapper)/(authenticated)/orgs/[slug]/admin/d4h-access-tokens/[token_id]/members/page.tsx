@@ -8,11 +8,12 @@ import { notFound } from "next/navigation";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
 import { D4HMember } from "@/lib/schemas/d4h/member";
-import { getOrganizationBySlug } from "@/server/cache/organization";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { requireOrganizationWith } from "@/server/organization-access";
 
 /**
  * DEVELOPMENT ONLY PAGE
@@ -20,8 +21,10 @@ import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-
 export default async function Admin_D4HAccessToken_Members_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/members`>,
 ) {
+    if (!env.isDevelopment()) notFound();
+
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,

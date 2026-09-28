@@ -5,12 +5,11 @@
 
 import * as z from "zod";
 
-import type { D4HAccessToken as D4HAccessTokenRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
 
-export type { D4HAccessTokenRecord };
+import type { ProviderCredentialRecord } from "./provider-credential";
 
 export const D4HAccessTokenId = {
     schema: zodNanoId16("D4HAccessTokenId expected").brand<"D4HAccessTokenId">(),
@@ -62,6 +61,25 @@ export const D4HAccessTokenMetadata = {
 
 export type D4HAccessTokenMetadata = z.infer<typeof D4HAccessTokenMetadata.schema>;
 
+/**
+ * D4H's slice of `ProviderCredential.metadata` — `{ provider: "D4H", serverCode, ...D4HAccessTokenMetadata }`,
+ * per the discriminated union in `provider-credential.ts`. Only used to pull `serverCode` and the
+ * team/org lists back out of a raw `ProviderCredentialRecord`'s `metadata` JSON below.
+ */
+export const D4HProviderMetadata = {
+    schema: metadataSchema.extend({
+        provider: z.literal("D4H"),
+        serverCode: D4HServerCode.schema,
+    }),
+} as const;
+
+export type D4HProviderMetadata = z.infer<typeof D4HProviderMetadata.schema>;
+
+/**
+ * D4H's own view of a `ProviderCredential` row — same shape this codebase used before D4H moved
+ * onto the generic table (#286 Phase 2), with `serverCode` back at the top level instead of nested
+ * in `metadata`. Every existing D4H page/consumer keeps working against this unchanged shape.
+ */
 export const D4HAccessToken = {
     schema: z.object({
         id: D4HAccessTokenId.schema,
@@ -75,12 +93,21 @@ export const D4HAccessToken = {
         metadata: D4HAccessTokenMetadata.schema,
     }),
 
-    fromRecord: (record: D4HAccessTokenRecord) =>
-        D4HAccessToken.schema.parse({
+    /** Drops the encrypted `token` explicitly rather than relying on `z.object` stripping unknown
+     * keys, so it can't reach the client if the schema is ever loosened. */
+    fromRecord: ({ token: _token, ...record }: ProviderCredentialRecord) => {
+        const { serverCode, d4HTeams, d4HOrganisations } = D4HProviderMetadata.schema.parse(
+            record.metadata,
+        );
+
+        return D4HAccessToken.schema.parse({
             ...record,
+            serverCode,
             expiresAt: record.expiresAt.toISOString(),
             createdAt: record.createdAt.toISOString(),
-        }),
+            metadata: { d4HTeams, d4HOrganisations },
+        });
+    },
 } as const;
 
 export type D4HAccessToken = z.infer<typeof D4HAccessToken.schema>;

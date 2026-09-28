@@ -620,15 +620,21 @@ describe("organizations.getOrganizationAsAdmin", () => {
                 updatedAt: new Date(),
             },
         });
-        await db.d4HAccessToken.create({
+        await db.providerCredential.create({
             data: {
                 id: nanoId16(),
+                provider: "D4H",
                 organizationId: T.org,
                 label: "Token",
                 token: "secret",
-                serverCode: "us",
                 status: "active",
                 expiresAt: new Date(),
+                metadata: {
+                    provider: "D4H",
+                    serverCode: "us",
+                    d4HTeams: [],
+                    d4HOrganisations: [],
+                },
                 createdAt: new Date(),
                 updatedAt: new Date(),
             },

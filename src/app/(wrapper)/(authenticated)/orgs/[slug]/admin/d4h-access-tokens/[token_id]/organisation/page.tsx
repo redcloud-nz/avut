@@ -10,16 +10,17 @@ import { notFound } from "next/navigation";
 import { Eagle } from "@/components/blocks/eagle";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
-import { getOrganizationBySlug } from "@/server/cache/organization";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import {
     fetchD4HWhoamiCached,
     getD4HFetchClient,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
+import { requireOrganizationWith } from "@/server/organization-access";
 
 async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4HFetchClient(accessToken);
@@ -51,8 +52,10 @@ async function fetchOrganisation(accessToken: D4HAccessToken_ServerOnly) {
 export default async function Admin_D4HAccessToken_Organisation_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/organisation`>,
 ) {
+    if (!env.isDevelopment()) notFound();
+
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,
