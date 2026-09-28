@@ -25,7 +25,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate, formatRelativeDateTime } from "@/lib/datetime";
 import type { Skill } from "@/lib/schemas/skill";
-import { getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
+import { assessorDisplayName, getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
 import { RouterOutput, trpc } from "@/trpc/client";
 
 type Competency = RouterOutput["skillChecks"]["getCompetencyMatrix"]["competencies"][number];
@@ -248,7 +248,9 @@ function CheckDetailsContent({
                         ? "—"
                         : isPending
                           ? "Loading…"
-                          : (check?.assessor.name ?? "Unknown")}
+                          : check
+                            ? assessorDisplayName(check)
+                            : "Unknown"}
                 </dd>
             </dl>
             {isSynthetic ? (

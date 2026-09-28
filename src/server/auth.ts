@@ -23,6 +23,7 @@ import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
+import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
 import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
@@ -81,8 +82,12 @@ export const auth = betterAuth({
      * not our schema's `users` / `invitations`. This endpoint is the only better-auth path
      * that joins Organization to those, so it 500s with a PrismaClientValidationError. The
      * app never calls it; keep it off until upstream fixes the key naming (#97).
+     *
+     * `/organization/delete` would hard-delete the org and cascade everything under it,
+     * bypassing the audit log and the Rubbish bin's retention window (#297). Org deletion
+     * goes through our own procedure instead.
      */
-    disabledPaths: ["/organization/get-full-organization"],
+    disabledPaths: ["/organization/get-full-organization", "/organization/delete"],
     hooks: {
         // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
         after: revalidateRolesAfterLeave(revalidateOrganizationUser),
@@ -139,6 +144,13 @@ export const auth = betterAuth({
     },
     plugins: [
         admin(),
+        deletedUserPlugin(async (userIds) => {
+            const rows = await prisma.user.findMany({
+                where: { id: { in: userIds }, status: "Deleted" },
+                select: { id: true },
+            });
+            return new Set(rows.map((r) => r.id));
+        }),
         emailOTP({
             changeEmail: {
                 enabled: true,
@@ -264,6 +276,16 @@ export const auth = betterAuth({
 
     user: {
         modelName: "user",
+        /*
+         * Read-only on the session so the closed-account gate (`requireSession`,
+         * `authenticatedProcedure`) costs no extra query. Fresh where it matters: deleting an
+         * account revokes every session, so the next one is minted with `Deleted`; restoring
+         * refetches the session past the cookie cache (see `account-closed-content.tsx`).
+         */
+        additionalFields: {
+            status: { type: "string", input: false, required: false },
+            deletedBy: { type: "string", input: false, required: false },
+        },
     },
     verification: {
         modelName: "verification",

@@ -51,6 +51,9 @@ const skillCheckResultsConfigSchema = z
     })
     .default(DEFAULT_SKILL_TRACK_RESULTS_CONFIG);
 
+export const RUBBISH_BIN_DEFAULT_RETENTION_DAYS = 30;
+export const RUBBISH_BIN_MAX_RETENTION_DAYS = 90;
+
 const organizationSettingsSchema = z.object({
     general: z.object({
         publicDomain: z.string().regex(z.regexes.domain, "Invalid domain format").optional(),
@@ -80,6 +83,21 @@ const organizationSettingsSchema = z.object({
         autoLinkOnInviteAccept: z.boolean().default(false),
         /** Link a newly-created person to an existing *member* holding the same email. */
         autoLinkOnPersonCreate: z.boolean().default(false),
+    }),
+    /*
+     * How long a Deleted record stays in the org's Rubbish bin before the daily purge removes it
+     * for good (#298). One number for every entity type the org owns. This is routine deletion of
+     * the org's own records, so the window is the org's call — the privacy policy's deletion
+     * promises cover an organisation leaving AVUT and account closure, which use the fixed 14-day
+     * system window instead.
+     */
+    rubbishBin: z.object({
+        retentionDays: z
+            .number()
+            .int()
+            .min(1)
+            .max(RUBBISH_BIN_MAX_RETENTION_DAYS)
+            .default(RUBBISH_BIN_DEFAULT_RETENTION_DAYS),
     }),
     modules: z.object({
         "d4h-views": z.object({
@@ -122,6 +140,7 @@ export const OrganizationSettingsSlices = defineSettingsSlices(organizationSetti
     "integrations.d4h",
     "integrations.email",
     "personnel",
+    "rubbishBin",
     "modules.d4h-views",
     "modules.forms",
     "modules.i3",

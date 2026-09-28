@@ -52,6 +52,7 @@ function base(over: Partial<BuildSyncPlanInput> = {}): BuildSyncPlanInput {
         d4hMembers: [],
         avutMemberships: [],
         existingPersonEmails: new Set(),
+        deletedPersonEmails: new Set(),
         manualMembershipEmails: new Set(),
         teamMetadata: { current: { d4hTeamName: "A" }, incoming: { d4hTeamName: "A" } },
         generatedAt: new Date("2026-09-10T00:00:00.000Z"),
@@ -60,6 +61,20 @@ function base(over: Partial<BuildSyncPlanInput> = {}): BuildSyncPlanInput {
 }
 
 describe("buildSyncPlan — additions", () => {
+    it("skips a member whose email belongs to a person in the Rubbish bin (#183)", () => {
+        const plan = buildSyncPlan(
+            base({
+                d4hMembers: [member({ id: 1, email: { value: "Gone@x.com", verified: true } })],
+                deletedPersonEmails: new Set(["gone@x.com"]),
+            }),
+        );
+        expect(plan.additions).toHaveLength(0);
+        expect(plan.skipped).toEqual([
+            expect.objectContaining({ d4hMemberId: 1, reason: "person-in-rubbish-bin" }),
+        ]);
+        expect(plan.counts.skipped).toBe(1);
+    });
+
     it("new person when the email is unknown", () => {
         const plan = buildSyncPlan(base({ d4hMembers: [member({ id: 1 })] }));
         expect(plan.additions).toHaveLength(1);

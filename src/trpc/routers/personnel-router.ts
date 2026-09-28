@@ -60,11 +60,7 @@ export const personnelRouter = createTrpcRouter({
                 },
             });
 
-            if (emailConflict)
-                throw new FieldConflictError(
-                    "email",
-                    "A person with this email address already exists in this organisation.",
-                );
+            if (emailConflict) throw emailConflictError(emailConflict.status);
 
             // Delegates to the shared service so this path and the D4H team import behave
             // identically — in particular, both auto-link.
@@ -72,7 +68,7 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
-     * Soft-deletes a person from the organization (reversible via `restorePersonFromTrash`).
+     * Soft-deletes a person from the organization (reversible via `recoverPerson`).
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.
      * @returns The deleted person object.
@@ -324,6 +320,25 @@ export const personnelRouter = createTrpcRouter({
         }),
 
     /**
+     * Recovers a deleted person in the organization back to Active.
+     * @param ctx The authenticated context.
+     * @param input The input object containing the personId.
+     * @returns The recovered person object.
+     * @throws TRPCError(NOT_FOUND) if the person is not found.
+     * @throws TRPCError(BAD_REQUEST) if the person is not Deleted.
+     */
+    recoverPerson: organizationProcedure({ person: ["delete"] })
+        .input(
+            z.object({
+                personId: PersonId.schema,
+            }),
+        )
+        .output(z.object({ updated: PersonData.schema }))
+        .mutation(async ({ ctx, input: { personId } }) => {
+            return { updated: await Personnel.recover(ctx, personId) };
+        }),
+
+    /**
      * Restores an archived person in the organization back to Active.
      * @param ctx The authenticated context.
      * @param input The input object containing the personId.
@@ -339,26 +354,7 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(z.object({ updated: PersonData.schema }))
         .mutation(async ({ ctx, input: { personId } }) => {
-            return { updated: await Personnel.restoreFromArchive(ctx, personId) };
-        }),
-
-    /**
-     * Restores a deleted person in the organization back to Active.
-     * @param ctx The authenticated context.
-     * @param input The input object containing the personId.
-     * @returns The restored person object.
-     * @throws TRPCError(NOT_FOUND) if the person is not found.
-     * @throws TRPCError(BAD_REQUEST) if the person is not Deleted.
-     */
-    restorePersonFromTrash: organizationProcedure({ person: ["delete"] })
-        .input(
-            z.object({
-                personId: PersonId.schema,
-            }),
-        )
-        .output(z.object({ updated: PersonData.schema }))
-        .mutation(async ({ ctx, input: { personId } }) => {
-            return { updated: await Personnel.restoreFromTrash(ctx, personId) };
+            return { updated: await Personnel.restore(ctx, personId) };
         }),
 
     /**
@@ -392,11 +388,7 @@ export const personnelRouter = createTrpcRouter({
                         organizationId: ctx.organizationId,
                     },
                 });
-                if (emailConflict)
-                    throw new FieldConflictError(
-                        "email",
-                        "A person with this email address already exists in this organisation.",
-                    );
+                if (emailConflict) throw emailConflictError(emailConflict.status);
             }
 
             // Calculate changes from existing record
@@ -422,3 +414,16 @@ export const personnelRouter = createTrpcRouter({
             };
         }),
 });
+
+/**
+ * Person emails stay unique across the Rubbish bin (deliberately — no partial index), so a
+ * clash with a `Deleted` person tells the user how to free the address rather than just "exists".
+ */
+function emailConflictError(conflictStatus: PersonData["status"]): FieldConflictError {
+    return new FieldConflictError(
+        "email",
+        conflictStatus === "Deleted"
+            ? "A person with this email address is in the Rubbish bin. Recover them, or delete them forever from the Rubbish bin, to use this address."
+            : "A person with this email address already exists in this organisation.",
+    );
+}

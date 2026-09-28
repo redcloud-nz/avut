@@ -162,7 +162,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
     ],
-    restoreGroupFromTrash: (vars, { updated }) => [
+    recoverGroup: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getGroup.queryKey({
                 organizationId: vars.organizationId,
@@ -191,7 +191,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
     ],
-    restorePackageFromTrash: (vars, { updated }) => [
+    recoverPackage: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getPackage.queryKey({
                 organizationId: vars.organizationId,
@@ -220,7 +220,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
     ],
-    restoreSkillFromTrash: (vars, { updated }) => [
+    recoverSkill: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getSkill.queryKey({
                 organizationId: vars.organizationId,

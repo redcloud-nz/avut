@@ -14,6 +14,7 @@ import { UserProfile_ChangePassword_Dialog } from "@/components/user-settings/ch
 import { UserProfile_Card } from "@/components/user-settings/user-profile-card";
 
 import { ActiveSessions_Card } from "./active-sessions-card";
+import { UserSettings_CloseAccount_Dialog } from "./close-account-dialog";
 import { LinkedAccounts_Card } from "./linked-accounts-card";
 
 export function UserAccountSettings() {
@@ -47,6 +48,25 @@ export function UserAccountSettings() {
             </Card>
             <LinkedAccounts_Card />
             <ActiveSessions_Card />
+            <Card>
+                <CardHeader>
+                    <CardTitle>Close Account</CardTitle>
+                    <CardDescription>
+                        Stop using AVUT and have your account deleted.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <DataItem>
+                        <DataItemTitle>Account</DataItemTitle>
+                        <DataItemValue>{sessionQuery.data.user.email}</DataItemValue>
+                        <DataItemAction>
+                            <UserSettings_CloseAccount_Dialog
+                                email={sessionQuery.data.user.email}
+                            />
+                        </DataItemAction>
+                    </DataItem>
+                </CardContent>
+            </Card>
         </div>
     );
 }

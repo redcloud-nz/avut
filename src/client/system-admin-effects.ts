@@ -6,6 +6,15 @@
 import { trpc } from "@/trpc/client";
 import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
+/** Moving an account into, out of, or past the system Rubbish bin changes every user/member view. */
+const userBinCaches = (vars: { userId: string }) => [
+    invalidate(trpc.systemAdmin.listUsers.queryFilter()),
+    invalidate(trpc.systemAdmin.listDeletedUsers.queryFilter()),
+    invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
+    invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+    invalidate(trpc.systemAdmin.getOrganization.queryFilter()),
+];
+
 /**
  * Cache effects for `systemAdmin` router mutations, keyed by procedure name.
  *
@@ -17,11 +26,9 @@ export const systemAdminEffects = createEffects<"systemAdmin">()({
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),
     ],
     createOrganization: () => [invalidate(trpc.systemAdmin.listOrganizations.queryFilter())],
-    deleteUser: () => [
-        invalidate(trpc.systemAdmin.listUsers.queryFilter()),
-        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
-        invalidate(trpc.systemAdmin.getOrganization.queryFilter()),
-    ],
+    deleteUser: (vars) => userBinCaches(vars),
+    purgeUser: (vars) => userBinCaches(vars),
+    recoverUser: (vars) => userBinCaches(vars),
     setUserRole: (vars) => [
         invalidate(trpc.systemAdmin.listUsers.queryFilter()),
         invalidate(trpc.systemAdmin.getUser.queryFilter({ userId: vars.userId })),

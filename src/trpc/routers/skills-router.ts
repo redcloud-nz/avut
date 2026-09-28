@@ -175,6 +175,7 @@ export const skillsRouter = createTrpcRouter({
                 where: {
                     id: skillPackageId,
                     published: true,
+                    status: { not: "Deleted" },
                 },
                 select: {
                     id: true,
@@ -341,12 +342,13 @@ export const skillsRouter = createTrpcRouter({
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: {
                     organizationId: ctx.organizationId,
+                    skillPackage: { status: { not: "Deleted" } },
                 },
                 include: {
                     skillPackage: {
                         include: {
-                            skills: true,
-                            groups: true,
+                            skills: { where: { status: { not: "Deleted" } } },
+                            groups: { where: { status: { not: "Deleted" } } },
                         },
                     },
                 },
@@ -388,6 +390,7 @@ export const skillsRouter = createTrpcRouter({
             const publishedPackages = await ctx.prisma.skillPackage.findMany({
                 where: {
                     published: true,
+                    status: { not: "Deleted" },
                 },
                 select: {
                     id: true,
@@ -560,7 +563,10 @@ export const skillsRouter = createTrpcRouter({
                     distinct: ["assessorId"],
                 });
 
-                const assessors = checks.map((check) => check.assessor);
+                // A purged assessor (null) has no Person to list.
+                const assessors = checks.flatMap((check) =>
+                    check.assessor ? [check.assessor] : [],
+                );
 
                 const uniqueAssessors = R.uniqueBy(assessors, (a) => a.id);
 
@@ -677,6 +683,7 @@ export const skillsRouter = createTrpcRouter({
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: {
                     organizationId: ctx.organizationId,
+                    skillPackage: { status: { not: "Deleted" } },
                 },
                 include: {
                     skillPackage: {
@@ -733,7 +740,7 @@ export const skillsRouter = createTrpcRouter({
                 },
             });
 
-            if (!skillPackage || !skillPackage.published) {
+            if (!skillPackage || !skillPackage.published || skillPackage.status === "Deleted") {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.skillPackageNotFound(skillPackageId),

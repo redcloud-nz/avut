@@ -14,12 +14,15 @@ import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData } from "@/lib/schemas/user-session";
 import { auth } from "@/server/auth";
+import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
 import * as Personnel from "@/server/services/personnel";
 import type { OrgServiceContext } from "@/server/services/service-context";
+import * as UserAccounts from "@/server/services/user-accounts";
 
 import {
     authenticatedProcedure,
+    closedAccountProcedure,
     createTrpcRouter,
     publicProcedure,
     type AuthenticatedContext,
@@ -189,6 +192,64 @@ export const userRouter = createTrpcRouter({
             });
 
             return { organizationSlug: invitation.organization.slug };
+        }),
+
+    /**
+     * Close the caller's own account (#150): the same soft delete a system administrator does,
+     * into the system Rubbish bin for `USER_RETENTION_DAYS`, with the same guards —
+     * the sole owner of an organization is refused with its name. Every session is revoked, this
+     * one included, so the client signs out afterwards. Person records in each organization are
+     * the organization's and are kept.
+     *
+     * The entry is `scope: "system"`: a user-scoped one would be cascaded away by the purge.
+     * @throws TRPCError(BAD_REQUEST) if `confirmEmail` doesn't match, or a guard refuses it.
+     */
+    closeMyAccount: authenticatedProcedure
+        .input(z.object({ confirmEmail: z.string() }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.confirmEmail.trim().toLowerCase() !== ctx.auth.user.email.toLowerCase()) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Type your email address exactly to confirm.",
+                });
+            }
+
+            await UserAccounts.softDelete(
+                {
+                    prisma: ctx.prisma,
+                    logSystemEvent: (options, tx = ctx.prisma) =>
+                        recordLogEntry(
+                            { scope: "system", ...resolveActor(ctx.auth), ...options },
+                            tx,
+                        ),
+                },
+                ctx.userId,
+                "self",
+            );
+            await revalidateOrganizationUser(ctx.userId);
+        }),
+
+    /**
+     * What `/auth/account-closed` shows a closed account: whether its owner may restore it
+     * (only if they closed it themselves) and when it will be purged.
+     */
+    getAccountClosure: closedAccountProcedure
+        .output(
+            z.object({
+                closed: z.boolean(),
+                canRestore: z.boolean(),
+                purgeAt: z.iso.datetime().nullable(),
+            }),
+        )
+        .query(async ({ ctx }) => {
+            const [deleted] = (await UserAccounts.listDeleted(ctx.prisma)).filter(
+                (u) => u.id === ctx.userId,
+            );
+            return {
+                closed: deleted !== undefined,
+                canRestore: deleted !== undefined && ctx.auth.user.deletedBy === "Self",
+                purgeAt: deleted?.purgeAt?.toISOString() ?? null,
+            };
         }),
 
     /**
@@ -468,4 +529,20 @@ export const userRouter = createTrpcRouter({
                 description: `Rejected invitation to join ${invitation.organization.name} (${invitation.organizationId}).`,
             });
         }),
+
+    /**
+     * The owner restoring an account they closed, from `/auth/account-closed`. An account a
+     * system administrator deleted is refused — that's the administrator's call to undo.
+     */
+    restoreMyAccount: closedAccountProcedure.mutation(async ({ ctx }) => {
+        await UserAccounts.restoreOwn(
+            {
+                prisma: ctx.prisma,
+                logSystemEvent: (options, tx = ctx.prisma) =>
+                    recordLogEntry({ scope: "system", ...resolveActor(ctx.auth), ...options }, tx),
+            },
+            ctx.userId,
+        );
+        await revalidateOrganizationUser(ctx.userId);
+    }),
 });

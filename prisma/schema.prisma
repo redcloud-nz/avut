@@ -31,6 +31,12 @@ model User {
   banned            Boolean?                 @default(false)
   banReason         String?
   banExpires        DateTime?
+  /// `Deleted` = in the system Rubbish bin: can't sign in, purged after a fixed 14 days (#296).
+  /// Distinct from `banned`, which blocks access but keeps the account indefinitely.
+  status            RecordStatus             @default(Active)
+  /// Who put a `Deleted` account in the bin: `Self` (closed it) may restore it on sign-in;
+  /// `Admin` has to ask an administrator. Null while the account isn't deleted.
+  deletedBy         AccountDeletedBy?
   sessions          Session[]                @relation("session_to_user")
   accounts          Account[]                @relation("account_to_user")
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
@@ -372,6 +378,11 @@ model LogBatch {
   @@map("log_batches")
 }
 
+enum AccountDeletedBy {
+  Self
+  Admin
+}
+
 enum RecordStatus {
   Active
   Archived
@@ -607,8 +618,12 @@ model SkillCheck {
   sessionId      String?
   session        SkillCheckSession? @relation("skill_check_session_checks", fields: [sessionId], references: [id], onDelete: SetNull)
   assessee       Person             @relation("skill_check_assessee", fields: [assesseeId], references: [id], onDelete: Cascade)
-  assessorId     String
-  assessor       Person             @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
+  /// Null once the assessor's Person is purged from the Rubbish bin — the check is the assessee's
+  /// record and survives, with `assessorLabel` keeping the assessor's name.
+  assessorId     String?
+  assessor       Person?            @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: SetNull)
+  /// The assessor's name, written by the Person purge just before `assessorId` is nulled.
+  assessorLabel  String?
   skillId        String
   skill          Skill              @relation("skill_check_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
   result         SkillCheckResult

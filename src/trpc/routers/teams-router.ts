@@ -12,7 +12,7 @@ import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
-import { TeamMembershipData } from "@/lib/schemas/team-membership";
+import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
@@ -294,7 +294,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            if (!person) {
+            if (!person || person.status === "Deleted") {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.personNotFound(personId),
@@ -313,7 +313,7 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Soft-deletes a team from the organization (reversible via `restoreTeamFromTrash`).
+     * Soft-deletes a team from the organization (reversible via `recoverTeam`).
      * `TeamMembership` rows are deliberately left untouched — nothing cascades on a soft delete.
      */
     deleteTeam: organizationProcedure({ team: ["delete"] })
@@ -328,7 +328,7 @@ export const teamsRouter = createTrpcRouter({
 
     /**
      * Soft-deletes a team membership, removing a person from a team (reversible via
-     * `restoreTeamMembershipFromTrash`). Idempotent — deleting an already-deleted membership
+     * `recoverTeamMembership`). Idempotent — deleting an already-deleted membership
      * returns it unchanged.
      * @param ctx The authenticated context.
      * @param personId The ID of the person to remove from the team.
@@ -397,7 +397,11 @@ export const teamsRouter = createTrpcRouter({
         .output(teamMembershipRowSchema)
         .query(async ({ ctx, input: { organizationId, teamId, personId } }) => {
             const record = await ctx.prisma.teamMembership.findUnique({
-                where: { organizationId, teamId_personId: { teamId, personId } },
+                where: {
+                    organizationId,
+                    teamId_personId: { teamId, personId },
+                    status: { not: "Deleted" },
+                },
                 include: teamMembershipRowInclude,
             });
 
@@ -405,6 +409,36 @@ export const teamsRouter = createTrpcRouter({
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.teamMembershipNotFound({ teamId, personId }),
+                });
+            }
+
+            return {
+                ...TeamMembershipData.fromRecord(record),
+                team: record.team,
+                person: record.person,
+            };
+        }),
+
+    /**
+     * Get a single team membership by its own id — the lookup behind the single-id
+     * detail route (`/orgs/[slug]/admin/team-memberships/[team_membership_id]`), which
+     * exists so the Rubbish bin can link to a deleted membership (#307). Prefer
+     * `getTeamMembership` when the (teamId, personId) pair is already known.
+     * @throws TRPCError(NOT_FOUND) if no membership with this id exists in the organization.
+     */
+    getTeamMembershipById: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamMembershipId: TeamMembershipId.schema }))
+        .output(teamMembershipRowSchema)
+        .query(async ({ ctx, input: { organizationId, teamMembershipId } }) => {
+            const record = await ctx.prisma.teamMembership.findUnique({
+                where: { id: teamMembershipId, organizationId },
+                include: teamMembershipRowInclude,
+            });
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamMembershipNotFoundById(teamMembershipId),
                 });
             }
 
@@ -597,6 +631,32 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * Recovers a deleted team in the organization back to Active. Idempotent — recovering an
+     * already-active team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the team is not Deleted.
+     */
+    recoverTeam: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            return { updated: await Teams.recover(ctx, teamId) };
+        }),
+
+    /**
+     * Recovers a deleted team membership back to Active. Idempotent — recovering an
+     * already-active membership returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the membership does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the membership is not Deleted.
+     */
+    recoverTeamMembership: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ personId: PersonId.schema, teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamMembershipData.schema }))
+        .mutation(async ({ ctx, input: { personId, teamId } }) => {
+            return { updated: await Teams.recoverMembership(ctx, teamId, personId) };
+        }),
+
+    /**
      * Restores an archived team in the organization back to Active. Idempotent — restoring an
      * already-active team returns it unchanged.
      * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
@@ -606,33 +666,7 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.restoreFromArchive(ctx, teamId) };
-        }),
-
-    /**
-     * Restores a deleted team in the organization back to Active. Idempotent — restoring an
-     * already-active team returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
-     * @throws TRPCError(BAD_REQUEST) if the team is not Deleted.
-     */
-    restoreTeamFromTrash: organizationProcedure({ team: ["delete"] })
-        .input(z.object({ teamId: TeamId.schema }))
-        .output(z.object({ updated: TeamData.schema }))
-        .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.restoreFromTrash(ctx, teamId) };
-        }),
-
-    /**
-     * Restores a deleted team membership back to Active. Idempotent — restoring an
-     * already-active membership returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the membership does not exist within the organization.
-     * @throws TRPCError(BAD_REQUEST) if the membership is not Deleted.
-     */
-    restoreTeamMembershipFromTrash: organizationProcedure({ team: ["delete"] })
-        .input(z.object({ personId: PersonId.schema, teamId: TeamId.schema }))
-        .output(z.object({ updated: TeamMembershipData.schema }))
-        .mutation(async ({ ctx, input: { personId, teamId } }) => {
-            return { updated: await Teams.restoreMembershipFromTrash(ctx, teamId, personId) };
+            return { updated: await Teams.restore(ctx, teamId) };
         }),
 
     /**
@@ -792,13 +826,15 @@ export const teamsRouter = createTrpcRouter({
                 updated: TeamMembershipData.schema,
             }),
         )
-        .mutation(async ({ ctx, input: { teamId, personId, update } }) => {
+        .mutation(async ({ ctx, input: { organizationId, teamId, personId, update } }) => {
             const existing = await ctx.prisma.teamMembership.findUnique({
                 where: {
+                    organizationId,
                     teamId_personId: {
                         teamId,
                         personId,
                     },
+                    status: { not: "Deleted" },
                 },
             });
 
@@ -822,12 +858,7 @@ export const teamsRouter = createTrpcRouter({
             const [updated] = await ctx.prisma.$transaction([
                 // Apply the changes
                 ctx.prisma.teamMembership.update({
-                    where: {
-                        teamId_personId: {
-                            teamId,
-                            personId,
-                        },
-                    },
+                    where: { id: existing.id },
                     data: { ...update },
                 }),
                 // Record an event for the update

@@ -461,6 +461,7 @@ describe("personnel email normalisation", () => {
         adminUser: UserId.create(),
         dana: PersonId.create(),
         evan: PersonId.create(),
+        gwen: PersonId.create(),
     };
 
     const db = createMockPrisma();
@@ -493,6 +494,18 @@ describe("personnel email normalisation", () => {
                 },
             });
         }
+        // In the Rubbish bin — still holds her email (#183: no partial unique index).
+        await db.person.create({
+            data: {
+                id: T.gwen,
+                organizationId: T.org,
+                name: "Gwen Hale",
+                email: "gwen.hale@example.com",
+                status: "Deleted",
+                tags: [],
+                properties: {},
+            },
+        });
     });
 
     function caller() {
@@ -553,6 +566,36 @@ describe("personnel email normalisation", () => {
                 },
             }),
         ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("tells the user to recover or purge when the email belongs to a person in the Rubbish bin", async () => {
+        const inBin = { code: "CONFLICT", message: expect.stringMatching(/Rubbish bin/) };
+
+        await expect(
+            caller().createPerson({
+                organizationId: T.org,
+                personId: PersonId.create(),
+                create: {
+                    name: "Gwen H",
+                    email: "Gwen.Hale@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject(inBin);
+
+        await expect(
+            caller().updatePerson({
+                organizationId: T.org,
+                personId: T.evan,
+                update: {
+                    name: "Evan Stone",
+                    email: "gwen.hale@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject(inBin);
     });
 
     it("finds a person by a mixed-case needle", async () => {
@@ -653,7 +696,7 @@ describe("personnel.getLinkedUser", () => {
     });
 });
 
-describe("personnel.deletePerson / restorePerson / restorePersonFromTrash", () => {
+describe("personnel.deletePerson / restorePerson / recoverPerson", () => {
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -721,24 +764,24 @@ describe("personnel.deletePerson / restorePerson / restorePersonFromTrash", () =
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("restorePersonFromTrash requires person:delete, not person:update", async () => {
+    it("recoverPerson requires person:delete, not person:update", async () => {
         await expect(
-            makeCaller({ person: ["update"] }).restorePersonFromTrash({
+            makeCaller({ person: ["update"] }).recoverPerson({
                 organizationId: T.org,
                 personId: T.person,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("restorePersonFromTrash restores a Deleted person back to Active", async () => {
-        const { updated } = await makeCaller({ person: ["delete"] }).restorePersonFromTrash({
+    it("recoverPerson recovers a Deleted person back to Active", async () => {
+        const { updated } = await makeCaller({ person: ["delete"] }).recoverPerson({
             organizationId: T.org,
             personId: T.person,
         });
         expect(updated.status).toBe("Active");
 
         const entries = await db.logEntry.findMany({
-            where: { objectType: "Person", objectId: T.person, action: "Restore" },
+            where: { objectType: "Person", objectId: T.person, action: "Recover" },
         });
         expect(entries).toHaveLength(1);
     });

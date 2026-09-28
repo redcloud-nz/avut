@@ -433,7 +433,7 @@ describe("SkillPackages.requireSkillById / requireGroupById / requirePackageById
     });
 });
 
-describe("SkillPackages archive / restoreFromArchive / restoreFromTrash / delete", () => {
+describe("SkillPackages archive / restore / recover / delete", () => {
     const L = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -542,25 +542,40 @@ describe("SkillPackages archive / restoreFromArchive / restoreFromTrash / delete
         expect(pkg.status).toBe("Archived");
     });
 
-    it("restoreSkillFromTrash rejects an Archived skill", async () => {
-        await expect(SkillPackages.restoreSkillFromTrash(ctx(), L.skill)).rejects.toThrow(
-            /only a Deleted skill can be restored from rubbish/,
+    it("recoverSkill rejects an Archived skill", async () => {
+        await expect(SkillPackages.recoverSkill(ctx(), L.skill)).rejects.toThrow(
+            /only a Deleted skill can be recovered from rubbish/,
         );
     });
 
-    it("restoreSkillFromArchive moves an Archived skill back to Active", async () => {
-        const restored = await SkillPackages.restoreSkillFromArchive(ctx(), L.skill);
+    it("restoreSkill moves an Archived skill back to Active and records a Restore log entry", async () => {
+        const restored = await SkillPackages.restoreSkill(ctx(), L.skill);
         expect(restored.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Skill", objectId: L.skill, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
     });
 
-    it("restoreGroupFromArchive moves an Archived group back to Active", async () => {
-        const restored = await SkillPackages.restoreGroupFromArchive(ctx(), L.group);
+    it("restoreGroup moves an Archived group back to Active and records a Restore log entry", async () => {
+        const restored = await SkillPackages.restoreGroup(ctx(), L.group);
         expect(restored.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillGroup", objectId: L.group, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
     });
 
-    it("restorePackageFromArchive moves an Archived package back to Active", async () => {
-        const restored = await SkillPackages.restorePackageFromArchive(ctx(), L.pkg);
+    it("restorePackage moves an Archived package back to Active and records a Restore log entry", async () => {
+        const restored = await SkillPackages.restorePackage(ctx(), L.pkg);
         expect(restored.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillPackage", objectId: L.pkg, action: "Restore" },
+        });
+        expect(entries).toHaveLength(1);
     });
 
     it("deleteSkill/deleteGroup/deletePackage soft-delete without cascading between levels", async () => {
@@ -595,16 +610,32 @@ describe("SkillPackages archive / restoreFromArchive / restoreFromTrash / delete
         expect((await SkillPackages.requirePackageById(ctx(), L.pkg)).status).toBe("Deleted");
     });
 
-    it("restoreSkillFromArchive rejects a Deleted skill", async () => {
-        await expect(SkillPackages.restoreSkillFromArchive(ctx(), L.skill)).rejects.toThrow(
+    it("restoreSkill rejects a Deleted skill", async () => {
+        await expect(SkillPackages.restoreSkill(ctx(), L.skill)).rejects.toThrow(
             /only an Archived skill can be restored from archive/,
         );
     });
 
-    it("restoreSkillFromTrash/restoreGroupFromTrash/restorePackageFromTrash move Deleted rows back to Active", async () => {
-        expect((await SkillPackages.restoreSkillFromTrash(ctx(), L.skill)).status).toBe("Active");
-        expect((await SkillPackages.restoreGroupFromTrash(ctx(), L.group)).status).toBe("Active");
-        expect((await SkillPackages.restorePackageFromTrash(ctx(), L.pkg)).status).toBe("Active");
+    it("recoverSkill/recoverGroup/recoverPackage move Deleted rows back to Active and record Recover log entries", async () => {
+        expect((await SkillPackages.recoverSkill(ctx(), L.skill)).status).toBe("Active");
+        expect((await SkillPackages.recoverGroup(ctx(), L.group)).status).toBe("Active");
+        expect((await SkillPackages.recoverPackage(ctx(), L.pkg)).status).toBe("Active");
+
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "Skill", objectId: L.skill, action: "Recover" },
+            }),
+        ).toHaveLength(1);
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "SkillGroup", objectId: L.group, action: "Recover" },
+            }),
+        ).toHaveLength(1);
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "SkillPackage", objectId: L.pkg, action: "Recover" },
+            }),
+        ).toHaveLength(1);
     });
 
     it("getSkillDeleteImpact counts recorded skill checks", async () => {
@@ -624,5 +655,20 @@ describe("SkillPackages archive / restoreFromArchive / restoreFromTrash / delete
             groupCount: 1,
             skillCount: 1,
         });
+    });
+
+    it("deletePackage unpublishes a published package and recoverPackage leaves it unpublished", async () => {
+        await db.skillPackage.update({ where: { id: L.pkg }, data: { published: true } });
+
+        const deleted = await SkillPackages.deletePackage(ctx(), L.pkg);
+        expect(deleted).toMatchObject({ status: "Deleted", published: false });
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "SkillPackage", objectId: L.pkg, action: "Unpublish" },
+            }),
+        ).toHaveLength(1);
+
+        const recovered = await SkillPackages.recoverPackage(ctx(), L.pkg);
+        expect(recovered).toMatchObject({ status: "Active", published: false });
     });
 });

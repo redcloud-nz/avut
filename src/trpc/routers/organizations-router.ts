@@ -33,7 +33,8 @@ export async function findOwnerMemberships(
     where: { organizationId?: string | { in: string[] }; userId?: string },
 ) {
     const rows = await prisma.organizationUser.findMany({
-        where: { ...where, role: { contains: "owner" } },
+        // A deleted account's membership is kept for recovery, but it can't act as an owner.
+        where: { ...where, role: { contains: "owner" }, user: { status: { not: "Deleted" } } },
         select: { organizationId: true, userId: true, role: true },
     });
     return rows.filter((row) => OrganizationRole.includes(row.role, "owner"));
@@ -58,10 +59,16 @@ export async function assertNotLastOwner(
     }
 }
 
-/** Throws `NOT_FOUND` if the user does not exist (surfaces a clear error before an FK violation). */
+/**
+ * Throws `NOT_FOUND` if the user does not exist (surfaces a clear error before an FK violation),
+ * or is in the system Rubbish bin — a deleted account can't be given a new membership.
+ */
 async function assertUserExists(prisma: Pick<PrismaClient, "user">, userId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-    if (!user) {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, status: true },
+    });
+    if (!user || user.status === "Deleted") {
         throw new TRPCError({ code: "NOT_FOUND", message: `User ${userId} not found.` });
     }
 }

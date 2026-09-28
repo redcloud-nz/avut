@@ -94,6 +94,7 @@ describe("Operations", () => {
             "invitation-accept",
             "invitation-reject",
             "organization-leave",
+            "rubbish-purge",
             "skill-package-import",
         ]);
     });

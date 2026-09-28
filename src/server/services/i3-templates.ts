@@ -46,10 +46,10 @@ export async function requireById(
 }
 
 /**
- * Soft-delete an I3 Template (reversible via `restoreFromTrash`). No-op, returning the existing
+ * Soft-delete an I3 Template (reversible via `recover`). No-op, returning the existing
  * record unchanged, if the template is already `Deleted`.
  *
- * I3Template has no archive concept (#295) — only delete/restore-from-trash.
+ * I3Template has no archive concept (#295) — only delete/recover.
  * `I3TemplateVariant` rows are deliberately left untouched (out of scope for #295; they have no
  * `RecordStatus` column of their own).
  * @throws NotFoundError if the template is not found in the organization.
@@ -77,13 +77,13 @@ export async function deleteRecord(
 }
 
 /**
- * Restore a `Deleted` I3 Template back to `Active`. No-op, returning the existing record
+ * Recover a `Deleted` I3 Template back to `Active`. No-op, returning the existing record
  * unchanged, if the template is already `Active`.
  * @throws NotFoundError if the template is not found in the organization.
  * @throws ValidationError if the template is not `Deleted` (there is no archive state to guard
  * against here, but a future non-`Active`/`Deleted` status should still be rejected explicitly).
  */
-export async function restoreFromTrash(
+export async function recover(
     ctx: OrgServiceContext,
     templateId: I3TemplateId,
 ): Promise<I3Template> {
@@ -95,7 +95,7 @@ export async function restoreFromTrash(
 
     if (existing.status !== "Deleted") {
         throw new ValidationError(
-            `I3Template(id=${templateId}) has status ${existing.status}; only a Deleted template can be restored from rubbish.`,
+            `I3Template(id=${templateId}) has status ${existing.status}; only a Deleted template can be recovered from rubbish.`,
         );
     }
 
@@ -105,7 +105,7 @@ export async function restoreFromTrash(
             data: { status: "Active" },
             include: { d4h: true },
         }),
-        ctx.logEvent({ action: "Restore", objectType: "I3Template", objectId: templateId }),
+        ctx.logEvent({ action: "Recover", objectType: "I3Template", objectId: templateId }),
     ]);
 
     return I3Template.fromRecord(updated);

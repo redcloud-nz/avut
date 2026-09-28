@@ -41,9 +41,9 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
     .stage({
         stageName: "ProcessItems",
         stageFn: async (ctx) => {
-            // Get all of the templates configured for the organization.
+            // Get all of the templates configured for the organization, minus any in the Rubbish bin.
             const templates = await ctx.prisma.i3Template.findMany({
-                where: { organizationId: ctx.organizationId },
+                where: { organizationId: ctx.organizationId, status: { not: "Deleted" } },
                 include: { d4h: true, variants: { include: { d4h: true } } },
             });
 

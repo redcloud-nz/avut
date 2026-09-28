@@ -19,9 +19,13 @@ import {
 import { I3Template } from "@/lib/schemas/i3-template";
 
 import { I3Module_DeleteTemplate_Dialog } from "./delete-template";
+import { I3Module_RecoverTemplate_Dialog } from "./recover-template";
 
 export function I3Module_Template_Menu({ template }: { template: I3Template }) {
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["delete", "recover"] as const),
+    );
 
     return (
         <>
@@ -35,14 +39,23 @@ export function I3Module_Template_Menu({ template }: { template: I3Template }) {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect
                         permissions={{ i3Template: ["delete"] }}
-                        render={(allowed) => (
-                            <DropdownMenuItem
-                                onClick={() => setAction("delete", { history: "push" })}
-                                disabled={!allowed}
-                            >
-                                <ObjectIcons.Delete /> Delete
-                            </DropdownMenuItem>
-                        )}
+                        render={(allowed) =>
+                            template.status == "Deleted" ? (
+                                <DropdownMenuItem
+                                    onClick={() => setAction("recover", { history: "push" })}
+                                    disabled={!allowed}
+                                >
+                                    <ObjectIcons.Recover /> Recover from rubbish
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem
+                                    onClick={() => setAction("delete", { history: "push" })}
+                                    disabled={!allowed}
+                                >
+                                    <ObjectIcons.Delete /> Delete
+                                </DropdownMenuItem>
+                            )
+                        }
                     />
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -52,6 +65,16 @@ export function I3Module_Template_Menu({ template }: { template: I3Template }) {
                 open={action === "delete"}
                 onOpenChange={(open) =>
                     setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            <I3Module_RecoverTemplate_Dialog
+                template={template}
+                open={action === "recover"}
+                onOpenChange={(open) =>
+                    setAction(open ? "recover" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

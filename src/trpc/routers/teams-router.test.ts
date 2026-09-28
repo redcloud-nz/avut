@@ -454,6 +454,8 @@ describe("teamsRouter.getTeamMembership", () => {
         d4hPerson: PersonId.create(),
         manualPerson: PersonId.create(),
         strangerPerson: PersonId.create(),
+        d4hMembership: TeamMembershipId.create(),
+        manualMembership: TeamMembershipId.create(),
     };
 
     const db = createMockPrisma();
@@ -509,7 +511,7 @@ describe("teamsRouter.getTeamMembership", () => {
         });
         await db.teamMembership.create({
             data: {
-                id: TeamMembershipId.create(),
+                id: T.d4hMembership,
                 organizationId: T.org,
                 teamId: T.team,
                 personId: T.d4hPerson,
@@ -529,7 +531,7 @@ describe("teamsRouter.getTeamMembership", () => {
         });
         await db.teamMembership.create({
             data: {
-                id: TeamMembershipId.create(),
+                id: T.manualMembership,
                 organizationId: T.org,
                 teamId: T.team,
                 personId: T.manualPerson,
@@ -596,6 +598,38 @@ describe("teamsRouter.getTeamMembership", () => {
                 personId: T.d4hPerson,
             }),
         ).rejects.toThrow(/not found/i);
+    });
+
+    describe("getTeamMembershipById", () => {
+        it("returns the row for the membership's own id", async () => {
+            const row = await makeCaller().getTeamMembershipById({
+                organizationId: T.org,
+                teamMembershipId: T.d4hMembership,
+            });
+
+            expect(row.id).toBe(T.d4hMembership);
+            expect(row.person).toMatchObject({ name: "Dana D4H", email: "dana@example.com" });
+            expect(row.team).toMatchObject({ id: T.team, name: "Alpha" });
+            expect(row.d4h).toMatchObject({ d4hMemberId: 12 });
+        });
+
+        it("throws NOT_FOUND for an id with no membership", async () => {
+            await expect(
+                makeCaller().getTeamMembershipById({
+                    organizationId: T.org,
+                    teamMembershipId: TeamMembershipId.create(),
+                }),
+            ).rejects.toThrow(/not found/i);
+        });
+
+        it("is organization-scoped", async () => {
+            await expect(
+                makeCaller().getTeamMembershipById({
+                    organizationId: T.otherOrg,
+                    teamMembershipId: T.d4hMembership,
+                }),
+            ).rejects.toThrow(/not found/i);
+        });
     });
 });
 
@@ -781,7 +815,7 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
     });
 });
 
-describe("teamsRouter.deleteTeam / restoreTeamFromTrash", () => {
+describe("teamsRouter.deleteTeam / recoverTeam", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
@@ -864,30 +898,30 @@ describe("teamsRouter.deleteTeam / restoreTeamFromTrash", () => {
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("restoreTeamFromTrash requires team:delete, not team:update", async () => {
+    it("recoverTeam requires team:delete, not team:update", async () => {
         await expect(
-            makeCaller({ team: ["update"] }).restoreTeamFromTrash({
+            makeCaller({ team: ["update"] }).recoverTeam({
                 organizationId: T.org,
                 teamId: T.team,
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("restores a deleted team back to Active and records a Restore log entry", async () => {
-        const { updated } = await makeCaller({ team: ["delete"] }).restoreTeamFromTrash({
+    it("recovers a deleted team back to Active and records a Recover log entry", async () => {
+        const { updated } = await makeCaller({ team: ["delete"] }).recoverTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Active");
 
         const entries = await db.logEntry.findMany({
-            where: { objectType: "Team", objectId: T.team, action: "Restore" },
+            where: { objectType: "Team", objectId: T.team, action: "Recover" },
         });
         expect(entries).toHaveLength(1);
     });
 });
 
-describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", () => {
+describe("teamsRouter.deleteTeamMembership / recoverTeamMembership", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
@@ -970,9 +1004,31 @@ describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", ()
         expect(listed).toHaveLength(0);
     });
 
-    it("restoreTeamMembershipFromTrash requires team:delete, not team:update", async () => {
+    it("getTeamMembership and updateTeamMembership treat a Deleted membership as not found (#308)", async () => {
         await expect(
-            makeCaller({ team: ["update"] }).restoreTeamMembershipFromTrash({
+            makeCaller({ team: ["view"] }).getTeamMembership({
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.member,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+        await expect(
+            makeCaller({ team: ["update"] }).updateTeamMembership({
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.member,
+                update: { tags: ["edited"], properties: {} },
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+        const membership = await db.teamMembership.findFirst({ where: { teamId: T.team } });
+        expect(membership?.tags).toEqual([]);
+    });
+
+    it("recoverTeamMembership requires team:delete, not team:update", async () => {
+        await expect(
+            makeCaller({ team: ["update"] }).recoverTeamMembership({
                 organizationId: T.org,
                 teamId: T.team,
                 personId: T.member,
@@ -980,8 +1036,8 @@ describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", ()
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("restores a deleted membership back to Active and records a Restore log entry", async () => {
-        const { updated } = await makeCaller({ team: ["delete"] }).restoreTeamMembershipFromTrash({
+    it("recovers a deleted membership back to Active and records a Recover log entry", async () => {
+        const { updated } = await makeCaller({ team: ["delete"] }).recoverTeamMembership({
             organizationId: T.org,
             teamId: T.team,
             personId: T.member,
@@ -989,7 +1045,7 @@ describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", ()
         expect(updated.status).toBe("Active");
 
         const entries = await db.logEntry.findMany({
-            where: { objectType: "TeamMembership", action: "Restore" },
+            where: { objectType: "TeamMembership", action: "Recover" },
         });
         expect(entries).toHaveLength(1);
 
@@ -998,6 +1054,17 @@ describe("teamsRouter.deleteTeamMembership / restoreTeamMembershipFromTrash", ()
             teamId: T.team,
         });
         expect(listed).toHaveLength(1);
+    });
+
+    it("updateTeamMembership refuses a membership belonging to another organization", async () => {
+        await expect(
+            makeCaller({ team: ["update"] }).updateTeamMembership({
+                organizationId: OrganizationId.create(),
+                teamId: T.team,
+                personId: T.member,
+                update: { tags: ["edited"], properties: {} },
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 });
 
@@ -1125,6 +1192,56 @@ describe("teamsRouter.createTeamMembership guards against an archived team", () 
                 create: { tags: [], properties: {} },
             }),
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+});
+
+describe("teamsRouter.createTeamMembership guards against a Deleted person", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        team: TeamId.create(),
+        person: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: { id: T.team, organizationId: T.org, name: "Alpha", properties: {}, tags: [] },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Dora Deleted",
+                email: "dora-deleted@example.com",
+                tags: [],
+                properties: {},
+                status: "Deleted",
+            },
+        });
+    });
+
+    it("rejects adding a person who is in the Rubbish bin", async () => {
+        const caller = teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["update"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+
+        await expect(
+            caller.createTeamMembership({
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.person,
+                create: { tags: [], properties: {} },
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 });
 

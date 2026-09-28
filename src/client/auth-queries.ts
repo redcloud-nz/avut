@@ -259,3 +259,12 @@ export function unlinkAccountMutationOptions() {
 export function signOut() {
     return authClient.signOut();
 }
+
+/**
+ * Refetch the session past its 5-minute cookie cache, for a call site that just changed
+ * something the cache is still serving a stale value for (e.g. a just-restored account's
+ * `status`, or a just-demoted admin's `role`) and needs the app to see the change immediately.
+ */
+export function refetchSessionPastCookieCache() {
+    return authClient.getSession({ query: { disableCookieCache: true } });
+}
