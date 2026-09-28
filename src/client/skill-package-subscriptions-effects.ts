@@ -32,6 +32,16 @@ export const skillPackageSubscriptionsEffects = createEffects<"skillPackageSubsc
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(
+            trpc.skillPackageSubscriptions.listSubscribedPackages.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
     ],
     unsubscribeFromPackage: (vars) => [
         write(
@@ -50,6 +60,16 @@ export const skillPackageSubscriptionsEffects = createEffects<"skillPackageSubsc
         ),
         invalidate(
             trpc.skillPackageSubscriptions.listPackages.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(
+            trpc.skillPackageSubscriptions.listSubscribedPackages.queryFilter({
                 organizationId: vars.organizationId,
             }),
         ),

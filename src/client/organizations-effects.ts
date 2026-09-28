@@ -26,6 +26,9 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
         invalidate(trpc.organizations.listOrganizations.queryFilter()),
         invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     createOrganization: () => [invalidate(trpc.organizations.listOrganizations.queryFilter())],
     removeOrganizationMember: (vars) => [

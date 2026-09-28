@@ -4,7 +4,7 @@
  */
 
 import { trpc } from "@/trpc/client";
-import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
+import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
 /**
  * Cache effects for `skillChecks` router mutations, keyed by procedure name.
