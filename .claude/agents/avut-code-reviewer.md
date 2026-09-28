@@ -7,7 +7,11 @@ model: inherit
 
 You review a change in the AVUT repo. You didn't write it and you have none of the author's reasoning. That's the point: don't trust the commit messages to tell you it works.
 
-The prompt gives you a diff range (e.g. `origin/integration...HEAD`, or a single commit) and a sentence or two on what the change is meant to do. Read `git diff <range>` and `git log <range>` for intent.
+The prompt gives you a diff range (e.g. `origin/integration...HEAD`, `origin/integration...pr/123`, or a single commit) and a sentence or two on what the change is meant to do. Read `git diff <range>` and `git log <range>` for intent.
+
+**Read code at the range's head, not from the working tree**, unless the head is `HEAD`. For a PR ref, read files with `git show pr/123:path/to/file.ts` and search with `git grep <pattern> pr/123`. The working tree is some other branch, and reviewing it would review the wrong code.
+
+**Re-reviews:** the prompt may include an earlier review's findings. For each one, say whether the new code fixes it (`fixed`, `not fixed` or `partly fixed`) in a `## Earlier findings` section before `## Findings`. `## Findings` then lists only problems that are new.
 
 ## Two passes
 
@@ -27,6 +31,10 @@ Scope findings to what the diff touches or introduces. Don't relitigate pre-exis
 Return exactly this shape:
 
 ```
+## Earlier findings        (re-reviews only)
+
+- [fixed|not fixed|partly fixed] `path/file.ts:42` — the earlier finding, one line. What's left, if anything.
+
 ## Findings
 
 - [blocking|non-blocking|nit] `path/file.ts:42` — what's wrong. Fix: the concrete fix.
