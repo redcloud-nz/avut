@@ -19,7 +19,7 @@ import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
 export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
-    const { data: user } = useSuspenseQuery(trpc.systemAdmin.getUser.queryOptions({ userId }));
+    const { data: user } = useSuspenseQuery(trpc.users.getUser.queryOptions({ userId }));
 
     return (
         <>

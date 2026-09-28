@@ -7,10 +7,12 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
-import { OrganizationData } from "@/lib/schemas/organization";
+import type { ModuleId } from "@/lib/modules";
+import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { UserId } from "@/lib/schemas/user";
 import { auth, type AuthOrganizationMember } from "@/server/auth";
@@ -18,8 +20,11 @@ import { revalidateOrganization } from "@/server/cache/organization";
 import { getOrganizationUserRoles } from "@/server/cache/organization-user";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure, systemAdminProcedure } from "../init";
 import { Messages } from "../messages";
+
+/** A membership whose account isn't in the Rubbish bin — the row is kept for recovery. */
+const activeMember = { user: { status: { not: "Deleted" as const } } };
 
 /**
  * The memberships holding the `owner` role, filtered by `where`.
@@ -148,6 +153,92 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
+     * Provision a new organization site-wide. Seeds the same default `OrganizationConfig` rows a
+     * user-created org would resolve to (`OrganizationSettings.default()` flattened to
+     * `{ key, value }` leaves) so the two are indistinguishable, and — only when `addSelfAsOwner`
+     * is set — attaches the acting system admin as `owner`.
+     */
+    createOrganization: systemAdminProcedure
+        .input(
+            OrganizationData.createSchema.extend({
+                addSelfAsOwner: z.boolean().default(false),
+            }),
+        )
+        .mutation(async ({ ctx, input }) => {
+            const existing = await ctx.prisma.organization.findUnique({
+                where: { slug: input.slug },
+                select: { id: true },
+            });
+            if (existing) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: `An organisation with the slug "${input.slug}" already exists.`,
+                });
+            }
+
+            const organizationId = OrganizationId.create();
+            const userId = ctx.auth.user.id;
+
+            // `flatten` types a leaf as `unknown` — it is whatever JSON that path declares.
+            const configRows = Object.entries(
+                OrganizationSettings.flatten(OrganizationSettings.default()),
+            ).map(([key, value]) => ({
+                organizationId,
+                key,
+                value: value as Prisma.InputJsonValue,
+            }));
+
+            try {
+                await ctx.prisma.$transaction([
+                    ctx.prisma.organization.create({
+                        data: {
+                            id: organizationId,
+                            name: input.name,
+                            slug: input.slug,
+                            createdAt: new Date(),
+                        },
+                    }),
+                    ctx.prisma.organizationConfig.createMany({ data: configRows }),
+                    ...(input.addSelfAsOwner
+                        ? [
+                              ctx.prisma.organizationUser.create({
+                                  data: {
+                                      id: OrganizationUserId.create(),
+                                      organizationId,
+                                      userId,
+                                      role: "owner",
+                                      createdAt: new Date(),
+                                  },
+                              }),
+                          ]
+                        : []),
+                    ctx.logEvent({
+                        organizationId,
+                        action: "Create",
+                        objectType: "Organization",
+                        objectId: organizationId,
+                        changes: [],
+                    }),
+                ]);
+            } catch (error) {
+                // A concurrent create took the slug between the check above and this insert.
+                if (isUniqueViolation(error)) {
+                    throw new TRPCError({
+                        code: "CONFLICT",
+                        message: `An organisation with the slug "${input.slug}" already exists.`,
+                    });
+                }
+                throw error;
+            }
+
+            if (input.addSelfAsOwner) {
+                await revalidateOrganizationUser(userId);
+            }
+
+            return { id: organizationId, slug: input.slug };
+        }),
+
+    /**
      * Retrieves the calling user's role(s) within the organization, for client-side
      * permission checks (see `Protect`, `useOrganization`).
      */
@@ -181,6 +272,87 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
+     * Site-wide lookup of any organization by ID, for the system-admin console — unlike
+     * `getOrganization`, the caller need not belong to it.
+     */
+    getOrganizationAsAdmin: systemAdminProcedure
+        .input(z.object({ organizationId: OrganizationId.schema }))
+        .query(async ({ ctx, input }) => {
+            const org = await ctx.prisma.organization.findUnique({
+                where: { id: input.organizationId },
+                include: {
+                    users: {
+                        where: activeMember,
+                        include: {
+                            user: { select: { id: true, name: true, email: true } },
+                        },
+                    },
+                    teams: {
+                        select: {
+                            id: true,
+                            name: true,
+                            _count: { select: { teamMemberships: true } },
+                        },
+                    },
+                    configs: true,
+                    _count: {
+                        select: {
+                            d4hAccessTokens: true,
+                            personnel: true,
+                            skillChecks: true,
+                            skillCheckSessions: true,
+                            notes: true,
+                            skillPackages: true,
+                            i3IssuedItems: true,
+                            formInstances: true,
+                        },
+                    },
+                },
+            });
+
+            if (!org) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `Organization ${input.organizationId} not found.`,
+                });
+            }
+
+            return {
+                id: org.id,
+                name: org.name,
+                slug: org.slug,
+                logo: org.logo,
+                createdAt: org.createdAt,
+                members: org.users.map((m) => ({
+                    userId: m.userId,
+                    name: m.user.name,
+                    email: m.user.email,
+                    role: m.role,
+                })),
+                teams: org.teams.map((t) => ({
+                    id: t.id,
+                    name: t.name,
+                    memberCount: t._count.teamMemberships,
+                })),
+                enabledModules: Object.entries(
+                    OrganizationSettings.fromRecords(org.configs).modules,
+                )
+                    .filter(([, v]) => v.enabled)
+                    .map(([k]) => k as ModuleId),
+                d4hTokenCount: org._count.d4hAccessTokens,
+                recordCounts: {
+                    personnel: org._count.personnel,
+                    skillChecks: org._count.skillChecks,
+                    skillCheckSessions: org._count.skillCheckSessions,
+                    notes: org._count.notes,
+                    skillPackages: org._count.skillPackages,
+                    i3IssuedItems: org._count.i3IssuedItems,
+                    formInstances: org._count.formInstances,
+                } as Record<string, number>,
+            };
+        }),
+
+    /**
      * Lists every member of the organization, shaped like Better Auth's own
      * `authClient.organization.listMembers` — a plain Prisma read of the same
      * `organization_users` table Better Auth's organization plugin already writes to.
@@ -206,6 +378,36 @@ export const organizationsRouter = createTrpcRouter({
             }));
         },
     ),
+
+    listOrganizations: systemAdminProcedure.query(async ({ ctx }) => {
+        const rows = await ctx.prisma.organization.findMany({
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                logo: true,
+                createdAt: true,
+                configs: true,
+                _count: { select: { users: { where: activeMember } } },
+                users: {
+                    where: { role: { contains: "owner" }, ...activeMember },
+                    select: { role: true },
+                },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+
+        return {
+            organizations: rows.map(({ _count, configs, users, ...o }) => ({
+                ...o,
+                memberCount: _count.users,
+                ownerCount: users.filter((u) => OrganizationRole.includes(u.role, "owner")).length,
+                enabledModules: Object.entries(OrganizationSettings.fromRecords(configs).modules)
+                    .filter(([, v]) => v.enabled)
+                    .map(([k]) => k as ModuleId),
+            })),
+        };
+    }),
 
     /**
      * Remove a member from the organization. `BAD_REQUEST` if this would remove the

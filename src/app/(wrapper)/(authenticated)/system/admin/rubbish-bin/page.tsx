@@ -17,7 +17,7 @@ export const metadata = {
 export default async function SystemAdmin_RubbishBin_Page() {
     await requireSystemAdmin();
 
-    prefetch(trpc.systemAdmin.listDeletedUsers.queryOptions());
+    prefetch(trpc.users.listDeletedUsers.queryOptions());
 
     return (
         <HydrateClient>

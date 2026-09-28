@@ -8,6 +8,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
+import { PersonId } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -524,5 +526,345 @@ describe("organizationsRouter — audit entries", () => {
             objectId: membershipId,
         });
         expect(entries[0].description).toContain("from member to admin");
+    });
+
+    it("records an organization-scoped entry when creating an organization", async () => {
+        const { db, caller, adminId } = await seedOrganizationWithMembers();
+
+        const { id } = await caller.createOrganization({
+            name: "New Co",
+            slug: "new-co",
+            addSelfAsOwner: false,
+        });
+
+        const entries = await db.logEntry.findMany({ where: { objectType: "Organization" } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: id,
+            ownerId: null,
+            userId: adminId,
+            action: "Create",
+            objectId: id,
+        });
+    });
+});
+
+describe("organizations.getOrganizationAsAdmin", () => {
+    const T = {
+        admin: UserId.create(),
+        owner: UserId.create(),
+        member: UserId.create(),
+        org: OrganizationId.create(),
+        team: TeamId.create(),
+        person: PersonId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.admin, T.owner, T.member]) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.owner,
+                role: "owner",
+                createdAt: new Date(),
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.member,
+                role: "member",
+                createdAt: new Date(),
+            },
+        });
+        await db.organizationConfig.create({
+            data: { organizationId: T.org, key: "modules.notes.enabled", value: true },
+        });
+        await db.team.create({
+            data: { id: T.team, name: "Alpha", organizationId: T.org, createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Person One",
+                email: "p1@x.test",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        });
+        await db.teamMembership.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                teamId: T.team,
+                personId: T.person,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        });
+        await db.d4HAccessToken.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                label: "Token",
+                token: "secret",
+                serverCode: "us",
+                status: "active",
+                expiresAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        });
+        await db.note.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                authorId: T.owner,
+                content: "hi",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        });
+    });
+
+    const call = () =>
+        organizationsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("returns aggregated organization data", async () => {
+        const org = await call().getOrganizationAsAdmin({ organizationId: T.org });
+
+        expect(org).toMatchObject({ id: T.org, name: "Acme", slug: "acme" });
+        expect(org.members).toHaveLength(2);
+        expect(org.members.find((m) => m.userId === T.owner)?.role).toBe("owner");
+        expect(org.teams).toEqual([{ id: T.team, name: "Alpha", memberCount: 1 }]);
+        expect(org.enabledModules).toContain("notes");
+        expect(org.d4hTokenCount).toBe(1);
+        expect(org.recordCounts.notes).toBe(1);
+        expect(org.recordCounts.personnel).toBe(1);
+    });
+
+    it("throws NOT_FOUND for an unknown id", async () => {
+        await expect(
+            call().getOrganizationAsAdmin({ organizationId: OrganizationId.create() }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});
+
+describe("organizations.createOrganization", () => {
+    const T = {
+        admin: UserId.create(),
+        existingOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: T.admin,
+                name: "Admin",
+                email: "admin@x.test",
+                emailVerified: true,
+                createdAt: new Date(),
+            },
+        });
+        await db.organization.create({
+            data: { id: T.existingOrg, name: "Existing", slug: "org", createdAt: new Date() },
+        });
+    });
+
+    const call = () =>
+        organizationsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("creates an org with default config and no membership by default", async () => {
+        const { id, slug } = await call().createOrganization({
+            name: "New Co",
+            slug: "new-co",
+            addSelfAsOwner: false,
+        });
+        expect(slug).toBe("new-co");
+        expect(await db.organizationUser.count({ where: { organizationId: id } })).toBe(0);
+        expect(
+            await db.organizationConfig.count({ where: { organizationId: id } }),
+        ).toBeGreaterThan(0);
+    });
+
+    it("adds the actor as owner when addSelfAsOwner is true", async () => {
+        const { id } = await call().createOrganization({
+            name: "Mine",
+            slug: "mine",
+            addSelfAsOwner: true,
+        });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: id, userId: T.admin },
+            }),
+        ).toMatchObject({ role: "owner" });
+    });
+
+    it("rejects a duplicate slug", async () => {
+        await expect(
+            call().createOrganization({ name: "Dup", slug: "org", addSelfAsOwner: false }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("turns a concurrent duplicate slug into CONFLICT", async () => {
+        // The pre-check passes (the slug is free); the insert then loses the race.
+        const uniqueViolation = Object.assign(new Error("Unique constraint failed"), {
+            code: "P2002",
+        });
+        vi.spyOn(db.organization, "create").mockImplementationOnce((() =>
+            Promise.reject(uniqueViolation)) as never);
+
+        await expect(
+            call().createOrganization({ name: "Race", slug: "race-co", addSelfAsOwner: false }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+});
+
+describe("organizations.listOrganizations counts owners with secondary roles", () => {
+    const T = {
+        admin: UserId.create(),
+        owner: UserId.create(),
+        other: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    let db: ReturnType<typeof createMockPrisma>;
+
+    beforeEach(async () => {
+        db = createMockPrisma();
+
+        for (const [id, role] of [
+            [T.admin, "admin"],
+            [T.owner, null],
+            [T.other, null],
+        ] as const) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    role,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "multi-role-org", createdAt: new Date() },
+        });
+        // The sole owner also holds a secondary role, so the column reads "owner,i3-editor".
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.owner,
+                role: "owner,i3-editor",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    const call = () =>
+        organizationsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("counts owners with secondary roles in the organization list", async () => {
+        const { organizations } = await call().listOrganizations();
+        expect(organizations.find((o) => o.id === T.org)?.ownerCount).toBe(1);
+    });
+});
+
+describe("organizations.listOrganizations", () => {
+    const T = {
+        admin: UserId.create(),
+        owner: UserId.create(),
+        member: UserId.create(),
+        org: OrganizationId.create(),
+        emptyOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.admin, T.owner, T.member]) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.emptyOrg, name: "Empty", slug: "empty", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.owner,
+                role: "owner",
+                createdAt: new Date(),
+            },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.member,
+                role: "member",
+                createdAt: new Date(),
+            },
+        });
+        await db.organizationConfig.create({
+            data: { organizationId: T.org, key: "modules.notes.enabled", value: true },
+        });
+    });
+
+    const call = () =>
+        organizationsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("lists every organization with member count, owner count, enabled modules", async () => {
+        const { organizations } = await call().listOrganizations();
+        expect(organizations).toHaveLength(2);
+
+        const org = organizations.find((o) => o.id === T.org)!;
+        expect(org.memberCount).toBe(2);
+        expect(org.ownerCount).toBe(1);
+        expect(org.enabledModules).toContain("notes");
+
+        const empty = organizations.find((o) => o.id === T.emptyOrg)!;
+        expect(empty.memberCount).toBe(0);
+        expect(empty.ownerCount).toBe(0);
+        expect(empty.enabledModules).toEqual([]);
     });
 });

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillPackageSubscriptionsEffects } from "@/client/skill-package-subscriptions-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -35,8 +35,8 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
     const organization = useOrganization();
 
     const mutation = useMutation(
-        trpc.skills.unsubscribeFromPackage.mutationOptions({
-            meta: { effects: skillsEffects.unsubscribeFromPackage },
+        trpc.skillPackageSubscriptions.unsubscribeFromPackage.mutationOptions({
+            meta: { effects: skillPackageSubscriptionsEffects.unsubscribeFromPackage },
             onError(error) {
                 console.error("Failed to unsubscribe from skill package:", error);
                 toast.error(`Failed to unsubscribe from skill package: ${error.message}`);

@@ -124,7 +124,9 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
     const {
         data: { skillPackages, skillGroups, skills },
     } = useSuspenseQuery(
-        trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+        trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
+            organizationId: organization.id,
+        }),
     );
 
     // Package -> group -> skill, flattened to a single "Package · Group" heading per section.

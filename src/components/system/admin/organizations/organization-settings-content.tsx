@@ -37,7 +37,7 @@ export function SystemAdmin_OrganizationSettings_Content({
     moduleFlags: ModuleFlagState;
 }) {
     const { data: organization } = useSuspenseQuery(
-        trpc.systemAdmin.getOrganization.queryOptions({ organizationId }),
+        trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
     );
 
     const { data: settings } = useSuspenseQuery(

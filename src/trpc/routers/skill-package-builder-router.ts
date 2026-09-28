@@ -8,6 +8,7 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
+import { OrganizationId } from "@/lib/schemas/organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
@@ -15,7 +16,12 @@ import { SkillPackageExport } from "@/lib/schemas/skill-package-export";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 import * as SkillPackages from "@/server/services/skill-packages";
 
-import { createTrpcRouter, organizationProcedure } from "../init";
+import {
+    assertOrganizationExists,
+    createTrpcRouter,
+    organizationProcedure,
+    systemAdminProcedure,
+} from "../init";
 import { Messages } from "../messages";
 
 export const skillPackageBuilderRouter = createTrpcRouter({
@@ -472,6 +478,71 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                 await ctx.prisma.$transaction([
                     item.write(ctx.prisma),
                     ctx.logEvent({ ...item.log, batchId: batch.id }),
+                ]);
+            }
+
+            return { plan, applied: true as const };
+        }),
+
+    /**
+     * Import a skill-package export envelope (produced by `exportPackage`) into a target
+     * organization, moving a package across AVUT instances. System-wide (`systemAdminProcedure`),
+     * unlike `importPackage`, which imports into the caller's own organization.
+     *
+     * Create-or-sync keyed on the record IDs in the envelope (see `SkillPackages.prepareImport`):
+     * the tree is created if new, otherwise groups/skills are upserted and anything the
+     * envelope omits is archived. A package ID that already belongs to another organization is
+     * rejected. Imported packages always land `published: false`.
+     *
+     * `dryRun: true` computes and returns the plan without writing — the UI shows it for
+     * confirmation before a real import.
+     *
+     * Each changed package/group/skill is its own `ctx.prisma.$transaction([write, logEvent])`
+     * rather than one transaction for the whole import — a package with many groups/skills
+     * would otherwise risk tripping Prisma's interactive-transaction timeout. The entries are
+     * independently meaningful (each lands on its own group's/skill's timeline), so they're
+     * correlated by a `LogBatch` instead of one combined entry. Unchanged nodes are skipped
+     * entirely — no write, no log entry.
+     */
+    importSkillPackage: systemAdminProcedure
+        .input(
+            z.object({
+                envelope: SkillPackageExport.schema,
+                targetOrganizationId: OrganizationId.schema,
+                dryRun: z.boolean().default(false),
+            }),
+        )
+        .mutation(async ({ ctx, input: { envelope, targetOrganizationId, dryRun } }) => {
+            await assertOrganizationExists(ctx.prisma, targetOrganizationId);
+
+            const { plan, writeItems } = await SkillPackages.prepareImport(
+                ctx.prisma,
+                envelope,
+                targetOrganizationId,
+            );
+
+            if (dryRun) return { plan, applied: false as const };
+            if (writeItems.length === 0) return { plan, applied: true as const };
+
+            const { counts } = plan;
+            const batch = await createLogBatch(
+                {
+                    operationKey: "skill-package-import",
+                    userId: ctx.userId,
+                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                    description: `${plan.packageAction === "Create" ? "Imported" : "Re-imported"} skill package "${envelope.package.name}" into another organisation (${counts.created} created, ${counts.updated} updated, ${counts.archived} archived).`,
+                },
+                ctx.prisma,
+            );
+
+            for (const item of writeItems) {
+                await ctx.prisma.$transaction([
+                    item.write(ctx.prisma),
+                    ctx.logEvent({
+                        organizationId: targetOrganizationId,
+                        ...item.log,
+                        batchId: batch.id,
+                    }),
                 ]);
             }
 

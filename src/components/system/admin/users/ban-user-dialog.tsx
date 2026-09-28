@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { systemAdminEffects } from "@/client/system-admin-effects";
+import { usersEffects } from "@/client/users-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -33,7 +33,7 @@ import { trpc } from "@/trpc/client";
  * Host-driven (`open` / `onOpenChange` come from `SystemAdmin_UserActions_Menu`, which also
  * picks `action` from the current `user.banned`).
  *
- * Routes through `systemAdmin.banUser`/`unbanUser`, which enforce the self-ban guard
+ * Routes through `users.banUser`/`unbanUser`, which enforce the self-ban guard
  * server-side (#86) and log a `Ban`/`Unban` entry on the target's own timeline. The ban is
  * permanent (no `banExpiresIn`).
  */
@@ -63,15 +63,15 @@ export function SystemAdmin_BanUser_Dialog({
     }
 
     const banMutation = useMutation(
-        trpc.systemAdmin.banUser.mutationOptions({
-            meta: { effects: systemAdminEffects.banUser },
+        trpc.users.banUser.mutationOptions({
+            meta: { effects: usersEffects.banUser },
             onError,
             onSuccess,
         }),
     );
     const unbanMutation = useMutation(
-        trpc.systemAdmin.unbanUser.mutationOptions({
-            meta: { effects: systemAdminEffects.unbanUser },
+        trpc.users.unbanUser.mutationOptions({
+            meta: { effects: usersEffects.unbanUser },
             onError,
             onSuccess,
         }),

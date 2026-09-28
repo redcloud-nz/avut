@@ -21,7 +21,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const { user_id } = await props.params;
     const userId = UserId.schema.parse(user_id);
 
-    const user = await fetchQuery(trpc.systemAdmin.getUser.queryOptions({ userId }));
+    const user = await fetchQuery(trpc.users.getUser.queryOptions({ userId }));
 
     return {
         title: `${user.name} ${TITLE_SEPARATOR} Users`,
@@ -34,7 +34,7 @@ export default async function SystemAdmin_User_Page(props: Props) {
     const { user_id } = await props.params;
     const userId = UserId.schema.parse(user_id);
 
-    prefetch(trpc.systemAdmin.getUser.queryOptions({ userId }));
+    prefetch(trpc.users.getUser.queryOptions({ userId }));
 
     return (
         <HydrateClient>

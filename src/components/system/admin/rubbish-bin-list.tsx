@@ -17,7 +17,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { systemAdminEffects } from "@/client/system-admin-effects";
+import { usersEffects } from "@/client/users-effects";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import {
@@ -36,12 +36,12 @@ import { USER_RETENTION_DAYS } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
-type DeletedUserRow = RouterOutput["systemAdmin"]["listDeletedUsers"][number];
+type DeletedUserRow = RouterOutput["users"]["listDeletedUsers"][number];
 
 function RecoverButton({ row }: { row: DeletedUserRow }) {
     const mutation = useMutation(
-        trpc.systemAdmin.recoverUser.mutationOptions({
-            meta: { effects: systemAdminEffects.recoverUser },
+        trpc.users.recoverUser.mutationOptions({
+            meta: { effects: usersEffects.recoverUser },
             onError(error) {
                 toast.error(`Failed to recover account: ${error.message}`);
             },
@@ -73,8 +73,8 @@ function PurgeUserDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     const mutation = useMutation(
-        trpc.systemAdmin.purgeUser.mutationOptions({
-            meta: { effects: systemAdminEffects.purgeUser },
+        trpc.users.purgeUser.mutationOptions({
+            meta: { effects: usersEffects.purgeUser },
             onError(error) {
                 toast.error(`Failed to delete account forever: ${error.message}`);
             },
@@ -123,7 +123,7 @@ function PurgeUserDialog({
  */
 export function SystemAdmin_RubbishBin_List() {
     const { formatRelativeDateTime } = usePreferences();
-    const { data: rows } = useSuspenseQuery(trpc.systemAdmin.listDeletedUsers.queryOptions());
+    const { data: rows } = useSuspenseQuery(trpc.users.listDeletedUsers.queryOptions());
 
     // `?action=purge&trashId=…` — the row is resolved from the list above.
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["purge"] as const));

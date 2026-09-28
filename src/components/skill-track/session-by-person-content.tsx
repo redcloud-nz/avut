@@ -89,17 +89,17 @@ export function SkillTrack_SessionByPerson_Content({
         },
     ] = useSuspenseQueries({
         queries: [
-            trpc.skills.getSession.queryOptions({
+            trpc.skillCheckSessions.getSession.queryOptions({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
             }),
-            trpc.skills.listSessionAssessees.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
                 sessionId: sessionId,
                 organizationId: organization.id,
                 scope: "assigned",
             }),
             skillChecksQueryOptions,
-            trpc.skills.listSessionSkills.queryOptions({
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
                 sessionId: sessionId,
                 organizationId: organization.id,
                 scope: "assigned",
@@ -107,14 +107,14 @@ export function SkillTrack_SessionByPerson_Content({
             trpc.personnel.getPersonSelf.queryOptions({
                 organizationId: organization.id,
             }),
-            trpc.skills.listAssessableSkills.queryOptions({
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
                 organizationId: organization.id,
             }),
         ],
     });
 
     const mutation = useMutation(
-        trpc.skillChecks.upsertSessionSkillChecks.mutationOptions({
+        trpc.skillCheckSessions.upsertSessionSkillChecks.mutationOptions({
             onError(error) {
                 console.error("Failed to save skill check changes:", error);
                 toast.error(`Failed to save changes: ${error.message}`);

@@ -114,7 +114,7 @@ function AddMember_Body({
     secondaryRoles: SecondaryRoleOptions;
     onDone: () => void;
 }) {
-    const { data: usersData } = useSuspenseQuery(trpc.systemAdmin.listUsers.queryOptions());
+    const { data: usersData } = useSuspenseQuery(trpc.users.listUsers.queryOptions());
 
     const existing = new Set(memberUserIds);
     const options = usersData.users

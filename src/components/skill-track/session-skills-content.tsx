@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -63,14 +63,14 @@ export function SkillTrack_SessionSkills_Content({
         { data: assignedSkills },
     ] = useSuspenseQueries({
         queries: [
-            trpc.skills.listAssessableSkills.queryOptions({
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
                 organizationId: organization.id,
             }),
-            trpc.skills.getSession.queryOptions({
+            trpc.skillCheckSessions.getSession.queryOptions({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
             }),
-            trpc.skills.listSessionSkills.queryOptions({
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "assigned",
@@ -79,8 +79,8 @@ export function SkillTrack_SessionSkills_Content({
     });
 
     const mutation = useMutation(
-        trpc.skills.updateSessionSkills.mutationOptions({
-            meta: { effects: skillsEffects.updateSessionSkills },
+        trpc.skillCheckSessions.updateSessionSkills.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.updateSessionSkills },
             onError(error) {
                 console.error("Failed to update session skills:", error);
                 toast.error(`Failed to update session skills. ${error.message}`);

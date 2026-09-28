@@ -43,7 +43,7 @@ export function SystemAdmin_Organization_Content({
     organizationId: OrganizationId;
 }) {
     const { data: organization } = useSuspenseQuery(
-        trpc.systemAdmin.getOrganization.queryOptions({ organizationId }),
+        trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
     );
 
     // Which secondary roles are offered follows the organization's enabled modules, as it does

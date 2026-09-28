@@ -57,7 +57,7 @@ export function SystemAdmin_ImpersonateUser_Dialog({
         },
         onSuccess() {
             // Identity switch: the browser-singleton query client still holds the admin's
-            // `systemAdmin.*` and org-scoped tRPC results. Drop the whole cache and hard-refresh
+            // `users.*`/`organizations.*` and org-scoped tRPC results. Drop the whole cache and hard-refresh
             // the RSC tree, mirroring `useSignOut`. No param clear / mutation.reset() race (see
             // docs/patterns/mutation-dialog.md).
             getQueryClient().clear();

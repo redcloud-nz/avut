@@ -23,12 +23,12 @@ import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
-type UserRow = RouterOutput["systemAdmin"]["listUsers"]["users"][number];
+type UserRow = RouterOutput["users"]["listUsers"]["users"][number];
 
 export function SystemAdmin_Users_List() {
     const {
         data: { users },
-    } = useSuspenseQuery(trpc.systemAdmin.listUsers.queryOptions());
+    } = useSuspenseQuery(trpc.users.listUsers.queryOptions());
 
     const columns = useMemo(
         () =>

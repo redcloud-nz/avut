@@ -15,7 +15,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { systemAdminEffects } from "@/client/system-admin-effects";
+import { organizationsEffects } from "@/client/organizations-effects";
 import { CreateNewIcon } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -71,8 +71,8 @@ export function SystemAdmin_CreateOrganization_Dialog() {
     });
 
     const mutation = useMutation(
-        trpc.systemAdmin.createOrganization.mutationOptions({
-            meta: { effects: systemAdminEffects.createOrganization, navigates: true },
+        trpc.organizations.createOrganization.mutationOptions({
+            meta: { effects: organizationsEffects.createOrganization, navigates: true },
             onError(error) {
                 if (error.data?.code === "CONFLICT") {
                     form.setError("slug", { message: error.message });

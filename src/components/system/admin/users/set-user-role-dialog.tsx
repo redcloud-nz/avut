@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { systemAdminEffects } from "@/client/system-admin-effects";
+import { usersEffects } from "@/client/users-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -45,8 +45,8 @@ export function SystemAdmin_SetUserRole_Dialog({
     const promote = action === "promote";
 
     const mutation = useMutation(
-        trpc.systemAdmin.setUserRole.mutationOptions({
-            meta: { effects: systemAdminEffects.setUserRole },
+        trpc.users.setUserRole.mutationOptions({
+            meta: { effects: usersEffects.setUserRole },
             onError(error) {
                 console.error("Failed to change user role:", error);
                 toast.error(`Failed to change role: ${error.message}`);

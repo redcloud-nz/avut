@@ -23,7 +23,8 @@ import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
-type CataloguePackageGroup = RouterOutput["skills"]["getPackage"]["groups"][number];
+type CataloguePackageGroup =
+    RouterOutput["skillPackageSubscriptions"]["getPackage"]["groups"][number];
 
 export function SkillTrack_CataloguePackage_Content({
     skillPackageId,
@@ -33,7 +34,7 @@ export function SkillTrack_CataloguePackage_Content({
     const organization = useOrganization();
 
     const { data: skillPackage } = useSuspenseQuery(
-        trpc.skills.getPackage.queryOptions({
+        trpc.skillPackageSubscriptions.getPackage.queryOptions({
             organizationId: organization.id,
             skillPackageId,
         }),

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -46,12 +46,12 @@ export function SkillTrack_SessionPersonnel_Content({
         { data: teamMemberships },
     ] = useSuspenseQueries({
         queries: [
-            trpc.skills.listSessionAssessees.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
                 sessionId: sessionId,
                 organizationId: organization.id,
                 scope: "assigned",
             }),
-            trpc.skills.getSession.queryOptions({
+            trpc.skillCheckSessions.getSession.queryOptions({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
             }),
@@ -65,8 +65,8 @@ export function SkillTrack_SessionPersonnel_Content({
     });
 
     const mutation = useMutation(
-        trpc.skills.updateSessionAssessees.mutationOptions({
-            meta: { effects: skillsEffects.updateSessionAssessees },
+        trpc.skillCheckSessions.updateSessionAssessees.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.updateSessionAssessees },
             onError(error) {
                 console.error("Failed to update session assessees:", error);
                 toast.error(`Failed to update session assessees. ${error.message}`);

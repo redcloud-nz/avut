@@ -17,7 +17,7 @@ export const metadata = {
 export default async function SystemAdmin_SkillPackages_Page() {
     await requireSystemAdmin();
 
-    prefetch(trpc.systemAdmin.listOrganizations.queryOptions());
+    prefetch(trpc.organizations.listOrganizations.queryOptions());
 
     return (
         <HydrateClient>

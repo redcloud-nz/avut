@@ -3,239 +3,20 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it, vi } from "vitest";
-
-import { TRPCError } from "@trpc/server";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
-import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
-import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
-import { skillsRouter } from "./skills-router";
+import { skillPackageSubscriptionsRouter } from "./skill-package-subscriptions-router";
 
-// skills-router reaches @/server/auth at import time via ../init. The procedure
-// under test only touches ctx.prisma (the injected mock), so stubbing server-only
-// is enough to let the module load under jsdom.
-vi.mock("server-only", () => ({}));
-
-describe("skills.createSession", () => {
-    // Dataset:
-    //   linkedUser  → org member, linked to linkedPerson
-    //   unlinkedUser → org member, no linked person record
-    const T = {
-        org: OrganizationId.create(),
-        linkedUser: UserId.create(),
-        unlinkedUser: UserId.create(),
-        linkedPerson: PersonId.create(),
-    };
-
-    const db = createMockPrisma();
-
-    beforeAll(async () => {
-        await db.organization.create({
-            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
-        });
-
-        await db.person.create({
-            data: {
-                id: T.linkedPerson,
-                organizationId: T.org,
-                name: "Alice Anderson",
-                email: `${T.linkedPerson}@example.com`,
-            },
-        });
-
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.org,
-                userId: T.linkedUser,
-                role: "member",
-                personId: T.linkedPerson,
-            },
-        });
-        await db.organizationUser.create({
-            data: { id: nanoId16(), organizationId: T.org, userId: T.unlinkedUser, role: "member" },
-        });
-    });
-
-    function makeCaller(userId: UserId) {
-        return skillsRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: userId },
-                permissions: { organization: ["view"], skillCheckSession: ["create", "view"] },
-                prisma: db,
-            }),
-        );
-    }
-
-    it("assigns the caller's linked person as the session's sole assessor", async () => {
-        const { created } = await makeCaller(T.linkedUser).createSession({
-            organizationId: T.org,
-            skillCheckSessionId: SkillCheckSessionId.create(),
-            create: {
-                name: "Session A",
-                date: new Date().toISOString(),
-                notes: "",
-                status: "Draft",
-            },
-        });
-
-        expect(created.assessors).toEqual([{ id: T.linkedPerson, name: "Alice Anderson" }]);
-    });
-
-    it("throws BAD_REQUEST when the caller has no linked person record", async () => {
-        await expect(
-            makeCaller(T.unlinkedUser).createSession({
-                organizationId: T.org,
-                skillCheckSessionId: SkillCheckSessionId.create(),
-                create: {
-                    name: "Session B",
-                    date: new Date().toISOString(),
-                    notes: "",
-                    status: "Draft",
-                },
-            }),
-        ).rejects.toThrow(TRPCError);
-    });
-
-    it("assigns sequential session numbers within the organization", async () => {
-        const { created: first } = await makeCaller(T.linkedUser).createSession({
-            organizationId: T.org,
-            skillCheckSessionId: SkillCheckSessionId.create(),
-            create: {
-                name: "Session C",
-                date: new Date().toISOString(),
-                notes: "",
-                status: "Draft",
-            },
-        });
-        const { created: second } = await makeCaller(T.linkedUser).createSession({
-            organizationId: T.org,
-            skillCheckSessionId: SkillCheckSessionId.create(),
-            create: {
-                name: "Session D",
-                date: new Date().toISOString(),
-                notes: "",
-                status: "Draft",
-            },
-        });
-
-        expect(second.sessionNumber).toBe(first.sessionNumber + 1);
-    });
-
-    it("defaults the name to Session #N when no name is given", async () => {
-        const { nextSessionNumber } = await makeCaller(T.linkedUser).nextSessionNumber({
-            organizationId: T.org,
-        });
-
-        const { created } = await makeCaller(T.linkedUser).createSession({
-            organizationId: T.org,
-            skillCheckSessionId: SkillCheckSessionId.create(),
-            create: { name: "", date: new Date().toISOString(), notes: "", status: "Draft" },
-        });
-
-        expect(created.name).toBe(`Session #${nextSessionNumber}`);
-        expect(created.sessionNumber).toBe(nextSessionNumber);
-    });
-
-    it("assigns the next available number when a race leaves the computed number taken", async () => {
-        const { nextSessionNumber } = await makeCaller(T.linkedUser).nextSessionNumber({
-            organizationId: T.org,
-        });
-
-        // Simulate a concurrent create claiming the number that would otherwise be computed next.
-        await db.skillCheckSession.create({
-            data: {
-                id: SkillCheckSessionId.create(),
-                organizationId: T.org,
-                name: "Snuck in first",
-                sessionNumber: nextSessionNumber,
-                status: "Draft",
-            },
-        });
-
-        const { created } = await makeCaller(T.linkedUser).createSession({
-            organizationId: T.org,
-            skillCheckSessionId: SkillCheckSessionId.create(),
-            create: {
-                name: "Session E",
-                date: new Date().toISOString(),
-                notes: "",
-                status: "Draft",
-            },
-        });
-
-        expect(created.sessionNumber).toBe(nextSessionNumber + 1);
-    });
-});
-
-describe("skills.listSessions", () => {
-    const T = {
-        org: OrganizationId.create(),
-        user: UserId.create(),
-    };
-
-    const db = createMockPrisma();
-
-    beforeAll(async () => {
-        await db.organization.create({
-            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
-        });
-
-        await db.skillCheckSession.create({
-            data: {
-                id: SkillCheckSessionId.create(),
-                organizationId: T.org,
-                name: "Session A",
-                sessionNumber: 1,
-                status: "Draft",
-                startsAt: new Date(),
-                notes: "",
-            },
-        });
-    });
-
-    function makeCaller(
-        permissions: Parameters<typeof createAuthenticatedMockContext>[0]["permissions"],
-    ) {
-        return skillsRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: T.user },
-                permissions,
-                prisma: db,
-            }),
-        );
-    }
-
-    it("succeeds with skillCheckSession:view alone", async () => {
-        const sessions = await makeCaller({
-            organization: ["view"],
-            skillCheckSession: ["view"],
-        }).listSessions({ organizationId: T.org });
-
-        expect(sessions).toHaveLength(1);
-    });
-
-    it("throws FORBIDDEN with only skillPackageSubscription:view", async () => {
-        await expect(
-            makeCaller({
-                organization: ["view"],
-                skillPackageSubscription: ["view"],
-            }).listSessions({ organizationId: T.org }),
-        ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
-});
-
-describe("skillsRouter.getPackage", () => {
+describe("skillPackageSubscriptions.getPackage", () => {
     const T = {
         org: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
@@ -384,7 +165,7 @@ describe("skillsRouter.getPackage", () => {
     });
 
     function makeCaller() {
-        return skillsRouter.createCaller(
+        return skillPackageSubscriptionsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
                 permissions: { skillPackageSubscription: ["view"], organization: ["view"] },
@@ -411,7 +192,7 @@ describe("skillsRouter.getPackage", () => {
         await db.organization.create({
             data: { id: otherOrg, name: "Other", slug: "other", createdAt: new Date() },
         });
-        const caller = skillsRouter.createCaller(
+        const caller = skillPackageSubscriptionsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
                 permissions: { skillPackageSubscription: ["view"], organization: ["view"] },
@@ -482,7 +263,7 @@ describe("skillsRouter.getPackage", () => {
     });
 });
 
-describe("skillsRouter catalogue hides a Deleted package", () => {
+describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", () => {
     const T = {
         org: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
@@ -534,7 +315,7 @@ describe("skillsRouter catalogue hides a Deleted package", () => {
     });
 
     function makeCaller() {
-        return skillsRouter.createCaller(
+        return skillPackageSubscriptionsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
                 permissions: {

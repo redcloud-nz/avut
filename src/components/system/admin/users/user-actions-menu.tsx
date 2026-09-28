@@ -30,7 +30,7 @@ import {
 import { UserId } from "@/lib/schemas/user";
 import { type RouterOutput } from "@/trpc/client";
 
-type SystemAdminUser = RouterOutput["systemAdmin"]["getUser"];
+type SystemAdminUser = RouterOutput["users"]["getUser"];
 
 /**
  * Actions dropdown for a system-admin user detail page — mirrors how org member actions

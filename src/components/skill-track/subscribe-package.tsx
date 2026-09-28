@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillPackageSubscriptionsEffects } from "@/client/skill-package-subscriptions-effects";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -35,8 +35,8 @@ export function SkillTrack_SubscribeToPackage_Dialog({
     const organization = useOrganization();
 
     const mutation = useMutation(
-        trpc.skills.subscribeToPackage.mutationOptions({
-            meta: { effects: skillsEffects.subscribeToPackage },
+        trpc.skillPackageSubscriptions.subscribeToPackage.mutationOptions({
+            meta: { effects: skillPackageSubscriptionsEffects.subscribeToPackage },
             onError(error) {
                 console.error("Failed to subscribe to skill package:", error);
                 toast.error(`Failed to subscribe to skill package: ${error.message}`);

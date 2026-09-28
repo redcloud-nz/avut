@@ -17,7 +17,7 @@ export const metadata = {
 export default async function SystemAdmin_Users_Page() {
     await requireSystemAdmin();
 
-    prefetch(trpc.systemAdmin.listUsers.queryOptions());
+    prefetch(trpc.users.listUsers.queryOptions());
 
     return (
         <HydrateClient>

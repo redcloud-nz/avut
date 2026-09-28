@@ -25,12 +25,12 @@ import { Modules, type ModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
-type OrganizationRow = RouterOutput["systemAdmin"]["listOrganizations"]["organizations"][number];
+type OrganizationRow = RouterOutput["organizations"]["listOrganizations"]["organizations"][number];
 
 export function SystemAdmin_Organizations_List() {
     const {
         data: { organizations },
-    } = useSuspenseQuery(trpc.systemAdmin.listOrganizations.queryOptions());
+    } = useSuspenseQuery(trpc.organizations.listOrganizations.queryOptions());
 
     const columns = useMemo(
         () =>

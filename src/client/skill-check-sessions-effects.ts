@@ -7,7 +7,7 @@ import { trpc } from "@/trpc/client";
 import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 
 /**
- * Cache effects for `skills` router mutations, keyed by procedure name.
+ * Cache effects for `skillCheckSessions` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  * `createSession`'s response matches `getSession` exactly, so it writes wholesale. `updateSession`
@@ -15,75 +15,71 @@ import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
  * `SkillCheckSession` without the `assessors` extension `getSession` carries, so they merge into
  * whatever's already cached instead of replacing it.
  */
-export const skillsEffects = createEffects<"skills">()({
+export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
+    approveSession: (vars, { updated }) => [
+        write(
+            trpc.skillCheckSessions.getSession.queryKey({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.sessionId,
+            }),
+            (old) => (old ? { ...old, ...updated } : old),
+        ),
+        // approveSession updates every matching skillCheck row server-side (Include/Exclude), so
+        // any cached listSkillChecks for this session — including scoped variants like
+        // ownChecksOnly — needs to refetch rather than keep showing pre-approval statuses.
+        invalidate(
+            trpc.skillChecks.listSkillChecks.queryFilter({
+                organizationId: vars.organizationId,
+                sessionId: vars.sessionId,
+            }),
+        ),
+    ],
     createSession: (vars, { created }) => [
         write(
-            trpc.skills.getSession.queryKey({
+            trpc.skillCheckSessions.getSession.queryKey({
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
             created,
         ),
-        invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.skillCheckSessions.listSessions.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
     ],
     deleteSession: (vars) => [
         // Mark the deleted session's detail query stale so navigating Back to its route
         // refetches (and 404s) rather than rendering the now-deleted session from cache.
         invalidate(
-            trpc.skills.getSession.queryFilter({
+            trpc.skillCheckSessions.getSession.queryFilter({
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
         ),
-        invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
-    ],
-    subscribeToPackage: (vars, { created }) => [
-        write(
-            trpc.skills.getPackage.queryKey({
+        invalidate(
+            trpc.skillCheckSessions.listSessions.queryFilter({
                 organizationId: vars.organizationId,
-                skillPackageId: vars.skillPackageId,
             }),
-            (old) =>
-                old
-                    ? {
-                          ...old,
-                          subscription: created,
-                          subscriptionCount: old.subscriptionCount + 1,
-                      }
-                    : old,
         ),
-        invalidate(trpc.skills.listPackages.queryFilter({ organizationId: vars.organizationId })),
-    ],
-    unsubscribeFromPackage: (vars) => [
-        write(
-            trpc.skills.getPackage.queryKey({
-                organizationId: vars.organizationId,
-                skillPackageId: vars.skillPackageId,
-            }),
-            (old) =>
-                old
-                    ? {
-                          ...old,
-                          subscription: null,
-                          subscriptionCount: Math.max(0, old.subscriptionCount - 1),
-                      }
-                    : old,
-        ),
-        invalidate(trpc.skills.listPackages.queryFilter({ organizationId: vars.organizationId })),
     ],
     updateSession: (vars, { updated }) => [
         write(
-            trpc.skills.getSession.queryKey({
+            trpc.skillCheckSessions.getSession.queryKey({
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
             (old) => (old ? { ...old, ...updated } : old),
         ),
-        invalidate(trpc.skills.listSessions.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.skillCheckSessions.listSessions.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
     ],
     updateSessionAssessees: (vars, { updatedAssessees, updatedSession }) => [
         write(
-            trpc.skills.listSessionAssessees.queryKey({
+            trpc.skillCheckSessions.listSessionAssessees.queryKey({
                 organizationId: vars.organizationId,
                 sessionId: vars.skillCheckSessionId,
                 scope: "assigned",
@@ -91,14 +87,14 @@ export const skillsEffects = createEffects<"skills">()({
             updatedAssessees,
         ),
         write(
-            trpc.skills.getSession.queryKey({
+            trpc.skillCheckSessions.getSession.queryKey({
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
             (old) => (old ? { ...old, ...updatedSession } : old),
         ),
         invalidate(
-            trpc.skills.listSessionAssessees.queryFilter({
+            trpc.skillCheckSessions.listSessionAssessees.queryFilter({
                 organizationId: vars.organizationId,
                 sessionId: vars.skillCheckSessionId,
                 scope: "all",
@@ -107,7 +103,7 @@ export const skillsEffects = createEffects<"skills">()({
     ],
     updateSessionSkills: (vars, { updatedSkills, updatedSession }) => [
         write(
-            trpc.skills.listSessionSkills.queryKey({
+            trpc.skillCheckSessions.listSessionSkills.queryKey({
                 organizationId: vars.organizationId,
                 sessionId: vars.skillCheckSessionId,
                 scope: "assigned",
@@ -115,14 +111,14 @@ export const skillsEffects = createEffects<"skills">()({
             updatedSkills,
         ),
         write(
-            trpc.skills.getSession.queryKey({
+            trpc.skillCheckSessions.getSession.queryKey({
                 organizationId: vars.organizationId,
                 skillCheckSessionId: vars.skillCheckSessionId,
             }),
             (old) => (old ? { ...old, ...updatedSession } : old),
         ),
         invalidate(
-            trpc.skills.listSessionSkills.queryFilter({
+            trpc.skillCheckSessions.listSessionSkills.queryFilter({
                 organizationId: vars.organizationId,
                 sessionId: vars.skillCheckSessionId,
                 scope: "all",
