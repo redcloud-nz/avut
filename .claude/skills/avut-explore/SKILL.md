@@ -90,7 +90,7 @@ If this session started a server on 3100, stop it once the work leaves the main 
 ### Park
 
 1. Commit the work as it stands on `explore/<slug>` as `wip(explore): <idea>`, with the Decisions list in the body. Don't push.
-2. Offer to file it with `/avut-idea`, passing the idea, the Decisions list and the branch name, so the issue follows the usual idea format.
+2. Offer to file it with `/avut-draft-feature`, with the Decisions list and the branch name under _Additional context_, so the issue follows the feature-request template. That skill confirms the draft before creating anything.
 3. Switch back to the branch from Step 1, and restore the stash (by its SHA) if you made one: the user's uncommitted changes return exactly as they were, whatever the WIP commit holds. Stop your 3100 server if you started one.
 
 ### Drop
