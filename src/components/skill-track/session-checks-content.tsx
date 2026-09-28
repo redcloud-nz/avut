@@ -50,21 +50,21 @@ export function SkillTrack_SessionChecks_Content({
         { data: skillChecks },
     ] = useSuspenseQueries({
         queries: [
-            trpc.skills.getSession.queryOptions({
+            trpc.skillCheckSessions.getSession.queryOptions({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
             }),
-            trpc.skills.listSessionAssessees.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
             }),
-            trpc.skills.listSessionAssessors.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessors.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
             }),
-            trpc.skills.listSessionSkills.queryOptions({
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",

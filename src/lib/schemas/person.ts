@@ -27,7 +27,7 @@ const personSchema = z.object({
      * Lowercased on the way in. `personnel.email` is stored normalised so that
      * `@@unique([organizationId, email])` means what its comment claims — Postgres unique
      * indexes are case-sensitive, so without this two rows in one org may differ only by case.
-     * See docs/specs/person-email-normalisation.md.
+     * See docs/specs/2026-09-14-person-email-normalisation.md.
      *
      * This covers every parsed path. The D4H import builds its person object in code and never
      * parses it, so `Personnel.create` normalises as well.

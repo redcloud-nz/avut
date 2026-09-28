@@ -13,6 +13,9 @@ implementation, and the record of why it is that shape once built.
 - Header block, in order: `**Date:**`, `**Status:**`
   (`Draft` / `Approved` / `Implemented` / `Superseded`), and `**Supersedes:**`
   when it replaces earlier behaviour or another spec.
-- One file per spec, kebab-case, named for the subject (`d4h-linking.md`).
+- One file per spec, kebab-case, named for the subject, prefixed with the same
+  date as the header's `**Date:**` line (`2026-09-10-d4h-linking.md`). If the
+  spec is later substantively revised, update both the header date and the
+  filename prefix together — they must never disagree.
 - Close with the resolved decisions (a table works well) so a later reader sees
   what was settled without re-reading the discussion.

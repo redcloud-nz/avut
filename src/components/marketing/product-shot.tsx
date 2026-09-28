@@ -4,7 +4,7 @@
  *
  * `<ProductShot id="…" />` — a screenshot on the public marketing site. Reads the
  * same committed index as the docs `<Screenshot>` (see `@/lib/screenshots` and
- * `docs/specs/docs-screenshots.md`), rendered with `next/image` and no
+ * `docs/specs/2026-09-13-docs-screenshots.md`), rendered with `next/image` and no
  * browser-chrome frame. Light/dark sources are art-directed via `<picture>`
  * (`getImageProps` + a `prefers-color-scheme` `<source>`) so the browser fetches
  * only the variant it needs, not both. The trigger image is on the hero's LCP

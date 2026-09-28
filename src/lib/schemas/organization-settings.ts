@@ -76,7 +76,7 @@ const organizationSettingsSchema = z.object({
      * top-level rather than a `modules.*` key.
      *
      * Both default to `false`: an organization that upgrades into this feature keeps doing
-     * exactly what it did before until someone opts in. See `docs/specs/person-user-linking.md`.
+     * exactly what it did before until someone opts in. See `docs/specs/2026-09-14-person-user-linking.md`.
      */
     personnel: z.object({
         /** Link a person on invitation accept when the org already has one with that email. */

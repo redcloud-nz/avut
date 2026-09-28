@@ -5,7 +5,7 @@
  * Path: /user/settings/preferences
  */
 
-import { UserSettings_PreferencesContent } from "@/components/user-settings/user-settings-content";
+import { UserSettings_PreferencesContent } from "@/components/user/user-settings/user-settings-content";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export default async function UserSettings_Preferences_Page() {

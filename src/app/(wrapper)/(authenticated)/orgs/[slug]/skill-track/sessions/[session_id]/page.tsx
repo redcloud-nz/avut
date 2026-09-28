@@ -21,7 +21,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
     const session = await fetchQuery(
-        trpc.skills.getSession.queryOptions({
+        trpc.skillCheckSessions.getSession.queryOptions({
             organizationId: organization.id,
             skillCheckSessionId,
         }),
@@ -39,7 +39,7 @@ export default async function SkillTrack_Session_Page(props: Props) {
     const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
 
     prefetch(
-        trpc.skills.getSession.queryOptions({
+        trpc.skillCheckSessions.getSession.queryOptions({
             organizationId: organization.id,
             skillCheckSessionId,
         }),
@@ -51,14 +51,14 @@ export default async function SkillTrack_Session_Page(props: Props) {
         }),
     );
     prefetch(
-        trpc.skills.listSessionAssessees.queryOptions({
+        trpc.skillCheckSessions.listSessionAssessees.queryOptions({
             organizationId: organization.id,
             sessionId: skillCheckSessionId,
             scope: "assigned",
         }),
     );
     prefetch(
-        trpc.skills.listSessionSkills.queryOptions({
+        trpc.skillCheckSessions.listSessionSkills.queryOptions({
             organizationId: organization.id,
             sessionId: skillCheckSessionId,
             scope: "assigned",

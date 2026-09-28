@@ -23,7 +23,9 @@ export default async function SkillTrack_Sessions_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    prefetch(trpc.skills.listSessions.queryOptions({ organizationId: organization.id }));
+    prefetch(
+        trpc.skillCheckSessions.listSessions.queryOptions({ organizationId: organization.id }),
+    );
 
     return (
         <HydrateClient>

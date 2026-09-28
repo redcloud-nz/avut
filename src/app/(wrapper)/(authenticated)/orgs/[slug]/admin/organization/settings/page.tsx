@@ -5,7 +5,7 @@
  * Paths: /orgs/[slug]/admin/settings/--update
  */
 
-import { AdminModule_Settings_Content } from "@/components/admin-settings/settings-content";
+import { AdminModule_Settings_Content } from "@/components/admin/organization-settings/organization-settings-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

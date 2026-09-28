@@ -6,6 +6,15 @@
 import { trpc } from "@/trpc/client";
 import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
+/** Moving an account into, out of, or past the system Rubbish bin changes every user/member view. */
+const userBinCaches = (vars: { userId: string }) => [
+    invalidate(trpc.users.listUsers.queryFilter()),
+    invalidate(trpc.users.listDeletedUsers.queryFilter()),
+    invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+    invalidate(trpc.organizations.listOrganizations.queryFilter()),
+    invalidate(trpc.organizations.getOrganizationAsAdmin.queryFilter()),
+];
+
 /**
  * Cache effects for `users` router mutations, keyed by procedure name.
  *
@@ -15,6 +24,11 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * remember all five affected queries.
  */
 export const usersEffects = createEffects<"users">()({
+    banUser: (vars) => [
+        invalidate(trpc.users.listUsers.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+    ],
+    deleteUser: (vars) => userBinCaches(vars),
     linkPerson: (vars) => [
         invalidate(
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
@@ -46,6 +60,17 @@ export const usersEffects = createEffects<"users">()({
         invalidate(
             trpc.users.listUnlinkedMembers.queryFilter({ organizationId: vars.organizationId }),
         ),
+    ],
+    purgeUser: (vars) => userBinCaches(vars),
+    recoverUser: (vars) => userBinCaches(vars),
+    revokeSession: () => [invalidate(trpc.user.listSessions.queryFilter())],
+    setUserRole: (vars) => [
+        invalidate(trpc.users.listUsers.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+    ],
+    unbanUser: (vars) => [
+        invalidate(trpc.users.listUsers.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
     ],
     // `unlinkPerson`'s input only carries `userId` — the `personId` being unlinked comes back
     // in the response instead, since the server already knows it from the existing link.
@@ -79,6 +104,4 @@ export const usersEffects = createEffects<"users">()({
               ]
             : []),
     ],
-
-    revokeSession: () => [invalidate(trpc.user.listSessions.queryFilter())],
 });

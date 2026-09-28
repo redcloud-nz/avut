@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
 import { Permissions } from "@/lib/permissions";
@@ -22,14 +22,25 @@ import { usersRouter } from "./users-router";
 // them import in jsdom.
 vi.mock("server-only", () => ({}));
 
-// `revokeSession` delegates the actual revocation to Better Auth so its session cache is
-// invalidated properly. The test asserts on that delegation rather than standing up a real
+// `revalidateTag` needs a Next.js render/request store, which the test environment has no
+// business standing up — the router's contract here is just that it invalidates the tag.
+vi.mock("@/server/cache/organization-user-revalidate", () => ({
+    organizationUserCacheTag: (id: string) => `organization-user-${id}`,
+    revalidateOrganizationUser: vi.fn(async () => {}),
+}));
+
+// `revokeSession`/`banUser`/`unbanUser` delegate to Better Auth so its session cache is
+// invalidated properly. The tests assert on that delegation rather than standing up a real
 // auth instance.
 const revokeSessionMock = vi.fn();
+const banUserMock = vi.fn().mockResolvedValue({});
+const unbanUserMock = vi.fn().mockResolvedValue({});
 vi.mock("@/server/auth", () => ({
     auth: {
         api: {
             revokeSession: (...args: unknown[]) => revokeSessionMock(...args),
+            banUser: (...args: unknown[]) => banUserMock(...args),
+            unbanUser: (...args: unknown[]) => unbanUserMock(...args),
         },
     },
 }));
@@ -389,5 +400,648 @@ describe("usersRouter.revokeSession", () => {
         });
 
         expect(revokeSessionMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("users admin", () => {
+    const T = {
+        admin: UserId.create(),
+        u1: UserId.create(),
+        u2: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.admin, T.u1, T.u2]) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "org", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.u1,
+                role: "member",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    const call = () =>
+        usersRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("listUsers returns every user with membership count", async () => {
+        const { users } = await call().listUsers();
+        expect(users).toHaveLength(3);
+        expect(users.find((u) => u.id === T.u1)?.organizationCount).toBe(1);
+        expect(users.find((u) => u.id === T.u2)?.organizationCount).toBe(0);
+    });
+
+    it("getUser returns the user with organization memberships", async () => {
+        const user = await call().getUser({ userId: T.u1 });
+        expect(user.organizations).toEqual([
+            { id: T.org, name: "Org", slug: "org", role: "member" },
+        ]);
+    });
+
+    it("getUser returns only the fields the admin screens use, not the whole row", async () => {
+        const user = await call().getUser({ userId: T.u1 });
+        expect(Object.keys(user).sort()).toEqual([
+            "banned",
+            "createdAt",
+            "email",
+            "emailVerified",
+            "id",
+            "name",
+            "organizations",
+            "role",
+        ]);
+    });
+
+    it("getUser throws NOT_FOUND for an unknown id", async () => {
+        await expect(call().getUser({ userId: UserId.create() })).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+    });
+});
+
+describe("users.deleteUser refuses to orphan an organization, whatever roles are involved", () => {
+    const T = {
+        admin: UserId.create(),
+        owner: UserId.create(),
+        other: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    let db: ReturnType<typeof createMockPrisma>;
+
+    beforeEach(async () => {
+        db = createMockPrisma();
+
+        for (const [id, role] of [
+            [T.admin, "admin"],
+            [T.owner, null],
+            [T.other, null],
+        ] as const) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    role,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "multi-role-org", createdAt: new Date() },
+        });
+        // The sole owner also holds a secondary role, so the column reads "owner,i3-editor".
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.owner,
+                role: "owner,i3-editor",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    const call = () =>
+        usersRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("refuses to delete a user who is the sole owner, whatever other roles they hold", async () => {
+        await expect(call().deleteUser({ userId: T.owner })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+});
+
+describe("users.deleteUser", () => {
+    const T = {
+        admin: UserId.create(),
+        plain: UserId.create(),
+        soleOwner: UserId.create(),
+        coOwnerA: UserId.create(),
+        coOwnerB: UserId.create(),
+        soleOwnedOrg: OrganizationId.create(),
+        coOwnedOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, role] of [
+            [T.admin, "admin"],
+            [T.plain, null],
+            [T.soleOwner, null],
+            [T.coOwnerA, null],
+            [T.coOwnerB, null],
+        ] as const) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    role,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        await db.organization.create({
+            data: { id: T.soleOwnedOrg, name: "Sole Co", slug: "sole-co", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.coOwnedOrg, name: "Co Co", slug: "co-co", createdAt: new Date() },
+        });
+        for (const [organizationId, userId, role] of [
+            [T.soleOwnedOrg, T.soleOwner, "owner"],
+            [T.soleOwnedOrg, T.plain, "member"],
+            [T.coOwnedOrg, T.coOwnerA, "owner"],
+            [T.coOwnedOrg, T.coOwnerB, "owner"],
+        ] as const) {
+            await db.organizationUser.create({
+                data: { id: nanoId16(), organizationId, userId, role, createdAt: new Date() },
+            });
+        }
+    });
+
+    const call = () =>
+        usersRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("soft-deletes a user into the Rubbish bin, keeping their memberships for recovery", async () => {
+        const memberships = await db.organizationUser.count({ where: { userId: T.plain } });
+        const res = await call().deleteUser({ userId: T.plain });
+        expect(res).toEqual({ id: T.plain });
+        expect((await db.user.findUnique({ where: { id: T.plain } }))?.status).toBe("Deleted");
+        expect(await db.organizationUser.count({ where: { userId: T.plain } })).toBe(memberships);
+
+        const { users } = await call().listUsers();
+        expect(users.map((u) => u.id)).not.toContain(T.plain);
+        expect((await call().listDeletedUsers()).map((u) => u.id)).toContain(T.plain);
+    });
+
+    it("deletes an org owner when another owner remains", async () => {
+        await call().deleteUser({ userId: T.coOwnerA });
+        expect((await db.user.findUnique({ where: { id: T.coOwnerA } }))?.status).toBe("Deleted");
+    });
+
+    it("then refuses the remaining co-owner, since a deleted owner can't act for the org", async () => {
+        await expect(call().deleteUser({ userId: T.coOwnerB })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+
+    it("recoverUser brings a deleted user back", async () => {
+        await call().recoverUser({ userId: T.plain });
+        expect((await db.user.findUnique({ where: { id: T.plain } }))?.status).toBe("Active");
+    });
+
+    it("refuses to delete a sole organization owner", async () => {
+        await expect(call().deleteUser({ userId: T.soleOwner })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+        expect(await db.user.findUnique({ where: { id: T.soleOwner } })).not.toBeNull();
+    });
+
+    it("refuses to delete yourself", async () => {
+        await expect(call().deleteUser({ userId: T.admin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+
+    it("throws NOT_FOUND for an unknown user", async () => {
+        await expect(call().deleteUser({ userId: UserId.create() })).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+    });
+});
+
+describe("users.deleteUser last-admin guard", () => {
+    const soloAdmin = UserId.create();
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: soloAdmin,
+                name: "Solo",
+                email: "solo@x.test",
+                emailVerified: true,
+                role: "admin",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    it("refuses to delete the last system administrator", async () => {
+        const caller = usersRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: UserId.create(), role: "admin" },
+                prisma: db,
+            }),
+        );
+        await expect(caller.deleteUser({ userId: soloAdmin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+});
+
+describe("users.setUserRole", () => {
+    const T = {
+        adminA: UserId.create(),
+        adminB: UserId.create(),
+        plain: UserId.create(),
+        noop: UserId.create(),
+    };
+    let db: ReturnType<typeof createMockPrisma>;
+
+    // Promoting, demoting and the session revocation that comes with it all mutate the users
+    // below, so each case gets a fresh dataset instead of relying on the order they run in.
+    beforeEach(async () => {
+        db = createMockPrisma();
+
+        for (const [id, role] of [
+            [T.adminA, "admin"],
+            [T.adminB, "admin"],
+            [T.plain, null],
+            [T.noop, null],
+        ] as const) {
+            await db.user.create({
+                data: {
+                    id,
+                    name: `U-${id}`,
+                    email: `${id}@x.test`,
+                    emailVerified: true,
+                    role,
+                    createdAt: new Date(),
+                },
+            });
+        }
+        // A live session for the already-plain user — a no-op "user" update must leave it.
+        await db.session.create({
+            data: {
+                id: nanoId16(),
+                userId: T.noop,
+                token: nanoId16(),
+                expiresAt: new Date(Date.now() + 1_000_000),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        });
+        // Two live sessions for the admin we later demote — they must be gone afterwards.
+        for (let i = 0; i < 2; i++) {
+            await db.session.create({
+                data: {
+                    id: nanoId16(),
+                    userId: T.adminB,
+                    token: nanoId16(),
+                    expiresAt: new Date(Date.now() + 1_000_000),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            });
+        }
+    });
+
+    const call = () =>
+        usersRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.adminA, role: "admin" }, prisma: db }),
+        );
+
+    it("promotes a user to admin", async () => {
+        const { role } = await call().setUserRole({ userId: T.plain, role: "admin" });
+        expect(role).toBe("admin");
+        expect((await db.user.findUnique({ where: { id: T.plain } }))?.role).toBe("admin");
+    });
+
+    it("is a no-op when the role is unchanged and keeps sessions intact", async () => {
+        const { role } = await call().setUserRole({ userId: T.noop, role: "user" });
+        expect(role).toBe("user");
+        expect(await db.session.count({ where: { userId: T.noop } })).toBe(1);
+    });
+
+    it("refuses to change your own role", async () => {
+        await expect(call().setUserRole({ userId: T.adminA, role: "user" })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+    });
+
+    it("demotes an admin while another admin remains and revokes their sessions", async () => {
+        expect(await db.session.count({ where: { userId: T.adminB } })).toBe(2);
+
+        const { role } = await call().setUserRole({ userId: T.adminB, role: "user" });
+        expect(role).toBe("user");
+
+        expect(await db.session.count({ where: { userId: T.adminB } })).toBe(0);
+    });
+
+    it("throws NOT_FOUND for an unknown user", async () => {
+        await expect(
+            call().setUserRole({ userId: UserId.create(), role: "admin" }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});
+
+describe("users.setUserRole last-admin guard", () => {
+    const soloAdmin = UserId.create();
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: soloAdmin,
+                name: "Solo",
+                email: "solo-role@x.test",
+                emailVerified: true,
+                role: "admin",
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    it("refuses to demote the last system administrator", async () => {
+        const caller = usersRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: UserId.create(), role: "admin" },
+                prisma: db,
+            }),
+        );
+        await expect(caller.setUserRole({ userId: soloAdmin, role: "user" })).rejects.toMatchObject(
+            { code: "BAD_REQUEST" },
+        );
+    });
+});
+
+describe("users.banUser / unbanUser", () => {
+    const T = { admin: UserId.create(), target: UserId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: T.admin,
+                name: "Dana Okafor",
+                email: "dana@example.com",
+                emailVerified: true,
+                role: "admin",
+                createdAt: new Date(),
+            },
+        });
+        await db.user.create({
+            data: {
+                id: T.target,
+                name: "Kim Park",
+                email: "kim@example.com",
+                emailVerified: true,
+                role: null,
+                createdAt: new Date(),
+            },
+        });
+    });
+
+    beforeEach(() => vi.clearAllMocks());
+
+    const call = () =>
+        usersRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
+        );
+
+    it("bans a user via better-auth and logs a Ban entry with the reason", async () => {
+        const res = await call().banUser({ userId: T.target, banReason: "spam" });
+        expect(res).toEqual({ id: T.target });
+
+        expect(banUserMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { userId: T.target, banReason: "spam" } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { objectType: "User" } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "user",
+            ownerId: T.target,
+            organizationId: null,
+            userId: T.admin,
+            action: "Ban",
+            objectId: T.target,
+        });
+        expect(entries[0].changes).toContainEqual({
+            type: "obj_add",
+            path: ["banReason"],
+            curr: "spam",
+        });
+    });
+
+    it("bans without a reason when none is given", async () => {
+        await call().banUser({ userId: T.target });
+        expect(banUserMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { userId: T.target } }),
+        );
+    });
+
+    it("unbans a user via better-auth and logs an Unban entry", async () => {
+        const res = await call().unbanUser({ userId: T.target });
+        expect(res).toEqual({ id: T.target });
+        expect(unbanUserMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { userId: T.target } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { action: "Unban" } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "user",
+            ownerId: T.target,
+            action: "Unban",
+            objectId: T.target,
+        });
+    });
+
+    it("refuses to ban yourself", async () => {
+        await expect(call().banUser({ userId: T.admin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+        expect(banUserMock).not.toHaveBeenCalled();
+    });
+
+    it("refuses to unban yourself", async () => {
+        await expect(call().unbanUser({ userId: T.admin })).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+        });
+        expect(unbanUserMock).not.toHaveBeenCalled();
+    });
+
+    it("throws NOT_FOUND for an unknown user", async () => {
+        await expect(call().banUser({ userId: UserId.create() })).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+    });
+});
+
+describe("users — audit entries", () => {
+    it("records a user-scoped entry against the subject when changing a global role", async () => {
+        const db = createMockPrisma();
+        const adminId = UserId.create();
+        const subjectId = UserId.create();
+
+        await db.user.create({
+            data: { id: adminId, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: subjectId, name: "Kim Park", email: "kim@example.com", role: "user" },
+        });
+
+        const caller = usersRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: adminId,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+
+        await caller.setUserRole({ userId: subjectId, role: "admin" });
+
+        const entries = await db.logEntry.findMany({ where: { objectType: "User" } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "user",
+            ownerId: subjectId,
+            organizationId: null,
+            userId: adminId,
+            action: "Update",
+            objectId: subjectId,
+        });
+        expect(entries[0].changes).toContainEqual({
+            type: "obj_mod",
+            path: ["role"],
+            prev: "user",
+            curr: "admin",
+        });
+    });
+
+    it("purging a deleted user keeps their entries elsewhere — the FK policy keeps them", async () => {
+        const db = createMockPrisma();
+        const orgId = OrganizationId.create();
+        const adminId = UserId.create();
+        const subjectId = UserId.create();
+
+        await db.organization.create({
+            data: { id: orgId, name: "Org", slug: `org-${nanoId16()}`, createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: adminId, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: subjectId, name: "Kim Park", email: "kim@example.com" },
+        });
+
+        // An action the subject took in an organization, which must survive their deletion.
+        await db.logEntry.create({
+            data: {
+                id: nanoId16(),
+                scope: "organization",
+                organizationId: orgId,
+                userId: subjectId,
+                actorLabel: "Kim Park <kim@example.com>",
+                action: "Update",
+                objectType: "Person",
+                objectId: "person_1",
+                changes: [],
+            },
+        });
+
+        const caller = usersRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: adminId,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+
+        await caller.deleteUser({ userId: subjectId });
+        await caller.purgeUser({ userId: subjectId });
+        expect(await db.user.findUnique({ where: { id: subjectId } })).toBeNull();
+
+        const survivors = await db.logEntry.findMany({ where: { objectId: "person_1" } });
+        expect(survivors).toHaveLength(1);
+        expect(survivors[0].userId).toBeNull();
+        expect(survivors[0].actorLabel).toBe("Kim Park <kim@example.com>");
+    });
+});
+
+describe("users.deleteUser — the deletion's own audit entry", () => {
+    const T = { admin: UserId.create(), subject: UserId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: { id: T.admin, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+        await db.user.create({
+            data: { id: T.subject, name: "Kim Park", email: "kim@example.com" },
+        });
+    });
+
+    function makeCaller() {
+        return usersRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.admin,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    /*
+     * The regression this guards: the entry used to be written with `ownerId: input.userId`
+     * inside the same `$transaction` as `user.delete`. `log_entries.ownerId` is
+     * `onDelete: Cascade`, so it was inserted and cascaded away before the transaction
+     * committed — a write with a zero-length lifetime that nothing could ever read.
+     */
+    it("survives the deletion, because a system-scoped entry has no owner FK to cascade through", async () => {
+        await makeCaller().deleteUser({ userId: T.subject });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "User", objectId: T.subject, action: "Delete" },
+        });
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "system",
+            organizationId: null,
+            ownerId: null,
+            userId: T.admin,
+            actorLabel: "Dana Okafor <dana@example.com>",
+        });
+        expect(entries[0].description).toContain("Kim Park <kim@example.com>");
     });
 });

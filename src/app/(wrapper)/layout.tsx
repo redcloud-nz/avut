@@ -8,7 +8,7 @@
 import { Suspense, type ReactNode } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
-import { ImpersonationBanner } from "@/components/system-admin/impersonation-banner";
+import { ImpersonationBanner } from "@/components/system/admin/impersonation-banner";
 
 export default function AppLayout(props: { children: ReactNode }) {
     return (

@@ -43,7 +43,7 @@ describe("settings organization settings", () => {
         // (non-system-admin) org-creation path produces.
         bareOrg: OrganizationId.create(),
         // An organization whose default config rows have been fully materialised — what
-        // `systemAdmin.createOrganization` produces.
+        // `organizations.createOrganization` produces.
         seededOrg: OrganizationId.create(),
     };
     const db = createMockPrisma();

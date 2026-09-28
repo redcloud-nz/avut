@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -35,8 +35,8 @@ export function SkillsModule_DeleteSession_Dialog({
     const router = useRouter();
 
     const mutation = useMutation(
-        trpc.skills.deleteSession.mutationOptions({
-            meta: { effects: skillsEffects.deleteSession, navigates: true },
+        trpc.skillCheckSessions.deleteSession.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.deleteSession, navigates: true },
             onError(error) {
                 console.error("Failed to delete session:", error);
                 toast.error("Failed to delete session: " + error.message);

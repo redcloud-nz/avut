@@ -151,42 +151,47 @@ model SkillCheck {
 
 ## tRPC Procedures
 
-### `skills` router (`skillsRouter`)
+### `skillPackageSubscriptions` router (`skillPackageSubscriptionsRouter`)
 
-#### Subscription procedures
+| Procedure                                          | Permission                          | Description                                                             |
+| -------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------- |
+| `skillPackageSubscriptions.getPackage`             | skillPackageSubscription: view      | Get a single published skill package with subscription and contents     |
+| `skillPackageSubscriptions.listPackages`           | skillPackageSubscription: view      | List all published packages with subscription status for the org        |
+| `skillPackageSubscriptions.listSubscribedPackages` | skillPackageSubscription: view      | List packages the org is currently subscribed to                        |
+| `skillPackageSubscriptions.subscribeToPackage`     | skillPackageSubscription: subscribe | Subscribe the org to a published package; errors if already subscribed  |
+| `skillPackageSubscriptions.unsubscribeFromPackage` | skillPackageSubscription: subscribe | Unsubscribe the org from a package; errors if not currently subscribed  |
+| `skillPackageSubscriptions.listAssessableSkills`   | skillPackageSubscription: view      | List all skill packages, groups, and skills available via subscriptions |
 
-| Procedure                       | Permission        | Description                                                             |
-| ------------------------------- | ----------------- | ----------------------------------------------------------------------- |
-| `skills.listPackages`           | skills: view      | List all published packages with subscription status for the org        |
-| `skills.listSubscribedPackages` | skills: view      | List packages the org is currently subscribed to                        |
-| `skills.subscribeToPackage`     | skills: subscribe | Subscribe the org to a published package; errors if already subscribed  |
-| `skills.unsubscribeFromPackage` | skills: subscribe | Unsubscribe the org from a package; errors if not currently subscribed  |
-| `skills.listAssessableSkills`   | skills: view      | List all skill packages, groups, and skills available via subscriptions |
+### `skillCheckSessions` router (`skillCheckSessionsRouter`)
 
-#### Session procedures
-
-| Procedure                       | Permission                | Description                                            |
-| ------------------------------- | ------------------------- | ------------------------------------------------------ |
-| `skills.listSessions`           | skills: view              | List all sessions for the org                          |
-| `skills.createSession`          | skillCheckSession: create | Create a new session                                   |
-| `skills.getSession`             | skillCheckSession: view   | Get a session by ID                                    |
-| `skills.getSessionMetrics`      | skillCheckSession: view   | Return assessee, skill, and check counts for a session |
-| `skills.updateSession`          | skillCheckSession: update | Update session name, date, notes, and status           |
-| `skills.deleteSession`          | skillCheckSession: delete | Delete a session                                       |
-| `skills.listSessionAssessees`   | skillCheckSession: view   | List personnel assigned as assessees                   |
-| `skills.updateSessionAssessees` | skillCheckSession: update | Add or remove assessees from a session                 |
-| `skills.listSessionSkills`      | skillCheckSession: view   | List skills assigned to a session                      |
-| `skills.updateSessionSkills`    | skillCheckSession: update | Add or remove skills from a session                    |
+| Procedure                                     | Permission                                    | Description                                                                                                             |
+| --------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `skillCheckSessions.approveSession`           | skillCheckSession: update, skillCheck: update | Approves a session by stamping each check as Include/Exclude and moving session to Include status                       |
+| `skillCheckSessions.createSession`            | skillCheckSession: create                     | Create a new session with caller as sole assessor                                                                       |
+| `skillCheckSessions.deleteSession`            | skillCheckSession: delete                     | Delete a session                                                                                                        |
+| `skillCheckSessions.getSession`               | skillCheckSession: view                       | Get a session by ID                                                                                                     |
+| `skillCheckSessions.getSessionMetrics`        | skillCheckSession: view                       | Return assessee, skill, and check counts for a session                                                                  |
+| `skillCheckSessions.listSessionAssessees`     | skillCheckSession: view                       | List personnel assigned as assessees                                                                                    |
+| `skillCheckSessions.listSessionAssessors`     | skillCheckSession: view                       | List personnel assigned as assessors                                                                                    |
+| `skillCheckSessions.listSessionSkills`        | skillCheckSession: view                       | List skills assigned to a session                                                                                       |
+| `skillCheckSessions.listSessions`             | skillCheckSession: view                       | List all sessions for the org                                                                                           |
+| `skillCheckSessions.nextSessionNumber`        | skillCheckSession: view                       | Get advisory next available session number                                                                              |
+| `skillCheckSessions.updateSession`            | skillCheckSession: update                     | Update session name, date, notes, and status                                                                            |
+| `skillCheckSessions.updateSessionAssessees`   | skillCheckSession: update                     | Add or remove assessees from a session                                                                                  |
+| `skillCheckSessions.updateSessionSkills`      | skillCheckSession: update                     | Add or remove skills from a session                                                                                     |
+| `skillCheckSessions.upsertSessionSkillChecks` | skillCheck: update                            | Batch upsert/delete checks for a session; setting result to `null` deletes the check; assessorId is derived server-side |
 
 ### `skillChecks` router (`skillChecksRouter`)
 
-| Procedure                              | Permission         | Description                                                                                                                      |
-| -------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `skillChecks.listSkillChecks`          | skillCheck: view   | List checks filtered by sessionId, skillId, assesseeId, assessorId, or `ownChecksOnly`                                           |
-| `skillChecks.createSkillCheck`         | skillCheck: create | Create a single check; optionally linked to a session                                                                            |
-| `skillChecks.updateSkillCheck`         | skillCheck: update | Update a single check's result and notes                                                                                         |
-| `skillChecks.deleteSkillCheck`         | skillCheck: delete | Delete a single check                                                                                                            |
-| `skillChecks.upsertSessionSkillChecks` | skillCheck: update | Batch upsert/delete checks for a session; setting result to `"NotAssessed"` deletes the check; assessorId is derived server-side |
+| Procedure                                 | Permission         | Description                                                                            |
+| ----------------------------------------- | ------------------ | -------------------------------------------------------------------------------------- |
+| `skillChecks.createSkillCheck`            | skillCheck: create | Create a single check; optionally linked to a session                                  |
+| `skillChecks.deleteSkillCheck`            | skillCheck: delete | Delete a single check                                                                  |
+| `skillChecks.getCompetencyMatrix`         | skillCheck: view   | Get matrix data for all skills and assessees in scope                                  |
+| `skillChecks.getRecentSessionSkillChecks` | skillCheck: view   | List recently updated checks for a session                                             |
+| `skillChecks.getRecentSkillChecks`        | skillCheck: view   | List recently updated checks for the organization                                      |
+| `skillChecks.listSkillChecks`             | skillCheck: view   | List checks filtered by sessionId, skillId, assesseeId, assessorId, or `ownChecksOnly` |
+| `skillChecks.updateSkillCheck`            | skillCheck: update | Update a single check's result and notes                                               |
 
 ---
 
@@ -213,7 +218,7 @@ The recorder page (`…/record`) has three tabs:
 - **By Person** — record checks for each assessee across all skills in the session
 - **By Skill** — record checks for each skill across all assessees in the session
 
-Both grid views call `skillChecks.upsertSessionSkillChecks` when a cell is updated. `"NotAssessed"` is the sentinel value that causes an existing check to be deleted rather than updated.
+Both grid views call `skillCheckSessions.upsertSessionSkillChecks` when a cell is updated. `null` is the sentinel value that causes an existing check to be deleted rather than updated.
 
 ---
 

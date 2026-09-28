@@ -45,7 +45,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
     const organization = useOrganization();
 
     const { data: session } = useSuspenseQuery(
-        trpc.skills.getSession.queryOptions({
+        trpc.skillCheckSessions.getSession.queryOptions({
             organizationId: organization.id,
             skillCheckSessionId: sessionId,
         }),

@@ -29,12 +29,12 @@ export function SkillsModule_Session_Contents_Card({
                 organizationId: organization.id,
                 sessionId: sessionId,
             }),
-            trpc.skills.listSessionAssessees.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "assigned",
             }),
-            trpc.skills.listSessionSkills.queryOptions({
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "assigned",

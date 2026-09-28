@@ -40,7 +40,9 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
     // otherwise the list isn't needed until the user opens it, so don't pay for it here.
     if (!parsedSkillId?.success || action === "select-scope") {
         prefetch(
-            trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
+                organizationId: organization.id,
+            }),
         );
     }
 

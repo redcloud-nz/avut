@@ -40,7 +40,7 @@ const NEEDS_D4H = new Set(["d4h-views", "i3"]);
 /**
  * Hero product screenshot — the "Assess by Person" recording view from the
  * seeded demo org (`prisma/seed-demo.ts`). Managed via `npm run screenshot`;
- * see `docs/specs/docs-screenshots.md`.
+ * see `docs/specs/2026-09-13-docs-screenshots.md`.
  */
 const PRODUCT_SHOT_ID = "marketing/skill-track-session";
 

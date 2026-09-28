@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -54,8 +54,8 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
     });
 
     const mutation = useMutation(
-        trpc.skills.updateSession.mutationOptions({
-            meta: { effects: skillsEffects.updateSession },
+        trpc.skillCheckSessions.updateSession.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.updateSession },
             onError(error) {
                 console.error("Failed to update session", error);
                 toast.error(`Failed to update session ${error.message}`);

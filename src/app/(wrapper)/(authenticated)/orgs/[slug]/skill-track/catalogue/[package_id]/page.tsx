@@ -21,7 +21,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     const skillPackageId = SkillPackageId.schema.parse(package_id);
     const skillPackage = await fetchQuery(
-        trpc.skills.getPackage.queryOptions({
+        trpc.skillPackageSubscriptions.getPackage.queryOptions({
             organizationId: organization.id,
             skillPackageId,
         }),
@@ -37,7 +37,7 @@ export default async function SkillTrack_CataloguePackage_Page(props: Props) {
     const skillPackageId = SkillPackageId.schema.parse(package_id);
 
     prefetch(
-        trpc.skills.getPackage.queryOptions({
+        trpc.skillPackageSubscriptions.getPackage.queryOptions({
             organizationId: organization.id,
             skillPackageId,
         }),

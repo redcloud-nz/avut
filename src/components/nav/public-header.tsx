@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
  * Shared header for every public (unauthenticated-reachable) page: `/`, `/docs`,
- * `/auth/*`, `/policies/*`. See docs/reviews/suspense-boundaries.md — the session
+ * `/auth/*`, `/policies/*`. See docs/reviews/2026-09-12-suspense-boundaries.md — the session
  * check backing the CTA is the only dynamic part of this component, isolated in
  * its own `<Suspense>` so pages using this header stay otherwise prerenderable.
  */

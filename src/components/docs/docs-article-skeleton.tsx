@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * shell. Note this boundary has to live *inside* `page.tsx` rather than in a `loading.tsx`: a
  * `loading.tsx` nests inside the layout, above its own segment's validation boundary, which
  * satisfies the prerender check but not instant-navigation validation.
- * See docs/reviews/suspense-boundaries.md §3.
+ * See docs/reviews/2026-09-12-suspense-boundaries.md §3.
  */
 export function DocsArticle_Skeleton() {
     return (

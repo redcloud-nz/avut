@@ -35,7 +35,7 @@ export default function SkillTrack_Sessions_List() {
     const organization = useOrganization();
 
     const { data: sessions } = useSuspenseQuery(
-        trpc.skills.listSessions.queryOptions({
+        trpc.skillCheckSessions.listSessions.queryOptions({
             organizationId: organization.id,
         }),
     );

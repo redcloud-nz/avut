@@ -490,7 +490,7 @@ describe("person↔user link matching", () => {
 describe("Personnel.create during a D4H team import", () => {
     // One member per case, each with a distinct email. Deliberately no shared fixture and no
     // case-variant reuse: two people whose emails differ only in case can coexist today only
-    // because of the defect `docs/specs/person-email-normalisation.md` exists to fix, and a test
+    // because of the defect `docs/specs/2026-09-14-person-email-normalisation.md` exists to fix, and a test
     // that leans on it would start failing for the right reason at the worst moment.
     const T = {
         org: OrganizationId.create(),

@@ -24,7 +24,11 @@ export default async function SkillTrack_Catalogue_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    prefetch(trpc.skills.listPackages.queryOptions({ organizationId: organization.id }));
+    prefetch(
+        trpc.skillPackageSubscriptions.listPackages.queryOptions({
+            organizationId: organization.id,
+        }),
+    );
 
     return (
         <HydrateClient>

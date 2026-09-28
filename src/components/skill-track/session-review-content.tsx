@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
-import { skillChecksEffects } from "@/client/skill-checks-effects";
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -58,21 +58,21 @@ export function SkillTrack_SessionReview_Content({
         { data: skillChecks },
     ] = useSuspenseQueries({
         queries: [
-            trpc.skills.getSession.queryOptions({
+            trpc.skillCheckSessions.getSession.queryOptions({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
             }),
-            trpc.skills.listSessionAssessees.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
             }),
-            trpc.skills.listSessionAssessors.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessors.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
             }),
-            trpc.skills.listSessionSkills.queryOptions({
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
@@ -93,8 +93,8 @@ export function SkillTrack_SessionReview_Content({
     );
 
     const mutation = useMutation(
-        trpc.skillChecks.approveSession.mutationOptions({
-            meta: { effects: skillChecksEffects.approveSession },
+        trpc.skillCheckSessions.approveSession.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.approveSession },
             onError(error) {
                 toast.error(`Failed to approve session: ${error.message}`);
             },

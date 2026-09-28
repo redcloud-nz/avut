@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Phase 1 manual screenshot helper (see docs/specs/docs-screenshots.md §6).
+ * Phase 1 manual screenshot helper (see docs/specs/2026-09-13-docs-screenshots.md §6).
  *
  *   npm run screenshot -- <id> <light-image> [dark-image] --alt "description"
  *

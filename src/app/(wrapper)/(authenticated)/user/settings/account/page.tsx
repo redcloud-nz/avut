@@ -7,7 +7,7 @@
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { UserAccountSettings } from "@/components/user-settings/user-account-settings";
+import { UserSettings_Account } from "@/components/user/user-settings/user-account-settings";
 
 export default async function UserSettings_Account_Page() {
     return (
@@ -22,7 +22,7 @@ export default async function UserSettings_Account_Page() {
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <UserAccountSettings />
+                            <UserSettings_Account />
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary" />
                     </Saratoga.Columns>

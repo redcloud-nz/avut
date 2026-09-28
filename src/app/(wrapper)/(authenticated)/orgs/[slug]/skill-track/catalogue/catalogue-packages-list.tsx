@@ -25,7 +25,7 @@ export function SkillTrack_CataloguePackages_List() {
     const organization = useOrganization();
 
     const { data: packages } = useSuspenseQuery(
-        trpc.skills.listPackages.queryOptions({
+        trpc.skillPackageSubscriptions.listPackages.queryOptions({
             organizationId: organization.id,
         }),
     );

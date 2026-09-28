@@ -84,7 +84,7 @@ The dev database holds records for **real people with their real email addresses
 
 How the code is written. Read the linked pattern doc before writing a new page or mutation rather than inferring the pattern from a neighbouring file.
 
-Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec carries a `**Date:**` line in its header — see that README before adding one.
+Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec, plan, research doc, and review under `docs/` carries a `**Date:**` line in its header _and_ the same date as a filename prefix (`YYYY-MM-DD-subject.md`) — see that folder's README before adding or renaming one.
 
 ## tRPC Routers
 

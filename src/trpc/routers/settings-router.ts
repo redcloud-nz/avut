@@ -27,7 +27,8 @@ export const settingsRouter = createTrpcRouter({
      *
      * `allowSystemAdmin` lets a site-wide administrator read the settings of an organization
      * they are not a member of, which is what the system-administration organization screens
-     * need — previously a separate `systemAdmin.getOrganizationSettings` procedure.
+     * need — previously a separate `systemAdmin.getOrganizationSettings` procedure, now called
+     * directly by those screens instead of through a dedicated system-admin router.
      *
      * Reads uncached, through the injected `ctx.prisma`, rather than the `"use cache"`-backed
      * `getOrganizationSettings` in `@/server/cache/organization-settings` (used elsewhere by
@@ -35,7 +36,7 @@ export const settingsRouter = createTrpcRouter({
      * of taking a client, which is exactly what `.claude/rules/testing.md` says a router must
      * not depend on: it would silently ignore a test's mock `ctx.prisma` and hit the real
      * database. It still resolves identically for a config-less organization (the normal
-     * org-creation path seeds no rows) and a fully materialised one (`systemAdmin.createOrganization`
+     * org-creation path seeds no rows) and a fully materialised one (`organizations.createOrganization`
      * seeds every default leaf), since both fall back to `OrganizationSettings.default()`.
      *
      * @param ctx The authenticated context.
@@ -84,9 +85,10 @@ export const settingsRouter = createTrpcRouter({
      * merged group is re-parsed in full, so invariants within a slice still hold.
      *
      * `allowSystemAdmin` lets a site-wide administrator write the settings of an organization
-     * they are not a member of — `systemAdminRouter` reuses this procedure directly rather than
-     * duplicating it, so the audit entry lands in the target organization's log either way,
-     * attributed to the acting user, with no `description` distinguishing the two paths.
+     * they are not a member of — the system-administration organization screens call this
+     * procedure directly rather than through a dedicated system-admin router, so the audit
+     * entry lands in the target organization's log either way, attributed to the acting user,
+     * with no `description` distinguishing the two paths.
      *
      * @param ctx The authenticated context.
      * @param input `update` names the slice to patch and the changed fields of it. It is

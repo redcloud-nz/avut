@@ -18,8 +18,8 @@ export const settingsEffects = createEffects<"settings">()({
         // same config rows, so a settings save leaves those lists stale otherwise. Invalidating a
         // query this viewer has never loaded is a no-op, so both scopes can declare it flatly
         // rather than branching on who is calling.
-        invalidate(trpc.systemAdmin.getOrganization.queryFilter({ organizationId })),
-        invalidate(trpc.systemAdmin.listOrganizations.queryFilter()),
+        invalidate(trpc.organizations.getOrganizationAsAdmin.queryFilter({ organizationId })),
+        invalidate(trpc.organizations.listOrganizations.queryFilter()),
     ],
     updateUserSettingsSlice: (_vars, updated) => [
         write(trpc.settings.getUserSettings.queryKey(), updated),

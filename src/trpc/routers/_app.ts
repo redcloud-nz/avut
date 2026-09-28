@@ -16,10 +16,11 @@ import { notificationsRouter } from "./notification-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { settingsRouter } from "./settings-router";
+import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 import { skillChecksRouter } from "./skill-checks-router";
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
-import { skillsRouter } from "./skills-router";
-import { systemAdminRouter } from "./system-admin-router";
+import { skillPackageSubscriptionsRouter } from "./skill-package-subscriptions-router";
+import { systemRouter } from "./system-router";
 import { teamsRouter } from "./teams-router";
 import { trashRouter } from "./trash-router";
 import { userRouter } from "./user-router";
@@ -35,10 +36,11 @@ export const appRouter = createTrpcRouter({
     organizations: organizationsRouter,
     personnel: personnelRouter,
     settings: settingsRouter,
+    skillCheckSessions: skillCheckSessionsRouter,
     skillChecks: skillChecksRouter,
     skillPackageBuilder: skillPackageBuilderRouter,
-    skills: skillsRouter,
-    systemAdmin: systemAdminRouter,
+    skillPackageSubscriptions: skillPackageSubscriptionsRouter,
+    system: systemRouter,
     teams: teamsRouter,
     trash: trashRouter,
     user: userRouter,

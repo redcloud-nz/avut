@@ -24,7 +24,7 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
-import { TimeZoneAutoDetect } from "@/components/user-settings/timezone-auto-detect";
+import { TimeZoneAutoDetect } from "@/components/user/user-settings/timezone-auto-detect";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 

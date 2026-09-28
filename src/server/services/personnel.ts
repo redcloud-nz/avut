@@ -34,7 +34,7 @@ export async function create(
     data: z.infer<typeof PersonData.modifiableSchema>,
 ): Promise<{ created: PersonData }> {
     /*
-     * `personnel.email` is stored lowercased (docs/specs/person-email-normalisation.md).
+     * `personnel.email` is stored lowercased (docs/specs/2026-09-14-person-email-normalisation.md).
      * `PersonData.modifiableSchema` normalises every parsed path, but the D4H import builds its
      * person object in code and hands it straight to this function (`services/d4h-team-sync.ts`), so
      * the one write site that the schema cannot reach normalises here. Done before `changes`, so
@@ -122,7 +122,7 @@ export async function create(
  * Fetch a person by email.
  *
  * Lowercase the needle and match exactly. The stored column is normalised
- * (docs/specs/person-email-normalisation.md), so this is index-backed via
+ * (docs/specs/2026-09-14-person-email-normalisation.md), so this is index-backed via
  * `@@unique([organizationId, email])` — and, unlike the `mode: "insensitive"` form it replaces,
  * it behaves identically in `prisma-mock`, which ignores the whole `{ equals: … }` filter object
  * on a string field. That is what makes this function testable at all.
@@ -336,7 +336,7 @@ export async function getDeleteImpact(
 
 /*
  * Matching and linking a `Person` to a `User` within one organization — the shared half of
- * `docs/specs/person-user-linking.md` Parts 2 and 3.
+ * `docs/specs/2026-09-14-person-user-linking.md` Parts 2 and 3.
  *
  * `findLinkablePerson`/`findLinkableMember` take `OrgServiceContext` like any other service
  * function — both are pure reads run only against `ctx.prisma`, never a transaction client.
@@ -371,7 +371,7 @@ export type PersonUserLinkPrisma = Pick<PrismaClient, "person" | "organizationUs
  * Find the person in `organizationId` who should be linked to a user with `email`.
  *
  * Both sides are now lowercase in the database — `User.email` because better-auth normalises it,
- * `Person.email` because we do (docs/specs/person-email-normalisation.md). So this is the same
+ * `Person.email` because we do (docs/specs/2026-09-14-person-email-normalisation.md). So this is the same
  * rule as `findLinkableMember` below: lowercase the needle, match the column exactly. The needle
  * is still folded rather than trusted, since callers pass addresses that came from a form or from
  * D4H.
