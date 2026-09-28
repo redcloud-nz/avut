@@ -42,6 +42,7 @@ model User {
   organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
   invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
   d4hAccessTokens   D4HAccessToken[]         @relation("d4h_access_token_to_user")
+  providerCredentials ProviderCredential[]   @relation("provider_credential_to_user")
   configs           UserConfig[]             @relation("user_config_to_user")
 
   authoredNotes          Note[]         @relation("note_to_author")
@@ -129,6 +130,7 @@ model Organization {
   skillPackageSubscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_organization")
   personnel                 Person[]                   @relation("person_to_organization")
   d4hAccessTokens           D4HAccessToken[]           @relation("d4h_access_token_to_organization")
+  providerCredentials       ProviderCredential[]       @relation("provider_credential_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
   i3IssuedItems I3IssuedItem[] @relation("i3_issued_item_to_organization")
@@ -409,6 +411,36 @@ model D4HAccessToken {
 
   @@index([organizationId])
   @@map("d4h_access_tokens")
+}
+
+enum Provider {
+  D4H
+}
+
+/// Generalizes D4HAccessToken's encrypted-credential storage across every external-service
+/// integration (see #286). D4H itself still runs on D4HAccessToken above until it's migrated
+/// onto this table in a follow-up phase.
+model ProviderCredential {
+  id             String        @id
+  provider       Provider
+  organizationId String?
+  organization   Organization? @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?         @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  /// Nullable, unused until OrganizationGroup (#198) exists. No FK yet — added ahead of need
+  /// because #284 already commits to group-owned credentials being real.
+  groupId        String?
+  label          String
+  token          String
+  status         String
+  expiresAt      DateTime
+  metadata       Json          @default("{}")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
+  @@index([groupId])
+  @@map("provider_credentials")
 }
 
 model Person {
