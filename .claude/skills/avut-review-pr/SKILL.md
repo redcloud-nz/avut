@@ -19,56 +19,46 @@ Posts formal GitHub reviews as `claude-avut`, a second `gh` identity. GitHub ref
 - **No argument:** **queue mode**. Review every open PR where a review from `claude-avut` has been requested.
 - Anything else: ask which PR is meant, and stop.
 
-## Step 1 — Collect the candidates
+## Step 1 — Prep (script)
 
-**Specific PR mode:**
-
-```bash
-gh pr view <N> --repo redcloud-nz/avut \
-  --json number,title,url,author,state,isDraft,headRefName,headRefOid,baseRefName,body,reviewRequests,reviews
-```
-
-**Queue mode:**
+The mechanical part is one script call. It collects the candidates, applies the decision table below, and fetches each PR it doesn't skip to `refs/remotes/pr/<N>`, along with its base. It also gathers failing CI (with the tail of the failed log) and the earlier review:
 
 ```bash
-gh pr list --repo redcloud-nz/avut --state open --search "user-review-requested:claude-avut" \
-  --json number,title,url,author,isDraft,headRefName,headRefOid,baseRefName,body,reviewRequests,reviews
+node .claude/skills/avut-review-pr/review-pr.ts prep <N>   # specific PR mode
+node .claude/skills/avut-review-pr/review-pr.ts prep       # queue mode
 ```
 
-If the queue is empty, say so and stop.
+It prints JSON: `{ mode, prs: [...] }`. Each PR has `action` (`review` / `re-review` / `skip` / `unsure`) and a `reason`. Any PR that isn't skipped also has:
 
-## Step 2 — Does it need a review?
+- `ref` and `diffRange`: `origin/<base>...pr/<N>`
+- `sinceLastReview`: `<oid>..pr/<N>`, on a re-review where the earlier commit is still reachable
+- `description`
+- `ci`: `failing[]` with `logTail`, and `pending`
+- `previous`: the earlier review's `state`, `oid`, `reachable` and `body`
 
-Decide for each PR. `reviews` gives each earlier review's author, state and `commit.oid`. **Earlier review** below means the most recent one by `claude-avut`.
+An empty `prs` in queue mode means nothing is waiting. Say so and stop.
 
-| Situation | Decision |
+## Step 2 — Act on the decisions
+
+The script applies this table. `decide()` in `review-pr.ts` implements it, and `review-pr.test.ts` pins it. Change the code, the test and this table together:
+
+| Situation | `action` |
 | --- | --- |
-| Closed or merged | Skip ("#N is merged"). |
-| Authored by `claude-avut` | Skip. It can't review its own PR. |
-| No earlier review | **Review.** |
-| Earlier review is on an older commit than `headRefOid` | **Re-review.** Pass on the earlier findings. |
-| Earlier review is on `headRefOid`, and a review from `claude-avut` is requested again | **Re-review.** Someone wants another look. |
-| Earlier review is on `headRefOid`, with no new request | Skip ("already reviewed at this commit"). |
-| Draft | **Unsure.** |
-| Anything else that doesn't fit this table | **Unsure.** |
+| Closed or merged | `skip` |
+| Authored by `claude-avut` | `skip` |
+| Draft | `unsure` |
+| No earlier review by `claude-avut` | `review` |
+| Earlier review on an older commit | `re-review` |
+| Earlier review at head, and a review re-requested (always true in queue mode) | `re-review` |
+| Earlier review at head, no new request | `skip` |
 
-In queue mode, being in the queue is itself a new request, so skip only closed, merged or self-authored PRs.
+- **`skip`:** report the reason and do nothing else.
+- **`unsure`:** ask the user once about every unsure PR together, with its reason. Offer "review", "comment-only review" or "skip". In queue mode, start the clear-cut reviews first and ask while they run.
+- If something in the JSON makes a decision look wrong, treat that PR as unsure and ask. For example, a `review` PR whose description says "do not review yet". Don't override the script silently.
 
-**Unsure:** ask the user once, listing every unsure PR together with the reason. Offer "review", "comment-only review" (for drafts) or "skip". In queue mode, start the clear-cut reviews first and ask while they run.
+## Step 3 — Earlier findings
 
-## Step 3 — Prepare each PR
-
-For every PR being reviewed:
-
-```bash
-git fetch origin "pull/<N>/head:refs/remotes/pr/<N>" --force
-git fetch origin <base>
-gh pr checks <N> --repo redcloud-nz/avut
-```
-
-A failing check is itself a finding. Get the reason from `gh run view <run-id> --log-failed`. Pending checks don't block the review.
-
-For a **re-review**, get the earlier review's body from `gh pr view <N> --json reviews`. Take its Blocking and Non-blocking items, and its `commit.oid`. Check that commit is still reachable (`git cat-file -e <oid>`). A force-push may have removed it.
+For each `re-review`, take the Blocking and Non-blocking items from `previous.body`. They go to the reviewer as the findings to verify.
 
 ## Step 4 — Run the reviewers
 
@@ -123,15 +113,13 @@ Before you post it, check each blocking finding by looking at the cited line you
 
 ## Step 6 — Post
 
-Write each body to its own file in the scratchpad. Post as `claude-avut`. Scope the token to the one command; never use `gh auth switch`:
+Write each body to its own file in the scratchpad, then:
 
 ```bash
-GH_TOKEN=$(gh auth token --user claude-avut) gh pr review <N> --repo redcloud-nz/avut \
-  --approve \   # or --request-changes / --comment
-  --body-file <file>
+node .claude/skills/avut-review-pr/review-pr.ts post <N> <approve|request-changes|comment> <body-file>
 ```
 
-Always use `--body-file`, never `--body`. Posting a review clears the review request, so the queue doesn't pick the same PR up again.
+It posts as `claude-avut`, with that account's token scoped to the one call, and prints the review URL. Don't post with `gh pr review` directly. Posting a review clears the review request, so the queue doesn't pick the same PR up again.
 
 If posting fails, report it and leave the other PRs alone. Don't retry under the default account.
 
@@ -140,7 +128,7 @@ If posting fails, report it and leave the other PRs alone. Don't retry under the
 - **One PR:** the posted review body in full, the verdict and the review URL.
 - **Several PRs:** one row per PR (PR, title, verdict, blocking count, URL) and the rows for any PRs skipped, with the reason. Under the table, list each PR's blocking findings. The full bodies are at the URLs.
 
-Afterwards, remove the `pr/<N>` refs: `git update-ref -d refs/remotes/pr/<N>`.
+Afterwards, run `node .claude/skills/avut-review-pr/review-pr.ts cleanup`. It removes the `pr/<N>` refs.
 
 ## Common mistakes
 
@@ -149,5 +137,5 @@ Afterwards, remove the `pr/<N>` refs: `git update-ref -d refs/remotes/pr/<N>`.
 - Starting batch reviewers one at a time instead of in one message.
 - Posting an unchecked blocking finding.
 - Re-reviewing from scratch, and not checking the earlier findings.
-- Posting as `alexwestphal`, or switching accounts with `gh auth switch` instead of a scoped `GH_TOKEN`.
+- Running the `gh` or `git` steps by hand instead of `review-pr.ts`. It costs turns, it can apply the decision table inconsistently, and posting by hand risks using the wrong account (`alexwestphal`, or a `gh auth switch`).
 - Asking for approval before posting. This skill posts, then shows the result.
