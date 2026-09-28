@@ -6,16 +6,10 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { D4HIntegration_SettingsCard } from "@/components/admin/organization-settings/d4h-integration-settings";
-import { D4HViewsModule_SettingsCard } from "@/components/admin/organization-settings/d4h-views-module-settings";
-import { EmailIntegration_SettingsCard } from "@/components/admin/organization-settings/email-integration-settings";
-import { General_SettingsCard } from "@/components/admin/organization-settings/general-settings";
-import { I3Module_SettingsCard } from "@/components/admin/organization-settings/i3-module-settings";
-import { getOrganizationSettingsFormSections } from "@/components/admin/organization-settings/organization-settings-content";
-import { Personnel_SettingsCard } from "@/components/admin/organization-settings/personnel-settings";
-import { RubbishBin_SettingsCard } from "@/components/admin/organization-settings/rubbish-bin-settings";
-import { SkillPackageBuilderModule_SettingsCard } from "@/components/admin/organization-settings/skill-package-builder-module-settings";
-import { SkillTrackModule_SettingsCard } from "@/components/admin/organization-settings/skill-track-module-settings";
+import {
+    getOrganizationSettingsFormSections,
+    OrganizationSettingsForm,
+} from "@/components/admin/organization-settings/organization-settings-form";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import type { ModuleFlagState } from "@/lib/module-flags";
@@ -67,71 +61,11 @@ export function SystemAdmin_OrganizationSettings_Content({
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <div id="general" className="space-y-4 scroll-mt-4">
-                                <General_SettingsCard />
-                            </div>
-
-                            <div id="personnel" className="space-y-4 pt-6 scroll-mt-4">
-                                <h3 className="text-lg font-semibold tracking-tight">Personnel</h3>
-                                <Personnel_SettingsCard
-                                    organizationId={organizationId}
-                                    settings={settings}
-                                />
-                            </div>
-
-                            <div id="rubbish-bin" className="space-y-4 pt-6 scroll-mt-4">
-                                <h3 className="text-lg font-semibold tracking-tight">
-                                    Rubbish Bin
-                                </h3>
-                                <RubbishBin_SettingsCard
-                                    organizationId={organizationId}
-                                    settings={settings}
-                                />
-                            </div>
-
-                            <div id="integrations" className="space-y-4 pt-6 scroll-mt-4">
-                                <h3 className="text-lg font-semibold tracking-tight">
-                                    Integrations
-                                </h3>
-                                <D4HIntegration_SettingsCard
-                                    organizationId={organizationId}
-                                    settings={settings}
-                                />
-                                <EmailIntegration_SettingsCard
-                                    organizationId={organizationId}
-                                    settings={settings}
-                                />
-                            </div>
-
-                            <div id="modules" className="space-y-4 pt-6 scroll-mt-4">
-                                <h3 className="text-lg font-semibold tracking-tight">Modules</h3>
-                                <div id="module-d4h-views" className="scroll-mt-4">
-                                    <D4HViewsModule_SettingsCard
-                                        organizationId={organizationId}
-                                        settings={settings}
-                                    />
-                                </div>
-                                {moduleFlags.i3 !== false && (
-                                    <div id="module-i3" className="scroll-mt-4">
-                                        <I3Module_SettingsCard
-                                            organizationId={organizationId}
-                                            settings={settings}
-                                        />
-                                    </div>
-                                )}
-                                <div id="module-skill-package-builder" className="scroll-mt-4">
-                                    <SkillPackageBuilderModule_SettingsCard
-                                        organizationId={organizationId}
-                                        settings={settings}
-                                    />
-                                </div>
-                                <div id="module-skill-track" className="scroll-mt-4">
-                                    <SkillTrackModule_SettingsCard
-                                        organizationId={organizationId}
-                                        settings={settings}
-                                    />
-                                </div>
-                            </div>
+                            <OrganizationSettingsForm
+                                organizationId={organizationId}
+                                moduleFlags={moduleFlags}
+                                settings={settings}
+                            />
                             <Saratoga.ContentsSpacer />
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
