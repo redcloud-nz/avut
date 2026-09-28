@@ -18,7 +18,7 @@ import { admin } from "better-auth/plugins/admin";
 import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
-import { authCookiePrefix, withDevServerPort } from "@/lib/dev-server";
+import { withDevServerPort } from "@/lib/dev-server";
 // eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
@@ -61,7 +61,6 @@ export const auth = betterAuth({
         modelName: "account",
     },
     advanced: {
-        cookiePrefix: authCookiePrefix(),
         database: {
             generateId: nanoId16,
             joins: true,

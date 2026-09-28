@@ -5,7 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { authCookiePrefix, withDevServerPort } from "./dev-server";
+import { withDevServerPort } from "./dev-server";
 
 describe("dev-server", () => {
     beforeEach(() => {
@@ -34,24 +34,6 @@ describe("dev-server", () => {
 
         it("changes nothing when the port is unknown", () => {
             expect(withDevServerPort("http://localhost:3000")).toBe("http://localhost:3000");
-        });
-    });
-
-    describe("authCookiePrefix", () => {
-        it("keeps the default on 3000", () => {
-            vi.stubEnv("PORT", "3000");
-            expect(authCookiePrefix()).toBeUndefined();
-        });
-
-        it("is per-port on any other dev server", () => {
-            vi.stubEnv("PORT", "3101");
-            expect(authCookiePrefix()).toBe("better-auth-3101");
-        });
-
-        it("keeps the default outside development", () => {
-            vi.stubEnv("NODE_ENV", "production");
-            vi.stubEnv("PORT", "3101");
-            expect(authCookiePrefix()).toBeUndefined();
         });
     });
 });

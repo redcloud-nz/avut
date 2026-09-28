@@ -93,7 +93,7 @@ Every checkout gets its own port, and Next allows only one `next dev` per checko
 - Agents may start and stop servers on 3100 and up without asking. Never touch 3000 or 3001.
 - `npm run dev:port` prints the checkout's port: 3000 in the main checkout, the `.dev-port` in a worktree (allocating one on first use — the lowest free port from 3101).
 - `npm run dev` always passes the port explicitly, so a busy port fails instead of drifting onto 3001. Off 3000, the inspector moves too (port + 6229).
-- All the servers share `localhost` cookies, so auth uses a per-port cookie prefix off 3000 (`src/lib/dev-server.ts`): signing in on a worktree's server doesn't sign the user out on 3000. It also points better-auth's `baseURL` at the server's own port. Google and GitHub sign-in still only work on ports registered with the provider, so sign in with an email code on the others.
+- better-auth's `baseURL` follows the server's own port (`src/lib/dev-server.ts`), and any localhost port is a trusted origin. Session cookies are shared across ports, so signing in once on 3000 (Google included) signs you in on every server on the same database — and signing in as someone else on any of them replaces that session everywhere. Google and GitHub sign-in only work on ports registered with the provider, so on other ports sign in on 3000 first, or use email and password.
 
 ---
 
