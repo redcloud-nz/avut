@@ -207,6 +207,8 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
         user: nanoId16(),
         syncToken: D4HAccessTokenId.create(),
         otherToken: D4HAccessTokenId.create(),
+        member: nanoId16(),
+        personalToken: D4HAccessTokenId.create(),
     };
 
     const db = createMockPrisma();
@@ -220,6 +222,9 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
                 data: credentialData({ id, organizationId: T.org, userId: null }),
             });
         }
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.member }),
+        });
         await db.organizationConfig.create({
             data: { organizationId: T.org, key: "integrations.d4h.syncToken", value: T.syncToken },
         });
@@ -272,6 +277,19 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
         ).toBeNull();
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.syncToken);
     });
+
+    it("refuses to delete a member's personal token", async () => {
+        await expect(
+            makeCaller().deleteOrganizationAccessToken({
+                organizationId: T.org,
+                tokenId: T.personalToken,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+        expect(
+            await db.providerCredential.findUnique({ where: { id: T.personalToken } }),
+        ).not.toBeNull();
+    });
 });
 
 describe("d4hAccessTokensRouter.refreshToken", () => {
@@ -279,6 +297,8 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         org: OrganizationId.create(),
         user: nanoId16(),
         orgToken: D4HAccessTokenId.create(),
+        member: nanoId16(),
+        personalToken: D4HAccessTokenId.create(),
     };
 
     const db = createMockPrisma();
@@ -289,6 +309,9 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         });
         await db.providerCredential.create({
             data: credentialData({ id: T.orgToken, organizationId: T.org, userId: null }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.member }),
         });
     });
 
@@ -306,5 +329,11 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         await makeCaller().refreshToken({ organizationId: T.org, tokenId: T.orgToken });
 
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.orgToken);
+    });
+
+    it("refuses to refresh a member's personal token", async () => {
+        await expect(
+            makeCaller().refreshToken({ organizationId: T.org, tokenId: T.personalToken }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 });

@@ -181,11 +181,17 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input, ctx }) => {
+            // `userId: null`: only organization tokens. A member's personal token is theirs to delete.
             const existing = await ctx.prisma.providerCredential.findUnique({
-                where: { id: input.tokenId, provider: "D4H" },
+                where: {
+                    id: input.tokenId,
+                    provider: "D4H",
+                    organizationId: ctx.organizationId,
+                    userId: null,
+                },
             });
 
-            if (!existing || existing.organizationId !== ctx.organizationId) {
+            if (!existing) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.d4HAccessTokenNotFound(input.tokenId),
@@ -370,6 +376,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     id: input.tokenId,
                     provider: "D4H",
                     organizationId: ctx.organizationId,
+                    userId: null,
                 },
             });
 
