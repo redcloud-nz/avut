@@ -8,10 +8,10 @@ import * as z from "zod";
 import type { OrganizationUser as OrganizationUserRecord } from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
+import { parseStoredRoles, roleSchema } from "../permissions";
 import { zodNanoId16 } from "../validation";
 
 import { OrganizationId } from "./organization";
-import { OrganizationRole } from "./organization-role";
 import { PersonId } from "./person";
 import { UserId } from "./user";
 
@@ -33,16 +33,14 @@ export const OrganizationUser = {
         organizationId: OrganizationId.schema,
         organizationUserId: OrganizationUserId.schema,
         personId: PersonId.schema.nullable(),
-        roles: z.array(OrganizationRole.schema),
+        roles: z.array(roleSchema),
         createdAt: z.iso.datetime(),
         updatedAt: z.iso.datetime(),
     }),
 
     /**
-     * `roles` drops anything `OrganizationRole.parseStored` doesn't recognise — in particular
-     * `owner`, which sits outside `OrganizationRole` entirely (see `makeOwner`/`removeOwner`) and
-     * so is never part of this list. A caller that needs to know whether a member is an owner
-     * checks the raw `role` string directly rather than through this schema.
+     * `roles` is the full authorizing set, `owner` included — unlike `OrganizationRole.schema`,
+     * which is only the roles a picker can assign. Unrecognised stored entries are dropped.
      */
     fromRecord: (record: OrganizationUserRecord) =>
         OrganizationUser.schema.parse({
@@ -50,7 +48,7 @@ export const OrganizationUser = {
             organizationId: record.organizationId,
             organizationUserId: record.id,
             personId: record.personId,
-            roles: OrganizationRole.parseStored(record.role),
+            roles: parseStoredRoles(record.role),
             createdAt: record.createdAt.toISOString(),
             updatedAt: record.updatedAt.toISOString(),
         }),

@@ -15,6 +15,7 @@ import { AdminModule_RemoveOwner_Dialog } from "@/components/admin/users/remove-
 import { ObjectIcons } from "@/components/icons";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { hasOwnerRole } from "@/lib/permissions";
 import { PersonData } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { type AuthOrganizationMember } from "@/server/auth";
@@ -51,8 +52,9 @@ export function AdminModule_User_Menu({
 
     // `owner` is granted/revoked through dedicated mutations, not the general role picker — the
     // menu items below always show (the permission check surfaces as the mutation's own error
-    // inside the dialog), but which one shows follows the member's current ownership.
-    const isOwner = member.role.split(",").includes("owner");
+    // inside the dialog), but which one shows follows the member's current ownership. Remove is
+    // disabled on your own row, since `removeOwner` always refuses self-removal.
+    const isOwner = hasOwnerRole(member.role);
 
     const actions: MenuActionProps[] = [
         {
@@ -87,6 +89,7 @@ export function AdminModule_User_Menu({
             icon: <CrownIcon />,
             onSelect: () => setAction("remove-owner", { history: "push" }),
             destructive: true,
+            disabled: userId === currentUserId,
         });
     } else {
         actions.push({

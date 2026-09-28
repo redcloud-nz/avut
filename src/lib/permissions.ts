@@ -85,6 +85,10 @@ export const Roles = {
     // checks) — does not itself create/assess checks. Only role with `subscribe`.
     "skills-admin": ac.newRole({
         organization: ["view"],
+        // Managing a session's shell means picking its assessors and assessees — the session
+        // pages list personnel and teams, so without these the role can't open them.
+        person: ["view"],
+        team: ["view"],
         skillPackageSubscription: ["view", "subscribe"],
         skillCheckSession: ["view", "create", "update", "delete", "approve"],
         skillCheck: ["view", "delete"],
@@ -134,6 +138,11 @@ export function parseStoredRoles(stored: string): Role[] {
         const parsed = roleSchema.safeParse(value.trim());
         return parsed.success ? [parsed.data] : [];
     });
+}
+
+/** Whether a stored (comma-joined) `OrganizationUser.role` value includes `owner`. */
+export function hasOwnerRole(stored: string): boolean {
+    return parseStoredRoles(stored).includes("owner");
 }
 
 /**

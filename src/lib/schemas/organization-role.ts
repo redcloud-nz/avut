@@ -6,6 +6,7 @@
 import * as z from "zod";
 
 import type { OrganizationModuleId } from "@/lib/modules";
+import type { Role } from "@/lib/permissions";
 
 /**
  * Module ids that can actually gate a role. Excludes `org-admin` — it's `alwaysOn` and has no
@@ -104,9 +105,17 @@ export type ModuleGatedRoleOptions = readonly {
 export const OrganizationRole = {
     schema: organizationRoleSchema,
 
-    displayNames: Object.fromEntries(
-        Object.entries(organizationRoles).map(([role, info]) => [role, info.displayName]),
-    ) as Record<OrganizationRole, string>,
+    /**
+     * Display names for every role a stored membership can hold — the assignable roles plus
+     * `owner`, which no picker offers (see `makeOwner`/`removeOwner`) but which still has to
+     * read as "Owner" wherever a member's roles are listed.
+     */
+    displayNames: {
+        owner: "Owner",
+        ...Object.fromEntries(
+            Object.entries(organizationRoles).map(([role, info]) => [role, info.displayName]),
+        ),
+    } as Record<Role, string>,
 
     roles: organizationRoles as Record<OrganizationRole, OrganizationRoleInfo>,
 
@@ -171,7 +180,7 @@ export const OrganizationRole = {
     },
 
     /** Display names for a role list; an unrecognised stored role is shown as-is. */
-    formatList(roles: OrganizationRole[] | string) {
+    formatList(roles: Role[] | string) {
         const list = typeof roles === "string" ? roles.split(",").map((r) => r.trim()) : roles;
         return list
             .map((role) => (this.displayNames as Record<string, string>)[role] ?? role)

@@ -20,3 +20,16 @@ export const FLAGGED_MODULE_IDS = [
     "i3",
     "notes",
 ] as const satisfies readonly OrganizationModuleId[];
+
+/**
+ * Whether an org-scoped module is usable: its Vercel flag isn't off for this deployment, and
+ * the organization has it on (or it's `alwaysOn`). The one rule `OrganizationClient.isModuleEnabled`
+ * and the system-admin screens, which sit outside any one organization, both apply.
+ */
+export function isModuleUsable(
+    moduleFlags: ModuleFlagState,
+    moduleId: OrganizationModuleId,
+    enabledForOrganization: boolean,
+): boolean {
+    return moduleFlags[moduleId] !== false && enabledForOrganization;
+}

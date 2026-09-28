@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { hasAnyRoleWithPermissions, Permissions, Roles, roles } from "./permissions";
+import { hasAnyRoleWithPermissions, hasOwnerRole, Permissions, Roles, roles } from "./permissions";
 
 function can(role: keyof typeof Roles, permissions: Permissions): boolean {
     return Roles[role].authorize(permissions).success;
@@ -78,6 +78,13 @@ describe("Roles", () => {
             expect(can("skills-admin", { skillCheckSession: ["approve"] })).toBe(true);
             expect(can("skills-admin", { skillCheckSession: ["delete"] })).toBe(true);
             expect(can("skills-admin", { skillCheck: ["delete"] })).toBe(true);
+        });
+
+        // The session pages list personnel and teams (`listPersonnel`, `teams.listTeams`) to
+        // pick assessors and assessees — without these the role can't open them.
+        it("can read personnel and teams to manage session personnel", () => {
+            expect(can("skills-admin", { person: ["view"] })).toBe(true);
+            expect(can("skills-admin", { team: ["view"] })).toBe(true);
         });
 
         it("is the only role that can subscribe to skill packages", () => {
@@ -206,5 +213,14 @@ describe("hasAnyRoleWithPermissions", () => {
         expect(
             hasAnyRoleWithPermissions(["admin", "member"], { skillPackageSubscription: ["view"] }),
         ).toBe(true);
+    });
+});
+
+describe("hasOwnerRole", () => {
+    it("matches owner as a whole stored entry, alongside other roles", () => {
+        expect(hasOwnerRole("owner")).toBe(true);
+        expect(hasOwnerRole("member,owner")).toBe(true);
+        expect(hasOwnerRole("admin,member")).toBe(false);
+        expect(hasOwnerRole("")).toBe(false);
     });
 });

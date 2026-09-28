@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import type { ModuleId } from "@/lib/modules";
-import { roleSchema } from "@/lib/permissions";
+import { hasOwnerRole, roleSchema } from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -26,15 +26,6 @@ import { Messages } from "../messages";
 
 /** A membership whose account isn't in the Rubbish bin — the row is kept for recovery. */
 const activeMember = { user: { status: { not: "Deleted" as const } } };
-
-/**
- * Whether a stored (comma-joined) `OrganizationUser.role` value includes `owner`. `owner` sits
- * outside `OrganizationRole` entirely (see `makeOwner`/`removeOwner`), so this checks the raw
- * string rather than going through `OrganizationRole.includes`.
- */
-function hasOwnerRole(role: string): boolean {
-    return role.split(",").includes("owner");
-}
 
 /**
  * The memberships holding the `owner` role, filtered by `where`.
@@ -538,26 +529,34 @@ export const organizationsRouter = createTrpcRouter({
                 return { id: membership.id };
             }
 
-            await assertNotLastOwner(ctx.prisma, ctx.organizationId, input.userId);
-
             const role = membership.role
                 .split(",")
                 .filter((r) => r !== "owner")
                 .join(",");
 
-            await ctx.prisma.$transaction([
-                ctx.prisma.organizationUser.update({
-                    where: { id: membership.id },
-                    data: { role },
-                }),
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "OrganizationMembership",
-                    objectId: membership.id,
-                    changes: [],
-                    description: `Removed owner status from user ${input.userId}`,
-                }),
-            ]);
+            // The last-owner check runs inside a serializable transaction with the write: two
+            // owners removing each other concurrently would otherwise both see two owners and
+            // leave the org with none. Under `Serializable` Postgres aborts one of them instead.
+            await ctx.prisma.$transaction(
+                async (tx) => {
+                    await assertNotLastOwner(tx, ctx.organizationId, input.userId);
+                    await tx.organizationUser.update({
+                        where: { id: membership.id },
+                        data: { role },
+                    });
+                    await ctx.logEvent(
+                        {
+                            action: "Update",
+                            objectType: "OrganizationMembership",
+                            objectId: membership.id,
+                            changes: [],
+                            description: `Removed owner status from user ${input.userId}`,
+                        },
+                        tx,
+                    );
+                },
+                { isolationLevel: "Serializable" },
+            );
 
             await revalidateOrganizationUser(input.userId);
 

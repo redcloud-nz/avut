@@ -681,11 +681,15 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * - If there is an existing skill check for the assessee, skill, and session, it will be updated with the provided result and notes.
      * - If there is no existing skill check for the assessee, skill, and session, a new skill check will be created with the provided result and notes.
      */
-    // Recording/clearing checks within a session the caller assesses is gated as a session
-    // update (which `skills-assessor` holds) rather than on `skillCheck` — that resource no
-    // longer has an `"update"` action, and every write below is already scoped to the caller's
-    // own `assessorId`, so no separate ownership check is needed here.
-    upsertSessionSkillChecks: organizationProcedure({ skillCheckSession: ["update"] })
+    // Recording/clearing checks within a session the caller assesses needs both halves: a
+    // session update and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has
+    // no `"update"` action, and every write below is scoped to the caller's own `assessorId`.
+    // The `skillCheck` half keeps `skills-admin` — which holds session update, and so could add
+    // itself as an assessor — from recording checks.
+    upsertSessionSkillChecks: organizationProcedure({
+        skillCheckSession: ["update"],
+        skillCheck: ["create"],
+    })
         .input(
             z.object({
                 sessionId: SkillCheckSessionId.schema,

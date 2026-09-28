@@ -8,7 +8,7 @@ import { createContext, ReactNode, useContext, useMemo } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import type { ModuleFlagState } from "@/lib/module-flags";
+import { isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
 import { Modules, type ModuleDef, type OrganizationModuleId } from "@/lib/modules";
 import type { Role } from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
@@ -97,12 +97,12 @@ export class OrganizationClient {
      * is always on once flag-available.
      */
     isModuleEnabled(moduleId: OrganizationModuleId): boolean {
-        if (this.moduleFlags[moduleId] === false) return false;
-
         const moduleDef: ModuleDef = Modules[moduleId];
-        if (moduleDef.alwaysOn) return true;
-
         const config = this.settings.modules[moduleId as keyof OrganizationSettings["modules"]];
-        return config?.enabled === true;
+        return isModuleUsable(
+            this.moduleFlags,
+            moduleId,
+            moduleDef.alwaysOn === true || config?.enabled === true,
+        );
     }
 }

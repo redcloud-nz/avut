@@ -862,7 +862,7 @@ describe("organizations.createOrganization", () => {
     });
 });
 
-describe("organizations.listOrganizations counts owners with secondary roles", () => {
+describe("organizations.listOrganizations counts owners with other roles", () => {
     const T = {
         admin: UserId.create(),
         owner: UserId.create(),
@@ -910,7 +910,7 @@ describe("organizations.listOrganizations counts owners with secondary roles", (
             createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
         );
 
-    it("counts owners with secondary roles in the organization list", async () => {
+    it("counts owners with other roles in the organization list", async () => {
         const { organizations } = await call().listOrganizations();
         expect(organizations.find((o) => o.id === T.org)?.ownerCount).toBe(1);
     });

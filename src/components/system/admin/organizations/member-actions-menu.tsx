@@ -81,7 +81,7 @@ export function SystemAdmin_MemberActionsMenu({
 }: {
     organizationId: OrganizationId;
     member: Member;
-    /** The secondary roles this organization's enabled modules make available. */
+    /** The module-gated roles, each marked with whether this organization can offer it. */
     moduleGatedRoles: ModuleGatedRoleOptions;
 }) {
     const [action, setAction] = useQueryState(
