@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useState, type RefObject } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
@@ -47,11 +47,24 @@ import { trpc } from "@/trpc/client";
  */
 export function SkillTrack_ChangeSessionAssessors_Dialog({
     sessionId,
+    returnFocusRef,
     ...props
-}: DialogProps & { sessionId: SkillCheckSessionId }) {
+}: DialogProps & {
+    sessionId: SkillCheckSessionId;
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
     return (
         <Dialog {...props}>
-            <DialogContent>
+            <DialogContent
+                onCloseAutoFocus={
+                    returnFocusRef
+                        ? (event) => {
+                              event.preventDefault();
+                              returnFocusRef.current?.focus();
+                          }
+                        : undefined
+                }
+            >
                 <DialogHeader>
                     <DialogTitle>Change assessors</DialogTitle>
                     <DialogDescription>

@@ -5,6 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import type { RefObject } from "react";
 
 import { SkillTrack_ChangeSessionAssessors_Dialog } from "@/components/skill-track/change-session-assessors";
 import { SkillTrack_ChangeSessionPersonnel_Dialog } from "@/components/skill-track/change-session-personnel";
@@ -42,12 +43,24 @@ export function useSessionConfigAction() {
  * Hosts the dialogs that change a skill check session's personnel, skills and assessors, driven
  * by `?action=change-personnel` / `change-skills` / `change-assessors`. Mount it once per page
  * that can open them.
+ *
+ * Pass `returnFocusRef` when the trigger unmounts before its dialog opens (an item in a sheet or
+ * menu): each dialog then returns focus to that element on close. Without it, the dialogs keep
+ * Radix's default of returning focus to whatever was focused when they opened.
  */
-export function SkillTrack_SessionConfigDialogs({ sessionId }: { sessionId: SkillCheckSessionId }) {
+export function SkillTrack_SessionConfigDialogs({
+    sessionId,
+    returnFocusRef,
+}: {
+    sessionId: SkillCheckSessionId;
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
     const { action, open, close } = useSessionConfigAction();
 
     function dialogProps(dialogAction: SessionConfigAction) {
         return {
+            sessionId,
+            returnFocusRef,
             open: action === dialogAction,
             onOpenChange: (isOpen: boolean) => (isOpen ? open(dialogAction) : close(dialogAction)),
         };
@@ -55,18 +68,9 @@ export function SkillTrack_SessionConfigDialogs({ sessionId }: { sessionId: Skil
 
     return (
         <>
-            <SkillTrack_ChangeSessionPersonnel_Dialog
-                sessionId={sessionId}
-                {...dialogProps("change-personnel")}
-            />
-            <SkillTrack_ChangeSessionSkills_Dialog
-                sessionId={sessionId}
-                {...dialogProps("change-skills")}
-            />
-            <SkillTrack_ChangeSessionAssessors_Dialog
-                sessionId={sessionId}
-                {...dialogProps("change-assessors")}
-            />
+            <SkillTrack_ChangeSessionPersonnel_Dialog {...dialogProps("change-personnel")} />
+            <SkillTrack_ChangeSessionSkills_Dialog {...dialogProps("change-skills")} />
+            <SkillTrack_ChangeSessionAssessors_Dialog {...dialogProps("change-assessors")} />
         </>
     );
 }

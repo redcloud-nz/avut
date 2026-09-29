@@ -25,6 +25,7 @@ import { HelpButton } from "@/components/docs/help-button";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Show } from "@/components/show";
 import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
+import { SkillTrack_SessionActionsSheet } from "@/components/skill-track/session-actions-sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -166,7 +167,12 @@ export function SkillTrack_SessionByPerson_Content({
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
     type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
-    const [selected, setSelected] = useState<Selected>(null);
+    const [selectedState, setSelected] = useState<Selected>(null);
+    // A config change can take the selected person off the session; stop showing them then.
+    const selected =
+        selectedState && assignedPersonnel.some((person) => person.id === selectedState.personId)
+            ? selectedState
+            : null;
 
     async function handleSwitchPerson(personId: PersonId) {
         mutation.reset();
@@ -276,6 +282,7 @@ export function SkillTrack_SessionByPerson_Content({
                 />
                 <div className="flex items-center justify-end gap-1 grow">
                     <SaveStatusIndicator status={mutation.status} />
+                    <SkillTrack_SessionActionsSheet sessionId={sessionId} mode="by-person" />
                     <HelpButton slug="skill-track/sessions" />
                 </div>
             </Std.Navbar>
