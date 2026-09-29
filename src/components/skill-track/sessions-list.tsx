@@ -26,6 +26,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
+import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
@@ -78,7 +79,7 @@ export default function SkillTrack_Sessions_List() {
                 }),
                 columnHelper.accessor("status", {
                     header: "Status",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => SKILL_CHECK_STATUS_LABELS[ctx.getValue()] ?? ctx.getValue(),
                     enableColumnFilter: true,
                     enableSorting: false,
                     enableGlobalFilter: false,
@@ -86,8 +87,8 @@ export default function SkillTrack_Sessions_List() {
                     meta: {
                         columnOptions: [
                             { label: "Draft", value: "Draft" },
-                            { label: "Include", value: "Include" },
-                            { label: "Exclude", value: "Exclude" },
+                            { label: "Approved", value: "Include" },
+                            { label: "Excluded", value: "Exclude" },
                         ],
                     },
                 }),

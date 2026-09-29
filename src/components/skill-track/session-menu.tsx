@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { LockOpenIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
@@ -23,13 +24,32 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
 import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
+import { SkillsModule_ReopenSession_Dialog } from "./reopen-session";
 
 export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["reopen", "delete"] as const),
+    );
 
+    const canReopen = useHasPermission({ skillCheckSession: ["approve"] });
     const canDelete = useHasPermission({ skillCheckSession: ["delete"] });
 
+    // Reopen only exists for an approved session; a Draft one has nothing to reopen.
+    const isApproved = session.status === "Include";
+
     const actions: MenuActionProps[] = [
+        ...(isApproved
+            ? [
+                  {
+                      verb: "reopen",
+                      label: "Reopen",
+                      icon: <LockOpenIcon />,
+                      onSelect: () => setAction("reopen", { history: "push" }),
+                      disabled: !canReopen,
+                  } satisfies MenuActionProps,
+              ]
+            : []),
         {
             verb: "delete",
             label: "Delete",
@@ -58,6 +78,15 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                 </DropdownMenuContent>
             </DropdownMenu>
 
+            <SkillsModule_ReopenSession_Dialog
+                session={session}
+                open={isApproved && action === "reopen"}
+                onOpenChange={(open) =>
+                    setAction(open ? "reopen" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
             <SkillsModule_DeleteSession_Dialog
                 session={session}
                 open={action === "delete"}

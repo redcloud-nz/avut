@@ -5,6 +5,7 @@
 "use client";
 
 import { ClipboardCheckIcon } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -88,6 +89,12 @@ export function SkillTrack_SessionReview_Content({
 
     const assessorById = useMemo(() => new Map(assessors.map((p) => [p.id, p])), [assessors]);
 
+    // An approved session is locked: the selection is read-only until it's reopened.
+    const isApproved = session.status === "Include";
+
+    // Preselect everything not explicitly excluded: new `Draft` checks, the `Include` ones of an
+    // approved session, and the `Pending` ones a reopen left behind (the previous approval's
+    // selection), so re-approving starts from where the last approval left off.
     const [selected, setSelected] = useState<Set<SkillCheckId>>(
         () => new Set(skillChecks.filter((c) => c.status !== "Exclude").map((c) => c.id)),
     );
@@ -163,12 +170,26 @@ export function SkillTrack_SessionReview_Content({
                     <Saratoga.Header>
                         <Saratoga.Title>Review</Saratoga.Title>
                     </Saratoga.Header>
-                    <Show when={session.status === "Include"}>
+                    <Show when={isApproved}>
                         <Alert>
-                            <AlertTitle>Already approved</AlertTitle>
+                            <AlertTitle>Approved</AlertTitle>
                             <AlertDescription>
-                                This session has already been approved. You can update the selection
-                                and re-approve.
+                                <p>
+                                    This session has been approved. To change the selection, reopen
+                                    it from the{" "}
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/skill-track/sessions/[session_id]",
+                                            {
+                                                slug: organization.slug,
+                                                session_id: sessionId,
+                                            },
+                                        )}
+                                    >
+                                        session page
+                                    </Link>
+                                    .
+                                </p>
                             </AlertDescription>
                         </Alert>
                     </Show>
@@ -190,10 +211,9 @@ export function SkillTrack_SessionReview_Content({
                             <CardHeader>
                                 <CardTitle>Review</CardTitle>
                                 <CardDescription>
-                                    Select the skill checks you want to include in the session
-                                    approval. Only the selected checks will be included in the
-                                    session results. You can change the selection and re-approve as
-                                    needed.
+                                    {isApproved
+                                        ? "The selected skill checks were included in the session approval. Only they count towards the session results."
+                                        : "Select the skill checks you want to include in the session approval. Only the selected checks will be included in the session results."}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -217,6 +237,7 @@ export function SkillTrack_SessionReview_Content({
                                                 skillById={skillById}
                                                 assessorById={assessorById}
                                                 selected={selected}
+                                                disabled={isApproved}
                                                 toggleCheck={toggleCheck}
                                                 toggleGroup={toggleGroup}
                                             />
@@ -224,17 +245,19 @@ export function SkillTrack_SessionReview_Content({
                                     </TableBody>
                                 </Table>
                             </CardContent>
-                            <CardFooter className="justify-end">
-                                <MutationButton
-                                    status={mutation.status}
-                                    onClick={handleApprove}
-                                    text={{
-                                        idle: "Approve",
-                                        pending: "Submitting...",
-                                        success: "Submitted",
-                                    }}
-                                />
-                            </CardFooter>
+                            <Show when={!isApproved}>
+                                <CardFooter className="justify-end">
+                                    <MutationButton
+                                        status={mutation.status}
+                                        onClick={handleApprove}
+                                        text={{
+                                            idle: "Approve",
+                                            pending: "Submitting...",
+                                            success: "Submitted",
+                                        }}
+                                    />
+                                </CardFooter>
+                            </Show>
                         </Card>
                     </Show>
                 </Saratoga.Root>
@@ -249,6 +272,8 @@ interface AssesseeChecksProps {
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
     selected: Set<SkillCheckId>;
+    /** True while the session is approved: the checkboxes show the selection but can't change it. */
+    disabled: boolean;
     toggleCheck(id: SkillCheckId): void;
     toggleGroup(ids: SkillCheckId[]): void;
 }
@@ -259,6 +284,7 @@ function AssesseeChecks({
     skillById,
 
     selected,
+    disabled,
     toggleCheck,
     toggleGroup,
 }: AssesseeChecksProps) {
@@ -281,6 +307,7 @@ function AssesseeChecks({
                                       ? false
                                       : "indeterminate"
                             }
+                            disabled={disabled}
                             onCheckedChange={() =>
                                 toggleGroup(assesseeChecks.map((check) => check.id))
                             }
@@ -304,6 +331,7 @@ function AssesseeChecks({
                             <Checkbox
                                 id={`check-${check.id}`}
                                 checked={selected.has(check.id)}
+                                disabled={disabled}
                                 onCheckedChange={() => toggleCheck(check.id)}
                             />
                         </TableCell>
