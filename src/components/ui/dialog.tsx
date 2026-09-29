@@ -79,8 +79,10 @@ function DialogContent({
                     "fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-popover text-sm text-popover-foreground outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
                     // Centred modal (`sm` and up)
                     "sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100dvh-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1 sm:ring-foreground/10 sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-open:duration-100 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:duration-100",
-                    // Width (`sm` and up)
-                    "data-[size=default]:sm:max-w-md data-[size=lg]:sm:max-w-lg data-[size=xl]:sm:max-w-2xl",
+                    // Width (`sm` and up). The default is a bare `sm:max-w-md` so tailwind-merge still drops
+                    // it for a caller's own `sm:max-w-*` (the screenshot lightboxes); the larger sizes
+                    // outrank it by their `data-size` selector.
+                    "sm:max-w-md data-[size=lg]:sm:max-w-lg data-[size=xl]:sm:max-w-2xl",
                     className,
                 )}
                 data-size={size}
