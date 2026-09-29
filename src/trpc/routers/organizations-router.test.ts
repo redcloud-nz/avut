@@ -14,7 +14,7 @@ import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
-import { organizationsRouter } from "./organizations-router";
+import { organizationsRouter, withOwnerGuard } from "./organizations-router";
 
 // `revalidateTag` needs a Next.js render/request store, which the test environment has no
 // business standing up — the router's contract here is just that it invalidates the tag.
@@ -515,6 +515,20 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
         expect(await storedRole(T.owner)).toBe("owner");
     });
 
+    it("removes an owner's membership through the owner guard when another owner remains", async () => {
+        await db.organizationUser.update({
+            where: { organizationId_userId: { organizationId: T.org, userId: T.other } },
+            data: { role: "owner" },
+        });
+
+        await callAsSystemAdmin().removeOrganizationMember({
+            organizationId: T.org,
+            userId: T.owner,
+        });
+        expect(await storedRole(T.owner)).toBeUndefined();
+        expect(await storedRole(T.other)).toBe("owner");
+    });
+
     it("refuses a caller who does not hold member:owner", async () => {
         await expect(
             callAsMember().makeOwner({ organizationId: T.org, userId: T.other }),
@@ -991,5 +1005,50 @@ describe("organizations.listOrganizations", () => {
         expect(empty.memberCount).toBe(0);
         expect(empty.ownerCount).toBe(0);
         expect(empty.enabledModules).toEqual([]);
+    });
+});
+
+describe("withOwnerGuard", () => {
+    const serializationFailure = () => Object.assign(new Error("aborted"), { code: "P2034" });
+
+    // A `$transaction` stub that rejects the first `failures` calls with `P2034`, then runs the
+    // callback against `tx` — enough to exercise the retry without a real Postgres abort.
+    function stubPrisma(failures: number) {
+        let calls = 0;
+        const tx = { organizationUser: { findMany: vi.fn(async () => []) } };
+        const $transaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+            calls++;
+            if (calls <= failures) throw serializationFailure();
+            return fn(tx);
+        });
+        return { prisma: { $transaction } as never, $transaction };
+    }
+
+    it("retries once when the transaction is aborted, then succeeds", async () => {
+        const { prisma, $transaction } = stubPrisma(1);
+        await expect(withOwnerGuard(prisma, "org", "user", async () => "done")).resolves.toBe(
+            "done",
+        );
+        expect($transaction).toHaveBeenCalledTimes(2);
+    });
+
+    it("throws CONFLICT when the retry is aborted too", async () => {
+        const { prisma, $transaction } = stubPrisma(2);
+        await expect(
+            withOwnerGuard(prisma, "org", "user", async () => "done"),
+        ).rejects.toMatchObject({
+            code: "CONFLICT",
+        });
+        expect($transaction).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not retry other errors", async () => {
+        const { prisma, $transaction } = stubPrisma(0);
+        await expect(
+            withOwnerGuard(prisma, "org", "user", async () => {
+                throw new Error("boom");
+            }),
+        ).rejects.toThrow("boom");
+        expect($transaction).toHaveBeenCalledTimes(1);
     });
 });

@@ -51,6 +51,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
@@ -158,6 +159,9 @@ export function SkillTrack_SessionByPerson_Content({
 
     const isAssignedAssessor =
         !!personSelf && session.assessors.some((assessor) => assessor.id === personSelf.id);
+    // Recording also needs `skillCheck: ["create"]` (see `upsertSessionSkillChecks`) — a
+    // `skills-admin` can add itself as an assessor without being able to record.
+    const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
 
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
@@ -333,15 +337,25 @@ export function SkillTrack_SessionByPerson_Content({
                         }
                     >
                         <Show
-                            when={isAssignedAssessor}
+                            when={isAssignedAssessor && canRecordChecks}
                             fallback={
-                                <Alert variant="warning">
-                                    <AlertTitle>Not an assigned assessor</AlertTitle>
-                                    <AlertDescription>
-                                        You are not an assigned assessor for this session, so you
-                                        cannot record skill checks here.
-                                    </AlertDescription>
-                                </Alert>
+                                isAssignedAssessor ? (
+                                    <Alert variant="warning">
+                                        <AlertTitle>Cannot record skill checks</AlertTitle>
+                                        <AlertDescription>
+                                            You are an assessor on this session, but your role does
+                                            not allow recording skill checks.
+                                        </AlertDescription>
+                                    </Alert>
+                                ) : (
+                                    <Alert variant="warning">
+                                        <AlertTitle>Not an assigned assessor</AlertTitle>
+                                        <AlertDescription>
+                                            You are not an assigned assessor for this session, so
+                                            you cannot record skill checks here.
+                                        </AlertDescription>
+                                    </Alert>
+                                )
                             }
                         >
                             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">

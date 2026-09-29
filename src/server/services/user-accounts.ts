@@ -257,6 +257,31 @@ export async function listDeleted(prisma: PrismaClient): Promise<DeletedUser[]> 
         where: { status: "Deleted" },
         select: { id: true, name: true, email: true },
     });
+    return withDeletionDates(prisma, users);
+}
+
+/**
+ * One account's Rubbish bin entry, or `null` if it isn't Deleted — `listDeleted` for a single
+ * account, so the closed-account screen doesn't load the whole bin to find its own row.
+ */
+export async function getDeleted(
+    prisma: PrismaClient,
+    userId: UserId,
+): Promise<DeletedUser | null> {
+    const user = await prisma.user.findFirst({
+        where: { id: userId, status: "Deleted" },
+        select: { id: true, name: true, email: true },
+    });
+    if (!user) return null;
+    const [deleted] = await withDeletionDates(prisma, [user]);
+    return deleted;
+}
+
+/** Attach each account's latest `Delete` log timestamp and the `purgeAt` that follows from it. */
+async function withDeletionDates(
+    prisma: PrismaClient,
+    users: { id: string; name: string; email: string }[],
+): Promise<DeletedUser[]> {
     if (users.length === 0) return [];
 
     const entries = await prisma.logEntry.findMany({

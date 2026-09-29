@@ -62,7 +62,8 @@ export async function getOrganizationProviderCredential({
     if (record.organizationId !== organizationId) return null;
     // Group-owned credentials (#198) never come back from an organization lookup.
     if (record.groupId !== null) return null;
-    if (record.userId) throw new Error("Not an organization credential");
+    // A personal token carries its organization's ID too — it just isn't this lookup's to return.
+    if (record.userId !== null) return null;
 
     return toServerOnlyProviderCredential(record);
 }

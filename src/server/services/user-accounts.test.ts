@@ -97,6 +97,12 @@ describe("UserAccounts", () => {
         expect(row.purgeAt!.getTime() - row.deletedAt!.getTime()).toBe(14 * 24 * 60 * 60 * 1000);
     });
 
+    it("getDeleted returns one account's bin entry, and null for an active account", async () => {
+        const [listed] = await UserAccounts.listDeleted(db);
+        expect(await UserAccounts.getDeleted(db, T.member)).toEqual(listed);
+        expect(await UserAccounts.getDeleted(db, T.coOwnerB)).toBeNull();
+    });
+
     it("a co-owner in the Rubbish bin no longer covers for the other", async () => {
         await UserAccounts.softDelete(ctx, T.coOwnerA, "self");
         expect(await UserAccounts.getDeleteBlocker(ctx, T.coOwnerB)).toMatch(

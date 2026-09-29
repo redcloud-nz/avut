@@ -470,6 +470,13 @@ export const teamsRouter = createTrpcRouter({
                     message: "This team is already linked to D4H.",
                 });
             }
+            // Sync refuses an archived team, so linking one would leave it linked but unsyncable.
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is archived and cannot be linked to D4H",
+                });
+            }
 
             const resolved = await D4HTeamSync.resolveD4HTeamForLink(ctx, d4hTeamId);
 

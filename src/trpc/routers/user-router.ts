@@ -242,12 +242,10 @@ export const userRouter = createTrpcRouter({
             }),
         )
         .query(async ({ ctx }) => {
-            const [deleted] = (await UserAccounts.listDeleted(ctx.prisma)).filter(
-                (u) => u.id === ctx.userId,
-            );
+            const deleted = await UserAccounts.getDeleted(ctx.prisma, ctx.userId);
             return {
-                closed: deleted !== undefined,
-                canRestore: deleted !== undefined && ctx.auth.user.deletedBy === "Self",
+                closed: deleted !== null,
+                canRestore: deleted !== null && ctx.auth.user.deletedBy === "Self",
                 purgeAt: deleted?.purgeAt?.toISOString() ?? null,
             };
         }),
