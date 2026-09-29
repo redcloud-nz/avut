@@ -15,7 +15,9 @@
       "Bash(npx prettier *)",
       "Bash(pgrep *)",
       "Bash(curl -s http://localhost:*)",
-      "Bash(node .claude/skills/avut-review-pr/review-pr.ts *)"
+      "Bash(node .claude/skills/avut-review-pr/review-pr.ts *)",
+      "Bash(node .claude/skills/avut-status/status.ts)",
+      "Bash(node .claude/skills/avut-status/status.ts *)"
     ]
   },
   "enabledPlugins": {
