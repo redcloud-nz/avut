@@ -1,13 +1,17 @@
 ---
 name: avut-develop-feature
-description: Build a feature from a GitHub issue or a plain description. Clarify it if needed, triage it into a quick path (implement in-session) or a long path (reviewed plan executed by implementer/reviewer subagents in a worktree), pause for visual checks on UI work, and finish through /avut-ship. Trigger only when the user types /avut-develop-feature.
+description: Build a feature from a GitHub issue or a plain description. Clarify it if needed, triage it into a quick path (implement in-session) or a long path (reviewed plan executed by implementer/reviewer subagents in a worktree), pause for visual checks on UI work, and finish through /avut-ship. With --plan-only, stop once the plan is written and reviewed, on a plan/<slug> branch; given a plan (path, slug or plan/ branch), pick it up and build it. Trigger only when the user types /avut-develop-feature.
 effort: high
 manual: true
 ---
 
 # Develop Feature
 
-Takes a piece of work from "I want X" to a branch ready for `/avut-ship`. `$ARGUMENTS` is either a GitHub issue (a bare number, `#123`, or an issue URL) or a text description of what to achieve.
+Takes a piece of work from "I want X" to a branch ready for `/avut-ship`. `$ARGUMENTS` is one of:
+
+- a GitHub issue (a bare number, `#123`, or an issue URL) or a text description of what to achieve: the full flow below
+- either of those with **`--plan-only`**: write and review the plan, then stop. See [Plan only](#plan-only)
+- **a plan to pick up**: a `docs/plans/…` path, a `plan/<slug>` branch, or a slug. See [Pick up a plan](#pick-up-a-plan)
 
 The checkpoints are deliberate, and there are few of them. Clarify only when the work is unclear. On the long path, get approval for the path and then for the plan. Pause for visual checks on UI work. The final push confirmation belongs to `/avut-ship`. Between checkpoints, just work.
 
@@ -18,7 +22,8 @@ The checkpoints are deliberate, and there are few of them. Clarify only when the
 - **An exploration,** handed over by `/avut-explore`'s Keep step: its branch, its Decisions list, its gap list and the route chosen there. Skip Steps 2 and 3, since the exploration settled the idea and Keep chose the route:
   - **Finish in place:** the quick path from step 3, on the exploration's branch in the current checkout.
   - **Plan the rest:** the long path from L2, with the exploration's branch moved to a worktree (see L2). In L3, the exploration is **Task 0**, already done and ticked with its commits, and the gaps are the remaining tasks. The Decisions list goes into the plan's Decisions. L1 is covered by Keep's checkpoint.
-- **Nothing given:** ask what to build and stop.
+- **A plan** (a `docs/plans/` path, `plan/<slug>`, or a slug that matches a `plan/*` branch): skip everything and go to [Pick up a plan](#pick-up-a-plan).
+- **Nothing given:** ask what to build and stop. Mention any waiting plans (`git branch --list 'plan/*'`).
 
 ## Step 2 — Is it clear enough?
 
@@ -65,7 +70,7 @@ If a migration is involved, `npm run db:branch <slug>` comes before the first `m
 
 ### L3 — Write the plan
 
-Write `docs/plans/YYYY-MM-DD-<slug>.md`, following `docs/plans/README.md`: a `**Date:**` header matching the filename prefix, branch and DB notes up front, and a link to the issue or spec. Then:
+Write `docs/plans/YYYY-MM-DD-<slug>.md`, following `docs/plans/README.md`: a `**Date:**` header matching the filename prefix, branch and DB notes up front, a `**Written against:** integration @ <short sha>` line (`git rev-parse --short origin/integration`), and a link to the issue or spec. Then:
 
 - **Decisions:** anything settled in Step 2 or by reading the code.
 - **Tasks,** numbered. Each task is one reviewable commit and has:
@@ -104,6 +109,30 @@ Report progress only at checkpoints or when blocked. Don't send an update per ta
 
 When every task is ticked, continue into `/avut-ship`. Its whole-branch review catches problems between tasks that the per-task reviews couldn't see.
 
+## Plan only
+
+For `--plan-only`: the plan gets written and reviewed now, and built later, maybe in another session. The plan lives on its own branch until then, never on whatever branch the current checkout has out.
+
+1. **Steps 1–3** as usual. If triage says quick path, say so and ask whether a plan is still wanted.
+2. **Branch and worktree, without touching the current checkout:**
+   ```bash
+   git fetch origin integration
+   git worktree add -b plan/<slug> .claude/worktrees/<slug> origin/integration
+   ```
+   Don't `EnterWorktree`, and don't run `worktree:setup`. Planning only reads code, and this session stays where it is. Write the plan into `.claude/worktrees/<slug>/docs/plans/` by path, and read code there too, not in the current checkout, which may be on another branch.
+3. **L3 and L4:** write the plan, then run `avut-plan-reviewer`. Tell it the code to check the plan against is in `.claude/worktrees/<slug>`. Fix what it finds.
+4. **Commit and stop:** `git -C .claude/worktrees/<slug> add docs/plans/<file>` and `git -C .claude/worktrees/<slug> commit -m "docs(plans): <subject>"`. Show the task list, the decisions, what the review changed, and how to pick it up: `/avut-develop-feature plan/<slug>`. Don't push.
+
+L1's approval isn't needed here, since nothing gets built. L5's approval happens at pickup.
+
+## Pick up a plan
+
+1. **Find it.** In order: a `plan/<slug>` branch (`git branch --list 'plan/*<slug>*'`), a worktree at `.claude/worktrees/<slug>`, then `git log --all --oneline -- 'docs/plans/*<slug>*'`. More than one match: ask which.
+2. **Enter the worktree.** If `.claude/worktrees/<slug>` exists, `EnterWorktree` with `path`. If not, `git worktree add .claude/worktrees/<slug> plan/<slug>` first. Then `npm run worktree:setup`.
+3. **Rename the branch:** `git branch -m plan/<slug> <type>/<slug>`, with `<type>` being `feat` or `fix` from what the plan builds (it works with the branch checked out). From here on it's an ordinary feature branch.
+4. **Check the plan is still fresh.** `git merge origin/integration`. Then compare against the plan's `Written against` commit: `git diff --stat <sha>..origin/integration -- <every file the plan names>`. If any of them changed, run `avut-plan-reviewer` again and fix the plan. If the fix is substantive, update the plan's `**Date:**` and filename prefix together, per `docs/plans/README.md`.
+5. **L5, then L6 and L7:** show the plan, including anything the freshness check changed, and wait for approval. Then execute and finish as on the long path. L2's migration and dev-server notes still apply.
+
 ## Visual checkpoints
 
 The user wants to see UI work and steer it before it's final.
@@ -116,6 +145,9 @@ The user wants to see UI work and steer it before it's final.
 If there's no dev server running for the checkout, start one as AGENTS.md → Dev servers says: `npm run dev` in a worktree, `PORT=3100 npm run dev` in the main checkout when the user's 3000 isn't up.
 
 ## Common mistakes
+
+- Committing a `--plan-only` plan in the current checkout, or on its branch. It goes on `plan/<slug>` in its own worktree.
+- Picking up a plan without the freshness check, or leaving the branch named `plan/…` once building starts.
 
 - Planning in detail before triage. Step 3 is a quick look, not a plan.
 - Taking the long path without the L1 approval, or starting to build before the L5 approval.
