@@ -4,13 +4,7 @@
  */
 "use client";
 
-import {
-    ArrowDownAZIcon,
-    ArrowLeftIcon,
-    ArrowUpIcon,
-    ChevronRightIcon,
-    ListTreeIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
@@ -22,23 +16,13 @@ import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Show } from "@/components/show";
 import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
-import { SkillTrack_SessionActionsSheet } from "@/components/skill-track/session-actions-sheet";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    SessionSkillOrder,
+    SkillTrack_SessionActionsSheet,
+} from "@/components/skill-track/session-actions-sheet";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
@@ -231,9 +215,7 @@ export function SkillTrack_SessionBySkill_Content({
         };
     }
 
-    const [skillOrder, setSkillOrder] = useState<"alphabetical" | "by-package-group">(
-        "by-package-group",
-    );
+    const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
     const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // Group the session skills (the left-hand picker) by skill package and group (for the
@@ -323,7 +305,16 @@ export function SkillTrack_SessionBySkill_Content({
                 />
                 <div className="flex items-center justify-end gap-1 grow">
                     <SaveStatusIndicator status={mutation.status} />
-                    <SkillTrack_SessionActionsSheet sessionId={sessionId} mode="by-skill" />
+                    <SkillTrack_SessionActionsSheet
+                        sessionId={sessionId}
+                        mode="by-skill"
+                        view={{
+                            skillOrder,
+                            onSkillOrderChange: setSkillOrder,
+                            showSkillDescription,
+                            onShowSkillDescriptionChange: setShowSkillDescription,
+                        }}
+                    />
                     <HelpButton slug="skill-track/sessions" />
                 </div>
             </Std.Navbar>
@@ -331,45 +322,6 @@ export function SkillTrack_SessionBySkill_Content({
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Assess by Skill</Saratoga.Title>
-                        <Saratoga.Actions>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Skill Order</DropdownMenuLabel>
-                                        <DropdownMenuRadioGroup
-                                            value={skillOrder}
-                                            onValueChange={(value) =>
-                                                setSkillOrder(value as typeof skillOrder)
-                                            }
-                                        >
-                                            <DropdownMenuRadioItem value="alphabetical">
-                                                <ArrowDownAZIcon />
-                                                <span>Alphabetical</span>
-                                            </DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="by-package-group">
-                                                <ListTreeIcon />
-                                                <span>By Package/Group</span>
-                                            </DropdownMenuRadioItem>
-                                        </DropdownMenuRadioGroup>
-                                    </DropdownMenuGroup>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Show</DropdownMenuLabel>
-                                        <DropdownMenuCheckboxItem
-                                            checked={showSkillDescription}
-                                            onCheckedChange={setShowSkillDescription}
-                                        >
-                                            <span>Skill Description</span>
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <Show
                         when={!!personSelf}

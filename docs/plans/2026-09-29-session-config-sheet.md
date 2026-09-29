@@ -230,7 +230,7 @@ PersonRef[], updatedSession: SkillCheckSession }`.
   **Visual checkpoint** after this task, covering tasks 2–5 together: both entry pages
   (sheet, three dialogs, mode switch, phone width), and the detail page.
 
-- [ ] **6. End-user docs**
+- [ ] **6. End-user docs** — deferred (2026-09-29): held until the further session changes land
   - **Files:** `content/docs/skill-track/sessions.mdx`
   - **Do:** Rewrite steps 1–3. The Contents card rows (Personnel, Skills, Assessors) now
     open dialogs where you tick and then **Save**, instead of autosaving pages. Add a short

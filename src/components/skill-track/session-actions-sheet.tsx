@@ -5,8 +5,10 @@
 "use client";
 
 import {
+    ArrowDownAZIcon,
     ClipboardCheckIcon,
     ListChecksIcon,
+    ListTreeIcon,
     SlidersHorizontalIcon,
     UserCheckIcon,
     UserIcon,
@@ -24,7 +26,10 @@ import {
     useSessionConfigAction,
 } from "@/components/skill-track/session-config-dialogs";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Item, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
     Sheet,
     SheetContent,
@@ -39,10 +44,25 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 
 type SessionEntryMode = "by-person" | "by-skill";
 
+export type SessionSkillOrder = "alphabetical" | "by-package-group";
+
+/** The entry page's view options, which the sheet's View group displays and changes. */
+export interface SessionEntryView {
+    skillOrder: SessionSkillOrder;
+    onSkillOrderChange: (skillOrder: SessionSkillOrder) => void;
+    showSkillDescription: boolean;
+    onShowSkillDescriptionChange: (show: boolean) => void;
+}
+
 const CONFIG_ITEMS: { action: SessionConfigAction; label: string; icon: LucideIcon }[] = [
     { action: "change-personnel", label: "Change personnel", icon: UsersIcon },
     { action: "change-skills", label: "Change skills", icon: ListChecksIcon },
     { action: "change-assessors", label: "Change assessors", icon: UserCheckIcon },
+];
+
+const SKILL_ORDER_ITEMS: { value: SessionSkillOrder; label: string; icon: LucideIcon }[] = [
+    { value: "alphabetical", label: "Alphabetical", icon: ArrowDownAZIcon },
+    { value: "by-package-group", label: "By Package/Group", icon: ListTreeIcon },
 ];
 
 const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] = [
@@ -52,7 +72,8 @@ const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] 
 
 /**
  * The "Actions" navbar button on the skill check entry pages, and the side sheet it opens:
- * change the session's personnel, skills or assessors, or switch between recording modes.
+ * change the session's personnel, skills or assessors, switch between recording modes, or change
+ * how the page lists skills (`view`, owned by the page).
  *
  * The sheet is local state, not a URL param — `?action=` belongs to the dialog a sheet item
  * opens. Choosing a "change X" item closes the sheet and opens its dialog, which is hosted here
@@ -63,9 +84,11 @@ const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] 
 export function SkillTrack_SessionActionsSheet({
     sessionId,
     mode,
+    view,
 }: {
     sessionId: SkillCheckSessionId;
     mode: SessionEntryMode;
+    view: SessionEntryView;
 }) {
     const organization = useOrganization();
     const { open: openConfigDialog } = useSessionConfigAction();
@@ -81,6 +104,9 @@ export function SkillTrack_SessionActionsSheet({
 
     const configureHeadingId = useId();
     const recordHeadingId = useId();
+    const orderHeadingId = useId();
+    const showHeadingId = useId();
+    const idPrefix = useId();
 
     // Set while a "change X" item hands over to its dialog, so the closing sheet doesn't pull
     // focus back to the Actions button underneath the dialog that is opening.
@@ -96,9 +122,9 @@ export function SkillTrack_SessionActionsSheet({
         <>
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
                 <SheetTrigger asChild>
-                    <Button ref={triggerRef} variant="ghost">
+                    <Button ref={triggerRef} variant="ghost" size="icon">
                         <SlidersHorizontalIcon />
-                        <span className="sr-only sm:not-sr-only">Actions</span>
+                        <span className="sr-only">Actions</span>
                     </Button>
                 </SheetTrigger>
                 <SheetContent
@@ -114,7 +140,8 @@ export function SkillTrack_SessionActionsSheet({
                     <SheetHeader className="border-b">
                         <SheetTitle>Actions</SheetTitle>
                         <SheetDescription>
-                            Change this session, or switch how you record checks.
+                            Change this session, switch how you record checks, or change how skills
+                            are listed.
                         </SheetDescription>
                     </SheetHeader>
 
@@ -192,6 +219,63 @@ export function SkillTrack_SessionActionsSheet({
                                     );
                                 })}
                             </ItemGroup>
+                        </section>
+
+                        <section aria-labelledby={orderHeadingId} className="flex flex-col gap-2">
+                            <h3
+                                id={orderHeadingId}
+                                className="px-3 text-xs font-medium text-muted-foreground"
+                            >
+                                Skill Order
+                            </h3>
+                            <RadioGroup
+                                aria-labelledby={orderHeadingId}
+                                className="px-3"
+                                value={view.skillOrder}
+                                onValueChange={(value) =>
+                                    view.onSkillOrderChange(value as SessionSkillOrder)
+                                }
+                            >
+                                {SKILL_ORDER_ITEMS.map(({ value, label, icon: Icon }) => (
+                                    <Field key={value} orientation="horizontal">
+                                        <RadioGroupItem
+                                            value={value}
+                                            id={`${idPrefix}-order-${value}`}
+                                        />
+                                        <FieldLabel
+                                            htmlFor={`${idPrefix}-order-${value}`}
+                                            className="font-normal"
+                                        >
+                                            <Icon className="size-4 text-muted-foreground" />
+                                            {label}
+                                        </FieldLabel>
+                                    </Field>
+                                ))}
+                            </RadioGroup>
+                        </section>
+
+                        <section aria-labelledby={showHeadingId} className="flex flex-col gap-2">
+                            <h3
+                                id={showHeadingId}
+                                className="px-3 text-xs font-medium text-muted-foreground"
+                            >
+                                Show
+                            </h3>
+                            <Field orientation="horizontal" className="px-3">
+                                <Checkbox
+                                    id={`${idPrefix}-show-description`}
+                                    checked={view.showSkillDescription}
+                                    onCheckedChange={(checked) =>
+                                        view.onShowSkillDescriptionChange(checked === true)
+                                    }
+                                />
+                                <FieldLabel
+                                    htmlFor={`${idPrefix}-show-description`}
+                                    className="font-normal"
+                                >
+                                    Skill Description
+                                </FieldLabel>
+                            </Field>
                         </section>
                     </div>
                 </SheetContent>
