@@ -235,7 +235,7 @@ objectType, objectId }, { getNextPageParam: (p) => p.nextCursor ?? undefined }))
     membership history shows all three, newest first, with readable changes, and no "Load
     more" button (the `limit`/`limit + 1` boundary itself is covered by task 2's test).
 
-- [ ] **5. Team and D4H access token history pages** · `visual`
+- [x] **5. Team and D4H access token history pages** — `feat(history): add Team and D4H access token history pages` · `visual`
   - **Files:** `…/orgs/[slug]/admin/teams/[team_id]/history/page.tsx` (new),
     `src/components/admin/teams/team-history-content.tsx` (new),
     `src/components/admin/teams/team-menu.tsx`,
