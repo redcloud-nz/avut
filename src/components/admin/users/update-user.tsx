@@ -99,7 +99,7 @@ export function AdminModule_UpdateUser_Dialog({
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>Update User Roles</DialogTitle>
                     <DialogDescription>

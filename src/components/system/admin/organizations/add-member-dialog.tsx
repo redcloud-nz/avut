@@ -82,7 +82,7 @@ export function SystemAdmin_AddMember_Dialog({
                     <CreateNewIcon /> <span className="hidden md:inline">Add Member</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>Add Member</DialogTitle>
                     <DialogDescription>

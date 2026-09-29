@@ -58,7 +58,7 @@ export function I3Module_CreateTemplate_Dialog() {
                     <ObjectIcons.Create /> <span className="hidden md:inline">New Template</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>New I3 Template</DialogTitle>
                     <DialogDescription>Create a new I3 item template.</DialogDescription>

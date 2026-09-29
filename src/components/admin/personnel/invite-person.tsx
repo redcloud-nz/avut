@@ -62,7 +62,7 @@ export function AdminModule_InvitePerson_Dialog({
 }: DialogProps & { person: PersonData }) {
     return (
         <Dialog {...props}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DialogContent size="lg" onCloseAutoFocus={(e) => e.preventDefault()}>
                 {/* The header depends on `getInviteState`, so it lives in the body component; this
                     neutral one covers loading and a failed load. Radix only mounts the body while
                     the dialog is open, which also keeps the query and form state fresh per open. */}
