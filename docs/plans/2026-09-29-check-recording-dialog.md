@@ -289,7 +289,7 @@ modes over one dialog. Every tap commits a single check atomically.
     Expand then staging then Save calls `onRecord` once with the staged pair. Delete calls
     `onDelete`. Save is disabled while unchanged. Only enabled results render.
 
-- [ ] **5. Dialog-mode rows; entry pages drop the debounced autosave** `visual`
+- [x] **5. Dialog-mode rows; entry pages drop the debounced autosave** `visual` — feat(skill-track): record checks through the dialog on both entry pages
   - **Files:** `src/components/skill-track/check-row.tsx` (new),
     `src/components/skill-track/session-by-person-content.tsx`,
     `src/components/skill-track/session-by-skill-content.tsx`
