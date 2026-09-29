@@ -126,7 +126,7 @@ modes over one dialog. Every tap commits a single check atomically.
 
 ## Tasks
 
-- [ ] **1. `setSessionSkillCheck` + `deleteSessionSkillCheck` (service, router, tests)**
+- [x] **1. `setSessionSkillCheck` + `deleteSessionSkillCheck` (service, router, tests)** — feat(skill-track): add setSessionSkillCheck and deleteSessionSkillCheck
   - **Files:** `src/server/services/skill-checks.ts`, `src/server/services/skill-checks.test.ts`,
     `src/lib/errors.ts`, `src/trpc/init.ts`,
     `src/trpc/routers/skill-check-sessions-router.ts`,
@@ -135,17 +135,20 @@ modes over one dialog. Every tap commits a single check atomically.
     - Add `ForbiddenError` to `src/lib/errors.ts`, next to `NotFoundError`, and a
       `FORBIDDEN` branch for it in `mapDomainErrors` (`src/trpc/init.ts`). No domain error
       maps to `FORBIDDEN` today.
-    - Add a service function, `SkillChecks.requireSessionAssessor(ctx: OrgServiceContext,
-sessionId): Promise<{ session; assessorId: PersonId }>`. It loads the session with its
+    - Add a service function,
+      `SkillChecks.requireSessionAssessor(ctx: OrgServiceContext, sessionId): Promise<{ session; assessorId: PersonId }>`.
+      It loads the session with its
       assessors, assessees and skills (ids only), throwing `NotFoundError` if the session is
       missing. It resolves the caller's linked `organizationUser.personId`, throwing
       `ValidationError` if there isn't one, and `ForbiddenError` if that person isn't an
       assessor. A service can't import `src/trpc/`, so it uses local message literals worded
       like `Messages.noLinkedPersonRecord()` / `Messages.notSessionAssessor()`
       (precedent: `src/server/services/skill-packages.ts:32`).
-    - Router `setSessionSkillCheck: organizationProcedure({ skillCheckSession: ["update"],
-skillCheck: ["create"] })`, with input `{ skillCheckSessionId, assesseeId, skillId, result:
-SkillCheckResultValue.schema, notes: z.string() }` and output `SkillCheck.schema`. It
+    - Router
+      `setSessionSkillCheck: organizationProcedure({ skillCheckSession: ["update"], skillCheck: ["create"] })`,
+      with input
+      `{ skillCheckSessionId, assesseeId, skillId, result: SkillCheckResultValue.schema, notes: z.string() }`
+      and output `SkillCheck.schema`. It
       calls `requireSessionAssessor`, then rejects with `ValidationError` (→ `BAD_REQUEST`)
       an `assesseeId` not in the session's assessees or a `skillId` not in its skills. Then
       it runs `ctx.prisma.skillCheck.upsert` on
@@ -153,8 +156,8 @@ SkillCheckResultValue.schema, notes: z.string() }` and output `SkillCheck.schema
       update `result` + `notes`. It returns `SkillCheck.fromRecord`. Create sets `id`,
       `organizationId`, `sessionId`, `assesseeId`, `assessorId`, `skillId`, `result` and
       `notes`, with no `status` (the Prisma default, `Draft`), exactly as the upsert does.
-    - Router `deleteSessionSkillCheck`, with the same gate, input `{ skillCheckSessionId,
-assesseeId, skillId }` and output `z.object({ deleted: z.boolean() })`. It runs the same two
+    - Router `deleteSessionSkillCheck`, with the same gate, input
+      `{ skillCheckSessionId, assesseeId, skillId }` and output `z.object({ deleted: z.boolean() })`. It runs the same two
       checks, then `deleteMany` scoped to `organizationId`, `sessionId`, `assesseeId`,
       `skillId` and the caller's `assessorId`. `deleted` is `count > 0`.
     - Place the procedures alphabetically: `deleteSessionSkillCheck` between
@@ -166,8 +169,8 @@ assesseeId, skillId }` and output `z.object({ deleted: z.boolean() })`. It runs 
   - **Done when:** tests (per `.claude/rules/testing.md`) cover both procedures.
     `setSessionSkillCheck` creates, then updates the same row (same id, one row); rejects a
     non-assessor (`FORBIDDEN`), an unlinked user (`BAD_REQUEST`), and an assessee or skill
-    not on the session (`BAD_REQUEST`); and is refused for a role lacking `skillCheck:
-["create"]` (`skills-admin`). `deleteSessionSkillCheck` deletes the caller's own check
+    not on the session (`BAD_REQUEST`); and is refused for a role lacking
+    `skillCheck: ["create"]` (`skills-admin`). `deleteSessionSkillCheck` deletes the caller's own check
     (`deleted: true`), leaves another assessor's check on the same assessee/skill alone, and
     returns `deleted: false` when there's nothing to delete. The existing `T.session`
     fixture connects only `assessors`, so the new tests need a session with `assessees` and
@@ -181,8 +184,9 @@ assesseeId, skillId }` and output `z.object({ deleted: z.boolean() })`. It runs 
   - **Do:**
     - Effects for both procedures, following the file's existing shape and
       `src/trpc/mutation-effector.tsx`:
-      - Write the own-checks list, `trpc.skillChecks.listSkillChecks.queryKey({
-organizationId, sessionId, ownChecksOnly: true })`. For `setSessionSkillCheck`,
+      - Write the own-checks list,
+        `trpc.skillChecks.listSkillChecks.queryKey({ organizationId, sessionId, ownChecksOnly: true })`.
+        For `setSessionSkillCheck`,
         replace the row with the same `assesseeId`+`skillId`, or append it. For
         `deleteSessionSkillCheck`, filter that pair out.
       - Invalidate every other `listSkillChecks` cache for the org, which covers the
@@ -207,10 +211,14 @@ organizationId, sessionId, ownChecksOnly: true })`. For `setSessionSkillCheck`,
         observer's latest mutation, so a quick second delete would drop the first Undo. The
         deleted check's values travel from `onMutate`, which reads them from the own-checks
         cache and returns them as context, to `onSuccess`.
-    - `usePendingChecks(sessionId): Map<\`${PersonId}::${SkillId}\`, SkillCheckResultValue | null>`,
-exported from the same file. It makes one `useMutationState`call with`filters: {
-      status: "pending", predicate }`. The predicate matches `mutation.options.mutationKey`against`trpc.skillCheckSessions.setSessionSkillCheck.mutationKey()`and`…deleteSessionSkillCheck.mutationKey()`(one filter can't take two keys, and the
-partial`[["skillCheckSessions"]]`matches every session mutation), plus`variables.skillCheckSessionId`. `select`returns the key and variables. A pending delete maps to`null`. Callers call it once, at the page's top level.
+    - ``usePendingChecks(sessionId): Map<`${PersonId}::${SkillId}`, SkillCheckResultValue | null>``,
+      exported from the same file. It makes one `useMutationState` call with
+      `filters: { status: "pending", predicate }`. The predicate matches `mutation.options.mutationKey`
+      against `trpc.skillCheckSessions.setSessionSkillCheck.mutationKey()` and
+      `…deleteSessionSkillCheck.mutationKey()` (one filter can't take two keys, and the
+      partial `[["skillCheckSessions"]]` matches every session mutation), plus
+      `variables.skillCheckSessionId`. `select` returns the key and variables. A pending delete maps to
+      `null`. Callers call it once, at the page's top level.
   - **Done when:** `npm run check` passes. It has no UI caller yet; task 5 wires it in.
     Unit-test the effects' write updater (replace, append, remove) if
     `skill-check-sessions-effects` has or can have a test file cheaply. Otherwise it's
@@ -247,10 +255,10 @@ partial`[["skillCheckSessions"]]`matches every session mutation), plus`variables
   - **Files:** `src/components/skill-track/record-check-dialog.tsx` (new)
   - **Do:** A controlled dialog. It doesn't follow the `?action=` recipes, but read
     `docs/patterns/mutation-dialog.md` for header/body/footer structure and "form state
-    lives in the child". Props: `open`, `onOpenChange`, `initialDensity: "compact" |
-"expanded"`, `skillName`, `personName`, `current: { result, notes } | null`,
-    `resultOptions` (from `getEnabledSkillCheckResultOptions`), `onRecord({ result, notes
-})` and `onDelete()`. The parent supplies the last two from `useSessionCheckRecorder`,
+    lives in the child". Props: `open`, `onOpenChange`,
+    `initialDensity: "compact" | "expanded"`, `skillName`, `personName`,
+    `current: { result, notes } | null`, `resultOptions` (from
+    `getEnabledSkillCheckResultOptions`), `onRecord({ result, notes })` and `onDelete()`. The parent supplies the last two from `useSessionCheckRecorder`,
     so the dialog holds no mutation itself.
     - `DialogContent mobile="sheet"` at the default size. The title is the skill name and
       the description the person name.
@@ -281,8 +289,9 @@ partial`[["skillCheckSessions"]]`matches every session mutation), plus`variables
     `src/components/skill-track/session-by-person-content.tsx`,
     `src/components/skill-track/session-by-skill-content.tsx`
   - **Do:**
-    - `SkillTrack_CheckRow({ title, description?, check: { result, notes } | null, pending,
-mode, resultOptions, onRecord, onRemove, onOpenDialog(density) })`. This task builds
+    - The row component,
+      `SkillTrack_CheckRow({ title, description?, check: { result, notes } | null, pending, mode, resultOptions, onRecord, onRemove, onOpenDialog(density) })`.
+      This task builds
       the `mode="dialog"` layout: title/description as today, then (right-aligned) the notes
       indicator, a result badge (`SkillCheckResultIcon` + the org label, or muted "Not
       recorded"), and a ghost icon button that calls `onOpenDialog("compact")`, using
@@ -330,8 +339,9 @@ mode, resultOptions, onRecord, onRemove, onOpenDialog(density) })`. This task bu
     - Add `recordingMode` + `onRecordingModeChange` to `SessionEntryView`. The sheet's
       **View** group gains a "Recording" radio pair (Quick / Dialog) styled like the Skill
       Order control beside it.
-    - Both pages read the mode from `useLocalStorageState("avut:skill-track:recording-mode",
-z.enum(["quick", "dialog"]), "quick")` and pass it to the rows and the sheet.
+    - Both pages read the mode from
+      `useLocalStorageState("avut:skill-track:recording-mode", z.enum(["quick", "dialog"]), "quick")`
+      and pass it to the rows and the sheet.
   - **Done when:** the hook's tests cover the default when unset, a round-trip, falling back
     on a garbage value, and two hook instances staying in sync. Switching mode in the
     sheet changes the rows at once, and the choice survives a reload and applies to the

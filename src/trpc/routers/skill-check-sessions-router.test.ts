@@ -547,6 +547,16 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 }),
             ).rejects.toMatchObject({ code: "BAD_REQUEST" });
         });
+
+        it("rejects an assessee who is not on the session with BAD_REQUEST", async () => {
+            await expect(
+                makeCaller(T.assessorUser).deleteSessionSkillCheck({
+                    ...target,
+                    assesseeId: T.outsider,
+                    skillId: T.skill2,
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
     });
 });
 
