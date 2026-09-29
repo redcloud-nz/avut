@@ -378,7 +378,7 @@ one-tap dialog state). It was dropped at the visual checkpoint as unnecessary co
   - **Done when:** `grep -rn "upsertSessionSkillChecks\|SkillTrack_AssessmentRow\|assessment-row" src docs content`
     finds nothing outside `docs/plans/` and `docs/reviews/`. `npm run check -- --all` passes.
 
-- [ ] **8. End-user docs (text only)**
+- [x] **8. End-user docs (text only)** — docs(skill-track): describe Fail/Pass/More rows and the check dialog
   - **Files:** `content/docs/skill-track/sessions.mdx`
   - **Do:** Rewrite step 4's recording paragraphs (the cycle buttons, the dropdown and
     "changes autosave a couple of seconds after…") so they match the new rows: Fail/Pass
