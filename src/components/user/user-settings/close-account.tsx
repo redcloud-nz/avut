@@ -8,9 +8,10 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { useSignOut } from "@/client/use-sign-out";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -32,8 +33,8 @@ import { trpc } from "@/trpc/client";
  * like the system-admin delete. On success every session is already revoked server-side, so it
  * signs out and clears the query cache.
  *
- * A sole owner of an organisation is refused by the server with the organisation's name, shown
- * as the error toast.
+ * Closing as an organisation's only owner is allowed, but leaves it with no owner, so the dialog
+ * lists those organisations first.
  */
 export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
     const signOut = useSignOut();
@@ -48,6 +49,11 @@ export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
     function handleDialogOpenChange(open: boolean) {
         void setAction(open ? "close-account" : null, { history: open ? "push" : "replace" });
     }
+
+    const soleOwned = useQuery({
+        ...trpc.user.listSoleOwnedOrganizations.queryOptions(),
+        enabled: dialogOpen,
+    });
 
     const mutation = useMutation(
         trpc.user.closeMyAccount.mutationOptions({
@@ -88,6 +94,17 @@ export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
                         keep about you are theirs and aren&rsquo;t removed.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
+                {soleOwned.data && soleOwned.data.length > 0 && (
+                    <Alert variant="warning">
+                        <AlertTitle>These organisations will have no owner</AlertTitle>
+                        <AlertDescription>
+                            You&rsquo;re the only owner of{" "}
+                            {soleOwned.data.map((o) => o.name).join(", ")}. Nobody in them will be
+                            able to manage their owners until a system administrator appoints a new
+                            one.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 <Field>
                     <FieldLabel htmlFor="close-account-confirm">
                         Type <span className="font-mono">{email}</span> to confirm
@@ -104,7 +121,10 @@ export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
                         type="button"
                         variant="destructive"
                         status={mutation.status}
-                        disabled={confirmText.trim().toLowerCase() !== email.toLowerCase()}
+                        disabled={
+                            soleOwned.isPending ||
+                            confirmText.trim().toLowerCase() !== email.toLowerCase()
+                        }
                         text={{ idle: "Close account", pending: "Closing", success: "Closed" }}
                         onClick={() => mutation.mutate({ confirmEmail: confirmText })}
                     />

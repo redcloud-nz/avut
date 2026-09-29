@@ -74,7 +74,13 @@ export function SystemAdmin_Organizations_List() {
                 columnHelper.accessor("ownerCount", {
                     id: "ownerCount",
                     header: "Owners",
-                    cell: (ctx) => ctx.getValue(),
+                    // An org with no owner needs a system admin to appoint one (Make owner).
+                    cell: (ctx) =>
+                        ctx.getValue() === 0 ? (
+                            <Badge variant="destructive">None</Badge>
+                        ) : (
+                            ctx.getValue()
+                        ),
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,

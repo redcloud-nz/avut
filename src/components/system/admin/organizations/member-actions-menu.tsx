@@ -21,6 +21,7 @@ import {
     type InvitationRolesFormValues,
 } from "@/components/admin/invitations/invitation-role-fields";
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -48,6 +49,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ObjectName } from "@/components/ui/typography";
+import { hasOwnerRole } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole, type ModuleGatedRoleOptions } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
@@ -70,36 +72,44 @@ function roleFormValues(stored: string): InvitationRolesFormValues {
 
 /**
  * Per-row actions for an organization member on the system-admin detail page:
- * "Change role" (`?action=set-member-role`) and "Remove" (`?action=remove-member`,
- * destructive). Both dialogs are confirm-style and driven by the shared `action` param
- * plus a `memberUserId` param naming the row.
+ * "Change role" (`?action=set-member-role`), "Make owner" (`?action=make-owner`, for a
+ * non-owner) and "Remove" (`?action=remove-member`, destructive). The dialogs are driven by the
+ * shared `action` param plus a `memberUserId` param naming the row.
+ *
+ * "Make owner" is how an organization left with no owner gets one back. Removing the last owner
+ * is allowed, with a warning.
  */
 export function SystemAdmin_MemberActionsMenu({
     organizationId,
     member,
+    isLastOwner,
     moduleGatedRoles,
 }: {
     organizationId: OrganizationId;
     member: Member;
+    /** This member is the organization's only owner, so removing them leaves it with none. */
+    isLastOwner: boolean;
     /** The module-gated roles, each marked with whether this organization can offer it. */
     moduleGatedRoles: ModuleGatedRoleOptions;
 }) {
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["set-member-role", "remove-member"] as const),
+        parseAsStringLiteral(["set-member-role", "make-owner", "remove-member"] as const),
     );
     const [memberUserId, setMemberUserId] = useQueryState("memberUserId", parseAsString);
 
     const isTarget = memberUserId === member.userId;
     const roleDialogOpen = isTarget && action === "set-member-role";
     const removeDialogOpen = isTarget && action === "remove-member";
+    const makeOwnerDialogOpen = isTarget && action === "make-owner";
+    const isOwner = hasOwnerRole(member.role);
 
     const roleForm = useForm({
         resolver: zodResolver(invitationRolesSchema),
         defaultValues: roleFormValues(member.role),
     });
 
-    function open(next: "set-member-role" | "remove-member") {
+    function open(next: "set-member-role" | "make-owner" | "remove-member") {
         void setMemberUserId(member.userId, { history: "push" });
         void setAction(next, { history: "push" });
     }
@@ -117,6 +127,24 @@ export function SystemAdmin_MemberActionsMenu({
             },
             onSuccess() {
                 toast.success("Member role updated.");
+                close();
+            },
+        }),
+    );
+
+    const makeOwnerMutation = useMutation(
+        trpc.organizations.makeOwner.mutationOptions({
+            meta: { effects: organizationsEffects.makeOwner },
+            onError(error) {
+                console.error("Failed to make member an owner:", error);
+                toast.error(`Failed to make owner: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        <ObjectName>{member.name}</ObjectName> is now an owner.
+                    </>,
+                );
                 close();
             },
         }),
@@ -145,6 +173,11 @@ export function SystemAdmin_MemberActionsMenu({
     }, [roleDialogOpen]);
 
     useEffect(() => {
+        if (makeOwnerDialogOpen) makeOwnerMutation.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [makeOwnerDialogOpen]);
+
+    useEffect(() => {
         if (removeDialogOpen) removeMutation.reset();
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [removeDialogOpen]);
@@ -161,6 +194,11 @@ export function SystemAdmin_MemberActionsMenu({
                     <DropdownMenuItem onSelect={() => open("set-member-role")}>
                         <ObjectIcons.Edit /> Change role
                     </DropdownMenuItem>
+                    {!isOwner && (
+                        <DropdownMenuItem onSelect={() => open("make-owner")}>
+                            <ObjectIcons.Edit /> Make owner
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem variant="destructive" onSelect={() => open("remove-member")}>
                         <ObjectIcons.Delete /> Remove
                     </DropdownMenuItem>
@@ -203,6 +241,32 @@ export function SystemAdmin_MemberActionsMenu({
             </Dialog>
 
             <AlertDialog
+                open={makeOwnerDialogOpen}
+                onOpenChange={(open) => (open ? undefined : close())}
+            >
+                <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Make owner</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Make <ObjectName>{member.name}</ObjectName> ({member.email}) an owner of
+                            this organisation, in addition to their current roles.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <MutationButton
+                            type="button"
+                            status={makeOwnerMutation.status}
+                            text={{ idle: "Make owner", pending: "Saving", success: "Saved" }}
+                            onClick={() =>
+                                makeOwnerMutation.mutate({ organizationId, userId: member.userId })
+                            }
+                        />
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog
                 open={removeDialogOpen}
                 onOpenChange={(open) => (open ? undefined : close())}
             >
@@ -214,6 +278,15 @@ export function SystemAdmin_MemberActionsMenu({
                             organisation. This does not delete the user account.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    {isLastOwner && (
+                        <Alert variant="warning">
+                            <AlertTitle>This is the only owner</AlertTitle>
+                            <AlertDescription>
+                                The organisation will have no owner. Make another member an owner
+                                afterwards so someone can manage its owners.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                     <AlertDialogFooter>
                         <MutationButton
                             type="button"
