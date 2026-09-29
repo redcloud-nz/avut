@@ -4,7 +4,41 @@
  */
 
 import { trpc } from "@/trpc/client";
-import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
+import { createEffects, invalidate, write, type MutationEffect } from "@/trpc/mutation-effector";
+
+/** The recording pages' own-checks list, which `setSessionSkillCheck`/`deleteSessionSkillCheck` write. */
+function ownSessionChecksQueryKey(organizationId: string, sessionId: string) {
+    return trpc.skillChecks.listSkillChecks.queryKey({
+        organizationId,
+        sessionId,
+        ownChecksOnly: true,
+    });
+}
+
+/**
+ * Invalidates every skill-check list for the org except the own-checks lists, which the caller
+ * has just written: the session's Contents counts, Checks and Review, the org dashboard's stats,
+ * the skill-checks collection and the recent-checks list.
+ *
+ * The effector awaits these refetches before the mutation leaves `pending`, and the recording
+ * rows stay dimmed while it's pending, so a predicate that also matched the own-checks list would
+ * hold every tap behind a refetch of it.
+ */
+function invalidateOtherSkillCheckLists(organizationId: string): MutationEffect[] {
+    return [
+        invalidate(
+            trpc.skillChecks.listSkillChecks.queryFilter(
+                { organizationId },
+                {
+                    predicate: (query) =>
+                        (query.queryKey[1] as { input?: { ownChecksOnly?: boolean } } | undefined)
+                            ?.input?.ownChecksOnly !== true,
+                },
+            ),
+        ),
+        invalidate(trpc.skillChecks.listRecentChecks.queryFilter({ organizationId })),
+    ];
+}
 
 /**
  * Cache effects for `skillCheckSessions` router mutations, keyed by procedure name.
@@ -14,7 +48,9 @@ import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
  * and the session halves of `updateSessionAssessees`/`updateSessionSkills` return a bare
  * `SkillCheckSession` without the `assessors` extension `getSession` carries, so they merge into
  * whatever's already cached instead of replacing it. `updateSessionAssessors` merges its
- * `updatedAssessors` in as that `assessors` extension too.
+ * `updatedAssessors` in as that `assessors` extension too. `setSessionSkillCheck` and
+ * `deleteSessionSkillCheck` edit the caller's own-checks list in place, matching on the
+ * (assessee, skill) pair, and invalidate the org's other skill-check lists.
  */
 export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
     approveSession: (vars, { updated }) => [
@@ -63,6 +99,26 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                 organizationId: vars.organizationId,
             }),
         ),
+    ],
+    deleteSessionSkillCheck: (vars) => [
+        write(ownSessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId), (old) =>
+            old?.filter(
+                (check) =>
+                    !(check.assesseeId === vars.assesseeId && check.skillId === vars.skillId),
+            ),
+        ),
+        ...invalidateOtherSkillCheckLists(vars.organizationId),
+    ],
+    setSessionSkillCheck: (vars, saved) => [
+        write(ownSessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId), (old) => {
+            if (!old) return old;
+            const matches = (check: { assesseeId: string; skillId: string }) =>
+                check.assesseeId === saved.assesseeId && check.skillId === saved.skillId;
+            return old.some(matches)
+                ? old.map((check) => (matches(check) ? saved : check))
+                : [...old, saved];
+        }),
+        ...invalidateOtherSkillCheckLists(vars.organizationId),
     ],
     updateSession: (vars, { updated }) => [
         write(
