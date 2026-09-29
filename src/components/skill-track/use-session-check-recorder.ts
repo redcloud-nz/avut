@@ -41,6 +41,10 @@ type DeleteVariables = RouterInput["skillCheckSessions"]["deleteSessionSkillChec
  * read from the own-checks cache in `onMutate`, before the effect removes them, and reach
  * `onSuccess` as its `onMutate` result.
  *
+ * The "Check removed" toast is keyed by `sessionCheckKey`, and `record`/`remove` dismiss their
+ * key's toast before mutating. So an Undo can't overwrite a newer value recorded for the same
+ * check while the toast is still up, and repeat deletes of one check share a single toast.
+ *
  * Pair with `usePendingChecks` to show which rows have a write in flight.
  */
 export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSessionId }) {
@@ -78,10 +82,12 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
             onSuccess({ deleted }, vars, onMutateResult) {
                 if (!deleted) return;
                 const removed = onMutateResult?.removed;
+                const id = sessionCheckKey(vars.assesseeId as PersonId, vars.skillId as SkillId);
                 toast.success(
                     "Check removed",
                     removed
                         ? {
+                              id,
                               action: {
                                   label: "Undo",
                                   onClick: () =>
@@ -95,7 +101,7 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
                                       }),
                               },
                           }
-                        : undefined,
+                        : { id },
                 );
             },
             onError(error) {
@@ -111,6 +117,7 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
             result: SkillCheckResultValue;
             notes: string;
         }) => {
+            toast.dismiss(sessionCheckKey(check.assesseeId, check.skillId));
             mutateSet({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
@@ -122,6 +129,7 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
 
     const remove = useCallback(
         (target: { assesseeId: PersonId; skillId: SkillId }) => {
+            toast.dismiss(sessionCheckKey(target.assesseeId, target.skillId));
             mutateDelete({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,

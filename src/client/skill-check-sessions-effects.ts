@@ -101,12 +101,12 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
         ),
     ],
     deleteSessionSkillCheck: (vars) => [
-        write(ownSessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId), (old) =>
-            old?.filter(
-                (check) =>
-                    !(check.assesseeId === vars.assesseeId && check.skillId === vars.skillId),
-            ),
-        ),
+        write(ownSessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId), (old) => {
+            const matches = (check: { assesseeId: string; skillId: string }) =>
+                check.assesseeId === vars.assesseeId && check.skillId === vars.skillId;
+            // Nothing to remove: keep the same array, so no subscriber re-renders.
+            return old?.some(matches) ? old.filter((check) => !matches(check)) : old;
+        }),
         ...invalidateOtherSkillCheckLists(vars.organizationId),
     ],
     setSessionSkillCheck: (vars, saved) => [

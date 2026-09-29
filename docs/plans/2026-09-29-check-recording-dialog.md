@@ -178,7 +178,7 @@ modes over one dialog. Every tap commits a single check atomically.
     assessor. The existing
     `upsertSessionSkillChecks` tests still pass. `npm run check` passes.
 
-- [ ] **2. Cache effects + `useSessionCheckRecorder` hook**
+- [x] **2. Cache effects + `useSessionCheckRecorder` hook** — feat(skill-track): add session check recorder hooks and cache effects
   - **Files:** `src/client/skill-check-sessions-effects.ts`,
     `src/components/skill-track/use-session-check-recorder.ts` (new)
   - **Do:**

@@ -125,6 +125,22 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
 
             expect(next).toEqual([bob]);
         });
+
+        it("returns the same list when no row matches", () => {
+            const old = [makeCheck(T.bob, "Pass")];
+
+            const next = applyWrite(
+                skillCheckSessionsEffects.deleteSessionSkillCheck({
+                    organizationId: T.org,
+                    skillCheckSessionId: T.session,
+                    assesseeId: T.alice,
+                    skillId: T.skill,
+                }),
+                old,
+            );
+
+            expect(next).toBe(old);
+        });
     });
 
     it("invalidates the org's other skill-check lists but not the own-checks list", () => {
