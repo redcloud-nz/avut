@@ -7,11 +7,15 @@
 import { useQueryState } from "nuqs";
 import type { RefObject } from "react";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
+
 import { Protect } from "@/components/protect";
 import { SkillTrack_ChangeSessionAssessors_Dialog } from "@/components/skill-track/change-session-assessors";
 import { SkillTrack_ChangeSessionPersonnel_Dialog } from "@/components/skill-track/change-session-personnel";
 import { SkillTrack_ChangeSessionSkills_Dialog } from "@/components/skill-track/change-session-skills";
+import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { trpc } from "@/trpc/client";
 
 const SESSION_CONFIG_ACTIONS = ["change-personnel", "change-skills", "change-assessors"] as const;
 
@@ -60,13 +64,24 @@ export function SkillTrack_SessionConfigDialogs({
     sessionId: SkillCheckSessionId;
     returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
+    const organization = useOrganization();
     const { action, open, close } = useSessionConfigAction();
+
+    const { data: session } = useSuspenseQuery(
+        trpc.skillCheckSessions.getSession.queryOptions({
+            organizationId: organization.id,
+            skillCheckSessionId: sessionId,
+        }),
+    );
+    // An approved session's config is locked until it's reopened. The triggers are disabled
+    // then; this covers a shared `?action=change-*` link, and a session approved while one is open.
+    const isApproved = session.status === "Include";
 
     function dialogProps(dialogAction: SessionConfigAction) {
         return {
             sessionId,
             returnFocusRef,
-            open: action === dialogAction,
+            open: !isApproved && action === dialogAction,
             onOpenChange: (isOpen: boolean) => (isOpen ? open(dialogAction) : close(dialogAction)),
         };
     }

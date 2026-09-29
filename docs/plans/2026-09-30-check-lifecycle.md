@@ -237,7 +237,7 @@ migrate dev`, and `npm run prisma migrate status` reports the branch DB up to da
     locked, menu shows Reopen → reopen → review page editable with the previous selection
     preselected → re-approve.
 
-- [ ] **6. Read-only entry pages while approved** — `visual`
+- [x] **6. Read-only entry pages while approved** — `visual` — `feat(skill-track): make a session's entry pages read-only while approved`, `fix(skill-track): keep session config dialogs shut while approved`
   - **Files:** `src/components/skill-track/session-by-person-content.tsx`,
     `src/components/skill-track/session-by-skill-content.tsx`, the row/dialog components they render,
     `src/components/skill-track/session-actions-sheet.tsx`, `src/components/skill-track/session-contents.tsx`,

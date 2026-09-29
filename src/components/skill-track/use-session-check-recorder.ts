@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { hashKey, useMutation, useMutationState, useQueryClient } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
+import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { useOrganization } from "@/hooks/use-organization";
 import type { PersonId } from "@/lib/schemas/person";
 import type { SkillId } from "@/lib/schemas/skill";
@@ -56,30 +57,14 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    // Called from both mutations' `onError`. `meta.effects` only runs on success, so this one is
-    // by hand.
-    const refetchSessionOnConflict = useCallback(
-        (
-            error: { data?: { code?: string } | null },
-            vars: { organizationId: string; skillCheckSessionId: string },
-        ) => {
-            if (error.data?.code !== "CONFLICT") return;
-            void queryClient.invalidateQueries(
-                trpc.skillCheckSessions.getSession.queryFilter({
-                    organizationId: vars.organizationId,
-                    skillCheckSessionId: vars.skillCheckSessionId,
-                }),
-            );
-        },
-        [queryClient],
-    );
+    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
 
     const { mutate: mutateSet } = useMutation(
         trpc.skillCheckSessions.setSessionSkillCheck.mutationOptions({
             meta: { effects: skillCheckSessionsEffects.setSessionSkillCheck },
-            onError(error, vars) {
+            onError(error) {
                 toast.error(`Failed to save check: ${error.message}`);
-                refetchSessionOnConflict(error, vars);
+                refetchSessionOnConflict(error);
             },
         }),
     );
@@ -128,9 +113,9 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
                         : { id },
                 );
             },
-            onError(error, vars) {
+            onError(error) {
                 toast.error(`Failed to remove check: ${error.message}`);
-                refetchSessionOnConflict(error, vars);
+                refetchSessionOnConflict(error);
             },
         }),
     );

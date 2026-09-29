@@ -124,7 +124,7 @@ export function SkillTrack_SessionBySkill_Content({
     // able to record.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
     // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
-    // its checks read-only and the record dialog stays shut.
+    // its checks read-only and the record dialog is closed.
     const isApproved = session.status === "Include";
 
     type Selected = { skillId: SkillId; status: "Loading" | "Selected" } | null;
@@ -155,6 +155,12 @@ export function SkillTrack_SessionBySkill_Content({
             !sessionSkills.some((skill) => skill.id === target.skillId))
     ) {
         setTarget(null);
+        setDialogOpen(false);
+    }
+
+    // Close the dialog when the session is approved under it (during render, like the resets
+    // above), so a later reopen doesn't pop it back up.
+    if (isApproved && dialogOpen) {
         setDialogOpen(false);
     }
 
@@ -522,7 +528,7 @@ export function SkillTrack_SessionBySkill_Content({
                                         .exhaustive()}
                                     {target && (
                                         <SkillTrack_RecordCheckDialog
-                                            open={dialogOpen && !isApproved}
+                                            open={dialogOpen}
                                             onOpenChange={setDialogOpen}
                                             targetKey={sessionCheckKey(
                                                 target.assesseeId,
