@@ -2,12 +2,12 @@
 
 **Date:** 2026-09-29
 **Issue:** [#323](https://github.com/redcloud-nz/avut/issues/323)
-**Branch:** `plan/session-config-sheet` → rename to `feat/session-config-sheet` at pickup
+**Branch:** `feat/session-config-sheet` (renamed from `plan/session-config-sheet` at pickup)
 **Worktree:** `.claude/worktrees/session-config-sheet`
 **DB:** no migration. Shared `avut` is fine, and no `db:branch` is needed.
 **D4H:** nothing here depends on a D4H token. Teams, personnel and skills are all local, so
 the no-token case needs no handling.
-**Written against:** integration @ cef534bd
+**Written against:** integration @ 725ca99e (first written against cef534bd, re-reviewed at pickup)
 
 Changing a session's personnel, skills or assessors today means leaving the recording
 screen. This adds an **Actions** button to the `by-person`/`by-skill` navbars. It opens a
@@ -40,8 +40,10 @@ which the session detail page's Contents card opens.
   unticked, and they are eligible, the assessors dialog shows an inline warning saying they
   won't be able to record in this session. An ineligible self row, such as a
   `skills-admin` whom `createSession` made assessor, gets no warning, since they couldn't
-  record anyway. Saving still works. The entry page then shows its existing
-  "Not an assigned assessor" alert.
+  record anyway: the entry page already shows it the "Cannot record skill checks" alert,
+  and the dialog's "can't record checks" hint matches that wording. Saving still works.
+  Once removed, the entry page shows its "Not an assigned assessor" alert, whatever the
+  user's role.
 - **The dialogs stage changes.** Save and Cancel go in the footer, per
   `docs/patterns/mutation-dialog.md`, with no autosave or debounce. Save sends the
   existing `added…Ids`/`removed…Ids` shape and is disabled until something has changed.
@@ -87,20 +89,20 @@ which the session detail page's Contents card opens.
     - `SkillChecks.listEligibleAssessors(ctx: OrgServiceContext): Promise<PersonRef[]>`:
       `Active` personnel in `ctx.organizationId` with a linked `organizationUser` whose
       `role` passes `hasAnyRoleWithPermissions(parseStoredRoles(role), { skillCheck:
-      ["create"] })`, sorted by name. Filter roles in JS after one Prisma query that selects
+["create"] })`, sorted by name. Filter roles in JS after one Prisma query that selects
       `id`, `name` and `organizationUser.role`.
     - Router `listEligibleAssessors: organizationProcedure({ skillCheckSession: ["view"] })`,
       with input `{}` (org id comes from the procedure) and output `z.array(PersonRef.schema)`.
       It calls the service.
     - Router `updateSessionAssessors: organizationProcedure({ skillCheckSession: ["update"] })`
       mirrors `updateSessionAssessees`. The input is `{ skillCheckSessionId,
-      addedPersonIds, removedPersonIds }`. It calls `SkillChecks.requireSessionById`, then
+addedPersonIds, removedPersonIds }`. It calls `SkillChecks.requireSessionById`, then
       rejects any `addedPersonIds` entry not in `listEligibleAssessors` with a
       `ValidationError` (`src/lib/errors.ts`, mapped by the service-error middleware). It
       pairs the `connect`/`disconnect` update with `ctx.logEvent` (`arr_add`/`arr_del` on
       `path: ["assessors"]`) in `ctx.prisma.$transaction([...])`
       (`docs/patterns/transactional-writes.md`). The output is `{ updatedAssessors:
-      PersonRef[], updatedSession: SkillCheckSession }`.
+PersonRef[], updatedSession: SkillCheckSession }`.
   - **Done when:** tests (following `.claude/rules/testing.md`) cover four things.
     (a) The service returns only Active, linked `skills-assessor` people. It excludes an
     unlinked person, a linked `member`-only person, a linked `skills-admin`, an archived
@@ -132,7 +134,7 @@ which the session detail page's Contents card opens.
       skill descriptions" toggle, a `Checkbox` in the dialog header or top of the body.
     - `SkillTrack_SessionConfigDialogs({ sessionId })` owns
       `useQueryState("action", parseAsStringLiteral(["change-personnel", "change-skills",
-      "change-assessors"] as const))`, with push on open and replace on close. It renders
+"change-assessors"] as const))`, with push on open and replace on close. It renders
       the two dialogs, plus the assessors slot that task 3 fills. Export
       `useSessionConfigAction()` so triggers elsewhere can `open("change-skills")` without
       re-declaring the literals.
@@ -157,8 +159,9 @@ which the session detail page's Contents card opens.
       `listEligibleAssessors`, `listSessionAssessors({ scope: "assigned" })` and
       `personnel.getPersonSelf`. It's a flat, name-sorted checklist of eligible ∪ assigned
       people. Assigned-but-ineligible rows carry a muted "can't record checks" description.
-      If `personSelf` is currently assigned, is in the eligible list, and is staged as
-      unticked, it shows an inline warning `Alert` ("You won't be able to record checks in this session"). An empty
+      If `personSelf` is currently assigned, can record (`useHasPermission({ skillCheck:
+["create"] })`, the same check the entry pages' `canRecordChecks` uses), and is staged
+      as unticked, it shows an inline warning `Alert` ("You won't be able to record checks in this session"). An empty
       eligible list shows an `Empty` state explaining that assessors need the Skills
       Assessor role and a linked person.
     - Wire it into `SkillTrack_SessionConfigDialogs`.
@@ -203,9 +206,13 @@ which the session detail page's Contents card opens.
     mode links switch pages client-side. A user without `skillCheckSession: ["update"]`
     sees the three items disabled. A config change reflects in the page behind without a
     reload. Adding a person or skill shows it in the picker. Removing the selected one
-    drops back to the empty state. Adding yourself as assessor on a session you weren't
-    assessing turns the "Not an assigned assessor" alert into the recording UI, and
-    removing yourself does the reverse. `npm run check` passes.
+    drops back to the empty state. As a `skills-assessor`, adding yourself as assessor on a
+    session you weren't assessing turns the "Not an assigned assessor" alert into the
+    recording UI, and removing yourself does the reverse. As a `skills-admin` who is an
+    assigned assessor, the entry page shows "Cannot record skill checks"; your row in the
+    assessors dialog carries the "can't record checks" hint and no self-removal warning, and
+    unticking and saving turns the alert into "Not an assigned assessor". `npm run check`
+    passes.
 
 - [ ] **5. Session detail page opens the dialogs; retire the standalone pages** `visual`
   - **Files:** `src/components/skill-track/session-contents.tsx`,
@@ -223,7 +230,7 @@ which the session detail page's Contents card opens.
     Skill checks stays a link. Delete the two pages and content components, and drop their
     rows from the route table in `docs/modules/skills.md`. Run `npx next typegen` and
     confirm nothing else references the removed routes (`grep -rn
-    "sessions/\[session_id\]/\(personnel\|skills\)" src docs content`, ignoring
+"sessions/\[session_id\]/\(personnel\|skills\)" src docs content`, ignoring
     `docs/plans/` and `docs/reviews/`).
   - **Done when:** the detail page's three Contents rows open the right dialogs, counts
     update after a save, and the old URLs 404. `npm run check` passes with regenerated
