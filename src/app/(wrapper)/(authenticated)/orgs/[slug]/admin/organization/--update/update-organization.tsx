@@ -88,9 +88,7 @@ export function AdminModule_UpdateOrganization_Form({
             <FieldGroup>
                 <Field orientation="responsive">
                     <FieldLabel>Organisation ID</FieldLabel>
-                    <FieldValue className="min-w-1/2" format="id">
-                        {organization.id}
-                    </FieldValue>
+                    <FieldValue format="id">{organization.id}</FieldValue>
                 </Field>
                 <Controller
                     name="name"
@@ -101,7 +99,6 @@ export function AdminModule_UpdateOrganization_Form({
                             <Input
                                 id="organization-name"
                                 aria-invalid={fieldState.invalid}
-                                className="min-w-1/2"
                                 {...field}
                             />
                             {fieldState.error && <FieldError errors={[fieldState.error]} />}
@@ -117,7 +114,6 @@ export function AdminModule_UpdateOrganization_Form({
                             <Input
                                 id="organization-slug"
                                 aria-invalid={fieldState.invalid}
-                                className="min-w-1/2"
                                 {...field}
                             />
                             {fieldState.error && <FieldError errors={[fieldState.error]} />}
