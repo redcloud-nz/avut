@@ -5,6 +5,8 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { TRPCError } from "@trpc/server";
+
 import { Roles, type Role } from "@/lib/permissions";
 import { LogEntryId, LogEntryObjectId, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -134,10 +136,40 @@ describe("history.listObjectHistory", () => {
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("gives an admin every related type", async () => {
+    it("gives an admin every related type but the registry types it can't view", async () => {
         await makeCaller("admin").listObjectHistory(personInput);
 
-        expect([...lastRelatedTypes()].sort()).toEqual([...LogObjectType.values].sort());
+        // `admin` holds neither `skillCheckSession:view` nor `skillPackage:view`.
+        const expected = LogObjectType.values.filter(
+            (type) => type !== "SkillCheckSession" && type !== "SkillPackage",
+        );
+        expect([...lastRelatedTypes()].sort()).toEqual([...expected].sort());
+    });
+
+    it("gates a registry type missing from RelatedEntryPermissions by its page permission", async () => {
+        await makeCaller("member").listObjectHistory(personInput);
+
+        const relatedTypes = lastRelatedTypes();
+        expect(relatedTypes).not.toContain("SkillCheckSession");
+        expect(relatedTypes).not.toContain("D4HAccessToken");
+        // A type in neither map still passes through.
+        expect(relatedTypes).toContain("I3Template");
+    });
+
+    it("rethrows an error other than FORBIDDEN from a related-type check", async () => {
+        const caller = historyRouter.createCaller({
+            ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
+            hasPermission: async (_organizationId, required) => {
+                // Only the `OrganizationMembership` related-type check asks for `member`.
+                if (required.member) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+                assertHasPermissionResult(Roles.admin.authorize(required), required);
+            },
+        });
+
+        await expect(caller.listObjectHistory(personInput)).rejects.toMatchObject({
+            code: "INTERNAL_SERVER_ERROR",
+        });
+        expect(ObjectHistory.list).not.toHaveBeenCalled();
     });
 
     it("leaves out OrganizationMembership for a caller without member:view", async () => {

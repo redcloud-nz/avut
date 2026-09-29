@@ -55,7 +55,10 @@ export const HistoryObjects: Record<HistoryObjectType, { permissions: Permission
  * entry's own object type — without this, a `TeamMembership` entry would leak team names to a
  * role that can see personnel but not teams. `Person`/`Team` ref names are gated the same way.
  *
- * An object type missing from this map passes through unfiltered.
+ * A type with a History page that's missing here falls back to its `HistoryObjects` permission;
+ * only a type in neither map passes through unfiltered. So a type with its own view permission
+ * must be listed here (or be in `HistoryObjects`) before its entries carry refs — otherwise its
+ * entries show up, unfiltered, on every page they mention.
  */
 export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>> = {
     // Person ↔ user link entries carry a user id in their description.

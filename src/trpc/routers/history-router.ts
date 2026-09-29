@@ -38,24 +38,31 @@ async function canView(
 }
 
 /**
- * The object types whose *related* entries the caller may see: each type in
- * `RelatedEntryPermissions` whose permission the caller holds, plus every type that map doesn't
- * list (those pass through unfiltered).
+ * The permission each gated object type's *related* entries need: a type with a History page
+ * falls back to its `HistoryObjects` permission (fail closed), and `RelatedEntryPermissions`
+ * overlays that.
+ */
+const relatedEntryGates: Partial<Record<LogObjectType, Permissions>> = {
+    ...Object.fromEntries(
+        HistoryObjectType.values.map((type) => [type, HistoryObjects[type].permissions]),
+    ),
+    ...RelatedEntryPermissions,
+};
+
+/**
+ * The object types whose *related* entries the caller may see: each type in `relatedEntryGates`
+ * whose permission the caller holds, plus every type in neither map (those pass through).
  */
 async function allowedRelatedTypes(ctx: AuthenticatedOrganizationContext) {
-    const mapped = Object.entries(RelatedEntryPermissions) as [LogObjectType, Permissions][];
+    const gated = Object.entries(relatedEntryGates) as [LogObjectType, Permissions][];
 
     const allowed = await Promise.all(
-        mapped.map(async ([type, permissions]) =>
-            (await canView(ctx, permissions)) ? [type] : [],
-        ),
+        gated.map(async ([type, permissions]) => ((await canView(ctx, permissions)) ? [type] : [])),
     );
 
-    const unmapped = LogObjectType.values.filter(
-        (type) => !Object.hasOwn(RelatedEntryPermissions, type),
-    );
+    const ungated = LogObjectType.values.filter((type) => !Object.hasOwn(relatedEntryGates, type));
 
-    return [...allowed.flat(), ...unmapped];
+    return [...allowed.flat(), ...ungated];
 }
 
 /**
@@ -83,7 +90,7 @@ export const historyRouter = createTrpcRouter({
         .output(ObjectHistoryPage.schema)
         .query(async ({ ctx, input }) => {
             await ctx.hasPermission(
-                input.organizationId,
+                ctx.organizationId,
                 HistoryObjects[input.objectType].permissions,
             );
 

@@ -44,7 +44,10 @@ object: who did what, when, and the field-level changes.
   covers entries about the object itself. A related entry is shown only if the caller also
   holds the view permission for the entry's own `objectType`, from a second map,
   `RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>>`, in the same file.
-  An unmapped type passes through.
+  A registry type (one in `HistoryObjects`) missing from that map falls back to its
+  `HistoryObjects` permission, so it fails closed; only a type in neither map passes through.
+  A type with its own view permission must be listed in one of the two before its entries
+  carry refs.
 
   | entry objectType         | permission         | what would otherwise leak                                                                                     |
   | ------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------- |
@@ -188,7 +191,7 @@ cursor?, limit })` → one `logEntry.findMany` (filter `organizationId`, `object
     `actorLabel`, the impersonator and batch label, ref name resolution (resolved, purged →
     null, not viewable → null), and malformed `changes` → `[]`; `npm run check` passes.
 
-- [ ] **3. `history.listObjectHistory` procedure**
+- [x] **3. `history.listObjectHistory` procedure** — `feat(history): add history.listObjectHistory procedure` + `fix(history): gate related registry types by their page permission`
   - **Files:** `src/trpc/routers/history-router.ts` (new), `src/trpc/routers/history-router.test.ts`
     (new), `src/trpc/routers/_app.ts`.
   - **Do:** `historyRouter` with `listObjectHistory: organizationProcedure()` → input
