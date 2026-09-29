@@ -561,33 +561,48 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
         .output(z.object({ updated: SkillCheckSession.schema }))
         .mutation(async ({ ctx, input: { skillCheckSessionId } }) => {
-            const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
-            if (session.status !== "Include") {
-                throw new ConflictError(
+            const notApproved = () =>
+                new ConflictError(
                     `SkillCheckSession(id=${skillCheckSessionId}) is not approved, so it can't be reopened.`,
                 );
-            }
 
-            const [updated] = await ctx.prisma.$transaction([
-                ctx.prisma.skillCheckSession.update({
-                    where: { id: skillCheckSessionId, organizationId: ctx.organizationId },
-                    data: { status: "Draft" },
-                }),
-                ctx.prisma.skillCheck.updateMany({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        sessionId: skillCheckSessionId,
-                        status: "Include",
-                    },
-                    data: { status: "Pending" },
-                }),
-                ctx.logEvent({
-                    action: "Reopen",
-                    objectType: "SkillCheckSession",
-                    objectId: skillCheckSessionId,
-                    description: `Reopened session "${session.name}".`,
-                }),
-            ]);
+            const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+            if (session.status !== "Include") throw notApproved();
+
+            const [updated] = await ctx.prisma
+                .$transaction([
+                    // Conditional on still being approved, so two concurrent reopens (or a reopen
+                    // racing an approve) can't both commit and double-log: the loser's update
+                    // matches no row, throws P2025 and rolls its transaction back.
+                    ctx.prisma.skillCheckSession.update({
+                        where: {
+                            id: skillCheckSessionId,
+                            organizationId: ctx.organizationId,
+                            status: "Include",
+                        },
+                        data: { status: "Draft" },
+                    }),
+                    ctx.prisma.skillCheck.updateMany({
+                        where: {
+                            organizationId: ctx.organizationId,
+                            sessionId: skillCheckSessionId,
+                            status: "Include",
+                        },
+                        data: { status: "Pending" },
+                    }),
+                    ctx.logEvent({
+                        action: "Reopen",
+                        objectType: "SkillCheckSession",
+                        objectId: skillCheckSessionId,
+                        description: `Reopened session "${session.name}".`,
+                    }),
+                ])
+                .catch((error: unknown) => {
+                    if (error instanceof Object && "code" in error && error.code === "P2025") {
+                        throw notApproved();
+                    }
+                    throw error;
+                });
 
             return { updated: SkillCheckSession.fromRecord(updated) };
         }),

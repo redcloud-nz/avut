@@ -192,7 +192,7 @@ migrate dev`, and `npm run prisma migrate status` reports the branch DB up to da
       `updatedAt` moves.
   - **Done when:** those tests pass and `npm run check` is green.
 
-- [ ] **4. `reopenSession` and cache effects**
+- [x] **4. `reopenSession` and cache effects** — `feat(skill-track): reopen an approved skill check session`, `fix(skill-track): make reopening a skill check session race-safe`
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts` (+ `.test.ts`),
     `src/lib/schemas/log-entry.ts`, `src/client/skill-check-sessions-effects.ts` (+ `.test.ts`).
   - **Do:**

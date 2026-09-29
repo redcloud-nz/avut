@@ -1401,6 +1401,7 @@ describe("skillCheckSessions.reopenSession", () => {
     // Dataset:
     //   approvedSession → Include; includedCheck (skillA) Include, excludedCheck (skillB) Exclude
     //   draftSession    → Draft, no checks
+    //   racedSession    → Include, no checks (for the lost-race test)
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -1414,6 +1415,7 @@ describe("skillCheckSessions.reopenSession", () => {
         includedCheck: SkillCheckId.create(),
         excludedCheck: SkillCheckId.create(),
         draftSession: SkillCheckSessionId.create(),
+        racedSession: SkillCheckSessionId.create(),
     };
 
     const db = createMockPrisma();
@@ -1468,6 +1470,7 @@ describe("skillCheckSessions.reopenSession", () => {
         for (const [id, sessionNumber, status] of [
             [T.approvedSession, 1, "Include"],
             [T.draftSession, 2, "Draft"],
+            [T.racedSession, 3, "Include"],
         ] as const) {
             await db.skillCheckSession.create({
                 data: {
@@ -1539,8 +1542,28 @@ describe("skillCheckSessions.reopenSession", () => {
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    it("moves the session to Draft and its Include checks to Pending, leaving Exclude, and logs Reopen", async () => {
-        const { updated } = await makeCaller().reopenSession({
+    it("reports a session un-approved after the pre-check (P2025) as CONFLICT", async () => {
+        // prisma-mock can't interleave a concurrent reopen, so fake the lost race's error.
+        const spy = vi
+            .spyOn(db.skillCheckSession, "update")
+            .mockRejectedValueOnce(
+                Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+            );
+        try {
+            await expect(
+                makeCaller().reopenSession({
+                    organizationId: T.org,
+                    skillCheckSessionId: T.racedSession,
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it("moves the session to Draft and its Include checks to Pending, leaving Exclude, logs Reopen, and lets it be approved again", async () => {
+        const caller = makeCaller();
+        const { updated } = await caller.reopenSession({
             organizationId: T.org,
             skillCheckSessionId: T.approvedSession,
         });
@@ -1562,16 +1585,14 @@ describe("skillCheckSessions.reopenSession", () => {
             },
         });
         expect(entries).toHaveLength(1);
-    });
 
-    it("lets the reopened session be approved again", async () => {
-        const { updated } = await makeCaller().approveSession({
+        const { updated: reapproved } = await caller.approveSession({
             organizationId: T.org,
             sessionId: T.approvedSession,
             includedCheckIds: [T.excludedCheck],
         });
 
-        expect(updated.status).toBe("Include");
+        expect(reapproved.status).toBe("Include");
         expect(await checkStatuses()).toEqual({
             [T.includedCheck]: "Exclude",
             [T.excludedCheck]: "Include",

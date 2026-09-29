@@ -43,7 +43,8 @@ function invalidateOtherSkillCheckLists(organizationId: string): MutationEffect[
 /**
  * Invalidates the org-wide reads that change with a session's status: the sessions list (its rows
  * carry `status`) and the competency matrix, which counts only approved sessions' `Include` checks.
- * Shared by `approveSession` and `reopenSession`.
+ * Shared by `approveSession` and `reopenSession`. `listRecentChecks` and the org-wide
+ * `listSkillChecks` aren't invalidated: nothing renders a check's status there.
  */
 function invalidateSessionStatusReaders(organizationId: string): MutationEffect[] {
     return [
