@@ -62,6 +62,20 @@ export default async function SkillTrack_SessionBySkill_Page(props: Props) {
             ownChecksOnly: true,
         }),
     );
+    prefetch(
+        trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    prefetch(
+        trpc.skillCheckSessions.listSessionSkills.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
     // The Actions sheet's dialogs load their own lists once opened; prefetch only the one that
     // `?action=` opens on arrival.
     prefetchSessionConfigDialog({

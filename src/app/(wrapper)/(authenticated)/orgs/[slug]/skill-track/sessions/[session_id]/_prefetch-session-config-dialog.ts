@@ -12,6 +12,9 @@ import { prefetch, trpc } from "@/trpc/server";
  * Prefetches the queries of the session config dialog that `?action=` names, if any, for a page
  * that mounts `SkillTrack_SessionConfigDialogs`. A dialog's lists are only needed on the first
  * render when it opens on arrival; otherwise it fetches them itself once opened.
+ *
+ * The session's assigned assessees and skills are left out: every page that hosts the dialogs
+ * reads them itself and prefetches them unconditionally.
  */
 export function prefetchSessionConfigDialog({
     action,
@@ -25,13 +28,6 @@ export function prefetchSessionConfigDialog({
     // Only the literals are compared below, so an unknown value just matches no case.
     switch (action as SessionConfigAction | undefined) {
         case "change-personnel":
-            prefetch(
-                trpc.skillCheckSessions.listSessionAssessees.queryOptions({
-                    organizationId,
-                    sessionId,
-                    scope: "assigned",
-                }),
-            );
             prefetch(trpc.teams.listTeams.queryOptions({ organizationId }));
             prefetch(trpc.teams.listTeamMemberships.queryOptions({ organizationId }));
             break;
@@ -39,13 +35,6 @@ export function prefetchSessionConfigDialog({
             prefetch(
                 trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
                     organizationId,
-                }),
-            );
-            prefetch(
-                trpc.skillCheckSessions.listSessionSkills.queryOptions({
-                    organizationId,
-                    sessionId,
-                    scope: "assigned",
                 }),
             );
             break;

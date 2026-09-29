@@ -176,12 +176,13 @@ export function SkillTrack_SessionBySkill_Content({
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
     type Selected = { skillId: SkillId; status: "Loading" | "Selected" } | null;
-    const [selectedState, setSelected] = useState<Selected>(null);
-    // A config change can take the selected skill off the session; stop showing it then.
-    const selected =
-        selectedState && sessionSkills.some((skill) => skill.id === selectedState.skillId)
-            ? selectedState
-            : null;
+    const [selected, setSelected] = useState<Selected>(null);
+    // A config change can take the selected skill off the session. Clear the selection then
+    // (during render, so the stale skill is never shown), so re-adding it later doesn't
+    // silently re-select it.
+    if (selected && !sessionSkills.some((skill) => skill.id === selected.skillId)) {
+        setSelected(null);
+    }
 
     async function handleSwitchSkill(skillId: SkillId) {
         mutation.reset();

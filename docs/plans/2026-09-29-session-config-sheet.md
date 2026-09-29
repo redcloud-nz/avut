@@ -160,7 +160,7 @@ PersonRef[], updatedSession: SkillCheckSession }`.
     round-trip through it. `npm run check` passes. The live effect on the entry page is
     checked in task 4.
 
-- [ ] **4. Actions sheet on `by-person` / `by-skill`** `visual`
+- [x] **4. Actions sheet on `by-person` / `by-skill`** `visual` — feat(skill-track): add Actions sheet to the session entry pages
   - **Files:** `src/components/skill-track/session-actions-sheet.tsx` (new),
     `src/components/skill-track/session-by-person-content.tsx`,
     `src/components/skill-track/session-by-skill-content.tsx`, and both entry pages'

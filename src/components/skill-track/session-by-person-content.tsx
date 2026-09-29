@@ -167,12 +167,13 @@ export function SkillTrack_SessionByPerson_Content({
     const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
 
     type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
-    const [selectedState, setSelected] = useState<Selected>(null);
-    // A config change can take the selected person off the session; stop showing them then.
-    const selected =
-        selectedState && assignedPersonnel.some((person) => person.id === selectedState.personId)
-            ? selectedState
-            : null;
+    const [selected, setSelected] = useState<Selected>(null);
+    // A config change can take the selected person off the session. Clear the selection then
+    // (during render, so the stale person is never shown), so re-adding them later doesn't
+    // silently re-select them.
+    if (selected && !assignedPersonnel.some((person) => person.id === selected.personId)) {
+        setSelected(null);
+    }
 
     async function handleSwitchPerson(personId: PersonId) {
         mutation.reset();
