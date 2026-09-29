@@ -10,14 +10,27 @@ ask before running it.
 ## Status
 
 - **Phase 0:** done on `fix/d4h-token-permissions` (828199e9), merged into this branch.
-- **Phase 1:** done. §1.6's lookup is named `UserAccounts.getDeleted`.
-- **Phase 2:** done, except §2.7, which is skipped. §2.1's ID-brand decision: `ProviderCredentialId`
-  is the only brand; `D4HAccessTokenId` is gone. The D4H metadata schemas moved to
-  `src/lib/schemas/d4h-provider-metadata.ts`, so `provider-credential.ts` and
+- **Phase 1:** done. §1.6's lookup is named `UserAccounts.getDeleted`. §1.2 and §1.3 were built,
+  then superseded by the change of approach below.
+- **Phase 2:** done, except §2.7, which is skipped. No component test mocks the tRPC client yet,
+  so restoring the dialog test would introduce a new test pattern. §2.1's ID-brand decision:
+  `ProviderCredentialId` is the only brand; `D4HAccessTokenId` is gone. The D4H metadata schemas
+  moved to `src/lib/schemas/d4h-provider-metadata.ts`, so `provider-credential.ts` and
   `d4h-access-token.ts` don't import each other's values.
-  §2.7 is skipped. No component test mocks the tRPC client yet, so restoring the dialog test would introduce a new test pattern.
 - **Deviation in §2.3:** `AsAdmin` goes only on a system-admin procedure that sits beside an org-scoped one doing the same job. Suffixing every system-admin procedure would add churn without clearing up any ambiguity. So only `importSkillPackage` → `importPackageAsAdmin` changed, and the rule is in `src/trpc/CLAUDE.md`.
-- **Phase 3:** not started.
+- **Change of approach, 2026-09-29: an ownerless org is allowed.** Leaving an organization with
+  no owner is bad, but not worth bending over backwards to prevent. So:
+  - `withOwnerGuard` and every last-owner check are gone.
+  - Leaving as the only owner warns and asks for the org's name. Closing an account, and a
+    system admin deleting one, list the orgs it's the only owner of. A system admin removing
+    the last owner is warned. None of these block.
+  - Removing a member who holds `owner` needs `member: ["owner"]` or a system admin.
+  - `user.leaveOrganization` deletes the membership itself, and Better Auth's
+    `/organization/leave` is disabled.
+  - Account deletion and purge no longer block on sole ownership.
+  - The way back: a system admin can `makeOwner`, from a Make owner action on the system-admin
+    org screen, which also flags an org with no owner (as does the org list).
+- **Phase 3:** §3.2 is superseded: the recovery path is built here. §3.1 is not started.
 
 Every PR merged to `integration` between 2026-09-22 and 2026-09-28 (32 PRs, #249–#327). I
 checked each `claude-avut` review finding against `origin/integration` at `cef534bd`. There
