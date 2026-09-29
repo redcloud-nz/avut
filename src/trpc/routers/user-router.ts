@@ -7,6 +7,7 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { type LogAction, type LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
@@ -84,10 +85,14 @@ async function logMembershipEvent(
         objectId: string;
         description: string;
     },
+    /** A write that belongs with the entries — it commits or rolls back with them. */
+    write?: (tx: Prisma.TransactionClient) => Promise<unknown>,
 ) {
     const { operationKey, organizationId, ...entry } = input;
 
     await ctx.prisma.$transaction(async (tx) => {
+        await write?.(tx);
+
         const batch = await createLogBatch(
             {
                 operationKey,
@@ -196,8 +201,9 @@ export const userRouter = createTrpcRouter({
 
     /**
      * Close the caller's own account (#150): the same soft delete a system administrator does,
-     * into the system Rubbish bin for `USER_RETENTION_DAYS`, with the same guards —
-     * the sole owner of an organization is refused with its name. Every session is revoked, this
+     * into the system Rubbish bin for `USER_RETENTION_DAYS`, with the same guards. Closing as an
+     * organization's sole owner is allowed — the dialog lists those organizations first
+     * (`listSoleOwnedOrganizations`). Every session is revoked, this
      * one included, so the client signs out afterwards. Person records in each organization are
      * the organization's and are kept.
      *
@@ -242,12 +248,10 @@ export const userRouter = createTrpcRouter({
             }),
         )
         .query(async ({ ctx }) => {
-            const [deleted] = (await UserAccounts.listDeleted(ctx.prisma)).filter(
-                (u) => u.id === ctx.userId,
-            );
+            const deleted = await UserAccounts.getDeleted(ctx.prisma, ctx.userId);
             return {
-                closed: deleted !== undefined,
-                canRestore: deleted !== undefined && ctx.auth.user.deletedBy === "Self",
+                closed: deleted !== null,
+                canRestore: deleted !== null && ctx.auth.user.deletedBy === "Self",
                 purgeAt: deleted?.purgeAt?.toISOString() ?? null,
             };
         }),
@@ -368,9 +372,12 @@ export const userRouter = createTrpcRouter({
     }),
 
     /**
-     * Leaves an organization the caller is a member of. Better Auth itself refuses this
-     * (`BAD_REQUEST`) when the caller is the organization's only owner — nothing here
-     * re-checks that.
+     * Leaves an organization the caller is a member of. Leaving as its only owner is allowed —
+     * the leave dialog warns and asks for the organization's name first — and a system admin can
+     * appoint a new owner afterwards (`organizations.makeOwner`).
+     *
+     * Deletes the membership itself rather than through Better Auth's `/organization/leave`,
+     * which refuses the last owner (that path is disabled in `server/auth.ts`).
      *
      * @param ctx The authenticated context.
      * @param input The organization to leave.
@@ -390,20 +397,21 @@ export const userRouter = createTrpcRouter({
                 });
             }
 
-            // Not a Prisma operation, so it can't join a $transaction with the log entries.
-            await auth.api.leaveOrganization({
-                body: { organizationId: input.organizationId },
-                headers: await ctx.getHeaders(),
-            });
+            await logMembershipEvent(
+                ctx,
+                {
+                    operationKey: "organization-leave",
+                    organizationId: input.organizationId,
+                    action: "Delete",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    description: `Left ${membership.organization.name} (${input.organizationId}).`,
+                },
+                (tx) => tx.organizationUser.delete({ where: { id: membership.id } }),
+            );
 
-            await logMembershipEvent(ctx, {
-                operationKey: "organization-leave",
-                organizationId: input.organizationId,
-                action: "Delete",
-                objectType: "OrganizationMembership",
-                objectId: membership.id,
-                description: `Left ${membership.organization.name} (${input.organizationId}).`,
-            });
+            // The caller's cached roles would otherwise keep granting access to the org.
+            await revalidateOrganizationUser(ctx.userId);
 
             return { ok: true as const };
         }),
@@ -499,6 +507,17 @@ export const userRouter = createTrpcRouter({
             return sessions.map((session) =>
                 UserSessionData.fromRecord(session, session.id === ctx.auth.session.id),
             );
+        }),
+
+    /**
+     * The organizations the caller is the only owner of — what leaving them, or closing the
+     * account, would leave with no owner. The leave and close-account dialogs warn with it.
+     */
+    listSoleOwnedOrganizations: authenticatedProcedure
+        .output(z.array(z.object({ id: OrganizationId.schema, name: z.string() })))
+        .query(async ({ ctx }) => {
+            const orgs = await UserAccounts.getSoleOwnedOrganizations(ctx, ctx.userId);
+            return orgs.map((o) => ({ ...o, id: OrganizationId.schema.parse(o.id) }));
         }),
 
     /**

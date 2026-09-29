@@ -7,6 +7,7 @@
 
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import { requireOrganization } from "@/server/organization-access";
@@ -28,7 +29,7 @@ export default async function D4HViewsModules_Personnel_Page(
         throw new Error("D4H Views module is not configured properly. No sync token found.");
 
     const accessToken = await getOrganizationD4HAccessToken({
-        tokenId: accessTokenId,
+        tokenId: ProviderCredentialId.schema.parse(accessTokenId),
         organizationId: organization.id,
     });
 

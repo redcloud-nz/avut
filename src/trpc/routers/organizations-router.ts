@@ -28,44 +28,6 @@ import { Messages } from "../messages";
 const activeMember = { user: { status: { not: "Deleted" as const } } };
 
 /**
- * The memberships holding the `owner` role, filtered by `where`.
- *
- * `OrganizationUser.role` is comma-joined (an owner who is also an `i3-editor` is stored as
- * `"owner,i3-editor"`), so matching `role: "owner"` exactly would miss them. `contains` narrows
- * the query and the exact-role check afterwards keeps it from matching on a substring.
- */
-export async function findOwnerMemberships(
-    prisma: Pick<PrismaClient, "organizationUser">,
-    where: { organizationId?: string | { in: string[] }; userId?: string },
-) {
-    const rows = await prisma.organizationUser.findMany({
-        // A deleted account's membership is kept for recovery, but it can't act as an owner.
-        where: { ...where, role: { contains: "owner" }, user: { status: { not: "Deleted" } } },
-        select: { organizationId: true, userId: true, role: true },
-    });
-    return rows.filter((row) => hasOwnerRole(row.role));
-}
-
-/**
- * Guard against orphaning an organization: throws `BAD_REQUEST` if `userId` is the
- * organization's only `owner` (so removing them, or demoting them from `owner`, would
- * leave the org with no owner).
- */
-export async function assertNotLastOwner(
-    prisma: Pick<PrismaClient, "organizationUser">,
-    organizationId: string,
-    userId: string,
-) {
-    const owners = await findOwnerMemberships(prisma, { organizationId });
-    if (owners.length <= 1 && owners.some((o) => o.userId === userId)) {
-        throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Cannot remove or demote the last owner of an organisation.",
-        });
-    }
-}
-
-/**
  * Throws `NOT_FOUND` if the user does not exist (surfaces a clear error before an FK violation),
  * or is in the system Rubbish bin — a deleted account can't be given a new membership.
  */
@@ -414,12 +376,20 @@ export const organizationsRouter = createTrpcRouter({
      * Grant a member ownership of the organization, in addition to whatever other roles they
      * already hold — `owner` is orthogonal to the flat role set, not exclusive with it. Only an
      * existing owner holds `member: ["owner"]`.
+     *
+     * `allowSystemAdmin` is the way back for an organization left with no owner: nobody inside
+     * it holds `member: ["owner"]` any more, so a system admin appoints one.
      */
-    makeOwner: organizationProcedure({ member: ["owner"] })
+    makeOwner: organizationProcedure({ member: ["owner"] }, { allowSystemAdmin: true })
         .input(z.object({ userId: UserId.schema }))
         .mutation(async ({ ctx, input }) => {
             const membership = await ctx.prisma.organizationUser.findFirst({
-                where: { organizationId: ctx.organizationId, userId: input.userId },
+                where: {
+                    organizationId: ctx.organizationId,
+                    userId: input.userId,
+                    // A Deleted (Rubbish bin) account can't be appointed the recovery owner.
+                    user: { status: { not: "Deleted" } },
+                },
                 select: { id: true, role: true },
             });
             if (!membership) {
@@ -455,8 +425,9 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
-     * Remove a member from the organization. `BAD_REQUEST` if this would remove the
-     * organization's last `owner`.
+     * Remove a member from the organization. Only an owner (or a system admin) may remove a
+     * member who holds `owner`. Removing the last owner is allowed — the dialog warns, and a
+     * system admin can make someone an owner again (`makeOwner`).
      *
      * `allowSystemAdmin` lets a site-wide administrator remove a member of an organization
      * they don't themselves belong to (the system-admin console's org member management).
@@ -478,9 +449,9 @@ export const organizationsRouter = createTrpcRouter({
                 });
             }
 
-            // Only an owner removal can orphan the org — skip the owners query otherwise.
-            if (hasOwnerRole(membership.role)) {
-                await assertNotLastOwner(ctx.prisma, ctx.organizationId, input.userId);
+            // `member: ["delete"]` alone doesn't reach an owner — an admin can't remove one.
+            if (hasOwnerRole(membership.role) && !ctx.isSystemAdmin) {
+                await ctx.hasPermission(ctx.organizationId, { member: ["owner"] });
             }
 
             await ctx.prisma.$transaction([
@@ -501,8 +472,8 @@ export const organizationsRouter = createTrpcRouter({
 
     /**
      * Strip ownership from a member — the target must not be the caller (an owner cannot
-     * remove their own ownership; only a different owner can), and `BAD_REQUEST` if this would
-     * remove the organization's last `owner`. Only an existing owner holds `member: ["owner"]`.
+     * remove their own ownership; only a different owner can). Only an existing owner holds
+     * `member: ["owner"]`.
      */
     removeOwner: organizationProcedure({ member: ["owner"] })
         .input(z.object({ userId: UserId.schema }))
@@ -534,29 +505,22 @@ export const organizationsRouter = createTrpcRouter({
                 .filter((r) => r !== "owner")
                 .join(",");
 
-            // The last-owner check runs inside a serializable transaction with the write: two
-            // owners removing each other concurrently would otherwise both see two owners and
-            // leave the org with none. Under `Serializable` Postgres aborts one of them instead.
-            await ctx.prisma.$transaction(
-                async (tx) => {
-                    await assertNotLastOwner(tx, ctx.organizationId, input.userId);
-                    await tx.organizationUser.update({
-                        where: { id: membership.id },
-                        data: { role },
-                    });
-                    await ctx.logEvent(
-                        {
-                            action: "Update",
-                            objectType: "OrganizationMembership",
-                            objectId: membership.id,
-                            changes: [],
-                            description: `Removed owner status from user ${input.userId}`,
-                        },
-                        tx,
-                    );
-                },
-                { isolationLevel: "Serializable" },
-            );
+            // No last-owner check: the caller is an owner and can't target themselves, but two owners
+            // removing each other concurrently can still leave the org ownerless. That's allowed; a
+            // system admin recovers it with makeOwner.
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: { id: membership.id },
+                    data: { role },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Removed owner status from user ${input.userId}`,
+                }),
+            ]);
 
             await revalidateOrganizationUser(input.userId);
 

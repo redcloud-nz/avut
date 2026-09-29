@@ -80,6 +80,9 @@ export async function requireGroupById(
 /**
  * Fetch a skill package by ID and ensure it belongs to the organization.
  * @throws NotFoundError if the skill package does not exist or does not belong to the organization.
+ *
+ * The not-found message is a local literal, not `Messages.skillPackageNotFound` — see
+ * `requireSkillById`'s doc comment for why.
  */
 export async function requirePackageById(
     ctx: OrgServiceContext,

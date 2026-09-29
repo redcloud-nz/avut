@@ -14,7 +14,7 @@ import {
     d4hTodayTeamGroupSchema,
     zonedTodayRange,
 } from "@/lib/d4h-today";
-import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
+import { D4HTeamPermissions } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";

@@ -12,6 +12,7 @@ import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
@@ -55,10 +56,10 @@ export default async function Admin_D4HAccessToken_EquipmentCategories_Page(
     if (!env.isDevelopment()) notFound();
 
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
+    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     const accessToken = await getOrganizationD4HAccessToken({
-        tokenId: token_id,
+        tokenId: ProviderCredentialId.schema.parse(token_id),
         organizationId: organization.id,
     });
 

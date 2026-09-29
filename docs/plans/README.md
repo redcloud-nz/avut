@@ -19,3 +19,9 @@ already exists. A plan is the how, once the what is settled.
   the filename prefix together — they must never disagree.
 - Link the spec it implements, if any, and note branch/worktree/DB-branching
   requirements up front.
+- A plan written ahead of building (`/avut-develop-feature --plan-only`) lives on
+  a `plan/<slug>` branch, in `.claude/worktrees/<slug>`, until it's picked up;
+  then the branch is renamed to `feat/<slug>` or `fix/<slug>`.
+  `git branch --list 'plan/*'` shows what's waiting. Such a plan also records
+  `**Written against:** integration @ <sha>`, so the pickup can tell what has
+  changed since.

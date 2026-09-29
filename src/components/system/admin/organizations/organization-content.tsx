@@ -12,12 +12,14 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { UserLink } from "@/components/entity-links/user-link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import { isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
 import { Modules, type ModuleId } from "@/lib/modules";
+import { hasOwnerRole } from "@/lib/permissions";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
@@ -53,6 +55,7 @@ export function SystemAdmin_Organization_Content({
     const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
         isModuleUsable(moduleFlags, id, organization.enabledModules.includes(id)),
     );
+    const ownerCount = organization.members.filter((m) => hasOwnerRole(m.role)).length;
 
     return (
         <>
@@ -126,7 +129,17 @@ export function SystemAdmin_Organization_Content({
                                         />
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-4">
+                                    {ownerCount === 0 && (
+                                        <Alert variant="warning">
+                                            <AlertTitle>No owner</AlertTitle>
+                                            <AlertDescription>
+                                                Nobody in this organisation can manage its owners.
+                                                Use &ldquo;Make owner&rdquo; on a member to appoint
+                                                one.
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
                                     {organization.members.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">No members.</p>
                                     ) : (
@@ -176,6 +189,10 @@ export function SystemAdmin_Organization_Content({
                                                             <SystemAdmin_MemberActionsMenu
                                                                 organizationId={organizationId}
                                                                 member={member}
+                                                                isLastOwner={
+                                                                    ownerCount === 1 &&
+                                                                    hasOwnerRole(member.role)
+                                                                }
                                                                 moduleGatedRoles={moduleGatedRoles}
                                                             />
                                                         </td>

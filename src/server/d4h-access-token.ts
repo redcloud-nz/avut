@@ -6,10 +6,12 @@
 import "server-only";
 
 import { NotConfiguredError } from "@/lib/errors";
-import { D4HAccessToken_ServerOnly, D4HProviderMetadata } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { D4HProviderMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { OrganizationId } from "@/lib/schemas/organization";
 import type {
     ProviderCredential_ServerOnly,
+    ProviderCredentialId,
     ProviderCredentialRecord,
 } from "@/lib/schemas/provider-credential";
 import { UserId } from "@/lib/schemas/user";
@@ -55,7 +57,7 @@ export async function getOrganizationD4HAccessToken({
     tokenId,
 }: {
     organizationId: OrganizationId;
-    tokenId: string;
+    tokenId: ProviderCredentialId;
 }): Promise<D4HAccessToken_ServerOnly | null> {
     const credential = await getOrganizationProviderCredential({
         provider: "D4H",
@@ -66,7 +68,7 @@ export async function getOrganizationD4HAccessToken({
     return credential ? toD4HAccessToken_ServerOnly(credential) : null;
 }
 
-export function revalidateD4HAccessToken(tokenId: string) {
+export function revalidateD4HAccessToken(tokenId: ProviderCredentialId) {
     revalidateProviderCredential(tokenId);
 }
 

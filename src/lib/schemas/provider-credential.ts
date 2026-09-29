@@ -6,14 +6,12 @@
 import * as z from "zod";
 
 import type { ProviderCredential as ProviderCredentialRecord } from "@/generated/prisma/client";
-import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
 
-export type { ProviderCredentialRecord };
+import { D4HProviderMetadata } from "./d4h-provider-metadata";
 
-/** Record<D4H permission group, Record<D4H permission key, granted>> — same shape D4H's whoami response uses. */
-const d4hTeamPermissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()));
+export type { ProviderCredentialRecord };
 
 export const ProviderCredentialId = {
     schema: zodNanoId16("ProviderCredentialId expected").brand<"ProviderCredentialId">(),
@@ -33,33 +31,9 @@ export type Provider = z.infer<typeof Provider.schema>;
  * Provider-specific metadata, discriminated on `provider`. Each provider gets its own union
  * member here rather than every call site casting an untyped `Json` bag by hand.
  */
+// Each provider's member is defined beside that provider's own schemas, so the two can't drift.
 const providerCredentialMetadataSchema = z.discriminatedUnion("provider", [
-    z.object({
-        provider: z.literal("D4H"),
-        serverCode: D4HServerCode.schema,
-        d4HTeams: z.array(
-            z.object({
-                id: z.number(),
-                title: z.string(),
-                resourceType: z.literal("Team"),
-                owner: z
-                    .object({
-                        id: z.number(),
-                        resourceType: z.literal("Organisation"),
-                        title: z.string(),
-                    })
-                    .optional(),
-                permissions: d4hTeamPermissionsSchema,
-            }),
-        ),
-        d4HOrganisations: z.array(
-            z.object({
-                id: z.number(),
-                title: z.string(),
-                resourceType: z.literal("Organisation"),
-            }),
-        ),
-    }),
+    D4HProviderMetadata.schema,
 ]);
 
 export const ProviderCredentialMetadata = {
@@ -68,6 +42,10 @@ export const ProviderCredentialMetadata = {
 
 export type ProviderCredentialMetadata = z.infer<typeof ProviderCredentialMetadata.schema>;
 
+/**
+ * The generic client-safe shape of a credential, for the next provider to read through. D4H
+ * doesn't use it: it reads rows through `D4HAccessToken.fromRecord`, which keeps D4H's own shape.
+ */
 export const ProviderCredential = {
     schema: z.object({
         id: ProviderCredentialId.schema,

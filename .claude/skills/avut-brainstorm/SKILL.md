@@ -7,10 +7,9 @@ manual: true
 
 # Brainstorm
 
-You are a thinking partner for an extended exploration of a big idea or problem.
-`/avut-idea` is for capturing a small idea mid-session without breaking flow; `/avut-brainstorm`
-is the opposite — a deliberate, unhurried conversation that ends in a well-developed
-GitHub issue ready for `/avut-review-ideas`.
+You are a thinking partner for an extended exploration of a big idea or problem: a
+deliberate, unhurried conversation that ends in a well-developed GitHub issue. To try an
+idea out in code instead of talking it through, that's `/avut-explore`.
 
 The topic: $ARGUMENTS
 
@@ -85,7 +84,7 @@ Body format:
 
 ## Open questions
 
-<unresolved forks for /avut-review-ideas or a future session to tackle>
+<unresolved forks for a future session to tackle>
 
 ## Notes
 
@@ -93,8 +92,8 @@ Body format:
 ```
 
 Omit `## Options considered` or `## Notes` only if the conversation genuinely produced
-nothing for them. Never write a `## Review` section into the body — reviews are posted
-as comments by `/avut-review-ideas`.
+nothing for them. Never write a `## Review` section into the body. A review, if one is
+wanted, goes in a comment, so the body stays the idea itself.
 
 **New idea:**
 
@@ -120,6 +119,6 @@ work identically from a local checkout or a cloud session.
 
 ## Common mistakes
 
-- Writing a `## Review` section into the body instead of leaving reviews to `/avut-review-ideas`'s comments
+- Writing a `## Review` section into the body instead of a comment
 - Skipping the "Expanded" comment after an in-place body edit, leaving no trace in the timeline of what changed
 - Treating a fuzzy title match as certain when more than one open `brainstorm` issue matches — ask instead of guessing

@@ -8,6 +8,7 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
+import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonData, PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import { UserSessionId } from "@/lib/schemas/user-session";
@@ -97,7 +98,8 @@ export const usersRouter = createTrpcRouter({
      * `USER_RETENTION_DAYS`. Recover with `recoverUser`; purge early with `purgeUser`.
      *
      * Guards: you cannot delete your own account (close it from your settings instead); the
-     * service refuses the last system administrator and the sole owner of any organization.
+     * service refuses the last system administrator. Deleting an organization's sole owner is
+     * allowed; the dialog warns first (`listSoleOwnedOrganizations`).
      */
     deleteUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))
@@ -310,6 +312,18 @@ export const usersRouter = createTrpcRouter({
         }),
 
     /**
+     * The organizations `userId` is the only owner of — what deleting the account would leave
+     * with no owner. The system-admin delete dialog warns with it.
+     */
+    listSoleOwnedOrganizations: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .output(z.array(z.object({ id: OrganizationId.schema, name: z.string() })))
+        .query(async ({ ctx, input }) => {
+            const orgs = await UserAccounts.getSoleOwnedOrganizations(ctx, input.userId);
+            return orgs.map((o) => ({ ...o, id: OrganizationId.schema.parse(o.id) }));
+        }),
+
+    /**
      * Lists the organization's members that are not yet linked to a personnel record.
      * Used to populate the "link user" picker on the person detail page — the mirror of
      * `personnel.listUnlinkedPersonnel`.
@@ -367,7 +381,7 @@ export const usersRouter = createTrpcRouter({
 
     /**
      * Permanently delete an account from the system Rubbish bin, ahead of the auto-purge.
-     * @throws TRPCError(BAD_REQUEST) if it isn't deleted, or it's now the sole owner of an org.
+     * @throws TRPCError(BAD_REQUEST) if it isn't deleted, or it's the last system administrator.
      */
     purgeUser: systemAdminProcedure
         .input(z.object({ userId: UserId.schema }))

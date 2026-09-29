@@ -204,8 +204,16 @@ function LinkDialog({
             meta: { effects: teamsEffects.linkTeamToD4H },
             onError: (error) => toast.error(error.message),
             onSuccess: ({ plan }) => {
+                // A Rubbish-bin skip needs the admin to act, unlike a missing email — say so.
+                const inBin = plan.skipped.filter(
+                    (s) => s.reason === "person-in-rubbish-bin",
+                ).length;
                 const skippedSuffix =
-                    plan.counts.skipped > 0 ? `, ${plan.counts.skipped} skipped` : "";
+                    plan.counts.skipped === 0
+                        ? ""
+                        : inBin === 0
+                          ? `, ${plan.counts.skipped} skipped`
+                          : `, ${plan.counts.skipped} skipped (${inBin} in the Rubbish bin — recover or delete them forever, then sync)`;
                 toast.success(
                     `Linked to D4H — ${plan.counts.additions} member(s) imported${skippedSuffix}`,
                 );

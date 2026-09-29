@@ -11,6 +11,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import {
     Provider,
     ProviderCredential_ServerOnly,
+    type ProviderCredentialId,
     type ProviderCredentialRecord,
 } from "@/lib/schemas/provider-credential";
 import { UserId } from "@/lib/schemas/user";
@@ -29,7 +30,7 @@ export function toServerOnlyProviderCredential(
 }
 
 async function fetchProviderCredential(
-    credentialId: string,
+    credentialId: ProviderCredentialId,
 ): Promise<ProviderCredentialRecord | null> {
     "use cache";
     cacheTag(`provider-credential-${credentialId}`);
@@ -41,7 +42,7 @@ async function fetchProviderCredential(
     });
 }
 
-export function revalidateProviderCredential(credentialId: string) {
+export function revalidateProviderCredential(credentialId: ProviderCredentialId) {
     revalidateTag(`provider-credential-${credentialId}`, { expire: 0 });
 }
 
@@ -52,7 +53,7 @@ export async function getOrganizationProviderCredential({
 }: {
     provider: Provider;
     organizationId: OrganizationId;
-    credentialId: string;
+    credentialId: ProviderCredentialId;
 }): Promise<ProviderCredential_ServerOnly | null> {
     const record = await fetchProviderCredential(credentialId);
 
@@ -62,7 +63,8 @@ export async function getOrganizationProviderCredential({
     if (record.organizationId !== organizationId) return null;
     // Group-owned credentials (#198) never come back from an organization lookup.
     if (record.groupId !== null) return null;
-    if (record.userId) throw new Error("Not an organization credential");
+    // A personal token carries its organization's ID too — it just isn't this lookup's to return.
+    if (record.userId !== null) return null;
 
     return toServerOnlyProviderCredential(record);
 }

@@ -79,6 +79,7 @@ config action. Two or three sentences of framing at the top. Show the draft to
 the user and let them edit before committing.
 
 ```bash
+git add "docs/releases/v$NEW.md"                       # new file — `commit -a` won't pick it up
 git commit -am "chore(release): v$NEW ($CODENAME)"     # include the Co-Authored-By trailer
 BOT_TOKEN=$(gh auth token --user claude-avut)
 GH_TOKEN="$BOT_TOKEN" git push -u origin "release/v$NEW"

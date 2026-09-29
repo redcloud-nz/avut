@@ -9,7 +9,8 @@
     "versionName": "Philomel"
   },
   "scripts": {
-    "dev": "next dev --inspect",
+    "dev": "bash scripts/dev.sh",
+    "dev:port": "bash scripts/dev-port.sh",
     "clean": "rm -rf .next",
     "dev-email": "email dev --dir 'src/emails' --port 3001",
     "prisma": "dotenv -e .env.local -- npx prisma",
@@ -102,7 +103,7 @@
     "tailwind-merge": "^3.6.0",
     "tailwind-variants": "^3.1.0",
     "ts-pattern": "^5.6.2",
-    "uuid": "^11.0.5",
+    "uuid": "^11.1.1",
     "zod": "^4.3.6",
     "zustand": "^5.0.3"
   },
@@ -149,7 +150,10 @@
   "overrides": {
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
+    "deepmerge-ts": "^8.0.2",
     "js-yaml": "^4.3.2",
-    "mysql2": "^3.22.0"
+    "mysql2": "^3.22.0",
+    "toml": "^4.2.0",
+    "uuid": "$uuid"
   }
 }
