@@ -6,7 +6,7 @@
 
 import { ClipboardCheckIcon } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
@@ -111,6 +111,13 @@ export function SkillTrack_SessionReview_Content({
             },
         }),
     );
+
+    // The page stays mounted across approve → reopen, so a finished approval would otherwise
+    // leave the button reading "Submitted" once the session is editable again.
+    const { reset: resetMutation } = mutation;
+    useEffect(() => {
+        if (!isApproved) resetMutation();
+    }, [isApproved, resetMutation]);
 
     function toggleCheck(id: SkillCheckId) {
         setSelected((prev) => {
