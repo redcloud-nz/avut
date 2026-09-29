@@ -262,7 +262,7 @@ export const organizationsRouter = createTrpcRouter({
                         select: {
                             providerCredentials: { where: { provider: "D4H" } },
                             personnel: true,
-                            skillChecks: true,
+                            skillChecks: { where: { status: { not: "Deleted" } } },
                             skillCheckSessions: true,
                             notes: true,
                             skillPackages: true,

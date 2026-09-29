@@ -148,7 +148,7 @@ migrate dev`, and `npm run prisma migrate status` reports the branch DB up to da
       `FORBIDDEN`. Follow `.claude/rules/testing.md`.
   - **Done when:** the tests above pass and `npm run check` is green.
 
-- [ ] **3a. Hide `Deleted` from every read**
+- [x] **3a. Hide `Deleted` from every read** — `feat(skill-track): hide Deleted skill checks from every read`
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts` (+ `.test.ts`),
     `src/trpc/routers/skill-checks-router.ts` (+ `.test.ts`), `src/trpc/routers/organizations-router.ts`,
     `src/trpc/routers/user-router.ts`, `src/server/services/personnel.ts`,

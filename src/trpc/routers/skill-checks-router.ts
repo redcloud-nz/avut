@@ -312,7 +312,11 @@ export const skillChecksRouter = createTrpcRouter({
         .output(SkillCheck.schema.extend({ assessor: PersonRef.schema.nullable() }))
         .query(async ({ ctx, input }) => {
             const check = await ctx.prisma.skillCheck.findFirst({
-                where: { id: input.skillCheckId, organizationId: ctx.organizationId },
+                where: {
+                    id: input.skillCheckId,
+                    organizationId: ctx.organizationId,
+                    status: { not: "Deleted" },
+                },
                 include: { assessor: { select: { id: true, name: true } } },
             });
 
@@ -354,6 +358,7 @@ export const skillChecksRouter = createTrpcRouter({
                 where: {
                     organizationId: ctx.organizationId,
                     createdAt: { gte: since },
+                    status: { not: "Deleted" },
                 },
                 include: {
                     assessee: { select: { id: true, name: true } },
@@ -412,6 +417,7 @@ export const skillChecksRouter = createTrpcRouter({
                     skillId,
                     assesseeId,
                     assessorId: resolvedAssessorId,
+                    status: { not: "Deleted" },
                 },
             });
 

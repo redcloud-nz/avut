@@ -262,7 +262,6 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         select: {
                             assessees: true,
                             skills: true,
-                            skillChecks: true,
                         },
                     },
                 },
@@ -274,10 +273,16 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     message: Messages.skillCheckSessionNotFound(skillCheckSessionId),
                 });
 
+            // Counted separately rather than through `_count`, so the `Deleted` filter is
+            // testable (prisma-mock ignores a `where` inside `_count.select`).
+            const checkCount = await ctx.prisma.skillCheck.count({
+                where: { sessionId: skillCheckSessionId, status: { not: "Deleted" } },
+            });
+
             return {
                 assesseeCount: session._count.assessees,
                 skillCount: session._count.skills,
-                checkCount: session._count.skillChecks,
+                checkCount,
             };
         }),
 
@@ -333,6 +338,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 const checks = await ctx.prisma.skillCheck.findMany({
                     where: {
                         sessionId,
+                        status: { not: "Deleted" },
                     },
                     select: {
                         assesseeId: true,
@@ -398,6 +404,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 const checks = await ctx.prisma.skillCheck.findMany({
                     where: {
                         sessionId,
+                        status: { not: "Deleted" },
                     },
                     select: {
                         assessorId: true,
@@ -466,6 +473,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 const checks = await ctx.prisma.skillCheck.findMany({
                     where: {
                         sessionId,
+                        status: { not: "Deleted" },
                     },
                     select: {
                         skillId: true,

@@ -1171,3 +1171,141 @@ describe("skillChecks — the session approval lock", () => {
         });
     });
 });
+
+describe("skillChecks reads ignore Deleted checks", () => {
+    // Dataset: one session holding liveCheck (Draft) and deletedCheck (Deleted) for the same
+    // assessee and assessor, on different skills. Both were recorded just now, so both fall
+    // inside listRecentChecks' one-month window.
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        assessor: PersonId.create(),
+        assessee: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill1: SkillId.create(),
+        skill2: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+        liveCheck: SkillCheckId.create(),
+        deletedCheck: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.assessor, "Dana Assessor"],
+            [T.assessee, "Pat Assessee"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [T.skill1, "Skill 1"],
+            [T.skill2, "Skill 2"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+        await db.skillCheckSession.create({
+            data: {
+                id: T.session,
+                organizationId: T.org,
+                name: "Session",
+                sessionNumber: 1,
+                status: "Draft",
+                startsAt: new Date(),
+                notes: "",
+            },
+        });
+        for (const [id, skillId, status] of [
+            [T.liveCheck, T.skill1, "Draft"],
+            [T.deletedCheck, T.skill2, "Deleted"],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId: T.session,
+                    assesseeId: T.assessee,
+                    assessorId: T.assessor,
+                    skillId,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillCheck: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("listSkillChecks leaves out the Deleted check", async () => {
+        const checks = await makeCaller().listSkillChecks({
+            organizationId: T.org,
+            sessionId: T.session,
+        });
+
+        expect(checks.map((c) => c.id)).toEqual([T.liveCheck]);
+    });
+
+    it("listRecentChecks leaves out the Deleted check", async () => {
+        const checks = await makeCaller().listRecentChecks({ organizationId: T.org });
+
+        expect(checks.map((c) => c.id)).toEqual([T.liveCheck]);
+    });
+
+    it("getSkillCheck throws NOT_FOUND for the Deleted check", async () => {
+        await expect(
+            makeCaller().getSkillCheck({ organizationId: T.org, skillCheckId: T.deletedCheck }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("getSkillCheck still returns the live check", async () => {
+        const check = await makeCaller().getSkillCheck({
+            organizationId: T.org,
+            skillCheckId: T.liveCheck,
+        });
+
+        expect(check.id).toBe(T.liveCheck);
+    });
+});

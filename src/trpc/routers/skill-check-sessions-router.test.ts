@@ -587,6 +587,164 @@ describe("skillCheckSessions.listSessions", () => {
     });
 });
 
+describe("skillCheckSessions reads ignore Deleted checks", () => {
+    // Dataset:
+    //   session → assigned: assessee [liveAssessee], skills [liveSkill], assessors [liveAssessor]
+    //   liveCheck    → (liveAssessee, liveSkill, liveAssessor), Draft
+    //   deletedCheck → (goneAssessee, goneSkill, goneAssessor), Deleted — none of the three
+    //                  is assigned, so they'd only surface through the tombstone
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        liveAssessee: PersonId.create(),
+        goneAssessee: PersonId.create(),
+        liveAssessor: PersonId.create(),
+        goneAssessor: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        liveSkill: SkillId.create(),
+        goneSkill: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+
+        for (const [id, name] of [
+            [T.liveAssessee, "Live Assessee"],
+            [T.goneAssessee, "Gone Assessee"],
+            [T.liveAssessor, "Live Assessor"],
+            [T.goneAssessor, "Gone Assessor"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [T.liveSkill, "Live Skill"],
+            [T.goneSkill, "Gone Skill"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+
+        await db.skillCheckSession.create({
+            data: {
+                id: T.session,
+                organizationId: T.org,
+                name: "Session",
+                sessionNumber: 1,
+                status: "Draft",
+                startsAt: new Date(),
+                notes: "",
+                assessors: { connect: [{ id: T.liveAssessor }] },
+                assessees: { connect: [{ id: T.liveAssessee }] },
+                skills: { connect: [{ id: T.liveSkill }] },
+            },
+        });
+
+        for (const [assesseeId, skillId, assessorId, status] of [
+            [T.liveAssessee, T.liveSkill, T.liveAssessor, "Draft"],
+            [T.goneAssessee, T.goneSkill, T.goneAssessor, "Deleted"],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id: SkillCheckId.create(),
+                    organizationId: T.org,
+                    sessionId: T.session,
+                    assesseeId,
+                    skillId,
+                    assessorId,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], skillCheckSession: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("getSessionMetrics counts only the live check", async () => {
+        const metrics = await makeCaller().getSessionMetrics({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        expect(metrics).toEqual({ assesseeCount: 1, skillCount: 1, checkCount: 1 });
+    });
+
+    it('listSessionAssessees "all" leaves out an assessee known only from a Deleted check', async () => {
+        const assessees = await makeCaller().listSessionAssessees({
+            organizationId: T.org,
+            sessionId: T.session,
+            scope: "all",
+        });
+
+        expect(assessees.map((p) => p.id)).toEqual([T.liveAssessee]);
+    });
+
+    it('listSessionAssessors "all" leaves out an assessor known only from a Deleted check', async () => {
+        const assessors = await makeCaller().listSessionAssessors({
+            organizationId: T.org,
+            sessionId: T.session,
+            scope: "all",
+        });
+
+        expect(assessors.map((p) => p.id)).toEqual([T.liveAssessor]);
+    });
+
+    it('listSessionSkills "all" leaves out a skill known only from a Deleted check', async () => {
+        const skills = await makeCaller().listSessionSkills({
+            organizationId: T.org,
+            sessionId: T.session,
+            scope: "all",
+        });
+
+        expect(skills.map((s) => s.id)).toEqual([T.liveSkill]);
+    });
+});
+
 describe("skillCheckSessions.updateSessionAssessors + listEligibleAssessors", () => {
     // Dataset (every person is linked to an org user):
     //   assessor   → "skills-assessor"          → eligible
