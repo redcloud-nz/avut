@@ -67,8 +67,10 @@ export const skillChecksRouter = createTrpcRouter({
         }),
 
     /**
-     * Deletes a skill check. The skill check must belong to the organization.
-     * @throws TRPCError(NOT_FOUND) if the check does not exist.
+     * Deletes a skill check. The skill check must belong to the organization. A check within a
+     * session is tombstoned (`status: "Deleted"`) for `approveSession`/`deleteSession` to purge;
+     * a standalone check is removed outright.
+     * @throws TRPCError(NOT_FOUND) if the check does not exist or is already `Deleted`.
      * @throws TRPCError(CONFLICT) if the check belongs to an approved session.
      */
     // No ownership check: `skillCheck: ["delete"]` is an admin grant for removing erroneous checks.
@@ -77,8 +79,12 @@ export const skillChecksRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             const { skillCheckId } = input;
 
-            const existing = await ctx.prisma.skillCheck.findUnique({
-                where: { id: skillCheckId, organizationId: ctx.organizationId },
+            const existing = await ctx.prisma.skillCheck.findFirst({
+                where: {
+                    id: skillCheckId,
+                    organizationId: ctx.organizationId,
+                    status: { not: "Deleted" },
+                },
                 select: { sessionId: true },
             });
             if (!existing) {
@@ -93,14 +99,19 @@ export const skillChecksRouter = createTrpcRouter({
                     SkillCheckSessionId.schema.parse(existing.sessionId),
                 );
                 SkillChecks.assertSessionUnlocked(session);
-            }
 
-            await ctx.prisma.skillCheck.delete({
-                where: {
-                    id: skillCheckId,
-                    organizationId: ctx.organizationId,
-                },
-            });
+                await ctx.prisma.skillCheck.update({
+                    where: { id: skillCheckId, organizationId: ctx.organizationId },
+                    data: { status: "Deleted" },
+                });
+            } else {
+                await ctx.prisma.skillCheck.delete({
+                    where: {
+                        id: skillCheckId,
+                        organizationId: ctx.organizationId,
+                    },
+                });
+            }
         }),
 
     /**
@@ -433,8 +444,9 @@ export const skillChecksRouter = createTrpcRouter({
      * holds; it's the ownership check that stops one assessor editing another's check.
      *
      * A check within a session also needs the session unlocked, and the caller still an assigned
-     * assessor of it.
-     * @throws TRPCError(NOT_FOUND) if the check does not exist.
+     * assessor of it; the edit moves it to `Draft`, so a `Pending` or `Exclude` check in a
+     * reopened session goes back for fresh review.
+     * @throws TRPCError(NOT_FOUND) if the check does not exist or is `Deleted`.
      * @throws TRPCError(FORBIDDEN) if the caller did not record the check, or is no longer an
      * assigned assessor of its session.
      * @throws TRPCError(CONFLICT) if the check belongs to an approved session.
@@ -453,8 +465,12 @@ export const skillChecksRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             const { skillCheckId, update } = input;
 
-            const existing = await ctx.prisma.skillCheck.findUnique({
-                where: { id: skillCheckId, organizationId: ctx.organizationId },
+            const existing = await ctx.prisma.skillCheck.findFirst({
+                where: {
+                    id: skillCheckId,
+                    organizationId: ctx.organizationId,
+                    status: { not: "Deleted" },
+                },
                 select: { assessorId: true, sessionId: true },
             });
             if (!existing) {
@@ -488,7 +504,7 @@ export const skillChecksRouter = createTrpcRouter({
                     id: skillCheckId,
                     organizationId: ctx.organizationId,
                 },
-                data: update,
+                data: existing.sessionId ? { ...update, status: "Draft" } : update,
             });
 
             return SkillCheck.fromRecord(record);

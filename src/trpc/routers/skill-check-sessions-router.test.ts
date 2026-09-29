@@ -314,9 +314,9 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
     });
 
     describe("deleteSessionSkillCheck", () => {
-        it("deletes the caller's own check and leaves another assessor's check alone", async () => {
+        it("tombstones the caller's own check and leaves another assessor's check alone", async () => {
             const caller = makeCaller(T.assessorUser);
-            await caller.setSessionSkillCheck({
+            const recorded = await caller.setSessionSkillCheck({
                 ...target,
                 skillId: T.skill2,
                 result: "Pass",
@@ -329,7 +329,21 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             const remaining = await db.skillCheck.findMany({
                 where: { sessionId: T.session, assesseeId: T.assessee, skillId: T.skill2 },
             });
-            expect(remaining.map((check) => check.id)).toEqual([T.secondAssessorCheck]);
+            expect(
+                remaining
+                    .map(({ id, status }) => ({ id, status }))
+                    .sort((a, b) => a.id.localeCompare(b.id)),
+            ).toEqual(
+                [
+                    { id: recorded.id, status: "Deleted" },
+                    { id: T.secondAssessorCheck, status: "Draft" },
+                ].sort((a, b) => a.id.localeCompare(b.id)),
+            );
+
+            // Nothing live is left on the caller's key, so a second delete finds nothing.
+            expect(await caller.deleteSessionSkillCheck({ ...target, skillId: T.skill2 })).toEqual({
+                deleted: false,
+            });
         });
 
         it("returns deleted: false when the caller has no check to delete", async () => {
@@ -1151,5 +1165,234 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
 
             expect(updated).toMatchObject({ name: "Renamed", notes: "After", status: "Include" });
         });
+    });
+});
+
+describe("skillCheckSessions tombstones", () => {
+    // Dataset:
+    //   user → linked to assessor, an assigned assessor of every session below
+    //   session → Draft; assessee × [skillA, skillB, skillC]
+    //     pendingCheck   (assessee, skillA) Pending, recorded a year ago
+    //     tombstoneCheck (assessee, skillB) Deleted, recorded a year ago
+    //     skillC has no check
+    //   approveSession → Draft; liveCheck (assessee, skillA) + deadCheck (assessee, skillB) Deleted
+    //   doomedSession  → Draft; doomedDeadCheck (assessee, skillA) Deleted
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        assessor: PersonId.create(),
+        assessee: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skillA: SkillId.create(),
+        skillB: SkillId.create(),
+        skillC: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+        pendingCheck: SkillCheckId.create(),
+        tombstoneCheck: SkillCheckId.create(),
+        approveSession: SkillCheckSessionId.create(),
+        liveCheck: SkillCheckId.create(),
+        deadCheck: SkillCheckId.create(),
+        doomedSession: SkillCheckSessionId.create(),
+        doomedDeadCheck: SkillCheckId.create(),
+    };
+    const aYearAgo = new Date("2025-09-30T00:00:00.000Z");
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.assessor, "Assessor"],
+            [T.assessee, "Assessee"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.user,
+                role: "member",
+                personId: T.assessor,
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [T.skillA, "Skill A"],
+            [T.skillB, "Skill B"],
+            [T.skillC, "Skill C"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+
+        for (const [id, sessionNumber] of [
+            [T.session, 1],
+            [T.approveSession, 2],
+            [T.doomedSession, 3],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Session ${sessionNumber}`,
+                    sessionNumber,
+                    startsAt: new Date(),
+                    endsAt: new Date(),
+                    notes: "",
+                    assessors: { connect: [{ id: T.assessor }] },
+                    assessees: { connect: [{ id: T.assessee }] },
+                    skills: { connect: [{ id: T.skillA }, { id: T.skillB }, { id: T.skillC }] },
+                },
+            });
+        }
+
+        const checks = [
+            [T.pendingCheck, T.session, T.skillA, "Pending"],
+            [T.tombstoneCheck, T.session, T.skillB, "Deleted"],
+            [T.liveCheck, T.approveSession, T.skillA, "Draft"],
+            [T.deadCheck, T.approveSession, T.skillB, "Deleted"],
+            [T.doomedDeadCheck, T.doomedSession, T.skillA, "Deleted"],
+        ] as const;
+        for (const [id, sessionId, skillId, status] of checks) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId,
+                    assesseeId: T.assessee,
+                    assessorId: T.assessor,
+                    skillId,
+                    result: "Pass",
+                    notes: "Old notes",
+                    status,
+                    createdAt: aYearAgo,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: {
+                    organization: ["view"],
+                    skillCheckSession: ["update", "approve", "delete"],
+                    skillCheck: ["create"],
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    const target = {
+        organizationId: T.org,
+        skillCheckSessionId: T.session,
+        assesseeId: T.assessee,
+    };
+
+    it("re-recording over a tombstone revives the same row as Draft with a new createdAt", async () => {
+        const revived = await makeCaller().setSessionSkillCheck({
+            ...target,
+            skillId: T.skillB,
+            result: "Fail",
+            notes: "Again",
+        });
+
+        expect(revived).toMatchObject({
+            id: T.tombstoneCheck,
+            status: "Draft",
+            result: "Fail",
+            notes: "Again",
+        });
+        expect(new Date(revived.createdAt).getTime()).toBeGreaterThan(aYearAgo.getTime());
+    });
+
+    it("re-recording over a live Pending check makes it Draft and keeps its createdAt", async () => {
+        const updated = await makeCaller().setSessionSkillCheck({
+            ...target,
+            skillId: T.skillA,
+            result: "Fail",
+            notes: "Changed",
+        });
+
+        expect(updated).toMatchObject({ id: T.pendingCheck, status: "Draft", result: "Fail" });
+        expect(updated.createdAt).toBe(aYearAgo.toISOString());
+    });
+
+    it("deleting and re-recording a check brings back the same row", async () => {
+        const caller = makeCaller();
+        const recorded = await caller.setSessionSkillCheck({
+            ...target,
+            skillId: T.skillC,
+            result: "Pass",
+            notes: "",
+        });
+
+        expect(await caller.deleteSessionSkillCheck({ ...target, skillId: T.skillC })).toEqual({
+            deleted: true,
+        });
+        const again = await caller.setSessionSkillCheck({
+            ...target,
+            skillId: T.skillC,
+            result: "Pass",
+            notes: "Undo",
+        });
+
+        expect(again).toMatchObject({ id: recorded.id, status: "Draft", notes: "Undo" });
+    });
+
+    it("approveSession purges the session's Deleted rows before stamping", async () => {
+        await makeCaller().approveSession({
+            organizationId: T.org,
+            sessionId: T.approveSession,
+            includedCheckIds: [T.liveCheck],
+        });
+
+        const rows = await db.skillCheck.findMany({ where: { sessionId: T.approveSession } });
+        expect(rows.map(({ id, status }) => ({ id, status }))).toEqual([
+            { id: T.liveCheck, status: "Include" },
+        ]);
+    });
+
+    it("deleteSession purges the session's Deleted rows rather than orphaning them", async () => {
+        await makeCaller().deleteSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.doomedSession,
+        });
+
+        expect(await db.skillCheck.findUnique({ where: { id: T.doomedDeadCheck } })).toBeNull();
     });
 });

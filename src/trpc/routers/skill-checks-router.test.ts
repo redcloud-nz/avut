@@ -924,7 +924,9 @@ describe("skillChecks — the session approval lock", () => {
     //                  since been taken off its assessors
     //   unlinkedUser → org member with no linked person
     //   draftSession    → Draft, holds draftCheck, draftCheckToDelete (on skill2, so it doesn't
-    //                     share draftCheck's unique key; both by assessorPerson) and removedCheck
+    //                     share draftCheck's unique key; both by assessorPerson) and removedCheck,
+    //                     plus pendingCheck (skill3, Pending, as after a reopen) and deadCheck
+    //                     (skill4, Deleted), both by assessorPerson
     //   approvedSession → Include, holds approvedCheck (by assessorPerson)
     //   standaloneCheck → no session, by assessorPerson
     //   orphanedCheck   → no session, its assessor purged (assessorId null)
@@ -939,11 +941,15 @@ describe("skillChecks — the session approval lock", () => {
         assessee: PersonId.create(),
         skill: SkillId.create(),
         skill2: SkillId.create(),
+        skill3: SkillId.create(),
+        skill4: SkillId.create(),
         draftSession: SkillCheckSessionId.create(),
         approvedSession: SkillCheckSessionId.create(),
         draftCheck: SkillCheckId.create(),
         draftCheckToDelete: SkillCheckId.create(),
         removedCheck: SkillCheckId.create(),
+        pendingCheck: SkillCheckId.create(),
+        deadCheck: SkillCheckId.create(),
         approvedCheck: SkillCheckId.create(),
         standaloneCheck: SkillCheckId.create(),
         orphanedCheck: SkillCheckId.create(),
@@ -1003,6 +1009,8 @@ describe("skillChecks — the session approval lock", () => {
             [T.draftCheck, T.draftSession, T.assessorPerson, T.skill, "Draft"],
             [T.draftCheckToDelete, T.draftSession, T.assessorPerson, T.skill2, "Draft"],
             [T.removedCheck, T.draftSession, T.removedPerson, T.skill, "Draft"],
+            [T.pendingCheck, T.draftSession, T.assessorPerson, T.skill3, "Pending"],
+            [T.deadCheck, T.draftSession, T.assessorPerson, T.skill4, "Deleted"],
             [T.approvedCheck, T.approvedSession, T.assessorPerson, T.skill, "Include"],
             [T.standaloneCheck, null, T.assessorPerson, T.skill, "Draft"],
             [T.orphanedCheck, null, null, T.skill, "Draft"],
@@ -1116,6 +1124,29 @@ describe("skillChecks — the session approval lock", () => {
             expect(check?.result).toBe("Pass");
         });
 
+        it("moves a Pending check back to Draft when it's edited", async () => {
+            const updated = await makeCaller().updateSkillCheck({
+                organizationId: T.org,
+                skillCheckId: T.pendingCheck,
+                update: { result: "Fail", notes: "Rechecked" },
+            });
+
+            expect(updated).toMatchObject({ result: "Fail", status: "Draft" });
+        });
+
+        it("throws NOT_FOUND for a Deleted check and leaves it alone", async () => {
+            await expect(
+                makeCaller().updateSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: T.deadCheck,
+                    update: { result: "Fail", notes: "" },
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            const check = await db.skillCheck.findUnique({ where: { id: T.deadCheck } });
+            expect(check).toMatchObject({ result: "Pass", status: "Deleted" });
+        });
+
         it("throws NOT_FOUND for an unknown check", async () => {
             await expect(
                 makeCaller().updateSkillCheck({
@@ -1141,18 +1172,24 @@ describe("skillChecks — the session approval lock", () => {
             ).not.toBeNull();
         });
 
-        it("deletes a check in a Draft session", async () => {
+        it("tombstones a check in a Draft session, then treats it as gone", async () => {
             await makeCaller().deleteSkillCheck({
                 organizationId: T.org,
                 skillCheckId: T.draftCheckToDelete,
             });
 
-            expect(
-                await db.skillCheck.findUnique({ where: { id: T.draftCheckToDelete } }),
-            ).toBeNull();
+            const check = await db.skillCheck.findUnique({ where: { id: T.draftCheckToDelete } });
+            expect(check?.status).toBe("Deleted");
+
+            await expect(
+                makeCaller().deleteSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: T.draftCheckToDelete,
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
         });
 
-        it("deletes a standalone check", async () => {
+        it("hard-deletes a standalone check", async () => {
             await makeCaller().deleteSkillCheck({
                 organizationId: T.org,
                 skillCheckId: T.standaloneCheck,
