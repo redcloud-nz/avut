@@ -32,13 +32,17 @@ const metadataSchema = z.object({
             permissions: D4HTeamPermissions.schema,
         }),
     ),
-    d4HOrganisations: z.array(
-        z.object({
-            id: z.number(),
-            title: z.string(),
-            resourceType: z.literal("Organisation"),
-        }),
-    ),
+    // Defaulted because a since-fixed misspelling (`d4HOrganizations`) once wrote rows without
+    // this field, and reading one back crashed the whole token list (#171).
+    d4HOrganisations: z
+        .array(
+            z.object({
+                id: z.number(),
+                title: z.string(),
+                resourceType: z.literal("Organisation"),
+            }),
+        )
+        .default([]),
 });
 
 export const D4HAccessTokenMetadata = {

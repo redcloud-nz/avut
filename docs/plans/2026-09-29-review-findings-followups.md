@@ -30,7 +30,12 @@ ask before running it.
   - Account deletion and purge no longer block on sole ownership.
   - The way back: a system admin can `makeOwner`, from a Make owner action on the system-admin
     org screen, which also flags an org with no owner (as does the org list).
-- **Phase 3:** §3.2 is superseded: the recovery path is built here. §3.1 is not started.
+- **Phase 3:** done.
+  - §3.2 is superseded: the recovery path is built here.
+  - §3.1 was issue #171. Its fix sat unshipped on a local `hotfix/0.9` branch (0af07ca2).
+    #327 already fixed the misspelling; the missing half was a `.default([])` on
+    `d4HOrganisations`, now ported. Rows with the old key read back as `[]` instead of throwing,
+    so no data migration is needed.
 
 Every PR merged to `integration` between 2026-09-22 and 2026-09-28 (32 PRs, #249–#327). I
 checked each `claude-avut` review finding against `origin/integration` at `cef534bd`. There
