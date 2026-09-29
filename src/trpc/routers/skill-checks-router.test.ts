@@ -922,23 +922,31 @@ describe("skillChecks — the session approval lock", () => {
     //   assessorUser → linked to assessorPerson, an assessor of draftSession and approvedSession
     //   removedUser  → linked to removedPerson, who recorded removedCheck in draftSession but has
     //                  since been taken off its assessors
-    //   draftSession    → Draft, holds draftCheck (by assessorPerson) and removedCheck
+    //   unlinkedUser → org member with no linked person
+    //   draftSession    → Draft, holds draftCheck, draftCheckToDelete (on skill2, so it doesn't
+    //                     share draftCheck's unique key; both by assessorPerson) and removedCheck
     //   approvedSession → Include, holds approvedCheck (by assessorPerson)
     //   standaloneCheck → no session, by assessorPerson
+    //   orphanedCheck   → no session, its assessor purged (assessorId null)
+    // Each test writes to a check no other test reads, so they don't depend on order.
     const T = {
         org: OrganizationId.create(),
         assessorUser: UserId.create(),
         removedUser: UserId.create(),
+        unlinkedUser: UserId.create(),
         assessorPerson: PersonId.create(),
         removedPerson: PersonId.create(),
         assessee: PersonId.create(),
         skill: SkillId.create(),
+        skill2: SkillId.create(),
         draftSession: SkillCheckSessionId.create(),
         approvedSession: SkillCheckSessionId.create(),
         draftCheck: SkillCheckId.create(),
+        draftCheckToDelete: SkillCheckId.create(),
         removedCheck: SkillCheckId.create(),
         approvedCheck: SkillCheckId.create(),
         standaloneCheck: SkillCheckId.create(),
+        orphanedCheck: SkillCheckId.create(),
     };
 
     const db = createMockPrisma();
@@ -959,6 +967,7 @@ describe("skillChecks — the session approval lock", () => {
         for (const [userId, personId] of [
             [T.assessorUser, T.assessorPerson],
             [T.removedUser, T.removedPerson],
+            [T.unlinkedUser, null],
         ] as const) {
             await db.organizationUser.create({
                 data: {
@@ -990,11 +999,13 @@ describe("skillChecks — the session approval lock", () => {
             });
         }
 
-        for (const [id, sessionId, assessorId, status] of [
-            [T.draftCheck, T.draftSession, T.assessorPerson, "Draft"],
-            [T.removedCheck, T.draftSession, T.removedPerson, "Draft"],
-            [T.approvedCheck, T.approvedSession, T.assessorPerson, "Include"],
-            [T.standaloneCheck, null, T.assessorPerson, "Draft"],
+        for (const [id, sessionId, assessorId, skillId, status] of [
+            [T.draftCheck, T.draftSession, T.assessorPerson, T.skill, "Draft"],
+            [T.draftCheckToDelete, T.draftSession, T.assessorPerson, T.skill2, "Draft"],
+            [T.removedCheck, T.draftSession, T.removedPerson, T.skill, "Draft"],
+            [T.approvedCheck, T.approvedSession, T.assessorPerson, T.skill, "Include"],
+            [T.standaloneCheck, null, T.assessorPerson, T.skill, "Draft"],
+            [T.orphanedCheck, null, null, T.skill, "Draft"],
         ] as const) {
             await db.skillCheck.create({
                 data: {
@@ -1003,7 +1014,7 @@ describe("skillChecks — the session approval lock", () => {
                     sessionId,
                     assesseeId: T.assessee,
                     assessorId,
-                    skillId: T.skill,
+                    skillId,
                     result: "Pass",
                     notes: "",
                     status,
@@ -1092,6 +1103,19 @@ describe("skillChecks — the session approval lock", () => {
             ).rejects.toMatchObject({ code: "FORBIDDEN" });
         });
 
+        it("refuses an unlinked user editing a check with no assessor with FORBIDDEN", async () => {
+            await expect(
+                makeCaller(T.unlinkedUser).updateSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: T.orphanedCheck,
+                    update: { result: "Fail", notes: "" },
+                }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+            const check = await db.skillCheck.findUnique({ where: { id: T.orphanedCheck } });
+            expect(check?.result).toBe("Pass");
+        });
+
         it("throws NOT_FOUND for an unknown check", async () => {
             await expect(
                 makeCaller().updateSkillCheck({
@@ -1120,10 +1144,12 @@ describe("skillChecks — the session approval lock", () => {
         it("deletes a check in a Draft session", async () => {
             await makeCaller().deleteSkillCheck({
                 organizationId: T.org,
-                skillCheckId: T.removedCheck,
+                skillCheckId: T.draftCheckToDelete,
             });
 
-            expect(await db.skillCheck.findUnique({ where: { id: T.removedCheck } })).toBeNull();
+            expect(
+                await db.skillCheck.findUnique({ where: { id: T.draftCheckToDelete } }),
+            ).toBeNull();
         });
 
         it("deletes a standalone check", async () => {

@@ -72,9 +72,9 @@ export type SessionWithMembers = SkillCheckSession & {
  * @throws ValidationError if the caller has no linked person record in the organization.
  * @throws ForbiddenError if the caller's person is not an assigned assessor for the session.
  *
- * The messages are local literals worded like `Messages.noLinkedPersonRecord` /
- * `Messages.notSessionAssessor` (`src/trpc/messages.ts`) — a domain service can't depend on
- * `src/trpc/`. Keep them in sync by hand.
+ * The no-linked-person message is a local literal worded like `Messages.noLinkedPersonRecord`
+ * (`src/trpc/messages.ts`) — a domain service can't depend on `src/trpc/`. Keep them in sync by
+ * hand.
  */
 export async function requireSessionAssessor(
     ctx: OrgServiceContext,

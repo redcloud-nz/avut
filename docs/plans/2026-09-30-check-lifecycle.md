@@ -121,7 +121,7 @@ prisma/schema.prisma --script`, then hand-edit the column part so it matches wha
 migrate dev`, and `npm run prisma migrate status` reports the branch DB up to date with no
     drift.
 
-- [ ] **2. The approval lock**
+- [x] **2. The approval lock** — `feat(skill-track): lock approved skill check sessions against writes`, `fix(skill-track): require a linked person to edit a skill check`
   - **Files:** `src/server/services/skill-checks.ts` (+ `.test.ts`),
     `src/trpc/routers/skill-check-sessions-router.ts` (+ `.test.ts`),
     `src/trpc/routers/skill-checks-router.ts` (+ `.test.ts`), `src/lib/schemas/skill-check-session.ts`,

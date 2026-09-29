@@ -27,9 +27,6 @@ export const Messages = {
     notCheckAssessor: (skillCheckId: string) =>
         `You are not the assessor who recorded SkillCheck(id=${skillCheckId}).`,
 
-    notSessionAssessor: (sessionId: string) =>
-        `You are not an assigned assessor for SkillCheckSession(id=${sessionId}).`,
-
     organizationNotFound: (organizationId: string) =>
         `Organization(id=${organizationId}) not found.`,
 

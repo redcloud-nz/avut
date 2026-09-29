@@ -462,7 +462,7 @@ export const skillChecksRouter = createTrpcRouter({
                 where: { organizationId: ctx.organizationId, userId: ctx.userId },
                 select: { personId: true },
             });
-            if (orgUser?.personId !== existing.assessorId) {
+            if (!orgUser?.personId || orgUser.personId !== existing.assessorId) {
                 throw new TRPCError({
                     code: "FORBIDDEN",
                     message: Messages.notCheckAssessor(skillCheckId),
