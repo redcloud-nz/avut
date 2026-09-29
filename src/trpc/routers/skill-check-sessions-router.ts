@@ -9,6 +9,7 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
+import { ValidationError } from "@/lib/errors";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
@@ -243,6 +244,16 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 checkCount: session._count.skillChecks,
             };
         }),
+
+    /**
+     * List the personnel who may be added as a session's assessors: active people linked to a
+     * user whose role can record skill checks. Gated on session view (not `member: ["view"]`) so
+     * that roles like `skills-assessor`, which lack member access, still see the candidates.
+     * @returns The eligible people, sorted by name.
+     */
+    listEligibleAssessors: organizationProcedure({ skillCheckSession: ["view"] })
+        .output(z.array(PersonRef.schema))
+        .query(async ({ ctx }) => SkillChecks.listEligibleAssessors(ctx)),
 
     /**
      * List the personnel that are assigned to a particular skill check session as assessees.
@@ -595,6 +606,96 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 ]);
                 return {
                     updatedAssessees: updated.assessees,
+                    updatedSession: SkillCheckSession.fromRecord(updated),
+                };
+            },
+        ),
+
+    /**
+     * Add and remove the personnel assigned to a skill check session as assessors.
+     * Every added person must be an eligible assessor (see `listEligibleAssessors`); removal is
+     * never validated, so an assessor who has since lost the ability to record can still be
+     * taken off.
+     * @param skillCheckSessionId The ID of the skill check session to update assessors for.
+     * @param addedPersonIds The people to add as assessors.
+     * @param removedPersonIds The people to remove as assessors.
+     * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
+     * @throws TRPCError(BAD_REQUEST) if any added person is not an eligible assessor.
+     */
+    updateSessionAssessors: organizationProcedure({ skillCheckSession: ["update"] })
+        .input(
+            z.object({
+                skillCheckSessionId: SkillCheckSessionId.schema,
+                addedPersonIds: z.array(PersonId.schema),
+                removedPersonIds: z.array(PersonId.schema),
+            }),
+        )
+        .output(
+            z.object({
+                updatedAssessors: z.array(PersonRef.schema),
+                updatedSession: SkillCheckSession.schema,
+            }),
+        )
+        .mutation(
+            async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
+                // Verify that the session exists and belongs to the organization.
+                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+
+                if (addedPersonIds.length > 0) {
+                    const eligibleIds = new Set(
+                        (await SkillChecks.listEligibleAssessors(ctx)).map((person) => person.id),
+                    );
+                    const ineligibleIds = addedPersonIds.filter((id) => !eligibleIds.has(id));
+                    if (ineligibleIds.length > 0) {
+                        throw new ValidationError(Messages.ineligibleAssessors(ineligibleIds));
+                    }
+                }
+
+                const changes = [
+                    ...addedPersonIds.map((id) => ({
+                        path: ["assessors"],
+                        type: "arr_add" as const,
+                        value: id,
+                    })),
+                    ...removedPersonIds.map((id) => ({
+                        path: ["assessors"],
+                        type: "arr_del" as const,
+                        value: id,
+                    })),
+                ];
+
+                const [updated] = await ctx.prisma.$transaction([
+                    ctx.prisma.skillCheckSession.update({
+                        where: {
+                            id: skillCheckSessionId,
+                            organizationId: ctx.organizationId,
+                        },
+                        include: {
+                            assessors: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                },
+                            },
+                        },
+                        data: {
+                            assessors: {
+                                connect: addedPersonIds.map((id) => ({ id })),
+                                disconnect: removedPersonIds.map((id) => ({ id })),
+                            },
+                        },
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillCheckSession",
+                        objectId: skillCheckSessionId,
+                        changes,
+                    }),
+                ]);
+                return {
+                    updatedAssessors: updated.assessors
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((person) => PersonRef.schema.parse(person)),
                     updatedSession: SkillCheckSession.fromRecord(updated),
                 };
             },

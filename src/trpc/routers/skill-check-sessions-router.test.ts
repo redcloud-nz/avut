@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { TRPCError } from "@trpc/server";
 
@@ -468,5 +468,212 @@ describe("skillCheckSessions.listSessions", () => {
                 skillPackageSubscription: ["view"],
             }).listSessions({ organizationId: T.org }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("skillCheckSessions.updateSessionAssessors", () => {
+    // Dataset (every person is linked to an org user):
+    //   assessor   → "skills-assessor"          → eligible
+    //   multiRole  → "member,skills-assessor"   → eligible
+    //   memberOnly → "member"                   → ineligible
+    //   lapsed     → "member", yet assigned to lapsedSession (has since lost the role)
+    // Each test works on its own session so they don't depend on each other's writes.
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        assessor: PersonId.create(),
+        multiRole: PersonId.create(),
+        memberOnly: PersonId.create(),
+        lapsed: PersonId.create(),
+        addRemoveSession: SkillCheckSessionId.create(),
+        multiRoleSession: SkillCheckSessionId.create(),
+        rejectSession: SkillCheckSessionId.create(),
+        lapsedSession: SkillCheckSessionId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+
+        const people = [
+            { id: T.assessor, name: "Assessor", role: "skills-assessor" },
+            { id: T.multiRole, name: "Multi Role", role: "member,skills-assessor" },
+            { id: T.memberOnly, name: "Member Only", role: "member" },
+            { id: T.lapsed, name: "Lapsed", role: "member" },
+        ];
+        for (const { id, name, role } of people) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+            await db.organizationUser.create({
+                data: {
+                    id: nanoId16(),
+                    organizationId: T.org,
+                    userId: UserId.create(),
+                    role,
+                    personId: id,
+                },
+            });
+        }
+
+        const sessions = [
+            { id: T.addRemoveSession, sessionNumber: 1, assessors: [T.multiRole] },
+            { id: T.multiRoleSession, sessionNumber: 2, assessors: [] },
+            { id: T.rejectSession, sessionNumber: 3, assessors: [T.assessor] },
+            { id: T.lapsedSession, sessionNumber: 4, assessors: [T.lapsed, T.assessor] },
+        ];
+        for (const { id, sessionNumber, assessors } of sessions) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Session ${sessionNumber}`,
+                    sessionNumber,
+                    startsAt: new Date(),
+                    notes: "",
+                    assessors: { connect: assessors.map((personId) => ({ id: personId })) },
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], skillCheckSession: ["update"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function assignedAssessorIds(sessionId: SkillCheckSessionId) {
+        const session = await db.skillCheckSession.findUnique({
+            where: { id: sessionId },
+            include: { assessors: { select: { id: true } } },
+        });
+        return (session?.assessors ?? []).map((person) => person.id).sort();
+    }
+
+    // prisma-mock doesn't apply `disconnect` to an implicit many-to-many relation, so removals
+    // are asserted on the update the router sends (plus its log entry) rather than on DB state.
+    function spyOnSessionUpdate() {
+        return vi.spyOn(db.skillCheckSession, "update");
+    }
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("adds an eligible person, removes an assigned one, and logs the change", async () => {
+        const update = spyOnSessionUpdate();
+
+        const result = await makeCaller().updateSessionAssessors({
+            organizationId: T.org,
+            skillCheckSessionId: T.addRemoveSession,
+            addedPersonIds: [T.assessor],
+            removedPersonIds: [T.multiRole],
+        });
+
+        expect(update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { id: T.addRemoveSession, organizationId: T.org },
+                data: {
+                    assessors: {
+                        connect: [{ id: T.assessor }],
+                        disconnect: [{ id: T.multiRole }],
+                    },
+                },
+            }),
+        );
+        expect(result.updatedSession.id).toBe(T.addRemoveSession);
+        expect(result.updatedAssessors).toContainEqual({ id: T.assessor, name: "Assessor" });
+        expect(await assignedAssessorIds(T.addRemoveSession)).toContain(T.assessor);
+
+        const entries = await db.logEntry.findMany({
+            where: {
+                objectType: "SkillCheckSession",
+                objectId: T.addRemoveSession,
+                action: "Update",
+            },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].changes).toEqual([
+            { path: ["assessors"], type: "arr_add", value: T.assessor },
+            { path: ["assessors"], type: "arr_del", value: T.multiRole },
+        ]);
+    });
+
+    it("accepts a person whose stored role lists skills-assessor among several", async () => {
+        const result = await makeCaller().updateSessionAssessors({
+            organizationId: T.org,
+            skillCheckSessionId: T.multiRoleSession,
+            addedPersonIds: [T.multiRole],
+            removedPersonIds: [],
+        });
+
+        expect(result.updatedAssessors).toEqual([{ id: T.multiRole, name: "Multi Role" }]);
+    });
+
+    it("rejects adding an ineligible person with BAD_REQUEST and changes nothing", async () => {
+        const update = spyOnSessionUpdate();
+
+        await expect(
+            makeCaller().updateSessionAssessors({
+                organizationId: T.org,
+                skillCheckSessionId: T.rejectSession,
+                addedPersonIds: [T.memberOnly],
+                removedPersonIds: [T.assessor],
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+        expect(update).not.toHaveBeenCalled();
+        expect(await assignedAssessorIds(T.rejectSession)).toEqual([T.assessor]);
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillCheckSession", objectId: T.rejectSession },
+        });
+        expect(entries).toHaveLength(0);
+    });
+
+    it("listEligibleAssessors needs only skillCheckSession:view", async () => {
+        const caller = skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], skillCheckSession: ["view"] },
+                prisma: db,
+            }),
+        );
+
+        expect(await caller.listEligibleAssessors({ organizationId: T.org })).toEqual([
+            { id: T.assessor, name: "Assessor" },
+            { id: T.multiRole, name: "Multi Role" },
+        ]);
+    });
+
+    it("allows removing an assessor who is no longer eligible", async () => {
+        const update = spyOnSessionUpdate();
+
+        await makeCaller().updateSessionAssessors({
+            organizationId: T.org,
+            skillCheckSessionId: T.lapsedSession,
+            addedPersonIds: [],
+            removedPersonIds: [T.lapsed],
+        });
+
+        expect(update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: { assessors: { connect: [], disconnect: [{ id: T.lapsed }] } },
+            }),
+        );
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillCheckSession", objectId: T.lapsedSession },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].changes).toEqual([
+            { path: ["assessors"], type: "arr_del", value: T.lapsed },
+        ]);
     });
 });
