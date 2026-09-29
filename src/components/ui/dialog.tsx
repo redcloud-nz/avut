@@ -66,8 +66,8 @@ function DialogContent({
     ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
     showCloseButton?: boolean;
-    /** Width of the centred modal from `sm` up: 384 / 448 / 512 / 672px. Below `sm` it's full screen regardless. */
-    size?: "sm" | "default" | "lg" | "xl";
+    /** Width of the centred modal from `sm` up: 448 / 512 / 672px. Below `sm` it's full screen regardless. */
+    size?: "default" | "lg" | "xl";
 }) {
     return (
         <DialogPortal>
@@ -79,8 +79,10 @@ function DialogContent({
                     "fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-popover text-sm text-popover-foreground outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
                     // Centred modal (`sm` and up)
                     "sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100dvh-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1 sm:ring-foreground/10 sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-open:duration-100 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:duration-100",
-                    // Width (`sm` and up)
-                    "data-[size=sm]:sm:max-w-sm data-[size=default]:sm:max-w-md data-[size=lg]:sm:max-w-lg data-[size=xl]:sm:max-w-2xl",
+                    // Width (`sm` and up). The default is a bare `sm:max-w-md` so tailwind-merge still drops
+                    // it for a caller's own `sm:max-w-*` (the screenshot lightboxes); the larger sizes
+                    // outrank it by their `data-size` selector.
+                    "sm:max-w-md data-[size=lg]:sm:max-w-lg data-[size=xl]:sm:max-w-2xl",
                     className,
                 )}
                 data-size={size}
@@ -107,14 +109,17 @@ function DialogContent({
  * height guess of its own. Owns the horizontal and bottom padding around the content (the
  * header above supplies the space at the top) and lays its children out as a `gap-4` column.
  * A thin styled scrollbar (`scrollbar-color`, matching `Std.ScrollContainer`) appears when it
- * overflows; `scrollbar-gutter: stable` keeps the content from shifting when it does.
+ * overflows; `scrollbar-gutter: stable` keeps the content from shifting when it does. It never
+ * scrolls sideways: horizontal overflow is clipped (the `px-4` leaves room for focus rings), so a
+ * child that pokes past the edge — `input-otp` widening its hidden input by 40px to clear a
+ * password-manager badge, say — can't add a horizontal scrollbar.
  */
 function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="dialog-body"
             className={cn(
-                "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4 [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]",
+                "flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto px-4 pb-4 [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]",
                 className,
             )}
             {...props}

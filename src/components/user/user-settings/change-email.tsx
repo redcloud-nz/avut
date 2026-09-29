@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/dialog";
 import {
     Field,
-    FieldContent,
     FieldDescription,
     FieldError,
     FieldGroup,
@@ -141,7 +140,7 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>Change email</DialogTitle>
                     <DialogDescription>
@@ -151,23 +150,14 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                 <DialogBody>
                     <FieldGroup>
                         <Field orientation="responsive">
-                            <FieldContent>
-                                <FieldLabel>Current Email</FieldLabel>
-                                {step.name === "start" && (
-                                    <FieldDescription>
-                                        We&apos;ll send a verification code to this address to
-                                        confirm it&apos;s you.
-                                    </FieldDescription>
-                                )}
-                            </FieldContent>
-                            <FieldContent>
-                                <Input
-                                    disabled
-                                    type="email"
-                                    className="min-w-1/2"
-                                    value={session.user.email}
-                                />
-                            </FieldContent>
+                            <FieldLabel>Current Email</FieldLabel>
+                            <Input disabled type="email" value={session.user.email} />
+                            {step.name === "start" && (
+                                <FieldDescription>
+                                    We&apos;ll send a verification code to this address to confirm
+                                    it&apos;s you.
+                                </FieldDescription>
+                            )}
                         </Field>
                         {step.name === "start" && sendCurrentOtpMutation.isError && (
                             <FieldError
@@ -186,46 +176,42 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                                             orientation="responsive"
                                             data-invalid={fieldState.invalid}
                                         >
-                                            <FieldContent>
-                                                <FieldLabel htmlFor="current-email-code">
-                                                    Verification Code
-                                                </FieldLabel>
-                                                {step.name === "verify-current" && (
-                                                    <FieldDescription>
-                                                        Enter the 6-digit code we sent to your
-                                                        current email ({session.user.email}).
-                                                        <br />
-                                                        Didn&apos;t receive it?{" "}
-                                                        <a onClick={resendCurrentOtp}>Resend</a>
-                                                    </FieldDescription>
-                                                )}
-                                            </FieldContent>
-                                            <FieldContent>
-                                                <InputOTP
-                                                    id="current-email-code"
-                                                    maxLength={6}
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    pattern={REGEXP_ONLY_DIGITS}
-                                                    disabled={
-                                                        step.name === "verify-new" ||
-                                                        requestEmailChangeMutation.isPending
-                                                    }
-                                                    aria-invalid={fieldState.invalid}
-                                                >
-                                                    <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                                        <InputOTPSlot index={0} />
-                                                        <InputOTPSlot index={1} />
-                                                        <InputOTPSlot index={2} />
-                                                        <InputOTPSlot index={3} />
-                                                        <InputOTPSlot index={4} />
-                                                        <InputOTPSlot index={5} />
-                                                    </InputOTPGroup>
-                                                </InputOTP>
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </FieldContent>
+                                            <FieldLabel htmlFor="current-email-code">
+                                                Verification Code
+                                            </FieldLabel>
+                                            <InputOTP
+                                                id="current-email-code"
+                                                maxLength={6}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                pattern={REGEXP_ONLY_DIGITS}
+                                                disabled={
+                                                    step.name === "verify-new" ||
+                                                    requestEmailChangeMutation.isPending
+                                                }
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                                    <InputOTPSlot index={0} />
+                                                    <InputOTPSlot index={1} />
+                                                    <InputOTPSlot index={2} />
+                                                    <InputOTPSlot index={3} />
+                                                    <InputOTPSlot index={4} />
+                                                    <InputOTPSlot index={5} />
+                                                </InputOTPGroup>
+                                            </InputOTP>
+                                            {step.name === "verify-current" && (
+                                                <FieldDescription>
+                                                    Enter the 6-digit code we sent to your current
+                                                    email ({session.user.email}).
+                                                    <br />
+                                                    Didn&apos;t receive it?{" "}
+                                                    <a onClick={resendCurrentOtp}>Resend</a>
+                                                </FieldDescription>
+                                            )}
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
                                         </Field>
                                     )}
                                 />
@@ -237,27 +223,22 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                                             orientation="responsive"
                                             data-invalid={fieldState.invalid}
                                         >
-                                            <FieldContent>
-                                                <FieldLabel htmlFor="user-new-email">
-                                                    New Email
-                                                </FieldLabel>
-                                            </FieldContent>
-                                            <FieldContent>
-                                                <Input
-                                                    id="user-new-email"
-                                                    type="email"
-                                                    aria-invalid={fieldState.invalid}
-                                                    className="min-w-1/2"
-                                                    disabled={
-                                                        step.name === "verify-new" ||
-                                                        requestEmailChangeMutation.isPending
-                                                    }
-                                                    {...field}
-                                                />
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </FieldContent>
+                                            <FieldLabel htmlFor="user-new-email">
+                                                New Email
+                                            </FieldLabel>
+                                            <Input
+                                                id="user-new-email"
+                                                type="email"
+                                                aria-invalid={fieldState.invalid}
+                                                disabled={
+                                                    step.name === "verify-new" ||
+                                                    requestEmailChangeMutation.isPending
+                                                }
+                                                {...field}
+                                            />
+                                            {fieldState.error && (
+                                                <FieldError errors={[fieldState.error]} />
+                                            )}
                                         </Field>
                                     )}
                                 />
@@ -278,31 +259,27 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                             <>
                                 <FieldSeparator />
                                 <Field orientation="responsive">
-                                    <FieldContent>
-                                        <FieldLabel>Verification Code</FieldLabel>
-                                        <FieldDescription>
-                                            Enter the 6-digit code we sent to your new email address
-                                            ({step.newEmail}).
-                                        </FieldDescription>
-                                    </FieldContent>
-                                    <FieldContent>
-                                        <InputOTP
-                                            maxLength={6}
-                                            value={newCode}
-                                            onChange={setNewCode}
-                                            pattern={REGEXP_ONLY_DIGITS}
-                                            disabled={changeEmailMutation.isPending}
-                                        >
-                                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                                                <InputOTPSlot index={0} />
-                                                <InputOTPSlot index={1} />
-                                                <InputOTPSlot index={2} />
-                                                <InputOTPSlot index={3} />
-                                                <InputOTPSlot index={4} />
-                                                <InputOTPSlot index={5} />
-                                            </InputOTPGroup>
-                                        </InputOTP>
-                                    </FieldContent>
+                                    <FieldLabel>Verification Code</FieldLabel>
+                                    <InputOTP
+                                        maxLength={6}
+                                        value={newCode}
+                                        onChange={setNewCode}
+                                        pattern={REGEXP_ONLY_DIGITS}
+                                        disabled={changeEmailMutation.isPending}
+                                    >
+                                        <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                                            <InputOTPSlot index={0} />
+                                            <InputOTPSlot index={1} />
+                                            <InputOTPSlot index={2} />
+                                            <InputOTPSlot index={3} />
+                                            <InputOTPSlot index={4} />
+                                            <InputOTPSlot index={5} />
+                                        </InputOTPGroup>
+                                    </InputOTP>
+                                    <FieldDescription>
+                                        Enter the 6-digit code we sent to your new email address (
+                                        {step.newEmail}).
+                                    </FieldDescription>
                                 </Field>
                                 {changeEmailMutation.isError && (
                                     <FieldError

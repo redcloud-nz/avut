@@ -104,7 +104,6 @@ export function AdminModule_CreateD4HAccessToken_Form({
                             <Select {...field}>
                                 <SelectTrigger
                                     id="access-token-server-code"
-                                    className="min-w-1/2"
                                     aria-invalid={fieldState.invalid}
                                 >
                                     <SelectValue placeholder="Select D4H server" />
@@ -151,7 +150,6 @@ export function AdminModule_CreateD4HAccessToken_Form({
                                 id="access-token-label"
                                 placeholder="e.g. My Access Tokens"
                                 aria-invalid={fieldState.invalid}
-                                className="min-w-1/2"
                                 {...field}
                             />
                             {fieldState.error && <FieldError errors={[fieldState.error]} />}
