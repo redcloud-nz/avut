@@ -59,7 +59,7 @@ export default async function Admin_D4HAccessToken_EquipmentKinds_Page(
     if (!env.isDevelopment()) notFound();
 
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
+    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     const accessToken = await getOrganizationD4HAccessToken({
         tokenId: token_id,

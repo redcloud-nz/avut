@@ -20,7 +20,7 @@ export default async function AdminModule_CreateD4HAccessToken_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/--create`>,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["create"] });
+    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     return (
         <>
