@@ -9,6 +9,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
 import {
@@ -38,6 +39,8 @@ describe("getOrganizationProviderCredential", () => {
         orgCredential: ProviderCredentialId.create(),
         groupCredential: ProviderCredentialId.create(),
         otherOrgCredential: ProviderCredentialId.create(),
+        personalCredential: ProviderCredentialId.create(),
+        user: UserId.create(),
     };
 
     beforeAll(async () => {
@@ -50,13 +53,22 @@ describe("getOrganizationProviderCredential", () => {
             });
         }
 
-        const seed = (id: string, organizationId: string, groupId: string | null) =>
+        await prisma.user.create({
+            data: { id: T.user, name: "U", email: `${T.user}@x.test`, emailVerified: true },
+        });
+
+        const seed = (
+            id: string,
+            organizationId: string,
+            groupId: string | null,
+            userId: string | null = null,
+        ) =>
             prisma.providerCredential.create({
                 data: {
                     id,
                     provider: "D4H",
                     organizationId,
-                    userId: null,
+                    userId,
                     groupId,
                     label: "Seeded",
                     token: "encrypted:secret",
@@ -74,6 +86,7 @@ describe("getOrganizationProviderCredential", () => {
         await seed(T.orgCredential, T.org, null);
         await seed(T.groupCredential, T.org, nanoId16());
         await seed(T.otherOrgCredential, T.otherOrg, null);
+        await seed(T.personalCredential, T.org, null, T.user);
     });
 
     it("returns the organization's own credential, decrypted", async () => {
@@ -103,6 +116,16 @@ describe("getOrganizationProviderCredential", () => {
                 provider: "D4H",
                 organizationId: T.org,
                 credentialId: T.otherOrgCredential,
+            }),
+        ).toBeNull();
+    });
+
+    it("returns null, not an error, for a member's personal credential in the same organization", async () => {
+        expect(
+            await getOrganizationProviderCredential({
+                provider: "D4H",
+                organizationId: T.org,
+                credentialId: T.personalCredential,
             }),
         ).toBeNull();
     });

@@ -49,6 +49,9 @@ export function AdminModule_User_Menu({
     const canUpdateMember = useHasPermission({ member: ["update"] });
     const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
     const canDelete = useHasPermission({ member: ["delete"] });
+    // Removing a member who holds `owner` also needs `member: ["owner"]` (see
+    // `removeOrganizationMember`), so an admin can't remove an owner.
+    const canDeleteOwner = useHasPermission({ member: ["delete", "owner"] });
 
     // `owner` is granted/revoked through dedicated mutations, not the general role picker — the
     // menu items below always show (the permission check surfaces as the mutation's own error
@@ -104,7 +107,7 @@ export function AdminModule_User_Menu({
         label: "Delete",
         icon: <ObjectIcons.Delete />,
         onSelect: () => setAction("delete", { history: "push" }),
-        disabled: !canDelete || userId === currentUserId,
+        disabled: !(isOwner ? canDeleteOwner : canDelete) || userId === currentUserId,
         destructive: true,
     });
 

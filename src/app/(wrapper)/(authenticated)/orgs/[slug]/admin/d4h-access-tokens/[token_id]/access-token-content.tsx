@@ -28,10 +28,10 @@ import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAccessTokenId }) {
+export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: ProviderCredentialId }) {
     const organization = useOrganization();
 
     const { data: accessToken } = useSuspenseQuery(

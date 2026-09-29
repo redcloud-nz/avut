@@ -213,10 +213,44 @@ describe("organizations member management (system admin)", () => {
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    it("refuses to remove the last owner", async () => {
+    it("lets a system admin remove the last owner — the dialog warns, and makeOwner recovers", async () => {
+        await call().removeOrganizationMember({ organizationId: T.org, userId: T.owner });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: T.org, userId: T.owner },
+            }),
+        ).toBeNull();
+    });
+
+    it("refuses an admin who isn't an owner removing an owner", async () => {
+        const asAdmin = organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.u1 },
+                permissions: { organization: ["view"], member: ["view", "delete"] },
+                prisma: db,
+            }),
+        );
+
         await expect(
-            call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            asAdmin.removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("lets an owner remove another owner", async () => {
+        const asOwner = organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.u1 },
+                permissions: { organization: ["view"], member: ["view", "delete", "owner"] },
+                prisma: db,
+            }),
+        );
+
+        await asOwner.removeOrganizationMember({ organizationId: T.org, userId: T.owner });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: T.org, userId: T.owner },
+            }),
+        ).toBeNull();
     });
 
     it("changing the last owner's non-owner roles never demotes them — ownership is separate now", async () => {
@@ -387,12 +421,6 @@ describe("organizations multi-role memberships (system admin)", () => {
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("still treats an owner with other roles as the last owner when removing them", async () => {
-        await expect(
-            call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-
     it("admin and member can be held simultaneously — the primary/secondary split is gone", async () => {
         await call().addOrganizationMember({
             organizationId: T.org,
@@ -457,19 +485,6 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
             }),
         );
 
-    // `makeOwner`/`removeOwner` have no `allowSystemAdmin` bypass (org-admin Users page only,
-    // per the plan) — a caller needs `member: ["owner"]` on this org specifically. `T.other`
-    // isn't a DB owner, but the permission override is enough to exercise the mutation's own
-    // guards (last-owner, self-removal) against someone other than the target.
-    const callAsOtherWithOwnerPermission = () =>
-        organizationsRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: T.other },
-                permissions: { organization: ["view"], member: ["owner"] },
-                prisma: db,
-            }),
-        );
-
     it("grants ownership in addition to a member's existing roles", async () => {
         await callAsOwner().makeOwner({ organizationId: T.org, userId: T.other });
         expect(await storedRole(T.other)).toBe("owner,member");
@@ -492,18 +507,7 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
         expect(await storedRole(T.other)).toBe("i3-editor");
     });
 
-    it("refuses to remove ownership from the last owner", async () => {
-        await expect(
-            callAsOtherWithOwnerPermission().removeOwner({
-                organizationId: T.org,
-                userId: T.owner,
-            }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-        expect(await storedRole(T.owner)).toBe("owner");
-    });
-
     it("blocks an owner from removing their own ownership", async () => {
-        // A second owner exists, so the last-owner guard alone wouldn't catch this.
         await db.organizationUser.update({
             where: { organizationId_userId: { organizationId: T.org, userId: T.other } },
             data: { role: "owner" },
@@ -524,9 +528,14 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("gives a system admin with no membership of their own no bypass here — unlike the other member mutations", async () => {
+    it("lets a system admin appoint an owner — the way back for an org left with none", async () => {
+        await callAsSystemAdmin().makeOwner({ organizationId: T.org, userId: T.other });
+        expect(await storedRole(T.other)).toBe("owner,member");
+    });
+
+    it("gives a system admin no bypass on removeOwner", async () => {
         await expect(
-            callAsSystemAdmin().makeOwner({ organizationId: T.org, userId: T.other }),
+            callAsSystemAdmin().removeOwner({ organizationId: T.org, userId: T.owner }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });

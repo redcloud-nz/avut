@@ -23,8 +23,8 @@ import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 /**
- * A team-membership row as returned by `listTeamMemberships` and
- * `getTeamMembership` — the membership plus a thin `team` / `person` ref. The
+ * A team-membership row as returned by `listTeamMemberships`, `getTeamMembership` and
+ * `getTeamMembershipById` — the membership plus a thin `team` / `person` ref. The
  * `d4h` sub-object (with `d4hRef` / `d4hRoleId`) rides along from
  * `TeamMembershipData.schema`.
  */
@@ -468,6 +468,13 @@ export const teamsRouter = createTrpcRouter({
                 throw new TRPCError({
                     code: "CONFLICT",
                     message: "This team is already linked to D4H.",
+                });
+            }
+            // Sync refuses an archived team, so linking one would leave it linked but unsyncable.
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is archived and cannot be linked to D4H",
                 });
             }
 

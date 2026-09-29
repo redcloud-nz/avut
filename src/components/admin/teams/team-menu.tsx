@@ -110,12 +110,14 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                 category="Teams"
                 width="w-44"
                 after={
-                    d4hEnabled && (
+                    // An unlinked archived team has no D4H action left to offer.
+                    d4hEnabled &&
+                    (linked || isActive) && (
                         <>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel>D4H</DropdownMenuLabel>
                             <DropdownMenuGroup>
-                                {!linked && (
+                                {!linked && isActive && (
                                     <DropdownMenuItem
                                         disabled={!canUpdate}
                                         onClick={() =>

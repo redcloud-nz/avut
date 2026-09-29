@@ -20,6 +20,9 @@ import { SkillPackageBuilderModule_SettingsCard } from "./skill-package-builder-
 import { SkillTrackModule_SettingsCard } from "./skill-track-module-settings";
 
 /**
+ * The full organization-settings form: a stack of independently saved cards. Each card owns its
+ * own sub-form and save button, and writes through `useOrganizationSettingsMutation`.
+ *
  * Shared verbatim by the in-org admin settings page and the system-admin settings page — same
  * cards, same section `id`s (matched by `getOrganizationSettingsFormSections` below for the
  * contents nav).
@@ -30,6 +33,7 @@ export function OrganizationSettingsForm({
     settings,
 }: {
     organizationId: OrganizationId;
+    /** Environment-level module availability — a module's card is hidden when its flag is off. */
     moduleFlags: ModuleFlagState;
     settings: OrganizationSettings;
 }) {

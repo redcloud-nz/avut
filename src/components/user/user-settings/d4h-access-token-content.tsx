@@ -24,12 +24,12 @@ import {
 } from "@/components/ui/table";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
 import { UserSettings_D4HAccessToken_Menu } from "./d4h-access-token-menu";
 
-export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: D4HAccessTokenId }) {
+export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: ProviderCredentialId }) {
     const { data: tokens } = useSuspenseQuery(
         trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions(),
     );

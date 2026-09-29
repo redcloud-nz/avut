@@ -5,6 +5,8 @@
       "Bash(git add *)",
       "Bash(npx next *)",
       "Bash(npm run dev)",
+      "Bash(PORT=3100 npm run dev)",
+      "Bash(npm run dev:port)",
       "Bash(npm run clean)",
       "Bash(npm run lint)",
       "Bash(npm run lint:fix)",
@@ -12,7 +14,10 @@
       "Bash(npx eslint *)",
       "Bash(npx prettier *)",
       "Bash(pgrep *)",
-      "Bash(curl -s http://localhost:*)"
+      "Bash(curl -s http://localhost:*)",
+      "Bash(node .claude/skills/avut-review-pr/review-pr.ts *)",
+      "Bash(node .claude/skills/avut-status/status.ts)",
+      "Bash(node .claude/skills/avut-status/status.ts *)"
     ]
   },
   "enabledPlugins": {

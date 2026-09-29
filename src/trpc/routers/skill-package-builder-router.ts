@@ -504,7 +504,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
      * correlated by a `LogBatch` instead of one combined entry. Unchanged nodes are skipped
      * entirely — no write, no log entry.
      */
-    importSkillPackage: systemAdminProcedure
+    importPackageAsAdmin: systemAdminProcedure
         .input(
             z.object({
                 envelope: SkillPackageExport.schema,

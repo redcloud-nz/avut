@@ -27,7 +27,7 @@ import {
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
-type ImportResult = RouterOutput["skillPackageBuilder"]["importSkillPackage"];
+type ImportResult = RouterOutput["skillPackageBuilder"]["importPackageAsAdmin"];
 type ImportPlan = ImportResult["plan"];
 
 export function SystemAdmin_SkillPackageImport_Content() {
@@ -38,14 +38,14 @@ export function SystemAdmin_SkillPackageImport_Content() {
     const [plan, setPlan] = useState<{ plan: ImportPlan; applied: boolean } | null>(null);
 
     const preview = useMutation(
-        trpc.skillPackageBuilder.importSkillPackage.mutationOptions({
+        trpc.skillPackageBuilder.importPackageAsAdmin.mutationOptions({
             onError: (error) => toast.error(`Preview failed: ${error.message}`),
             onSuccess: (result) => setPlan(result),
         }),
     );
 
     const runImport = useMutation(
-        trpc.skillPackageBuilder.importSkillPackage.mutationOptions({
+        trpc.skillPackageBuilder.importPackageAsAdmin.mutationOptions({
             onError: (error) => toast.error(`Import failed: ${error.message}`),
             onSuccess: (result) => {
                 setPlan(result);

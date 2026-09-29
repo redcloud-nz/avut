@@ -18,13 +18,13 @@ import { admin } from "better-auth/plugins/admin";
 import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
+import { withDevServerPort } from "@/lib/dev-server";
 // eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
 import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
-import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
 import prisma from "./prisma";
@@ -39,27 +39,17 @@ import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression
  */
 const previousEmailByRequest = new WeakMap<Request, string>();
 
-/*
- * Ports a local dev server can be reached on: 3000 for the main checkout, 3001 for
- * `dev-email`, and 3100+ for worktrees, which AGENTS.md tells you to give a port of their
- * own. An origin missing here is rejected by the `trustedOrigins` check below, which
- * surfaces as a bare `FORBIDDEN` from `signIn` with the page itself loading fine — so keep
- * the worktree range ahead of how many worktrees are actually in use.
- */
-const DEV_PORTS = ["3000", "3001", "3002", "3100", "3101", "3102", "3103"];
-
 /**
  * This machine's LAN IPv4 addresses, so a phone on the same network can sign in
- * against a dev server started with e.g. `npm run dev` and reached over
- * `http://192.168.x.x:3000` — better-auth's origin check otherwise rejects it since
- * only `localhost` is trusted below.
+ * against a dev server reached over e.g. `http://192.168.x.x:3000` — better-auth's
+ * origin check otherwise rejects it since only `localhost` is trusted below.
  */
 function localNetworkOrigins(): string[] {
     const addresses = Object.values(networkInterfaces())
         .flat()
         .filter((info) => info != null && info.family === "IPv4" && !info.internal)
         .map((info) => info!.address);
-    return addresses.flatMap((address) => DEV_PORTS.map((port) => `http://${address}:${port}`));
+    return addresses.map((address) => `http://${address}:*`);
 }
 
 export const auth = betterAuth({
@@ -75,7 +65,7 @@ export const auth = betterAuth({
             joins: true,
         },
     },
-    baseURL: serverEnv.BETTER_AUTH_URL ?? "http://localhost:3000",
+    baseURL: withDevServerPort(serverEnv.BETTER_AUTH_URL ?? "http://localhost:3000"),
     /*
      * With `advanced.database.joins` on, better-auth's Prisma adapter guesses relation field
      * names from the joined model's name (`organizationusers`, `organizationinvitations`),
@@ -87,16 +77,19 @@ export const auth = betterAuth({
      * bypassing the audit log and the Rubbish bin's retention window (#297). Org deletion
      * goes through our own procedure instead.
      */
-    disabledPaths: ["/organization/get-full-organization", "/organization/delete"],
-    hooks: {
-        // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
-        after: revalidateRolesAfterLeave(revalidateOrganizationUser),
-    },
+    // `/organization/leave` refuses the last owner; `user.leaveOrganization` allows it (with a
+    // warning) and deletes the membership itself.
+    disabledPaths: [
+        "/organization/get-full-organization",
+        "/organization/delete",
+        "/organization/leave",
+    ],
     /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and
-     * from local dev servers on a non-3000 port. `src/trpc/client.ts` and the
-     * email templates already special-case `VERCEL_URL`; mirror that here.
+     * from local dev servers on any port but the one in `baseURL` (see AGENTS.md → Dev
+     * servers; any port is trusted in development). `src/trpc/client.ts` and the email
+     * templates already special-case `VERCEL_URL`; mirror that here.
      */
     trustedOrigins: [
         ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
@@ -105,9 +98,7 @@ export const auth = betterAuth({
             ? [`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`]
             : []),
         ...(env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
-        ...(env.isDevelopment()
-            ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
-            : []),
+        ...(env.isDevelopment() ? ["http://localhost:*", ...localNetworkOrigins()] : []),
     ],
     database: prismaAdapter(prisma, {
         provider: "postgresql",

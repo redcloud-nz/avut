@@ -1138,7 +1138,7 @@ describe("teamsRouter.listTeams", () => {
     });
 });
 
-describe("teamsRouter.createTeamMembership guards against an archived team", () => {
+describe("teamsRouter guards against an archived team", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
@@ -1192,6 +1192,24 @@ describe("teamsRouter.createTeamMembership guards against an archived team", () 
                 create: { tags: [], properties: {} },
             }),
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("rejects linking an archived team to D4H", async () => {
+        const caller = teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["update"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+
+        await expect(
+            caller.linkTeamToD4H({ organizationId: T.org, teamId: T.team, d4hTeamId: 1 }),
+        ).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: expect.stringMatching(/archived/),
+        });
+        expect(await db.team_D4H.findFirst({ where: { teamId: T.team } })).toBeNull();
     });
 });
 
