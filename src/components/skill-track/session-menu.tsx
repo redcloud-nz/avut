@@ -7,22 +7,13 @@
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+import { ObjectIcons } from "@/components/icons";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-    MenuAction,
-    useMenuActionHotkeys,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -47,42 +38,33 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
         },
     ];
 
-    useMenuActionHotkeys(actions, "Sessions");
-
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuGroup>
-                        <DropdownMenuItem asChild>
-                            <Link
-                                href={route(
-                                    "/orgs/[slug]/skill-track/sessions/[session_id]/history",
-                                    {
-                                        slug: organization.slug,
-                                        session_id: session.id,
-                                    },
-                                )}
-                            >
-                                <ObjectIcons.History /> History
-                            </Link>
-                        </DropdownMenuItem>
-                    </DropdownMenuGroup>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {actions.map((a) => (
-                            <MenuAction key={a.verb} {...a} />
-                        ))}
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu
+                actions={actions}
+                category="Sessions"
+                width="w-40"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={route(
+                                        "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                        {
+                                            slug: organization.slug,
+                                            session_id: session.id,
+                                        },
+                                    )}
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
+            />
 
             <SkillsModule_DeleteSession_Dialog
                 session={session}

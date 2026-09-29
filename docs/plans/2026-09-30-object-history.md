@@ -257,7 +257,7 @@ objectType, objectId }, { getNextPageParam: (p) => p.nextCursor ?? undefined }))
   - **Done when:** `npm run check` passes; both pages render their entries in the browser, and
     a Team's history shows membership entries from the fan-out.
 
-- [ ] **6. Skill package and skill check session history pages** · `visual`
+- [x] **6. Skill package and skill check session history pages** — `feat(history): add skill package and skill check session history pages` + `refactor(history): build the session menu on EntityActionMenu` · `visual`
   - **Files:** `src/components/skill-package-builder/package-history-content.tsx`,
     `…/skill-package-builder/packages/[package_id]/history/page.tsx`,
     `src/components/skill-package-builder/package-menu.tsx`,

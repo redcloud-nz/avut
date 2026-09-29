@@ -28,7 +28,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     );
 
     return {
-        title: `${session.name || session.id} History ${TITLE_SEPARATOR} Sessions`,
+        title: `${session.name || `Session ${session.id}`} History ${TITLE_SEPARATOR} Sessions`,
     };
 }
 
