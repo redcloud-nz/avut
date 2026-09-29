@@ -20,7 +20,7 @@ export default async function AdminModule_D4HAccessTokens_Page(
     props: PageProps<"/orgs/[slug]/admin/d4h-access-tokens">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
+    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     prefetch(
         trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({

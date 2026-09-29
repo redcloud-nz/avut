@@ -222,7 +222,7 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
         return d4hAccessTokensRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { d4hAccessToken: ["delete"], organization: ["view"] },
+                permissions: { organization: ["view", "update"] },
                 prisma: db,
             }),
         );
@@ -307,7 +307,7 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         return d4hAccessTokensRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { d4hAccessToken: ["update"], organization: ["view"] },
+                permissions: { organization: ["view", "update"] },
                 prisma: db,
             }),
         );
@@ -352,7 +352,7 @@ describe("d4hAccessTokensRouter queries never return the token", () => {
         return d4hAccessTokensRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { d4hAccessToken: ["view"], organization: ["view"] },
+                permissions: { organization: ["view", "update"] },
                 prisma: db,
             }),
         );
