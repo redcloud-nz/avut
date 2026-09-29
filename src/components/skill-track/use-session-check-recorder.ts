@@ -33,7 +33,7 @@ type DeleteVariables = RouterInput["skillCheckSessions"]["deleteSessionSkillChec
  *
  * - `record` is silent on success and toasts on error.
  * - `remove` toasts "Check removed" with an **Undo** action that re-records the deleted check's
- *   result and notes, and toasts on error.
+ *   result and notes (for a `Draft` check only), and toasts on error.
  *
  * Every toast lives in the `useMutation` options rather than in per-call `mutate` callbacks:
  * TanStack fires per-call callbacks only for the observer's latest mutation, so a second delete
@@ -75,8 +75,13 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
                     (check) =>
                         check.assesseeId === vars.assesseeId && check.skillId === vars.skillId,
                 );
+                // Undo re-records as a new Draft check, so it can't restore an approved one
+                // (`Include`/`Exclude`). Only offer it for a Draft.
                 return {
-                    removed: removed ? { result: removed.result, notes: removed.notes } : null,
+                    removed:
+                        removed?.status === "Draft"
+                            ? { result: removed.result, notes: removed.notes }
+                            : null,
                 };
             },
             onSuccess({ deleted }, vars, onMutateResult) {

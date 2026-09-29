@@ -34,6 +34,8 @@ export {
     DEFAULT_SKILL_CHECK_RESULT_LABELS,
     defaultSkillCheckResultLabel,
     isCompetentResult,
+    SKILL_CHECK_FAIL_TIERS,
+    SKILL_CHECK_PASS_TIERS,
     SKILL_CHECK_RESULT_VALUES,
     SkillCheckResultValue,
 } from "./skill-check-result";

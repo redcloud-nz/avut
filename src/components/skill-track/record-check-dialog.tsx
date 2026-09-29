@@ -21,15 +21,13 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
+    SKILL_CHECK_FAIL_TIERS,
+    SKILL_CHECK_PASS_TIERS,
     SKILL_CHECK_RESULT_VALUES,
     SkillCheckResultValue,
     type SkillCheckResultOption,
 } from "@/lib/schemas/skill-check";
 import { cn } from "@/lib/utils";
-
-/** The two result families, each all three tiers whether or not the org enables them. */
-export const FAIL_TIERS: readonly SkillCheckResultValue[] = ["LowFail", "Fail", "HighFail"];
-export const PASS_TIERS: readonly SkillCheckResultValue[] = ["WeakPass", "Pass", "StrongPass"];
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
 
@@ -197,10 +195,12 @@ function orderResultOptions(
     });
 
     return [
-        ...options.filter((option) => FAIL_TIERS.includes(option.value)),
-        ...options.filter((option) => PASS_TIERS.includes(option.value)),
+        ...options.filter((option) => SKILL_CHECK_FAIL_TIERS.includes(option.value)),
+        ...options.filter((option) => SKILL_CHECK_PASS_TIERS.includes(option.value)),
         ...options.filter(
-            (option) => !FAIL_TIERS.includes(option.value) && !PASS_TIERS.includes(option.value),
+            (option) =>
+                !SKILL_CHECK_FAIL_TIERS.includes(option.value) &&
+                !SKILL_CHECK_PASS_TIERS.includes(option.value),
         ),
     ];
 }

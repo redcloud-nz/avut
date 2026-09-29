@@ -7,11 +7,15 @@
 
 import { MessageSquareTextIcon, MoreHorizontalIcon } from "lucide-react";
 
-import { FAIL_TIERS, PASS_TIERS } from "@/components/skill-track/record-check-dialog";
 import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
 import { FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
-import type { SkillCheckResultOption, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import {
+    SKILL_CHECK_FAIL_TIERS,
+    SKILL_CHECK_PASS_TIERS,
+    type SkillCheckResultOption,
+    type SkillCheckResultValue,
+} from "@/lib/schemas/skill-check";
 import { cn } from "@/lib/utils";
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
@@ -37,8 +41,8 @@ interface CheckRowProps {
 }
 
 const QUICK_BUTTONS = [
-    { tiers: FAIL_TIERS, mid: "Fail", ariaLabel: "Not Yet Competent" },
-    { tiers: PASS_TIERS, mid: "Pass", ariaLabel: "Competent" },
+    { tiers: SKILL_CHECK_FAIL_TIERS, mid: "Fail", ariaLabel: "Not Yet Competent" },
+    { tiers: SKILL_CHECK_PASS_TIERS, mid: "Pass", ariaLabel: "Competent" },
 ] as const satisfies readonly {
     tiers: readonly SkillCheckResultValue[];
     mid: SkillCheckResultValue;
