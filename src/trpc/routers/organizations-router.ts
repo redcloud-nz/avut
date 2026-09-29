@@ -384,7 +384,12 @@ export const organizationsRouter = createTrpcRouter({
         .input(z.object({ userId: UserId.schema }))
         .mutation(async ({ ctx, input }) => {
             const membership = await ctx.prisma.organizationUser.findFirst({
-                where: { organizationId: ctx.organizationId, userId: input.userId },
+                where: {
+                    organizationId: ctx.organizationId,
+                    userId: input.userId,
+                    // A Deleted (Rubbish bin) account can't be appointed the recovery owner.
+                    user: { status: { not: "Deleted" } },
+                },
                 select: { id: true, role: true },
             });
             if (!membership) {
@@ -500,8 +505,9 @@ export const organizationsRouter = createTrpcRouter({
                 .filter((r) => r !== "owner")
                 .join(",");
 
-            // No last-owner check: the caller is an owner and can't target themselves, so another
-            // owner always remains.
+            // No last-owner check: the caller is an owner and can't target themselves, but two owners
+            // removing each other concurrently can still leave the org ownerless. That's allowed; a
+            // system admin recovers it with makeOwner.
             await ctx.prisma.$transaction([
                 ctx.prisma.organizationUser.update({
                     where: { id: membership.id },
