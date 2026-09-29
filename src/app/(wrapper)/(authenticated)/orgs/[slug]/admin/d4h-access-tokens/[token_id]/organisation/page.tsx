@@ -14,6 +14,7 @@ import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
 import {
     fetchD4HWhoamiCached,
@@ -58,7 +59,7 @@ export default async function Admin_D4HAccessToken_Organisation_Page(
     const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     const accessToken = await getOrganizationD4HAccessToken({
-        tokenId: token_id,
+        tokenId: ProviderCredentialId.schema.parse(token_id),
         organizationId: organization.id,
     });
 

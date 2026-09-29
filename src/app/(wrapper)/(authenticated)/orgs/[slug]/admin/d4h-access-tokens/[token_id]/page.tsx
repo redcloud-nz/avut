@@ -7,7 +7,7 @@
 
 import { Metadata } from "next";
 
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -19,7 +19,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, token_id } = await props.params;
     const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
-    const tokenId = D4HAccessTokenId.schema.parse(token_id);
+    const tokenId = ProviderCredentialId.schema.parse(token_id);
     const accessToken = await fetchQuery(
         trpc.d4hAccessTokens.getOrganizationAccessToken.queryOptions({
             organizationId: organization.id,
@@ -34,7 +34,7 @@ export default async function AdminModule_D4HAccessToken_Page(props: Props) {
     const { slug, token_id } = await props.params;
     const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
-    const tokenId = D4HAccessTokenId.schema.parse(token_id);
+    const tokenId = ProviderCredentialId.schema.parse(token_id);
 
     prefetch(
         trpc.d4hAccessTokens.getOrganizationAccessToken.queryOptions({

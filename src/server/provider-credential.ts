@@ -11,6 +11,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import {
     Provider,
     ProviderCredential_ServerOnly,
+    type ProviderCredentialId,
     type ProviderCredentialRecord,
 } from "@/lib/schemas/provider-credential";
 import { UserId } from "@/lib/schemas/user";
@@ -29,7 +30,7 @@ export function toServerOnlyProviderCredential(
 }
 
 async function fetchProviderCredential(
-    credentialId: string,
+    credentialId: ProviderCredentialId,
 ): Promise<ProviderCredentialRecord | null> {
     "use cache";
     cacheTag(`provider-credential-${credentialId}`);
@@ -41,7 +42,7 @@ async function fetchProviderCredential(
     });
 }
 
-export function revalidateProviderCredential(credentialId: string) {
+export function revalidateProviderCredential(credentialId: ProviderCredentialId) {
     revalidateTag(`provider-credential-${credentialId}`, { expire: 0 });
 }
 
@@ -52,7 +53,7 @@ export async function getOrganizationProviderCredential({
 }: {
     provider: Provider;
     organizationId: OrganizationId;
-    credentialId: string;
+    credentialId: ProviderCredentialId;
 }): Promise<ProviderCredential_ServerOnly | null> {
     const record = await fetchProviderCredential(credentialId);
 

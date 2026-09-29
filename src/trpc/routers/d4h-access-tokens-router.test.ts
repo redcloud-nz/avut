@@ -7,8 +7,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { revalidateD4HAccessToken } from "@/server/d4h-access-token";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -99,7 +99,7 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
     }
 
     it("never records the raw token in the audit log or returns it", async () => {
-        const tokenId = D4HAccessTokenId.create();
+        const tokenId = ProviderCredentialId.create();
 
         const result = await makeCaller().createOrganizationAccessToken({
             organizationId: T.org,
@@ -164,7 +164,7 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
     }
 
     it("never records the raw token in the audit log or returns it", async () => {
-        const tokenId = D4HAccessTokenId.create();
+        const tokenId = ProviderCredentialId.create();
 
         const result = await makeCaller().createPersonalAccessToken({
             organizationId: T.org,
@@ -193,10 +193,10 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
-        syncToken: D4HAccessTokenId.create(),
-        otherToken: D4HAccessTokenId.create(),
+        syncToken: ProviderCredentialId.create(),
+        otherToken: ProviderCredentialId.create(),
         member: nanoId16(),
-        personalToken: D4HAccessTokenId.create(),
+        personalToken: ProviderCredentialId.create(),
     };
 
     const db = createMockPrisma();
@@ -284,9 +284,9 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
-        orgToken: D4HAccessTokenId.create(),
+        orgToken: ProviderCredentialId.create(),
         member: nanoId16(),
-        personalToken: D4HAccessTokenId.create(),
+        personalToken: ProviderCredentialId.create(),
     };
 
     const db = createMockPrisma();
@@ -330,8 +330,8 @@ describe("d4hAccessTokensRouter queries never return the token", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
-        orgToken: D4HAccessTokenId.create(),
-        personalToken: D4HAccessTokenId.create(),
+        orgToken: ProviderCredentialId.create(),
+        personalToken: ProviderCredentialId.create(),
     };
 
     const db = createMockPrisma();

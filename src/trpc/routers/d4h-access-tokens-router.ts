@@ -11,14 +11,11 @@ import { TRPCError } from "@trpc/server";
 
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { DiffChange, diffObject } from "@/lib/diff";
-import {
-    D4HAccessToken,
-    D4HAccessToken_ServerOnly,
-    D4HAccessTokenId,
-    D4HAccessTokenMetadata,
-} from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken, D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { OrganizationData } from "@/lib/schemas/organization";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings";
 import {
     revalidateD4HAccessToken,
@@ -44,7 +41,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
                 create: z.object({
                     serverCode: D4HServerCode.schema,
                     label: z.string(),
@@ -108,7 +105,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     createPersonalAccessToken: organizationProcedure({ organization: ["view"] })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
                 create: z.object({
                     serverCode: D4HServerCode.schema,
                     token: z.string(),
@@ -178,7 +175,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
             }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -268,7 +265,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
             }),
         )
         .output(D4HAccessToken.schema)
@@ -368,7 +365,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
             }),
         )
         .mutation(async ({ input, ctx }) => {

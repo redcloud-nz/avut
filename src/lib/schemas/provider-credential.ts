@@ -9,7 +9,7 @@ import type { ProviderCredential as ProviderCredentialRecord } from "@/generated
 import { nanoId16 } from "@/lib/id";
 import { zodNanoId16 } from "@/lib/validation";
 
-import { D4HProviderMetadata } from "./d4h-access-token";
+import { D4HProviderMetadata } from "./d4h-provider-metadata";
 
 export type { ProviderCredentialRecord };
 

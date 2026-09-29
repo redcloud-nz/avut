@@ -11,7 +11,8 @@ import { cache } from "react";
 import * as z from "zod";
 
 import { getD4HServer } from "@/lib/d4h-servers";
-import { D4HAccessToken_ServerOnly, D4HAccessTokenMetadata } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HActivityAttendance } from "@/lib/schemas/d4h/activity-attendance";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";

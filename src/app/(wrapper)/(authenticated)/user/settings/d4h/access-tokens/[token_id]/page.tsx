@@ -9,14 +9,14 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { UserSettings_D4HAccessTokenContent } from "@/components/user/user-settings/d4h-access-token-content";
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/user/settings/d4h/access-tokens/[token_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { token_id } = await props.params;
-    const tokenId = D4HAccessTokenId.schema.parse(token_id);
+    const tokenId = ProviderCredentialId.schema.parse(token_id);
 
     const tokens = await fetchQuery(trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions());
     const token = tokens.find((t) => t.id === tokenId);
@@ -26,7 +26,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function UserSettings_D4HAccessToken_Page(props: Props) {
     const { token_id } = await props.params;
-    const tokenId = D4HAccessTokenId.schema.parse(token_id);
+    const tokenId = ProviderCredentialId.schema.parse(token_id);
 
     const tokens = await fetchQuery(trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions());
     if (!tokens.some((t) => t.id === tokenId)) notFound();

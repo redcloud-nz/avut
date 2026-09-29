@@ -11,9 +11,11 @@ ask before running it.
 
 - **Phase 0:** done on `fix/d4h-token-permissions` (828199e9), merged into this branch.
 - **Phase 1:** done. §1.6's lookup is named `UserAccounts.getDeleted`.
-- **Phase 2:** done, except:
-  - §2.1's ID-brand decision is still open.
-  - §2.7 is skipped. No component test mocks the tRPC client yet, so restoring the dialog test would introduce a new test pattern.
+- **Phase 2:** done, except §2.7, which is skipped. §2.1's ID-brand decision: `ProviderCredentialId`
+  is the only brand; `D4HAccessTokenId` is gone. The D4H metadata schemas moved to
+  `src/lib/schemas/d4h-provider-metadata.ts`, so `provider-credential.ts` and
+  `d4h-access-token.ts` don't import each other's values.
+  §2.7 is skipped. No component test mocks the tRPC client yet, so restoring the dialog test would introduce a new test pattern.
 - **Deviation in §2.3:** `AsAdmin` goes only on a system-admin procedure that sits beside an org-scoped one doing the same job. Suffixing every system-admin procedure would add churn without clearing up any ambiguity. So only `importSkillPackage` → `importPackageAsAdmin` changed, and the rule is in `src/trpc/CLAUDE.md`.
 - **Phase 3:** not started.
 
