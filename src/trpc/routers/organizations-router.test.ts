@@ -14,7 +14,7 @@ import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
-import { organizationsRouter, withOwnerGuard } from "./organizations-router";
+import { organizationsRouter } from "./organizations-router";
 
 // `revalidateTag` needs a Next.js render/request store, which the test environment has no
 // business standing up — the router's contract here is just that it invalidates the tag.
@@ -213,10 +213,44 @@ describe("organizations member management (system admin)", () => {
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    it("refuses to remove the last owner", async () => {
+    it("lets a system admin remove the last owner — the dialog warns, and makeOwner recovers", async () => {
+        await call().removeOrganizationMember({ organizationId: T.org, userId: T.owner });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: T.org, userId: T.owner },
+            }),
+        ).toBeNull();
+    });
+
+    it("refuses an admin who isn't an owner removing an owner", async () => {
+        const asAdmin = organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.u1 },
+                permissions: { organization: ["view"], member: ["view", "delete"] },
+                prisma: db,
+            }),
+        );
+
         await expect(
-            call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            asAdmin.removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("lets an owner remove another owner", async () => {
+        const asOwner = organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.u1 },
+                permissions: { organization: ["view"], member: ["view", "delete", "owner"] },
+                prisma: db,
+            }),
+        );
+
+        await asOwner.removeOrganizationMember({ organizationId: T.org, userId: T.owner });
+        expect(
+            await db.organizationUser.findFirst({
+                where: { organizationId: T.org, userId: T.owner },
+            }),
+        ).toBeNull();
     });
 
     it("changing the last owner's non-owner roles never demotes them — ownership is separate now", async () => {
@@ -387,12 +421,6 @@ describe("organizations multi-role memberships (system admin)", () => {
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
-    it("still treats an owner with other roles as the last owner when removing them", async () => {
-        await expect(
-            call().removeOrganizationMember({ organizationId: T.org, userId: T.owner }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    });
-
     it("admin and member can be held simultaneously — the primary/secondary split is gone", async () => {
         await call().addOrganizationMember({
             organizationId: T.org,
@@ -457,19 +485,6 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
             }),
         );
 
-    // `makeOwner`/`removeOwner` have no `allowSystemAdmin` bypass (org-admin Users page only,
-    // per the plan) — a caller needs `member: ["owner"]` on this org specifically. `T.other`
-    // isn't a DB owner, but the permission override is enough to exercise the mutation's own
-    // guards (last-owner, self-removal) against someone other than the target.
-    const callAsOtherWithOwnerPermission = () =>
-        organizationsRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: T.other },
-                permissions: { organization: ["view"], member: ["owner"] },
-                prisma: db,
-            }),
-        );
-
     it("grants ownership in addition to a member's existing roles", async () => {
         await callAsOwner().makeOwner({ organizationId: T.org, userId: T.other });
         expect(await storedRole(T.other)).toBe("owner,member");
@@ -492,18 +507,7 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
         expect(await storedRole(T.other)).toBe("i3-editor");
     });
 
-    it("refuses to remove ownership from the last owner", async () => {
-        await expect(
-            callAsOtherWithOwnerPermission().removeOwner({
-                organizationId: T.org,
-                userId: T.owner,
-            }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-        expect(await storedRole(T.owner)).toBe("owner");
-    });
-
     it("blocks an owner from removing their own ownership", async () => {
-        // A second owner exists, so the last-owner guard alone wouldn't catch this.
         await db.organizationUser.update({
             where: { organizationId_userId: { organizationId: T.org, userId: T.other } },
             data: { role: "owner" },
@@ -515,20 +519,6 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
         expect(await storedRole(T.owner)).toBe("owner");
     });
 
-    it("removes an owner's membership through the owner guard when another owner remains", async () => {
-        await db.organizationUser.update({
-            where: { organizationId_userId: { organizationId: T.org, userId: T.other } },
-            data: { role: "owner" },
-        });
-
-        await callAsSystemAdmin().removeOrganizationMember({
-            organizationId: T.org,
-            userId: T.owner,
-        });
-        expect(await storedRole(T.owner)).toBeUndefined();
-        expect(await storedRole(T.other)).toBe("owner");
-    });
-
     it("refuses a caller who does not hold member:owner", async () => {
         await expect(
             callAsMember().makeOwner({ organizationId: T.org, userId: T.other }),
@@ -538,9 +528,14 @@ describe("organizations.makeOwner / removeOwner (system admin)", () => {
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("gives a system admin with no membership of their own no bypass here — unlike the other member mutations", async () => {
+    it("lets a system admin appoint an owner — the way back for an org left with none", async () => {
+        await callAsSystemAdmin().makeOwner({ organizationId: T.org, userId: T.other });
+        expect(await storedRole(T.other)).toBe("owner,member");
+    });
+
+    it("gives a system admin no bypass on removeOwner", async () => {
         await expect(
-            callAsSystemAdmin().makeOwner({ organizationId: T.org, userId: T.other }),
+            callAsSystemAdmin().removeOwner({ organizationId: T.org, userId: T.owner }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
@@ -1005,50 +1000,5 @@ describe("organizations.listOrganizations", () => {
         expect(empty.memberCount).toBe(0);
         expect(empty.ownerCount).toBe(0);
         expect(empty.enabledModules).toEqual([]);
-    });
-});
-
-describe("withOwnerGuard", () => {
-    const serializationFailure = () => Object.assign(new Error("aborted"), { code: "P2034" });
-
-    // A `$transaction` stub that rejects the first `failures` calls with `P2034`, then runs the
-    // callback against `tx` — enough to exercise the retry without a real Postgres abort.
-    function stubPrisma(failures: number) {
-        let calls = 0;
-        const tx = { organizationUser: { findMany: vi.fn(async () => []) } };
-        const $transaction = vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
-            calls++;
-            if (calls <= failures) throw serializationFailure();
-            return fn(tx);
-        });
-        return { prisma: { $transaction } as never, $transaction };
-    }
-
-    it("retries once when the transaction is aborted, then succeeds", async () => {
-        const { prisma, $transaction } = stubPrisma(1);
-        await expect(withOwnerGuard(prisma, "org", "user", async () => "done")).resolves.toBe(
-            "done",
-        );
-        expect($transaction).toHaveBeenCalledTimes(2);
-    });
-
-    it("throws CONFLICT when the retry is aborted too", async () => {
-        const { prisma, $transaction } = stubPrisma(2);
-        await expect(
-            withOwnerGuard(prisma, "org", "user", async () => "done"),
-        ).rejects.toMatchObject({
-            code: "CONFLICT",
-        });
-        expect($transaction).toHaveBeenCalledTimes(2);
-    });
-
-    it("does not retry other errors", async () => {
-        const { prisma, $transaction } = stubPrisma(0);
-        await expect(
-            withOwnerGuard(prisma, "org", "user", async () => {
-                throw new Error("boom");
-            }),
-        ).rejects.toThrow("boom");
-        expect($transaction).toHaveBeenCalledTimes(1);
     });
 });

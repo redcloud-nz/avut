@@ -74,10 +74,12 @@ describe("UserAccounts", () => {
         );
     });
 
-    it("refuses the sole owner of an organisation, naming it", async () => {
-        await expect(UserAccounts.softDelete(ctx, T.soleOwner, "self")).rejects.toThrow(
-            /only owner of Solo SAR/,
-        );
+    it("names the organisations a sole owner would leave ownerless, without blocking", async () => {
+        expect(await UserAccounts.getSoleOwnedOrganizations(ctx, T.soleOwner)).toEqual([
+            { id: T.soleOrg, name: "Solo SAR" },
+        ]);
+        expect(await UserAccounts.getSoleOwnedOrganizations(ctx, T.coOwnerA)).toEqual([]);
+        expect(await UserAccounts.getDeleteBlocker(ctx, T.soleOwner)).toBeNull();
     });
 
     it("soft-deletes: status Deleted, sessions revoked, system-scoped Delete entry", async () => {
@@ -105,9 +107,9 @@ describe("UserAccounts", () => {
 
     it("a co-owner in the Rubbish bin no longer covers for the other", async () => {
         await UserAccounts.softDelete(ctx, T.coOwnerA, "self");
-        expect(await UserAccounts.getDeleteBlocker(ctx, T.coOwnerB)).toMatch(
-            /only owner of Shared SAR/,
-        );
+        expect(await UserAccounts.getSoleOwnedOrganizations(ctx, T.coOwnerB)).toEqual([
+            { id: T.sharedOrg, name: "Shared SAR" },
+        ]);
     });
 
     it("purgeExpired purges accounts past their window", async () => {
@@ -116,7 +118,7 @@ describe("UserAccounts", () => {
         expect(await db.user.findUnique({ where: { id: T.coOwnerA } })).toBeNull();
     });
 
-    it("purge re-runs the guard: a deleted account that is now an org's only owner is kept", async () => {
+    it("purges a deleted account that is an org's only owner — the org is left without one", async () => {
         // Deleted while a co-owner existed; that co-owner has since left the org.
         const id = UserId.create();
         const org = OrganizationId.create();
@@ -130,8 +132,9 @@ describe("UserAccounts", () => {
             data: { id: nanoId16(), organizationId: org, userId: id, role: "owner" },
         });
 
-        await expect(UserAccounts.purge(ctx, id)).rejects.toThrow(/only owner of Orphan SAR/);
-        expect(await db.user.findUnique({ where: { id } })).not.toBeNull();
+        await UserAccounts.purge(ctx, id);
+        expect(await db.user.findUnique({ where: { id } })).toBeNull();
+        expect(await db.organizationUser.count({ where: { organizationId: org } })).toBe(0);
     });
 
     it("purge refuses an account that isn't in the Rubbish bin", async () => {

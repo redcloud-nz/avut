@@ -25,7 +25,6 @@ import { ac, Roles } from "@/lib/permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
 import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
-import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
 import prisma from "./prisma";
@@ -78,11 +77,13 @@ export const auth = betterAuth({
      * bypassing the audit log and the Rubbish bin's retention window (#297). Org deletion
      * goes through our own procedure instead.
      */
-    disabledPaths: ["/organization/get-full-organization", "/organization/delete"],
-    hooks: {
-        // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
-        after: revalidateRolesAfterLeave(revalidateOrganizationUser),
-    },
+    // `/organization/leave` refuses the last owner; `user.leaveOrganization` allows it (with a
+    // warning) and deletes the membership itself.
+    disabledPaths: [
+        "/organization/get-full-organization",
+        "/organization/delete",
+        "/organization/leave",
+    ],
     /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and

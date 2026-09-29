@@ -478,7 +478,7 @@ describe("users admin", () => {
     });
 });
 
-describe("users.deleteUser refuses to orphan an organization, whatever roles are involved", () => {
+describe("users.listSoleOwnedOrganizations recognises an owner whatever other roles they hold", () => {
     const T = {
         admin: UserId.create(),
         owner: UserId.create(),
@@ -526,10 +526,11 @@ describe("users.deleteUser refuses to orphan an organization, whatever roles are
             createAuthenticatedMockContext({ user: { id: T.admin, role: "admin" }, prisma: db }),
         );
 
-    it("refuses to delete a user who is the sole owner, whatever other roles they hold", async () => {
-        await expect(call().deleteUser({ userId: T.owner })).rejects.toMatchObject({
-            code: "BAD_REQUEST",
-        });
+    it("lists the org a sole owner holding other roles too would leave ownerless", async () => {
+        expect(await call().listSoleOwnedOrganizations({ userId: T.owner })).toEqual([
+            { id: T.org, name: "Org" },
+        ]);
+        expect(await call().listSoleOwnedOrganizations({ userId: T.other })).toEqual([]);
     });
 });
 
@@ -604,10 +605,10 @@ describe("users.deleteUser", () => {
         expect((await db.user.findUnique({ where: { id: T.coOwnerA } }))?.status).toBe("Deleted");
     });
 
-    it("then refuses the remaining co-owner, since a deleted owner can't act for the org", async () => {
-        await expect(call().deleteUser({ userId: T.coOwnerB })).rejects.toMatchObject({
-            code: "BAD_REQUEST",
-        });
+    it("then counts the remaining co-owner as sole owner, since a deleted owner can't act for the org", async () => {
+        expect(await call().listSoleOwnedOrganizations({ userId: T.coOwnerB })).toEqual([
+            { id: T.coOwnedOrg, name: expect.any(String) },
+        ]);
     });
 
     it("recoverUser brings a deleted user back", async () => {
@@ -615,11 +616,9 @@ describe("users.deleteUser", () => {
         expect((await db.user.findUnique({ where: { id: T.plain } }))?.status).toBe("Active");
     });
 
-    it("refuses to delete a sole organization owner", async () => {
-        await expect(call().deleteUser({ userId: T.soleOwner })).rejects.toMatchObject({
-            code: "BAD_REQUEST",
-        });
-        expect(await db.user.findUnique({ where: { id: T.soleOwner } })).not.toBeNull();
+    it("deletes a sole organization owner — the dialog warns, it doesn't block", async () => {
+        await call().deleteUser({ userId: T.soleOwner });
+        expect((await db.user.findUnique({ where: { id: T.soleOwner } }))?.status).toBe("Deleted");
     });
 
     it("refuses to delete yourself", async () => {

@@ -5,7 +5,7 @@
 
 /*
  * Deliberately free of any prisma import — the status lookup is injected so this can be exercised
- * from the jsdom test environment, like `organization-user-hooks.ts`.
+ * from the jsdom test environment.
  */
 
 import "server-only";

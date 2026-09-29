@@ -54,13 +54,15 @@ async function requireUser(ctx: SystemServiceContext, userId: UserId) {
 }
 
 /**
- * Organizations this user is the only non-deleted owner of. Another owner who is themselves in
- * the Rubbish bin doesn't count — they can't act for the org either.
+ * Organizations this user is the only non-deleted owner of — what deleting the account would
+ * leave with no owner. Another owner who is themselves in the Rubbish bin doesn't count: they
+ * can't act for the org either. Only a warning: an ownerless org is allowed, and a system admin
+ * can appoint a new owner (`organizations.makeOwner`).
  */
-async function soleOwnedOrganizationNames(
-    ctx: SystemServiceContext,
+export async function getSoleOwnedOrganizations(
+    ctx: Pick<SystemServiceContext, "prisma">,
     userId: UserId,
-): Promise<string[]> {
+): Promise<{ id: string; name: string }[]> {
     const owned = (
         await ctx.prisma.organizationUser.findMany({
             where: { userId, role: { contains: "owner" } },
@@ -84,17 +86,17 @@ async function soleOwnedOrganizationNames(
 
     const soleIds = owned.map((o) => o.organizationId).filter((id) => !covered.has(id));
     if (soleIds.length === 0) return [];
-    const orgs = await ctx.prisma.organization.findMany({
+    return ctx.prisma.organization.findMany({
         where: { id: { in: soleIds } },
-        select: { name: true },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
     });
-    return orgs.map((o) => o.name).sort();
 }
 
 /**
- * Why this account can't be deleted (or purged) right now, or `null`.
- * - the last system administrator who isn't in the Rubbish bin;
- * - the sole owner of an organization (the message names them, per #150).
+ * Why this account can't be deleted (or purged) right now, or `null`: it's the last system
+ * administrator who isn't in the Rubbish bin. Being an org's sole owner doesn't block — see
+ * `getSoleOwnedOrganizations`.
  */
 export async function getDeleteBlocker(
     ctx: SystemServiceContext,
@@ -107,11 +109,6 @@ export async function getDeleteBlocker(
             where: { role: "admin", id: { not: userId }, status: { not: "Deleted" } },
         });
         if (otherAdmins === 0) return "Cannot delete the last system administrator.";
-    }
-
-    const soleOwned = await soleOwnedOrganizationNames(ctx, userId);
-    if (soleOwned.length > 0) {
-        return `${user.name} is the only owner of ${soleOwned.join(", ")}. Transfer ownership or delete the organisation first.`;
     }
 
     return null;
@@ -206,8 +203,8 @@ async function setActive(
 /**
  * Permanently delete a `Deleted` account — what `deleteUser` used to do immediately.
  *
- * The delete guard is re-run first: an account that has since become the sole owner of an
- * organization (its co-owner left, say) is refused rather than purged into an ownerless org.
+ * The delete guard is re-run first (the last system administrator is never purged). Sole
+ * ownership doesn't block: the account's organizations lose an owner they couldn't use anyway.
  *
  * Every FK into `User` is `Cascade` or `SetNull`, but the dependent rows are still cleared
  * explicitly so the behaviour is pinned here rather than depending on the database's cascade
