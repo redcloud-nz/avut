@@ -57,7 +57,7 @@ export function SkillTrack_SessionReview_Content({
         { data: assessees },
         { data: assessors },
         { data: sessionSkills },
-        { data: skillChecks, isFetching: isFetchingChecks },
+        { data: skillChecks, dataUpdatedAt: checksUpdatedAt },
     ] = useSuspenseQueries({
         queries: [
             trpc.skillCheckSessions.getSession.queryOptions({
@@ -93,10 +93,6 @@ export function SkillTrack_SessionReview_Content({
     // An approved session is locked until it's reopened: its checkboxes are read-only and show
     // the approval itself (`Include` checks), not `selected` (see `AssesseeChecks`).
     const isApproved = session.status === "Include";
-    // Right after an approval `getSession` flips to `Include` before `listSkillChecks` has
-    // refetched the stamped statuses, so until it has, keep showing `selected` (what was just
-    // approved) rather than the stale pre-approval statuses, which would read as all unticked.
-    const showApproval = isApproved && !isFetchingChecks;
 
     // The editable view's selection. Preselect everything not explicitly excluded: new `Draft`
     // checks and the `Pending` ones a reopen left behind (the previous approval's selection), so
@@ -130,6 +126,14 @@ export function SkillTrack_SessionReview_Content({
             },
         }),
     );
+
+    // Right after this page's approval, `getSession` flips to `Include` before `listSkillChecks`
+    // has refetched the stamped statuses. Until checks newer than the approval arrive, show
+    // `selected` (what was just approved) rather than the stale pre-approval statuses, which
+    // would read as all unticked. Any other time, an approved session shows its stored statuses,
+    // background refetches included.
+    const awaitingStampedChecks = mutation.isSuccess && checksUpdatedAt < mutation.submittedAt;
+    const showApproval = isApproved && !awaitingStampedChecks;
 
     // The page stays mounted across approve → reopen, so a finished approval would otherwise
     // leave the button reading "Submitted" once the session is editable again.
