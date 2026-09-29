@@ -197,18 +197,16 @@ model SkillCheck {
 
 ## Pages & Routes
 
-| Page                                                  | Description                                                        |
-| ----------------------------------------------------- | ------------------------------------------------------------------ |
-| `/orgs/[slug]/skills`                                 | Module index                                                       |
-| `/orgs/[slug]/skills/catalogue`                       | Catalogue of all published skill packages                          |
-| `/orgs/[slug]/skills/catalogue/[package_id]`          | Published package detail — groups, skills, and subscription action |
-| `/orgs/[slug]/skills/checks`                          | Skill checks view                                                  |
-| `/orgs/[slug]/skills/reports`                         | Reports view                                                       |
-| `/orgs/[slug]/skills/sessions`                        | Sessions list                                                      |
-| `/orgs/[slug]/skills/sessions/[session_id]`           | Session detail — fields, navigation to sub-pages                   |
-| `/orgs/[slug]/skills/sessions/[session_id]/personnel` | Manage assessees assigned to the session                           |
-| `/orgs/[slug]/skills/sessions/[session_id]/skills`    | Manage skills assigned to the session                              |
-| `/orgs/[slug]/skills/sessions/[session_id]/record`    | Recording interface — Details / By Person / By Skill tabs          |
+| Page                                               | Description                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------------ |
+| `/orgs/[slug]/skills`                              | Module index                                                       |
+| `/orgs/[slug]/skills/catalogue`                    | Catalogue of all published skill packages                          |
+| `/orgs/[slug]/skills/catalogue/[package_id]`       | Published package detail — groups, skills, and subscription action |
+| `/orgs/[slug]/skills/checks`                       | Skill checks view                                                  |
+| `/orgs/[slug]/skills/reports`                      | Reports view                                                       |
+| `/orgs/[slug]/skills/sessions`                     | Sessions list                                                      |
+| `/orgs/[slug]/skills/sessions/[session_id]`        | Session detail — fields, navigation to sub-pages                   |
+| `/orgs/[slug]/skills/sessions/[session_id]/record` | Recording interface — Details / By Person / By Skill tabs          |
 
 ### Recorder UI
 

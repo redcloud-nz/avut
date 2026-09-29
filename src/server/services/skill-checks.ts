@@ -7,6 +7,8 @@ import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { NotFoundError } from "@/lib/errors";
+import { hasAnyRoleWithPermissions, parseStoredRoles } from "@/lib/permissions";
+import { PersonRef } from "@/lib/schemas/person";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 
 import type { OrgServiceContext } from "./service-context";
@@ -31,6 +33,39 @@ export async function requireSessionById(
     }
 
     return SkillCheckSession.fromRecord(session);
+}
+
+/**
+ * List the personnel who may be added as a session's assessors: `Active` people in the
+ * organization whose linked `OrganizationUser` holds a role authorizing `skillCheck: ["create"]`,
+ * i.e. who could actually record checks. Evaluated against the role definitions rather than a
+ * hard-coded role name.
+ * @returns The eligible people, sorted by name.
+ */
+export async function listEligibleAssessors(ctx: OrgServiceContext): Promise<PersonRef[]> {
+    const personnel = await ctx.prisma.person.findMany({
+        where: {
+            organizationId: ctx.organizationId,
+            status: "Active",
+            organizationUser: { isNot: null },
+        },
+        select: {
+            id: true,
+            name: true,
+            organizationUser: { select: { role: true } },
+        },
+    });
+
+    return personnel
+        .filter(
+            ({ organizationUser }) =>
+                organizationUser != null &&
+                hasAnyRoleWithPermissions(parseStoredRoles(organizationUser.role), {
+                    skillCheck: ["create"],
+                }),
+        )
+        .map(({ id, name }) => PersonRef.schema.parse({ id, name }))
+        .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**

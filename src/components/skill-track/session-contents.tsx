@@ -9,6 +9,11 @@ import Link from "next/link";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
+import { Protect } from "@/components/protect";
+import {
+    useSessionConfigAction,
+    type SessionConfigAction,
+} from "@/components/skill-track/session-config-dialogs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
@@ -23,24 +28,29 @@ export function SkillsModule_Session_Contents_Card({
 }) {
     const organization = useOrganization();
 
-    const [{ data: skillChecks }, { data: assessees }, { data: skills }] = useSuspenseQueries({
-        queries: [
-            trpc.skillChecks.listSkillChecks.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-            }),
-            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-                scope: "assigned",
-            }),
-            trpc.skillCheckSessions.listSessionSkills.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-                scope: "assigned",
-            }),
-        ],
-    });
+    const [{ data: session }, { data: skillChecks }, { data: assessees }, { data: skills }] =
+        useSuspenseQueries({
+            queries: [
+                trpc.skillCheckSessions.getSession.queryOptions({
+                    organizationId: organization.id,
+                    skillCheckSessionId: sessionId,
+                }),
+                trpc.skillChecks.listSkillChecks.queryOptions({
+                    organizationId: organization.id,
+                    sessionId: sessionId,
+                }),
+                trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+                    organizationId: organization.id,
+                    sessionId: sessionId,
+                    scope: "assigned",
+                }),
+                trpc.skillCheckSessions.listSessionSkills.queryOptions({
+                    organizationId: organization.id,
+                    sessionId: sessionId,
+                    scope: "assigned",
+                }),
+            ],
+        });
 
     return (
         <Card>
@@ -49,38 +59,12 @@ export function SkillsModule_Session_Contents_Card({
             </CardHeader>
 
             <CardContent className="px-2 -my-2">
-                <Item size="sm" asChild>
-                    <Link
-                        href={route("/orgs/[slug]/skill-track/sessions/[session_id]/personnel", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
-                    >
-                        <ItemContent>
-                            <ItemTitle>{assessees.length} Personnel</ItemTitle>
-                            <ItemDescription>assigned to the session</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                            <ChevronRightIcon className="size-4" />
-                        </ItemActions>
-                    </Link>
-                </Item>
-                <Item size="sm" asChild>
-                    <Link
-                        href={route("/orgs/[slug]/skill-track/sessions/[session_id]/skills", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
-                    >
-                        <ItemContent>
-                            <ItemTitle>{skills.length} Skills</ItemTitle>
-                            <ItemDescription>assigned to the session</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                            <ChevronRightIcon className="size-4" />
-                        </ItemActions>
-                    </Link>
-                </Item>
+                <ConfigRow action="change-personnel" title={`${assessees.length} Personnel`} />
+                <ConfigRow action="change-skills" title={`${skills.length} Skills`} />
+                <ConfigRow
+                    action="change-assessors"
+                    title={`${session.assessors.length} Assessors`}
+                />
                 <Item size="sm" asChild>
                     <Link
                         href={route("/orgs/[slug]/skill-track/sessions/[session_id]/checks", {
@@ -99,5 +83,41 @@ export function SkillsModule_Session_Contents_Card({
                 </Item>
             </CardContent>
         </Card>
+    );
+}
+
+/**
+ * A Contents row for one of the session's config lists. Updaters get a button that opens the
+ * list's dialog (hosted by `SkillTrack_SessionConfigDialogs` on the page); everyone else gets the
+ * same row as plain text.
+ */
+function ConfigRow({ action, title }: { action: SessionConfigAction; title: string }) {
+    const { open } = useSessionConfigAction();
+
+    const content = (
+        <ItemContent>
+            <ItemTitle>{title}</ItemTitle>
+            <ItemDescription>assigned to the session</ItemDescription>
+        </ItemContent>
+    );
+
+    return (
+        <Protect
+            permissions={{ skillCheckSession: ["update"] }}
+            render={(hasPermission) =>
+                hasPermission ? (
+                    <Item size="sm" asChild className="cursor-pointer text-left hover:bg-muted">
+                        <button type="button" aria-haspopup="dialog" onClick={() => open(action)}>
+                            {content}
+                            <ItemActions>
+                                <ChevronRightIcon className="size-4" />
+                            </ItemActions>
+                        </button>
+                    </Item>
+                ) : (
+                    <Item size="sm">{content}</Item>
+                )
+            }
+        />
     );
 }

@@ -17,6 +17,9 @@ export const Messages = {
     i3TemplateVariantNotFound: (variantId: string) =>
         `I3TemplateVariant(id=${variantId}) not found.`,
 
+    ineligibleAssessors: (personIds: string[]) =>
+        `Cannot add ${personIds.map((id) => `Person(id=${id})`).join(", ")} as an assessor: an assessor must be an active person linked to a user who can record skill checks.`,
+
     noLinkedPersonRecord: () => `You must have a linked person record to perform this action.`,
 
     noteNotFound: (noteId: string) => `Note(id=${noteId}) not found.`,

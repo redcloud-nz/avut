@@ -5,13 +5,20 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
-import { createSession, nextSessionNumber, requireSessionById } from "./skill-checks";
+import {
+    createSession,
+    listEligibleAssessors,
+    nextSessionNumber,
+    requireSessionById,
+} from "./skill-checks";
 
 // The service reaches server-only modules at import time. The functions exercised here use an
 // injected prisma client, so an empty stub is enough to let it import in jsdom.
@@ -81,6 +88,78 @@ describe("skill-checks", () => {
             await expect(requireSessionById(ctx(), T.outsiderSession)).rejects.toThrow(
                 `SkillCheckSession(id=${T.outsiderSession}) not found.`,
             );
+        });
+    });
+
+    describe("listEligibleAssessors", () => {
+        // Dataset (all in T.org unless noted):
+        //   assessor      → Active, linked, "skills-assessor"            → eligible
+        //   multiRole     → Active, linked, "member,skills-assessor"     → eligible
+        //   unlinked      → Active, no OrganizationUser                  → excluded
+        //   memberOnly    → Active, linked, "member"                     → excluded
+        //   skillsAdmin   → Active, linked, "skills-admin"               → excluded
+        //   archived      → Archived, linked, "skills-assessor"          → excluded
+        //   outsider      → in T.otherOrg, linked, "skills-assessor"     → excluded
+        const P = {
+            assessor: PersonId.create(),
+            multiRole: PersonId.create(),
+            unlinked: PersonId.create(),
+            memberOnly: PersonId.create(),
+            skillsAdmin: PersonId.create(),
+            archived: PersonId.create(),
+            outsider: PersonId.create(),
+        };
+
+        beforeAll(async () => {
+            const people: {
+                id: PersonId;
+                name: string;
+                organizationId?: OrganizationId;
+                status?: "Active" | "Archived";
+                role?: string;
+            }[] = [
+                { id: P.assessor, name: "Zed Assessor", role: "skills-assessor" },
+                { id: P.multiRole, name: "Amy MultiRole", role: "member,skills-assessor" },
+                { id: P.unlinked, name: "Unlinked" },
+                { id: P.memberOnly, name: "Member Only", role: "member" },
+                { id: P.skillsAdmin, name: "Skills Admin", role: "skills-admin" },
+                {
+                    id: P.archived,
+                    name: "Archived",
+                    status: "Archived",
+                    role: "skills-assessor",
+                },
+                {
+                    id: P.outsider,
+                    name: "Outsider",
+                    organizationId: T.otherOrg,
+                    role: "skills-assessor",
+                },
+            ];
+
+            for (const { id, name, organizationId = T.org, status = "Active", role } of people) {
+                await db.person.create({
+                    data: { id, organizationId, name, email: `${id}@example.com`, status },
+                });
+                if (role) {
+                    await db.organizationUser.create({
+                        data: {
+                            id: nanoId16(),
+                            organizationId,
+                            userId: UserId.create(),
+                            role,
+                            personId: id,
+                        },
+                    });
+                }
+            }
+        });
+
+        it("returns only active, linked people whose role can record checks, sorted by name", async () => {
+            expect(await listEligibleAssessors(ctx())).toEqual([
+                { id: P.multiRole, name: "Amy MultiRole" },
+                { id: P.assessor, name: "Zed Assessor" },
+            ]);
         });
     });
 
