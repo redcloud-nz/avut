@@ -5,7 +5,7 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
@@ -19,6 +19,7 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
     assertSessionCheckTarget,
+    assertSessionUnlocked,
     createSession,
     listEligibleAssessors,
     nextSessionNumber,
@@ -94,6 +95,19 @@ describe("skill-checks", () => {
             await expect(requireSessionById(ctx(), T.outsiderSession)).rejects.toThrow(
                 `SkillCheckSession(id=${T.outsiderSession}) not found.`,
             );
+        });
+    });
+
+    describe("assertSessionUnlocked", () => {
+        it("throws ConflictError for an approved session", () => {
+            expect(() => assertSessionUnlocked({ id: T.session, status: "Include" })).toThrow(
+                ConflictError,
+            );
+        });
+
+        it("allows a Draft or Exclude session", () => {
+            expect(() => assertSessionUnlocked({ id: T.session, status: "Draft" })).not.toThrow();
+            expect(() => assertSessionUnlocked({ id: T.session, status: "Exclude" })).not.toThrow();
         });
     });
 

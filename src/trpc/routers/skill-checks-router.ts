@@ -15,14 +15,20 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
+import * as SkillChecks from "@/server/services/skill-checks";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 export const skillChecksRouter = createTrpcRouter({
     /**
-     * Creates a skill check. If sessionId is provided, the session must exist and belong to the same organization.
+     * Creates a standalone skill check, outside any session. Checks within a session are recorded
+     * through `skillCheckSessions.setSessionSkillCheck`, which enforces assessor membership and
+     * the approval lock.
+     * @throws TRPCError(BAD_REQUEST) if `sessionId` is not null.
      */
+    // `sessionId` stays in the input (nullable) so existing callers keep their shape; only `null`
+    // is accepted.
     createSkillCheck: organizationProcedure({ skillCheck: ["create"] })
         .input(
             z.object({
@@ -41,45 +47,18 @@ export const skillChecksRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             const { skillCheckId, sessionId, create } = input;
 
-            // Validate session exists if sessionId is provided, and that the caller is one of
-            // its assigned assessors — only assessors on a session may record checks against it.
-            if (sessionId) {
-                const session = await ctx.prisma.skillCheckSession.findUnique({
-                    where: {
-                        id: sessionId,
-                        organizationId: ctx.organizationId,
-                    },
-                    include: {
-                        assessors: { select: { id: true } },
-                    },
+            if (sessionId !== null) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: Messages.sessionCheckNotAllowed(sessionId),
                 });
-                if (!session) {
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: Messages.skillCheckSessionNotFound(sessionId),
-                    });
-                }
-
-                const orgUser = await ctx.prisma.organizationUser.findFirst({
-                    where: { organizationId: ctx.organizationId, userId: ctx.userId },
-                    select: { personId: true },
-                });
-                if (
-                    !orgUser?.personId ||
-                    !session.assessors.some((assessor) => assessor.id === orgUser.personId)
-                ) {
-                    throw new TRPCError({
-                        code: "FORBIDDEN",
-                        message: Messages.notSessionAssessor(sessionId),
-                    });
-                }
             }
 
             const record = await ctx.prisma.skillCheck.create({
                 data: {
                     id: skillCheckId,
                     organizationId: ctx.organizationId,
-                    sessionId,
+                    sessionId: null,
                     ...create,
                 },
             });
@@ -89,11 +68,32 @@ export const skillChecksRouter = createTrpcRouter({
 
     /**
      * Deletes a skill check. The skill check must belong to the organization.
+     * @throws TRPCError(NOT_FOUND) if the check does not exist.
+     * @throws TRPCError(CONFLICT) if the check belongs to an approved session.
      */
+    // No ownership check: `skillCheck: ["delete"]` is an admin grant for removing erroneous checks.
     deleteSkillCheck: organizationProcedure({ skillCheck: ["delete"] })
         .input(z.object({ skillCheckId: SkillCheckId.schema }))
         .mutation(async ({ ctx, input }) => {
             const { skillCheckId } = input;
+
+            const existing = await ctx.prisma.skillCheck.findUnique({
+                where: { id: skillCheckId, organizationId: ctx.organizationId },
+                select: { sessionId: true },
+            });
+            if (!existing) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillCheckNotFound(skillCheckId),
+                });
+            }
+            if (existing.sessionId) {
+                const session = await SkillChecks.requireSessionById(
+                    ctx,
+                    SkillCheckSessionId.schema.parse(existing.sessionId),
+                );
+                SkillChecks.assertSessionUnlocked(session);
+            }
 
             await ctx.prisma.skillCheck.delete({
                 where: {
@@ -425,6 +425,13 @@ export const skillChecksRouter = createTrpcRouter({
      * row-ownership check below (`assessorId === current user`), not a permission gate. The gate
      * here is `["create"]`, the same broad "records checks" grant a `skills-assessor` already
      * holds; it's the ownership check that stops one assessor editing another's check.
+     *
+     * A check within a session also needs the session unlocked, and the caller still an assigned
+     * assessor of it.
+     * @throws TRPCError(NOT_FOUND) if the check does not exist.
+     * @throws TRPCError(FORBIDDEN) if the caller did not record the check, or is no longer an
+     * assigned assessor of its session.
+     * @throws TRPCError(CONFLICT) if the check belongs to an approved session.
      */
     updateSkillCheck: organizationProcedure({ skillCheck: ["create"] })
         .input(
@@ -442,7 +449,7 @@ export const skillChecksRouter = createTrpcRouter({
 
             const existing = await ctx.prisma.skillCheck.findUnique({
                 where: { id: skillCheckId, organizationId: ctx.organizationId },
-                select: { assessorId: true },
+                select: { assessorId: true, sessionId: true },
             });
             if (!existing) {
                 throw new TRPCError({
@@ -460,6 +467,14 @@ export const skillChecksRouter = createTrpcRouter({
                     code: "FORBIDDEN",
                     message: Messages.notCheckAssessor(skillCheckId),
                 });
+            }
+
+            if (existing.sessionId) {
+                const { session } = await SkillChecks.requireSessionAssessor(
+                    ctx,
+                    SkillCheckSessionId.schema.parse(existing.sessionId),
+                );
+                SkillChecks.assertSessionUnlocked(session);
             }
 
             const record = await ctx.prisma.skillCheck.update({

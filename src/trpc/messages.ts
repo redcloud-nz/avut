@@ -37,6 +37,9 @@ export const Messages = {
 
     personNotFound: (personId: string) => `Person(id=${personId}) not found.`,
 
+    sessionCheckNotAllowed: (sessionId: string) =>
+        `Cannot create a check in SkillCheckSession(id=${sessionId}) here: record session checks through the session.`,
+
     skillCheckNotFound: (skillCheckId: string) => `SkillCheck(id=${skillCheckId}) not found.`,
 
     skillCheckSessionNotFound: (sessionId: string) =>

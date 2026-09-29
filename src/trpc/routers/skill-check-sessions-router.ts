@@ -22,6 +22,8 @@ import { Messages } from "../messages";
 export const skillCheckSessionsRouter = createTrpcRouter({
     /**
      * Approves a session by stamping each skill check as Include or Exclude and moving the session to Include status.
+     * @throws TRPCError(NOT_FOUND) if the session does not exist.
+     * @throws TRPCError(CONFLICT) if the session is already approved — reopen it first.
      */
     approveSession: organizationProcedure({ skillCheckSession: ["approve"] })
         .input(
@@ -34,15 +36,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input }) => {
             const { sessionId, includedCheckIds } = input;
 
-            const session = await ctx.prisma.skillCheckSession.findUnique({
-                where: { id: sessionId, organizationId: ctx.organizationId },
-            });
-            if (!session) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.skillCheckSessionNotFound(sessionId),
-                });
-            }
+            const session = await SkillChecks.requireSessionById(ctx, sessionId);
+            SkillChecks.assertSessionUnlocked(session);
 
             await ctx.prisma.$transaction([
                 ctx.prisma.skillCheck.updateMany({
@@ -74,11 +69,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             ]);
 
             return {
-                updated: SkillCheckSession.fromRecord({
-                    ...session,
-                    status: "Include",
-                    updatedAt: new Date(),
-                }),
+                updated: { ...session, status: "Include", updatedAt: new Date().toISOString() },
             };
         }),
 
@@ -89,8 +80,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @param startsAt Optional start datetime for the session.
      * @param endsAt Optional end datetime for the session.
      * @param notes Optional notes for the session.
-     * @param status The status of the session.
-     * @returns The created skill check session.
+     * @returns The created skill check session, in `Draft` status.
      * @throws TRPCError(BAD_REQUEST) if the caller has no linked person record.
      */
     createSession: organizationProcedure({ skillCheckSession: ["create"] })
@@ -126,7 +116,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 startsAt: new Date(create.date),
                 endsAt: new Date(create.date),
                 notes: create.notes,
-                status: create.status,
+                status: "Draft",
                 assessors: { connect: [{ id: assessorPersonId }] },
             }));
 
@@ -183,6 +173,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @throws TRPCError(BAD_REQUEST) if the caller has no linked person, or the assessee or skill
      * is not part of the session.
      * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
+     * @throws TRPCError(CONFLICT) if the session is approved.
      */
     // Same gate as `setSessionSkillCheck` (see there). `skills-assessor` holds no
     // `skillCheck: ["delete"]`, which is why clearing a check doesn't go through `deleteSkillCheck`.
@@ -203,6 +194,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 ctx,
                 skillCheckSessionId,
             );
+            SkillChecks.assertSessionUnlocked(session);
             SkillChecks.assertSessionCheckTarget(session, { assesseeId, skillId });
 
             const { count } = await ctx.prisma.skillCheck.deleteMany({
@@ -544,6 +536,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @throws TRPCError(BAD_REQUEST) if the caller has no linked person, or the assessee or skill
      * is not part of the session.
      * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
+     * @throws TRPCError(CONFLICT) if the session is approved.
      */
     // Recording a check within a session the caller assesses needs both halves: a session update
     // and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has no `"update"`
@@ -573,6 +566,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 ctx,
                 skillCheckSessionId,
             );
+            SkillChecks.assertSessionUnlocked(session);
             SkillChecks.assertSessionCheckTarget(session, { assesseeId, skillId });
 
             // Upsert on the unique key, so a double tap can't race two creates.
@@ -602,7 +596,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Update a skill check session.
+     * Update a skill check session's name, date and notes. Not subject to the approval lock.
      * @param skillCheckSessionId The ID of the skill check session to update.
      * @param update The fields to update on the skill check session.
      * @returns The updated skill check session.
@@ -632,10 +626,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     include: {},
                     data: {
                         name: update.name,
-                        startsAt: update.date,
-                        endsAt: update.date,
+                        startsAt: new Date(update.date),
+                        endsAt: new Date(update.date),
                         notes: update.notes,
-                        status: update.status,
                     },
                 }),
                 ctx.logEvent({
@@ -654,6 +647,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @param skillCheckSessionId The ID of the skill check session to update assessees for.
      * @param personIds An array of person IDs to assign as assessees to the skill check session.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
+     * @throws TRPCError(CONFLICT) if the session is approved.
      */
     updateSessionAssessees: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -671,8 +665,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         )
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
-                // Verify that the session exists and belongs to the organization.
-                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+                const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+                SkillChecks.assertSessionUnlocked(session);
 
                 const changes = [
                     ...addedPersonIds.map((id) => ({
@@ -732,6 +726,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @param removedPersonIds The people to remove as assessors.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
      * @throws TRPCError(BAD_REQUEST) if any added person is not an eligible assessor.
+     * @throws TRPCError(CONFLICT) if the session is approved.
      */
     updateSessionAssessors: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -749,8 +744,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         )
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
-                // Verify that the session exists and belongs to the organization.
-                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+                const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+                SkillChecks.assertSessionUnlocked(session);
 
                 if (addedPersonIds.length > 0) {
                     const eligibleIds = new Set(
@@ -817,6 +812,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @param skillCheckSessionId The ID of the skill check session to update skills for.
      * @param skillIds An array of skill IDs to assign to the skill check session.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
+     * @throws TRPCError(CONFLICT) if the session is approved.
      */
     updateSessionSkills: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -834,8 +830,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         )
         .mutation(
             async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
-                // Verify that the session exists and belongs to the organization.
-                await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+                const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+                SkillChecks.assertSessionUnlocked(session);
 
                 const changes = [
                     ...addedSkillIds.map((id) => ({

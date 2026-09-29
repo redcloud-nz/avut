@@ -12,6 +12,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckId } from "@/lib/schemas/skill-check";
+import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
@@ -913,5 +914,234 @@ describe("skillChecks.updateSkillCheck", () => {
                 update: { result: "Pass", notes: "Not mine to change" },
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("skillChecks — the session approval lock", () => {
+    // Dataset:
+    //   assessorUser → linked to assessorPerson, an assessor of draftSession and approvedSession
+    //   removedUser  → linked to removedPerson, who recorded removedCheck in draftSession but has
+    //                  since been taken off its assessors
+    //   draftSession    → Draft, holds draftCheck (by assessorPerson) and removedCheck
+    //   approvedSession → Include, holds approvedCheck (by assessorPerson)
+    //   standaloneCheck → no session, by assessorPerson
+    const T = {
+        org: OrganizationId.create(),
+        assessorUser: UserId.create(),
+        removedUser: UserId.create(),
+        assessorPerson: PersonId.create(),
+        removedPerson: PersonId.create(),
+        assessee: PersonId.create(),
+        skill: SkillId.create(),
+        draftSession: SkillCheckSessionId.create(),
+        approvedSession: SkillCheckSessionId.create(),
+        draftCheck: SkillCheckId.create(),
+        removedCheck: SkillCheckId.create(),
+        approvedCheck: SkillCheckId.create(),
+        standaloneCheck: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.assessorPerson, "Dana Assessor"],
+            [T.removedPerson, "Removed Assessor"],
+            [T.assessee, "Pat Assessee"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        for (const [userId, personId] of [
+            [T.assessorUser, T.assessorPerson],
+            [T.removedUser, T.removedPerson],
+        ] as const) {
+            await db.organizationUser.create({
+                data: {
+                    id: nanoId16(),
+                    organizationId: T.org,
+                    userId,
+                    role: "skills-assessor",
+                    personId,
+                },
+            });
+        }
+
+        for (const [id, sessionNumber, status] of [
+            [T.draftSession, 1, "Draft"],
+            [T.approvedSession, 2, "Include"],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Session ${sessionNumber}`,
+                    sessionNumber,
+                    status,
+                    startsAt: new Date(),
+                    notes: "",
+                    assessors: { connect: [{ id: T.assessorPerson }] },
+                    assessees: { connect: [{ id: T.assessee }] },
+                },
+            });
+        }
+
+        for (const [id, sessionId, assessorId, status] of [
+            [T.draftCheck, T.draftSession, T.assessorPerson, "Draft"],
+            [T.removedCheck, T.draftSession, T.removedPerson, "Draft"],
+            [T.approvedCheck, T.approvedSession, T.assessorPerson, "Include"],
+            [T.standaloneCheck, null, T.assessorPerson, "Draft"],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId,
+                    assesseeId: T.assessee,
+                    assessorId,
+                    skillId: T.skill,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                },
+            });
+        }
+    });
+
+    function makeCaller(userId: UserId = T.assessorUser) {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: userId },
+                permissions: { skillCheck: ["create", "delete"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    describe("createSkillCheck", () => {
+        const create = {
+            assesseeId: T.assessee,
+            assessorId: T.assessorPerson,
+            skillId: T.skill,
+            result: "Pass" as const,
+            notes: "",
+        };
+
+        it("creates a standalone check", async () => {
+            const skillCheckId = SkillCheckId.create();
+            const created = await makeCaller().createSkillCheck({
+                organizationId: T.org,
+                skillCheckId,
+                sessionId: null,
+                create,
+            });
+
+            expect(created).toMatchObject({ id: skillCheckId, sessionId: null });
+        });
+
+        it("rejects a session check with BAD_REQUEST — those go through setSessionSkillCheck", async () => {
+            const skillCheckId = SkillCheckId.create();
+            await expect(
+                makeCaller().createSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId,
+                    sessionId: T.draftSession,
+                    create,
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+            expect(await db.skillCheck.findUnique({ where: { id: skillCheckId } })).toBeNull();
+        });
+    });
+
+    describe("updateSkillCheck", () => {
+        it("lets an assigned assessor amend their check in a Draft session", async () => {
+            const updated = await makeCaller().updateSkillCheck({
+                organizationId: T.org,
+                skillCheckId: T.draftCheck,
+                update: { result: "Fail", notes: "Revised" },
+            });
+
+            expect(updated).toMatchObject({ result: "Fail", notes: "Revised" });
+        });
+
+        it("refuses a check in an approved session with CONFLICT", async () => {
+            await expect(
+                makeCaller().updateSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: T.approvedCheck,
+                    update: { result: "Fail", notes: "Too late" },
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+
+            const check = await db.skillCheck.findUnique({ where: { id: T.approvedCheck } });
+            expect(check?.result).toBe("Pass");
+        });
+
+        it("refuses the check's own assessor once removed from the session with FORBIDDEN", async () => {
+            await expect(
+                makeCaller(T.removedUser).updateSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: T.removedCheck,
+                    update: { result: "Fail", notes: "" },
+                }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+
+        it("throws NOT_FOUND for an unknown check", async () => {
+            await expect(
+                makeCaller().updateSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: SkillCheckId.create(),
+                    update: { result: "Fail", notes: "" },
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+    });
+
+    describe("deleteSkillCheck", () => {
+        it("refuses a check in an approved session with CONFLICT", async () => {
+            await expect(
+                makeCaller().deleteSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: T.approvedCheck,
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+
+            expect(
+                await db.skillCheck.findUnique({ where: { id: T.approvedCheck } }),
+            ).not.toBeNull();
+        });
+
+        it("deletes a check in a Draft session", async () => {
+            await makeCaller().deleteSkillCheck({
+                organizationId: T.org,
+                skillCheckId: T.removedCheck,
+            });
+
+            expect(await db.skillCheck.findUnique({ where: { id: T.removedCheck } })).toBeNull();
+        });
+
+        it("deletes a standalone check", async () => {
+            await makeCaller().deleteSkillCheck({
+                organizationId: T.org,
+                skillCheckId: T.standaloneCheck,
+            });
+
+            expect(await db.skillCheck.findUnique({ where: { id: T.standaloneCheck } })).toBeNull();
+        });
+
+        it("throws NOT_FOUND for an unknown check", async () => {
+            await expect(
+                makeCaller().deleteSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: SkillCheckId.create(),
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
     });
 });

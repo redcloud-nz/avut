@@ -6,7 +6,7 @@
 import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { hasAnyRoleWithPermissions, parseStoredRoles } from "@/lib/permissions";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
@@ -34,6 +34,25 @@ export async function requireSessionById(
     }
 
     return SkillCheckSession.fromRecord(session);
+}
+
+/**
+ * The single lock rule for a skill check session: an approved session (`status === "Include"`)
+ * accepts no writes to its checks or its configuration (assessees, skills, assessors) until it is
+ * reopened. Every procedure that writes either calls this after loading the session. Its name,
+ * date and notes stay editable, and it can still be deleted.
+ *
+ * Check-then-write, not transactional: a write racing an approval can still land a `Draft` check
+ * in an approved session. That's accepted — only `Include` checks count, and the stray check shows
+ * up for review on the next reopen.
+ * @throws ConflictError if the session is approved.
+ */
+export function assertSessionUnlocked(session: Pick<SkillCheckSession, "id" | "status">): void {
+    if (session.status === "Include") {
+        throw new ConflictError(
+            `SkillCheckSession(id=${session.id}) is approved. Reopen it to make changes.`,
+        );
+    }
 }
 
 /**

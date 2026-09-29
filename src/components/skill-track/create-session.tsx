@@ -73,7 +73,6 @@ export function SkillTrack_CreateSession_Dialog() {
             name: "",
             date: new Date().toISOString(),
             notes: "",
-            status: "Draft" as const,
         },
     });
 
