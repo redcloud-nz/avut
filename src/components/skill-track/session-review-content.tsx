@@ -89,12 +89,13 @@ export function SkillTrack_SessionReview_Content({
 
     const assessorById = useMemo(() => new Map(assessors.map((p) => [p.id, p])), [assessors]);
 
-    // An approved session is locked: the selection is read-only until it's reopened.
+    // An approved session is locked until it's reopened: its checkboxes are read-only and show
+    // the approval itself (`Include` checks), not `selected` (see `AssesseeChecks`).
     const isApproved = session.status === "Include";
 
-    // Preselect everything not explicitly excluded: new `Draft` checks, the `Include` ones of an
-    // approved session, and the `Pending` ones a reopen left behind (the previous approval's
-    // selection), so re-approving starts from where the last approval left off.
+    // The editable view's selection. Preselect everything not explicitly excluded: new `Draft`
+    // checks and the `Pending` ones a reopen left behind (the previous approval's selection), so
+    // re-approving starts from where the last approval left off.
     const [selected, setSelected] = useState<Set<SkillCheckId>>(
         () => new Set(skillChecks.filter((c) => c.status !== "Exclude").map((c) => c.id)),
     );
@@ -272,7 +273,11 @@ interface AssesseeChecksProps {
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
     selected: Set<SkillCheckId>;
-    /** True while the session is approved: the checkboxes show the selection but can't change it. */
+    /**
+     * True while the session is approved: the checkboxes are read-only and show the approval
+     * itself (`Include` checks) rather than the local selection, so a refetch is reflected and a
+     * check that raced the approval in as `Draft` isn't shown ticked.
+     */
     disabled: boolean;
     toggleCheck(id: SkillCheckId): void;
     toggleGroup(ids: SkillCheckId[]): void;
@@ -289,7 +294,9 @@ function AssesseeChecks({
     toggleGroup,
 }: AssesseeChecksProps) {
     const organization = useOrganization();
-    const selectedCount = assesseeChecks.filter((check) => selected.has(check.id)).length;
+    const isChecked = (check: SkillCheck) =>
+        disabled ? check.status === "Include" : selected.has(check.id);
+    const selectedCount = assesseeChecks.filter(isChecked).length;
 
     const hasChecks = assesseeChecks.length > 0;
 
@@ -330,7 +337,7 @@ function AssesseeChecks({
                         <TableCell>
                             <Checkbox
                                 id={`check-${check.id}`}
-                                checked={selected.has(check.id)}
+                                checked={isChecked(check)}
                                 disabled={disabled}
                                 onCheckedChange={() => toggleCheck(check.id)}
                             />

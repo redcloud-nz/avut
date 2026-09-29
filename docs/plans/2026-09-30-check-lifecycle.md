@@ -211,7 +211,7 @@ migrate dev`, and `npm run prisma migrate status` reports the branch DB up to da
       the new keys.
   - **Done when:** those tests pass and `npm run check` is green.
 
-- [ ] **5. Reopen action and the approved review page** — `visual`
+- [x] **5. Reopen action and the approved review page** — `visual` — `feat(skill-track): reopen an approved session and lock its review page`, `fix(skill-track): show the actual approval on a locked review page`
   - **Files:** `src/components/skill-track/session-menu.tsx`, a new
     `src/components/skill-track/reopen-session.tsx`, `src/components/skill-track/session-review-content.tsx`,
     `src/components/skill-track/session-content.tsx`, `src/components/skill-track/sessions-list.tsx`,
