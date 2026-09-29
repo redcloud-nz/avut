@@ -1,10 +1,21 @@
 # Implementation plan: Outstanding review findings, 2026-09-22 → 2026-09-28
 
 **Date:** 2026-09-29
-**Branch:** Phase 0 on its own branch (`fix/d4h-token-page-permissions`), off `integration`, and
-shipped first. Phases 1–2 on `fix/review-followups`. Phase 3 is issues and checks, with no branch.
+**Branch:** `fix/review-followups` (worktree `.claude/worktrees/review-followups`). It merges in
+`chore/ship-workflow` and `fix/d4h-token-permissions`, which already held Phase 0. Phase 3 is
+issues and checks, with no branch.
 **DB:** no schema change. §3.1 _might_ need a data migration. If it does, `db:branch` first and
 ask before running it.
+
+## Status
+
+- **Phase 0:** done on `fix/d4h-token-permissions` (828199e9), merged into this branch.
+- **Phase 1:** done. §1.6's lookup is named `UserAccounts.getDeleted`.
+- **Phase 2:** done, except:
+  - §2.1's ID-brand decision is still open.
+  - §2.7 is skipped. No component test mocks the tRPC client yet, so restoring the dialog test would introduce a new test pattern.
+- **Deviation in §2.3:** `AsAdmin` goes only on a system-admin procedure that sits beside an org-scoped one doing the same job. Suffixing every system-admin procedure would add churn without clearing up any ambiguity. So only `importSkillPackage` → `importPackageAsAdmin` changed, and the rule is in `src/trpc/CLAUDE.md`.
+- **Phase 3:** not started.
 
 Every PR merged to `integration` between 2026-09-22 and 2026-09-28 (32 PRs, #249–#327). I
 checked each `claude-avut` review finding against `origin/integration` at `cef534bd`. There
@@ -21,12 +32,12 @@ their own plans and issues.
 
 ## Phases
 
-| Phase | PR  | Contents                                                                                 |
-| ----- | --- | ---------------------------------------------------------------------------------------- |
+| Phase | PR  | Contents                                                                                |
+| ----- | --- | --------------------------------------------------------------------------------------- |
 | 0     | 1   | `integration` fails typecheck, and the D4H token pages 403 for everyone. **Ship first** |
-| 1     | 2   | Behaviour fixes: permission/UI mismatch, owner race, error mapping, 500 → 404, guards    |
-| 2     | 2   | Docs, comments, naming, and small cleanups (same PR as Phase 1, separate commits)        |
-| 3     | —   | One data check and one issue to file                                                     |
+| 1     | 2   | Behaviour fixes: permission/UI mismatch, owner race, error mapping, 500 → 404, guards   |
+| 2     | 2   | Docs, comments, naming, and small cleanups (same PR as Phase 1, separate commits)       |
+| 3     | —   | One data check and one issue to file                                                    |
 
 ---
 
@@ -89,7 +100,7 @@ ownership" can still leave the org with no owners.
 
 ```ts
 /** Run `fn` in a Serializable transaction, after checking `userId` isn't the org's last owner. */
-async function withOwnerGuard<T>(ctx, userId, fn: (tx) => Promise<T>): Promise<T>
+async function withOwnerGuard<T>(ctx, userId, fn: (tx) => Promise<T>): Promise<T>;
 ```
 
 Both `removeOwner` and `removeOrganizationMember` use it. `removeOrganizationMember`
@@ -197,7 +208,7 @@ rest.
 
 - `teams-router.ts:26`: `teamMembershipRowSchema`'s JSDoc should also list `getTeamMembershipById` (#310).
 - `src/server/services/skill-packages.ts:80`: `requirePackageById` needs the same "local literal, not `Messages.skillPackageNotFound`" note that `requireSkillById`/`requireGroupById` have (#288).
-- `src/server/auth-hooks/deleted-user-plugin.ts:79`: add a comment that `total` is adjusted only for deleted members on *this page*, so it drifts if `list-members` is ever paginated (#315). No code change until pagination exists.
+- `src/server/auth-hooks/deleted-user-plugin.ts:79`: add a comment that `total` is adjusted only for deleted members on _this page_, so it drifts if `list-members` is ever paginated (#315). No code change until pagination exists.
 
 ### 2.6 Workflow docs
 
@@ -242,35 +253,35 @@ related issue is #5, which is about leave-org error feedback. Proposed fix: give
 
 These review findings need no work.
 
-| PR   | Finding                                                                  | Status                                                                                  |
-| ---- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| #326 | `skills-admin` lacks `person`/`team` view (blocking)                     | Fixed in 98b35a57                                                                       |
-| #326 | `owner` hidden or shown raw in role displays                             | Fixed in 98b35a57                                                                       |
-| #326 | `skills-admin` can record checks (server)                                | Fixed in 98b35a57. UI side is §1.1                                                      |
-| #326 | `removeOwner` race                                                       | Fixed in 98b35a57. `removeOrganizationMember` side is §1.2                              |
-| #326 | Deploy impact on existing admins/owners                                  | Declined: `member` only adds `d4hEquipment:view`, which has no production users         |
-| #326 | `hasOwnerRole` ×3, self "Remove owner", sidebar comment, module helper, JSDoc | Fixed in 98b35a57                                                                   |
-| #321 | PR description misdescribes the settings-form change                     | Moot once merged                                                                        |
-| #315 | `setUserRole` doc comment, `Promise.all` in the purge cron               | Fixed in b4a7c230                                                                       |
-| #314 | Resend-OTP unhandled rejection                                           | Fixed in 9d3b11a3                                                                       |
-| #314 | Invitation `status` enum can fail `listInvitations`                      | Flagged only. Better Auth writes just these four values. No action                     |
-| #313 | `PurgeDialog` stuck on "Deleted"; non-constant-time bearer check         | Fixed in 6c2a60aa, f19dc31d                                                             |
-| #306 | Double fetch after delete/restore; router-local `getI3TemplateOrThrow`   | Fixed in 4c464312                                                                       |
-| #305 | Archive resurrects Deleted rows (blocking); router order; `entityIdByType` | Fixed in 951bea71                                                                     |
-| #305 | `restoreSkill` docstring still mentions Deleted                          | Fixed in #311                                                                           |
-| #304 | Re-add after soft delete conflicts; skill-check scope includes Deleted   | Fixed in cbeff67a                                                                       |
-| #304 | `getTeamMembership`/`updateTeamMembership` show Deleted rows             | Fixed in #312                                                                           |
-| #304 | Non-null assertions in `trash-list.tsx`; "no Archived state" note        | Superseded: #313 rewrote the list over the registry; PR note moot                       |
-| #302 | Self-triggered dialog unmounts; reset deps; "Reject" label               | Fixed in ddafada6                                                                       |
-| #301 | Dead `TeamMembershipLink`/`UserRef`; `Pick<>` instead of `Ref`           | Fixed in cab321a2                                                                       |
-| #300 | Sessions stat card under the wrong `<Protect>` (blocking)                | Fixed in 728d9c2a                                                                       |
-| #290 | `listTrash` not invalidated; no prefetch; team menu Delete; nav gate     | Fixed in 6fb81c53, 9e7b8ebe                                                             |
-| #290 | Follow-up issue for a partial unique index on `Person.email`             | Superseded: #312 decided email stays unique across the bin                              |
-| #280, #277, #276, #275, #274, #271 | Stale doc refs, `Teams.find` naming, missing service tests, dead re-export, `Messages` note | Fixed in #288 (except the one `requirePackageById` note, §2.5) |
-| #273 | `Forms.saveInstance` writes no audit entry                               | Declined in #288: it's the draft autosave path. Needs a product decision, not a cleanup |
-| #270 | (Everything except `linkTeamToD4H`)                                      | n/a. `linkTeamToD4H` is §1.5                                                            |
-| #269 | Sidebar-state cookie removed (blocking)                                  | Declined: intentional                                                                   |
-| #269 | Sequential `fetchQuery`; `userConfig` cleanup; timezone double-fire      | Fixed in d98efcfa                                                                       |
-| #255 | Unprotected stat cards (blocking); `cn()`; duplicate query; `w-14`       | Fixed in 27af90c6, a482e993; `listSessions` inconsistency filed as #256, fixed by #300  |
-| #252 | `sync-integration` race note in `releasing.md`                           | Superseded: auto sync-back can't bypass the `integration` ruleset at all, so it's done by hand each release (tracked separately) |
-| #251, #267, #303, #310 (bar §2.5), #311 | No findings                                          | —                                                                                       |
+| PR                                      | Finding                                                                                     | Status                                                                                                                           |
+| --------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| #326                                    | `skills-admin` lacks `person`/`team` view (blocking)                                        | Fixed in 98b35a57                                                                                                                |
+| #326                                    | `owner` hidden or shown raw in role displays                                                | Fixed in 98b35a57                                                                                                                |
+| #326                                    | `skills-admin` can record checks (server)                                                   | Fixed in 98b35a57. UI side is §1.1                                                                                               |
+| #326                                    | `removeOwner` race                                                                          | Fixed in 98b35a57. `removeOrganizationMember` side is §1.2                                                                       |
+| #326                                    | Deploy impact on existing admins/owners                                                     | Declined: `member` only adds `d4hEquipment:view`, which has no production users                                                  |
+| #326                                    | `hasOwnerRole` ×3, self "Remove owner", sidebar comment, module helper, JSDoc               | Fixed in 98b35a57                                                                                                                |
+| #321                                    | PR description misdescribes the settings-form change                                        | Moot once merged                                                                                                                 |
+| #315                                    | `setUserRole` doc comment, `Promise.all` in the purge cron                                  | Fixed in b4a7c230                                                                                                                |
+| #314                                    | Resend-OTP unhandled rejection                                                              | Fixed in 9d3b11a3                                                                                                                |
+| #314                                    | Invitation `status` enum can fail `listInvitations`                                         | Flagged only. Better Auth writes just these four values. No action                                                               |
+| #313                                    | `PurgeDialog` stuck on "Deleted"; non-constant-time bearer check                            | Fixed in 6c2a60aa, f19dc31d                                                                                                      |
+| #306                                    | Double fetch after delete/restore; router-local `getI3TemplateOrThrow`                      | Fixed in 4c464312                                                                                                                |
+| #305                                    | Archive resurrects Deleted rows (blocking); router order; `entityIdByType`                  | Fixed in 951bea71                                                                                                                |
+| #305                                    | `restoreSkill` docstring still mentions Deleted                                             | Fixed in #311                                                                                                                    |
+| #304                                    | Re-add after soft delete conflicts; skill-check scope includes Deleted                      | Fixed in cbeff67a                                                                                                                |
+| #304                                    | `getTeamMembership`/`updateTeamMembership` show Deleted rows                                | Fixed in #312                                                                                                                    |
+| #304                                    | Non-null assertions in `trash-list.tsx`; "no Archived state" note                           | Superseded: #313 rewrote the list over the registry; PR note moot                                                                |
+| #302                                    | Self-triggered dialog unmounts; reset deps; "Reject" label                                  | Fixed in ddafada6                                                                                                                |
+| #301                                    | Dead `TeamMembershipLink`/`UserRef`; `Pick<>` instead of `Ref`                              | Fixed in cab321a2                                                                                                                |
+| #300                                    | Sessions stat card under the wrong `<Protect>` (blocking)                                   | Fixed in 728d9c2a                                                                                                                |
+| #290                                    | `listTrash` not invalidated; no prefetch; team menu Delete; nav gate                        | Fixed in 6fb81c53, 9e7b8ebe                                                                                                      |
+| #290                                    | Follow-up issue for a partial unique index on `Person.email`                                | Superseded: #312 decided email stays unique across the bin                                                                       |
+| #280, #277, #276, #275, #274, #271      | Stale doc refs, `Teams.find` naming, missing service tests, dead re-export, `Messages` note | Fixed in #288 (except the one `requirePackageById` note, §2.5)                                                                   |
+| #273                                    | `Forms.saveInstance` writes no audit entry                                                  | Declined in #288: it's the draft autosave path. Needs a product decision, not a cleanup                                          |
+| #270                                    | (Everything except `linkTeamToD4H`)                                                         | n/a. `linkTeamToD4H` is §1.5                                                                                                     |
+| #269                                    | Sidebar-state cookie removed (blocking)                                                     | Declined: intentional                                                                                                            |
+| #269                                    | Sequential `fetchQuery`; `userConfig` cleanup; timezone double-fire                         | Fixed in d98efcfa                                                                                                                |
+| #255                                    | Unprotected stat cards (blocking); `cn()`; duplicate query; `w-14`                          | Fixed in 27af90c6, a482e993; `listSessions` inconsistency filed as #256, fixed by #300                                           |
+| #252                                    | `sync-integration` race note in `releasing.md`                                              | Superseded: auto sync-back can't bypass the `integration` ruleset at all, so it's done by hand each release (tracked separately) |
+| #251, #267, #303, #310 (bar §2.5), #311 | No findings                                                                                 | —                                                                                                                                |
