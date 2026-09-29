@@ -325,7 +325,7 @@ modes over one dialog. Every tap commits a single check atomically.
     card shows updated counts after a refetch. No `upsertSessionSkillChecks` or
     `useDebouncer` reference remains in either file. `npm run check` passes.
 
-- [ ] **6. Quick Mode rows + the mode switch** `visual`
+- [x] **6. Quick Mode rows + the mode switch** `visual` — feat(skill-track): add Quick Mode rows and a remembered recording-mode switch
   - **Files:** `src/components/skill-track/check-row.tsx`, `src/hooks/use-local-storage-state.ts`
     (new), `src/hooks/use-local-storage-state.test.ts` (new),
     `src/components/skill-track/session-actions-sheet.tsx`, both entry content files

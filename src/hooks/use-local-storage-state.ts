@@ -15,16 +15,21 @@ const LOCAL_STORAGE_SET_EVENT = "avut:local-storage-set";
 const fallbackStore = new Map<string, string>();
 
 function readItem(key: string): string | null {
+    // A fallback value is newer than anything in `localStorage`: it's only written when a
+    // `setItem` threw, and cleared by the next one that succeeds.
+    const fallback = fallbackStore.get(key);
+    if (fallback !== undefined) return fallback;
     try {
         return window.localStorage.getItem(key);
     } catch {
-        return fallbackStore.get(key) ?? null;
+        return null;
     }
 }
 
 function writeItem(key: string, value: string) {
     try {
         window.localStorage.setItem(key, value);
+        fallbackStore.delete(key);
     } catch {
         fallbackStore.set(key, value);
     }

@@ -196,18 +196,20 @@ function QuickControls({
                 </span>
             ) : (
                 QUICK_FAMILIES.map(({ tiers, mid, ariaLabel }) => {
-                    // The mid tier, or the first enabled tier if the org has disabled it. A
-                    // family with no enabled tier has no button.
-                    const tier: SkillCheckResultValue | undefined = enabled.has(mid)
-                        ? mid
-                        : tiers.find((value) => enabled.has(value));
-                    if (!tier) return null;
-
                     // Active across the whole family, so a tier the org has since disabled
                     // still shows as recorded.
                     const activeTier =
                         shownResult !== null && tiers.includes(shownResult) ? shownResult : null;
                     const active = activeTier !== null;
+
+                    // The mid tier, or the first enabled tier if the org has disabled it. A
+                    // family with no enabled tier has no button, unless the check's result is
+                    // in it: then the button stays, active, so the result can still be seen
+                    // and cleared.
+                    const tier: SkillCheckResultValue | null =
+                        (enabled.has(mid) ? mid : tiers.find((value) => enabled.has(value))) ??
+                        activeTier;
+                    if (!tier) return null;
 
                     return (
                         <Button

@@ -113,6 +113,18 @@ describe("SkillTrack_CheckRow (quick mode)", () => {
         expect(screen.getByRole("button", { name: "Competent" })).toBeInTheDocument();
     });
 
+    it("keeps a family's button for a recorded result when none of its tiers is enabled", async () => {
+        const { onRemove } = renderQuick({
+            check: { result: "LowFail", notes: "" },
+            resultOptions: [{ value: "Pass", label: "Competent" }],
+        });
+
+        const failButton = screen.getByRole("button", { name: "Not Yet Competent" });
+        expect(failButton).toHaveAttribute("aria-pressed", "true");
+        await userEvent.click(failButton);
+        expect(onRemove).toHaveBeenCalledOnce();
+    });
+
     it("marks the family active for any of its tiers, even a disabled one", () => {
         renderQuick({ check: { result: "StrongPass", notes: "" } });
 
