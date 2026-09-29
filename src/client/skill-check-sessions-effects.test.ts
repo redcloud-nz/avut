@@ -44,6 +44,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             notes,
             status: "Draft",
             createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
         };
     }
 

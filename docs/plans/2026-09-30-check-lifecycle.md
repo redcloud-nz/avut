@@ -100,27 +100,22 @@ half) can observe.
 
 ## Tasks
 
-- [ ] **1. Schema and migration**
+- [x] **1. Schema and migration** — `feat(skill-track): add Pending/Deleted check statuses and SkillCheck.updatedAt`
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<timestamp>_skill_check_lifecycle/migration.sql`,
     `src/lib/schemas/skill-check.ts`, any test fixture that builds a `SkillCheck` record.
-  - **Do:**
-    - Append `Pending` then `Deleted` to the end of `enum SkillCheckStatus`. Add
-      `updatedAt DateTime @updatedAt` to `model SkillCheck`, after `createdAt`.
-    - Write the migration SQL without a DB (no `migrate dev`: it needs the branch DB and the user's
-      permission; the orchestrator applies it after this task). Generate the base with
-      `npx prisma migrate diff --from-schema <copy of HEAD's schema.prisma> --to-schema
+  - **Do:** - Append `Pending` then `Deleted` to the end of `enum SkillCheckStatus`. Add
+    `updatedAt DateTime @updatedAt` to `model SkillCheck`, after `createdAt`. - Write the migration SQL without a DB (no `migrate dev`: it needs the branch DB and the user's
+    permission; the orchestrator applies it after this task). Generate the base with
+    `npx prisma migrate diff --from-schema <copy of HEAD's schema.prisma> --to-schema
 prisma/schema.prisma --script`, then hand-edit the column part so it matches what Prisma
-      would produce, or `migrate dev` will emit a second migration:
-      `ALTER TYPE "SkillCheckStatus" ADD VALUE 'Pending'`, then `'Deleted'` (same order as the
-      enum); add `"updatedAt" TIMESTAMP(3)` nullable, `UPDATE … SET "updatedAt" = "createdAt"`,
-      then `SET NOT NULL`. Nothing in the migration may use the new enum values (Postgres forbids
-      that inside the transaction that adds them). Match the naming of the latest folder in
-      `prisma/migrations/`.
-    - `npx prisma generate`.
-    - `SkillCheck.schema.status` becomes `z.enum(["Draft", "Pending", "Include", "Exclude",
+    would produce, or `migrate dev` will emit a second migration:
+    `ALTER TYPE "SkillCheckStatus" ADD VALUE 'Pending'`, then `'Deleted'` (same order as the
+    enum); add `"updatedAt" TIMESTAMP(3)` nullable, `UPDATE … SET "updatedAt" = "createdAt"`,
+    then `SET NOT NULL`. Nothing in the migration may use the new enum values (Postgres forbids
+    that inside the transaction that adds them). Match the naming of the latest folder in
+    `prisma/migrations/`. - `npx prisma generate`. - `SkillCheck.schema.status` becomes `z.enum(["Draft", "Pending", "Include", "Exclude",
 "Deleted"])`, add `updatedAt: z.iso.datetime()`, and `fromRecord` serialises it.
-      `SKILL_CHECK_STATUS_LABELS` gains `Pending: "Pending review"` and `Deleted: "Deleted"`.
-    - Fix fixtures and tests that construct `SkillCheck` records or outputs to carry `updatedAt`.
+    `SKILL_CHECK_STATUS_LABELS` gains `Pending: "Pending review"` and `Deleted: "Deleted"`. - Fix fixtures and tests that construct `SkillCheck` records or outputs to carry `updatedAt`.
   - **Done when:** `npx prisma validate` passes and `npm run check` is green. After the commit, the
     orchestrator runs `npm run db:branch check-lifecycle` and (with permission) `npm run prisma
 migrate dev`, and `npm run prisma migrate status` reports the branch DB up to date with no
