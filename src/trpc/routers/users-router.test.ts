@@ -1045,3 +1045,27 @@ describe("users.deleteUser — the deletion's own audit entry", () => {
         expect(entries[0].description).toContain("Kim Park <kim@example.com>");
     });
 });
+
+describe("systemAdminProcedure gate", () => {
+    const db = createMockPrisma();
+
+    it("rejects a user whose session role is not admin", async () => {
+        const ctx = createAuthenticatedMockContext({
+            user: { id: UserId.create(), role: "user" },
+            prisma: db,
+        });
+        await expect(usersRouter.createCaller(ctx).listUsers()).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+    });
+
+    it("allows a user whose session role is admin", async () => {
+        const ctx = createAuthenticatedMockContext({
+            user: { id: UserId.create(), role: "admin" },
+            prisma: db,
+        });
+        await expect(usersRouter.createCaller(ctx).listUsers()).resolves.toMatchObject({
+            users: expect.any(Array),
+        });
+    });
+});

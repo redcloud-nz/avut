@@ -23,8 +23,8 @@ import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 /**
- * A team-membership row as returned by `listTeamMemberships` and
- * `getTeamMembership` — the membership plus a thin `team` / `person` ref. The
+ * A team-membership row as returned by `listTeamMemberships`, `getTeamMembership` and
+ * `getTeamMembershipById` — the membership plus a thin `team` / `person` ref. The
  * `d4h` sub-object (with `d4hRef` / `d4hRoleId`) rides along from
  * `TeamMembershipData.schema`.
  */

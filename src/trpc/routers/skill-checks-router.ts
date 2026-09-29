@@ -107,7 +107,7 @@ export const skillChecksRouter = createTrpcRouter({
      * Returns the competency matrix for the given scope. Personnel scope: teamId, personId, or
      * all active org personnel. Skill scope: skillId, skillGroupId, skillPackageId, or all active
      * subscribed skills. Skills, groups and packages are returned as flat sibling arrays in the
-     * same shape as `skills.listAssessableSkills`, with only the groups and packages that contain
+     * same shape as `skillPackageSubscriptions.listAssessableSkills`, with only the groups and packages that contain
      * an in-scope skill. Competencies contain only the most recent Include-status check per
      * (assessee, skill) pair, with expiry computed from the skill's frequency (months).
      */

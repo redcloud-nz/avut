@@ -73,6 +73,8 @@ export function deletedUserPlugin(findDeletedUserIds: FindDeletedUserIds): Bette
                         if (deleted.size === 0) return;
 
                         const members = body.members.filter((m) => !deleted.has(m.userId));
+                        // `total` only drops the deleted members on *this* page. That's exact while
+                        // `list-members` is called unpaginated, but it would drift if it's ever paged.
                         return ctx.json({
                             ...body,
                             members,
