@@ -114,6 +114,9 @@ export function SkillTrack_SessionByPerson_Content({
     // `deleteSessionSkillCheck`) — a `skills-admin` can add itself as an assessor without being
     // able to record.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
+    // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
+    // its checks read-only and the record dialog stays shut.
+    const isApproved = session.status === "Include";
 
     type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
     const [selected, setSelected] = useState<Selected>(null);
@@ -272,6 +275,15 @@ export function SkillTrack_SessionByPerson_Content({
                                 )
                             }
                         >
+                            <Show when={isApproved}>
+                                <Alert>
+                                    <AlertTitle>Approved</AlertTitle>
+                                    <AlertDescription>
+                                        This session is approved. Reopen it to record or change
+                                        checks.
+                                    </AlertDescription>
+                                </Alert>
+                            </Show>
                             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
                                 <div>
                                     <FieldGroup className="block lg:hidden">
@@ -382,6 +394,7 @@ export function SkillTrack_SessionByPerson_Content({
                                                     onOpenDialog={() =>
                                                         openDialog(personId, skill.id)
                                                     }
+                                                    disabled={isApproved}
                                                 />
                                             );
 
@@ -441,7 +454,7 @@ export function SkillTrack_SessionByPerson_Content({
                                         .exhaustive()}
                                     {target && (
                                         <SkillTrack_RecordCheckDialog
-                                            open={dialogOpen}
+                                            open={dialogOpen && !isApproved}
                                             onOpenChange={setDialogOpen}
                                             targetKey={sessionCheckKey(
                                                 target.assesseeId,

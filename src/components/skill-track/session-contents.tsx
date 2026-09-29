@@ -52,6 +52,9 @@ export function SkillsModule_Session_Contents_Card({
             ],
         });
 
+    // An approved session's config is locked until it's reopened.
+    const isApproved = session.status === "Include";
+
     return (
         <Card>
             <CardHeader>
@@ -59,10 +62,19 @@ export function SkillsModule_Session_Contents_Card({
             </CardHeader>
 
             <CardContent className="px-2 -my-2">
-                <ConfigRow action="change-personnel" title={`${assessees.length} Personnel`} />
-                <ConfigRow action="change-skills" title={`${skills.length} Skills`} />
+                <ConfigRow
+                    action="change-personnel"
+                    locked={isApproved}
+                    title={`${assessees.length} Personnel`}
+                />
+                <ConfigRow
+                    action="change-skills"
+                    locked={isApproved}
+                    title={`${skills.length} Skills`}
+                />
                 <ConfigRow
                     action="change-assessors"
+                    locked={isApproved}
                     title={`${session.assessors.length} Assessors`}
                 />
                 <Item size="sm" asChild>
@@ -88,10 +100,18 @@ export function SkillsModule_Session_Contents_Card({
 
 /**
  * A Contents row for one of the session's config lists. Updaters get a button that opens the
- * list's dialog (hosted by `SkillTrack_SessionConfigDialogs` on the page); everyone else gets the
- * same row as plain text.
+ * list's dialog (hosted by `SkillTrack_SessionConfigDialogs` on the page); everyone else, and
+ * everyone while the session is `locked` (approved), gets the same row as plain text.
  */
-function ConfigRow({ action, title }: { action: SessionConfigAction; title: string }) {
+function ConfigRow({
+    action,
+    title,
+    locked,
+}: {
+    action: SessionConfigAction;
+    title: string;
+    locked: boolean;
+}) {
     const { open } = useSessionConfigAction();
 
     const content = (
@@ -105,7 +125,7 @@ function ConfigRow({ action, title }: { action: SessionConfigAction; title: stri
         <Protect
             permissions={{ skillCheckSession: ["update"] }}
             render={(hasPermission) =>
-                hasPermission ? (
+                hasPermission && !locked ? (
                     <Item size="sm" asChild className="cursor-pointer text-left hover:bg-muted">
                         <button type="button" aria-haspopup="dialog" onClick={() => open(action)}>
                             {content}

@@ -33,7 +33,12 @@ type DeleteVariables = RouterInput["skillCheckSessions"]["deleteSessionSkillChec
  *
  * - `record` is silent on success and toasts on error.
  * - `remove` toasts "Check removed" with an **Undo** action that re-records the deleted check's
- *   result and notes (for a `Draft` check only), and toasts on error.
+ *   result and notes, and toasts on error. The re-record revives the deleted row as a `Draft`
+ *   check. An approved session's `Include` checks can't be deleted in the first place (the lock),
+ *   and any other status needs a fresh review anyway, so Undo is offered whatever the removed
+ *   check's status was.
+ * - A `CONFLICT` from either write means the session was approved under the page. Both then
+ *   invalidate the session's `getSession`, so the page picks up the approval and turns read-only.
  *
  * Every toast lives in the `useMutation` options rather than in per-call `mutate` callbacks:
  * TanStack fires per-call callbacks only for the observer's latest mutation, so a second delete
@@ -51,11 +56,30 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
+    // Called from both mutations' `onError`. `meta.effects` only runs on success, so this one is
+    // by hand.
+    const refetchSessionOnConflict = useCallback(
+        (
+            error: { data?: { code?: string } | null },
+            vars: { organizationId: string; skillCheckSessionId: string },
+        ) => {
+            if (error.data?.code !== "CONFLICT") return;
+            void queryClient.invalidateQueries(
+                trpc.skillCheckSessions.getSession.queryFilter({
+                    organizationId: vars.organizationId,
+                    skillCheckSessionId: vars.skillCheckSessionId,
+                }),
+            );
+        },
+        [queryClient],
+    );
+
     const { mutate: mutateSet } = useMutation(
         trpc.skillCheckSessions.setSessionSkillCheck.mutationOptions({
             meta: { effects: skillCheckSessionsEffects.setSessionSkillCheck },
-            onError(error) {
+            onError(error, vars) {
                 toast.error(`Failed to save check: ${error.message}`);
+                refetchSessionOnConflict(error, vars);
             },
         }),
     );
@@ -75,13 +99,8 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
                     (check) =>
                         check.assesseeId === vars.assesseeId && check.skillId === vars.skillId,
                 );
-                // Undo re-records as a new Draft check, so it can't restore an approved one
-                // (`Include`/`Exclude`). Only offer it for a Draft.
                 return {
-                    removed:
-                        removed?.status === "Draft"
-                            ? { result: removed.result, notes: removed.notes }
-                            : null,
+                    removed: removed ? { result: removed.result, notes: removed.notes } : null,
                 };
             },
             onSuccess({ deleted }, vars, onMutateResult) {
@@ -109,8 +128,9 @@ export function useSessionCheckRecorder({ sessionId }: { sessionId: SkillCheckSe
                         : { id },
                 );
             },
-            onError(error) {
+            onError(error, vars) {
                 toast.error(`Failed to remove check: ${error.message}`);
+                refetchSessionOnConflict(error, vars);
             },
         }),
     );
