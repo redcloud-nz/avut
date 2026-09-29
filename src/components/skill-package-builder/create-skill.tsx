@@ -28,14 +28,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
     InputGroup,
@@ -165,7 +158,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                     <ObjectIcons.Create />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent size="xl">
                 <DialogHeader>
                     <DialogTitle>New Skill</DialogTitle>
                     <DialogDescription>
@@ -180,7 +173,10 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                 name="name"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
+                                    <Field
+                                        data-invalid={fieldState.invalid}
+                                        orientation="responsive"
+                                    >
                                         <FieldLabel htmlFor="skill-name">Name</FieldLabel>
                                         <Input
                                             id="skill-name"
@@ -198,7 +194,10 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                 name="description"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
+                                    <Field
+                                        data-invalid={fieldState.invalid}
+                                        orientation="responsive"
+                                    >
                                         <FieldLabel htmlFor="skill-description">
                                             Description
                                         </FieldLabel>
@@ -217,15 +216,11 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                 name="defaultRequired"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldContent>
-                                            <FieldLabel htmlFor="default-required">
-                                                Required
-                                            </FieldLabel>
-                                            <FieldDescription>
-                                                Whether this skill is required by default.
-                                            </FieldDescription>
-                                        </FieldContent>
+                                    <Field
+                                        data-invalid={fieldState.invalid}
+                                        orientation="responsive"
+                                    >
+                                        <FieldLabel htmlFor="default-required">Required</FieldLabel>
                                         <Select
                                             value={field.value ? "true" : "false"}
                                             onValueChange={(value) =>
@@ -243,6 +238,9 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                                 <SelectItem value="false">No</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        <FieldDescription>
+                                            Whether this skill is required by default.
+                                        </FieldDescription>
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}
@@ -253,16 +251,13 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                 name="frequency"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldContent>
-                                            <FieldLabel htmlFor="frequency">
-                                                Revalidation Frequency
-                                            </FieldLabel>
-                                            <FieldDescription>
-                                                How often this skill should be revalidated.
-                                            </FieldDescription>
-                                        </FieldContent>
-
+                                    <Field
+                                        data-invalid={fieldState.invalid}
+                                        orientation="responsive"
+                                    >
+                                        <FieldLabel htmlFor="frequency">
+                                            Revalidation Frequency
+                                        </FieldLabel>
                                         <InputGroup aria-invalid={fieldState.invalid}>
                                             <InputGroupInput
                                                 id="frequency"
@@ -278,6 +273,9 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                                 <InputGroupText>months</InputGroupText>
                                             </InputGroupAddon>
                                         </InputGroup>
+                                        <FieldDescription>
+                                            How often this skill should be revalidated.
+                                        </FieldDescription>
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}

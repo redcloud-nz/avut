@@ -132,7 +132,7 @@ export function TablePseudoQuery<TData extends RowData>({
                 if (!next) setCopied(false);
             }}
         >
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>Query</DialogTitle>
                     <DialogDescription>

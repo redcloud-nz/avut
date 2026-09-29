@@ -92,7 +92,6 @@ export function D4HIntegration_SettingsCard({
                                         <SelectTrigger
                                             id="d4h-default-server"
                                             aria-invalid={fieldState.invalid}
-                                            className="min-w-1/2"
                                         >
                                             <SelectValue placeholder="Select a server" />
                                         </SelectTrigger>
