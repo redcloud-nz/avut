@@ -36,7 +36,6 @@ function renderDialog(props: Partial<DialogProps> = {}) {
     const element = (overrides: Partial<DialogProps>) => (
         <SkillTrack_RecordCheckDialog
             open
-            initialDensity="compact"
             targetKey="alice::cpr"
             skillName="CPR"
             personName="Alice"
@@ -56,11 +55,11 @@ function renderDialog(props: Partial<DialogProps> = {}) {
 }
 
 describe("SkillTrack_RecordCheckDialog", () => {
-    it("titles the dialog with the skill and person", () => {
+    it("titles the dialog with the person and describes it with the skill", () => {
         renderDialog();
 
-        expect(screen.getByRole("dialog", { name: "CPR" })).toBeInTheDocument();
-        expect(screen.getByText("Alice")).toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Alice" })).toBeInTheDocument();
+        expect(screen.getByText("CPR")).toBeInTheDocument();
     });
 
     it("renders only the enabled results", () => {
@@ -82,42 +81,9 @@ describe("SkillTrack_RecordCheckDialog", () => {
         );
     });
 
-    it("records and closes on a compact tap, keeping existing notes", async () => {
-        const user = userEvent.setup();
-        const { onRecord, onOpenChange } = renderDialog({
-            current: { result: "Fail", notes: "Slow start" },
-        });
-
-        await user.click(screen.getByRole("button", { name: "Competent" }));
-
-        expect(onRecord).toHaveBeenCalledExactlyOnceWith({ result: "Pass", notes: "Slow start" });
-        expect(onOpenChange).toHaveBeenCalledWith(false);
-    });
-
-    it("closes without recording when the current result is tapped", async () => {
-        const user = userEvent.setup();
-        const { onRecord, onOpenChange } = renderDialog({
-            current: { result: "Pass", notes: "" },
-        });
-
-        await user.click(screen.getByRole("button", { name: "Competent" }));
-
-        expect(onRecord).not.toHaveBeenCalled();
-        expect(onOpenChange).toHaveBeenCalledWith(false);
-    });
-
-    it("has no footer while compact", () => {
-        renderDialog({ current: { result: "Pass", notes: "" } });
-
-        expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
-    });
-
-    it("expands in place, stages a result and notes, and saves them once", async () => {
+    it("stages a result and notes, and saves them once", async () => {
         const user = userEvent.setup();
         const { onRecord, onOpenChange } = renderDialog();
-
-        await user.click(screen.getByRole("button", { name: "Notes & more" }));
 
         const save = screen.getByRole("button", { name: "Save" });
         expect(save).toBeDisabled();
@@ -142,7 +108,6 @@ describe("SkillTrack_RecordCheckDialog", () => {
     it("keeps Save disabled until the staged pair differs from the current check", async () => {
         const user = userEvent.setup();
         renderDialog({
-            initialDensity: "expanded",
             current: { result: "Pass", notes: "Good" },
         });
 
@@ -156,10 +121,9 @@ describe("SkillTrack_RecordCheckDialog", () => {
         expect(save).toBeEnabled();
     });
 
-    it("deletes and closes from the expanded footer", async () => {
+    it("deletes and closes from the footer", async () => {
         const user = userEvent.setup();
         const { onDelete, onRecord, onOpenChange } = renderDialog({
-            initialDensity: "expanded",
             current: { result: "Pass", notes: "" },
         });
 
@@ -171,37 +135,32 @@ describe("SkillTrack_RecordCheckDialog", () => {
     });
 
     it("offers no Delete when there's no check", () => {
-        renderDialog({ initialDensity: "expanded" });
+        renderDialog();
 
         expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
     });
 
-    it("reopens compact with nothing staged after closing an expanded, edited dialog", async () => {
+    it("reopens with nothing staged after closing an edited dialog", async () => {
         const user = userEvent.setup();
         const { rerender } = renderDialog();
 
-        await user.click(screen.getByRole("button", { name: "Notes & more" }));
         await user.click(screen.getByRole("button", { name: "Competent" }));
         await user.type(screen.getByRole("textbox", { name: "Notes" }), "Draft");
 
         rerender({ open: false });
-        rerender({ open: true, initialDensity: "compact" });
+        rerender({ open: true });
 
-        expect(screen.getByRole("button", { name: "Notes & more" })).toBeInTheDocument();
-        expect(screen.queryByRole("textbox", { name: "Notes" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Competent" })).toHaveAttribute(
             "aria-pressed",
             "false",
         );
-
-        await user.click(screen.getByRole("button", { name: "Notes & more" }));
         expect(screen.getByRole("textbox", { name: "Notes" })).toHaveValue("");
+        expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     });
 
     it("discards staged changes on Cancel", async () => {
         const user = userEvent.setup();
-        const { onRecord, onOpenChange } = renderDialog({ initialDensity: "expanded" });
+        const { onRecord, onOpenChange } = renderDialog();
 
         await user.click(screen.getByRole("button", { name: "Competent" }));
         await user.click(screen.getByRole("button", { name: "Cancel" }));

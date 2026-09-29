@@ -5,33 +5,16 @@
 
 "use client";
 
-import { MessageSquareTextIcon, MoreHorizontalIcon, PencilIcon, PlusIcon } from "lucide-react";
-import * as z from "zod";
+import { MessageSquareTextIcon, MoreHorizontalIcon } from "lucide-react";
 
-import {
-    FAIL_TIERS,
-    PASS_TIERS,
-    type RecordCheckDensity,
-} from "@/components/skill-track/record-check-dialog";
+import { FAIL_TIERS, PASS_TIERS } from "@/components/skill-track/record-check-dialog";
 import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
 import { FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import type { SkillCheckResultOption, SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import { cn } from "@/lib/utils";
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
-
-const RecordingModeSchema = z.enum(["quick", "dialog"]);
-export type RecordingMode = z.infer<typeof RecordingModeSchema>;
-
-/**
- * The recording mode chosen in the entry pages' Actions sheet, remembered per browser and shared
- * by both entry pages. Defaults to Quick Mode.
- */
-export function useRecordingMode() {
-    return useLocalStorageState("avut:skill-track:recording-mode", RecordingModeSchema, "quick");
-}
 
 interface CheckRowProps {
     title: string;
@@ -43,25 +26,34 @@ interface CheckRowProps {
      * `null` for a pending delete, or `undefined` when nothing is pending.
      */
     pending: SkillCheckResultValue | null | undefined;
-    mode: RecordingMode;
     /** The org's enabled results, from `getEnabledSkillCheckResultOptions`. */
     resultOptions: SkillCheckResultOption[];
     /** The org's label for any result, enabled or not (`getSkillCheckResultLabel`). */
     resultLabel: (value: SkillCheckResultValue) => string;
     onRecord: (value: CheckValue) => void;
     onRemove: () => void;
-    onOpenDialog: (density: RecordCheckDensity) => void;
+    /** Opens the host's `SkillTrack_RecordCheckDialog` for this row. */
+    onOpenDialog: () => void;
 }
 
+const QUICK_BUTTONS = [
+    { tiers: FAIL_TIERS, mid: "Fail", ariaLabel: "Not Yet Competent" },
+    { tiers: PASS_TIERS, mid: "Pass", ariaLabel: "Competent" },
+] as const satisfies readonly {
+    tiers: readonly SkillCheckResultValue[];
+    mid: SkillCheckResultValue;
+    ariaLabel: string;
+}[];
+
 /**
- * One (assessee, skill) row on a session's recording page.
+ * One (assessee, skill) row on a session's recording page: a Fail and a Pass button, then `More`.
  *
- * - **Quick Mode** shows Fail and Pass buttons. Tapping an inactive one records its family's mid
- *   tier; tapping the active one clears the check, or opens the dialog expanded if the check has
- *   notes. A result outside both families shows its label instead. `More` opens the dialog
- *   expanded.
- * - **Dialog mode** shows the check's result (or "Not recorded") and an edit/add button that
- *   opens the host's `SkillTrack_RecordCheckDialog` compact.
+ * - Each button records one result: its family's mid tier, or the first enabled tier if the org
+ *   has disabled the mid one. A family with no enabled tier has no button.
+ * - Tapping an inactive button records its result. Tapping the active one clears the check, or
+ *   opens the dialog if the check has notes, so a stray tap can't drop them.
+ * - Any other result (another tier, or `NotTaught`/`Exempt`/…) shows its label in place of the
+ *   buttons. `More` opens the dialog, which records any result, notes, or deletes.
  *
  * While a write is pending the row shows the pending value dimmed, with its buttons disabled, so
  * two writes to one check can't reorder.
@@ -71,7 +63,6 @@ export function SkillTrack_CheckRow({
     description,
     check,
     pending,
-    mode,
     resultOptions,
     resultLabel,
     onRecord,
@@ -81,6 +72,25 @@ export function SkillTrack_CheckRow({
     const isPending = pending !== undefined;
     const shownResult = isPending ? pending : (check?.result ?? null);
     const hasNotes = shownResult !== null && !!check?.notes;
+
+    const enabled = new Set(resultOptions.map((option) => option.value));
+    const buttons = QUICK_BUTTONS.flatMap(({ tiers, mid, ariaLabel }) => {
+        const result = enabled.has(mid) ? mid : tiers.find((value) => enabled.has(value));
+        return result ? [{ result, ariaLabel }] : [];
+    });
+    const showsLabel =
+        shownResult !== null && !buttons.some((button) => button.result === shownResult);
+
+    function handleTap(result: SkillCheckResultValue) {
+        if (result !== shownResult) {
+            onRecord({ result, notes: check?.notes ?? "" });
+        } else if (check?.notes) {
+            // Clearing would drop the notes too, so show them and leave Delete to the dialog.
+            onOpenDialog();
+        } else {
+            onRemove();
+        }
+    }
 
     return (
         <div className="flex items-center gap-2">
@@ -105,137 +115,39 @@ export function SkillTrack_CheckRow({
                     />
                 )}
 
-                {mode === "quick" ? (
-                    <QuickControls
-                        check={check}
-                        shownResult={shownResult}
-                        disabled={isPending}
-                        resultOptions={resultOptions}
-                        resultLabel={resultLabel}
-                        onRecord={onRecord}
-                        onRemove={onRemove}
-                        onOpenDialog={onOpenDialog}
-                    />
+                {showsLabel ? (
+                    <span className="px-1 text-sm whitespace-nowrap text-muted-foreground">
+                        {resultLabel(shownResult)}
+                    </span>
                 ) : (
-                    <>
-                        {shownResult !== null ? (
-                            <span className="flex items-center gap-1.5 px-1 text-sm whitespace-nowrap">
-                                <SkillCheckResultIcon result={shownResult} />
-                                {resultLabel(shownResult)}
-                            </span>
-                        ) : (
-                            <span className="px-1 text-sm whitespace-nowrap text-muted-foreground">
-                                Not recorded
-                            </span>
-                        )}
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={check ? "Edit check" : "Add check"}
-                            disabled={isPending}
-                            onClick={() => onOpenDialog("compact")}
-                        >
-                            {check ? <PencilIcon /> : <PlusIcon />}
-                        </Button>
-                    </>
+                    buttons.map(({ result, ariaLabel }) => {
+                        const active = result === shownResult;
+                        return (
+                            <Button
+                                key={result}
+                                variant={active ? "outline" : "ghost"}
+                                size="icon"
+                                aria-label={ariaLabel}
+                                aria-pressed={active}
+                                disabled={isPending}
+                                onClick={() => handleTap(result)}
+                            >
+                                <SkillCheckResultIcon result={result} />
+                            </Button>
+                        );
+                    })
                 )}
+
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="More options"
+                    disabled={isPending}
+                    onClick={onOpenDialog}
+                >
+                    <MoreHorizontalIcon />
+                </Button>
             </div>
         </div>
-    );
-}
-
-const QUICK_FAMILIES = [
-    { tiers: FAIL_TIERS, mid: "Fail", ariaLabel: "Not Yet Competent" },
-    { tiers: PASS_TIERS, mid: "Pass", ariaLabel: "Competent" },
-] as const satisfies readonly {
-    tiers: readonly SkillCheckResultValue[];
-    mid: SkillCheckResultValue;
-    ariaLabel: string;
-}[];
-
-/** Quick Mode's Fail/Pass buttons (or the other-value label), then `More`. */
-function QuickControls({
-    check,
-    shownResult,
-    disabled,
-    resultOptions,
-    resultLabel,
-    onRecord,
-    onRemove,
-    onOpenDialog,
-}: Pick<
-    CheckRowProps,
-    "check" | "resultOptions" | "resultLabel" | "onRecord" | "onRemove" | "onOpenDialog"
-> & {
-    shownResult: SkillCheckResultValue | null;
-    disabled: boolean;
-}) {
-    const enabled = new Set(resultOptions.map((option) => option.value));
-    const isOtherValue =
-        shownResult !== null &&
-        !FAIL_TIERS.includes(shownResult) &&
-        !PASS_TIERS.includes(shownResult);
-
-    function handleTap(active: boolean, tier: SkillCheckResultValue) {
-        if (!active) {
-            onRecord({ result: tier, notes: check?.notes ?? "" });
-        } else if (check?.notes) {
-            // Clearing would drop the notes too, so show them and leave Delete to the dialog.
-            onOpenDialog("expanded");
-        } else {
-            onRemove();
-        }
-    }
-
-    return (
-        <>
-            {isOtherValue ? (
-                <span className="px-1 text-sm whitespace-nowrap text-muted-foreground">
-                    {resultLabel(shownResult)}
-                </span>
-            ) : (
-                QUICK_FAMILIES.map(({ tiers, mid, ariaLabel }) => {
-                    // Active across the whole family, so a tier the org has since disabled
-                    // still shows as recorded.
-                    const activeTier =
-                        shownResult !== null && tiers.includes(shownResult) ? shownResult : null;
-                    const active = activeTier !== null;
-
-                    // The mid tier, or the first enabled tier if the org has disabled it. A
-                    // family with no enabled tier has no button, unless the check's result is
-                    // in it: then the button stays, active, so the result can still be seen
-                    // and cleared.
-                    const tier: SkillCheckResultValue | null =
-                        (enabled.has(mid) ? mid : tiers.find((value) => enabled.has(value))) ??
-                        activeTier;
-                    if (!tier) return null;
-
-                    return (
-                        <Button
-                            key={mid}
-                            variant={active ? "outline" : "ghost"}
-                            size="icon"
-                            aria-label={ariaLabel}
-                            aria-pressed={active}
-                            disabled={disabled}
-                            onClick={() => handleTap(active, tier)}
-                        >
-                            <SkillCheckResultIcon result={activeTier ?? tier} />
-                        </Button>
-                    );
-                })
-            )}
-
-            <Button
-                variant="ghost"
-                size="icon"
-                aria-label="More options"
-                disabled={disabled}
-                onClick={() => onOpenDialog("expanded")}
-            >
-                <MoreHorizontalIcon />
-            </Button>
-        </>
     );
 }

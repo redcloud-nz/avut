@@ -9,8 +9,6 @@ import {
     ClipboardCheckIcon,
     ListChecksIcon,
     ListTreeIcon,
-    MousePointerClickIcon,
-    PanelTopIcon,
     SlidersHorizontalIcon,
     UserCheckIcon,
     UserIcon,
@@ -22,7 +20,6 @@ import Link from "next/link";
 import { useId, useRef, useState } from "react";
 
 import { Protect } from "@/components/protect";
-import type { RecordingMode } from "@/components/skill-track/check-row";
 import {
     SessionConfigAction,
     SkillTrack_SessionConfigDialogs,
@@ -55,24 +52,17 @@ export interface SessionEntryView {
     onSkillOrderChange: (skillOrder: SessionSkillOrder) => void;
     showSkillDescription: boolean;
     onShowSkillDescriptionChange: (show: boolean) => void;
-    recordingMode: RecordingMode;
-    onRecordingModeChange: (recordingMode: RecordingMode) => void;
 }
 
 const CONFIG_ITEMS: { action: SessionConfigAction; label: string; icon: LucideIcon }[] = [
-    { action: "change-personnel", label: "Change personnel", icon: UsersIcon },
-    { action: "change-skills", label: "Change skills", icon: ListChecksIcon },
-    { action: "change-assessors", label: "Change assessors", icon: UserCheckIcon },
+    { action: "change-personnel", label: "Personnel", icon: UsersIcon },
+    { action: "change-skills", label: "Skills", icon: ListChecksIcon },
+    { action: "change-assessors", label: "Assessors", icon: UserCheckIcon },
 ];
 
 const SKILL_ORDER_ITEMS: { value: SessionSkillOrder; label: string; icon: LucideIcon }[] = [
     { value: "alphabetical", label: "Alphabetical", icon: ArrowDownAZIcon },
     { value: "by-package-group", label: "By Package/Group", icon: ListTreeIcon },
-];
-
-const RECORDING_MODE_ITEMS: { value: RecordingMode; label: string; icon: LucideIcon }[] = [
-    { value: "quick", label: "Quick", icon: MousePointerClickIcon },
-    { value: "dialog", label: "Dialog", icon: PanelTopIcon },
 ];
 
 const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] = [
@@ -115,7 +105,6 @@ export function SkillTrack_SessionActionsSheet({
     const configureHeadingId = useId();
     const recordHeadingId = useId();
     const orderHeadingId = useId();
-    const recordingHeadingId = useId();
     const showHeadingId = useId();
     const idPrefix = useId();
 
@@ -167,7 +156,7 @@ export function SkillTrack_SessionActionsSheet({
                             >
                                 Configure
                             </h3>
-                            <ItemGroup className="gap-0">
+                            <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                                 {CONFIG_ITEMS.map(({ action, label, icon: Icon }) => (
                                     <Protect
                                         key={action}
@@ -204,7 +193,7 @@ export function SkillTrack_SessionActionsSheet({
                             >
                                 Record
                             </h3>
-                            <ItemGroup className="gap-0">
+                            <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                                 {MODE_ITEMS.map(({ mode: itemMode, label, icon: Icon }) => {
                                     const current = itemMode === mode;
                                     return (
@@ -255,42 +244,6 @@ export function SkillTrack_SessionActionsSheet({
                                         />
                                         <FieldLabel
                                             htmlFor={`${idPrefix}-order-${value}`}
-                                            className="font-normal"
-                                        >
-                                            <Icon className="size-4 text-muted-foreground" />
-                                            {label}
-                                        </FieldLabel>
-                                    </Field>
-                                ))}
-                            </RadioGroup>
-                        </section>
-
-                        <section
-                            aria-labelledby={recordingHeadingId}
-                            className="flex flex-col gap-2"
-                        >
-                            <h3
-                                id={recordingHeadingId}
-                                className="px-3 text-xs font-medium text-muted-foreground"
-                            >
-                                Recording
-                            </h3>
-                            <RadioGroup
-                                aria-labelledby={recordingHeadingId}
-                                className="px-3"
-                                value={view.recordingMode}
-                                onValueChange={(value) =>
-                                    view.onRecordingModeChange(value as RecordingMode)
-                                }
-                            >
-                                {RECORDING_MODE_ITEMS.map(({ value, label, icon: Icon }) => (
-                                    <Field key={value} orientation="horizontal">
-                                        <RadioGroupItem
-                                            value={value}
-                                            id={`${idPrefix}-recording-${value}`}
-                                        />
-                                        <FieldLabel
-                                            htmlFor={`${idPrefix}-recording-${value}`}
                                             className="font-normal"
                                         >
                                             <Icon className="size-4 text-muted-foreground" />

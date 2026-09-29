@@ -5,7 +5,6 @@
 
 "use client";
 
-import { Maximize2Icon } from "lucide-react";
 import { useState } from "react";
 
 import { RESULT_ICONS } from "@/components/skill-track/result-icon";
@@ -26,6 +25,7 @@ import {
     SkillCheckResultValue,
     type SkillCheckResultOption,
 } from "@/lib/schemas/skill-check";
+import { cn } from "@/lib/utils";
 
 /** The two result families, each all three tiers whether or not the org enables them. */
 export const FAIL_TIERS: readonly SkillCheckResultValue[] = ["LowFail", "Fail", "HighFail"];
@@ -33,13 +33,9 @@ export const PASS_TIERS: readonly SkillCheckResultValue[] = ["WeakPass", "Pass",
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
 
-export type RecordCheckDensity = "compact" | "expanded";
-
 interface RecordCheckDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    /** Which state the dialog opens in. The body can switch compact → expanded in place. */
-    initialDensity: RecordCheckDensity;
     /**
      * Opaque id of the (assessee, skill) pair, e.g. `sessionCheckKey(assesseeId, skillId)`.
      * Changing it while the dialog is open resets the staged state.
@@ -61,12 +57,9 @@ interface RecordCheckDialogProps {
 }
 
 /**
- * Records one skill check for an (assessee, skill) pair on a session's recording page.
- *
- * - **Compact:** one button per enabled result. A tap records it (keeping any existing notes)
- *   and closes; tapping the current result just closes. **Notes & more** expands in place.
- * - **Expanded:** the same buttons stage a result, with a notes field and Cancel / Delete /
- *   Save. Save is enabled once the staged pair differs from `current`.
+ * Records one skill check for an (assessee, skill) pair on a session's recording page: one
+ * button per enabled result stages it, with a notes field and Cancel / Delete / Save. Save is
+ * enabled once the staged pair differs from `current`.
  *
  * Controlled and mutation-free: the host owns `open` and supplies `onRecord`/`onDelete` from
  * `useSessionCheckRecorder`. The host should keep its target in place while closing (set `open`
@@ -75,7 +68,6 @@ interface RecordCheckDialogProps {
 export function SkillTrack_RecordCheckDialog({
     open,
     onOpenChange,
-    initialDensity,
     targetKey,
     skillName,
     personName,
@@ -89,14 +81,13 @@ export function SkillTrack_RecordCheckDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent mobile="sheet">
                 <DialogHeader>
-                    <DialogTitle>{skillName}</DialogTitle>
-                    <DialogDescription>{personName}</DialogDescription>
+                    <DialogTitle>{personName}</DialogTitle>
+                    <DialogDescription>{skillName}</DialogDescription>
                 </DialogHeader>
                 <RecordCheck_Body
                     // Radix unmounts the content on close, which resets the body on every reopen.
                     // The key covers the target changing while the dialog stays open.
                     key={targetKey}
-                    initialDensity={initialDensity}
                     current={current}
                     resultOptions={resultOptions}
                     resultLabel={resultLabel}
@@ -110,7 +101,6 @@ export function SkillTrack_RecordCheckDialog({
 }
 
 function RecordCheck_Body({
-    initialDensity,
     current,
     resultOptions,
     resultLabel,
@@ -119,26 +109,14 @@ function RecordCheck_Body({
     onClose,
 }: Pick<
     RecordCheckDialogProps,
-    "initialDensity" | "current" | "resultOptions" | "resultLabel" | "onRecord" | "onDelete"
+    "current" | "resultOptions" | "resultLabel" | "onRecord" | "onDelete"
 > & { onClose: () => void }) {
-    const [density, setDensity] = useState<RecordCheckDensity>(initialDensity);
     const [stagedResult, setStagedResult] = useState<SkillCheckResultValue | null>(
         current?.result ?? null,
     );
     const [stagedNotes, setStagedNotes] = useState(current?.notes ?? "");
 
-    const rows = groupResultOptions(resultOptions, current?.result ?? null, resultLabel);
-
-    function handleResultClick(result: SkillCheckResultValue) {
-        if (density === "expanded") {
-            setStagedResult(result);
-            return;
-        }
-        if (result !== current?.result) {
-            onRecord({ result, notes: current?.notes ?? "" });
-        }
-        onClose();
-    }
+    const options = orderResultOptions(resultOptions, current?.result ?? null, resultLabel);
 
     function handleSave() {
         if (stagedResult === null) return;
@@ -151,80 +129,63 @@ function RecordCheck_Body({
         onClose();
     }
 
-    const selected = density === "expanded" ? stagedResult : (current?.result ?? null);
     const changed = stagedResult !== current?.result || stagedNotes !== (current?.notes ?? "");
 
     return (
         <>
             <DialogBody>
-                <div className="flex flex-col gap-2">
-                    {rows.map((row, index) => (
-                        <div key={index} className="flex flex-wrap gap-2 *:flex-1">
-                            {row.map((option) => {
-                                const { Icon, className } = RESULT_ICONS[option.value];
-                                const isSelected = option.value === selected;
-                                return (
-                                    <Button
-                                        key={option.value}
-                                        variant={isSelected ? "outline" : "ghost"}
-                                        aria-pressed={isSelected}
-                                        onClick={() => handleResultClick(option.value)}
-                                    >
-                                        <Icon className={className} />
-                                        {option.label}
-                                    </Button>
-                                );
-                            })}
-                        </div>
-                    ))}
+                <div className="flex flex-wrap gap-2 *:flex-1">
+                    {options.map((option) => {
+                        const { Icon, className } = RESULT_ICONS[option.value];
+                        const isSelected = option.value === stagedResult;
+                        return (
+                            <Button
+                                key={option.value}
+                                variant={isSelected ? "outline" : "ghost"}
+                                aria-pressed={isSelected}
+                                className="h-auto min-w-0 flex-col justify-start gap-1.5 px-1 py-1.5 text-[0.625rem] leading-tight font-normal whitespace-normal"
+                                onClick={() => setStagedResult(option.value)}
+                            >
+                                <Icon className={cn("size-5", className)} />
+                                <span className="text-muted-foreground">{option.label}</span>
+                            </Button>
+                        );
+                    })}
                 </div>
 
-                {density === "compact" ? (
-                    <Button
-                        variant="ghost"
-                        className="self-start"
-                        onClick={() => setDensity("expanded")}
-                    >
-                        <Maximize2Icon />
-                        Notes &amp; more
-                    </Button>
-                ) : (
-                    <Textarea
-                        aria-label="Notes"
-                        placeholder="Notes..."
-                        value={stagedNotes}
-                        onChange={(e) => setStagedNotes(e.target.value)}
-                    />
-                )}
+                <Textarea
+                    aria-label="Notes"
+                    placeholder="Notes..."
+                    value={stagedNotes}
+                    onChange={(e) => setStagedNotes(e.target.value)}
+                />
             </DialogBody>
 
-            {density === "expanded" && (
-                <DialogFooter>
-                    {current && (
-                        <Button variant="destructive" className="mr-auto" onClick={handleDelete}>
-                            Delete
-                        </Button>
-                    )}
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <Button disabled={stagedResult === null || !changed} onClick={handleSave}>
-                        Save
+            <DialogFooter>
+                {current && (
+                    <Button variant="destructive" className="mr-auto" onClick={handleDelete}>
+                        Delete
                     </Button>
-                </DialogFooter>
-            )}
+                )}
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <Button disabled={stagedResult === null || !changed} onClick={handleSave}>
+                    Save
+                </Button>
+            </DialogFooter>
         </>
     );
 }
 
 /**
- * The result buttons in up to three rows: fail tiers, pass tiers, then everything else, each
- * in `SKILL_CHECK_RESULT_VALUES` order, with empty rows dropped. The current result is always
- * included, even if the org has since disabled it, so an existing check keeps its active button.
+ * The result buttons, in one wrapping row: fail tiers, pass tiers, then everything else, each
+ * in `SKILL_CHECK_RESULT_VALUES` order. The current result is always included, even if the org
+ * has since disabled it, so an existing check keeps its active button.
  */
-function groupResultOptions(
+function orderResultOptions(
     resultOptions: SkillCheckResultOption[],
     currentResult: SkillCheckResultValue | null,
     resultLabel: (value: SkillCheckResultValue) => string,
-): SkillCheckResultOption[][] {
+): SkillCheckResultOption[] {
     const labels = new Map(resultOptions.map((option) => [option.value, option.label]));
     if (currentResult !== null && !labels.has(currentResult)) {
         labels.set(currentResult, resultLabel(currentResult));
@@ -236,10 +197,10 @@ function groupResultOptions(
     });
 
     return [
-        options.filter((option) => FAIL_TIERS.includes(option.value)),
-        options.filter((option) => PASS_TIERS.includes(option.value)),
-        options.filter(
+        ...options.filter((option) => FAIL_TIERS.includes(option.value)),
+        ...options.filter((option) => PASS_TIERS.includes(option.value)),
+        ...options.filter(
             (option) => !FAIL_TIERS.includes(option.value) && !PASS_TIERS.includes(option.value),
         ),
-    ].filter((row) => row.length > 0);
+    ];
 }

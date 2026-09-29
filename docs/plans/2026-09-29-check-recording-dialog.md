@@ -13,16 +13,18 @@ against integration @ 2adbe211
 
 The `by-person`/`by-skill` recording pages use tap-to-cycle rows (`assessment-row.tsx`)
 and a debounced batch autosave (`upsertSessionSkillChecks`, with a `changes` overlay and a
-"did it still match what I sent" merge). This replaces both with two switchable recording
-modes over one dialog. Every tap commits a single check atomically.
+"did it still match what I sent" merge). This replaces both with Quick Mode rows and one
+dialog. Every tap commits a single check atomically.
 
-- **Quick Mode** (default). Each row has `Fail`, `Pass` and `More` buttons. Tapping Fail or
-  Pass records the family's mid tier at once. Tapping the active one clears the check.
-  `More` opens the dialog already expanded.
-- **Dialog mode**. Each row shows a result badge and an edit/add button, which opens the
-  dialog **compact**: one button per enabled result, where a tap commits and closes.
-  **Expand** turns the same instance into a full form, with the result buttons staged,
-  notes, and Cancel / Delete / Save.
+- **Rows** have `Fail`, `Pass` and `More` buttons. Tapping Fail or Pass records that result at
+  once, and tapping the active one clears the check. Any other result shows its label in place
+  of the buttons.
+- **The dialog** (from `More`) is a full form: result buttons that stage, notes, and Cancel /
+  Delete / Save.
+
+The first build had a second, switchable Dialog mode (badge + edit button, and a compact
+one-tap dialog state). It was dropped at the visual checkpoint as unnecessary complexity; see
+"Changed at the visual checkpoint" below.
 
 ## Decisions
 
@@ -56,14 +58,12 @@ modes over one dialog. Every tap commits a single check atomically.
 - **The dialog is local state, not a `?action=` param.** It opens once per row, many times
   per session, and targets an (assessee, skill) pair. A URL entry for each would flood
   history, and the page's picker selection isn't in the URL either. Each page holds one
-  `target` state (`{ assesseeId, skillId, density: "compact" | "expanded" } | null`) and
+  `target` state (`{ assesseeId, skillId } | null`) and
   renders **one** dialog instance, not one per row.
-- **Compact commits and closes right away.** Tapping a result fires `setSessionSkillCheck`
-  (keeping existing notes) and closes the dialog without waiting. Expanded stages the
-  result and notes. **Save** fires the mutation and closes. It's disabled until something
-  changed and while no result is selected. **Delete** fires `deleteSessionSkillCheck` and
-  closes. **Cancel** discards. Tapping the current result in compact state does nothing
-  and closes.
+- **The dialog stages, then saves.** The result buttons and notes are staged. **Save** fires
+  `setSessionSkillCheck` and closes. It's disabled until something changed and while no
+  result is selected. **Delete** fires `deleteSessionSkillCheck` and closes. **Cancel**
+  discards.
 - **Delete has no confirm step, and its toast offers Undo.** Deletion is a hard delete
   until #319 lands. The success toast, from every delete path (dialog Delete and a Quick
   Mode retap), carries an **Undo** action that calls `setSessionSkillCheck` with the
@@ -77,36 +77,31 @@ modes over one dialog. Every tap commits a single check atomically.
   row shows the pending value at reduced opacity and disables its buttons. That stops two
   writes to one key from reordering on the server. On success the effect writes the cache.
   On error a toast shows and the row falls back to the cached value.
-- **Quick Mode buttons.**
+- **Row buttons.**
   - The Fail button records `Fail`, or the first enabled fail tier if `Fail` is disabled
     for the org. The Pass button does the same with `Pass`. A family with no enabled tier
     has no button.
-  - A button is **active** when the check's result is in its family. A family means all
-    three of its tiers, whether or not each is enabled for the org. The button then shows that
-    exact tier's icon (as today's `failPreview`/`passPreview` do), with `variant="outline"`.
-  - Tapping an **inactive** button records the mid tier, keeping existing notes.
+  - A button is **active** only when the check's result is exactly the result it records.
+  - Tapping an **inactive** button records its result, keeping existing notes.
   - Tapping an **active** button clears the check if it has no notes. If it has notes, the
-    dialog opens expanded instead, so the notes are visible and Delete is a deliberate
-    choice.
-  - A result outside both families (`NotTaught`, `Exempt`, `Expired`, `Provisional`)
-    shows its label in place of both buttons, as today, with `More` still beside it.
+    dialog opens instead, so the notes are visible and Delete is a deliberate choice.
+  - Any other result (another tier, or `NotTaught`, `Exempt`, `Expired`, `Provisional`)
+    shows its label, muted, in place of both buttons, with `More` still beside it.
   - A check with notes shows a small notes icon (`MessageSquareTextIcon`, muted,
-    `aria-label="Has notes"`) before the buttons, in both modes.
-- **Compact layout.** The enabled results are laid out in up to three rows of buttons, each
-  with icon and label: the fail tiers, the pass tiers, then everything else (`NotTaught`,
-  `Exempt`, `Expired`, `Provisional`), in `SKILL_CHECK_RESULT_VALUES` order. Empty rows are
-  omitted. The check's current result is always included, even if the org has since
-  disabled it, so an existing check never loses its active button. The expanded state shows
-  the same buttons, with the staged one marked
+    `aria-label="Has notes"`) before the buttons.
+- **Dialog layout.** The title is the person, the description the skill. The enabled results
+  are one wrapping row of equal-width buttons, each an icon with a small muted label under it
+  (top-aligned, so icons line up whether a label takes one line or two): the fail tiers, the
+  pass tiers, then everything else, in `SKILL_CHECK_RESULT_VALUES` order. The check's current
+  result is always included, even if the org has since disabled it. The staged one is marked
   (`variant="outline"` + `aria-pressed`), above a notes `Textarea`.
-- **The mode is remembered per browser.** It's a `"quick" | "dialog"` choice in the Actions
-  sheet's **View** group, next to Skill Order. It lives in `localStorage` under
-  `avut:skill-track:recording-mode`, shared by both entry pages, and defaults to `"quick"`.
-  No hook for this exists yet. Add `useLocalStorageState` (task 6), built on
-  `useSyncExternalStore`, whose server snapshot is the default. It's restricted to string
-  values, so its snapshot is stable without caching a parse. That makes it SSR-safe with
-  no hydration mismatch, and it falls back to the default when a stored value fails the
-  zod schema.
+- **Changed at the visual checkpoint** (after task 6):
+  - Dialog mode, the Actions sheet's Recording switch, `useRecordingMode` and the
+    `useLocalStorageState` hook were removed. Quick Mode is the only mode.
+  - The dialog's compact state was removed. It opens straight to the full form.
+  - Fail/Pass are active only for their exact result, not their whole family.
+  - The Actions sheet's Configure items read Personnel / Skills / Assessors, and its item
+    groups lost a stray `ItemGroup` gap.
 - **The navbar's `SaveStatusIndicator` is removed** from both entry pages. With no batch
   there's no one save status, and pending and error are shown per row. The component and
   `@tanstack/react-pacer` stay, since `i3` still uses both.
@@ -371,7 +366,7 @@ modes over one dialog. Every tap commits a single check atomically.
     `src/components/skill-track/change-session-assessors.tsx` (comment),
     `docs/modules/skills.md`
   - **Do:** Delete the procedure and its `describe` block. Delete the old row and its test.
-    Rework the docs demo to render `SkillTrack_CheckRow` in Quick Mode, holding local state,
+    Rework the docs demo to render `SkillTrack_CheckRow`, holding local state,
     with its `More` opening a local `SkillTrack_RecordCheckDialog`. The row takes plain
     props, so no tRPC is involved. Rename the file `demo-check-row.tsx` and the export
     `DocsCheckRowDemo`, and update both the MDX component map and the
@@ -383,18 +378,15 @@ modes over one dialog. Every tap commits a single check atomically.
   - **Done when:** `grep -rn "upsertSessionSkillChecks\|SkillTrack_AssessmentRow\|assessment-row" src docs content`
     finds nothing outside `docs/plans/` and `docs/reviews/`. `npm run check -- --all` passes.
 
-- [ ] **8. End-user docs**
+- [ ] **8. End-user docs (text only)**
   - **Files:** `content/docs/skill-track/sessions.mdx`
   - **Do:** Rewrite step 4's recording paragraphs (the cycle buttons, the dropdown and
-    "changes autosave a couple of seconds after…") to describe the two modes, the result
-    dialog (compact, Expand, notes, Delete + Undo), the retap-to-clear rule and its notes
-    exception, and where to switch modes (Actions → View). Keep the demo component.
-    - **Screenshots:** don't reference new ids, since `getScreenshot` throws on a missing
-      one. List the wanted captures in the report: By Person in Quick Mode, By Person in
-      Dialog mode, the compact dialog and the expanded dialog. The main session captures
-      them with `avut-doc-screenshots` and adds the `<Screenshot>`s in the same commit that
-      adds their ids to `src/lib/screenshots.generated.json`. If an existing capture (e.g.
-      the By Person one) now shows the old rows, say so in the report.
+    "changes autosave a couple of seconds after…") so they match the new rows: Fail/Pass
+    record at once, retapping the active one clears it (with Undo) unless it has notes, other
+    results show as a label, and `More` opens the dialog (result, notes, Delete + Undo). Keep
+    the demo component. Text only: screenshots and the fuller write-up belong to #336's single
+    docs pass after Stage 2, so don't add or change `<Screenshot>`s. If an existing capture
+    (e.g. the By Person one) now shows the old rows, say so in the report.
   - **Done when:** no text describes cycling or autosave. `/docs/skill-track/sessions` and
     the entry pages' `?help=skill-track/sessions` sheet render, with the demo working.
     `npm run check` passes.
@@ -411,4 +403,4 @@ modes over one dialog. Every tap commits a single check atomically.
 - **#319 soft-delete tombstones, and #320's approval lock.** The two new procedures are
   where #320's guard goes when it lands.
 - **"Save & Next"** within the dialog.
-- **Syncing the mode per user** (server-side preference). It's per browser for now.
+- **Screenshots and the full docs write-up,** which wait for #336's docs pass.

@@ -21,80 +21,42 @@ const OPTIONS: SkillCheckResultOption[] = [
 const LABELS: Partial<Record<SkillCheckResultValue, string>> = {
     Fail: "Not Yet",
     Pass: "Competent",
+    StrongPass: "Excellent",
 };
 const resultLabel = (value: SkillCheckResultValue) => LABELS[value] ?? value;
 
 type RowProps = ComponentProps<typeof SkillTrack_CheckRow>;
 
 function renderRow(props: Partial<RowProps> = {}) {
+    const onRecord = vi.fn();
+    const onRemove = vi.fn();
     const onOpenDialog = vi.fn();
     render(
         <SkillTrack_CheckRow
             title="CPR"
             check={null}
             pending={undefined}
-            mode="dialog"
             resultOptions={OPTIONS}
             resultLabel={resultLabel}
-            onRecord={vi.fn()}
-            onRemove={vi.fn()}
+            onRecord={onRecord}
+            onRemove={onRemove}
             onOpenDialog={onOpenDialog}
             {...props}
         />,
     );
-    return { onOpenDialog };
+    return { onRecord, onRemove, onOpenDialog };
 }
 
-describe("SkillTrack_CheckRow (dialog mode)", () => {
-    it("shows Not recorded and an Add button that opens the dialog compact", async () => {
-        const { onOpenDialog } = renderRow();
-
-        expect(screen.getByText("Not recorded")).toBeInTheDocument();
-        await userEvent.click(screen.getByRole("button", { name: "Add check" }));
-        expect(onOpenDialog).toHaveBeenCalledExactlyOnceWith("compact");
-    });
-
-    it("shows the check's org label, a notes indicator and an Edit button", () => {
-        renderRow({ check: { result: "Pass", notes: "Good compressions" } });
-
-        expect(screen.getByText("Competent")).toBeInTheDocument();
-        expect(screen.getByLabelText("Has notes")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Edit check" })).toBeEnabled();
-    });
-
-    it("shows a pending value with the button disabled", () => {
-        renderRow({ check: { result: "Pass", notes: "" }, pending: "Fail" });
-
-        expect(screen.getByText("Not Yet")).toBeInTheDocument();
-        expect(screen.queryByText("Competent")).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Edit check" })).toBeDisabled();
-    });
-
-    it("shows a pending delete as Not recorded", () => {
-        renderRow({ check: { result: "Pass", notes: "Some notes" }, pending: null });
-
-        expect(screen.getByText("Not recorded")).toBeInTheDocument();
-        expect(screen.queryByLabelText("Has notes")).not.toBeInTheDocument();
-    });
-});
-
-describe("SkillTrack_CheckRow (quick mode)", () => {
-    function renderQuick(props: Partial<RowProps> = {}) {
-        const onRecord = vi.fn();
-        const onRemove = vi.fn();
-        const { onOpenDialog } = renderRow({ mode: "quick", onRecord, onRemove, ...props });
-        return { onRecord, onRemove, onOpenDialog };
-    }
-
+describe("SkillTrack_CheckRow", () => {
     it("records the mid tier when an inactive button is tapped, keeping notes", async () => {
-        const { onRecord } = renderQuick({ check: { result: "Fail", notes: "Keep" } });
+        const { onRecord } = renderRow({ check: { result: "Fail", notes: "Keep" } });
 
         await userEvent.click(screen.getByRole("button", { name: "Competent" }));
         expect(onRecord).toHaveBeenCalledExactlyOnceWith({ result: "Pass", notes: "Keep" });
     });
 
     it("falls back to the first enabled tier when the mid tier is disabled", async () => {
-        const { onRecord } = renderQuick({
+        const { onRecord } = renderRow({
             resultOptions: [
                 { value: "HighFail", label: "Nearly" },
                 { value: "WeakPass", label: "Weak" },
@@ -107,26 +69,14 @@ describe("SkillTrack_CheckRow (quick mode)", () => {
     });
 
     it("omits a family's button when none of its tiers is enabled", () => {
-        renderQuick({ resultOptions: [{ value: "Pass", label: "Competent" }] });
+        renderRow({ resultOptions: [{ value: "Pass", label: "Competent" }] });
 
         expect(screen.queryByRole("button", { name: "Not Yet Competent" })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Competent" })).toBeInTheDocument();
     });
 
-    it("keeps a family's button for a recorded result when none of its tiers is enabled", async () => {
-        const { onRemove } = renderQuick({
-            check: { result: "LowFail", notes: "" },
-            resultOptions: [{ value: "Pass", label: "Competent" }],
-        });
-
-        const failButton = screen.getByRole("button", { name: "Not Yet Competent" });
-        expect(failButton).toHaveAttribute("aria-pressed", "true");
-        await userEvent.click(failButton);
-        expect(onRemove).toHaveBeenCalledOnce();
-    });
-
-    it("marks the family active for any of its tiers, even a disabled one", () => {
-        renderQuick({ check: { result: "StrongPass", notes: "" } });
+    it("marks only the button whose result was recorded as active", () => {
+        renderRow({ check: { result: "Pass", notes: "" } });
 
         expect(screen.getByRole("button", { name: "Competent" })).toHaveAttribute(
             "aria-pressed",
@@ -138,38 +88,58 @@ describe("SkillTrack_CheckRow (quick mode)", () => {
         );
     });
 
+    it("shows another tier's label in place of the buttons", () => {
+        renderRow({ check: { result: "StrongPass", notes: "" } });
+
+        expect(screen.getByText("Excellent")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Competent" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "More options" })).toBeInTheDocument();
+    });
+
+    it("shows a non-pass/fail result's label in place of the buttons, with More", async () => {
+        const { onOpenDialog } = renderRow({ check: { result: "NotTaught", notes: "" } });
+
+        expect(screen.getByText("NotTaught")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Competent" })).not.toBeInTheDocument();
+        await userEvent.click(screen.getByRole("button", { name: "More options" }));
+        expect(onOpenDialog).toHaveBeenCalledOnce();
+    });
+
     it("clears the check when the active button is tapped and there are no notes", async () => {
-        const { onRemove, onRecord } = renderQuick({ check: { result: "Pass", notes: "" } });
+        const { onRemove, onRecord } = renderRow({ check: { result: "Pass", notes: "" } });
 
         await userEvent.click(screen.getByRole("button", { name: "Competent" }));
         expect(onRemove).toHaveBeenCalledOnce();
         expect(onRecord).not.toHaveBeenCalled();
     });
 
-    it("opens the dialog expanded instead of clearing a check with notes", async () => {
-        const { onRemove, onOpenDialog } = renderQuick({
+    it("opens the dialog instead of clearing a check with notes", async () => {
+        const { onRemove, onOpenDialog } = renderRow({
             check: { result: "Pass", notes: "Good compressions" },
         });
 
         expect(screen.getByLabelText("Has notes")).toBeInTheDocument();
         await userEvent.click(screen.getByRole("button", { name: "Competent" }));
-        expect(onOpenDialog).toHaveBeenCalledExactlyOnceWith("expanded");
+        expect(onOpenDialog).toHaveBeenCalledOnce();
         expect(onRemove).not.toHaveBeenCalled();
     });
 
-    it("shows another result's label in place of the buttons, with More", async () => {
-        const { onOpenDialog } = renderQuick({ check: { result: "NotTaught", notes: "" } });
+    it("shows a pending value with its buttons disabled", () => {
+        renderRow({ check: { result: "Fail", notes: "" }, pending: "Pass" });
 
-        expect(screen.getByText("NotTaught")).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Competent" })).not.toBeInTheDocument();
-        await userEvent.click(screen.getByRole("button", { name: "More options" }));
-        expect(onOpenDialog).toHaveBeenCalledExactlyOnceWith("expanded");
+        const pass = screen.getByRole("button", { name: "Competent" });
+        expect(pass).toHaveAttribute("aria-pressed", "true");
+        expect(pass).toBeDisabled();
+        expect(screen.getByRole("button", { name: "More options" })).toBeDisabled();
     });
 
-    it("disables its buttons while a write is pending", () => {
-        renderQuick({ check: null, pending: "Pass" });
+    it("shows a pending delete as unrecorded, without the notes indicator", () => {
+        renderRow({ check: { result: "Pass", notes: "Some notes" }, pending: null });
 
-        expect(screen.getByRole("button", { name: "Competent" })).toBeDisabled();
-        expect(screen.getByRole("button", { name: "More options" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Competent" })).toHaveAttribute(
+            "aria-pressed",
+            "false",
+        );
+        expect(screen.queryByLabelText("Has notes")).not.toBeInTheDocument();
     });
 });

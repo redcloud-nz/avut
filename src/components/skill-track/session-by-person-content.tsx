@@ -15,11 +15,8 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
-import { SkillTrack_CheckRow, useRecordingMode } from "@/components/skill-track/check-row";
-import {
-    SkillTrack_RecordCheckDialog,
-    type RecordCheckDensity,
-} from "@/components/skill-track/record-check-dialog";
+import { SkillTrack_CheckRow } from "@/components/skill-track/check-row";
+import { SkillTrack_RecordCheckDialog } from "@/components/skill-track/record-check-dialog";
 import {
     SessionSkillOrder,
     SkillTrack_SessionActionsSheet,
@@ -55,8 +52,8 @@ import {
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
-/** The (assessee, skill) check the record dialog is open on, and the density it opened in. */
-type CheckDialogTarget = { assesseeId: PersonId; skillId: SkillId; density: RecordCheckDensity };
+/** The (assessee, skill) check the record dialog is open on. */
+type CheckDialogTarget = { assesseeId: PersonId; skillId: SkillId };
 
 export function SkillTrack_SessionByPerson_Content({
     sessionId,
@@ -149,8 +146,8 @@ export function SkillTrack_SessionByPerson_Content({
         setDialogOpen(false);
     }
 
-    function openDialog(assesseeId: PersonId, skillId: SkillId, density: RecordCheckDensity) {
-        setTarget({ assesseeId, skillId, density });
+    function openDialog(assesseeId: PersonId, skillId: SkillId) {
+        setTarget({ assesseeId, skillId });
         setDialogOpen(true);
     }
 
@@ -165,7 +162,6 @@ export function SkillTrack_SessionByPerson_Content({
         getSkillCheckResultLabel(organization.settings, value);
 
     const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
-    const [recordingMode, setRecordingMode] = useRecordingMode();
     const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // Group the session skills by skill package and group (for the "by-package-group" order).
@@ -231,8 +227,6 @@ export function SkillTrack_SessionByPerson_Content({
                             onSkillOrderChange: setSkillOrder,
                             showSkillDescription,
                             onShowSkillDescriptionChange: setShowSkillDescription,
-                            recordingMode,
-                            onRecordingModeChange: setRecordingMode,
                         }}
                     />
                     <HelpButton slug="skill-track/sessions" />
@@ -370,7 +364,6 @@ export function SkillTrack_SessionByPerson_Content({
                                                     pending={pendingChecks.get(
                                                         sessionCheckKey(personId, skill.id),
                                                     )}
-                                                    mode={recordingMode}
                                                     resultOptions={resultOptions}
                                                     resultLabel={resultLabel}
                                                     onRecord={(value) =>
@@ -386,8 +379,8 @@ export function SkillTrack_SessionByPerson_Content({
                                                             skillId: skill.id,
                                                         })
                                                     }
-                                                    onOpenDialog={(density) =>
-                                                        openDialog(personId, skill.id, density)
+                                                    onOpenDialog={() =>
+                                                        openDialog(personId, skill.id)
                                                     }
                                                 />
                                             );
@@ -450,7 +443,6 @@ export function SkillTrack_SessionByPerson_Content({
                                         <SkillTrack_RecordCheckDialog
                                             open={dialogOpen}
                                             onOpenChange={setDialogOpen}
-                                            initialDensity={target.density}
                                             targetKey={sessionCheckKey(
                                                 target.assesseeId,
                                                 target.skillId,
