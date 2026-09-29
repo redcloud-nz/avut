@@ -6,6 +6,7 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
+import { SkillTrack_ChangeSessionAssessors_Dialog } from "@/components/skill-track/change-session-assessors";
 import { SkillTrack_ChangeSessionPersonnel_Dialog } from "@/components/skill-track/change-session-personnel";
 import { SkillTrack_ChangeSessionSkills_Dialog } from "@/components/skill-track/change-session-skills";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -62,7 +63,10 @@ export function SkillTrack_SessionConfigDialogs({ sessionId }: { sessionId: Skil
                 sessionId={sessionId}
                 {...dialogProps("change-skills")}
             />
-            {/* change-assessors: added with the assessors dialog. */}
+            <SkillTrack_ChangeSessionAssessors_Dialog
+                sessionId={sessionId}
+                {...dialogProps("change-assessors")}
+            />
         </>
     );
 }

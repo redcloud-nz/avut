@@ -13,7 +13,8 @@ import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
  * `createSession`'s response matches `getSession` exactly, so it writes wholesale. `updateSession`
  * and the session halves of `updateSessionAssessees`/`updateSessionSkills` return a bare
  * `SkillCheckSession` without the `assessors` extension `getSession` carries, so they merge into
- * whatever's already cached instead of replacing it.
+ * whatever's already cached instead of replacing it. `updateSessionAssessors` merges its
+ * `updatedAssessors` in as that `assessors` extension too.
  */
 export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
     approveSession: (vars, { updated }) => [
@@ -98,6 +99,37 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                 organizationId: vars.organizationId,
                 sessionId: vars.skillCheckSessionId,
                 scope: "all",
+            }),
+        ),
+    ],
+    updateSessionAssessors: (vars, { updatedAssessors, updatedSession }) => [
+        write(
+            trpc.skillCheckSessions.listSessionAssessors.queryKey({
+                organizationId: vars.organizationId,
+                sessionId: vars.skillCheckSessionId,
+                scope: "assigned",
+            }),
+            updatedAssessors,
+        ),
+        // getSession carries `assessors`, so this one merges the new list in as well.
+        write(
+            trpc.skillCheckSessions.getSession.queryKey({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.skillCheckSessionId,
+            }),
+            (old) => (old ? { ...old, ...updatedSession, assessors: updatedAssessors } : old),
+        ),
+        invalidate(
+            trpc.skillCheckSessions.listSessionAssessors.queryFilter({
+                organizationId: vars.organizationId,
+                sessionId: vars.skillCheckSessionId,
+                scope: "all",
+            }),
+        ),
+        // listSessions rows carry `assessors`.
+        invalidate(
+            trpc.skillCheckSessions.listSessions.queryFilter({
+                organizationId: vars.organizationId,
             }),
         ),
     ],

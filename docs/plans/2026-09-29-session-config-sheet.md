@@ -139,7 +139,7 @@ PersonRef[], updatedSession: SkillCheckSession }`.
     "page behind updates without a reload" checks live in those tasks. Leave the visual
     check for the checkpoint.
 
-- [ ] **3. Assessors dialog + cache effects** `visual`
+- [x] **3. Assessors dialog + cache effects** `visual` — feat(skill-track): add session assessors dialog and cache effects
   - **Files:** `src/components/skill-track/change-session-assessors.tsx` (new),
     `src/components/skill-track/session-config-dialogs.tsx`,
     `src/client/skill-check-sessions-effects.ts`
