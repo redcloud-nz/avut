@@ -166,7 +166,7 @@ migrate dev`, and `npm run prisma migrate status` reports the branch DB up to da
       inside `_count.select`); don't try.
   - **Done when:** those tests pass and `npm run check` is green.
 
-- [ ] **3b. Tombstones, Pending → Draft, and the purges**
+- [x] **3b. Tombstones, Pending → Draft, and the purges** — `feat(skill-track): tombstone deleted session checks and purge them on approve`, `fix(skill-track): don't revive a skill check tombstoned mid-edit`
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts` (+ `.test.ts`),
     `src/trpc/routers/skill-checks-router.ts` (+ `.test.ts`).
   - **Do:**

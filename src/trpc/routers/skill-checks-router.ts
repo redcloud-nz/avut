@@ -20,6 +20,24 @@ import * as SkillChecks from "@/server/services/skill-checks";
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
+/**
+ * A `.catch` handler for a skill check write guarded by `status: { not: "Deleted" }`: the row
+ * matched the pre-check but was tombstoned (or removed) before the write, so Prisma raises
+ * `P2025`. Report that as the `NOT_FOUND` the pre-check would have given, not a 500.
+ */
+function rethrowSkillCheckGone(skillCheckId: string) {
+    return (error: unknown): never => {
+        if (error instanceof Object && "code" in error && error.code === "P2025") {
+            throw new TRPCError({
+                code: "NOT_FOUND",
+                message: Messages.skillCheckNotFound(skillCheckId),
+                cause: error,
+            });
+        }
+        throw error;
+    };
+}
+
 export const skillChecksRouter = createTrpcRouter({
     /**
      * Creates a standalone skill check, outside any session. Checks within a session are recorded
@@ -100,10 +118,17 @@ export const skillChecksRouter = createTrpcRouter({
                 );
                 SkillChecks.assertSessionUnlocked(session);
 
-                await ctx.prisma.skillCheck.update({
-                    where: { id: skillCheckId, organizationId: ctx.organizationId },
-                    data: { status: "Deleted" },
-                });
+                // Guarded so a concurrent delete loses as NOT_FOUND rather than re-tombstoning.
+                await ctx.prisma.skillCheck
+                    .update({
+                        where: {
+                            id: skillCheckId,
+                            organizationId: ctx.organizationId,
+                            status: { not: "Deleted" },
+                        },
+                        data: { status: "Deleted" },
+                    })
+                    .catch(rethrowSkillCheckGone(skillCheckId));
             } else {
                 await ctx.prisma.skillCheck.delete({
                     where: {
@@ -499,13 +524,18 @@ export const skillChecksRouter = createTrpcRouter({
                 SkillChecks.assertSessionUnlocked(session);
             }
 
-            const record = await ctx.prisma.skillCheck.update({
-                where: {
-                    id: skillCheckId,
-                    organizationId: ctx.organizationId,
-                },
-                data: existing.sessionId ? { ...update, status: "Draft" } : update,
-            });
+            // Guarded so a delete landing after the pre-check isn't revived as `Draft` (with a
+            // stale `createdAt`); the lost race surfaces as NOT_FOUND.
+            const record = await ctx.prisma.skillCheck
+                .update({
+                    where: {
+                        id: skillCheckId,
+                        organizationId: ctx.organizationId,
+                        status: { not: "Deleted" },
+                    },
+                    data: existing.sessionId ? { ...update, status: "Draft" } : update,
+                })
+                .catch(rethrowSkillCheckGone(skillCheckId));
 
             return SkillCheck.fromRecord(record);
         }),

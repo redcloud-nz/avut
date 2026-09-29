@@ -1134,6 +1134,26 @@ describe("skillChecks — the session approval lock", () => {
             expect(updated).toMatchObject({ result: "Fail", status: "Draft" });
         });
 
+        it("reports a check tombstoned after the pre-check (P2025) as NOT_FOUND", async () => {
+            // prisma-mock can't interleave a concurrent delete, so fake the lost race's error.
+            const spy = vi
+                .spyOn(db.skillCheck, "update")
+                .mockRejectedValueOnce(
+                    Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+                );
+            try {
+                await expect(
+                    makeCaller().updateSkillCheck({
+                        organizationId: T.org,
+                        skillCheckId: T.draftCheck,
+                        update: { result: "Fail", notes: "" },
+                    }),
+                ).rejects.toMatchObject({ code: "NOT_FOUND" });
+            } finally {
+                spy.mockRestore();
+            }
+        });
+
         it("throws NOT_FOUND for a Deleted check and leaves it alone", async () => {
             await expect(
                 makeCaller().updateSkillCheck({
