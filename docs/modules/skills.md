@@ -57,9 +57,9 @@ An individual competency assessment for a specific assessee–skill pair. Checks
 - `notes`
 - A `status` field (`Draft` / `Include` / `Exclude`) mirroring the session-level pattern
 
-The unique constraint `(assesseeId, assessorId, sessionId, skillId)` prevents duplicate checks for the same assessor–assessee–skill combination within a session. The `upsertSessionSkillChecks` procedure uses this constraint to safely batch create, update, and delete checks from the recorder UI.
+The unique constraint `(assesseeId, assessorId, sessionId, skillId)` prevents duplicate checks for the same assessor–assessee–skill combination within a session. The recorder UI writes one check at a time: `setSessionSkillCheck` upserts on this constraint (so a double tap can't create a duplicate), and `deleteSessionSkillCheck` deletes the caller's own check on it.
 
-The assessor is always derived server-side from the calling user's linked `Person` record (`organizationUser.personId`); the client does not pass an `assessorId` to `upsertSessionSkillChecks`.
+The assessor is always derived server-side from the calling user's linked `Person` record (`organizationUser.personId`); the client does not pass an `assessorId` to `setSessionSkillCheck` or `deleteSessionSkillCheck`.
 
 ---
 
@@ -164,22 +164,23 @@ model SkillCheck {
 
 ### `skillCheckSessions` router (`skillCheckSessionsRouter`)
 
-| Procedure                                     | Permission                                    | Description                                                                                                             |
-| --------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `skillCheckSessions.approveSession`           | skillCheckSession: update, skillCheck: update | Approves a session by stamping each check as Include/Exclude and moving session to Include status                       |
-| `skillCheckSessions.createSession`            | skillCheckSession: create                     | Create a new session with caller as sole assessor                                                                       |
-| `skillCheckSessions.deleteSession`            | skillCheckSession: delete                     | Delete a session                                                                                                        |
-| `skillCheckSessions.getSession`               | skillCheckSession: view                       | Get a session by ID                                                                                                     |
-| `skillCheckSessions.getSessionMetrics`        | skillCheckSession: view                       | Return assessee, skill, and check counts for a session                                                                  |
-| `skillCheckSessions.listSessionAssessees`     | skillCheckSession: view                       | List personnel assigned as assessees                                                                                    |
-| `skillCheckSessions.listSessionAssessors`     | skillCheckSession: view                       | List personnel assigned as assessors                                                                                    |
-| `skillCheckSessions.listSessionSkills`        | skillCheckSession: view                       | List skills assigned to a session                                                                                       |
-| `skillCheckSessions.listSessions`             | skillCheckSession: view                       | List all sessions for the org                                                                                           |
-| `skillCheckSessions.nextSessionNumber`        | skillCheckSession: view                       | Get advisory next available session number                                                                              |
-| `skillCheckSessions.updateSession`            | skillCheckSession: update                     | Update session name, date, notes, and status                                                                            |
-| `skillCheckSessions.updateSessionAssessees`   | skillCheckSession: update                     | Add or remove assessees from a session                                                                                  |
-| `skillCheckSessions.updateSessionSkills`      | skillCheckSession: update                     | Add or remove skills from a session                                                                                     |
-| `skillCheckSessions.upsertSessionSkillChecks` | skillCheck: update                            | Batch upsert/delete checks for a session; setting result to `null` deletes the check; assessorId is derived server-side |
+| Procedure                                    | Permission                                    | Description                                                                                                    |
+| -------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `skillCheckSessions.approveSession`          | skillCheckSession: update, skillCheck: update | Approves a session by stamping each check as Include/Exclude and moving session to Include status              |
+| `skillCheckSessions.createSession`           | skillCheckSession: create                     | Create a new session with caller as sole assessor                                                              |
+| `skillCheckSessions.deleteSession`           | skillCheckSession: delete                     | Delete a session                                                                                               |
+| `skillCheckSessions.deleteSessionSkillCheck` | skillCheckSession: update, skillCheck: create | Delete the caller's own check for one assessee and skill in a session; assessorId is derived server-side       |
+| `skillCheckSessions.getSession`              | skillCheckSession: view                       | Get a session by ID                                                                                            |
+| `skillCheckSessions.getSessionMetrics`       | skillCheckSession: view                       | Return assessee, skill, and check counts for a session                                                         |
+| `skillCheckSessions.listSessionAssessees`    | skillCheckSession: view                       | List personnel assigned as assessees                                                                           |
+| `skillCheckSessions.listSessionAssessors`    | skillCheckSession: view                       | List personnel assigned as assessors                                                                           |
+| `skillCheckSessions.listSessionSkills`       | skillCheckSession: view                       | List skills assigned to a session                                                                              |
+| `skillCheckSessions.listSessions`            | skillCheckSession: view                       | List all sessions for the org                                                                                  |
+| `skillCheckSessions.nextSessionNumber`       | skillCheckSession: view                       | Get advisory next available session number                                                                     |
+| `skillCheckSessions.setSessionSkillCheck`    | skillCheckSession: update, skillCheck: create | Create or update the caller's check for one assessee and skill in a session; assessorId is derived server-side |
+| `skillCheckSessions.updateSession`           | skillCheckSession: update                     | Update session name, date, notes, and status                                                                   |
+| `skillCheckSessions.updateSessionAssessees`  | skillCheckSession: update                     | Add or remove assessees from a session                                                                         |
+| `skillCheckSessions.updateSessionSkills`     | skillCheckSession: update                     | Add or remove skills from a session                                                                            |
 
 ### `skillChecks` router (`skillChecksRouter`)
 
@@ -216,7 +217,7 @@ The recorder page (`…/record`) has three tabs:
 - **By Person** — record checks for each assessee across all skills in the session
 - **By Skill** — record checks for each skill across all assessees in the session
 
-Both grid views call `skillCheckSessions.upsertSessionSkillChecks` when a cell is updated. `null` is the sentinel value that causes an existing check to be deleted rather than updated.
+Both grid views record each check as it's tapped or saved: `skillCheckSessions.setSessionSkillCheck` records a result (and notes), and `skillCheckSessions.deleteSessionSkillCheck` clears one. Both reject an assessee or skill that isn't part of the session.
 
 ---
 

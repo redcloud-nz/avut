@@ -106,7 +106,8 @@ function ChangeSessionAssessors_Body({
             ],
         });
 
-    // The same check the entry pages use for recording (see `upsertSessionSkillChecks`).
+    // The same check the entry pages use for recording (see `setSessionSkillCheck` and
+    // `deleteSessionSkillCheck`).
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
 
     // Staged changes, keyed by person id: true = add, false = remove.

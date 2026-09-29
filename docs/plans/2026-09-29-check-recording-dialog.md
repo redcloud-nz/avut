@@ -356,7 +356,7 @@ one-tap dialog state). It was dropped at the visual checkpoint as unnecessary co
   at desktop and phone width (the bottom sheet), with an org that has only Fail/Pass enabled
   and one with the full tier set.
 
-- [ ] **7. Retire `upsertSessionSkillChecks` and `assessment-row`**
+- [x] **7. Retire `upsertSessionSkillChecks` and `assessment-row`** — refactor(skill-track): retire upsertSessionSkillChecks and the assessment row
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts`,
     `src/trpc/routers/skill-check-sessions-router.test.ts`,
     `src/components/skill-track/assessment-row.tsx` (delete),
