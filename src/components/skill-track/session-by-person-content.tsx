@@ -15,7 +15,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
-import { SkillTrack_CheckRow } from "@/components/skill-track/check-row";
+import { SkillTrack_CheckRow, useRecordingMode } from "@/components/skill-track/check-row";
 import {
     SkillTrack_RecordCheckDialog,
     type RecordCheckDensity,
@@ -165,6 +165,7 @@ export function SkillTrack_SessionByPerson_Content({
         getSkillCheckResultLabel(organization.settings, value);
 
     const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
+    const [recordingMode, setRecordingMode] = useRecordingMode();
     const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // Group the session skills by skill package and group (for the "by-package-group" order).
@@ -230,6 +231,8 @@ export function SkillTrack_SessionByPerson_Content({
                             onSkillOrderChange: setSkillOrder,
                             showSkillDescription,
                             onShowSkillDescriptionChange: setShowSkillDescription,
+                            recordingMode,
+                            onRecordingModeChange: setRecordingMode,
                         }}
                     />
                     <HelpButton slug="skill-track/sessions" />
@@ -367,7 +370,7 @@ export function SkillTrack_SessionByPerson_Content({
                                                     pending={pendingChecks.get(
                                                         sessionCheckKey(personId, skill.id),
                                                     )}
-                                                    mode="dialog"
+                                                    mode={recordingMode}
                                                     resultOptions={resultOptions}
                                                     resultLabel={resultLabel}
                                                     onRecord={(value) =>

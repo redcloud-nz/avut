@@ -27,8 +27,9 @@ import {
     type SkillCheckResultOption,
 } from "@/lib/schemas/skill-check";
 
-const FAIL_TIERS: readonly SkillCheckResultValue[] = ["LowFail", "Fail", "HighFail"];
-const PASS_TIERS: readonly SkillCheckResultValue[] = ["WeakPass", "Pass", "StrongPass"];
+/** The two result families, each all three tiers whether or not the org enables them. */
+export const FAIL_TIERS: readonly SkillCheckResultValue[] = ["LowFail", "Fail", "HighFail"];
+export const PASS_TIERS: readonly SkillCheckResultValue[] = ["WeakPass", "Pass", "StrongPass"];
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
 
