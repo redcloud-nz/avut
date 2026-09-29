@@ -11,6 +11,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { Prisma } from "@/generated/prisma/client";
 import {
     ConflictError,
+    ForbiddenError,
     NotFoundError,
     PreconditionError,
     StalePlanError,
@@ -90,6 +91,9 @@ export const publicProcedure = t.procedure
             const cause = result.error.cause;
             if (cause instanceof NotFoundError) {
                 throw new TRPCError({ code: "NOT_FOUND", message: cause.message, cause });
+            }
+            if (cause instanceof ForbiddenError) {
+                throw new TRPCError({ code: "FORBIDDEN", message: cause.message, cause });
             }
             if (cause instanceof ConflictError) {
                 throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });

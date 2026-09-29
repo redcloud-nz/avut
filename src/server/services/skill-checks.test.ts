@@ -5,18 +5,24 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
+    assertSessionCheckTarget,
     createSession,
     listEligibleAssessors,
     nextSessionNumber,
+    requireSessionAssessor,
     requireSessionById,
 } from "./skill-checks";
 
@@ -88,6 +94,152 @@ describe("skill-checks", () => {
             await expect(requireSessionById(ctx(), T.outsiderSession)).rejects.toThrow(
                 `SkillCheckSession(id=${T.outsiderSession}) not found.`,
             );
+        });
+    });
+
+    describe("requireSessionAssessor + assertSessionCheckTarget", () => {
+        // Dataset (all in A.org — its own org, so the suites below keep their session numbers):
+        //   assessorUser → linked to assessor, who is assigned to assessedSession
+        //   otherUser    → linked to other, NOT assigned
+        //   T.user       → no OrganizationUser at all (unlinked)
+        //   assessedSession → assessees [assessee], skills [skill], assessors [assessor]
+        const A = {
+            org: OrganizationId.create(),
+            assessorUser: UserId.create(),
+            otherUser: UserId.create(),
+            assessor: PersonId.create(),
+            other: PersonId.create(),
+            assessee: PersonId.create(),
+            pkg: SkillPackageId.create(),
+            grp: SkillGroupId.create(),
+            skill: SkillId.create(),
+            assessedSession: SkillCheckSessionId.create(),
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: { id: A.org, name: A.org, slug: A.org, createdAt: new Date() },
+            });
+            for (const id of [A.assessor, A.other, A.assessee]) {
+                await db.person.create({
+                    data: { id, organizationId: A.org, name: id, email: `${id}@example.com` },
+                });
+            }
+            for (const [userId, personId] of [
+                [A.assessorUser, A.assessor],
+                [A.otherUser, A.other],
+            ] as const) {
+                await db.organizationUser.create({
+                    data: {
+                        id: nanoId16(),
+                        organizationId: A.org,
+                        userId,
+                        role: "member",
+                        personId,
+                    },
+                });
+            }
+            await db.skillPackage.create({
+                data: {
+                    id: A.pkg,
+                    organizationId: A.org,
+                    name: "Pkg",
+                    description: "",
+                    properties: {},
+                    published: true,
+                },
+            });
+            await db.skillGroup.create({
+                data: {
+                    id: A.grp,
+                    skillPackageId: A.pkg,
+                    name: "Group",
+                    description: "",
+                    properties: {},
+                },
+            });
+            await db.skill.create({
+                data: {
+                    id: A.skill,
+                    skillPackageId: A.pkg,
+                    skillGroupId: A.grp,
+                    name: "Skill",
+                    description: "",
+                    properties: {},
+                },
+            });
+            await db.skillCheckSession.create({
+                data: {
+                    id: A.assessedSession,
+                    organizationId: A.org,
+                    name: "Assessed Session",
+                    sessionNumber: 1,
+                    startsAt: new Date("2026-01-01T00:00:00.000Z"),
+                    notes: "",
+                    assessors: { connect: [{ id: A.assessor }] },
+                    assessees: { connect: [{ id: A.assessee }] },
+                    skills: { connect: [{ id: A.skill }] },
+                },
+            });
+        });
+
+        function ctxFor(userId: UserId) {
+            return createOrganizationMockContext({
+                organizationId: A.org,
+                user: { id: userId },
+                permissions: {},
+                prisma: db,
+            });
+        }
+
+        it("returns the session's members and the caller's person as the assessor", async () => {
+            const { session, assessorId } = await requireSessionAssessor(
+                ctxFor(A.assessorUser),
+                A.assessedSession,
+            );
+
+            expect(assessorId).toBe(A.assessor);
+            expect(session.id).toBe(A.assessedSession);
+            expect(session.assesseeIds).toEqual([A.assessee]);
+            expect(session.skillIds).toEqual([A.skill]);
+        });
+
+        it("throws NotFoundError for a session in another organization", async () => {
+            await expect(
+                requireSessionAssessor(ctxFor(A.assessorUser), T.outsiderSession),
+            ).rejects.toBeInstanceOf(NotFoundError);
+        });
+
+        it("throws ValidationError when the caller has no linked person", async () => {
+            await expect(
+                requireSessionAssessor(ctxFor(T.user), A.assessedSession),
+            ).rejects.toBeInstanceOf(ValidationError);
+        });
+
+        it("throws ForbiddenError when the caller is not an assigned assessor", async () => {
+            await expect(
+                requireSessionAssessor(ctxFor(A.otherUser), A.assessedSession),
+            ).rejects.toBeInstanceOf(ForbiddenError);
+        });
+
+        it("accepts a target on the session and rejects an assessee or skill off it", async () => {
+            const { session } = await requireSessionAssessor(
+                ctxFor(A.assessorUser),
+                A.assessedSession,
+            );
+
+            expect(() =>
+                assertSessionCheckTarget(session, { assesseeId: A.assessee, skillId: A.skill }),
+            ).not.toThrow();
+            expect(() =>
+                assertSessionCheckTarget(session, { assesseeId: A.other, skillId: A.skill }),
+            ).toThrow(ValidationError);
+            expect(() =>
+                assertSessionCheckTarget(session, {
+                    assesseeId: A.assessee,
+                    skillId: SkillId.create(),
+                }),
+            ).toThrow(ValidationError);
         });
     });
 
