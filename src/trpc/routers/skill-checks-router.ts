@@ -15,6 +15,7 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
+import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import * as SkillChecks from "@/server/services/skill-checks";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
@@ -27,7 +28,7 @@ import { Messages } from "../messages";
  */
 function rethrowSkillCheckGone(skillCheckId: string) {
     return (error: unknown): never => {
-        if (error instanceof Object && "code" in error && error.code === "P2025") {
+        if (isPrismaRecordNotFound(error)) {
             throw new TRPCError({
                 code: "NOT_FOUND",
                 message: Messages.skillCheckNotFound(skillCheckId),

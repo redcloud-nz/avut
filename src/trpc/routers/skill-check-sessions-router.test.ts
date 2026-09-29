@@ -971,6 +971,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
     //   draftSession    → Draft, the lock doesn't apply
     //   approvedSession → Include, every guarded procedure refuses with CONFLICT
     //   toApprove       → Draft, with one check, approved by the "approves a Draft session" test
+    //   racedSession    → Draft, no checks (for the lost-race test)
     //   person          → an eligible assessor (skills-assessor), also used as an assessee
     const T = {
         org: OrganizationId.create(),
@@ -983,6 +984,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
         approvedSession: SkillCheckSessionId.create(),
         toApprove: SkillCheckSessionId.create(),
         toApproveCheck: SkillCheckId.create(),
+        racedSession: SkillCheckSessionId.create(),
     };
 
     const db = createMockPrisma();
@@ -1042,6 +1044,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
             { id: T.draftSession, sessionNumber: 1, status: "Draft" },
             { id: T.approvedSession, sessionNumber: 2, status: "Include" },
             { id: T.toApprove, sessionNumber: 3, status: "Draft" },
+            { id: T.racedSession, sessionNumber: 4, status: "Draft" },
         ] as const;
         for (const { id, sessionNumber, status } of sessions) {
             await db.skillCheckSession.create({
@@ -1152,6 +1155,26 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                     includedCheckIds: [],
                 }),
             ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("reports a session approved after the pre-check (P2025) as CONFLICT", async () => {
+            // prisma-mock can't interleave a concurrent approval, so fake the lost race's error.
+            const spy = vi
+                .spyOn(db.skillCheckSession, "update")
+                .mockRejectedValueOnce(
+                    Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+                );
+            try {
+                await expect(
+                    makeCaller().approveSession({
+                        organizationId: T.org,
+                        sessionId: T.racedSession,
+                        includedCheckIds: [],
+                    }),
+                ).rejects.toMatchObject({ code: "CONFLICT" });
+            } finally {
+                spy.mockRestore();
+            }
         });
     });
 

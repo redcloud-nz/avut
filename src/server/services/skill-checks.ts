@@ -48,11 +48,17 @@ export async function requireSessionById(
  * @throws ConflictError if the session is approved.
  */
 export function assertSessionUnlocked(session: Pick<SkillCheckSession, "id" | "status">): void {
-    if (session.status === "Include") {
-        throw new ConflictError(
-            `SkillCheckSession(id=${session.id}) is approved. Reopen it to make changes.`,
-        );
-    }
+    if (session.status === "Include") throw sessionLockedError(session.id);
+}
+
+/**
+ * The error `assertSessionUnlocked` throws, for a write that finds the session approved some
+ * other way (e.g. a conditional update that lost a race with an approval).
+ */
+export function sessionLockedError(sessionId: SkillCheckSessionId): ConflictError {
+    return new ConflictError(
+        `SkillCheckSession(id=${sessionId}) is approved. Reopen it to make changes.`,
+    );
 }
 
 /**

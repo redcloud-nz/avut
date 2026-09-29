@@ -14,6 +14,7 @@ import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import * as SkillChecks from "@/server/services/skill-checks";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
@@ -41,38 +42,53 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             const session = await SkillChecks.requireSessionById(ctx, sessionId);
             SkillChecks.assertSessionUnlocked(session);
 
-            await ctx.prisma.$transaction([
-                // Purge first, so the Exclude stamp below can't turn a tombstone back into a check.
-                ctx.prisma.skillCheck.deleteMany({
-                    where: { organizationId: ctx.organizationId, sessionId, status: "Deleted" },
-                }),
-                ctx.prisma.skillCheck.updateMany({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        sessionId,
-                        id: { in: includedCheckIds },
-                    },
-                    data: { status: "Include" },
-                }),
-                ctx.prisma.skillCheck.updateMany({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        sessionId,
-                        NOT: { id: { in: includedCheckIds } },
-                    },
-                    data: { status: "Exclude" },
-                }),
-                ctx.prisma.skillCheckSession.update({
-                    where: { id: sessionId, organizationId: ctx.organizationId },
-                    data: { status: "Include" },
-                }),
-                ctx.logEvent({
-                    action: "Approve",
-                    objectType: "SkillCheckSession",
-                    objectId: sessionId,
-                    description: `Approved session "${session.name}".`,
-                }),
-            ]);
+            await ctx.prisma
+                .$transaction([
+                    // Conditional on not already being approved, so two concurrent approvals can't
+                    // both commit and double-log: the loser's update matches no row, throws P2025
+                    // and rolls its transaction back.
+                    ctx.prisma.skillCheckSession.update({
+                        where: {
+                            id: sessionId,
+                            organizationId: ctx.organizationId,
+                            status: { not: "Include" },
+                        },
+                        data: { status: "Include" },
+                    }),
+                    // Purge before stamping, so the Exclude stamp can't turn a tombstone back
+                    // into a check.
+                    ctx.prisma.skillCheck.deleteMany({
+                        where: { organizationId: ctx.organizationId, sessionId, status: "Deleted" },
+                    }),
+                    ctx.prisma.skillCheck.updateMany({
+                        where: {
+                            organizationId: ctx.organizationId,
+                            sessionId,
+                            id: { in: includedCheckIds },
+                        },
+                        data: { status: "Include" },
+                    }),
+                    ctx.prisma.skillCheck.updateMany({
+                        where: {
+                            organizationId: ctx.organizationId,
+                            sessionId,
+                            NOT: { id: { in: includedCheckIds } },
+                        },
+                        data: { status: "Exclude" },
+                    }),
+                    ctx.logEvent({
+                        action: "Approve",
+                        objectType: "SkillCheckSession",
+                        objectId: sessionId,
+                        description: `Approved session "${session.name}".`,
+                    }),
+                ])
+                .catch((error: unknown) => {
+                    if (isPrismaRecordNotFound(error)) {
+                        throw SkillChecks.sessionLockedError(sessionId);
+                    }
+                    throw error;
+                });
 
             return {
                 updated: { ...session, status: "Include", updatedAt: new Date().toISOString() },
@@ -144,7 +160,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
     /**
      * Delete a skill check session. Requires the "delete" action on "skillCheckSession". Its
      * `Deleted` tombstones are purged with it; `SkillCheck.sessionId` is `onDelete: SetNull`, so
-     * they would otherwise survive as standalone `Deleted` rows nothing ever purges.
+     * they would otherwise survive as standalone `Deleted` rows nothing ever purges. Its other
+     * checks are kept and detached: `Draft` ones, and a reopened session's `Pending` ones, survive
+     * as standalone rows in that status. That's harmless — only `Include` checks count.
      * @param skillCheckSessionId The ID of the skill check session to delete.
      * @returns The deleted skill check session.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
@@ -598,7 +616,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     }),
                 ])
                 .catch((error: unknown) => {
-                    if (error instanceof Object && "code" in error && error.code === "P2025") {
+                    if (isPrismaRecordNotFound(error)) {
                         throw notApproved();
                     }
                     throw error;
