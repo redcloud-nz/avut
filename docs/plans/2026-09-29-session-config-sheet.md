@@ -109,7 +109,7 @@ PersonRef[], updatedSession: SkillCheckSession }`.
     `BAD_REQUEST` and changes nothing. (d) It allows removing an assessor who is no longer
     eligible. `npm run check` passes.
 
-- [ ] **2. Personnel + skills dialogs and the config-dialogs host** `visual`
+- [x] **2. Personnel + skills dialogs and the config-dialogs host** `visual` — feat(skill-track): add session personnel and skills dialogs with config-dialogs host
   - **Files (new):** `src/components/skill-track/session-config-dialogs.tsx`,
     `src/components/skill-track/change-session-personnel.tsx`,
     `src/components/skill-track/change-session-skills.tsx`

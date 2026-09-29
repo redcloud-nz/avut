@@ -17,6 +17,8 @@ export type SessionConfigAction = (typeof SESSION_CONFIG_ACTIONS)[number];
 /**
  * The `?action=` param for the session config dialogs. `open(...)` pushes a history entry (so
  * Back closes the dialog), `close()` replaces it (so Back from the closed page doesn't reopen it).
+ * `close(only)` clears the param only while it still names `only`, so a save that settles after
+ * its dialog was dismissed can't close a different dialog opened in the meantime.
  * Triggers call `open(...)`; `SkillTrack_SessionConfigDialogs` renders the dialogs themselves.
  */
 export function useSessionConfigAction() {
@@ -28,7 +30,10 @@ export function useSessionConfigAction() {
     return {
         action,
         open: (next: SessionConfigAction) => void setAction(next, { history: "push" }),
-        close: () => void setAction(null, { history: "replace" }),
+        close: (only?: SessionConfigAction) =>
+            void setAction((current) => (only && current !== only ? current : null), {
+                history: "replace",
+            }),
     };
 }
 
@@ -43,7 +48,7 @@ export function SkillTrack_SessionConfigDialogs({ sessionId }: { sessionId: Skil
     function dialogProps(dialogAction: SessionConfigAction) {
         return {
             open: action === dialogAction,
-            onOpenChange: (isOpen: boolean) => (isOpen ? open(dialogAction) : close()),
+            onOpenChange: (isOpen: boolean) => (isOpen ? open(dialogAction) : close(dialogAction)),
         };
     }
 
