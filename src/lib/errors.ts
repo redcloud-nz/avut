@@ -45,6 +45,19 @@ export class NotFoundError extends Error {
 }
 
 /**
+ * Error thrown by a domain service when the caller is authenticated and holds the role
+ * permissions a procedure requires, but is not allowed to act on this particular record (e.g. a
+ * user who isn't one of a session's assigned assessors). Mapped to
+ * `TRPCError({ code: "FORBIDDEN" })` the same way as `NotFoundError`.
+ */
+export class ForbiddenError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "ForbiddenError";
+    }
+}
+
+/**
  * Error thrown by a domain service when a write would conflict with existing state (e.g. a
  * uniqueness rule). Mapped to `TRPCError({ code: "CONFLICT" })` the same way as `NotFoundError`.
  * For a conflict the UI needs to attribute to one input field, throw `FieldConflictError`

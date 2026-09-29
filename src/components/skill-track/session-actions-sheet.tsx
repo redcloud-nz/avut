@@ -55,9 +55,9 @@ export interface SessionEntryView {
 }
 
 const CONFIG_ITEMS: { action: SessionConfigAction; label: string; icon: LucideIcon }[] = [
-    { action: "change-personnel", label: "Change personnel", icon: UsersIcon },
-    { action: "change-skills", label: "Change skills", icon: ListChecksIcon },
-    { action: "change-assessors", label: "Change assessors", icon: UserCheckIcon },
+    { action: "change-personnel", label: "Personnel", icon: UsersIcon },
+    { action: "change-skills", label: "Skills", icon: ListChecksIcon },
+    { action: "change-assessors", label: "Assessors", icon: UserCheckIcon },
 ];
 
 const SKILL_ORDER_ITEMS: { value: SessionSkillOrder; label: string; icon: LucideIcon }[] = [
@@ -156,7 +156,7 @@ export function SkillTrack_SessionActionsSheet({
                             >
                                 Configure
                             </h3>
-                            <ItemGroup className="gap-0">
+                            <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                                 {CONFIG_ITEMS.map(({ action, label, icon: Icon }) => (
                                     <Protect
                                         key={action}
@@ -193,7 +193,7 @@ export function SkillTrack_SessionActionsSheet({
                             >
                                 Record
                             </h3>
-                            <ItemGroup className="gap-0">
+                            <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                                 {MODE_ITEMS.map(({ mode: itemMode, label, icon: Icon }) => {
                                     const current = itemMode === mode;
                                     return (

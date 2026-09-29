@@ -175,6 +175,50 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
+     * Delete the caller's own check for an assessee and skill within a session. The assessor is
+     * the caller's linked person, derived server-side; another assessor's check on the same
+     * assessee and skill is left alone.
+     * @returns `deleted: true` if a check was deleted, `false` if there was none.
+     * @throws TRPCError(NOT_FOUND) if the session does not exist.
+     * @throws TRPCError(BAD_REQUEST) if the caller has no linked person, or the assessee or skill
+     * is not part of the session.
+     * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
+     */
+    // Same gate as `setSessionSkillCheck` (see there). `skills-assessor` holds no
+    // `skillCheck: ["delete"]`, which is why clearing a check doesn't go through `deleteSkillCheck`.
+    deleteSessionSkillCheck: organizationProcedure({
+        skillCheckSession: ["update"],
+        skillCheck: ["create"],
+    })
+        .input(
+            z.object({
+                skillCheckSessionId: SkillCheckSessionId.schema,
+                assesseeId: PersonId.schema,
+                skillId: SkillId.schema,
+            }),
+        )
+        .output(z.object({ deleted: z.boolean() }))
+        .mutation(async ({ ctx, input: { skillCheckSessionId, assesseeId, skillId } }) => {
+            const { session, assessorId } = await SkillChecks.requireSessionAssessor(
+                ctx,
+                skillCheckSessionId,
+            );
+            SkillChecks.assertSessionCheckTarget(session, { assesseeId, skillId });
+
+            const { count } = await ctx.prisma.skillCheck.deleteMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    sessionId: skillCheckSessionId,
+                    assesseeId,
+                    skillId,
+                    assessorId,
+                },
+            });
+
+            return { deleted: count > 0 };
+        }),
+
+    /**
      * Get a skill check session by ID.
      * @param skillCheckSessionId The ID of the skill check session to retrieve.
      * @returns The skill check session.
@@ -491,6 +535,73 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         })),
 
     /**
+     * Record the caller's check for an assessee and skill within a session: creates it, or
+     * updates the result and notes of the caller's existing check on that key. The assessor is
+     * the caller's linked person, derived server-side. A created check takes the default status
+     * (`Draft`); an update leaves the status alone.
+     * @returns The created or updated skill check.
+     * @throws TRPCError(NOT_FOUND) if the session does not exist.
+     * @throws TRPCError(BAD_REQUEST) if the caller has no linked person, or the assessee or skill
+     * is not part of the session.
+     * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
+     */
+    // Recording a check within a session the caller assesses needs both halves: a session update
+    // and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has no `"update"`
+    // action, and the write is scoped to the caller's own `assessorId`. The `skillCheck` half
+    // keeps `skills-admin` — which holds session update, and so could add itself as an assessor —
+    // from recording checks.
+    //
+    // No `ctx.logEvent` (here or in `deleteSessionSkillCheck`): no skill check write is logged yet,
+    // and `SkillCheck` isn't a `LogObjectType`. Tracked in #46.
+    setSessionSkillCheck: organizationProcedure({
+        skillCheckSession: ["update"],
+        skillCheck: ["create"],
+    })
+        .input(
+            z.object({
+                skillCheckSessionId: SkillCheckSessionId.schema,
+                assesseeId: PersonId.schema,
+                skillId: SkillId.schema,
+                result: SkillCheckResultValue.schema,
+                notes: z.string(),
+            }),
+        )
+        .output(SkillCheck.schema)
+        .mutation(async ({ ctx, input }) => {
+            const { skillCheckSessionId, assesseeId, skillId, result, notes } = input;
+            const { session, assessorId } = await SkillChecks.requireSessionAssessor(
+                ctx,
+                skillCheckSessionId,
+            );
+            SkillChecks.assertSessionCheckTarget(session, { assesseeId, skillId });
+
+            // Upsert on the unique key, so a double tap can't race two creates.
+            const check = await ctx.prisma.skillCheck.upsert({
+                where: {
+                    assesseeId_assessorId_sessionId_skillId: {
+                        assesseeId,
+                        assessorId,
+                        sessionId: skillCheckSessionId,
+                        skillId,
+                    },
+                },
+                update: { result, notes },
+                create: {
+                    id: SkillCheckId.create(),
+                    organizationId: ctx.organizationId,
+                    sessionId: skillCheckSessionId,
+                    assesseeId,
+                    assessorId,
+                    skillId,
+                    result,
+                    notes,
+                },
+            });
+
+            return SkillCheck.fromRecord(check);
+        }),
+
+    /**
      * Update a skill check session.
      * @param skillCheckSessionId The ID of the skill check session to update.
      * @param update The fields to update on the skill check session.
@@ -773,149 +884,6 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 };
             },
         ),
-
-    /**
-     * Create, update, or delete multiple skill checks for a session. All skill checks must belong to the organization.
-     *
-     * For each provided skill check update:
-     * - If the provided result is null, the skill check will be deleted if it exists.
-     * - If there is an existing skill check for the assessee, skill, and session, it will be updated with the provided result and notes.
-     * - If there is no existing skill check for the assessee, skill, and session, a new skill check will be created with the provided result and notes.
-     */
-    // Recording/clearing checks within a session the caller assesses needs both halves: a
-    // session update and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has
-    // no `"update"` action, and every write below is scoped to the caller's own `assessorId`.
-    // The `skillCheck` half keeps `skills-admin` — which holds session update, and so could add
-    // itself as an assessor — from recording checks.
-    upsertSessionSkillChecks: organizationProcedure({
-        skillCheckSession: ["update"],
-        skillCheck: ["create"],
-    })
-        .input(
-            z.object({
-                sessionId: SkillCheckSessionId.schema,
-                updates: z.array(
-                    SkillCheck.schema
-                        .pick({
-                            assesseeId: true,
-                            skillId: true,
-                            notes: true,
-                        })
-                        .extend({ result: SkillCheckResultValue.schema.nullable() }),
-                ),
-            }),
-        )
-        .output(
-            z.object({
-                created: z.array(SkillCheck.schema),
-                updated: z.array(SkillCheck.schema),
-                deleted: z.array(
-                    z.object({ assesseeId: PersonId.schema, skillId: SkillId.schema }),
-                ),
-            }),
-        )
-        .mutation(async ({ ctx, input }) => {
-            const { sessionId, updates } = input;
-
-            // Validate session exists
-            const session = await ctx.prisma.skillCheckSession.findUnique({
-                where: {
-                    id: sessionId,
-                    organizationId: ctx.organizationId,
-                },
-                include: {
-                    assessors: {
-                        select: { id: true },
-                    },
-                },
-            });
-            if (!session) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.skillCheckSessionNotFound(sessionId),
-                });
-            }
-
-            const orgUser = await ctx.prisma.organizationUser.findFirst({
-                where: { organizationId: ctx.organizationId, userId: ctx.userId },
-                select: { personId: true },
-            });
-            if (!orgUser?.personId) {
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: Messages.noLinkedPersonRecord(),
-                });
-            }
-            const assessorId = orgUser.personId;
-
-            if (!session.assessors.some((assessor) => assessor.id === assessorId)) {
-                throw new TRPCError({
-                    code: "FORBIDDEN",
-                    message: Messages.notSessionAssessor(sessionId),
-                });
-            }
-
-            const created: SkillCheck[] = [];
-            const updated: SkillCheck[] = [];
-            const deleted: { assesseeId: PersonId; skillId: SkillId }[] = [];
-
-            for (const update of updates) {
-                if (update.result === null) {
-                    // If there is an existing skill check, delete it. If there isn't, do nothing.
-                    // This allows the client to "clear" a skill check by setting its result to null.
-                    await ctx.prisma.skillCheck.deleteMany({
-                        where: {
-                            organizationId: ctx.organizationId,
-                            sessionId,
-                            skillId: update.skillId,
-                            assesseeId: update.assesseeId,
-                            assessorId,
-                        },
-                    });
-                    deleted.push({ assesseeId: update.assesseeId, skillId: update.skillId });
-                } else {
-                    const newSkillCheckId = SkillCheckId.create();
-
-                    const result = await ctx.prisma.skillCheck.upsert({
-                        where: {
-                            assesseeId_assessorId_sessionId_skillId: {
-                                assesseeId: update.assesseeId,
-                                assessorId,
-                                sessionId,
-                                skillId: update.skillId,
-                            },
-                        },
-                        update: {
-                            result: update.result,
-                            notes: update.notes,
-                            assessorId,
-                        },
-                        create: {
-                            id: newSkillCheckId,
-                            organizationId: ctx.organizationId,
-                            sessionId,
-                            assesseeId: update.assesseeId,
-                            assessorId,
-                            skillId: update.skillId,
-                            result: update.result,
-                            notes: update.notes,
-                        },
-                    });
-
-                    if (result.id === newSkillCheckId) {
-                        created.push(SkillCheck.fromRecord(result));
-                    } else {
-                        updated.push(SkillCheck.fromRecord(result));
-                    }
-                }
-            }
-
-            return {
-                created,
-                updated,
-                deleted,
-            };
-        }),
 });
 
 function sessionNotFound(sessionId: SkillCheckSessionId): never {

@@ -8,9 +8,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { TRPCError } from "@trpc/server";
 
 import { nanoId16 } from "@/lib/id";
+import type { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
+import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
@@ -20,26 +22,34 @@ import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 
-describe("skillCheckSessions.upsertSessionSkillChecks", () => {
+describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", () => {
     // Dataset:
-    //   assessorUser  → org member, linked to assessorPerson, assigned as the session's assessor
-    //   otherUser     → org member, linked to otherPerson, NOT assigned to the session
-    //   session       → has one skill (skill1) and assessorPerson as its sole assessor
-    //   unscopedSession → has no assessors at all (nobody may record on it)
+    //   assessorUser      → linked to assessorPerson, assigned as an assessor of session
+    //   secondAssessorUser → linked to secondAssessorPerson, also assigned to session
+    //   otherUser         → linked to otherPerson, NOT assigned to session
+    //   unlinkedUser      → org member with no linked person
+    //   session           → assessees [assessee], skills [skill1, skill2], assessors [assessor, secondAssessor]
+    //   outsider          → a person in the org but not an assessee of session
+    //   offSessionSkill   → a skill in the org but not one of session's skills
+    //   secondAssessorPerson's own check on (assessee, skill2) is seeded directly
     const T = {
         org: OrganizationId.create(),
         assessorUser: UserId.create(),
+        secondAssessorUser: UserId.create(),
         otherUser: UserId.create(),
+        unlinkedUser: UserId.create(),
         assessorPerson: PersonId.create(),
+        secondAssessorPerson: PersonId.create(),
         otherPerson: PersonId.create(),
         assessee: PersonId.create(),
+        outsider: PersonId.create(),
         pkg: SkillPackageId.create(),
         grp: SkillGroupId.create(),
         skill1: SkillId.create(),
         skill2: SkillId.create(),
-        skill3: SkillId.create(),
+        offSessionSkill: SkillId.create(),
         session: SkillCheckSessionId.create(),
-        unscopedSession: SkillCheckSessionId.create(),
+        secondAssessorCheck: SkillCheckId.create(),
     };
 
     const db = createMockPrisma();
@@ -49,49 +59,28 @@ describe("skillCheckSessions.upsertSessionSkillChecks", () => {
             data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
         });
 
-        await db.person.create({
-            data: {
-                id: T.assessorPerson,
-                organizationId: T.org,
-                name: "Assessor Assigned",
-                email: `${T.assessorPerson}@example.com`,
-            },
-        });
-        await db.person.create({
-            data: {
-                id: T.otherPerson,
-                organizationId: T.org,
-                name: "Assessor Other",
-                email: `${T.otherPerson}@example.com`,
-            },
-        });
-        await db.person.create({
-            data: {
-                id: T.assessee,
-                organizationId: T.org,
-                name: "Assessee",
-                email: `${T.assessee}@example.com`,
-            },
-        });
+        for (const [id, name] of [
+            [T.assessorPerson, "Assessor"],
+            [T.secondAssessorPerson, "Second Assessor"],
+            [T.otherPerson, "Other"],
+            [T.assessee, "Assessee"],
+            [T.outsider, "Outsider"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
 
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.org,
-                userId: T.assessorUser,
-                role: "member",
-                personId: T.assessorPerson,
-            },
-        });
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.org,
-                userId: T.otherUser,
-                role: "member",
-                personId: T.otherPerson,
-            },
-        });
+        for (const [userId, personId] of [
+            [T.assessorUser, T.assessorPerson],
+            [T.secondAssessorUser, T.secondAssessorPerson],
+            [T.otherUser, T.otherPerson],
+            [T.unlinkedUser, null],
+        ] as const) {
+            await db.organizationUser.create({
+                data: { id: nanoId16(), organizationId: T.org, userId, role: "member", personId },
+            });
+        }
 
         await db.skillPackage.create({
             data: {
@@ -112,153 +101,220 @@ describe("skillCheckSessions.upsertSessionSkillChecks", () => {
                 properties: {},
             },
         });
-        await db.skill.create({
-            data: {
-                id: T.skill1,
-                skillPackageId: T.pkg,
-                skillGroupId: T.grp,
-                name: "Skill 1",
-                description: "",
-                properties: {},
-            },
-        });
-        await db.skill.create({
-            data: {
-                id: T.skill2,
-                skillPackageId: T.pkg,
-                skillGroupId: T.grp,
-                name: "Skill 2",
-                description: "",
-                properties: {},
-            },
-        });
-        await db.skill.create({
-            data: {
-                id: T.skill3,
-                skillPackageId: T.pkg,
-                skillGroupId: T.grp,
-                name: "Skill 3",
-                description: "",
-                properties: {},
-            },
-        });
+        for (const [id, name] of [
+            [T.skill1, "Skill 1"],
+            [T.skill2, "Skill 2"],
+            [T.offSessionSkill, "Off-session Skill"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
 
         await db.skillCheckSession.create({
             data: {
                 id: T.session,
                 organizationId: T.org,
-                name: "Scoped Session",
+                name: "Session",
                 sessionNumber: 1,
                 startsAt: new Date(),
                 endsAt: new Date(),
                 notes: "",
-                assessors: { connect: [{ id: T.assessorPerson }] },
+                assessors: {
+                    connect: [{ id: T.assessorPerson }, { id: T.secondAssessorPerson }],
+                },
+                assessees: { connect: [{ id: T.assessee }] },
+                skills: { connect: [{ id: T.skill1 }, { id: T.skill2 }] },
             },
         });
-        await db.skillCheckSession.create({
+
+        await db.skillCheck.create({
             data: {
-                id: T.unscopedSession,
+                id: T.secondAssessorCheck,
                 organizationId: T.org,
-                name: "Unscoped Session",
-                sessionNumber: 2,
-                startsAt: new Date(),
-                endsAt: new Date(),
-                notes: "",
+                sessionId: T.session,
+                assesseeId: T.assessee,
+                assessorId: T.secondAssessorPerson,
+                skillId: T.skill2,
+                result: "Fail",
+                notes: "Second assessor's check",
             },
         });
     });
 
-    function makeCaller(userId: UserId) {
+    function makeCaller(
+        userId: UserId,
+        permissions: Permissions = {
+            organization: ["view"],
+            skillCheckSession: ["update"],
+            skillCheck: ["create"],
+        },
+    ) {
         return skillCheckSessionsRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: userId },
-                permissions: {
-                    organization: ["view"],
-                    skillCheckSession: ["update"],
-                    skillCheck: ["create"],
-                },
-                prisma: db,
-            }),
+            createAuthenticatedMockContext({ user: { id: userId }, permissions, prisma: db }),
         );
     }
 
-    it("allows the assigned assessor to record checks", async () => {
-        const result = await makeCaller(T.assessorUser).upsertSessionSkillChecks({
-            organizationId: T.org,
-            sessionId: T.session,
-            updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
-        });
+    const target = {
+        organizationId: T.org,
+        skillCheckSessionId: T.session,
+        assesseeId: T.assessee,
+    };
 
-        expect(result.created).toHaveLength(1);
-        expect(result.created[0].assessorId).toBe(T.assessorPerson);
-    });
+    describe("setSessionSkillCheck", () => {
+        it("creates the caller's check, then updates the same row", async () => {
+            const caller = makeCaller(T.assessorUser);
 
-    it("rejects an assigned assessor holding only session update, as skills-admin does", async () => {
-        const caller = skillCheckSessionsRouter.createCaller(
-            createAuthenticatedMockContext({
-                user: { id: T.assessorUser },
-                permissions: { organization: ["view"], skillCheckSession: ["update"] },
-                prisma: db,
-            }),
-        );
-
-        await expect(
-            caller.upsertSessionSkillChecks({
-                organizationId: T.org,
+            const created = await caller.setSessionSkillCheck({
+                ...target,
+                skillId: T.skill1,
+                result: "Pass",
+                notes: "",
+            });
+            expect(created).toMatchObject({
                 sessionId: T.session,
-                updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
-            }),
-        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+                assesseeId: T.assessee,
+                assessorId: T.assessorPerson,
+                skillId: T.skill1,
+                result: "Pass",
+                notes: "",
+                status: "Draft",
+            });
+
+            const updated = await caller.setSessionSkillCheck({
+                ...target,
+                skillId: T.skill1,
+                result: "Fail",
+                notes: "Try again",
+            });
+            expect(updated.id).toBe(created.id);
+            expect(updated).toMatchObject({ result: "Fail", notes: "Try again" });
+
+            const rows = await db.skillCheck.findMany({
+                where: { sessionId: T.session, assesseeId: T.assessee, skillId: T.skill1 },
+            });
+            expect(rows).toHaveLength(1);
+        });
+
+        it("rejects a user who is not an assigned assessor with FORBIDDEN", async () => {
+            await expect(
+                makeCaller(T.otherUser).setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill1,
+                    result: "Pass",
+                    notes: "",
+                }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
+
+        it("rejects a user with no linked person with BAD_REQUEST", async () => {
+            await expect(
+                makeCaller(T.unlinkedUser).setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill1,
+                    result: "Pass",
+                    notes: "",
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("rejects an assessee who is not on the session with BAD_REQUEST", async () => {
+            await expect(
+                makeCaller(T.assessorUser).setSessionSkillCheck({
+                    ...target,
+                    assesseeId: T.outsider,
+                    skillId: T.skill1,
+                    result: "Pass",
+                    notes: "",
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("rejects a skill that is not in the session with BAD_REQUEST", async () => {
+            await expect(
+                makeCaller(T.assessorUser).setSessionSkillCheck({
+                    ...target,
+                    skillId: T.offSessionSkill,
+                    result: "Pass",
+                    notes: "",
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("is refused for a role lacking skillCheck create, as skills-admin is", async () => {
+            await expect(
+                makeCaller(T.assessorUser, {
+                    organization: ["view"],
+                    skillCheckSession: ["update"],
+                }).setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill1,
+                    result: "Pass",
+                    notes: "",
+                }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        });
     });
 
-    it("rejects a person who is not an assigned assessor for the session", async () => {
-        await expect(
-            makeCaller(T.otherUser).upsertSessionSkillChecks({
-                organizationId: T.org,
-                sessionId: T.session,
-                updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
-            }),
-        ).rejects.toThrow(TRPCError);
-    });
+    describe("deleteSessionSkillCheck", () => {
+        it("deletes the caller's own check and leaves another assessor's check alone", async () => {
+            const caller = makeCaller(T.assessorUser);
+            await caller.setSessionSkillCheck({
+                ...target,
+                skillId: T.skill2,
+                result: "Pass",
+                notes: "",
+            });
 
-    it("rejects recording on a session with no assigned assessors at all", async () => {
-        await expect(
-            makeCaller(T.assessorUser).upsertSessionSkillChecks({
-                organizationId: T.org,
-                sessionId: T.unscopedSession,
-                updates: [{ assesseeId: T.assessee, skillId: T.skill1, result: "Pass", notes: "" }],
-            }),
-        ).rejects.toThrow(TRPCError);
-    });
+            const result = await caller.deleteSessionSkillCheck({ ...target, skillId: T.skill2 });
+            expect(result).toEqual({ deleted: true });
 
-    it("deletes an existing check when result is null, and does nothing if none exists", async () => {
-        const caller = makeCaller(T.assessorUser);
-
-        const created = await caller.upsertSessionSkillChecks({
-            organizationId: T.org,
-            sessionId: T.session,
-            updates: [{ assesseeId: T.assessee, skillId: T.skill2, result: "Pass", notes: "" }],
+            const remaining = await db.skillCheck.findMany({
+                where: { sessionId: T.session, assesseeId: T.assessee, skillId: T.skill2 },
+            });
+            expect(remaining.map((check) => check.id)).toEqual([T.secondAssessorCheck]);
         });
-        expect(created.created).toHaveLength(1);
 
-        const cleared = await caller.upsertSessionSkillChecks({
-            organizationId: T.org,
-            sessionId: T.session,
-            updates: [{ assesseeId: T.assessee, skillId: T.skill2, result: null, notes: "" }],
-        });
-        expect(cleared.deleted).toEqual([{ assesseeId: T.assessee, skillId: T.skill2 }]);
+        it("returns deleted: false when the caller has no check to delete", async () => {
+            const result = await makeCaller(T.assessorUser).deleteSessionSkillCheck({
+                ...target,
+                skillId: T.skill2,
+            });
 
-        const remaining = await db.skillCheck.findMany({
-            where: { organizationId: T.org, assesseeId: T.assessee, skillId: T.skill2 },
+            expect(result).toEqual({ deleted: false });
         });
-        expect(remaining).toHaveLength(0);
 
-        const noOp = await caller.upsertSessionSkillChecks({
-            organizationId: T.org,
-            sessionId: T.session,
-            updates: [{ assesseeId: T.assessee, skillId: T.skill2, result: null, notes: "" }],
+        it("rejects a user who is not an assigned assessor with FORBIDDEN", async () => {
+            await expect(
+                makeCaller(T.otherUser).deleteSessionSkillCheck({ ...target, skillId: T.skill2 }),
+            ).rejects.toMatchObject({ code: "FORBIDDEN" });
         });
-        expect(noOp.deleted).toEqual([{ assesseeId: T.assessee, skillId: T.skill2 }]);
+
+        it("rejects a skill that is not in the session with BAD_REQUEST", async () => {
+            await expect(
+                makeCaller(T.assessorUser).deleteSessionSkillCheck({
+                    ...target,
+                    skillId: T.offSessionSkill,
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
+
+        it("rejects an assessee who is not on the session with BAD_REQUEST", async () => {
+            await expect(
+                makeCaller(T.assessorUser).deleteSessionSkillCheck({
+                    ...target,
+                    assesseeId: T.outsider,
+                    skillId: T.skill2,
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        });
     });
 });
 

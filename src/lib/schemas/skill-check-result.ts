@@ -47,6 +47,20 @@ export const COMPETENT_SKILL_CHECK_RESULTS: readonly SkillCheckResultValue[] = [
     "StrongPass",
 ];
 
+/** The fail family's three tiers, lowest first, whether or not an org enables each. */
+export const SKILL_CHECK_FAIL_TIERS: readonly SkillCheckResultValue[] = [
+    "LowFail",
+    "Fail",
+    "HighFail",
+];
+
+/** The pass family's three tiers, lowest first, whether or not an org enables each. */
+export const SKILL_CHECK_PASS_TIERS: readonly SkillCheckResultValue[] = [
+    "WeakPass",
+    "Pass",
+    "StrongPass",
+];
+
 /**
  * Whether a skill check result demonstrates competency in the skill.
  * @param result The result of the skill check.

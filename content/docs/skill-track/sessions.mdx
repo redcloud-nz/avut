@@ -92,20 +92,36 @@ list of assessment rows on the right:
   caption="By Skill — the same screen with the axes swapped: a skill on the left, everyone assigned to it on the right."
 />
 
-For each row, record a result with the two quick buttons — one cycles through
-the fail tiers, the other through the pass tiers (e.g. Weak Pass → Pass →
-Strong Pass) — or open the **⋮** menu for the full list of enabled results
-(see [Skill Track](/docs/skill-track) for what each one means). You can add a
-free-text note per result too. Changes autosave a couple of seconds after you
-stop clicking or typing. Try it below — this is the same row you'll see in the
-app:
+Each row has a **Fail** button, a **Pass** button and a **More** button (**⋯**).
+Every tap saves straight away — there's no separate save step:
 
-<DocsAssessmentRowDemo />
+- **Fail** or **Pass** records that result for the row at once. The one that
+  matches the row's current result is highlighted.
+- Tapping the highlighted button again clears the check, and the confirmation
+  that pops up offers **Undo** if you didn't mean to. If the check has a note,
+  the tap opens the dialog below instead, so a stray tap can't throw the note
+  away.
+- Any other result — a different tier such as Strong Pass, or Not Taught —
+  shows as its name in place of the Fail and Pass buttons.
+- A small note icon appears before the buttons when the check has a note.
 
-A menu in the page header (the small icon next to the picker) controls how the
-skill list is organised:
+**More** opens a dialog for that person and skill with every result your
+organisation has enabled (see [Skill Track](/docs/skill-track) for what each
+one means) and a free-text **Notes** field. Pick a result, add a note if you
+like, then **Save**. **Delete** removes the check (again with **Undo**), and
+**Cancel** closes the dialog without changing anything.
 
-- **Skill order** — **By Package/Group** (the default) nests skills under
+While a tap is saving, its row dims briefly and its buttons wait until it's
+done. Try it below — this is the same row and dialog you'll see in the app:
+
+<DocsCheckRowDemo />
+
+The **Actions** button in the page header (the sliders icon) opens a side panel:
+
+- **Configure** — change the session's **Personnel**, **Skills** or
+  **Assessors** without leaving the page.
+- **Record** — switch between **By Person** and **By Skill**.
+- **Skill Order** — **By Package/Group** (the default) nests skills under
   their package and skill group, in catalogue order, with anything no longer
   part of an assessable group collected under "Other." **Alphabetical** lists
   skills by name instead.
