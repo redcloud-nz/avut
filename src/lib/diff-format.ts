@@ -52,7 +52,6 @@ export const FieldLabels: Partial<Record<LogObjectType, Record<string, string>>>
 
 /** Object-type labels where humanising the type name isn't good enough. */
 const objectTypeLabelOverrides: Partial<Record<LogObjectType, string>> = {
-    D4HAccessToken: "D4H access token",
     Session: "Sign-in session",
 };
 
@@ -110,10 +109,12 @@ export function formatFieldPath(path: string[], labels?: Record<string, string>)
 }
 
 /**
- * The exact shape `Date.prototype.toISOString()` produces, which is how `diffObject` stores a
- * `Date`. Matched in full so a string that merely starts with a date isn't reformatted.
+ * An ISO datetime with optional fractional seconds and a `Z` or `±hh:mm` offset. That covers
+ * both `Date.prototype.toISOString()` (how `diffObject` stores a `Date`) and `formatISO` (what
+ * `DatePicker` emits: no milliseconds, a local offset). Matched in full so a string that merely
+ * starts with a date isn't reformatted.
  */
-const ISO_DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+const ISO_DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 /**
  * A stored diff value for display: `null`/`""` → "(empty)", booleans → "Yes"/"No", arrays → a
@@ -134,10 +135,6 @@ export function formatDiffValue(value: DiffValues, prefs?: DisplayPreferences): 
     return value;
 }
 
-function isEmptyValue(value: DiffValues): boolean {
-    return value === null || value === "" || (Array.isArray(value) && value.length === 0);
-}
-
 /** Maps one `DiffChange` to a display descriptor. */
 export function describeChange(
     change: DiffChange,
@@ -149,9 +146,9 @@ export function describeChange(
 
     switch (change.type) {
         case "obj_add":
-            return isEmptyValue(change.curr)
-                ? { field, kind: "cleared" }
-                : { field, kind: "set", curr: format(change.curr) };
+            // Always "set", even for an empty value: a create is logged as `diffObject({}, record)`,
+            // so every empty optional field arrives here, and "cleared" would misreport it.
+            return { field, kind: "set", curr: format(change.curr) };
         case "obj_del":
             return { field, kind: "cleared", prev: format(change.prev) };
         case "obj_mod":

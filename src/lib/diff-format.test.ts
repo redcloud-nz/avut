@@ -86,12 +86,22 @@ describe("formatDiffValue", () => {
         ).toBe("03 Feb 2026 11:36 AM");
     });
 
+    it("formats ISO datetimes without milliseconds or with an offset", () => {
+        const utc = prefs({ timeZone: "UTC", dateFormat: "iso-extended", timeFormat: "24-hour" });
+        // `formatISO`, as `DatePicker` emits it: no milliseconds, a local offset.
+        expect(formatDiffValue("2026-02-03T11:36:00+13:00", utc)).toBe("2026-02-02 22:36");
+        expect(formatDiffValue("2026-02-02T22:36:00Z", utc)).toBe("2026-02-02 22:36");
+        expect(formatDiffValue("2026-02-02T12:36:00.000-10:00", utc)).toBe("2026-02-02 22:36");
+    });
+
     it("leaves non-datetime strings alone, including date-like ones", () => {
         expect(formatDiffValue("Rescue 1")).toBe("Rescue 1");
         expect(formatDiffValue("2026-02-02")).toBe("2026-02-02");
         expect(formatDiffValue("2026-02-02T22:36:00.000Z and more")).toBe(
             "2026-02-02T22:36:00.000Z and more",
         );
+        expect(formatDiffValue("2026-02-02T22:36:00")).toBe("2026-02-02T22:36:00");
+        expect(formatDiffValue("2026-02-02T22:36:00+1300")).toBe("2026-02-02T22:36:00+1300");
         expect(formatDiffValue("123 Main St")).toBe("123 Main St");
     });
 });
@@ -105,13 +115,11 @@ describe("describeChange", () => {
         });
     });
 
-    it("obj_add with an empty value → cleared", () => {
-        expect(describeChange({ type: "obj_add", path: ["name"], curr: null })).toEqual({
-            field: "Name",
-            kind: "cleared",
-        });
-        expect(describeChange({ type: "obj_add", path: ["name"], curr: "" }).kind).toBe("cleared");
-        expect(describeChange({ type: "obj_add", path: ["tags"], curr: [] }).kind).toBe("cleared");
+    it("obj_add with an empty value → set (empty), since creates log empty fields as obj_add", () => {
+        const setEmpty = { field: "Notes", kind: "set", curr: "(empty)" };
+        expect(describeChange({ type: "obj_add", path: ["notes"], curr: null })).toEqual(setEmpty);
+        expect(describeChange({ type: "obj_add", path: ["notes"], curr: "" })).toEqual(setEmpty);
+        expect(describeChange({ type: "obj_add", path: ["notes"], curr: [] })).toEqual(setEmpty);
     });
 
     it("obj_del → cleared", () => {
@@ -188,10 +196,10 @@ describe("objectTypeLabel", () => {
         expect(objectTypeLabel("TeamMembership")).toBe("Team membership");
         expect(objectTypeLabel("SkillCheckSession")).toBe("Skill check session");
         expect(objectTypeLabel("OrganizationMembership")).toBe("Organisation membership");
+        expect(objectTypeLabel("D4HAccessToken")).toBe("D4H access token");
     });
 
     it("uses an override where one exists", () => {
-        expect(objectTypeLabel("D4HAccessToken")).toBe("D4H access token");
         expect(objectTypeLabel("Session")).toBe("Sign-in session");
     });
 

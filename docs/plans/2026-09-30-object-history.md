@@ -118,7 +118,7 @@ object: who did what, when, and the field-level changes.
   the viewer's display preferences. `obj_mask` → "changed (hidden)", `arr_ord` →
   "reordered". Object types get a display label from `objectTypeLabel(type)` (humanised,
   `"TeamMembership"` → "Team membership", with overrides where that reads badly, e.g.
-  `D4HAccessToken` → "D4H access token"). Unknown values fall back to the raw string.
+  `Session` → "Sign-in session"; acronym runs like `D4H` already humanise correctly). Unknown values fall back to the raw string.
 - **Layout:** `Saratoga.Root` with a single-column list of entries, which is a timeline, not a
   `Kaga` table: each entry is a heterogeneous block of changes. Each row shows the action
   (a `Badge`), a "related: Team membership" tag for non-primary entries, the actor, and the
@@ -129,19 +129,18 @@ object: who did what, when, and the field-level changes.
 
 ## Tasks
 
-- [ ] **1. Diff change formatter**
+- [x] **1. Diff change formatter** — `feat(history): add diff change formatter` + `fix(history): accept offset ISO datetimes and keep empty creates as set`
   - **Files:** `src/lib/diff-format.ts` (new), `src/lib/diff-format.test.ts` (new).
   - **Do:** Export `describeChange(change: DiffChange, options?: { labels?: Record<string,
 string>; prefs?: DisplayPreferences })` returning `{ field: string; kind: "set" |
 "cleared" | "changed" | "added" | "removed" | "masked" | "reordered"; prev?: string;
 curr?: string }`, plus the helpers it uses (`formatFieldPath(path, labels?)`,
     `formatDiffValue(value, prefs?)`), and `objectTypeLabel(type: string)` (see Decisions).
-    Mapping: `obj_add` → `set` (or `cleared` when `curr` is empty), `obj_del` → `cleared`,
+    Mapping: `obj_add` → `set` (an empty `curr` renders as `set` "(empty)", never `cleared`: creates are logged as `diffObject({}, record)`, so empty optional fields arrive as `obj_add`), `obj_del` → `cleared`,
     `obj_mod` → `changed`, `arr_add` → `added`, `arr_del` → `removed`, `obj_mask` → `masked`,
     `arr_ord` → `reordered`. `labels` is keyed by the joined path (`"properties.callSign"`)
     and wins over humanising. Use `formatDateTime(value, prefs)` from `src/lib/datetime.ts` for
-    ISO datetime strings (match the full `toISOString()` shape only, so a plain string that
-    merely starts with digits isn't reformatted). The component passes
+    ISO datetime strings (a full-string match of an ISO datetime with optional fractional seconds and a `Z` or `±hh:mm` offset — `DatePicker` emits `formatISO` without milliseconds — so a plain string that merely starts with digits isn't reformatted). The component passes
     `usePreferences().display` as `prefs`. Types come from `DiffChange` in `src/lib/diff.ts`.
     Don't add anything to `diff.ts` itself. `FieldLabels` lives here too, starting empty
     unless a real field reads badly.
