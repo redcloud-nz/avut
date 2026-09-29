@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
@@ -11,7 +12,10 @@ import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -20,11 +24,14 @@ import {
     type MenuActionProps,
 } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
 import { SkillsModule_DeleteSession_Dialog } from "./delete-session";
 
 export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSession }) {
+    const organization = useOrganization();
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     const canDelete = useHasPermission({ skillCheckSession: ["delete"] });
@@ -51,10 +58,29 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    {actions.map((a) => (
-                        <MenuAction key={a.verb} {...a} />
-                    ))}
+                    <DropdownMenuGroup>
+                        <DropdownMenuItem asChild>
+                            <Link
+                                href={route(
+                                    "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                    {
+                                        slug: organization.slug,
+                                        session_id: session.id,
+                                    },
+                                )}
+                            >
+                                <ObjectIcons.History /> History
+                            </Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuGroup>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        {actions.map((a) => (
+                            <MenuAction key={a.verb} {...a} />
+                        ))}
+                    </DropdownMenuGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
 

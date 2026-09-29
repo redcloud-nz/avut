@@ -11,7 +11,7 @@ import { SkillPackageBuilder_PackageHistory_Content } from "@/components/skill-p
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { getOrganizationBySlug } from "@/server/cache/organization";
-import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/history`>;
 
@@ -41,6 +41,17 @@ export default async function SkillPackageBuilder_PackageHistory_Page(props: Pro
             organizationId: organization.id,
             skillPackageId,
         }),
+    );
+    // Same input as `ObjectHistory`'s client query (no `limit`), so the keys match.
+    prefetchInfinite(
+        trpc.history.listObjectHistory.infiniteQueryOptions(
+            {
+                organizationId: organization.id,
+                objectType: "SkillPackage",
+                objectId: skillPackageId,
+            },
+            { getNextPageParam: (page) => page.nextCursor ?? undefined },
+        ),
     );
 
     return (
