@@ -104,7 +104,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                     <ObjectIcons.Create /> <span className="hidden md:inline">New Invitation</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>Invite</DialogTitle>
                     <DialogDescription>

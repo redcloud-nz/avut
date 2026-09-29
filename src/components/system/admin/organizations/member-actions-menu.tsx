@@ -206,7 +206,7 @@ export function SystemAdmin_MemberActionsMenu({
             </DropdownMenu>
 
             <Dialog open={roleDialogOpen} onOpenChange={(open) => (open ? undefined : close())}>
-                <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                <DialogContent size="lg" onCloseAutoFocus={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle>Change role</DialogTitle>
                         <DialogDescription>
