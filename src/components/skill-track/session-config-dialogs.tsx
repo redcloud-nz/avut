@@ -4,9 +4,10 @@
  */
 "use client";
 
-import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useQueryState } from "nuqs";
 import type { RefObject } from "react";
 
+import { Protect } from "@/components/protect";
 import { SkillTrack_ChangeSessionAssessors_Dialog } from "@/components/skill-track/change-session-assessors";
 import { SkillTrack_ChangeSessionPersonnel_Dialog } from "@/components/skill-track/change-session-personnel";
 import { SkillTrack_ChangeSessionSkills_Dialog } from "@/components/skill-track/change-session-skills";
@@ -20,14 +21,14 @@ export type SessionConfigAction = (typeof SESSION_CONFIG_ACTIONS)[number];
  * The `?action=` param for the session config dialogs. `open(...)` pushes a history entry (so
  * Back closes the dialog), `close()` replaces it (so Back from the closed page doesn't reopen it).
  * `close(only)` clears the param only while it still names `only`, so a save that settles after
- * its dialog was dismissed can't close a different dialog opened in the meantime.
+ * its dialog was dismissed can't close a different dialog opened in the meantime. The param is
+ * read raw, not with `parseAsStringLiteral`: the page's other dialogs share `?action=` (e.g.
+ * `update`, `delete`), and a literal parser would read theirs as `null`, which `close` would clear.
  * Triggers call `open(...)`; `SkillTrack_SessionConfigDialogs` renders the dialogs themselves.
  */
 export function useSessionConfigAction() {
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(SESSION_CONFIG_ACTIONS),
-    );
+    const [rawAction, setAction] = useQueryState("action");
+    const action = isSessionConfigAction(rawAction) ? rawAction : null;
 
     return {
         action,
@@ -37,6 +38,10 @@ export function useSessionConfigAction() {
                 history: "replace",
             }),
     };
+}
+
+function isSessionConfigAction(value: string | null): value is SessionConfigAction {
+    return (SESSION_CONFIG_ACTIONS as readonly (string | null)[]).includes(value);
 }
 
 /**
@@ -66,11 +71,12 @@ export function SkillTrack_SessionConfigDialogs({
         };
     }
 
+    // The triggers are gated the same way; this covers a shared `?action=change-*` link.
     return (
-        <>
+        <Protect permissions={{ skillCheckSession: ["update"] }}>
             <SkillTrack_ChangeSessionPersonnel_Dialog {...dialogProps("change-personnel")} />
             <SkillTrack_ChangeSessionSkills_Dialog {...dialogProps("change-skills")} />
             <SkillTrack_ChangeSessionAssessors_Dialog {...dialogProps("change-assessors")} />
-        </>
+        </Protect>
     );
 }
