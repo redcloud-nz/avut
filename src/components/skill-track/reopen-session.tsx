@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
+import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -36,12 +37,14 @@ export function SkillsModule_ReopenSession_Dialog({
 }: ComponentProps<typeof Dialog> & { session: SkillCheckSession }) {
     const organization = useOrganization();
 
+    const refetchSessionOnConflict = useRefetchSessionOnConflict(session.id);
     const mutation = useMutation(
         trpc.skillCheckSessions.reopenSession.mutationOptions({
             meta: { effects: skillCheckSessionsEffects.reopenSession },
             onError(error) {
                 console.error("Failed to reopen session:", error);
                 toast.error(`Failed to reopen session: ${error.message}`);
+                refetchSessionOnConflict(error);
             },
             onSuccess() {
                 toast.success(

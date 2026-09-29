@@ -16,6 +16,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
+import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
 import {
@@ -56,7 +57,7 @@ export function SkillTrack_SessionReview_Content({
         { data: assessees },
         { data: assessors },
         { data: sessionSkills },
-        { data: skillChecks },
+        { data: skillChecks, isFetching: isFetchingChecks },
     ] = useSuspenseQueries({
         queries: [
             trpc.skillCheckSessions.getSession.queryOptions({
@@ -92,19 +93,37 @@ export function SkillTrack_SessionReview_Content({
     // An approved session is locked until it's reopened: its checkboxes are read-only and show
     // the approval itself (`Include` checks), not `selected` (see `AssesseeChecks`).
     const isApproved = session.status === "Include";
+    // Right after an approval `getSession` flips to `Include` before `listSkillChecks` has
+    // refetched the stamped statuses, so until it has, keep showing `selected` (what was just
+    // approved) rather than the stale pre-approval statuses, which would read as all unticked.
+    const showApproval = isApproved && !isFetchingChecks;
 
     // The editable view's selection. Preselect everything not explicitly excluded: new `Draft`
     // checks and the `Pending` ones a reopen left behind (the previous approval's selection), so
-    // re-approving starts from where the last approval left off.
+    // re-approving starts from where the last approval left off. The page stays mounted across
+    // approve → reopen, so a check that arrives in a later `skillChecks` (recorded, or re-recorded
+    // over a tombstone, after mount) is preselected the same way; a check already listed keeps
+    // whatever the user made of it, so their unticks survive a refetch.
     const [selected, setSelected] = useState<Set<SkillCheckId>>(
         () => new Set(skillChecks.filter((c) => c.status !== "Exclude").map((c) => c.id)),
     );
+    const [prevSkillChecks, setPrevSkillChecks] = useState(skillChecks);
+    if (skillChecks !== prevSkillChecks) {
+        setPrevSkillChecks(skillChecks);
+        const prevIds = new Set(prevSkillChecks.map((c) => c.id));
+        const added = skillChecks
+            .filter((c) => !prevIds.has(c.id) && c.status !== "Exclude")
+            .map((c) => c.id);
+        if (added.length > 0) setSelected((prev) => new Set([...prev, ...added]));
+    }
 
+    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
     const mutation = useMutation(
         trpc.skillCheckSessions.approveSession.mutationOptions({
             meta: { effects: skillCheckSessionsEffects.approveSession },
             onError(error) {
                 toast.error(`Failed to approve session: ${error.message}`);
+                refetchSessionOnConflict(error);
             },
             onSuccess() {
                 toast.success("Session approved.");
@@ -246,6 +265,7 @@ export function SkillTrack_SessionReview_Content({
                                                 assessorById={assessorById}
                                                 selected={selected}
                                                 disabled={isApproved}
+                                                showApproval={showApproval}
                                                 toggleCheck={toggleCheck}
                                                 toggleGroup={toggleGroup}
                                             />
@@ -280,12 +300,14 @@ interface AssesseeChecksProps {
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
     selected: Set<SkillCheckId>;
-    /**
-     * True while the session is approved: the checkboxes are read-only and show the approval
-     * itself (`Include` checks) rather than the local selection, so a refetch is reflected and a
-     * check that raced the approval in as `Draft` isn't shown ticked.
-     */
+    /** True while the session is approved: the checkboxes are read-only. */
     disabled: boolean;
+    /**
+     * Show the approval itself (`Include` checks) rather than the local selection, so a refetch is
+     * reflected and a check that raced the approval in as `Draft` isn't shown ticked. False while
+     * the checks are still refetching after an approval, when `selected` is the better answer.
+     */
+    showApproval: boolean;
     toggleCheck(id: SkillCheckId): void;
     toggleGroup(ids: SkillCheckId[]): void;
 }
@@ -297,12 +319,13 @@ function AssesseeChecks({
 
     selected,
     disabled,
+    showApproval,
     toggleCheck,
     toggleGroup,
 }: AssesseeChecksProps) {
     const organization = useOrganization();
     const isChecked = (check: SkillCheck) =>
-        disabled ? check.status === "Include" : selected.has(check.id);
+        showApproval ? check.status === "Include" : selected.has(check.id);
     const selectedCount = assesseeChecks.filter(isChecked).length;
 
     const hasChecks = assesseeChecks.length > 0;
