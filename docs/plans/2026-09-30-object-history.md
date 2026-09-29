@@ -149,7 +149,7 @@ curr?: string }`, plus the helpers it uses (`formatFieldPath(path, labels?)`,
     non-date string), prefs being honoured, and `objectTypeLabel` for a known, an overridden
     and an unknown type; `npm run check` passes.
 
-- [ ] **2. History registry, output schema and read service**
+- [x] **2. History registry, output schema and read service** — `feat(history): add object history registry and read service` + `test(history): cover unresolved ref types and use log entry id factories`
   - **Files:** `src/lib/schemas/object-history.ts` (new), `src/server/services/object-history.ts`
     (new), `src/server/services/object-history.test.ts` (new).
   - **Do:** In the schema file: `HistoryObjects` (the registry in Decisions: `permissions:

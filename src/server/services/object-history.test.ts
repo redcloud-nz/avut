@@ -7,9 +7,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import type { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
-import { LogBatchId, LogObjectType } from "@/lib/schemas/log-entry";
+import { LogBatchId, LogEntryId, LogEntryObjectId, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { UserId } from "@/lib/schemas/user";
@@ -32,6 +33,7 @@ describe("ObjectHistory.list", () => {
         purgedMembership: TeamMembershipId.create(),
         orgMembership: nanoId16(),
         batch: LogBatchId.create(),
+        skillPackage: SkillPackageId.create(),
     };
 
     const db = createMockPrisma();
@@ -69,7 +71,7 @@ describe("ObjectHistory.list", () => {
         const { refs = [], organizationId = T.org, userId = T.user, changes = [], ...rest } = entry;
         await db.logEntry.create({
             data: {
-                id: nanoId16(),
+                id: LogEntryId.create(),
                 scope: "organization",
                 organizationId,
                 userId,
@@ -78,12 +80,16 @@ describe("ObjectHistory.list", () => {
                 objects: {
                     create: [
                         {
-                            id: nanoId16(),
+                            id: LogEntryObjectId.create(),
                             objectType: entry.objectType,
                             objectId: entry.objectId,
                             role: "primary",
                         },
-                        ...refs.map((ref) => ({ id: nanoId16(), role: "context", ...ref })),
+                        ...refs.map((ref) => ({
+                            id: LogEntryObjectId.create(),
+                            role: "context",
+                            ...ref,
+                        })),
                     ],
                 },
             },
@@ -174,12 +180,13 @@ describe("ObjectHistory.list", () => {
             objectType: "Person",
             objectId: T.person,
         });
-        // Nothing to do with the asked-for person.
+        // Nothing to do with the asked-for person. Its ref is of a type that isn't resolved.
         await log({
             sequence: SEQ.unrelated,
             action: "Update",
             objectType: "Person",
             objectId: T.otherPerson,
+            refs: [{ objectType: "SkillPackage", objectId: T.skillPackage }],
         });
     });
 
@@ -302,6 +309,20 @@ describe("ObjectHistory.list", () => {
     });
 
     it("keeps refs of other types by id", async () => {
+        const { entries } = await ObjectHistory.list(ctx, {
+            objectType: "Person",
+            objectId: T.otherPerson,
+            relatedTypes: allTypes,
+            limit: 50,
+        });
+
+        expect(entries.map((e) => e.sequence)).toEqual([SEQ.unrelated]);
+        expect(entries[0].refs).toEqual([
+            { objectType: "SkillPackage", role: "context", objectId: T.skillPackage },
+        ]);
+    });
+
+    it("resolves a Person ref on a Team's history", async () => {
         const { entries } = await ObjectHistory.list(ctx, {
             objectType: "Team",
             objectId: T.team,
