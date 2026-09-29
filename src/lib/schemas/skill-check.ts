@@ -81,12 +81,15 @@ export const SKILL_CHECK_STATUS_LABELS: Record<string, string> = {
     Exclude: "Excluded",
 };
 
+/** One selectable result value with the org's label for it. */
+export type SkillCheckResultOption = { value: SkillCheckResultValue; label: string };
+
 /**
  * The org's enabled result values, in fixed app-wide order, with their configured labels.
  */
 export function getEnabledSkillCheckResultOptions(
     settings: OrganizationSettings,
-): { value: SkillCheckResultValue; label: string }[] {
+): SkillCheckResultOption[] {
     const results = settings.modules["skill-track"].results;
     return SKILL_CHECK_RESULT_VALUES.filter((value) => results[value].enabled).map((value) => ({
         value,

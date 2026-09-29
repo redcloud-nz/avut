@@ -251,19 +251,24 @@ modes over one dialog. Every tap commits a single check atomically.
   - **Done when:** `npm run check` passes and existing dialogs are unchanged (the default is
     unchanged). Visual check at the checkpoint.
 
-- [ ] **4. `SkillTrack_RecordCheckDialog`** `visual`
+- [x] **4. `SkillTrack_RecordCheckDialog`** `visual` — feat(skill-track): add SkillTrack_RecordCheckDialog
   - **Files:** `src/components/skill-track/record-check-dialog.tsx` (new)
   - **Do:** A controlled dialog. It doesn't follow the `?action=` recipes, but read
     `docs/patterns/mutation-dialog.md` for header/body/footer structure and "form state
     lives in the child". Props: `open`, `onOpenChange`,
-    `initialDensity: "compact" | "expanded"`, `skillName`, `personName`,
-    `current: { result, notes } | null`, `resultOptions` (from
-    `getEnabledSkillCheckResultOptions`), `onRecord({ result, notes })` and `onDelete()`. The parent supplies the last two from `useSessionCheckRecorder`,
+    `initialDensity: "compact" | "expanded"`, `targetKey` (an opaque string for the
+    (assessee, skill) pair; the parent passes `sessionCheckKey(assesseeId, skillId)`),
+    `skillName`, `personName`, `current: { result, notes } | null`, `resultOptions`
+    (`SkillCheckResultOption[]`, from `getEnabledSkillCheckResultOptions`), `resultLabel`
+    (`(value) => string`; the parent passes `getSkillCheckResultLabel(organization.settings, value)`,
+    used to label a current result the org has since disabled), `onRecord({ result, notes })`
+    and `onDelete()`. The parent supplies the last two from `useSessionCheckRecorder`,
     so the dialog holds no mutation itself.
     - `DialogContent mobile="sheet"` at the default size. The title is the skill name and
       the description the person name.
-    - The body is a child component keyed on the target, so density and staged state reset
-      on every open. It holds `density`, `stagedResult` and `stagedNotes`.
+    - The body is a child component keyed on `targetKey`. It holds `density`, `stagedResult`
+      and `stagedNotes`. Radix unmounting the content on close is what resets them on every
+      reopen; the key covers the target changing while the dialog stays open.
     - **The close animation:** the parent keeps `open` separate from `target`. Closing sets
       `open` false and leaves `target` in place, so the title and grid don't go blank during
       Radix's exit animation. The next open replaces `target`. Spell this out in task 5's
@@ -303,7 +308,9 @@ modes over one dialog. Every tap commits a single check atomically.
       `mutation.reset()` in the switch handler, and the navbar `SaveStatusIndicator`. Add
       `useSessionCheckRecorder`, a `target` state and one `SkillTrack_RecordCheckDialog`,
       rendered once at the bottom of the recording column. It uses a `dialogOpen` boolean
-      next to `target` (see task 4, "The close animation"). At the top level, call
+      next to `target` (see task 4, "The close animation"). Pass it
+      `targetKey={sessionCheckKey(target.assesseeId, target.skillId)}` and
+      `resultLabel={(value) => getSkillCheckResultLabel(organization.settings, value)}`. At the top level, call
       `usePendingChecks(sessionId)` once. `renderRow` reads the saved check from
       `skillChecks` and the pending value from that map, and passes both as props. Hard-code
       `mode="dialog"` until task 6. The dialog's `current` is looked up from `skillChecks`

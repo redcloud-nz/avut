@@ -22,15 +22,14 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
-    defaultSkillCheckResultLabel,
     SKILL_CHECK_RESULT_VALUES,
     SkillCheckResultValue,
+    type SkillCheckResultOption,
 } from "@/lib/schemas/skill-check";
 
 const FAIL_TIERS: readonly SkillCheckResultValue[] = ["LowFail", "Fail", "HighFail"];
 const PASS_TIERS: readonly SkillCheckResultValue[] = ["WeakPass", "Pass", "StrongPass"];
 
-type ResultOption = { value: SkillCheckResultValue; label: string };
 type CheckValue = { result: SkillCheckResultValue; notes: string };
 
 export type RecordCheckDensity = "compact" | "expanded";
@@ -40,12 +39,22 @@ interface RecordCheckDialogProps {
     onOpenChange: (open: boolean) => void;
     /** Which state the dialog opens in. The body can switch compact → expanded in place. */
     initialDensity: RecordCheckDensity;
+    /**
+     * Opaque id of the (assessee, skill) pair, e.g. `sessionCheckKey(assesseeId, skillId)`.
+     * Changing it while the dialog is open resets the staged state.
+     */
+    targetKey: string;
     skillName: string;
     personName: string;
     /** The caller's saved check for this assessee and skill, or null if there isn't one. */
     current: CheckValue | null;
     /** The org's enabled results, from `getEnabledSkillCheckResultOptions`. */
-    resultOptions: ResultOption[];
+    resultOptions: SkillCheckResultOption[];
+    /**
+     * The org's label for any result, enabled or not (`getSkillCheckResultLabel`). Used for a
+     * current result the org has since disabled, which `resultOptions` leaves out.
+     */
+    resultLabel: (value: SkillCheckResultValue) => string;
     onRecord: (value: CheckValue) => void;
     onDelete: () => void;
 }
@@ -66,10 +75,12 @@ export function SkillTrack_RecordCheckDialog({
     open,
     onOpenChange,
     initialDensity,
+    targetKey,
     skillName,
     personName,
     current,
     resultOptions,
+    resultLabel,
     onRecord,
     onDelete,
 }: RecordCheckDialogProps) {
@@ -81,12 +92,13 @@ export function SkillTrack_RecordCheckDialog({
                     <DialogDescription>{personName}</DialogDescription>
                 </DialogHeader>
                 <RecordCheck_Body
-                    // Radix remounts the content on every open; the key also resets the staged
-                    // state if the target changes while the dialog stays open.
-                    key={`${personName}\u0000${skillName}`}
+                    // Radix unmounts the content on close, which resets the body on every reopen.
+                    // The key covers the target changing while the dialog stays open.
+                    key={targetKey}
                     initialDensity={initialDensity}
                     current={current}
                     resultOptions={resultOptions}
+                    resultLabel={resultLabel}
                     onRecord={onRecord}
                     onDelete={onDelete}
                     onClose={() => onOpenChange(false)}
@@ -100,12 +112,13 @@ function RecordCheck_Body({
     initialDensity,
     current,
     resultOptions,
+    resultLabel,
     onRecord,
     onDelete,
     onClose,
 }: Pick<
     RecordCheckDialogProps,
-    "initialDensity" | "current" | "resultOptions" | "onRecord" | "onDelete"
+    "initialDensity" | "current" | "resultOptions" | "resultLabel" | "onRecord" | "onDelete"
 > & { onClose: () => void }) {
     const [density, setDensity] = useState<RecordCheckDensity>(initialDensity);
     const [stagedResult, setStagedResult] = useState<SkillCheckResultValue | null>(
@@ -113,7 +126,7 @@ function RecordCheck_Body({
     );
     const [stagedNotes, setStagedNotes] = useState(current?.notes ?? "");
 
-    const rows = groupResultOptions(resultOptions, current?.result ?? null);
+    const rows = groupResultOptions(resultOptions, current?.result ?? null, resultLabel);
 
     function handleResultClick(result: SkillCheckResultValue) {
         if (density === "expanded") {
@@ -207,12 +220,13 @@ function RecordCheck_Body({
  * included, even if the org has since disabled it, so an existing check keeps its active button.
  */
 function groupResultOptions(
-    resultOptions: ResultOption[],
+    resultOptions: SkillCheckResultOption[],
     currentResult: SkillCheckResultValue | null,
-): ResultOption[][] {
+    resultLabel: (value: SkillCheckResultValue) => string,
+): SkillCheckResultOption[][] {
     const labels = new Map(resultOptions.map((option) => [option.value, option.label]));
     if (currentResult !== null && !labels.has(currentResult)) {
-        labels.set(currentResult, defaultSkillCheckResultLabel(currentResult));
+        labels.set(currentResult, resultLabel(currentResult));
     }
 
     const options = SKILL_CHECK_RESULT_VALUES.flatMap((value) => {

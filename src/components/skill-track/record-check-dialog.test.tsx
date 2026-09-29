@@ -9,37 +9,50 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import type { SkillCheckResultOption, SkillCheckResultValue } from "@/lib/schemas/skill-check";
 
 import { SkillTrack_RecordCheckDialog } from "./record-check-dialog";
 
-type ResultOption = { value: SkillCheckResultValue; label: string };
-
-const OPTIONS: ResultOption[] = [
+const OPTIONS: SkillCheckResultOption[] = [
     { value: "NotTaught", label: "Not Taught" },
     { value: "Fail", label: "Not Yet" },
     { value: "Pass", label: "Competent" },
 ];
 
-function renderDialog(props: Partial<ComponentProps<typeof SkillTrack_RecordCheckDialog>> = {}) {
+/** The org's label for every result, including ones it hasn't enabled. */
+const ORG_LABELS: Partial<Record<SkillCheckResultValue, string>> = {
+    StrongPass: "Excellent",
+};
+const resultLabel = (value: SkillCheckResultValue) => ORG_LABELS[value] ?? value;
+
+type DialogProps = ComponentProps<typeof SkillTrack_RecordCheckDialog>;
+
+function renderDialog(props: Partial<DialogProps> = {}) {
     const handlers = {
         onOpenChange: vi.fn(),
         onRecord: vi.fn(),
         onDelete: vi.fn(),
     };
-    render(
+    const element = (overrides: Partial<DialogProps>) => (
         <SkillTrack_RecordCheckDialog
             open
             initialDensity="compact"
+            targetKey="alice::cpr"
             skillName="CPR"
             personName="Alice"
             current={null}
             resultOptions={OPTIONS}
+            resultLabel={resultLabel}
             {...handlers}
             {...props}
-        />,
+            {...overrides}
+        />
     );
-    return handlers;
+    const { rerender } = render(element({}));
+    return {
+        ...handlers,
+        rerender: (overrides: Partial<DialogProps>) => rerender(element(overrides)),
+    };
 }
 
 describe("SkillTrack_RecordCheckDialog", () => {
@@ -60,10 +73,10 @@ describe("SkillTrack_RecordCheckDialog", () => {
         expect(screen.queryByRole("button", { name: "Low Fail" })).not.toBeInTheDocument();
     });
 
-    it("still shows the current result when the org has since disabled it", () => {
+    it("still shows the current result, with the org's label, when the org has since disabled it", () => {
         renderDialog({ current: { result: "StrongPass", notes: "" } });
 
-        expect(screen.getByRole("button", { name: "Strong Pass" })).toHaveAttribute(
+        expect(screen.getByRole("button", { name: "Excellent" })).toHaveAttribute(
             "aria-pressed",
             "true",
         );
@@ -161,6 +174,29 @@ describe("SkillTrack_RecordCheckDialog", () => {
         renderDialog({ initialDensity: "expanded" });
 
         expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+    });
+
+    it("reopens compact with nothing staged after closing an expanded, edited dialog", async () => {
+        const user = userEvent.setup();
+        const { rerender } = renderDialog();
+
+        await user.click(screen.getByRole("button", { name: "Notes & more" }));
+        await user.click(screen.getByRole("button", { name: "Competent" }));
+        await user.type(screen.getByRole("textbox", { name: "Notes" }), "Draft");
+
+        rerender({ open: false });
+        rerender({ open: true, initialDensity: "compact" });
+
+        expect(screen.getByRole("button", { name: "Notes & more" })).toBeInTheDocument();
+        expect(screen.queryByRole("textbox", { name: "Notes" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Competent" })).toHaveAttribute(
+            "aria-pressed",
+            "false",
+        );
+
+        await user.click(screen.getByRole("button", { name: "Notes & more" }));
+        expect(screen.getByRole("textbox", { name: "Notes" })).toHaveValue("");
     });
 
     it("discards staged changes on Cancel", async () => {

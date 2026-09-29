@@ -9,15 +9,20 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import type { SkillCheckResultOption, SkillCheckResultValue } from "@/lib/schemas/skill-check";
 
 import { SkillTrack_AssessmentRow } from "./assessment-row";
 
 type Value = { result: SkillCheckResultValue | null; notes: string };
-type ResultOption = { value: SkillCheckResultValue; label: string };
 
 /** Owns `value` state so clicks produce visible, re-rendered changes like a real caller would see. */
-function Harness({ initial, resultOptions }: { initial: Value; resultOptions: ResultOption[] }) {
+function Harness({
+    initial,
+    resultOptions,
+}: {
+    initial: Value;
+    resultOptions: SkillCheckResultOption[];
+}) {
     const [value, setValue] = useState<Value>(initial);
     return (
         <SkillTrack_AssessmentRow
@@ -29,14 +34,14 @@ function Harness({ initial, resultOptions }: { initial: Value; resultOptions: Re
     );
 }
 
-const DEFAULT_OPTIONS: ResultOption[] = [
+const DEFAULT_OPTIONS: SkillCheckResultOption[] = [
     { value: "NotTaught", label: "Not Taught" },
     { value: "Fail", label: "Fail" },
     { value: "Pass", label: "Pass" },
     { value: "StrongPass", label: "Strong Pass" },
 ];
 
-const ALL_TIER_OPTIONS: ResultOption[] = [
+const ALL_TIER_OPTIONS: SkillCheckResultOption[] = [
     { value: "NotTaught", label: "Not Taught" },
     { value: "LowFail", label: "Low Fail" },
     { value: "Fail", label: "Fail" },
@@ -115,7 +120,7 @@ describe("SkillTrack_AssessmentRow", () => {
 
     it("skips disabled tiers, landing on the first enabled tier when the mid tier isn't enabled", async () => {
         const user = userEvent.setup();
-        const options: ResultOption[] = [
+        const options: SkillCheckResultOption[] = [
             { value: "LowFail", label: "Low Fail" },
             { value: "HighFail", label: "High Fail" },
         ];
@@ -132,7 +137,7 @@ describe("SkillTrack_AssessmentRow", () => {
 
     it("behaves as a plain toggle when only one tier in the family is enabled", async () => {
         const user = userEvent.setup();
-        const options: ResultOption[] = [{ value: "Fail", label: "Fail" }];
+        const options: SkillCheckResultOption[] = [{ value: "Fail", label: "Fail" }];
         render(<Harness initial={{ result: null, notes: "" }} resultOptions={options} />);
 
         const failButton = screen.getByRole("button", { name: "Not Yet Competent" });
