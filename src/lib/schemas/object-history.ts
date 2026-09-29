@@ -71,14 +71,17 @@ export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>
 };
 
 /**
- * A ref object type other than `Person`/`Team`. Branded so that `ref.objectType === "Person"`
- * narrows `ObjectHistoryRef` to its `Person` member — a plain `string` would swallow the literal
- * and leave `ref.person` unreachable without a cast.
+ * A ref object type other than `Person`/`Team`. It's a plain `string` in the inferred type, so
+ * `ref.objectType === "Person"` does not narrow `ObjectHistoryRef` — consumers narrow with
+ * `"person" in ref` / `"team" in ref` instead. The refine keeps a Person/Team ref from being
+ * built in this shape.
  */
 const otherRefObjectTypeSchema = z
     .string()
-    .refine((type) => type !== "Person" && type !== "Team", "Person/Team refs have their own shape")
-    .brand<"OtherRefObjectType">();
+    .refine(
+        (type) => type !== "Person" && type !== "Team",
+        "Person/Team refs have their own shape",
+    );
 
 export const OtherRefObjectType = {
     schema: otherRefObjectTypeSchema,

@@ -4,7 +4,7 @@
  */
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 
@@ -45,15 +45,16 @@ export interface ObjectHistoryProps {
  */
 export function ObjectHistory({ objectType, objectId, title = "History" }: ObjectHistoryProps) {
     const organization = useOrganization();
+    const titleId = useId();
 
     const { data, hasNextPage, fetchNextPage, isFetchingNextPage } = useSuspenseInfiniteQuery(
         trpc.history.listObjectHistory.infiniteQueryOptions(
             { organizationId: organization.id, objectType, objectId },
             {
                 getNextPageParam: (page) => page.nextCursor ?? undefined,
-                // No mutation effect invalidates history, so the 10-minute default would show a
-                // history that trails an edit made moments before.
-                staleTime: 0,
+                // No `staleTime` override: Suspense would clamp one below 1s anyway. Freshness
+                // comes from the page's RSC `prefetchInfinite`, which reruns on each navigation,
+                // and hydration overwrites the cache with its newer data.
             },
         ),
     );
@@ -63,7 +64,7 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
     return (
         <Saratoga.Root>
             <Saratoga.Header>
-                <Saratoga.Title>{title}</Saratoga.Title>
+                <Saratoga.Title id={titleId}>{title}</Saratoga.Title>
             </Saratoga.Header>
 
             {entries.length === 0 ? (
@@ -71,7 +72,10 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
                     No history recorded yet.
                 </p>
             ) : (
-                <ol className="divide-y divide-border rounded-lg border border-border">
+                <ol
+                    aria-labelledby={titleId}
+                    className="divide-y divide-border rounded-lg border border-border"
+                >
                     {entries.map((entry) => (
                         <ObjectHistoryEntryItem key={entry.id} entry={entry} />
                     ))}
@@ -82,8 +86,10 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
                 <div className="flex justify-center pt-2">
                     <Button
                         variant="outline"
-                        onClick={() => void fetchNextPage()}
-                        disabled={isFetchingNextPage}
+                        aria-busy={isFetchingNextPage}
+                        onClick={() => {
+                            if (!isFetchingNextPage) void fetchNextPage();
+                        }}
                     >
                         {isFetchingNextPage ? "Loading…" : "Load more"}
                     </Button>
@@ -149,11 +155,13 @@ function HistoryRef({ historyRef }: { historyRef: ObjectHistoryRef }) {
 
     // Narrowed with `in`, not on `objectType`: the fallback member's branded `string` is still
     // comparable to "Person"/"Team", so an `objectType` check doesn't discriminate the union.
+    // A null person/team was purged or isn't viewable by the caller.
+    const unavailable = <span className="text-muted-foreground">(unavailable)</span>;
     let target: ReactNode = null;
     if ("person" in historyRef) {
-        target = historyRef.person ? <PersonLink person={historyRef.person} /> : null;
+        target = historyRef.person ? <PersonLink person={historyRef.person} /> : unavailable;
     } else if ("team" in historyRef) {
-        target = historyRef.team ? <TeamLink team={historyRef.team} /> : null;
+        target = historyRef.team ? <TeamLink team={historyRef.team} /> : unavailable;
     }
 
     return (

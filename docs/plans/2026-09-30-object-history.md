@@ -106,9 +106,10 @@ object: who did what, when, and the field-level changes.
   shape: un-awaited `getServerQueryClient().prefetchInfiniteQuery(...)`). The history pages
   prefetch the entity getter (for the title and breadcrumbs) and the first history page. The
   server prefetch and the client call pass identical input (both omit `limit`), so the query
-  keys match. The client query sets `staleTime: 0`. The default is 10 minutes
-  (`src/trpc/query-client.ts`), and no mutation effect invalidates history, so without this a
-  cached history would trail an edit made moments before.
+  keys match. The client query keeps the default `staleTime` (a lower one would be clamped to
+  1s under Suspense anyway). No mutation effect invalidates history; freshness comes from the
+  page's RSC `prefetchInfinite` rerunning on each navigation, whose newer data hydration
+  writes over the cache.
 - **Change rendering is a pure formatter in `src/lib/`**, with no JSX, so it's unit-testable.
   `describeChange(change, labels?)` maps each `DiffChange` variant to a
   `{ field, kind, prev?, curr? }` descriptor. The component turns that into markup. Field names
@@ -212,14 +213,14 @@ z.number().int().optional(), limit: z.number().int().min(1).max(100).default(50)
     without `OrganizationMembership`, and one without `team:view` (`i3-editor`) passes one
     without `TeamMembership`/`Team`; `npm run check` passes.
 
-- [ ] **4. `ObjectHistory` component and the Person history page** · `visual`
+- [x] **4. `ObjectHistory` component and the Person history page** — `feat(history): add ObjectHistory component and the Person history page` + `fix(history): address review of the ObjectHistory component` · `visual`
   - **Files:** `src/components/history/object-history.tsx` (new), `src/trpc/server.tsx`
     (add `prefetchInfinite`), `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/personnel/[person_id]/history/page.tsx`
     (rewrite), `src/components/admin/personnel/person-history-content.tsx` (new),
     `src/components/admin/personnel/person-menu.tsx`.
   - **Do:** `<ObjectHistory objectType objectId />`, a client component using
     `useSuspenseInfiniteQuery(trpc.history.listObjectHistory.infiniteQueryOptions({ organizationId,
-objectType, objectId }, { getNextPageParam: (p) => p.nextCursor ?? undefined, staleTime: 0 }))`,
+objectType, objectId }, { getNextPageParam: (p) => p.nextCursor ?? undefined }))`,
     rendering the layout in Decisions, with changes rendered through `describeChange` (passing
     `FieldLabels[entry.objectType]` and `usePreferences().display`).
     Resolved `Person`/`Team` refs render as `PersonLink`/`TeamLink` (`docs/patterns/entity-link.md`).
