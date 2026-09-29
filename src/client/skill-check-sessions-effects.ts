@@ -41,13 +41,26 @@ function invalidateOtherSkillCheckLists(organizationId: string): MutationEffect[
 }
 
 /**
+ * Invalidates the org-wide reads that change with a session's status: the sessions list (its rows
+ * carry `status`) and the competency matrix, which counts only approved sessions' `Include` checks.
+ * Shared by `approveSession` and `reopenSession`.
+ */
+function invalidateSessionStatusReaders(organizationId: string): MutationEffect[] {
+    return [
+        invalidate(trpc.skillCheckSessions.listSessions.queryFilter({ organizationId })),
+        invalidate(trpc.skillChecks.getCompetencyMatrix.queryFilter({ organizationId })),
+    ];
+}
+
+/**
  * Cache effects for `skillCheckSessions` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
- * `createSession`'s response matches `getSession` exactly, so it writes wholesale. `updateSession`
- * and the session halves of `updateSessionAssessees`/`updateSessionSkills` return a bare
- * `SkillCheckSession` without the `assessors` extension `getSession` carries, so they merge into
- * whatever's already cached instead of replacing it. `updateSessionAssessors` merges its
+ * `createSession`'s response matches `getSession` exactly, so it writes wholesale.
+ * `approveSession`, `reopenSession`, `updateSession` and the session halves of
+ * `updateSessionAssessees`/`updateSessionSkills` return a bare `SkillCheckSession` without the
+ * `assessors` extension `getSession` carries, so they merge into whatever's already cached instead
+ * of replacing it. `updateSessionAssessors` merges its
  * `updatedAssessors` in as that `assessors` extension too. `setSessionSkillCheck` and
  * `deleteSessionSkillCheck` edit the caller's own-checks list in place, matching on the
  * (assessee, skill) pair, and invalidate the org's other skill-check lists.
@@ -70,6 +83,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                 sessionId: vars.sessionId,
             }),
         ),
+        ...invalidateSessionStatusReaders(vars.organizationId),
     ],
     createSession: (vars, { created }) => [
         write(
@@ -108,6 +122,24 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             return old?.some(matches) ? old.filter((check) => !matches(check)) : old;
         }),
         ...invalidateOtherSkillCheckLists(vars.organizationId),
+    ],
+    reopenSession: (vars, { updated }) => [
+        write(
+            trpc.skillCheckSessions.getSession.queryKey({
+                organizationId: vars.organizationId,
+                skillCheckSessionId: vars.skillCheckSessionId,
+            }),
+            (old) => (old ? { ...old, ...updated } : old),
+        ),
+        // reopenSession moves the session's Include checks to Pending server-side, so every
+        // cached listSkillChecks for it (ownChecksOnly included) refetches.
+        invalidate(
+            trpc.skillChecks.listSkillChecks.queryFilter({
+                organizationId: vars.organizationId,
+                sessionId: vars.skillCheckSessionId,
+            }),
+        ),
+        ...invalidateSessionStatusReaders(vars.organizationId),
     ],
     setSessionSkillCheck: (vars, saved) => [
         write(ownSessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId), (old) => {

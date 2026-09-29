@@ -1396,3 +1396,185 @@ describe("skillCheckSessions tombstones", () => {
         expect(await db.skillCheck.findUnique({ where: { id: T.doomedDeadCheck } })).toBeNull();
     });
 });
+
+describe("skillCheckSessions.reopenSession", () => {
+    // Dataset:
+    //   approvedSession → Include; includedCheck (skillA) Include, excludedCheck (skillB) Exclude
+    //   draftSession    → Draft, no checks
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        assessor: PersonId.create(),
+        assessee: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skillA: SkillId.create(),
+        skillB: SkillId.create(),
+        approvedSession: SkillCheckSessionId.create(),
+        includedCheck: SkillCheckId.create(),
+        excludedCheck: SkillCheckId.create(),
+        draftSession: SkillCheckSessionId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.assessor, "Assessor"],
+            [T.assessee, "Assessee"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [T.skillA, "Skill A"],
+            [T.skillB, "Skill B"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+
+        for (const [id, sessionNumber, status] of [
+            [T.approvedSession, 1, "Include"],
+            [T.draftSession, 2, "Draft"],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Session ${sessionNumber}`,
+                    sessionNumber,
+                    startsAt: new Date(),
+                    endsAt: new Date(),
+                    notes: "",
+                    status,
+                    assessors: { connect: [{ id: T.assessor }] },
+                    assessees: { connect: [{ id: T.assessee }] },
+                    skills: { connect: [{ id: T.skillA }, { id: T.skillB }] },
+                },
+            });
+        }
+
+        for (const [id, skillId, status] of [
+            [T.includedCheck, T.skillA, "Include"],
+            [T.excludedCheck, T.skillB, "Exclude"],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId: T.approvedSession,
+                    assesseeId: T.assessee,
+                    assessorId: T.assessor,
+                    skillId,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], skillCheckSession: ["approve"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function checkStatuses() {
+        const rows = await db.skillCheck.findMany({ where: { sessionId: T.approvedSession } });
+        return Object.fromEntries(rows.map((row) => [row.id, row.status]));
+    }
+
+    it("refuses a Draft session with CONFLICT", async () => {
+        await expect(
+            makeCaller().reopenSession({
+                organizationId: T.org,
+                skillCheckSessionId: T.draftSession,
+            }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("throws NOT_FOUND for an unknown session", async () => {
+        await expect(
+            makeCaller().reopenSession({
+                organizationId: T.org,
+                skillCheckSessionId: SkillCheckSessionId.create(),
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("moves the session to Draft and its Include checks to Pending, leaving Exclude, and logs Reopen", async () => {
+        const { updated } = await makeCaller().reopenSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.approvedSession,
+        });
+
+        expect(updated).toMatchObject({ id: T.approvedSession, status: "Draft" });
+        const session = await db.skillCheckSession.findUnique({
+            where: { id: T.approvedSession },
+        });
+        expect(session?.status).toBe("Draft");
+        expect(await checkStatuses()).toEqual({
+            [T.includedCheck]: "Pending",
+            [T.excludedCheck]: "Exclude",
+        });
+        const entries = await db.logEntry.findMany({
+            where: {
+                objectType: "SkillCheckSession",
+                objectId: T.approvedSession,
+                action: "Reopen",
+            },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("lets the reopened session be approved again", async () => {
+        const { updated } = await makeCaller().approveSession({
+            organizationId: T.org,
+            sessionId: T.approvedSession,
+            includedCheckIds: [T.excludedCheck],
+        });
+
+        expect(updated.status).toBe("Include");
+        expect(await checkStatuses()).toEqual({
+            [T.includedCheck]: "Exclude",
+            [T.excludedCheck]: "Include",
+        });
+    });
+});

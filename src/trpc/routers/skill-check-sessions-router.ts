@@ -9,7 +9,7 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
-import { ValidationError } from "@/lib/errors";
+import { ConflictError, ValidationError } from "@/lib/errors";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
@@ -548,6 +548,49 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         .query(async ({ ctx }) => ({
             nextSessionNumber: await SkillChecks.nextSessionNumber(ctx),
         })),
+
+    /**
+     * Reopens an approved session so its checks can be changed. In one transaction: moves the
+     * session back to `Draft`, moves its `Include` checks to `Pending` (so re-approval can start
+     * from the previous selection), and logs a `Reopen`. `Exclude` checks stay `Exclude`. The
+     * session's results leave the competency reports until it's approved again.
+     * @throws TRPCError(NOT_FOUND) if the session does not exist.
+     * @throws TRPCError(CONFLICT) if the session is not approved.
+     */
+    reopenSession: organizationProcedure({ skillCheckSession: ["approve"] })
+        .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
+        .output(z.object({ updated: SkillCheckSession.schema }))
+        .mutation(async ({ ctx, input: { skillCheckSessionId } }) => {
+            const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+            if (session.status !== "Include") {
+                throw new ConflictError(
+                    `SkillCheckSession(id=${skillCheckSessionId}) is not approved, so it can't be reopened.`,
+                );
+            }
+
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.skillCheckSession.update({
+                    where: { id: skillCheckSessionId, organizationId: ctx.organizationId },
+                    data: { status: "Draft" },
+                }),
+                ctx.prisma.skillCheck.updateMany({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        sessionId: skillCheckSessionId,
+                        status: "Include",
+                    },
+                    data: { status: "Pending" },
+                }),
+                ctx.logEvent({
+                    action: "Reopen",
+                    objectType: "SkillCheckSession",
+                    objectId: skillCheckSessionId,
+                    description: `Reopened session "${session.name}".`,
+                }),
+            ]);
+
+            return { updated: SkillCheckSession.fromRecord(updated) };
+        }),
 
     /**
      * Record the caller's check for an assessee and skill within a session: creates it, or
