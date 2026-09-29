@@ -14,6 +14,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
+import { SkillTrack_SessionConfigDialogs } from "@/components/skill-track/session-config-dialogs";
 import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
 import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "@/components/skill-track/update-session";
@@ -182,6 +183,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
+            <SkillTrack_SessionConfigDialogs sessionId={session.id} />
         </>
     );
 }

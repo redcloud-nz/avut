@@ -205,7 +205,7 @@ PersonRef[], updatedSession: SkillCheckSession }`.
     unticking and saving turns the alert into "Not an assigned assessor". `npm run check`
     passes.
 
-- [ ] **5. Session detail page opens the dialogs; retire the standalone pages** `visual`
+- [x] **5. Session detail page opens the dialogs; retire the standalone pages** `visual` — feat(skill-track): open session config dialogs from the detail page and retire the standalone pages
   - **Files:** `src/components/skill-track/session-contents.tsx`,
     `src/components/skill-track/session-content.tsx`, the detail `page.tsx` (conditional
     prefetch), `docs/modules/skills.md` (route table rows for the retired pages). **Delete** `…/sessions/[session_id]/personnel/page.tsx`,
