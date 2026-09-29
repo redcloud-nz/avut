@@ -471,7 +471,7 @@ describe("skillCheckSessions.listSessions", () => {
     });
 });
 
-describe("skillCheckSessions.updateSessionAssessors", () => {
+describe("skillCheckSessions.updateSessionAssessors + listEligibleAssessors", () => {
     // Dataset (every person is linked to an org user):
     //   assessor   → "skills-assessor"          → eligible
     //   multiRole  → "member,skills-assessor"   → eligible

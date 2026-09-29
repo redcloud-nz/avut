@@ -80,28 +80,25 @@ which the session detail page's Contents card opens.
 
 ## Tasks
 
-- [ ] **1. `listEligibleAssessors` + `updateSessionAssessors` (service, router, tests)**
+- [x] **1. `listEligibleAssessors` + `updateSessionAssessors` (service, router, tests)** — feat(skill-track): add listEligibleAssessors and updateSessionAssessors
   - **Files:** `src/server/services/skill-checks.ts`, `src/server/services/skill-checks.test.ts`,
     `src/trpc/routers/skill-check-sessions-router.ts`,
     `src/trpc/routers/skill-check-sessions-router.test.ts`, `src/trpc/messages.ts` (if a new
     message is needed)
-  - **Do:**
-    - `SkillChecks.listEligibleAssessors(ctx: OrgServiceContext): Promise<PersonRef[]>`:
-      `Active` personnel in `ctx.organizationId` with a linked `organizationUser` whose
-      `role` passes `hasAnyRoleWithPermissions(parseStoredRoles(role), { skillCheck:
+  - **Do:** - `SkillChecks.listEligibleAssessors(ctx: OrgServiceContext): Promise<PersonRef[]>`:
+    `Active` personnel in `ctx.organizationId` with a linked `organizationUser` whose
+    `role` passes `hasAnyRoleWithPermissions(parseStoredRoles(role), { skillCheck:
 ["create"] })`, sorted by name. Filter roles in JS after one Prisma query that selects
-      `id`, `name` and `organizationUser.role`.
-    - Router `listEligibleAssessors: organizationProcedure({ skillCheckSession: ["view"] })`,
-      with input `{}` (org id comes from the procedure) and output `z.array(PersonRef.schema)`.
-      It calls the service.
-    - Router `updateSessionAssessors: organizationProcedure({ skillCheckSession: ["update"] })`
-      mirrors `updateSessionAssessees`. The input is `{ skillCheckSessionId,
+    `id`, `name` and `organizationUser.role`. - Router `listEligibleAssessors: organizationProcedure({ skillCheckSession: ["view"] })`,
+    with input `{}` (org id comes from the procedure) and output `z.array(PersonRef.schema)`.
+    It calls the service. - Router `updateSessionAssessors: organizationProcedure({ skillCheckSession: ["update"] })`
+    mirrors `updateSessionAssessees`. The input is `{ skillCheckSessionId,
 addedPersonIds, removedPersonIds }`. It calls `SkillChecks.requireSessionById`, then
-      rejects any `addedPersonIds` entry not in `listEligibleAssessors` with a
-      `ValidationError` (`src/lib/errors.ts`, mapped by the service-error middleware). It
-      pairs the `connect`/`disconnect` update with `ctx.logEvent` (`arr_add`/`arr_del` on
-      `path: ["assessors"]`) in `ctx.prisma.$transaction([...])`
-      (`docs/patterns/transactional-writes.md`). The output is `{ updatedAssessors:
+    rejects any `addedPersonIds` entry not in `listEligibleAssessors` with a
+    `ValidationError` (`src/lib/errors.ts`, mapped by the service-error middleware). It
+    pairs the `connect`/`disconnect` update with `ctx.logEvent` (`arr_add`/`arr_del` on
+    `path: ["assessors"]`) in `ctx.prisma.$transaction([...])`
+    (`docs/patterns/transactional-writes.md`). The output is `{ updatedAssessors:
 PersonRef[], updatedSession: SkillCheckSession }`.
   - **Done when:** tests (following `.claude/rules/testing.md`) cover four things.
     (a) The service returns only Active, linked `skills-assessor` people. It excludes an
@@ -119,25 +116,22 @@ PersonRef[], updatedSession: SkillCheckSession }`.
   - **Do:** Follow `docs/patterns/mutation-dialog.md`, specifically the host-driven
     relationship dialog (Recipe C) and the "dialog that loads its own data" section
     (`DialogBoundary`, `useSuspenseQueries` in a child body, local state in the child, and
-    `onDone` to close).
-    - `SkillTrack_ChangeSessionPersonnel_Dialog({ sessionId, open, onOpenChange })`. The
-      body fetches `listSessionAssessees({ scope: "assigned" })`, `teams.listTeams` and
-      `teams.listTeamMemberships`, and renders the team → member collapsible checklist
-      moved from `session-personnel-content.tsx`. Changes are staged in a
-      `Record<PersonId, boolean>`. Save calls `updateSessionAssessees` with
-      `meta.effects: skillCheckSessionsEffects.updateSessionAssessees`, toasts on
-      success/error, and closes. A person on more than one team toggles in every section,
-      because state is keyed by person id as it is today.
-    - `SkillTrack_ChangeSessionSkills_Dialog`: the same shape, over
-      `listAssessableSkills` + `listSessionSkills({ scope: "assigned" })` and
-      `updateSessionSkills`. It carries the package → group → skill tree and the "Show
-      skill descriptions" toggle, a `Checkbox` in the dialog header or top of the body.
-    - `SkillTrack_SessionConfigDialogs({ sessionId })` owns
-      `useQueryState("action", parseAsStringLiteral(["change-personnel", "change-skills",
+    `onDone` to close). - `SkillTrack_ChangeSessionPersonnel_Dialog({ sessionId, open, onOpenChange })`. The
+    body fetches `listSessionAssessees({ scope: "assigned" })`, `teams.listTeams` and
+    `teams.listTeamMemberships`, and renders the team → member collapsible checklist
+    moved from `session-personnel-content.tsx`. Changes are staged in a
+    `Record<PersonId, boolean>`. Save calls `updateSessionAssessees` with
+    `meta.effects: skillCheckSessionsEffects.updateSessionAssessees`, toasts on
+    success/error, and closes. A person on more than one team toggles in every section,
+    because state is keyed by person id as it is today. - `SkillTrack_ChangeSessionSkills_Dialog`: the same shape, over
+    `listAssessableSkills` + `listSessionSkills({ scope: "assigned" })` and
+    `updateSessionSkills`. It carries the package → group → skill tree and the "Show
+    skill descriptions" toggle, a `Checkbox` in the dialog header or top of the body. - `SkillTrack_SessionConfigDialogs({ sessionId })` owns
+    `useQueryState("action", parseAsStringLiteral(["change-personnel", "change-skills",
 "change-assessors"] as const))`, with push on open and replace on close. It renders
-      the two dialogs, plus the assessors slot that task 3 fills. Export
-      `useSessionConfigAction()` so triggers elsewhere can `open("change-skills")` without
-      re-declaring the literals.
+    the two dialogs, plus the assessors slot that task 3 fills. Export
+    `useSessionConfigAction()` so triggers elsewhere can `open("change-skills")` without
+    re-declaring the literals.
   - **Done when:** each dialog opens from a URL (`?action=change-personnel`,
     `?action=change-skills`), is full-screen below `sm`, and has a scrolling body with a
     fixed footer. Cancel discards the staged ticks. Save persists them and closes.
@@ -149,22 +143,19 @@ PersonRef[], updatedSession: SkillCheckSession }`.
   - **Files:** `src/components/skill-track/change-session-assessors.tsx` (new),
     `src/components/skill-track/session-config-dialogs.tsx`,
     `src/client/skill-check-sessions-effects.ts`
-  - **Do:**
-    - Add an `updateSessionAssessors` effect. It writes `getSession` (merging
-      `updatedSession` and `assessors: updatedAssessors` into the cached value), writes
-      `listSessionAssessors({ scope: "assigned" })`, invalidates
-      `listSessionAssessors({ scope: "all" })`, and invalidates `listSessions` (its rows
-      carry `assessors`).
-    - `SkillTrack_ChangeSessionAssessors_Dialog`: the same shape as task 2. The body fetches
-      `listEligibleAssessors`, `listSessionAssessors({ scope: "assigned" })` and
-      `personnel.getPersonSelf`. It's a flat, name-sorted checklist of eligible ∪ assigned
-      people. Assigned-but-ineligible rows carry a muted "can't record checks" description.
-      If `personSelf` is currently assigned, can record (`useHasPermission({ skillCheck:
+  - **Do:** - Add an `updateSessionAssessors` effect. It writes `getSession` (merging
+    `updatedSession` and `assessors: updatedAssessors` into the cached value), writes
+    `listSessionAssessors({ scope: "assigned" })`, invalidates
+    `listSessionAssessors({ scope: "all" })`, and invalidates `listSessions` (its rows
+    carry `assessors`). - `SkillTrack_ChangeSessionAssessors_Dialog`: the same shape as task 2. The body fetches
+    `listEligibleAssessors`, `listSessionAssessors({ scope: "assigned" })` and
+    `personnel.getPersonSelf`. It's a flat, name-sorted checklist of eligible ∪ assigned
+    people. Assigned-but-ineligible rows carry a muted "can't record checks" description.
+    If `personSelf` is currently assigned, can record (`useHasPermission({ skillCheck:
 ["create"] })`, the same check the entry pages' `canRecordChecks` uses), and is staged
-      as unticked, it shows an inline warning `Alert` ("You won't be able to record checks in this session"). An empty
-      eligible list shows an `Empty` state explaining that assessors need the Skills
-      Assessor role and a linked person.
-    - Wire it into `SkillTrack_SessionConfigDialogs`.
+    as unticked, it shows an inline warning `Alert` ("You won't be able to record checks in this session"). An empty
+    eligible list shows an `Empty` state explaining that assessors need the Skills
+    Assessor role and a linked person. - Wire it into `SkillTrack_SessionConfigDialogs`.
   - **Done when:** it opens at `?action=change-assessors`, and the Task 1 procedures
     round-trip through it. `npm run check` passes. The live effect on the entry page is
     checked in task 4.

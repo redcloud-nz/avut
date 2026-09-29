@@ -47,6 +47,7 @@ export async function listEligibleAssessors(ctx: OrgServiceContext): Promise<Per
         where: {
             organizationId: ctx.organizationId,
             status: "Active",
+            organizationUser: { isNot: null },
         },
         select: {
             id: true,
