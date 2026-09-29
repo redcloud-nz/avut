@@ -104,6 +104,10 @@ of which owns its own padding:
   button, since there's no overlay left to tap; the footer buttons share the
   row). From `sm` up it's the usual centred modal. `AlertDialog` is different: it
   stays a compact bottom sheet below `sm`, as tall as its content.
+  `<DialogContent mobile="sheet">` gives a `Dialog` that bottom sheet too (the body
+  still scrolls past 92dvh). Use it for a short, one-tap dialog that isn't a
+  destructive confirm, such as picking a result, where taking over the screen
+  would be heavier than the task. A form keeps the full-screen default.
 - **A header directly above a footer, with nothing between them** (a plain
   confirm) needs no `DialogBody` — the header supplies the space below it.
 - **Dialogs that lay themselves out** (a `Command` picker with its own scrolling

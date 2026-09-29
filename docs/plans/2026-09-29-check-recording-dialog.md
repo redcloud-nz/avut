@@ -224,7 +224,7 @@ modes over one dialog. Every tap commits a single check atomically.
     `skill-check-sessions-effects` has or can have a test file cheaply. Otherwise it's
     covered by the task 5 visual check.
 
-- [ ] **3. `DialogContent` `mobile="sheet"` variant** `visual`
+- [x] **3. `DialogContent` `mobile="sheet"` variant** `visual` — feat(ui): add DialogContent mobile="sheet" bottom-sheet variant
   - **Files:** `src/components/ui/dialog.tsx`, `src/components/ui/README.md`,
     `docs/patterns/mutation-dialog.md`
   - **Do:** Add `mobile?: "fullscreen" | "sheet"` (default `"fullscreen"`) to

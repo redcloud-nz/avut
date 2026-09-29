@@ -45,6 +45,13 @@ function DialogOverlay({
  * centred modal that fades and zooms in. Same Radix primitive either way, so focus trap / Escape
  * / Back-button dismissal are identical.
  *
+ * `mobile="sheet"` swaps the full-screen takeover for a bottom sheet below `sm`, as tall as its
+ * content (capped at 92dvh, with the body scrolling past that), like `AlertDialogContent`. Use it
+ * for a short, one-tap dialog that isn't a destructive confirm (that's `AlertDialog`'s job).
+ * From `sm` up it's the same centred modal either way. The sheet's bottom safe-area inset comes
+ * from `DialogFooter`, or `DialogBody` when no footer follows it; a sheet that lays itself out
+ * without either must pad its own bottom with `env(safe-area-inset-bottom)`.
+ *
  * `DialogContent` owns no padding. Compose it from three regions — `DialogHeader`, `DialogBody`
  * and `DialogFooter` — each of which owns its own padding, so the body is the only part that
  * scrolls and the header and footer stay put at every size:
@@ -63,11 +70,14 @@ function DialogContent({
     children,
     showCloseButton = true,
     size = "default",
+    mobile = "fullscreen",
     ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
     showCloseButton?: boolean;
-    /** Width of the centred modal from `sm` up: 448 / 512 / 672px. Below `sm` it's full screen regardless. */
+    /** Width of the centred modal from `sm` up: 448 / 512 / 672px. Below `sm` it's full width regardless. */
     size?: "default" | "lg" | "xl";
+    /** Below `sm`: take over the whole screen (the default), or sit as a bottom sheet as tall as its content. */
+    mobile?: "fullscreen" | "sheet";
 }) {
     return (
         <DialogPortal>
@@ -76,7 +86,11 @@ function DialogContent({
                 data-slot="dialog-content"
                 className={cn(
                     // Full screen (below `sm`)
-                    "fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-popover text-sm text-popover-foreground outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
+                    "group/dialog-content fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-popover text-sm text-popover-foreground outline-none data-open:animate-in data-open:slide-in-from-bottom data-open:duration-200 data-closed:animate-out data-closed:slide-out-to-bottom data-closed:duration-150",
+                    // Bottom sheet (below `sm`, `mobile="sheet"`): drops the top edge so the sheet rests on the
+                    // bottom one, as tall as its content up to 92dvh. Every class is `max-sm:`-scoped so none
+                    // of them fight the centred-modal classes below.
+                    "max-sm:data-[mobile=sheet]:top-auto max-sm:data-[mobile=sheet]:max-h-[92dvh] max-sm:data-[mobile=sheet]:rounded-t-2xl max-sm:data-[mobile=sheet]:ring-1 max-sm:data-[mobile=sheet]:ring-foreground/10",
                     // Centred modal (`sm` and up)
                     "sm:top-1/2 sm:right-auto sm:bottom-auto sm:left-1/2 sm:max-h-[calc(100dvh-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:ring-1 sm:ring-foreground/10 sm:data-open:fade-in-0 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-open:duration-100 sm:data-closed:fade-out-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0 sm:data-closed:duration-100",
                     // Width (`sm` and up). The default is a bare `sm:max-w-md` so tailwind-merge still drops
@@ -86,6 +100,7 @@ function DialogContent({
                     className,
                 )}
                 data-size={size}
+                data-mobile={mobile}
                 {...props}
             >
                 {children}
@@ -120,6 +135,10 @@ function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
             data-slot="dialog-body"
             className={cn(
                 "flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto px-4 pb-4 [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]",
+                // In a bottom sheet with no footer after it, the body is the bottom edge, so its padding
+                // grows by the safe-area inset (a footer does this itself). Not `last:`, since the close
+                // button renders after the regions.
+                "max-sm:group-data-[mobile=sheet]/dialog-content:[&:not(:has(~[data-slot=dialog-footer]))]:pb-[max(1rem,env(safe-area-inset-bottom))]",
                 className,
             )}
             {...props}
@@ -134,7 +153,8 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
             className={cn(
                 // Supplies the space below it too (so a header directly above a footer, with no body,
                 // is still spaced), and the top padding grows by the safe-area inset when full screen
-                "flex shrink-0 flex-col gap-2 p-4 max-sm:pt-[max(1rem,env(safe-area-inset-top))]",
+                // (not in a bottom sheet, whose top edge isn't the screen's)
+                "flex shrink-0 flex-col gap-2 p-4 max-sm:pt-[max(1rem,env(safe-area-inset-top))] max-sm:group-data-[mobile=sheet]/dialog-content:pt-4",
                 className,
             )}
             {...props}
