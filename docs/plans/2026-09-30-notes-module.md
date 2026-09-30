@@ -238,7 +238,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
   - panes scroll independently
   - no console errors
 
-### - [ ] 7a. Notes module settings card
+### - [x] 7a. Notes module settings card
+
+`feat(settings): add Notes module settings card`
 
 **Files:** new `src/components/admin/organization-settings/notes-module-settings.tsx`, `src/components/admin/organization-settings/organization-settings-form.tsx`.
 
