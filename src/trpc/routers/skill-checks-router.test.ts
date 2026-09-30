@@ -927,7 +927,8 @@ describe("skillChecks — the session approval lock", () => {
     //                     share draftCheck's unique key; both by assessorPerson) and removedCheck,
     //                     plus pendingCheck (skill3, Pending, as after a reopen) and deadCheck
     //                     (skill4, Deleted), both by assessorPerson
-    //   approvedSession → Include, holds approvedCheck (by assessorPerson)
+    //   approvedSession → Include, holds approvedCheck, plus raceUpdateCheck (skill2) and
+    //                     raceDeleteCheck (skill3) for the lost-race tests, all by assessorPerson
     //   standaloneCheck → no session, by assessorPerson
     //   orphanedCheck   → no session, its assessor purged (assessorId null)
     // Each test writes to a check no other test reads, so they don't depend on order.
@@ -951,6 +952,8 @@ describe("skillChecks — the session approval lock", () => {
         pendingCheck: SkillCheckId.create(),
         deadCheck: SkillCheckId.create(),
         approvedCheck: SkillCheckId.create(),
+        raceUpdateCheck: SkillCheckId.create(),
+        raceDeleteCheck: SkillCheckId.create(),
         standaloneCheck: SkillCheckId.create(),
         orphanedCheck: SkillCheckId.create(),
     };
@@ -1012,6 +1015,8 @@ describe("skillChecks — the session approval lock", () => {
             [T.pendingCheck, T.draftSession, T.assessorPerson, T.skill3, "Pending"],
             [T.deadCheck, T.draftSession, T.assessorPerson, T.skill4, "Deleted"],
             [T.approvedCheck, T.approvedSession, T.assessorPerson, T.skill, "Include"],
+            [T.raceUpdateCheck, T.approvedSession, T.assessorPerson, T.skill2, "Include"],
+            [T.raceDeleteCheck, T.approvedSession, T.assessorPerson, T.skill3, "Include"],
             [T.standaloneCheck, null, T.assessorPerson, T.skill, "Draft"],
             [T.orphanedCheck, null, null, T.skill, "Draft"],
         ] as const) {
@@ -1039,6 +1044,31 @@ describe("skillChecks — the session approval lock", () => {
                 prisma: db,
             }),
         );
+    }
+
+    /**
+     * Fake a write racing an approval of approvedSession, which prisma-mock can't interleave: the
+     * up-front read sees it as Draft, as it would if the approval committed just after, and the
+     * write's session lock loses the race (P2025). The `.catch` re-reads the session for real and
+     * finds it approved. Returns the restore function.
+     */
+    function fakeLostApprovalRace() {
+        const findUnique = db.skillCheckSession.findUnique.bind(db.skillCheckSession);
+        const findSpy = vi
+            .spyOn(db.skillCheckSession, "findUnique")
+            .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => ({
+                ...(await findUnique(args)),
+                status: "Draft",
+            })) as unknown as typeof findUnique);
+        const updateSpy = vi
+            .spyOn(db.skillCheckSession, "update")
+            .mockRejectedValueOnce(
+                Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+            );
+        return () => {
+            findSpy.mockRestore();
+            updateSpy.mockRestore();
+        };
     }
 
     describe("createSkillCheck", () => {
@@ -1154,6 +1184,23 @@ describe("skillChecks — the session approval lock", () => {
             }
         });
 
+        it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
+            const restore = fakeLostApprovalRace();
+            try {
+                await expect(
+                    makeCaller().updateSkillCheck({
+                        organizationId: T.org,
+                        skillCheckId: T.raceUpdateCheck,
+                        update: { result: "Fail", notes: "Too late" },
+                    }),
+                ).rejects.toMatchObject({ code: "CONFLICT" });
+            } finally {
+                restore();
+            }
+            // No assertion on the check: prisma-mock doesn't roll back an array `$transaction`
+            // when one of its statements rejects, as Postgres does.
+        });
+
         it("throws NOT_FOUND for a Deleted check and leaves it alone", async () => {
             await expect(
                 makeCaller().updateSkillCheck({
@@ -1207,6 +1254,21 @@ describe("skillChecks — the session approval lock", () => {
                     skillCheckId: T.draftCheckToDelete,
                 }),
             ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
+            const restore = fakeLostApprovalRace();
+            try {
+                await expect(
+                    makeCaller().deleteSkillCheck({
+                        organizationId: T.org,
+                        skillCheckId: T.raceDeleteCheck,
+                    }),
+                ).rejects.toMatchObject({ code: "CONFLICT" });
+            } finally {
+                restore();
+            }
+            // As above, no assertion on the check: prisma-mock doesn't roll back.
         });
 
         it("hard-deletes a standalone check", async () => {

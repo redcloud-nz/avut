@@ -31,11 +31,13 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * and excluded.
      *
      * The comparison reads outside the transaction, so the transaction re-checks it: it fails if
-     * the session's `updatedAt` moved (any write to the session row: an exclusion saved, but also
-     * `updateSession` or an `updateSession{Assessees,Assessors,Skills}` write, so a name or notes
-     * edit trips it too) or a check was recorded or
-     * re-recorded since (a `Draft` check the stamps skipped remains). A write committing after the
-     * transaction's last check is the stray `Draft` `assertSessionUnlocked` accepts.
+     * the session's `updatedAt` moved (any write to the session row: every check write, which
+     * opens with `SkillChecks.lockUnapprovedSession`, so a check recorded while the Approve dialog
+     * is open refuses the approval; but also `updateSession` or an
+     * `updateSession{Assessees,Assessors,Skills}` write, so a name or notes edit trips it too), or
+     * a check was recorded, re-recorded or deleted since (a `Draft`, `Pending` or `Deleted` row
+     * the stamps and the purge skipped remains). A check write that comes after the approval finds
+     * the session approved in its own `lockUnapprovedSession` and is refused.
      * @throws TRPCError(NOT_FOUND) if the session does not exist.
      * @throws TRPCError(CONFLICT) if the session is already approved (reopen it first), or if
      * `includedCheckIds` isn't the session's saved set of included checks, up front or by the
@@ -59,9 +61,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             const { includedCount, excludedCount, sessionUpdatedAt, checksAsOf } =
                 await SkillChecks.assertApprovalMatchesSavedState(ctx, sessionId, includedCheckIds);
 
-            // Every live check was either confirmed or left out, so once the stamps below have
-            // run, a check still `Draft` or `Pending` is one the stamps skipped for changing after
-            // the comparison.
+            // Every live check was either confirmed or left out, so once the purge and the stamps
+            // below have run, a check still `Draft`, `Pending` or `Deleted` is one they skipped
+            // for changing after the comparison (`checksAsOf` covers the tombstones it read too).
             const unchangedSince = { updatedAt: { lte: checksAsOf } };
 
             await ctx.prisma
@@ -70,9 +72,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     // both commit and double-log: the loser's update matches no row, throws P2025
                     // and rolls its transaction back. Also conditional on the session's
                     // `updatedAt` as the comparison read it: any write to the session row bumps it
-                    // (`updateCheckExclusions` writes this row first, and `updateSession` and its
-                    // assessee/assessor/skill writes touch it too), so any of those since turns
-                    // this into P2025 too.
+                    // (every check write opens with `lockUnapprovedSession` on this row, and
+                    // `updateSession` and its assessee/assessor/skill writes touch it too), so any
+                    // of those since turns this into P2025 too.
                     ctx.prisma.skillCheckSession.update({
                         where: {
                             id: sessionId,
@@ -83,12 +85,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         data: { status: "Include" },
                     }),
                     // Purge before stamping, so the Exclude stamp can't turn a tombstone back
-                    // into a check.
+                    // into a check. Only tombstones the comparison saw: a check deleted since has
+                    // a later `updatedAt`, so it stays for the guard below rather than vanishing
+                    // from an approval that confirmed it.
                     ctx.prisma.skillCheck.deleteMany({
-                        where: { organizationId: ctx.organizationId, sessionId, status: "Deleted" },
+                        where: {
+                            organizationId: ctx.organizationId,
+                            sessionId,
+                            status: "Deleted",
+                            ...unchangedSince,
+                        },
                     }),
-                    // Both stamps skip a check recorded or re-recorded since the comparison (a
-                    // later `updatedAt`), leaving it `Draft` for the guard below.
+                    // Both stamps skip a check recorded, re-recorded or deleted since the
+                    // comparison (a later `updatedAt`), leaving it `Draft` or `Deleted` for the
+                    // guard below.
                     ctx.prisma.skillCheck.updateMany({
                         where: {
                             organizationId: ctx.organizationId,
@@ -107,15 +117,16 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         },
                         data: { status: "Exclude" },
                     }),
-                    // The guard: a check the stamps skipped fails the approval (P2025, rolled
-                    // back) rather than sitting unconfirmed in an approved session. A write that
-                    // commits after this point is the accepted stray `Draft` of
-                    // `assertSessionUnlocked`.
+                    // The guard: a check the stamps or the purge skipped fails the approval
+                    // (P2025, rolled back) rather than sitting unconfirmed in an approved session,
+                    // or dropping out of it unnoticed.
                     ctx.prisma.skillCheckSession.update({
                         where: {
                             id: sessionId,
                             organizationId: ctx.organizationId,
-                            skillChecks: { none: { status: { in: ["Draft", "Pending"] } } },
+                            skillChecks: {
+                                none: { status: { in: ["Draft", "Pending", "Deleted"] } },
+                            },
                         },
                         data: { status: "Include" },
                     }),
@@ -250,7 +261,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @throws TRPCError(BAD_REQUEST) if the caller has no linked person, or the assessee or skill
      * is not part of the session.
      * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
-     * @throws TRPCError(CONFLICT) if the session is approved.
+     * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
+     * runs.
      */
     // Same gate as `setSessionSkillCheck` (see there). `skills-assessor` holds no
     // `skillCheck: ["delete"]`, which is why clearing a check doesn't go through `deleteSkillCheck`.
@@ -274,17 +286,23 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             SkillChecks.assertSessionUnlocked(session);
             SkillChecks.assertSessionCheckTarget(session, { assesseeId, skillId });
 
-            const { count } = await ctx.prisma.skillCheck.updateMany({
-                where: {
-                    organizationId: ctx.organizationId,
-                    sessionId: skillCheckSessionId,
-                    assesseeId,
-                    skillId,
-                    assessorId,
-                    status: { not: "Deleted" },
-                },
-                data: { status: "Deleted" },
-            });
+            const [, { count }] = await ctx.prisma
+                .$transaction([
+                    // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                    ctx.prisma.skillCheck.updateMany({
+                        where: {
+                            organizationId: ctx.organizationId,
+                            sessionId: skillCheckSessionId,
+                            assesseeId,
+                            skillId,
+                            assessorId,
+                            status: { not: "Deleted" },
+                        },
+                        data: { status: "Deleted" },
+                    }),
+                ])
+                .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
 
             return { deleted: count > 0 };
         }),
@@ -683,7 +701,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @throws TRPCError(BAD_REQUEST) if the caller has no linked person, or the assessee or skill
      * is not part of the session.
      * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
-     * @throws TRPCError(CONFLICT) if the session is approved.
+     * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
+     * runs.
      */
     // Recording a check within a session the caller assesses needs both halves: a session update
     // and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has no `"update"`
@@ -720,28 +739,32 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 sessionId: skillCheckSessionId,
                 skillId,
             };
-            const [, check] = await ctx.prisma.$transaction([
-                // Only a tombstone gets a fresh `createdAt`; a live check keeps its "checked at".
-                ctx.prisma.skillCheck.updateMany({
-                    where: { ...key, organizationId: ctx.organizationId, status: "Deleted" },
-                    data: { createdAt: new Date() },
-                }),
-                // Upsert on the unique key, so a double tap can't race two creates.
-                ctx.prisma.skillCheck.upsert({
-                    where: { assesseeId_assessorId_sessionId_skillId: key },
-                    update: { result, notes, status: "Draft" },
-                    create: {
-                        id: SkillCheckId.create(),
-                        organizationId: ctx.organizationId,
-                        sessionId: skillCheckSessionId,
-                        assesseeId,
-                        assessorId,
-                        skillId,
-                        result,
-                        notes,
-                    },
-                }),
-            ]);
+            const [, , check] = await ctx.prisma
+                .$transaction([
+                    // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                    // Only a tombstone gets a fresh `createdAt`; a live check keeps its "checked at".
+                    ctx.prisma.skillCheck.updateMany({
+                        where: { ...key, organizationId: ctx.organizationId, status: "Deleted" },
+                        data: { createdAt: new Date() },
+                    }),
+                    // Upsert on the unique key, so a double tap can't race two creates.
+                    ctx.prisma.skillCheck.upsert({
+                        where: { assesseeId_assessorId_sessionId_skillId: key },
+                        update: { result, notes, status: "Draft" },
+                        create: {
+                            id: SkillCheckId.create(),
+                            organizationId: ctx.organizationId,
+                            sessionId: skillCheckSessionId,
+                            assesseeId,
+                            assessorId,
+                            skillId,
+                            result,
+                            notes,
+                        },
+                    }),
+                ])
+                .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
 
             return SkillCheck.fromRecord(check);
         }),
@@ -756,9 +779,10 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * check in the session (a stale view, most likely a check deleted since the page loaded).
      * @throws TRPCError(BAD_REQUEST) if a `skillCheckId` is repeated.
      */
-    // No `ctx.logEvent`, deliberately, as an exception to the rule that state changes are logged:
-    // the review page saves each tick as it's made, and logging every one would flood the log.
-    // `approveSession`'s entry records the outcome (how many checks were included and excluded).
+    // No `ctx.logEvent`, deliberately: these per-check exclusion writes aren't logged one by one.
+    // `approveSession`'s entry records the outcome, with how many checks were included and
+    // excluded. Skill check writes generally aren't logged yet either (#46; see
+    // `setSessionSkillCheck`).
     updateCheckExclusions: organizationProcedure({ skillCheckSession: ["approve"] })
         .input(
             z.object({

@@ -16,6 +16,7 @@ import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
+import type { OrgServiceContext } from "@/server/services/service-context";
 import * as SkillChecks from "@/server/services/skill-checks";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
@@ -36,6 +37,25 @@ function rethrowSkillCheckGone(skillCheckId: string) {
             });
         }
         throw error;
+    };
+}
+
+/**
+ * A `.catch` handler for a session check's write, opened by `SkillChecks.lockUnapprovedSession`
+ * and guarded by `status: { not: "Deleted" }`: either statement can raise `P2025`, so the session's
+ * status tells which lost its race. Approved since the pre-check: the lock's `CONFLICT`. Otherwise
+ * the check was tombstoned since: `NOT_FOUND`, as `rethrowSkillCheckGone`.
+ */
+function rethrowSessionCheckRace(
+    ctx: OrgServiceContext,
+    sessionId: SkillCheckSessionId,
+    skillCheckId: string,
+) {
+    return async (error: unknown): Promise<never> => {
+        if (!isPrismaRecordNotFound(error)) throw error;
+        const session = await SkillChecks.requireSessionById(ctx, sessionId);
+        if (session.status === "Include") throw SkillChecks.sessionLockedError(sessionId);
+        return rethrowSkillCheckGone(skillCheckId)(error);
     };
 }
 
@@ -90,7 +110,8 @@ export const skillChecksRouter = createTrpcRouter({
      * session is tombstoned (`status: "Deleted"`) for `approveSession`/`deleteSession` to purge;
      * a standalone check is removed outright.
      * @throws TRPCError(NOT_FOUND) if the check does not exist or is already `Deleted`.
-     * @throws TRPCError(CONFLICT) if the check belongs to an approved session.
+     * @throws TRPCError(CONFLICT) if the check belongs to an approved session, up front or by the
+     * time the write runs.
      */
     // No ownership check: `skillCheck: ["delete"]` is an admin grant for removing erroneous checks.
     deleteSkillCheck: organizationProcedure({ skillCheck: ["delete"] })
@@ -113,23 +134,27 @@ export const skillChecksRouter = createTrpcRouter({
                 });
             }
             if (existing.sessionId) {
-                const session = await SkillChecks.requireSessionById(
-                    ctx,
-                    SkillCheckSessionId.schema.parse(existing.sessionId),
-                );
+                const sessionId = SkillCheckSessionId.schema.parse(existing.sessionId);
+                const session = await SkillChecks.requireSessionById(ctx, sessionId);
                 SkillChecks.assertSessionUnlocked(session);
 
-                // Guarded so a concurrent delete loses as NOT_FOUND rather than re-tombstoning.
-                await ctx.prisma.skillCheck
-                    .update({
-                        where: {
-                            id: skillCheckId,
-                            organizationId: ctx.organizationId,
-                            status: { not: "Deleted" },
-                        },
-                        data: { status: "Deleted" },
-                    })
-                    .catch(rethrowSkillCheckGone(skillCheckId));
+                await ctx.prisma
+                    .$transaction([
+                        // Serializes with `approveSession`; see
+                        // `SkillChecks.lockUnapprovedSession`.
+                        SkillChecks.lockUnapprovedSession(ctx, sessionId),
+                        // Guarded so a concurrent delete loses as NOT_FOUND rather than
+                        // re-tombstoning.
+                        ctx.prisma.skillCheck.update({
+                            where: {
+                                id: skillCheckId,
+                                organizationId: ctx.organizationId,
+                                status: { not: "Deleted" },
+                            },
+                            data: { status: "Deleted" },
+                        }),
+                    ])
+                    .catch(rethrowSessionCheckRace(ctx, sessionId, skillCheckId));
             } else {
                 await ctx.prisma.skillCheck.delete({
                     where: {
@@ -475,7 +500,8 @@ export const skillChecksRouter = createTrpcRouter({
      * @throws TRPCError(NOT_FOUND) if the check does not exist or is `Deleted`.
      * @throws TRPCError(FORBIDDEN) if the caller did not record the check, or is no longer an
      * assigned assessor of its session.
-     * @throws TRPCError(CONFLICT) if the check belongs to an approved session.
+     * @throws TRPCError(CONFLICT) if the check belongs to an approved session, up front or by the
+     * time the write runs.
      */
     updateSkillCheck: organizationProcedure({ skillCheck: ["create"] })
         .input(
@@ -517,26 +543,32 @@ export const skillChecksRouter = createTrpcRouter({
                 });
             }
 
-            if (existing.sessionId) {
-                const { session } = await SkillChecks.requireSessionAssessor(
-                    ctx,
-                    SkillCheckSessionId.schema.parse(existing.sessionId),
-                );
-                SkillChecks.assertSessionUnlocked(session);
-            }
-
             // Guarded so a delete landing after the pre-check isn't revived as `Draft` (with a
             // stale `createdAt`); the lost race surfaces as NOT_FOUND.
-            const record = await ctx.prisma.skillCheck
-                .update({
-                    where: {
-                        id: skillCheckId,
-                        organizationId: ctx.organizationId,
-                        status: { not: "Deleted" },
-                    },
-                    data: existing.sessionId ? { ...update, status: "Draft" } : update,
-                })
-                .catch(rethrowSkillCheckGone(skillCheckId));
+            const where = {
+                id: skillCheckId,
+                organizationId: ctx.organizationId,
+                status: { not: "Deleted" as const },
+            };
+
+            if (!existing.sessionId) {
+                const record = await ctx.prisma.skillCheck
+                    .update({ where, data: update })
+                    .catch(rethrowSkillCheckGone(skillCheckId));
+                return SkillCheck.fromRecord(record);
+            }
+
+            const sessionId = SkillCheckSessionId.schema.parse(existing.sessionId);
+            const { session } = await SkillChecks.requireSessionAssessor(ctx, sessionId);
+            SkillChecks.assertSessionUnlocked(session);
+
+            const [, record] = await ctx.prisma
+                .$transaction([
+                    // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                    SkillChecks.lockUnapprovedSession(ctx, sessionId),
+                    ctx.prisma.skillCheck.update({ where, data: { ...update, status: "Draft" } }),
+                ])
+                .catch(rethrowSessionCheckRace(ctx, sessionId, skillCheckId));
 
             return SkillCheck.fromRecord(record);
         }),

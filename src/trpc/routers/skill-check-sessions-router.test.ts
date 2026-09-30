@@ -203,6 +203,30 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
         assesseeId: T.assessee,
     };
 
+    /**
+     * Fake a write racing an approval of approvedSession, which prisma-mock can't interleave: the
+     * up-front read sees it as Draft, as it would if the approval committed just after, and the
+     * write's session lock loses the race (P2025). Returns the restore function.
+     */
+    function fakeLostApprovalRace() {
+        const findUnique = db.skillCheckSession.findUnique.bind(db.skillCheckSession);
+        const findSpy = vi
+            .spyOn(db.skillCheckSession, "findUnique")
+            .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => ({
+                ...(await findUnique(args)),
+                status: "Draft",
+            })) as unknown as typeof findUnique);
+        const updateSpy = vi
+            .spyOn(db.skillCheckSession, "update")
+            .mockRejectedValueOnce(
+                Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+            );
+        return () => {
+            findSpy.mockRestore();
+            updateSpy.mockRestore();
+        };
+    }
+
     describe("setSessionSkillCheck", () => {
         it("creates the caller's check, then updates the same row", async () => {
             const caller = makeCaller(T.assessorUser);
@@ -298,6 +322,44 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             expect(check).toMatchObject({ result: "Pass", status: "Include" });
         });
 
+        it("bumps the session's updatedAt", async () => {
+            const before = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.session },
+            });
+            await new Promise((resolve) => setTimeout(resolve, 5));
+
+            await makeCaller(T.assessorUser).setSessionSkillCheck({
+                ...target,
+                skillId: T.skill1,
+                result: "Pass",
+                notes: "",
+            });
+
+            const after = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.session },
+            });
+            expect(after.updatedAt.getTime()).toBeGreaterThan(before.updatedAt.getTime());
+        });
+
+        it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
+            const restore = fakeLostApprovalRace();
+            try {
+                await expect(
+                    makeCaller(T.assessorUser).setSessionSkillCheck({
+                        ...target,
+                        skillCheckSessionId: T.approvedSession,
+                        skillId: T.skill2,
+                        result: "Fail",
+                        notes: "Too late",
+                    }),
+                ).rejects.toMatchObject({ code: "CONFLICT" });
+            } finally {
+                restore();
+            }
+            // No assertion on the checks: prisma-mock doesn't roll back an array `$transaction`
+            // when one of its statements rejects, as Postgres does.
+        });
+
         it("is refused for a role lacking skillCheck create", async () => {
             await expect(
                 makeCaller(T.assessorUser, {
@@ -373,6 +435,22 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             expect(
                 await db.skillCheck.findUnique({ where: { id: T.approvedCheck } }),
             ).not.toBeNull();
+        });
+
+        it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
+            const restore = fakeLostApprovalRace();
+            try {
+                await expect(
+                    makeCaller(T.assessorUser).deleteSessionSkillCheck({
+                        ...target,
+                        skillCheckSessionId: T.approvedSession,
+                        skillId: T.skill2,
+                    }),
+                ).rejects.toMatchObject({ code: "CONFLICT" });
+            } finally {
+                restore();
+            }
+            // As above, no assertion on the checks: prisma-mock doesn't roll back.
         });
 
         it("rejects a skill that is not in the session with BAD_REQUEST", async () => {
@@ -1397,7 +1475,14 @@ describe("skillCheckSessions tombstones", () => {
         expect(again).toMatchObject({ id: recorded.id, status: "Draft", notes: "Undo" });
     });
 
-    it("approveSession purges the session's Deleted rows before stamping", async () => {
+    it("approveSession purges the session's Deleted rows before stamping, even one newer than every live check", async () => {
+        // Left before the approval's comparison, but later than the live check: the comparison's
+        // `checksAsOf` covers it, so the purge takes it rather than the guard tripping on it.
+        await db.skillCheck.update({
+            where: { id: T.deadCheck },
+            data: { updatedAt: new Date(Date.now() + 1000) },
+        });
+
         await makeCaller().approveSession({
             organizationId: T.org,
             sessionId: T.approveSession,
@@ -1642,6 +1727,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
     //   staleSession    → Draft; staleDraft (assessorA) Draft + staleExcluded (assessorB) Exclude
     //   raceExclusionSession → Draft; exclusionPick (assessorA) Draft + exclusionOther (assessorB) Exclude
     //   raceRecordSession    → Draft; recordPick (assessorA) Draft + recordOther (assessorB) Exclude
+    //   raceDeleteSession    → Draft; deletePick (assessorA) Draft + deleteOther (assessorB) Exclude
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -1673,6 +1759,9 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
         raceRecordSession: SkillCheckSessionId.create(),
         recordPick: SkillCheckId.create(),
         recordOther: SkillCheckId.create(),
+        raceDeleteSession: SkillCheckSessionId.create(),
+        deletePick: SkillCheckId.create(),
+        deleteOther: SkillCheckId.create(),
     };
 
     const db = createMockPrisma();
@@ -1729,6 +1818,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             [T.staleSession, 6],
             [T.raceExclusionSession, 7],
             [T.raceRecordSession, 8],
+            [T.raceDeleteSession, 9],
         ] as const) {
             await db.skillCheckSession.create({
                 data: {
@@ -1761,6 +1851,8 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             [T.exclusionOther, T.raceExclusionSession, T.assessorB, "Exclude"],
             [T.recordPick, T.raceRecordSession, T.assessorA, "Draft"],
             [T.recordOther, T.raceRecordSession, T.assessorB, "Exclude"],
+            [T.deletePick, T.raceDeleteSession, T.assessorA, "Draft"],
+            [T.deleteOther, T.raceDeleteSession, T.assessorB, "Exclude"],
         ] as const;
         for (const [id, sessionId, assessorId, status] of checks) {
             await db.skillCheck.create({
@@ -1940,6 +2032,32 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
         // As above, only the stamps can be checked: the Exclude stamp skipped the re-recorded
         // check rather than excluding a result nobody saw.
         expect((await checkStatuses(T.raceRecordSession))[T.recordOther]).toBe("Draft");
+    });
+
+    it("refuses with CONFLICT when a confirmed check is deleted between the comparison and the commit", async () => {
+        const spy = interleaveAfterComparison(() =>
+            // What a delete does to the check, without the session write (tested on its own), so
+            // the refusal here comes from the final guard.
+            db.skillCheck.update({
+                where: { id: T.deletePick },
+                data: { status: "Deleted", updatedAt: new Date(Date.now() + 1000) },
+            }),
+        );
+        try {
+            await expect(
+                makeCaller().approveSession({
+                    organizationId: T.org,
+                    sessionId: T.raceDeleteSession,
+                    includedCheckIds: [T.deletePick],
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+        } finally {
+            spy.mockRestore();
+        }
+
+        // As above, only the purge and the stamps can be checked: the purge left the tombstone
+        // the comparison never saw, for the guard, rather than approving without the check.
+        expect((await checkStatuses(T.raceDeleteSession))[T.deletePick]).toBe("Deleted");
     });
 });
 
