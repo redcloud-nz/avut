@@ -43,7 +43,8 @@
   min-height: 0;
 }
 
-.mdxeditor-fill [contenteditable] {
+/* The root editable only: table cells hold nested editors, which must keep their own height. */
+.mdxeditor-fill > .mdxeditor-root-contenteditable > div > [contenteditable] {
   height: 100%;
 }
 

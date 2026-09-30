@@ -13,12 +13,19 @@
  * when nothing is selected, the detail when a record is.
  *
  * Switching records crossfades the detail pane: `Hermes.Detail` wraps its children in a
- * `ViewTransition` keyed on the selected segment (see `HermesDetailTransition`).
+ * `ViewTransition` keyed on the selected segment (see `HermesDetailTransition`). Two limits follow:
+ *
+ * - The record id must be the direct child segment of the layout that renders Hermes (e.g.
+ *   `notes/layout.tsx` above `notes/[note_id]`). Anything deeper doesn't change the key, so those
+ *   records swap without the crossfade.
+ * - The transition's `name` is fixed (`hermes-detail`), and a view-transition name must be unique
+ *   on screen, so there can be only one Hermes per screen.
  *
  * Suspense: `Hermes.List` has its own boundary. `Hermes.Detail` has none, and the route must not
  * add one with a `loading.tsx`: a fallback mounted under the new key would be what the crossfade
  * shows. Without one, a record navigation keeps the old record on screen until the new one is
- * ready, and a hard load falls back to `Std.SidebarInset`'s spinner.
+ * ready, and a hard load falls back to the nearest `loading.tsx` above the route (for org routes,
+ * `orgs/[slug]/loading.tsx`).
  */
 
 import { ComponentProps, Suspense } from "react";

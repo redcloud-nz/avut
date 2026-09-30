@@ -5,9 +5,9 @@
 
 "use client";
 
-import { PlusIcon } from "lucide-react";
+import { Loader2Icon, PlusIcon } from "lucide-react";
 import type { Route } from "next";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -117,10 +117,11 @@ export function NotesList({
                                 href={hrefFor(note.id)}
                                 aria-current={note.id === selectedId ? "page" : undefined}
                                 className={cn(
-                                    "flex flex-col gap-0.5 border-b px-4 py-3 hover:bg-muted/50",
+                                    "relative flex flex-col gap-0.5 border-b py-3 pr-8 pl-4 hover:bg-muted/50",
                                     "aria-[current=page]:bg-muted",
                                 )}
                             >
+                                <NoteRowPendingHint />
                                 <span className="truncate font-medium">{note.title}</span>
                                 <span className="truncate text-xs text-muted-foreground">
                                     updated {formatRelativeDateTime(note.updatedAt)}
@@ -134,5 +135,25 @@ export function NotesList({
                 </ul>
             )}
         </div>
+    );
+}
+
+/**
+ * A spinner at the right of a row while navigation to it is pending. Always rendered at a fixed
+ * size so nothing shifts; it fades in after a short delay, so fast switches don't flicker it.
+ * Must render inside the row's `<Link>`.
+ */
+function NoteRowPendingHint() {
+    const { pending } = useLinkStatus();
+
+    return (
+        <Loader2Icon
+            aria-hidden
+            data-pending={pending}
+            className={cn(
+                "absolute top-1/2 right-3 size-3.5 -translate-y-1/2 animate-spin text-muted-foreground",
+                "opacity-0 transition-opacity data-[pending=true]:opacity-100 data-[pending=true]:delay-150",
+            )}
+        />
     );
 }

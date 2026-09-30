@@ -6,10 +6,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ComponentProps } from "react";
+import { ComponentProps, useEffect } from "react";
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { organizationNotesEffects } from "@/client/organization-notes-effects";
 import {
@@ -28,6 +28,8 @@ import { route } from "@/lib/routes";
 import { OrganizationNoteData } from "@/lib/schemas/organization-note";
 import { trpc } from "@/trpc/client";
 
+import { rememberDeletedNote } from "./deleted-notes";
+
 /**
  * Confirms and permanently deletes an org note, then returns to the notes list. Host-driven: the
  * note's detail pane owns the `?action=delete` param and passes `open`/`onOpenChange`.
@@ -38,6 +40,7 @@ export function OrgNotes_DeleteNote_Dialog({
 }: ComponentProps<typeof AlertDialog> & { note: OrganizationNoteData }) {
     const organization = useOrganization();
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const mutation = useMutation(
         trpc.organizationNotes.deleteNote.mutationOptions({
@@ -59,6 +62,24 @@ export function OrgNotes_DeleteNote_Dialog({
             },
         }),
     );
+
+    // Once the delete has succeeded, and as this dialog unmounts (i.e. once the replace to the list
+    // has landed; any sooner and the still-open detail would react), record the note as deleted
+    // and drop its cached `getNote`. Back to the note's URL then says it was deleted, rather than
+    // showing it from the cache with Edit and Delete. See `deleted-notes.ts` for why both.
+    useEffect(() => {
+        if (!mutation.isSuccess) return;
+
+        return () => {
+            rememberDeletedNote(queryClient, organization.id, note.id);
+            queryClient.removeQueries({
+                queryKey: trpc.organizationNotes.getNote.queryKey({
+                    organizationId: organization.id,
+                    noteId: note.id,
+                }),
+            });
+        };
+    }, [mutation.isSuccess, queryClient, organization.id, note.id]);
 
     return (
         <AlertDialog {...props}>

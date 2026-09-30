@@ -49,7 +49,11 @@ export function HermesRoot({ children, className, ...props }: ComponentProps<"di
  * No `Suspense` boundary may sit between this and the record's content (so no `loading.tsx` for
  * the record route): a boundary mounted under the new key shows its fallback at once, and the
  * crossfade goes to the spinner. Without one, the navigation holds the old record until the new
- * one is ready.
+ * one is ready, and a hard load falls back to the nearest `loading.tsx` above the route
+ * (`orgs/[slug]/loading.tsx` for org routes).
+ *
+ * The record id must be the layout's direct child segment, or records swap without the crossfade;
+ * and the fixed `name` allows only one Hermes per screen. See `hermes.tsx`.
  */
 export function HermesDetailTransition({ children }: { children: ReactNode }) {
     const segment = useSelectedLayoutSegment();
