@@ -386,7 +386,13 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             });
 
             const result = await caller.deleteSessionSkillCheck({ ...target, skillId: T.skill2 });
-            expect(result).toEqual({ deleted: true });
+            expect(result).toEqual({
+                deleted: true,
+                check: expect.objectContaining({ id: recorded.id, status: "Deleted" }),
+            });
+            expect(new Date(result.check!.updatedAt).getTime()).toBeGreaterThanOrEqual(
+                new Date(recorded.updatedAt).getTime(),
+            );
 
             const remaining = await db.skillCheck.findMany({
                 where: { sessionId: T.session, assesseeId: T.assessee, skillId: T.skill2 },
@@ -405,6 +411,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             // Nothing live is left on the caller's key, so a second delete finds nothing.
             expect(await caller.deleteSessionSkillCheck({ ...target, skillId: T.skill2 })).toEqual({
                 deleted: false,
+                check: null,
             });
         });
 
@@ -414,7 +421,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 skillId: T.skill2,
             });
 
-            expect(result).toEqual({ deleted: false });
+            expect(result).toEqual({ deleted: false, check: null });
         });
 
         it("rejects a user who is not an assigned assessor with FORBIDDEN", async () => {
@@ -1464,6 +1471,7 @@ describe("skillCheckSessions tombstones", () => {
 
         expect(await caller.deleteSessionSkillCheck({ ...target, skillId: T.skillC })).toEqual({
             deleted: true,
+            check: expect.objectContaining({ id: recorded.id, status: "Deleted" }),
         });
         const again = await caller.setSessionSkillCheck({
             ...target,

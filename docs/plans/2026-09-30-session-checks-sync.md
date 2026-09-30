@@ -121,7 +121,7 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
 
     `npm run check` passes.
 
-- [ ] **2. `deleteSessionSkillCheck` returns the row it tombstoned**
+- [x] **2. `deleteSessionSkillCheck` returns the row it tombstoned** — feat(skill-track): return the tombstoned row from deleteSessionSkillCheck
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts`, its test, and `src/components/skill-track/use-session-check-recorder.ts` only if its types need it.
   - **Do:**
     - Extend the output to `{ deleted, check: SkillCheck | null }`.

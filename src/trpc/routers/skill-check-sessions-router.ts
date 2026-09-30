@@ -263,7 +263,11 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * re-record to revive; `approveSession` and `deleteSession` purge tombstones. The assessor is
      * the caller's linked person, derived server-side; another assessor's check on the same
      * assessee and skill is left alone.
-     * @returns `deleted: true` if a live check was deleted, `false` if there was none.
+     * @returns `deleted: true` if a live check was deleted, `false` if there was none. With
+     * `deleted: true`, `check` is the row as read back after the write, for the client's session
+     * cache; it's usually the tombstone, but it can be live again if the caller re-recorded it
+     * (from another device, say) between the write and the read, or `null` if the row went
+     * altogether. With `deleted: false`, `check` is `null`.
      * @throws TRPCError(NOT_FOUND) if the session does not exist.
      * @throws TRPCError(BAD_REQUEST) if the caller has no linked person, or the assessee or skill
      * is not part of the session.
@@ -284,7 +288,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 skillId: SkillId.schema,
             }),
         )
-        .output(z.object({ deleted: z.boolean() }))
+        .output(z.object({ deleted: z.boolean(), check: SkillCheck.schema.nullable() }))
         .mutation(async ({ ctx, input: { skillCheckSessionId, assesseeId, skillId } }) => {
             const { session, assessorId } = await SkillChecks.requireSessionAssessor(
                 ctx,
@@ -311,7 +315,22 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 ])
                 .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
 
-            return { deleted: count > 0 };
+            if (count === 0) return { deleted: false, check: null };
+
+            // Read after the transaction, so it can see a re-record that landed in between; the
+            // client's newer-wins merge handles either version.
+            const check = await ctx.prisma.skillCheck.findUnique({
+                where: {
+                    assesseeId_assessorId_sessionId_skillId: {
+                        assesseeId,
+                        assessorId,
+                        sessionId: skillCheckSessionId,
+                        skillId,
+                    },
+                },
+            });
+
+            return { deleted: true, check: check ? SkillCheck.fromRecord(check) : null };
         }),
 
     /**
