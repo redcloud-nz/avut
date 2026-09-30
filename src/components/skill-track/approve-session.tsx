@@ -32,22 +32,30 @@ import { trpc } from "@/trpc/client";
  * plain `Dialog` rather than an `AlertDialog`; host-driven (`open`/`onOpenChange` from the review
  * page, which owns `?action=approve` alongside `?action=reopen`).
  *
- * `onApproved` gets the time the approval was submitted, so the page can keep showing its
- * selection until checks fetched after that time (with the stamped statuses) arrive.
+ * The page keeps showing its selection while an approval is in flight and until checks fetched
+ * after it arrive: `onApproving` gets the submit time just before the mutation starts, and
+ * `onApproveSettled` reports how it ended. The mutation's cache effects (which write `getSession`
+ * as approved and await the `listSkillChecks` refetch) run before its `onSuccess`/`onSettled`, so
+ * the page can't wait for success to start showing its selection.
+ *
+ * The dialog stays open while its approval is pending (the page doesn't treat the session turning
+ * approved as a stale `?action=approve` meanwhile), and closes itself on success.
  */
 export function SkillsModule_ApproveSession_Dialog({
     session,
     includedCheckIds,
     includedCount,
     excludedCount,
-    onApproved,
+    onApproving,
+    onApproveSettled,
     ...props
 }: ComponentProps<typeof Dialog> & {
     session: SkillCheckSession;
     includedCheckIds: SkillCheckId[];
     includedCount: number;
     excludedCount: number;
-    onApproved?: (submittedAt: number) => void;
+    onApproving?: (submittedAt: number) => void;
+    onApproveSettled?: (ok: boolean) => void;
 }) {
     const organization = useOrganization();
 
@@ -59,6 +67,7 @@ export function SkillsModule_ApproveSession_Dialog({
                 console.error("Failed to approve session:", error);
                 toast.error(`Failed to approve session: ${error.message}`);
                 refetchSessionOnConflict(error);
+                onApproveSettled?.(false);
             },
             onSuccess() {
                 toast.success(
@@ -67,6 +76,7 @@ export function SkillsModule_ApproveSession_Dialog({
                     </>,
                 );
                 props.onOpenChange?.(false);
+                onApproveSettled?.(true);
             },
         }),
     );
@@ -79,20 +89,17 @@ export function SkillsModule_ApproveSession_Dialog({
     }, [props.open]);
 
     function handleApprove() {
-        const submittedAt = Date.now();
-        mutation.mutate(
-            {
-                organizationId: organization.id,
-                sessionId: session.id,
-                includedCheckIds,
-            },
-            { onSuccess: () => onApproved?.(submittedAt) },
-        );
+        onApproving?.(Date.now());
+        mutation.mutate({
+            organizationId: organization.id,
+            sessionId: session.id,
+            includedCheckIds,
+        });
     }
 
     return (
         <Dialog {...props}>
-            <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Approve session</DialogTitle>
                     <DialogDescription>

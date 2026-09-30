@@ -135,27 +135,48 @@ export function SkillTrack_SessionReview_Content({
               ? `Resolve ${unresolvedConflicts} ${unresolvedConflicts === 1 ? "conflict" : "conflicts"} to approve`
               : null;
 
-    // When this page last approved the session (the time it was submitted), set by the approve
-    // dialog's success. Right after it, `getSession` flips to `Include` before `listSkillChecks`
-    // has refetched the stamped statuses. Until checks newer than the approval arrive, show
-    // `selected` (what was just approved) rather than the stale pre-approval statuses, which
-    // would read as all unticked. Any other time, an approved session shows its stored statuses,
-    // background refetches included.
+    // Showing this page's own approval before its stamped checks arrive. The approve mutation's
+    // cache effects run before the dialog hears it succeeded: they write `getSession` as `Include`
+    // and then await the `listSkillChecks` refetch. So from submit until the mutation settles
+    // (`approving`), and after that until checks fetched since the submit (`approvedAt`) are in,
+    // show `selected` (what was just approved) rather than the pre-approval statuses, which would
+    // read as all unticked. Any other time, an approved session shows its stored statuses,
+    // background refetches included. A failed approval clears both: on a conflict the refetch
+    // brings in someone else's approval, which should show as stored.
+    const [approving, setApproving] = useState(false);
     const [approvedAt, setApprovedAt] = useState<number | null>(null);
-    // The page stays mounted across approve → reopen; forget the old approval once it's reopened.
-    if (!isApproved && approvedAt !== null) setApprovedAt(null);
-    const awaitingStampedChecks = approvedAt !== null && checksUpdatedAt < approvedAt;
+    function handleApproving(submittedAt: number) {
+        setApproving(true);
+        setApprovedAt(submittedAt);
+    }
+    function handleApproveSettled(ok: boolean) {
+        setApproving(false);
+        if (!ok) setApprovedAt(null);
+    }
+    // The page stays mounted across approve → reopen; forget the old approval once the session
+    // goes from approved to unapproved (not merely while it's unapproved, which would wipe the
+    // stamp of an approval still in flight).
+    const [prevIsApproved, setPrevIsApproved] = useState(isApproved);
+    if (isApproved !== prevIsApproved) {
+        setPrevIsApproved(isApproved);
+        if (!isApproved) setApprovedAt(null);
+    }
+    const awaitingStampedChecks =
+        approving || (approvedAt !== null && checksUpdatedAt < approvedAt);
     const showApproval = isApproved && !awaitingStampedChecks;
 
     // One `?action=` owner for both dialogs on this page: two literal parsers would each read the
     // other's value as `null`. Reopen opens only on an approved session; Approve only on one that
-    // isn't, and only when it isn't blocked. Both need the approve permission.
+    // isn't, and only when it isn't blocked. Both need the approve permission. While the dialog's
+    // own approval is pending, the session turning approved (or the stamped checks reshuffling the
+    // conflict picks) isn't a reason to close it; it closes itself on success.
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["reopen", "approve"] as const),
     );
     const canOpenReopen = canApprove && isApproved;
-    const canOpenApprove = canApprove && !isApproved && approveBlockedReason === null;
+    const canOpenApprove =
+        canApprove && (approving || (!isApproved && approveBlockedReason === null));
 
     function openAction(next: "reopen" | "approve") {
         void setAction(next, { history: "push" });
@@ -267,7 +288,8 @@ export function SkillTrack_SessionReview_Content({
                                     includedCheckIds={includedCheckIds}
                                     includedCount={includedCheckIds.length}
                                     excludedCount={excludedCount}
-                                    onApproved={setApprovedAt}
+                                    onApproving={handleApproving}
+                                    onApproveSettled={handleApproveSettled}
                                     open={canOpenApprove && action === "approve"}
                                     onOpenChange={(open) =>
                                         open ? openAction("approve") : closeAction("approve")
@@ -281,8 +303,11 @@ export function SkillTrack_SessionReview_Content({
                             <AlertTitle>Approved</AlertTitle>
                             <AlertDescription>
                                 <p>
-                                    This session has been approved and is locked. To change the
-                                    selection, reopen it with Reopen at the top of the page.
+                                    This session has been approved and is locked.{" "}
+                                    <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                                        To change the selection, reopen it with Reopen at the top of
+                                        the page.
+                                    </Protect>
                                 </p>
                             </AlertDescription>
                         </Alert>
