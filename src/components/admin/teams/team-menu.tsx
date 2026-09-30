@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { AdminModule_AddTeamMembership_Dialog } from "@/components/admin/teams/add-team-membership";
@@ -17,6 +18,7 @@ import {
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
 
 import { AdminModule_ArchiveTeam_Dialog } from "./archive-team";
@@ -43,7 +45,8 @@ const ACTIONS = [
 export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
 
-    const d4hEnabled = useOrganization().settings.integrations.d4h.enabled;
+    const organization = useOrganization();
+    const d4hEnabled = organization.settings.integrations.d4h.enabled;
     const canUpdate = useHasPermission({ team: ["update"] });
     const canDelete = useHasPermission({ team: ["delete"] });
     const linked = team.d4h !== null;
@@ -109,6 +112,23 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                 actions={actions}
                 category="Teams"
                 width="w-44"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/admin/teams/[team_id]/history", {
+                                        slug: organization.slug,
+                                        team_id: team.id,
+                                    })}
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
                 after={
                     // An unlinked archived team has no D4H action left to offer.
                     d4hEnabled &&

@@ -7,24 +7,18 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function SkillPackageBuilder_PackageHistory_Content({
-    skillPackageId,
-}: {
-    skillPackageId: SkillPackageId;
-}) {
+export function AdminModule_TeamHistory_Content({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
 
-    const { data: skillPackage } = useSuspenseQuery(
-        trpc.skillPackageBuilder.getPackage.queryOptions({
-            organizationId: organization.id,
-            skillPackageId,
-        }),
+    const { data: team } = useSuspenseQuery(
+        trpc.teams.getTeam.queryOptions({ organizationId: organization.id, teamId }),
     );
 
     return (
@@ -32,26 +26,29 @@ export function SkillPackageBuilder_PackageHistory_Content({
             <Std.Navbar
                 breadcrumbs={[
                     {
-                        label: "Skill Package Builder",
-                        href: route("/orgs/[slug]/skill-package-builder", {
-                            slug: organization.slug,
-                        }),
+                        label: "Admin",
+                        href: route("/orgs/[slug]/admin", { slug: organization.slug }),
                     },
                     {
-                        label: skillPackage.name,
-                        href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
+                        label: "Teams",
+                        href: route("/orgs/[slug]/admin/teams", { slug: organization.slug }),
+                    },
+                    {
+                        label: team.name,
+                        href: route("/orgs/[slug]/admin/teams/[team_id]", {
                             slug: organization.slug,
-                            package_id: skillPackageId,
+                            team_id: teamId,
                         }),
                     },
                     "History",
                 ]}
+                actions={<HelpButton slug="admin" />}
             />
             <Std.ScrollContainer>
                 <ObjectHistory
-                    objectType="SkillPackage"
-                    objectId={skillPackageId}
-                    title={`${skillPackage.name} — History`}
+                    objectType="Team"
+                    objectId={teamId}
+                    title={`${team.name} — History`}
                 />
             </Std.ScrollContainer>
         </>
