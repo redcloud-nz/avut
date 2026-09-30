@@ -19,11 +19,13 @@ import { usePreferences } from "@/hooks/use-preferences";
 import type { DiffValue } from "@/lib/diff";
 import {
     actionPastTenseLabel,
-    describeChange,
+    describeChanges,
     FieldLabels,
     formatDiffValue,
+    lowerFirst,
     objectTypeLabel,
     relatedActionPhrase,
+    summariseChanges,
     type ChangeDescriptor,
 } from "@/lib/diff-format";
 import { LogObjectType } from "@/lib/schemas/log-entry";
@@ -135,14 +137,21 @@ function ObjectHistoryEntryItem({
     const labels = entryType.success ? FieldLabels[entryType.data] : undefined;
 
     // A related entry with a phrase ("Added to team") names its refs after it, as the sentence's
-    // object ("Added to team Erehwon Logistics by …"); the linked refs are in the details. One
-    // without a phrase names its own type instead ("Updated organisation membership by …").
+    // object ("Added to team Erehwon Logistics — …"); the linked refs are in the details. One
+    // without a phrase names its own type instead ("Updated organisation membership — …").
     const phrase =
         entry.relation === "related"
             ? relatedActionPhrase(entry.objectType, pageType, entry.action)
             : undefined;
+    // An update to the object itself that only moved values in one list says so ("Added 26
+    // skills") instead of the bare "Updated".
+    const changeSummary =
+        entry.relation === "primary" && entry.action === "Update"
+            ? summariseChanges(entry.changes, labels)
+            : undefined;
     const verb =
         phrase ??
+        changeSummary ??
         (entry.relation === "related"
             ? `${actionPastTenseLabel(entry.action)} ${lowerFirst(objectTypeLabel(entry.objectType))}`
             : actionPastTenseLabel(entry.action));
@@ -150,7 +159,7 @@ function ObjectHistoryEntryItem({
     // standing in as its type ("Added to team team"); the details still list it as unavailable.
     const inlineNames = phrase ? entry.refs.flatMap((ref) => refName(ref) ?? []) : [];
 
-    // Plain text, read as a sentence: "Added to team Erehwon Logistics by Demo Owner", with only
+    // Plain text, read as a sentence: "Added to team Erehwon Logistics — Demo Owner", with only
     // the relative time after it. In a narrow list (the `<li>` is the container) it drops to the
     // bare action, "Added to team" / "Updated membership"; the body repeats the ref and actor, so
     // nothing is lost. Nothing in it is a link (the refs are linked in the body), so the whole
@@ -160,7 +169,7 @@ function ObjectHistoryEntryItem({
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             <span className="@2xl:hidden">{verb.replace(/ of$/, "")}</span>
             <span className="hidden @2xl:inline">
-                {[verb, ...inlineNames].join(" ")} by {actorText(entry)}
+                {[verb, ...inlineNames].join(" ")} — {actorText(entry)}
             </span>
             <time
                 dateTime={entry.timestamp.toISOString()}
@@ -206,18 +215,15 @@ function ObjectHistoryEntryItem({
 
                     {entry.changes.length > 0 && (
                         <ul className="space-y-0.5 text-sm">
-                            {entry.changes.map((change, index) => (
-                                <ChangeLine
-                                    key={index}
-                                    change={describeChange(change, {
-                                        labels,
-                                        prefs: preferences.display,
-                                        valueLabel: idValueLabel(
-                                            idFieldTarget(entry.objectType, change.path),
-                                            names,
-                                        ),
-                                    })}
-                                />
+                            {describeChanges(entry.changes, (change) => ({
+                                labels,
+                                prefs: preferences.display,
+                                valueLabel: idValueLabel(
+                                    idFieldTarget(entry.objectType, change.path),
+                                    names,
+                                ),
+                            })).map((line, index) => (
+                                <ChangeLine key={index} change={line} />
                             ))}
                         </ul>
                     )}
@@ -282,6 +288,8 @@ function ChangeLine({ change }: { change: ChangeDescriptor }) {
     const field = <span className="text-muted-foreground">{change.field}</span>;
     const prev = <span className="line-through decoration-muted-foreground">{change.prev}</span>;
     const curr = <span>{change.curr}</span>;
+    // A grouped add/remove line says how many values it stands for.
+    const count = change.count && <span className="text-muted-foreground"> ({change.count})</span>;
 
     let body: ReactNode;
     switch (change.kind) {
@@ -306,6 +314,7 @@ function ChangeLine({ change }: { change: ChangeDescriptor }) {
             body = (
                 <>
                     <span className="text-muted-foreground">added</span> {curr}
+                    {count}
                 </>
             );
             break;
@@ -313,6 +322,7 @@ function ChangeLine({ change }: { change: ChangeDescriptor }) {
             body = (
                 <>
                     <span className="text-muted-foreground">removed</span> {prev}
+                    {count}
                 </>
             );
             break;
@@ -341,12 +351,4 @@ function actorText(entry: ObjectHistoryEntry): string {
     return entry.actorName && entry.operationLabel
         ? `${withImpersonator} (${entry.operationLabel})`
         : withImpersonator;
-}
-
-/**
- * Lower-case a label's first letter for use mid-sentence ("Organisation membership" →
- * "organisation membership"), leaving a leading acronym alone ("D4H access token").
- */
-function lowerFirst(label: string): string {
-    return /^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label;
 }

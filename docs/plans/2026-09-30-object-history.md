@@ -323,11 +323,11 @@ objectType="SkillPackage" …>`, add the history prefetch to its page, and remov
     - `npm run check` passes, and on Session #2's history the skills and assessees show as
       names.
 
-- [ ] **8. Group array changes per field** · `visual` (in session, at the checkpoint)
+- [x] **8. Group array changes per field** — `feat(history): group list changes and summarise single-list updates` · `visual` (in session, at the checkpoint)
   - One line per field and direction: "Skills: added Knots, Radio procedure, … (26)", not a
     line per value. `src/lib/diff-format.ts` + the component.
 
-- [ ] **9. A specific sentence for single-list updates** · `visual` (in session, at the checkpoint)
+- [x] **9. A specific sentence for single-list updates** — `feat(history): group list changes and summarise single-list updates` · `visual` (in session, at the checkpoint)
   - An `Update` whose changes touch only one array field reads "Added 26 skills by …" /
     "Removed 2 assessors by …", both in the full sentence and in the short title.
 

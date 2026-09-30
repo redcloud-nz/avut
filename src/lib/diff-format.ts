@@ -33,6 +33,11 @@ export interface ChangeDescriptor {
     prev?: string;
     /** The formatted value after the change, where the change carries one. */
     curr?: string;
+    /**
+     * How many array values an "added"/"removed" line stands for, once `describeChanges` has
+     * grouped them. Absent on a line for a single change.
+     */
+    count?: number;
 }
 
 export interface DescribeChangeOptions {
@@ -176,6 +181,90 @@ export function describeChange(
                 curr: format(change.curr),
             };
     }
+}
+
+/**
+ * Maps an entry's changes to display lines, merging every array add (and every array remove) on
+ * the same field into one line: 26 `arr_add`s on `skills` become "Skills: added A, B, … (26)"
+ * rather than 26 lines. Each merged line sits where its field's first change did. Other kinds are
+ * one line per change. `options` is per change, so a caller can give id fields a `valueLabel`.
+ */
+export function describeChanges(
+    changes: DiffChange[],
+    options: (change: DiffChange) => DescribeChangeOptions = () => ({}),
+): ChangeDescriptor[] {
+    const lines: ChangeDescriptor[] = [];
+    const merged = new Map<string, { line: ChangeDescriptor; values: string[] }>();
+
+    for (const change of changes) {
+        const line = describeChange(change, options(change));
+        if (change.type !== "arr_add" && change.type !== "arr_del") {
+            lines.push(line);
+            continue;
+        }
+
+        const key = JSON.stringify([change.type, change.path]);
+        const value = (change.type === "arr_add" ? line.curr : line.prev) ?? "";
+        const group = merged.get(key);
+        if (group) {
+            group.values.push(value);
+        } else {
+            merged.set(key, { line, values: [value] });
+            lines.push(line);
+        }
+    }
+
+    for (const { line, values } of merged.values()) {
+        if (values.length === 1) continue;
+        const joined = values.join(", ");
+        if (line.kind === "added") line.curr = joined;
+        else line.prev = joined;
+        line.count = values.length;
+    }
+
+    return lines;
+}
+
+/**
+ * Lower-case a label's first letter for use mid-sentence ("Organisation membership" →
+ * "organisation membership"), leaving a leading acronym alone ("D4H access token").
+ */
+export function lowerFirst(label: string): string {
+    return /^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label;
+}
+
+/**
+ * A short account of an `Update` that only added to, or removed from, one array field: "Added 26
+ * skills", "Removed 1 assessor", "Updated assessees" (both at once). `undefined` for anything
+ * else (several fields, a scalar change, no changes), where the plain action says it best.
+ *
+ * The count comes from the raw changes, not the display, so it's the number of values that moved.
+ * The noun is the field's label in lower case, singularised for one by dropping a trailing "s":
+ * good enough for the plural field names the log uses today.
+ */
+export function summariseChanges(
+    changes: DiffChange[],
+    labels?: Record<string, string>,
+): string | undefined {
+    const [first] = changes;
+    if (!first) return undefined;
+
+    const path = JSON.stringify(first.path);
+    let added = 0;
+    let removed = 0;
+    for (const change of changes) {
+        if (JSON.stringify(change.path) !== path) return undefined;
+        if (change.type === "arr_add") added++;
+        else if (change.type === "arr_del") removed++;
+        else return undefined;
+    }
+
+    const plural = lowerFirst(formatFieldPath(first.path, labels));
+    const noun = (count: number) => (count === 1 ? plural.replace(/s$/, "") : plural);
+
+    if (added && removed) return `Updated ${plural}`;
+    if (added) return `Added ${added} ${noun(added)}`;
+    return `Removed ${removed} ${noun(removed)}`;
 }
 
 /**

@@ -9,10 +9,13 @@ import { DEFAULT_DISPLAY_PREFERENCES, formatDateTime, type DisplayPreferences } 
 import {
     actionPastTenseLabel,
     describeChange,
+    describeChanges,
     formatDiffValue,
     formatFieldPath,
+    lowerFirst,
     objectTypeLabel,
     relatedActionPhrase,
+    summariseChanges,
 } from "./diff-format";
 
 /** 2026-02-02 22:36 UTC — next morning (11:36 NZDT) in Auckland. */
@@ -277,5 +280,82 @@ describe("relatedActionPhrase", () => {
         expect(relatedActionPhrase("TeamMembership", "Team", "Approve")).toBeUndefined();
         expect(relatedActionPhrase("OrganizationMembership", "Person", "Update")).toBeUndefined();
         expect(relatedActionPhrase("TeamMembership", "constructor", "Create")).toBeUndefined();
+    });
+});
+
+describe("describeChanges", () => {
+    it("merges array adds and removes per field, where the field first appears", () => {
+        const lines = describeChanges([
+            { type: "obj_mod", path: ["name"], prev: "Old", curr: "New" },
+            { type: "arr_add", path: ["skills"], value: "a" },
+            { type: "arr_del", path: ["skills"], value: "x" },
+            { type: "arr_add", path: ["skills"], value: "b" },
+            { type: "arr_add", path: ["tags"], value: "red" },
+            { type: "arr_add", path: ["skills"], value: "c" },
+        ]);
+
+        expect(lines).toEqual([
+            { field: "Name", kind: "changed", prev: "Old", curr: "New" },
+            { field: "Skills", kind: "added", curr: "a, b, c", count: 3 },
+            { field: "Skills", kind: "removed", prev: "x" },
+            { field: "Tags", kind: "added", curr: "red" },
+        ]);
+    });
+
+    it("applies per-change options before merging", () => {
+        const lines = describeChanges(
+            [
+                { type: "arr_add", path: ["skills"], value: "a" },
+                { type: "arr_add", path: ["skills"], value: "b" },
+                { type: "arr_add", path: ["tags"], value: "red" },
+            ],
+            (change) =>
+                change.path[0] === "skills"
+                    ? { valueLabel: (value) => `Skill ${String(value)}` }
+                    : {},
+        );
+
+        expect(lines).toEqual([
+            { field: "Skills", kind: "added", curr: "Skill a, Skill b", count: 2 },
+            { field: "Tags", kind: "added", curr: "red" },
+        ]);
+    });
+});
+
+describe("summariseChanges", () => {
+    const add = (value: string) => ({ type: "arr_add" as const, path: ["skills"], value });
+    const del = (value: string) => ({ type: "arr_del" as const, path: ["skills"], value });
+
+    it("counts adds or removes on a single list", () => {
+        expect(summariseChanges([add("a"), add("b"), add("c")])).toBe("Added 3 skills");
+        expect(summariseChanges([del("a")])).toBe("Removed 1 skill");
+    });
+
+    it("says 'Updated' when one list both gained and lost values", () => {
+        expect(summariseChanges([add("a"), del("b")])).toBe("Updated skills");
+    });
+
+    it("uses a label override for the noun", () => {
+        expect(summariseChanges([add("a"), add("b")], { skills: "Competencies" })).toBe(
+            "Added 2 competencies",
+        );
+    });
+
+    it("returns undefined for anything but one list's adds and removes", () => {
+        expect(summariseChanges([])).toBeUndefined();
+        expect(
+            summariseChanges([add("a"), { type: "arr_add", path: ["tags"], value: "red" }]),
+        ).toBeUndefined();
+        expect(
+            summariseChanges([add("a"), { type: "obj_mod", path: ["name"], prev: "a", curr: "b" }]),
+        ).toBeUndefined();
+    });
+});
+
+describe("lowerFirst", () => {
+    it("lower-cases a leading word but not a leading acronym", () => {
+        expect(lowerFirst("Organisation membership")).toBe("organisation membership");
+        expect(lowerFirst("D4H access token")).toBe("D4H access token");
+        expect(lowerFirst("IDs")).toBe("IDs");
     });
 });
