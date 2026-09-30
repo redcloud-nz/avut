@@ -70,6 +70,30 @@ export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>
     Team: { team: ["view"] },
 };
 
+/** The record types an id-valued change field can name. */
+export type IdFieldTarget = "Person" | "Skill";
+
+/**
+ * Change fields whose values are record ids, keyed by the **entry's own** `objectType`, then the
+ * change path joined with `.`. The service resolves the ids it finds in these fields to names
+ * (`ObjectHistoryPage.names`), and the client maps them back when rendering the change, so a
+ * session's "Skills: added QVzbUJCSUj0NM13P" reads as the skill's name.
+ */
+export const IdFields: Partial<Record<LogObjectType, Record<string, IdFieldTarget>>> = {
+    SkillCheckSession: { skills: "Skill", assessees: "Person", assessors: "Person" },
+};
+
+/**
+ * The `IdFields` target of a change on an entry of type `entryType`, or `undefined` when the
+ * field doesn't hold ids. Takes a plain string: stored rows aren't parsed strictly.
+ */
+export function idFieldTarget(entryType: string, path: string[]): IdFieldTarget | undefined {
+    const fields: Partial<Record<string, Record<string, IdFieldTarget>>> = IdFields;
+    const byPath = Object.hasOwn(fields, entryType) ? fields[entryType] : undefined;
+    const key = path.join(".");
+    return byPath && Object.hasOwn(byPath, key) ? byPath[key] : undefined;
+}
+
 /**
  * A ref object type other than `Person`/`Team`. It's a plain `string` in the inferred type, so
  * `ref.objectType === "Person"` does not narrow `ObjectHistoryRef` — consumers narrow with
@@ -152,6 +176,14 @@ export const ObjectHistoryPage = {
         entries: z.array(ObjectHistoryEntry.schema),
         /** Pass as `cursor` to fetch the next (older) page; `null` on the last page. */
         nextCursor: z.number().int().nullable(),
+        /**
+         * Names for the ids found in this page's `IdFields` changes, by target type. An id that
+         * wasn't found (purged, or not this organization's) is absent.
+         */
+        names: z.object({
+            Person: z.record(z.string(), z.string()),
+            Skill: z.record(z.string(), z.string()),
+        }),
     }),
 } as const;
 

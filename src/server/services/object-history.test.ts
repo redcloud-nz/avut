@@ -10,7 +10,11 @@ import { nanoId16 } from "@/lib/id";
 import { LogBatchId, LogEntryId, LogEntryObjectId, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillId } from "@/lib/schemas/skill";
+import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { UserId } from "@/lib/schemas/user";
@@ -339,5 +343,150 @@ describe("ObjectHistory.list", () => {
                 person: { id: T.person, name: "Pat Person" },
             },
         ]);
+    });
+});
+
+describe("ObjectHistory.list names for IdFields changes", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        session: SkillCheckSessionId.create(),
+        assessee: PersonId.create(),
+        assessor: PersonId.create(),
+        purgedPerson: PersonId.create(),
+        // A real person whose id only appears in a field that isn't in IdFields.
+        bystander: PersonId.create(),
+        // Another org's person, named by a stray id.
+        otherOrgPerson: PersonId.create(),
+        ownPackage: SkillPackageId.create(),
+        subscribedPackage: SkillPackageId.create(),
+        foreignPackage: SkillPackageId.create(),
+        ownSkill: SkillId.create(),
+        subscribedSkill: SkillId.create(),
+        foreignSkill: SkillId.create(),
+    };
+
+    const db = createMockPrisma();
+    const ctx = { prisma: db, organizationId: T.org };
+
+    const changes: DiffChange[] = [
+        { type: "arr_add", path: ["assessees"], value: T.assessee },
+        { type: "arr_add", path: ["assessees"], value: T.purgedPerson },
+        { type: "arr_add", path: ["assessees"], value: T.otherOrgPerson },
+        { type: "obj_mod", path: ["assessors"], prev: null, curr: [T.assessor] },
+        { type: "arr_add", path: ["skills"], value: T.ownSkill },
+        { type: "arr_add", path: ["skills"], value: T.subscribedSkill },
+        { type: "arr_del", path: ["skills"], value: T.foreignSkill },
+        // Not in IdFields, though it holds an id.
+        { type: "obj_mod", path: ["name"], prev: "Old", curr: T.bystander },
+    ];
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        await db.user.create({ data: { id: T.user, name: "Una User", email: "una@example.com" } });
+        for (const [id, organizationId, name] of [
+            [T.assessee, T.org, "Ava Assessee"],
+            [T.assessor, T.org, "Abe Assessor"],
+            [T.bystander, T.org, "Bea Bystander"],
+            [T.otherOrgPerson, T.otherOrg, "Olly Other"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId, name, email: `${id}@example.com` },
+            });
+        }
+        for (const [packageId, organizationId, skillId, name] of [
+            [T.ownPackage, T.org, T.ownSkill, "Knots"],
+            [T.subscribedPackage, T.otherOrg, T.subscribedSkill, "Radio"],
+            [T.foreignPackage, T.otherOrg, T.foreignSkill, "Secret"],
+        ] as const) {
+            const skillGroupId = SkillGroupId.create();
+            await db.skillPackage.create({
+                data: { id: packageId, organizationId, name: packageId, description: "" },
+            });
+            await db.skillGroup.create({
+                data: { id: skillGroupId, skillPackageId: packageId, name: "G", description: "" },
+            });
+            await db.skill.create({
+                data: {
+                    id: skillId,
+                    skillPackageId: packageId,
+                    skillGroupId,
+                    name,
+                    description: "",
+                },
+            });
+        }
+        await db.skillPackageSubscription.create({
+            data: {
+                id: SkillPackageSubscriptionId.create(),
+                organizationId: T.org,
+                skillPackageId: T.subscribedPackage,
+            },
+        });
+
+        await db.logEntry.create({
+            data: {
+                id: LogEntryId.create(),
+                sequence: 1,
+                scope: "organization",
+                organizationId: T.org,
+                userId: T.user,
+                action: "Update",
+                objectType: "SkillCheckSession",
+                objectId: T.session,
+                changes: changes as never,
+                objects: {
+                    create: [
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "SkillCheckSession",
+                            objectId: T.session,
+                            role: "primary",
+                        },
+                    ],
+                },
+            },
+        });
+    });
+
+    const listSession = () =>
+        ObjectHistory.list(ctx, {
+            objectType: "SkillCheckSession",
+            objectId: T.session,
+            relatedTypes: LogObjectType.values,
+            limit: 50,
+        });
+
+    it("resolves Person ids in arr_add values and array values, org-scoped", async () => {
+        const { names } = await listSession();
+
+        expect(names.Person).toEqual({
+            [T.assessee]: "Ava Assessee",
+            [T.assessor]: "Abe Assessor",
+        });
+    });
+
+    it("leaves a purged id absent", async () => {
+        const { names } = await listSession();
+
+        expect(names.Person).not.toHaveProperty(T.purgedPerson);
+    });
+
+    it("resolves skills from owned and subscribed packages, but not another org's", async () => {
+        const { names } = await listSession();
+
+        expect(names.Skill).toEqual({ [T.ownSkill]: "Knots", [T.subscribedSkill]: "Radio" });
+    });
+
+    it("leaves a field not in IdFields alone", async () => {
+        const { entries, names } = await listSession();
+
+        expect(names.Person).not.toHaveProperty(T.bystander);
+        expect(entries[0].changes).toEqual(changes);
     });
 });

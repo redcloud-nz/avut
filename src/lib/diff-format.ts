@@ -4,7 +4,7 @@
  */
 
 import { formatDateTime, type DisplayPreferences } from "@/lib/datetime";
-import type { DiffChange, DiffValues } from "@/lib/diff";
+import type { DiffChange, DiffValue, DiffValues } from "@/lib/diff";
 import type { LogObjectType } from "@/lib/schemas/log-entry";
 
 /**
@@ -40,6 +40,11 @@ export interface DescribeChangeOptions {
     labels?: Record<string, string>;
     /** The viewer's display preferences, used for datetime values. */
     prefs?: DisplayPreferences;
+    /**
+     * Formats a scalar value in place of `formatDiffValue` — for each element of an array value
+     * too. For fields whose values need a lookup, such as ids mapped to names.
+     */
+    valueLabel?: (value: DiffValue) => string;
 }
 
 /**
@@ -140,9 +145,13 @@ export function describeChange(
     change: DiffChange,
     options: DescribeChangeOptions = {},
 ): ChangeDescriptor {
-    const { labels, prefs } = options;
+    const { labels, prefs, valueLabel } = options;
     const field = formatFieldPath(change.path, labels);
-    const format = (value: DiffValues) => formatDiffValue(value, prefs);
+    const format = (value: DiffValues): string => {
+        if (!valueLabel) return formatDiffValue(value, prefs);
+        if (!Array.isArray(value)) return valueLabel(value);
+        return value.length === 0 ? "(empty)" : value.map(valueLabel).join(", ");
+    };
 
     switch (change.type) {
         case "obj_add":

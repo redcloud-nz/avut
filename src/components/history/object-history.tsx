@@ -5,7 +5,7 @@
 "use client";
 
 import { ChevronDownIcon } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import { useId, useMemo, type ReactNode } from "react";
 
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 
@@ -16,19 +16,24 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
+import type { DiffValue } from "@/lib/diff";
 import {
     actionPastTenseLabel,
     describeChange,
     FieldLabels,
+    formatDiffValue,
     objectTypeLabel,
     relatedActionPhrase,
     type ChangeDescriptor,
 } from "@/lib/diff-format";
 import { LogObjectType } from "@/lib/schemas/log-entry";
-import type {
-    HistoryObjectType,
-    ObjectHistoryEntry,
-    ObjectHistoryRef,
+import {
+    idFieldTarget,
+    type HistoryObjectType,
+    type IdFieldTarget,
+    type ObjectHistoryEntry,
+    type ObjectHistoryPage,
+    type ObjectHistoryRef,
 } from "@/lib/schemas/object-history";
 import { trpc } from "@/trpc/client";
 
@@ -63,6 +68,14 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
     );
 
     const entries = data.pages.flatMap((page) => page.entries);
+    // Each page resolves the ids on it; an id means the same record on every page, so merge them.
+    const names = useMemo<IdFieldNames>(
+        () => ({
+            Person: Object.assign({}, ...data.pages.map((page) => page.names.Person)),
+            Skill: Object.assign({}, ...data.pages.map((page) => page.names.Skill)),
+        }),
+        [data.pages],
+    );
 
     return (
         <Saratoga.Root>
@@ -84,6 +97,7 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
                             key={entry.id}
                             entry={entry}
                             pageType={objectType}
+                            names={names}
                         />
                     ))}
                 </ol>
@@ -109,9 +123,11 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
 function ObjectHistoryEntryItem({
     entry,
     pageType,
+    names,
 }: {
     entry: ObjectHistoryEntry;
     pageType: string;
+    names: IdFieldNames;
 }) {
     const preferences = usePreferences();
 
@@ -196,6 +212,10 @@ function ObjectHistoryEntryItem({
                                     change={describeChange(change, {
                                         labels,
                                         prefs: preferences.display,
+                                        valueLabel: idValueLabel(
+                                            idFieldTarget(entry.objectType, change.path),
+                                            names,
+                                        ),
                                     })}
                                 />
                             ))}
@@ -205,6 +225,25 @@ function ObjectHistoryEntryItem({
             </Collapsible>
         </li>
     );
+}
+
+type IdFieldNames = ObjectHistoryPage["names"];
+
+/**
+ * For a change in an `IdFields` field, a `valueLabel` that shows each id as its record's name, or
+ * "(unavailable)" when the service couldn't resolve it (purged, or not this organization's). A
+ * value that isn't an id-shaped string (a `null` prev) keeps the default formatting.
+ */
+function idValueLabel(
+    target: IdFieldTarget | undefined,
+    names: IdFieldNames,
+): ((value: DiffValue) => string) | undefined {
+    if (!target) return undefined;
+    const byId = names[target];
+    return (value) =>
+        typeof value === "string" && value !== ""
+            ? ((Object.hasOwn(byId, value) ? byId[value] : undefined) ?? "(unavailable)")
+            : formatDiffValue(value);
 }
 
 /**

@@ -196,6 +196,43 @@ describe("describeChange", () => {
             curr: "2026-02-02 22:36",
         });
     });
+
+    describe("valueLabel", () => {
+        const names: Record<string, string> = { s1: "Knots", s2: "Radio" };
+        const valueLabel = (value: unknown) =>
+            typeof value === "string" ? (names[value] ?? "(unavailable)") : String(value);
+
+        it("labels a scalar value in place of the default formatting", () => {
+            expect(
+                describeChange({ type: "arr_add", path: ["skills"], value: "s1" }, { valueLabel }),
+            ).toEqual({ field: "Skills", kind: "added", curr: "Knots" });
+            expect(
+                describeChange(
+                    { type: "arr_del", path: ["skills"], value: "gone" },
+                    { valueLabel },
+                ),
+            ).toEqual({ field: "Skills", kind: "removed", prev: "(unavailable)" });
+            // The default would render `true` as "Yes"; valueLabel replaces it entirely.
+            expect(
+                describeChange(
+                    { type: "obj_mod", path: ["lead"], prev: "s2", curr: true },
+                    { valueLabel },
+                ),
+            ).toEqual({ field: "Lead", kind: "changed", prev: "Radio", curr: "true" });
+        });
+
+        it("labels each element of an array value", () => {
+            expect(
+                describeChange(
+                    { type: "obj_add", path: ["skills"], curr: ["s1", "s2", "gone"] },
+                    { valueLabel },
+                ),
+            ).toEqual({ field: "Skills", kind: "set", curr: "Knots, Radio, (unavailable)" });
+            expect(
+                describeChange({ type: "obj_add", path: ["skills"], curr: [] }, { valueLabel }),
+            ).toEqual({ field: "Skills", kind: "set", curr: "(empty)" });
+        });
+    });
 });
 
 describe("objectTypeLabel", () => {

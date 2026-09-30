@@ -15,12 +15,14 @@ import "server-only";
 
 import * as z from "zod";
 
-import { DiffChange } from "@/lib/diff";
+import { DiffChange, type DiffValues } from "@/lib/diff";
 import { Operations } from "@/lib/operations";
 import type { LogObjectType } from "@/lib/schemas/log-entry";
 import {
+    idFieldTarget,
     OtherRefObjectType,
     type HistoryObjectType,
+    type IdFieldTarget,
     type ObjectHistoryEntry,
     type ObjectHistoryPage,
     type ObjectHistoryRef,
@@ -103,7 +105,14 @@ export async function list(
         row.objects.filter((ref) => ref.role !== "primary" && !isAskedFor(ref)),
     );
 
-    const names = await resolveNames(ctx, refRows.flat(), relatedTypes);
+    const changes = page.map((row) => changesSchema.parse(row.changes));
+
+    const names = await resolveNames(
+        ctx,
+        refRows.flat(),
+        relatedTypes,
+        collectIdFieldIds(page.map((row, index) => ({ row, changes: changes[index] }))),
+    );
 
     const entries = page.map(
         (row, index): ObjectHistoryEntry => ({
@@ -118,12 +127,65 @@ export async function list(
             operationLabel: row.batch ? operationLabel(row.batch.operationKey) : null,
             description: row.description,
             timestamp: row.timestamp,
-            changes: changesSchema.parse(row.changes),
+            changes: changes[index],
             refs: refRows[index].map((ref) => toRef(ref, names)),
         }),
     );
 
-    return { entries, nextCursor };
+    return {
+        entries,
+        nextCursor,
+        names: {
+            Person: Object.fromEntries(names.idFieldPersons),
+            Skill: Object.fromEntries(names.idFieldSkills),
+        },
+    };
+}
+
+type IdFieldIds = Record<IdFieldTarget, Set<string>>;
+
+/**
+ * The string ids in a page's `IdFields` changes, by target type: `arr_add`/`arr_del` values,
+ * `obj_*`/`arr_ord` `prev`/`curr`, and each element of an array value. Anything that isn't a
+ * string (a `null` prev, say) is skipped.
+ */
+function collectIdFieldIds(
+    rows: { row: { objectType: string }; changes: DiffChange[] }[],
+): IdFieldIds {
+    const ids: IdFieldIds = { Person: new Set(), Skill: new Set() };
+
+    for (const { row, changes } of rows) {
+        for (const change of changes) {
+            const target = idFieldTarget(row.objectType, change.path);
+            if (!target) continue;
+
+            const values: DiffValues[] = [];
+            switch (change.type) {
+                case "arr_add":
+                case "arr_del":
+                    values.push(change.value);
+                    break;
+                case "obj_add":
+                    values.push(change.curr);
+                    break;
+                case "obj_del":
+                    values.push(change.prev);
+                    break;
+                case "obj_mod":
+                case "arr_ord":
+                    values.push(change.prev, change.curr);
+                    break;
+                case "obj_mask":
+                    break;
+            }
+
+            for (const value of values.flat()) {
+                if (typeof value === "string") ids[target].add(value);
+            }
+        }
+    }
+
+    return ids;
 }
 
 interface StoredRef {
@@ -133,28 +195,43 @@ interface StoredRef {
 }
 
 interface ResolvedNames {
+    /** `Person` refs, only those the caller may view. */
     persons: Map<string, PersonRef>;
+    /** `Team` refs, only those the caller may view. */
     teams: Map<string, TeamRef>;
+    /** Names for the `Person` ids in `IdFields` changes. */
+    idFieldPersons: Map<string, string>;
+    /** Names for the `Skill` ids in `IdFields` changes. */
+    idFieldSkills: Map<string, string>;
 }
 
 /**
- * Names for the `Person`/`Team` refs on a page — at most one `findMany` each, org-scoped, and only
- * for types the caller may view. A ref missing from the result was purged, or isn't viewable.
+ * Names for a page — at most one `findMany` per type, all org-scoped:
+ *
+ * - `Person`/`Team` refs, only for types the caller may view. A ref missing from the result was
+ *   purged, or isn't viewable.
+ * - Ids in `IdFields` changes, with no extra gate: whoever can view the page's object already sees
+ *   these names on its own detail page (a session lists its assessees and skills). Person ids share
+ *   the ref lookup; skills are matched in packages the org owns *or* subscribes to, since a session
+ *   can use a subscribed package's skills. An id not found is absent.
  */
 async function resolveNames(
     ctx: ObjectHistoryContext,
     refs: StoredRef[],
     relatedTypes: readonly LogObjectType[],
+    idFieldIds: IdFieldIds,
 ): Promise<ResolvedNames> {
-    const idsOf = (type: "Person" | "Team") =>
+    const refIdsOf = (type: "Person" | "Team") =>
         relatedTypes.includes(type)
-            ? [...new Set(refs.filter((r) => r.objectType === type).map((r) => r.objectId))]
-            : [];
+            ? new Set(refs.filter((r) => r.objectType === type).map((r) => r.objectId))
+            : new Set<string>();
 
-    const personIds = idsOf("Person");
-    const teamIds = idsOf("Team");
+    const refPersonIds = refIdsOf("Person");
+    const teamIds = [...refIdsOf("Team")];
+    const personIds = [...new Set([...refPersonIds, ...idFieldIds.Person])];
+    const skillIds = [...idFieldIds.Skill];
 
-    const [persons, teams] = await Promise.all([
+    const [persons, teams, skills] = await Promise.all([
         personIds.length === 0
             ? []
             : ctx.prisma.person.findMany({
@@ -167,13 +244,39 @@ async function resolveNames(
                   where: { organizationId: ctx.organizationId, id: { in: teamIds } },
                   select: { id: true, name: true },
               }),
+        skillIds.length === 0
+            ? []
+            : ctx.prisma.skill.findMany({
+                  where: {
+                      id: { in: skillIds },
+                      skillPackage: {
+                          OR: [
+                              { organizationId: ctx.organizationId },
+                              {
+                                  subscriptions: {
+                                      some: { organizationId: ctx.organizationId },
+                                  },
+                              },
+                          ],
+                      },
+                  },
+                  select: { id: true, name: true },
+              }),
     ]);
 
     return {
+        // Only the ref ids go in here: a person named in a change but not viewable as a ref
+        // (no `Person` in relatedTypes) must still come back as a null ref.
         persons: new Map(
-            persons.map(({ id, name }) => [id, { id: PersonId.schema.parse(id), name }]),
+            persons
+                .filter(({ id }) => refPersonIds.has(id))
+                .map(({ id, name }) => [id, { id: PersonId.schema.parse(id), name }]),
         ),
         teams: new Map(teams.map(({ id, name }) => [id, { id: TeamId.schema.parse(id), name }])),
+        idFieldPersons: new Map(
+            persons.filter(({ id }) => idFieldIds.Person.has(id)).map(({ id, name }) => [id, name]),
+        ),
+        idFieldSkills: new Map(skills.map(({ id, name }) => [id, name])),
     };
 }
 

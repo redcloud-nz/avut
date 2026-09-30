@@ -122,6 +122,7 @@ describe("history.listObjectHistory", () => {
         await expect(caller.listObjectHistory(tokenInput)).resolves.toEqual({
             entries: [],
             nextCursor: null,
+            names: { Person: {}, Skill: {} },
         });
     });
 
