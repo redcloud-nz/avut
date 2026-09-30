@@ -84,7 +84,7 @@ A per-user "what's new" dialog. It opens once, automatically, whenever there are
     - **`/avut-release` skill.** Add the matching step: after drafting `docs/releases/v$NEW.md`, list the user-facing changes in the range and offer to draft `updates` entries. Entries can also land earlier, with the feature's own PR.
   - **Done when:** the docs read consistently, and `npm run check` passes.
 
-- [ ] **5. `/docs/updates` page** · `visual`
+- [x] **5. `/docs/updates` page** — feat(whats-new): /docs/updates page and shared UpdateArticle · `visual`
   - **Files:** `src/app/(public)/(marketing)/docs/updates/page.tsx` (new), `src/components/whats-new/update-article.tsx` (new, shared with task 6), `src/components/docs/docs-sidebar.tsx`
   - **Do:**
     - **Page.** A static page under the existing docs layout, alongside `[[...slug]]` the way `docs/glossary/page.tsx` is: an `h1` "What's new", a lead line, then every entry from `getAllUpdates()`. Add `metadata`. Run `npx next typegen` after adding the page.
