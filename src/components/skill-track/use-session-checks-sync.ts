@@ -108,39 +108,6 @@ export function sessionChecksQueryOptions({
 }
 
 /**
- * Observes a session's cache of every assessor's checks, for a reader that isn't the recording
- * page's poll (the Recent checks dialog). Shares the query with `useSessionChecksSync` through
- * `sessionChecksQueryOptions`. Pass `refetchInterval` to keep it live on its own.
- */
-export function useSessionChecks({
-    sessionId,
-    selfPersonId,
-    enabled,
-    refetchInterval,
-}: {
-    sessionId: SkillCheckSessionId;
-    selfPersonId: PersonId | undefined;
-    enabled: boolean;
-    refetchInterval?: number;
-}) {
-    const organization = useOrganization();
-
-    // Not a suspense query, deliberately (an exception to detail-page-data-fetching.md): what
-    // this feeds, the other assessors' markers and the Recent checks list, is secondary, and the
-    // page shouldn't wait for it. The page renders as before, and they appear once the first
-    // response lands.
-    return useQuery({
-        ...sessionChecksQueryOptions({
-            organizationId: organization.id,
-            sessionId,
-            selfPersonId,
-        }),
-        enabled,
-        refetchInterval,
-    });
-}
-
-/**
  * Polls a session's checks every 10 s while the tab is visible (TanStack's default
  * `refetchIntervalInBackground: false`; `refetchOnWindowFocus` catches up on return), keeping the
  * session cache and the caller's own-checks list in step with other assessors and the caller's
@@ -167,9 +134,15 @@ export function useSessionChecksSync({
     const organization = useOrganization();
     const queryClient = useQueryClient();
 
-    const { data } = useSessionChecks({
-        sessionId,
-        selfPersonId,
+    // Not a suspense query, deliberately (an exception to detail-page-data-fetching.md): what
+    // this feeds, the other assessors' markers, is secondary, and the page shouldn't wait for it.
+    // The page renders as before, and the markers appear once the first response lands.
+    const { data } = useQuery({
+        ...sessionChecksQueryOptions({
+            organizationId: organization.id,
+            sessionId,
+            selfPersonId,
+        }),
         enabled,
         refetchInterval: SESSION_CHECKS_POLL_MS,
     });

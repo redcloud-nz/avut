@@ -190,7 +190,7 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
     - Each page computes `otherAssessorChecks(data?.checks ?? [], personSelf.id)` once with `useMemo`, from `useSessionChecksSync`'s returned `data` and only when `personSelf` is set. It passes each row its entry.
   - **Done when:** with two assessors recording on one session, each sees the other's result on the matching row within about 10 s, and a removal clears it. `npm run check` passes.
 
-- [ ] **7. Recent checks dialog** `visual`
+- [x] **7. Recent checks dialog** `visual` — feat(skill-track): add a Recent checks dialog to the session actions sheet; fix(skill-track): load the Recent checks dialog through suspense. (As built, the dialog reads through `useSuspenseQuery` with `sessionChecksQueryOptions`, and `useSessionChecks` folded into `useSessionChecksSync`.)
   - **Files:** `src/components/skill-track/session-recent-checks-dialog.tsx` (new) and `src/components/skill-track/session-actions-sheet.tsx`.
   - **Do:**
     - Build `SkillTrack_SessionRecentChecksDialog` as described under Decisions → UI: a scrolling list in a `Dialog`, using the `size` prop (#334) if the default width is cramped.

@@ -11,7 +11,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import {
     SESSION_CHECKS_POLL_MS,
-    useSessionChecks,
+    sessionChecksQueryOptions,
 } from "@/components/skill-track/use-session-checks-sync";
 import {
     Dialog,
@@ -33,11 +33,11 @@ import {
     ItemGroup,
     ItemTitle,
 } from "@/components/ui/item";
-import { Spinner } from "@/components/ui/spinner";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatRelativeDateTime } from "@/lib/datetime";
 import { getSkillCheckResultLabel, type SessionCheck } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { hasNames } from "@/lib/session-checks-sync";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
@@ -120,28 +120,20 @@ function SessionRecentChecks_Body({ sessionId }: { sessionId: SkillCheckSessionI
         trpc.personnel.getPersonSelf.queryOptions({ organizationId: organization.id }),
     );
 
-    // Mounted only while the dialog is open, so this polls only then. Not a suspense query: it
-    // shares `sessionChecksQueryOptions` with the page's poll, which isn't one either.
-    const { data, error } = useSessionChecks({
-        sessionId,
-        selfPersonId: personSelf?.id,
-        enabled: true,
+    // Mounted only while the dialog is open, so this polls only then. The options are the page
+    // poll's (`sessionChecksQueryOptions`, same inputs), so the two observers share one query.
+    const { data } = useSuspenseQuery({
+        ...sessionChecksQueryOptions({
+            organizationId: organization.id,
+            sessionId,
+            selfPersonId: personSelf?.id,
+        }),
         refetchInterval: SESSION_CHECKS_POLL_MS,
     });
 
-    if (!data) {
-        if (error) throw error;
-        return (
-            <DialogBody aria-busy="true" className="items-center justify-center sm:min-h-40">
-                <Spinner className="size-6 text-muted-foreground" />
-            </DialogBody>
-        );
-    }
-
-    // Rows a local write added before the next poll filled in their names are skipped until then.
     const named = data.checks
-        .filter((check) => check.assesseeName && check.skillName && check.assessorName)
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        .filter(hasNames)
+        .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
     const shown = named.slice(0, RECENT_CHECKS_LIMIT);
 
     return (
@@ -181,7 +173,7 @@ function RecentCheckItem({ check }: { check: SessionCheck }) {
     const removed = check.status === "Deleted";
 
     return (
-        <Item size="sm" className={cn("px-0", removed && "text-muted-foreground")}>
+        <Item role="listitem" size="sm" className={cn("px-0", removed && "text-muted-foreground")}>
             <ItemContent>
                 <ItemTitle className={cn(removed && "text-muted-foreground")}>
                     {check.assesseeName} · {check.skillName}
