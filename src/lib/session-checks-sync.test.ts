@@ -98,12 +98,13 @@ describe("mergeSessionChecks", () => {
         expect(applied).toEqual([polled]);
     });
 
-    it("returns the same array when the incoming rows are identical to the cached ones", () => {
+    it("returns the same array for an identical re-send, but still passes it on as applied", () => {
         const row = sessionCheck();
         const input = [row];
-        const { checks, applied } = mergeSessionChecks(input, [{ ...row }]);
+        const resent = { ...row };
+        const { checks, applied } = mergeSessionChecks(input, [resent]);
         expect(checks).toBe(input);
-        expect(applied).toEqual([]);
+        expect(applied).toEqual([resent]);
     });
 
     it("keeps a tombstone that blocks a stale live row", () => {
@@ -184,6 +185,31 @@ describe("patchOwnChecks", () => {
     it("returns the same array for a tombstone with no own row", () => {
         const own: SkillCheck[] = [];
         expect(patchOwnChecks(own, [sessionCheck({ status: "Deleted" })], T.self)).toBe(own);
+    });
+
+    it("returns the same array for a field-identical live row, e.g. a name-filling poll", () => {
+        const local = sessionCheck({ assesseeName: "", skillName: "", assessorName: "" });
+        const own = [stripNames(local)];
+        const polled = {
+            ...local,
+            assesseeName: "Alice",
+            skillName: "Knots",
+            assessorName: "Self",
+        };
+        expect(patchOwnChecks(own, [polled], T.self)).toBe(own);
+    });
+
+    it("heals an own list that lost a row, from the identical re-send", () => {
+        // The first poll merged the other device's write and patched it into the own list, then
+        // an own-list refetch that read before the write overwrote the patch.
+        const row = sessionCheck();
+        const sessionCache = mergeSessionChecks([], [row]).checks;
+        const ownAfterRefetch: SkillCheck[] = [];
+
+        // The next poll re-sends the same row, thanks to the lagged cursor.
+        const { checks, applied } = mergeSessionChecks(sessionCache, [{ ...row }]);
+        expect(checks).toBe(sessionCache);
+        expect(patchOwnChecks(ownAfterRefetch, applied, T.self)).toEqual([stripNames(row)]);
     });
 });
 

@@ -129,7 +129,7 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
     - Update the JSDoc `@returns`, including the case where the row was re-recorded in between.
   - **Done when:** the tests assert the row is returned after a delete and `check: null` when there was nothing to delete, and `npm run check` passes.
 
-- [ ] **3. Merge helpers**
+- [x] **3. Merge helpers** — feat(skill-track): add session checks merge helpers; fix(skill-track): pass identical re-sends to the own-checks patch
   - **Files:** `src/lib/session-checks-sync.ts` and `src/lib/session-checks-sync.test.ts` (new), and `src/components/skill-track/use-session-check-recorder.ts`.
   - **Do:**
     - Move `SessionCheckKey` and `sessionCheckKey` into the new lib file, since `src/lib` can't import from components (lint). Re-export them from the hook module so the existing imports keep working.

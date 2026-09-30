@@ -32,8 +32,9 @@ function hasNames(check: SessionCheck): boolean {
     return check.assesseeName !== "" && check.skillName !== "" && check.assessorName !== "";
 }
 
-function sameRow(a: SessionCheck, b: SessionCheck): boolean {
-    const keys = Object.keys(a) as (keyof SessionCheck)[];
+/** Whether two rows have the same fields with the same values (shallow). */
+function sameFields<T extends object>(a: T, b: T): boolean {
+    const keys = Object.keys(a) as (keyof T)[];
     return keys.length === Object.keys(b).length && keys.every((key) => Object.is(a[key], b[key]));
 }
 
@@ -44,9 +45,14 @@ function sameRow(a: SessionCheck, b: SessionCheck): boolean {
  * write added without them. `Deleted` tombstones are kept like any other row, so a stale live row
  * can't bring a removed check back.
  *
- * @returns the merged list, and the incoming rows that were actually applied. An incoming row
- * identical to the cached one isn't counted as applied. When nothing applies, `checks` is the
- * same `cached` array, so subscribers don't re-render.
+ * @returns
+ * - `checks`: the merged list. An incoming row identical to the cached one leaves it as it is, so
+ *   when no row changes anything, `checks` is the same `cached` array and subscribers don't
+ *   re-render.
+ * - `applied`: every incoming row that won the merge, identical re-sends included. Pass these to
+ *   `patchOwnChecks`. The lagged cursor re-sends each row about once more, and handing the
+ *   identical copy on too lets the own-checks list heal when an own-list refetch that read before
+ *   the write overwrote the first patch.
  */
 export function mergeSessionChecks(
     cached: SessionCheck[],
@@ -66,10 +72,11 @@ export function mergeSessionChecks(
             continue;
         }
         const current = checks[index];
-        if (stamp(row) < stamp(current) || sameRow(row, current)) continue;
+        if (stamp(row) < stamp(current)) continue;
+        applied.push(row);
+        if (sameFields(row, current)) continue;
         if (checks === cached) checks = [...cached];
         checks[index] = row;
-        applied.push(row);
     }
 
     return { checks, applied };
@@ -88,7 +95,9 @@ function toSkillCheck(check: SessionCheck): SkillCheck {
  * - A live row replaces the own row, or is added, when its `updatedAt` is at least the own row's.
  * - A `Deleted` row removes the own row when its `updatedAt` is at least the own row's.
  *
- * So a poll response that was in flight can't undo a newer local write.
+ * So a poll response that was in flight can't undo a newer local write. A live row whose
+ * `SkillCheck` fields equal the own row's is skipped, which covers an identical re-send and a
+ * poll that only fills in the names on a local write.
  *
  * @returns the patched list, stripped to the `SkillCheck` shape; the same `own` array when
  * nothing changes; and `undefined` when the list isn't cached.
@@ -113,10 +122,13 @@ export function patchOwnChecks(
         if (row.status === "Deleted") {
             if (!current) continue;
             result = result.filter((_, i) => i !== index);
-        } else if (current) {
-            result = result.map((check, i) => (i === index ? toSkillCheck(row) : check));
-        } else {
-            result = [...result, toSkillCheck(row)];
+            continue;
+        }
+        const next = toSkillCheck(row);
+        if (!current) {
+            result = [...result, next];
+        } else if (!sameFields(next, current)) {
+            result = result.map((check, i) => (i === index ? next : check));
         }
     }
     return result;
