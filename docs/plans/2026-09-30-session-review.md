@@ -290,7 +290,7 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 
 ### Task 7: Docs: review and approve
 
-- [ ] (commit subject goes here once done)
+- [ ] **Deferred** (2026-09-30): the user wants every end-user docs update held until all the skill check session work (#336) is complete, then done in one pass. Not part of this plan's delivery.
 
 **Files:**
 
