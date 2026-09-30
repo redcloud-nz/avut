@@ -62,6 +62,11 @@ vi.mock("@/server/d4h-access-token", () => ({
         token: "fake-token",
         metadata: { d4HTeams: [], d4HOrganisations: [] },
     })),
+    toD4HCredentialRef: vi.fn((token: { id: string }) => ({
+        credentialId: token.id,
+        organizationId: null,
+        userId: null,
+    })),
 }));
 
 describe("teamsRouter.getTeam", () => {

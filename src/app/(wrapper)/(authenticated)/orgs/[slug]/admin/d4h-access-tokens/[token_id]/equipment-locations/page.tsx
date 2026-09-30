@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -10,19 +11,26 @@ import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentLocation } from "@/lib/schemas/d4h/equipment-location";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import {
+    d4hApiCacheTag,
+    D4HCredentialRef,
+    getOrganizationD4HAccessToken,
+    resolveD4HCredential,
+    toD4HCredentialRef,
+} from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
 
-async function fetchEquipmentLocations(accessToken: D4HAccessToken_ServerOnly) {
+async function fetchEquipmentLocations(ref: D4HCredentialRef) {
     "use cache";
+    cacheLife("hours");
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
-    const fetchClient = getD4HFetchClient(accessToken);
+    const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const teams = await getD4HTeamsAccessibleWithToken(ref);
 
     const items = (
         await Promise.all(
@@ -65,7 +73,7 @@ export default async function Admin_D4HAccessToken_EquipmentLocations_Page(
 
     if (!accessToken) notFound();
 
-    const fetched = await fetchEquipmentLocations(accessToken);
+    const fetched = await fetchEquipmentLocations(toD4HCredentialRef(accessToken));
 
     const locations = fetched.map((location) => ({
         raw: location,
