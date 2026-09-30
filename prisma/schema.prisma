@@ -505,6 +505,7 @@ model OrganizationNote {
   updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
+  @@index([authorId])
   @@map("organization_notes")
 }
 

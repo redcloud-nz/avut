@@ -14,3 +14,36 @@ export const NoteTitle = {
 export const NoteContent = {
     schema: z.string().max(100_000),
 } as const;
+
+/** Input for creating a note, organization or user: a title, and optionally its markdown body. */
+export const NoteCreateInput = {
+    schema: z.object({
+        title: NoteTitle.schema,
+        content: NoteContent.schema.optional(),
+    }),
+} as const;
+
+/**
+ * Input for updating a note, organization or user: a title and/or a body.
+ *
+ * `schema` is deliberately unrefined, so it can still be `.extend`ed (Zod 4 throws on
+ * `.pick`/`.omit`/`.extend` of a refined object). Apply the "at least one of them" rule
+ * to the finished input with {@link NoteUpdateInput.refine}:
+ *
+ * ```ts
+ * NoteUpdateInput.refine(NoteUpdateInput.schema.extend({ noteId: OrganizationNoteId.schema }))
+ * ```
+ */
+export const NoteUpdateInput = {
+    schema: z.object({
+        title: NoteTitle.schema.optional(),
+        content: NoteContent.schema.optional(),
+    }),
+
+    /** Rejects an update that sets neither the title nor the body. */
+    refine: <T extends z.ZodType<{ title?: string; content?: string }>>(schema: T) =>
+        schema.refine(
+            (update) => update.title !== undefined || update.content !== undefined,
+            "Nothing to update.",
+        ),
+} as const;

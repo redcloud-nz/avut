@@ -48,7 +48,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 
 ## Tasks
 
-### - [ ] 1. Replace `Note` with `OrganizationNote` and `UserNote`
+### - [x] 1. Replace `Note` with `OrganizationNote` and `UserNote`
+
+`feat(notes): replace Note with OrganizationNote and UserNote`, `fix(notes): index OrganizationNote.authorId and share note input schemas`
 
 **Files:**
 
@@ -58,7 +60,7 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - `src/server/services/user-accounts.ts` (+ `user-accounts.test.ts` if it covers the purge)
 - `src/trpc/routers/organizations-router.ts` and `organizations-router.test.ts`
 
-**Precondition:** `.env.local` points at `avut_notes` (`grep DATABASE_URL .env.local`). If it still points at `avut`, **stop and report**. Never run `migrate dev` against the shared database.
+**Precondition:** `.env.local` points at `avut_notes` (`grep POSTGRES_PRISMA_URL .env.local`). If it still points at `avut`, **stop and report**. Never run `migrate dev` against the shared database.
 
 **Do:**
 
@@ -133,6 +135,7 @@ The `notes` module already exists in the registry, with a placeholder page, and 
   - `createNote` needs `["create"]`.
   - `updateNote` and `deleteNote` need `["create"]`. Each then loads the note and, unless `note.authorId === ctx.userId`, runs `await ctx.hasPermission(ctx.organizationId, { organizationNote: ["update"] })` (or `["delete"]`). This check stays in the router, because `hasPermission` isn't on `OrgServiceContext`.
   - Register the router in `_app.ts`.
+  - **Update input:** build it as `NoteUpdateInput.refine(NoteUpdateInput.schema.extend({ noteId: … }))` (`src/lib/schemas/note-fields.ts`). The "at least one field" refine goes on last, because Zod 4 throws when you extend a refined object.
 
 **Done when:** tests (`.claude/rules/testing.md`) cover the cases below. `createAuthenticatedMockContext`'s `hasPermission` checks statements literally, so a member fixture passes `permissions: { organization: ["view"], organizationNote: ["view", "create"] }`, and an admin fixture adds `update`/`delete`.
 
@@ -155,6 +158,8 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - Add `LogObjectType` `UserNote` → `null`, with `// → "user-notes" once the module is registered (Task 9)`.
 - The service mirrors Task 3's, scoped by `userId: ctx.userId` on every query and write.
 - The router `userNotes` uses `authenticatedProcedure`, with the same five procedures. Its `ctx.logEvent` writes `scope: "user"` entries. There's no permission check beyond ownership.
+
+- **Update input:** build it as `NoteUpdateInput.refine(NoteUpdateInput.schema.extend({ noteId: … }))` (`src/lib/schemas/note-fields.ts`). The "at least one field" refine goes on last, because Zod 4 throws when you extend a refined object.
 
 **Done when:** tests go through `userNotesRouter.createCaller(createAuthenticatedMockContext(...))`, whose middleware builds the user `logEvent`. There's no user-scoped mock-context helper. They cover:
 

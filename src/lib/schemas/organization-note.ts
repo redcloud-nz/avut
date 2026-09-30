@@ -10,7 +10,7 @@ import type { OrganizationNote as OrganizationNoteRecord } from "@/generated/pri
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
-import { NoteContent, NoteTitle } from "./note-fields";
+import { NoteContent, NoteCreateInput, NoteTitle, NoteUpdateInput } from "./note-fields";
 
 export type { OrganizationNoteRecord };
 
@@ -36,22 +36,11 @@ const organizationNoteSchema = z.object({
 export const OrganizationNoteData = {
     schema: organizationNoteSchema,
 
-    /** Input for creating a note: a title, and optionally its markdown body. */
-    createSchema: z.object({
-        title: NoteTitle.schema,
-        content: NoteContent.schema.optional(),
-    }),
+    /** Input for creating a note; see {@link NoteCreateInput}. */
+    createSchema: NoteCreateInput.schema,
 
-    /** Input for updating a note: a title and/or a body, at least one of them. */
-    updateSchema: z
-        .object({
-            title: NoteTitle.schema.optional(),
-            content: NoteContent.schema.optional(),
-        })
-        .refine(
-            (update) => update.title !== undefined || update.content !== undefined,
-            "Nothing to update.",
-        ),
+    /** Unrefined input for updating a note; apply {@link NoteUpdateInput.refine} to the full input. */
+    updateSchema: NoteUpdateInput.schema,
 
     fromRecord: (record: OrganizationNoteRecord): OrganizationNoteData =>
         organizationNoteSchema.parse({
