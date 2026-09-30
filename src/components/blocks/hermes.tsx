@@ -32,7 +32,7 @@ function HermesList({ children, className, ...props }: ComponentProps<"nav">) {
             data-component="HermesList"
             data-slot="list"
             className={cn(
-                "min-h-0 flex-1 group-data-[selected=true]/hermes:hidden md:flex-none md:w-80 md:shrink-0 md:border-r md:group-data-[selected=true]/hermes:block",
+                "flex-1 max-md:group-data-[selected=true]/hermes:hidden md:flex-none md:w-80 md:border-r",
                 paneScroll,
                 className,
             )}
@@ -57,7 +57,7 @@ function HermesDetail({ children, className, ...props }: ComponentProps<"main">)
             data-component="HermesDetail"
             data-slot="detail"
             className={cn(
-                "relative min-h-0 min-w-0 flex-1 p-4 group-data-[selected=false]/hermes:hidden md:group-data-[selected=false]/hermes:block",
+                "relative min-w-0 flex-1 p-4 max-md:group-data-[selected=false]/hermes:hidden",
                 paneScroll,
                 className,
             )}

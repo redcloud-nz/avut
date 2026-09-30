@@ -18,6 +18,9 @@ import { cn } from "@/lib/utils";
  * Must be rendered from the `layout.tsx` whose child segment is the record id (e.g. the notes
  * layout above `[note_id]`), so `useSelectedLayoutSegment()` returns `null` on the index route
  * and the record id on a record.
+ *
+ * Must also render inside `Std.SidebarInset` (or another Suspense boundary): under
+ * `cacheComponents`, `useSelectedLayoutSegment()` reads a dynamic param during prerender.
  */
 export function HermesRoot({ children, className, ...props }: ComponentProps<"div">) {
     const segment = useSelectedLayoutSegment();

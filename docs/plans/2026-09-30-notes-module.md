@@ -191,9 +191,11 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 
 `npm run check` passes.
 
-### - [ ] 6. `Hermes` master-detail block
+### - [x] 6. `Hermes` master-detail block
 
-**Files:** new `src/components/blocks/hermes.tsx`, `AGENTS.md` (the UI Block Components table).
+`feat(blocks): add Hermes master-detail block`, `fix(blocks): scope Hermes pane hiding to small screens`
+
+**Files:** new `src/components/blocks/hermes.tsx` + `hermes-root.tsx` (the client `Root`, split out so server layouts can use `Hermes.Root`, as with `saratoga-contents.tsx`), `AGENTS.md` (the UI Block Components table).
 
 **Do:** build the block described in Decisions → Layout component and Suspense.
 
