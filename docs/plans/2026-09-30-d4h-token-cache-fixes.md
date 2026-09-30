@@ -147,7 +147,9 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - `grep -n "accessToken.metadata" src/trpc/routers/d4h-api-router.ts` finds nothing.
 - `npm run check` passes.
 
-### - [ ] 6. i3 issue processor: fresh permission check, checked writes
+### - [x] 6. i3 issue processor: fresh permission check, checked writes
+
+`fix(i3): fresh D4H permission check and checked equipment writes`, `fix(i3): log D4H's error body on a rejected equipment POST, neutral failure reason`
 
 **Files:** `src/forms/i3-issue-items/processor.ts`, new `src/forms/i3-issue-items/processor.test.ts`, `src/emails/i3-issue-items-notification.tsx`.
 

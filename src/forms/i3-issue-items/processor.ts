@@ -109,7 +109,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
             const failures: string[] = [];
             for (const item of items) {
                 try {
-                    const { response } = await fetchClient.POST(
+                    const { error, response } = await fetchClient.POST(
                         "/v3/{context}/{contextId}/equipment",
                         {
                             params: {
@@ -132,7 +132,13 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
                             },
                         },
                     );
-                    if (!response.ok) failures.push(String(response.status));
+                    if (!response.ok) {
+                        ctx.logger.error(
+                            `Failed to create equipment in D4H (status ${response.status})`,
+                            error,
+                        );
+                        failures.push(String(response.status));
+                    }
                 } catch (err) {
                     ctx.logger.error("Failed to create equipment in D4H", err);
                     failures.push(err instanceof Error ? err.message : String(err));
@@ -141,9 +147,11 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
 
             if (failures.length === 0) return { savedToD4H: true as const };
 
+            // Worded to cover a thrown network error as well as a D4H rejection, and without its
+            // own "in D4H": the email's sentences ("…recorded in D4H, due to ___.") already say it.
             return {
                 savedToD4H: {
-                    reason: `D4H rejecting ${failures.length} of ${items.length} items (first error: ${failures[0]})`,
+                    reason: `failing to record ${failures.length} of ${items.length} items (first error: ${failures[0]})`,
                     partial: failures.length < items.length,
                 },
             };

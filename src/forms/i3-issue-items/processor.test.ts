@@ -5,10 +5,10 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { nanoId16 } from "@/lib/id";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { fetchD4HWhoami, fetchD4HWhoamiCached, getD4HFetchClient } from "@/server/d4h-api/client";
 import { sendEmail } from "@/server/email";
@@ -67,7 +67,7 @@ vi.mock("@/server/email", () => ({
 describe("I3IssueItemsFormProcessor", () => {
     const T = {
         org: OrganizationId.create(),
-        user: nanoId16(),
+        user: UserId.create(),
         template: I3TemplateId.create(),
     };
 
@@ -141,7 +141,7 @@ describe("I3IssueItemsFormProcessor", () => {
         expect(emailedSavedToD4H()).toBe(true);
     });
 
-    it("keeps going past a failed POST and names how many of the items D4H rejected", async () => {
+    it("keeps going past a failed POST and names how many of the items failed", async () => {
         POST.mockResolvedValueOnce({ response: new Response(null, { status: 201 }) })
             .mockResolvedValueOnce({ response: new Response(null, { status: 422 }) })
             .mockResolvedValueOnce({ response: new Response(null, { status: 201 }) });
@@ -150,7 +150,19 @@ describe("I3IssueItemsFormProcessor", () => {
 
         expect(POST).toHaveBeenCalledTimes(3);
         expect(emailedSavedToD4H()).toEqual({
-            reason: "D4H rejecting 1 of 3 items (first error: 422)",
+            reason: "failing to record 1 of 3 items (first error: 422)",
+            partial: true,
+        });
+    });
+
+    it("counts a POST that throws as a failure, with its message as the error", async () => {
+        POST.mockRejectedValueOnce(new Error("fetch failed"));
+
+        await execute(2);
+
+        expect(POST).toHaveBeenCalledTimes(2);
+        expect(emailedSavedToD4H()).toEqual({
+            reason: "failing to record 1 of 2 items (first error: fetch failed)",
             partial: true,
         });
     });
@@ -161,7 +173,7 @@ describe("I3IssueItemsFormProcessor", () => {
         await execute(2);
 
         expect(emailedSavedToD4H()).toEqual({
-            reason: "D4H rejecting 2 of 2 items (first error: 403)",
+            reason: "failing to record 2 of 2 items (first error: 403)",
             partial: false,
         });
     });
