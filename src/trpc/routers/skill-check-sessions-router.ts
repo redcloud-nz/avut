@@ -27,6 +27,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * status. No `Pending` or `Deleted` check survives an approval.
      * @throws TRPCError(NOT_FOUND) if the session does not exist.
      * @throws TRPCError(CONFLICT) if the session is already approved — reopen it first.
+     * @throws TRPCError(BAD_REQUEST) if `includedCheckIds` holds more than one of the session's
+     * live checks for the same assessee and skill.
      */
     approveSession: organizationProcedure({ skillCheckSession: ["approve"] })
         .input(
@@ -41,6 +43,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
 
             const session = await SkillChecks.requireSessionById(ctx, sessionId);
             SkillChecks.assertSessionUnlocked(session);
+            await SkillChecks.assertOneIncludedCheckPerPair(ctx, sessionId, includedCheckIds);
 
             await ctx.prisma
                 .$transaction([

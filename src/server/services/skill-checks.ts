@@ -10,7 +10,9 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@
 import { hasAnyRoleWithPermissions, parseStoredRoles } from "@/lib/permissions";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
+import type { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { findConflicts } from "@/lib/skill-check-conflicts";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -146,6 +148,40 @@ export function assertSessionCheckTarget(
             `Skill(id=${target.skillId}) is not a skill of SkillCheckSession(id=${session.id}).`,
         );
     }
+}
+
+/**
+ * Ensure an approval includes at most one check per assessee and skill. Only the session's live
+ * checks among `includedCheckIds` count: ids from another session, and `Deleted` checks, are
+ * ignored, just as approval's stamping ignores them.
+ * @throws ValidationError if more than one included check shares an assessee and skill.
+ */
+export async function assertOneIncludedCheckPerPair(
+    ctx: OrgServiceContext,
+    sessionId: SkillCheckSessionId,
+    includedCheckIds: SkillCheckId[],
+): Promise<void> {
+    if (includedCheckIds.length < 2) return;
+
+    const checks = await ctx.prisma.skillCheck.findMany({
+        where: {
+            organizationId: ctx.organizationId,
+            sessionId,
+            id: { in: includedCheckIds },
+            status: { not: "Deleted" },
+        },
+        select: { id: true, assesseeId: true, skillId: true, status: true },
+    });
+
+    const conflicts = findConflicts(checks);
+    if (conflicts.length === 0) return;
+
+    const [first] = conflicts;
+    throw new ValidationError(
+        `Approval includes more than one check for ${conflicts.length} assessee and skill ` +
+            `pair(s) in SkillCheckSession(id=${sessionId}); e.g. Person(id=${first.assesseeId}) ` +
+            `and Skill(id=${first.skillId}): checks ${first.checks.map(({ id }) => id).join(", ")}.`,
+    );
 }
 
 /**

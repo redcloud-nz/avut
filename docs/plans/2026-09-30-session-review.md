@@ -169,7 +169,7 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 
 ### Task 3: `approveSession` enforces one included check per pair
 
-- [ ] (commit subject goes here once done)
+- [x] feat(skill-track): reject approving more than one check per assessee and skill
 
 **Files:**
 

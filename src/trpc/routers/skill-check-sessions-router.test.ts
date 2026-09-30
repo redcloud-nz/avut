@@ -1622,3 +1622,194 @@ describe("skillCheckSessions.reopenSession", () => {
         });
     });
 });
+
+describe("skillCheckSessions.approveSession conflicts", () => {
+    // Dataset: assessorA and assessorB may both assess assessee on skill in every session below.
+    //   conflictSession → Draft; checkA (assessorA) + checkB (assessorB), both Draft
+    //   deletedSession  → Draft; liveCheck (assessorA) Draft + deadCheck (assessorB) Deleted
+    //   ownSession      → Draft; ownCheck (assessorA) Draft
+    //   foreignSession  → Draft; foreignCheck (assessorB) Draft, same assessee and skill
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        assessorA: PersonId.create(),
+        assessorB: PersonId.create(),
+        assessee: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill: SkillId.create(),
+        conflictSession: SkillCheckSessionId.create(),
+        checkA: SkillCheckId.create(),
+        checkB: SkillCheckId.create(),
+        deletedSession: SkillCheckSessionId.create(),
+        liveCheck: SkillCheckId.create(),
+        deadCheck: SkillCheckId.create(),
+        ownSession: SkillCheckSessionId.create(),
+        ownCheck: SkillCheckId.create(),
+        foreignSession: SkillCheckSessionId.create(),
+        foreignCheck: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.assessorA, "Assessor A"],
+            [T.assessorB, "Assessor B"],
+            [T.assessee, "Assessee"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill,
+                skillPackageId: T.pkg,
+                skillGroupId: T.grp,
+                name: "Skill",
+                description: "",
+                properties: {},
+            },
+        });
+
+        for (const [id, sessionNumber] of [
+            [T.conflictSession, 1],
+            [T.deletedSession, 2],
+            [T.ownSession, 3],
+            [T.foreignSession, 4],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Session ${sessionNumber}`,
+                    sessionNumber,
+                    startsAt: new Date(),
+                    endsAt: new Date(),
+                    notes: "",
+                    assessors: { connect: [{ id: T.assessorA }, { id: T.assessorB }] },
+                    assessees: { connect: [{ id: T.assessee }] },
+                    skills: { connect: [{ id: T.skill }] },
+                },
+            });
+        }
+
+        const checks = [
+            [T.checkA, T.conflictSession, T.assessorA, "Draft"],
+            [T.checkB, T.conflictSession, T.assessorB, "Draft"],
+            [T.liveCheck, T.deletedSession, T.assessorA, "Draft"],
+            [T.deadCheck, T.deletedSession, T.assessorB, "Deleted"],
+            [T.ownCheck, T.ownSession, T.assessorA, "Draft"],
+            [T.foreignCheck, T.foreignSession, T.assessorB, "Draft"],
+        ] as const;
+        for (const [id, sessionId, assessorId, status] of checks) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId,
+                    assesseeId: T.assessee,
+                    assessorId,
+                    skillId: T.skill,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], skillCheckSession: ["approve"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function checkStatuses(sessionId: SkillCheckSessionId) {
+        const rows = await db.skillCheck.findMany({ where: { sessionId } });
+        return Object.fromEntries(rows.map(({ id, status }) => [id, status]));
+    }
+
+    it("rejects two included checks on one pair with BAD_REQUEST and writes nothing", async () => {
+        await expect(
+            makeCaller().approveSession({
+                organizationId: T.org,
+                sessionId: T.conflictSession,
+                includedCheckIds: [T.checkA, T.checkB],
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+        const session = await db.skillCheckSession.findUnique({
+            where: { id: T.conflictSession },
+        });
+        expect(session?.status).toBe("Draft");
+        expect(await checkStatuses(T.conflictSession)).toEqual({
+            [T.checkA]: "Draft",
+            [T.checkB]: "Draft",
+        });
+    });
+
+    it("approves with one of the pair included, stamping Include and Exclude", async () => {
+        const { updated } = await makeCaller().approveSession({
+            organizationId: T.org,
+            sessionId: T.conflictSession,
+            includedCheckIds: [T.checkA],
+        });
+
+        expect(updated.status).toBe("Include");
+        expect(await checkStatuses(T.conflictSession)).toEqual({
+            [T.checkA]: "Include",
+            [T.checkB]: "Exclude",
+        });
+    });
+
+    it("doesn't count an included Deleted check towards a conflict", async () => {
+        const { updated } = await makeCaller().approveSession({
+            organizationId: T.org,
+            sessionId: T.deletedSession,
+            includedCheckIds: [T.liveCheck, T.deadCheck],
+        });
+
+        expect(updated.status).toBe("Include");
+        expect(await checkStatuses(T.deletedSession)).toEqual({ [T.liveCheck]: "Include" });
+    });
+
+    it("doesn't count an id from another session towards a conflict", async () => {
+        const { updated } = await makeCaller().approveSession({
+            organizationId: T.org,
+            sessionId: T.ownSession,
+            includedCheckIds: [T.ownCheck, T.foreignCheck],
+        });
+
+        expect(updated.status).toBe("Include");
+        expect(await checkStatuses(T.ownSession)).toEqual({ [T.ownCheck]: "Include" });
+        expect(await checkStatuses(T.foreignSession)).toEqual({ [T.foreignCheck]: "Draft" });
+    });
+});
