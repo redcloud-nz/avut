@@ -101,7 +101,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - A test asserts that the purge nulls `authorId` on org notes and deletes the user's notes (in `user-accounts.test.ts` if it has a purge test; add one if not).
 - `npm run check` passes.
 
-### - [ ] 2. `organizationNote` permission
+### - [x] 2. `organizationNote` permission
+
+`feat(notes): add organizationNote permission`
 
 **Files:** `src/lib/permissions.ts`, `src/lib/permissions.test.ts`.
 
