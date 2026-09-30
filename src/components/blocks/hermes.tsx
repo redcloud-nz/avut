@@ -1,0 +1,91 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Hermes master-detail layout components.
+ *
+ * A list pane beside a detail pane, filling what's left of `Std.SidebarInset` under the navbar.
+ * Render `Hermes.Root` from the route's `layout.tsx`, with the list in `Hermes.List` and the
+ * layout's `children` (the selected record, or `Hermes.Placeholder` on the index route) in
+ * `Hermes.Detail`. Each pane scrolls on its own, and together they replace `Std.ScrollContainer`.
+ *
+ * At `md` and up both panes show side by side. Below `md` only the active one does: the list
+ * when nothing is selected, the detail when a record is.
+ *
+ * Suspense: `Hermes.List` has its own boundary. `Hermes.Detail` has none, since the route's
+ * `loading.tsx` already wraps the layout's `children` inside it; make that a pane-sized fallback.
+ */
+
+import { ComponentProps, Suspense } from "react";
+
+import { RainbowSpinner } from "@/components/ui/loading";
+import { cn } from "@/lib/utils";
+
+import { HermesRoot } from "./hermes-root";
+
+const paneScroll =
+    "overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]";
+
+function HermesList({ children, className, ...props }: ComponentProps<"nav">) {
+    return (
+        <nav
+            data-component="HermesList"
+            data-slot="list"
+            className={cn(
+                "min-h-0 flex-1 group-data-[selected=true]/hermes:hidden md:flex-none md:w-80 md:shrink-0 md:border-r md:group-data-[selected=true]/hermes:block",
+                paneScroll,
+                className,
+            )}
+            {...props}
+        >
+            <Suspense
+                fallback={
+                    <div className="flex h-full items-center justify-center p-4">
+                        <RainbowSpinner />
+                    </div>
+                }
+            >
+                {children}
+            </Suspense>
+        </nav>
+    );
+}
+
+function HermesDetail({ children, className, ...props }: ComponentProps<"main">) {
+    return (
+        <main
+            data-component="HermesDetail"
+            data-slot="detail"
+            className={cn(
+                "relative min-h-0 min-w-0 flex-1 p-4 group-data-[selected=false]/hermes:hidden md:group-data-[selected=false]/hermes:block",
+                paneScroll,
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </main>
+    );
+}
+
+function HermesPlaceholder({ children, className, ...props }: ComponentProps<"div">) {
+    return (
+        <div
+            data-component="HermesPlaceholder"
+            className={cn(
+                "hidden h-full items-center justify-center text-sm text-muted-foreground md:flex",
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </div>
+    );
+}
+
+export const Hermes = {
+    Root: HermesRoot,
+    List: HermesList,
+    Detail: HermesDetail,
+    Placeholder: HermesPlaceholder,
+};
