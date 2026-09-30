@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
  * content-collections config — compiles the team-authored end-user docs in
- * `content/docs/**` to typed, MDX-rendered records. The `withContentCollections`
+ * `content/docs/**` and the "what's new" product-update entries in
+ * `content/updates/*.mdx` to typed, MDX-rendered records. The `withContentCollections`
  * wrapper in `next.config.ts` runs this on `next dev` (watch) and `next build`.
  */
 
@@ -74,6 +75,36 @@ const docs = defineCollection({
     },
 });
 
+/**
+ * Product-update entries for the in-app "What's new" dialog and `/docs/updates`.
+ * Files are `content/updates/YYYY-MM-DD-<slug>.mdx`; every file counts as
+ * published (no scheduling). See `content/updates/README.md` for the authoring
+ * rules and `src/lib/updates.ts` for the read model.
+ */
+const updates = defineCollection({
+    name: "updates",
+    directory: "content/updates",
+    include: "*.mdx",
+    schema: z.object({
+        content: z.string(),
+        title: z.string(),
+        /** ISO date (`YYYY-MM-DD`), read as 00:00 UTC. The display date and the seen-cursor comparison. */
+        publishedAt: z.iso.date(),
+        description: z.string().optional(),
+        /** The release the entry shipped in — display only. */
+        version: z.string().optional(),
+    }),
+    transform: async (entry, ctx) => {
+        const mdx = await compileMDX(ctx, entry, mdxOptions);
+        return {
+            ...entry,
+            mdx,
+            /** The filename without extension; the `#anchor` on `/docs/updates`. */
+            slug: entry._meta.path,
+        };
+    },
+});
+
 export default defineConfig({
-    content: [docs],
+    content: [docs, updates],
 });
