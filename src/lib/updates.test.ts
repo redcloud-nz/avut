@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
     clampSeenCursor,
@@ -13,10 +13,8 @@ import {
     updatesHref,
 } from "@/lib/updates";
 
-// Fixture entries, deliberately out of order, so the tests don't depend on the
-// real (growing) corpus.
-vi.mock("content-collections", () => {
-    const entry = (slug: string, publishedAt: string) => ({
+function entry(slug: string, publishedAt: string) {
+    return {
         slug,
         publishedAt,
         title: `Title ${slug}`,
@@ -25,20 +23,35 @@ vi.mock("content-collections", () => {
         mdx: `compiled ${slug}`,
         content: `body ${slug}`,
         _meta: { path: slug },
-    });
-    return {
-        allUpdates: [
-            entry("2026-09-01-older", "2026-09-01"),
-            entry("2026-09-20-b-second", "2026-09-20"),
-            entry("2026-09-25-newest", "2026-09-25"),
-            entry("2026-09-20-a-first", "2026-09-20"),
-        ],
     };
-});
+}
+
+// Fixture entries, deliberately out of order, so the tests don't depend on the
+// real (growing) corpus. Mutable per test; reset in `beforeEach`.
+function defaultEntries() {
+    return [
+        entry("2026-09-01-older", "2026-09-01"),
+        entry("2026-09-20-b-second", "2026-09-20"),
+        entry("2026-09-25-newest", "2026-09-25"),
+        entry("2026-09-20-a-first", "2026-09-20"),
+    ];
+}
+
+const fixture = vi.hoisted(() => ({ entries: [] as ReturnType<typeof entry>[] }));
+
+vi.mock("content-collections", () => ({
+    get allUpdates() {
+        return fixture.entries;
+    },
+}));
 
 const utc = (date: string) => new Date(`${date}T00:00:00Z`);
 
 describe("updates read model", () => {
+    beforeEach(() => {
+        fixture.entries = defaultEntries();
+    });
+
     it("sorts newest first, breaking same-day ties by slug", () => {
         expect(getAllUpdates().map((e) => e.slug)).toEqual([
             "2026-09-25-newest",
@@ -92,6 +105,12 @@ describe("updates read model", () => {
     it("leaves a requested cursor at or before the newest entry alone", () => {
         expect(clampSeenCursor(utc("2026-09-20"))).toEqual(utc("2026-09-20"));
         expect(clampSeenCursor(utc("2026-09-25"))).toEqual(utc("2026-09-25"));
+    });
+
+    it("handles an empty collection", () => {
+        fixture.entries = [];
+        expect(getAllUpdates()).toEqual([]);
+        expect(clampSeenCursor(utc("2026-10-15"))).toBeNull();
     });
 
     it("builds the updates page href, with an optional anchor", () => {

@@ -32,7 +32,7 @@ A per-user "what's new" dialog. It opens once, automatically, whenever there are
 
 ## Tasks
 
-- [ ] **1. `updates` content collection and read model**
+- [x] **1. `updates` content collection and read model** — feat(whats-new): updates content collection and read model; fix(whats-new): guard update filenames and cover an empty collection
   - **Files:** `content-collections.ts`, `content/updates/2026-09-30-whats-new.mdx` (new), `src/lib/updates.ts` (new), `src/lib/updates-shared.ts` (new, client-safe), `src/lib/updates.test.ts` (new)
   - **Do:**
     - **Collection.** Add an `updates` collection next to `docs` in `content-collections.ts`: `directory: "content/updates"`, `include: "*.mdx"`. Use the frontmatter schema from Decisions, including `content: z.string()` as `docs` has it (`compileMDX` reads it), and `publishedAt` as `z.iso.date()`. `transform` compiles the MDX with the same `mdxOptions` and adds `slug` (from `_meta.path`) and `mdx`. Register the collection in `defineConfig`.

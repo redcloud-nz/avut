@@ -95,6 +95,13 @@ const updates = defineCollection({
         version: z.string().optional(),
     }),
     transform: async (entry, ctx) => {
+        // Ties count as seen, so a filename date that disagrees with
+        // `publishedAt` can silently hide an entry — fail the build instead.
+        if (!entry._meta.path.startsWith(`${entry.publishedAt}-`)) {
+            throw new Error(
+                `content/updates/${entry._meta.fileName}: filename must start with its publishedAt date ("${entry.publishedAt}-")`,
+            );
+        }
         const mdx = await compileMDX(ctx, entry, mdxOptions);
         return {
             ...entry,
