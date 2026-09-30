@@ -5,7 +5,7 @@
 "use client";
 
 import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import * as R from "remeda";
 import { match } from "ts-pattern";
 
@@ -26,7 +26,10 @@ import {
     usePendingChecks,
     useSessionCheckRecorder,
 } from "@/components/skill-track/use-session-check-recorder";
-import { useSessionChecksSync } from "@/components/skill-track/use-session-checks-sync";
+import {
+    useOtherAssessorChecks,
+    useSessionChecksSync,
+} from "@/components/skill-track/use-session-checks-sync";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -60,11 +63,6 @@ import {
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import {
-    otherAssessorChecks,
-    type OtherAssessorCheck,
-    type SessionCheckKey,
-} from "@/lib/session-checks-sync";
 import { trpc } from "@/trpc/client";
 
 /** The (assessee, skill) check the record dialog is open on. */
@@ -136,13 +134,7 @@ export function SkillTrack_SessionBySkill_Content({
         enabled: !!personSelf && isAssignedAssessor && canRecordChecks,
     });
     // The "Also checked by" markers, keyed by (assessee, skill).
-    const otherChecksByKey = useMemo(
-        () =>
-            personSelf
-                ? otherAssessorChecks(sessionChecks?.checks ?? [], personSelf.id)
-                : new Map<SessionCheckKey, OtherAssessorCheck[]>(),
-        [sessionChecks?.checks, personSelf],
-    );
+    const otherChecksByKey = useOtherAssessorChecks(sessionChecks, personSelf?.id);
     // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
     // its checks read-only and the record dialog is closed.
     const isApproved = session.status === "Include";

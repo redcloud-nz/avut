@@ -63,6 +63,13 @@ describe("SkillTrack_CheckRow", () => {
         ).toBeInTheDocument();
     });
 
+    it("shows the title and the marker on a row without a description", () => {
+        renderRow({ otherChecks: [{ assessorName: "Jane", result: "Pass" }] });
+
+        expect(screen.getByText("CPR")).toBeInTheDocument();
+        expect(screen.getByText("Also checked by Jane (Competent)")).toBeInTheDocument();
+    });
+
     it("shows no marker when there are no other checks", () => {
         renderRow({ otherChecks: [] });
 

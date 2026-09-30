@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { useQuery, useQueryClient, type QueryFunctionContext } from "@tanstack/react-query";
 
@@ -15,7 +15,10 @@ import type { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import {
     maxCursor,
     mergeSessionChecks,
+    otherAssessorChecks,
     patchOwnChecks,
+    type OtherAssessorCheck,
+    type SessionCheckKey,
     type SessionChecksData,
 } from "@/lib/session-checks-sync";
 import { trpc, trpcClient } from "@/trpc/client";
@@ -186,4 +189,23 @@ export function useSessionChecksSync({
     }, [sessionStatus, queryClient, organization.id, sessionId]);
 
     return data;
+}
+
+/**
+ * The "Also checked by" markers for the recording rows: the other assessors' live checks from
+ * `useSessionChecksSync`'s data, keyed by (assessee, skill). Empty when the caller has no linked
+ * person or the first response hasn't landed.
+ */
+export function useOtherAssessorChecks(
+    sessionChecks: SessionChecksData | undefined,
+    selfPersonId: PersonId | undefined,
+): Map<SessionCheckKey, OtherAssessorCheck[]> {
+    const checks = sessionChecks?.checks;
+    return useMemo(
+        () =>
+            selfPersonId
+                ? otherAssessorChecks(checks ?? [], selfPersonId)
+                : new Map<SessionCheckKey, OtherAssessorCheck[]>(),
+        [checks, selfPersonId],
+    );
 }

@@ -183,7 +183,7 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
 
     `npm run check` passes.
 
-- [ ] **6. "Also checked by" marker** `visual`
+- [x] **6. "Also checked by" marker** `visual` — feat(skill-track): show other assessors' checks on the recording rows; refactor(skill-track): share the other-assessor markers memo as a hook
   - **Files:** `src/components/skill-track/check-row.tsx`, `session-by-person-content.tsx`, `session-by-skill-content.tsx`.
   - **Do:**
     - Add an optional `otherChecks?: { assessorName: string; result: SkillCheckResultValue }[]` prop to `SkillTrack_CheckRow`. When it's non-empty, render "Also checked by Jane (Competent), Bob (…)" under the title in `text-xs text-muted-foreground`, labelled with `resultLabel`. The layout otherwise stays as it is: the title column grows and the buttons stay right-aligned.
