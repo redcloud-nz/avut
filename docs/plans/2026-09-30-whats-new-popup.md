@@ -71,7 +71,7 @@ A per-user "what's new" dialog. It opens once, automatically, whenever there are
 
   - **Done when:** `npm run check` passes, including the new tests.
 
-- [ ] **4. Release checklist and authoring guide**
+- [x] **4. Release checklist and authoring guide** — docs(whats-new): authoring guide and release checklist step for updates
   - **Files:** `docs/releasing.md`, `.claude/skills/avut-release/SKILL.md`, `content/updates/README.md` (new)
   - **Do:**
     - **`content/updates/README.md`.** It isn't collected, because the collection only includes `*.mdx`. It covers:
