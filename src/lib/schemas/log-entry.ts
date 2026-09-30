@@ -130,6 +130,7 @@ const logObjectTypeValues = [
     "Team",
     "TeamMembership",
     "User",
+    "UserNote",
     "UserSettings",
 ] as const;
 
@@ -216,6 +217,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Team: "org-admin",
     TeamMembership: "org-admin",
     User: null,
+    UserNote: null, // → "user-notes" once the module is registered (Task 9)
     UserSettings: "profile",
 };
 

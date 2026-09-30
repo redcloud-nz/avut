@@ -40,6 +40,14 @@ export const UserNoteData = {
     /** Unrefined input for updating a note; apply {@link NoteUpdateInput.refine} to the full input. */
     updateSchema: NoteUpdateInput.schema,
 
+    /** A note as the list shows it: no `content`. */
+    listItemSchema: userNoteSchema.pick({
+        id: true,
+        title: true,
+        createdAt: true,
+        updatedAt: true,
+    }),
+
     fromRecord: (record: UserNoteRecord): UserNoteData =>
         userNoteSchema.parse({
             ...record,
@@ -53,3 +61,5 @@ export type UserNoteData = z.infer<typeof userNoteSchema>;
 export type CreateUserNoteData = z.infer<typeof UserNoteData.createSchema>;
 
 export type UpdateUserNoteData = z.infer<typeof UserNoteData.updateSchema>;
+
+export type UserNoteListItem = z.infer<typeof UserNoteData.listItemSchema>;
