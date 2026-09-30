@@ -81,6 +81,9 @@ export function OrgNotes_Breadcrumbs({ actions }: { actions?: ReactNode }) {
         <NotesBreadcrumbs
             notes={notes}
             listHref={route("/orgs/[slug]/notes", { slug: organization.slug })}
+            noteHref={(noteId) =>
+                route("/orgs/[slug]/notes/[note_id]", { slug: organization.slug, note_id: noteId })
+            }
             actions={actions}
         />
     );

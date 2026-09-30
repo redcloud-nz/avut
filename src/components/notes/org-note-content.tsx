@@ -5,6 +5,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
 import { ErrorBoundary } from "react-error-boundary";
 import { toast } from "sonner";
@@ -17,9 +18,15 @@ import { Hermes } from "@/components/blocks/hermes";
 import { describeError, ErrorDescriptions } from "@/components/errors/describe-error";
 import { ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { EntityActionMenu } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { OrganizationNoteData, OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { trpc } from "@/trpc/client";
 
@@ -132,6 +139,26 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
                             <EntityActionMenu
                                 category="Notes"
                                 width="w-44"
+                                before={
+                                    <>
+                                        <DropdownMenuGroup>
+                                            <DropdownMenuItem asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/notes/[note_id]/history",
+                                                        {
+                                                            slug: organization.slug,
+                                                            note_id: note.id,
+                                                        },
+                                                    )}
+                                                >
+                                                    <ObjectIcons.History /> History
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuGroup>
+                                        <DropdownMenuSeparator />
+                                    </>
+                                }
                                 actions={[
                                     {
                                         verb: "update",

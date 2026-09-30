@@ -18,6 +18,7 @@ import { TeamRef } from "./team";
  */
 const historyObjectTypeValues = [
     "D4HAccessToken",
+    "OrganizationNote",
     "Person",
     "SkillCheckSession",
     "SkillPackage",
@@ -39,6 +40,8 @@ export type HistoryObjectType = (typeof historyObjectTypeValues)[number];
 export const HistoryObjects: Record<HistoryObjectType, { permissions: Permissions }> = {
     // d4hAccessTokens.getOrganizationAccessToken
     D4HAccessToken: { permissions: { organization: ["update"] } },
+    // organizationNotes.getNote
+    OrganizationNote: { permissions: { organizationNote: ["view"] } },
     // personnel.getPerson
     Person: { permissions: { person: ["view"] } },
     // skillCheckSessions.getSession

@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { Roles, type Role } from "@/lib/permissions";
 import { LogEntryId, LogEntryObjectId, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
 import * as ObjectHistory from "@/server/services/object-history";
@@ -31,6 +32,7 @@ describe("history.listObjectHistory", () => {
         org: OrganizationId.create(),
         user: UserId.create(),
         person: PersonId.create(),
+        note: OrganizationNoteId.create(),
         tokenId: "d4h-token-id",
     };
 
@@ -65,6 +67,29 @@ describe("history.listObjectHistory", () => {
                             id: LogEntryObjectId.create(),
                             objectType: "Person",
                             objectId: T.person,
+                            role: "primary",
+                        },
+                    ],
+                },
+            },
+        });
+        await db.logEntry.create({
+            data: {
+                id: LogEntryId.create(),
+                scope: "organization",
+                organizationId: T.org,
+                sequence: 2,
+                action: "Create",
+                objectType: "OrganizationNote",
+                objectId: T.note,
+                actorLabel: "Una User <una@example.com>",
+                changes: [],
+                objects: {
+                    create: [
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "OrganizationNote",
+                            objectId: T.note,
                             role: "primary",
                         },
                     ],
@@ -124,6 +149,34 @@ describe("history.listObjectHistory", () => {
             nextCursor: null,
             names: { Person: {}, Skill: {} },
         });
+    });
+
+    const noteInput = {
+        organizationId: T.org,
+        objectType: "OrganizationNote",
+        objectId: T.note,
+    } as const;
+
+    it("lets a member read an OrganizationNote's history", async () => {
+        const page = await makeCaller("member").listObjectHistory(noteInput);
+
+        expect(page.entries.map((entry) => entry.objectId)).toEqual([T.note]);
+    });
+
+    it("refuses an OrganizationNote's history to a caller without organizationNote:view", async () => {
+        // Every role holds `organizationNote:view`, so deny just that on top of `member`.
+        const caller = historyRouter.createCaller({
+            ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
+            hasPermission: async (_organizationId, required) => {
+                if (required.organizationNote) throw new TRPCError({ code: "FORBIDDEN" });
+                assertHasPermissionResult(Roles.member.authorize(required), required);
+            },
+        });
+
+        await expect(caller.listObjectHistory(noteInput)).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+        expect(ObjectHistory.list).not.toHaveBeenCalled();
     });
 
     it("rejects an object type with no History page", async () => {

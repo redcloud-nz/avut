@@ -6,7 +6,7 @@
 "use client";
 
 import type { Route } from "next";
-import { useSelectedLayoutSegment } from "next/navigation";
+import { useSelectedLayoutSegments } from "next/navigation";
 import { ReactNode, useState } from "react";
 
 import { Std } from "@/components/blocks/std";
@@ -16,17 +16,20 @@ interface NotesBreadcrumbsProps {
     notes: { id: string; title: string }[];
     /** The notes index route. */
     listHref: Route;
+    /** A note's detail route; the title crumb links there from the note's History. */
+    noteHref: (noteId: string) => Route;
     actions?: ReactNode;
 }
 
 /**
  * The navbar above a notes module's master-detail layout. Must be rendered from the notes
- * `layout.tsx`, so `useSelectedLayoutSegment()` returns the selected note's id (or `null` on the
- * index route). With a note selected the "Notes" crumb links back to the list, which is the way
- * back at phone width, where the list pane is hidden.
+ * `layout.tsx`, so `useSelectedLayoutSegments()` starts with the selected note's id (and is empty
+ * on the index route). With a note selected the "Notes" crumb links back to the list, which is the
+ * way back at phone width, where the list pane is hidden. On a note's History, the note's title
+ * links back to the note.
  */
-export function NotesBreadcrumbs({ notes, listHref, actions }: NotesBreadcrumbsProps) {
-    const selectedId = useSelectedLayoutSegment();
+export function NotesBreadcrumbs({ notes, listHref, noteHref, actions }: NotesBreadcrumbsProps) {
+    const [selectedId = null, subpage] = useSelectedLayoutSegments();
     const selected = selectedId === null ? undefined : notes.find((note) => note.id === selectedId);
 
     // Deleting a note drops it from the list before the navigation away lands, so hold on to the
@@ -40,7 +43,15 @@ export function NotesBreadcrumbs({ notes, listHref, actions }: NotesBreadcrumbsP
     return (
         <Std.Navbar
             breadcrumbs={
-                selectedId === null ? ["Notes"] : [{ label: "Notes", href: listHref }, title]
+                selectedId === null
+                    ? ["Notes"]
+                    : subpage === "history"
+                      ? [
+                            { label: "Notes", href: listHref },
+                            { label: title, href: noteHref(selectedId) },
+                            "History",
+                        ]
+                      : [{ label: "Notes", href: listHref }, title]
             }
             actions={actions}
         />
