@@ -20,6 +20,8 @@ import {
 import { SkillCheckConflict } from "@/lib/skill-check-conflicts";
 
 interface SessionReviewConflictsProps {
+    /** The card's element id, for in-page links to it. */
+    id?: string;
     conflicts: SkillCheckConflict<SkillCheck>[];
     selected: ReadonlySet<SkillCheckId>;
     /** Make `checkId` the group's pick, replacing whichever of `groupIds` was picked before. */
@@ -42,6 +44,7 @@ interface SessionReviewConflictsProps {
  * live check, for picking which check the approval includes.
  */
 export function SkillTrack_SessionReview_Conflicts({
+    id,
     conflicts,
     selected,
     pick,
@@ -66,7 +69,7 @@ export function SkillTrack_SessionReview_Conflicts({
           : `All ${plural(conflicts.length)} resolved`;
 
     return (
-        <Card>
+        <Card id={id} className="scroll-mt-4">
             <CardHeader>
                 <CardTitle>Conflicts</CardTitle>
                 <CardDescription>{description}</CardDescription>

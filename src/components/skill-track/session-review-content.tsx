@@ -18,6 +18,7 @@ import { Show } from "@/components/show";
 import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
 import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reopen-session";
 import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
+import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { getSkillCheckResultLabel, SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { findConflicts, initialSelection, reconcileSelection } from "@/lib/skill-check-conflicts";
+import { findNotAssessed } from "@/lib/skill-check-coverage";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SessionReview_Content({
@@ -55,6 +57,8 @@ export function SkillTrack_SessionReview_Content({
         { data: assessors },
         { data: sessionSkills },
         { data: skillChecks, dataUpdatedAt: checksUpdatedAt },
+        { data: assignedAssessees },
+        { data: assignedSkills },
     ] = useSuspenseQueries({
         queries: [
             trpc.skillCheckSessions.getSession.queryOptions({
@@ -79,6 +83,16 @@ export function SkillTrack_SessionReview_Content({
             trpc.skillChecks.listSkillChecks.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
+            }),
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+                scope: "assigned",
+            }),
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+                scope: "assigned",
             }),
         ],
     });
@@ -126,6 +140,19 @@ export function SkillTrack_SessionReview_Content({
         .filter((check) => selected.has(check.id))
         .map((check) => check.id);
     const excludedCount = skillChecks.length - includedCheckIds.length;
+
+    // The assigned assessee and skill pairs with no live check. Uses the `assigned` lists, not
+    // the `all` ones above: a person or skill no longer assigned isn't a gap anyone means to fill.
+    const notAssessed = useMemo(
+        () =>
+            findNotAssessed(
+                assignedAssessees.map((p) => p.id),
+                assignedSkills.map((s) => s.id),
+                skillChecks,
+            ),
+        [assignedAssessees, assignedSkills, skillChecks],
+    );
+    const notAssessedCount = notAssessed.reduce((sum, entry) => sum + entry.skillIds.length, 0);
 
     // Why Approve is disabled, if it is. `null` means it can open the confirm dialog.
     const approveBlockedReason =
@@ -329,8 +356,27 @@ export function SkillTrack_SessionReview_Content({
                             </Empty>
                         }
                     >
+                        <SkillTrack_SessionReview_Summary
+                            includedCount={
+                                showApproval
+                                    ? skillChecks.filter((check) => check.status === "Include")
+                                          .length
+                                    : includedCheckIds.length
+                            }
+                            excludedCount={
+                                showApproval
+                                    ? skillChecks.filter((check) => check.status !== "Include")
+                                          .length
+                                    : excludedCount
+                            }
+                            conflictCount={conflicts.length}
+                            unresolvedConflicts={unresolvedConflicts}
+                            notAssessedCount={notAssessedCount}
+                            showApproval={showApproval}
+                        />
                         <Show when={conflicts.length > 0}>
                             <SkillTrack_SessionReview_Conflicts
+                                id="conflicts"
                                 conflicts={conflicts}
                                 selected={selected}
                                 pick={pick}
