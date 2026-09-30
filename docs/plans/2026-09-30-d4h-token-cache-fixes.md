@@ -21,29 +21,31 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 
 ## Decisions
 
-| Question | Decision (2026-09-30) |
-| --- | --- |
-| How the cached functions are keyed | Adopt the earlier plan's Phase 2 design as it stands: a `D4HCredentialRef` (`credentialId`, `organizationId`, `userId`), re-resolved and ownership-checked **inside** each cached body (Tasks 1–2). No caller passes plaintext into a cache key. |
-| Unsaved tokens (create mutations, refresh) | Uncached `computeD4HTokenMetadata(token, whoami)`. Validating a token the user just entered must hit D4H, and there's no row to reference yet. |
-| Cache invalidation | Every cached D4H function also gets an umbrella tag `d4h-api-${credentialId}`. `revalidateD4HApiCache(credentialId)` clears it on refresh and delete. Inner tags do propagate to outer entries (checked against Next 16.3.4), so the inner `provider-credential-${id}` tag already covers part of this. The umbrella tag says it explicitly instead of relying on that. |
-| Lifetimes | Keep the explicit `cacheLife("hours")` on each outer function. Per `cacheLife.md` → "Nested caching behavior", an explicit outer lifetime wins over the inner credential cache's default. |
-| i3 permission check | Uses a new **uncached** `fetchD4HWhoami`. Checks every `POST`, continues past failures, and reports `savedToD4H: { reason }` naming how many items D4H rejected and the first status. |
-| i3 token lookup | `getConfiguredD4HAccessToken`, so a disabled integration stops the form like every other D4H read. |
-| D4H Views token model | The **viewer's personal token** (`getConfiguredD4HAccessToken`), like the module's members/equipment pages and every `d4hApi` procedure. Each viewer sees exactly what D4H lets them see. |
-| D4H Views props | Only the displayed columns cross to the client. No `email`, no duplicate `teams` prop. |
-| One personal token per user per org | A guard in `createPersonalAccessToken` (`CONFLICT` if one exists). **No unique index / migration.** A race or a direct DB write can still create a duplicate; accepted. |
-| Refresh on a failed whoami | Record the new `status`, **keep the existing metadata**. Today it overwrites metadata with empty lists. |
-| Personal-token refresh UI | A "Refresh" button on the personal token's detail page, not a menu item. `ActionVerb` in `src/lib/hotkeys.ts` has no refresh verb, and adding one just for this isn't worth it. |
-| How a request gets its bearer value | Through one async accessor, `getD4HAccessToken(credential)`, called from an async `onRequest` middleware in `getD4HFetchClient` (openapi-fetch supports async `onRequest`). For API keys it returns the stored key. For OAuth it will return a current access token and refresh it when needed. Nothing else reads the secret. |
-| What identifies a credential | Always `credentialId`, in cache keys, tags, refs and `Team_D4H.linkTokenId`. Never anything derived from the secret, which an OAuth refresh would rotate. |
-| Credential kind discriminator (`api-key` / `oauth`) | **Not added now.** It belongs in the OAuth work, and it costs nothing then: a `.default("api-key")` on the metadata schema covers every existing row without a migration. |
-| Validating a credential against D4H | One uncached `validateD4HCredential(credential)` returns `{ ok, status, whoami }`. It's shared by the create mutations, the refresh helper and, later, the OAuth callback. |
+| Question                                            | Decision (2026-09-30)                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| How the cached functions are keyed                  | Adopt the earlier plan's Phase 2 design as it stands: a `D4HCredentialRef` (`credentialId`, `organizationId`, `userId`), re-resolved and ownership-checked **inside** each cached body (Tasks 1–2). No caller passes plaintext into a cache key.                                                                                                                        |
+| Unsaved tokens (create mutations, refresh)          | Uncached `computeD4HTokenMetadata(token, whoami)`. Validating a token the user just entered must hit D4H, and there's no row to reference yet.                                                                                                                                                                                                                          |
+| Cache invalidation                                  | Every cached D4H function also gets an umbrella tag `d4h-api-${credentialId}`. `revalidateD4HApiCache(credentialId)` clears it on refresh and delete. Inner tags do propagate to outer entries (checked against Next 16.3.4), so the inner `provider-credential-${id}` tag already covers part of this. The umbrella tag says it explicitly instead of relying on that. |
+| Lifetimes                                           | Keep the explicit `cacheLife("hours")` on each outer function. Per `cacheLife.md` → "Nested caching behavior", an explicit outer lifetime wins over the inner credential cache's default.                                                                                                                                                                               |
+| i3 permission check                                 | Uses a new **uncached** `fetchD4HWhoami`. Checks every `POST`, continues past failures, and reports `savedToD4H: { reason }` naming how many items D4H rejected and the first status.                                                                                                                                                                                   |
+| i3 token lookup                                     | `getConfiguredD4HAccessToken`, so a disabled integration stops the form like every other D4H read.                                                                                                                                                                                                                                                                      |
+| D4H Views token model                               | The **viewer's personal token** (`getConfiguredD4HAccessToken`), like the module's members/equipment pages and every `d4hApi` procedure. Each viewer sees exactly what D4H lets them see.                                                                                                                                                                               |
+| D4H Views props                                     | Only the displayed columns cross to the client. No `email`, no duplicate `teams` prop.                                                                                                                                                                                                                                                                                  |
+| One personal token per user per org                 | A guard in `createPersonalAccessToken` (`CONFLICT` if one exists). **No unique index / migration.** A race or a direct DB write can still create a duplicate; accepted.                                                                                                                                                                                                 |
+| Refresh on a failed whoami                          | Record the new `status`, **keep the existing metadata**. Today it overwrites metadata with empty lists.                                                                                                                                                                                                                                                                 |
+| Personal-token refresh UI                           | A "Refresh" button on the personal token's detail page, not a menu item. `ActionVerb` in `src/lib/hotkeys.ts` has no refresh verb, and adding one just for this isn't worth it.                                                                                                                                                                                         |
+| How a request gets its bearer value                 | Through one async accessor, `getD4HAccessToken(credential)`, called from an async `onRequest` middleware in `getD4HFetchClient` (openapi-fetch supports async `onRequest`). For API keys it returns the stored key. For OAuth it will return a current access token and refresh it when needed. Nothing else reads the secret.                                          |
+| What identifies a credential                        | Always `credentialId`, in cache keys, tags, refs and `Team_D4H.linkTokenId`. Never anything derived from the secret, which an OAuth refresh would rotate.                                                                                                                                                                                                               |
+| Credential kind discriminator (`api-key` / `oauth`) | **Not added now.** It belongs in the OAuth work, and it costs nothing then: a `.default("api-key")` on the metadata schema covers every existing row without a migration.                                                                                                                                                                                               |
+| Validating a credential against D4H                 | One uncached `validateD4HCredential(credential)` returns `{ ok, status, whoami }`. It's shared by the create mutations, the refresh helper and, later, the OAuth callback.                                                                                                                                                                                              |
 
 ---
 
 ## Tasks
 
-### - [ ] 1. Owner-checked credential resolution
+### - [x] 1. Owner-checked credential resolution
+
+`feat(d4h): owner-checked credential references`, `test(d4h): cover toD4HCredentialRef round-trip and null organizationId`
 
 **Files:** `src/server/d4h-access-token.ts`, new `src/server/d4h-access-token.test.ts`, `docs/plans/2026-09-29-provider-credential-security-fixes.md`.
 
@@ -54,6 +56,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - **Earlier plan:** under its `## Phase 2` heading, add one line saying it's taken over by this plan, with a link.
 
 **Done when:**
+
 - `d4h-access-token.test.ts` covers `resolveD4HCredential`: it resolves a matching org ref and a matching personal ref, and throws for another user's personal credential, for a personal credential referenced as an org one, for the reverse, and for a wrong organization.
   - Use `provider-credential.test.ts` as the template: `vi.hoisted` + `vi.mock("./prisma")` with `createMockPrisma()`, plus mocks for `next/cache` and `@/server/encrypt`.
   - `d4h-access-token.ts` imports `./cache/organization-settings`, so mock that too.
@@ -66,6 +69,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 **Files:** `src/server/d4h-api/client.ts`, `src/trpc/routers/d4h-api-router.ts`, `src/trpc/routers/d4h-access-tokens-router.ts`, `src/server/services/d4h-team-sync.ts`, `src/forms/i3-issue-items/processor.ts`, pages under `src/app/(wrapper)/(authenticated)/orgs/[slug]/` (`i3/members`, `i3/equipment-kinds`, `d4h-views/teams`, `d4h-views/personnel`, `admin/d4h-access-tokens/[token_id]/{organisation,equipment-categories,equipment-items,equipment-kinds,equipment-locations,members}`); tests: `src/trpc/routers/teams-router.test.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`. `src/trpc/routers/teams-router.ts` is likely unchanged: it passes the resolved token to `D4HTeamSync`, which converts.
 
 **Do:**
+
 - **`client.ts`:**
   - `fetchD4HWhoamiCached`, `getD4HTokenMetadata`, `getD4HTeamMembers`, `fetchD4HTeamDetailCached` and `fetchD4HOrganisationCached` take `ref: D4HCredentialRef` in place of `token`. Each calls `resolveD4HCredential(ref)` inside the cache scope, then `getD4HFetchClient(resolved)`. Tags stay `d4h-api-${ref.credentialId}-…`, and each keeps its explicit `cacheLife("hours")`.
   - Extract the uncached bodies: `fetchD4HWhoami(token)` and `computeD4HTokenMetadata(token, whoami)`. The cached versions call them. `getD4HTokenMetadata(ref)` loses its `options.whoami` parameter.
@@ -80,6 +84,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - Behaviour doesn't change in this task. It's a refactor of what the cache key contains.
 
 **Done when:**
+
 - `grep -n 'D4HAccessToken_ServerOnly' src/server/d4h-api/client.ts` lists only the import, `getD4HFetchClient`, `fetchD4HWhoami`, `computeD4HTokenMetadata`, `validateD4HCredential`, `fetchD4HTeamMembersForSync` and `fetchD4HMemberAttendance`.
 - The secret is read only inside `getD4HAccessToken` and `toD4HAccessToken_ServerOnly`: `grep -rnE '\b(token|accessToken|credential)\.token\b' src --include='*.ts' --include='*.tsx' | grep -v test` shows only those two.
 - A test on `getD4HFetchClient` (mocking `fetch`) asserts the request carries `Authorization: Bearer <key>` via the accessor.
@@ -91,6 +96,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 **Files:** `src/server/d4h-api/client.ts`, `src/server/d4h-access-token.ts`, `src/trpc/routers/d4h-access-tokens-router.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`.
 
 **Do:**
+
 - Every cached function in `client.ts` also calls `cacheTag(d4hApiCacheTag(ref.credentialId))`, where `d4hApiCacheTag = (id) => \`d4h-api-${id}\``. Keep the specific tags.
   - Inner tags already propagate to outer entries, so `provider-credential-${id}` covers part of this. The umbrella tag makes it explicit.
 - Add `revalidateD4HApiCache(credentialId)` next to `revalidateD4HAccessToken` in `d4h-access-token.ts`. It calls `revalidateTag(d4hApiCacheTag(id), { expire: 0 })`, matching `provider-credential.ts`.
@@ -104,6 +110,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 **Files:** `src/trpc/routers/d4h-access-tokens-router.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`, `src/trpc/messages.ts`, `src/client/d4h-access-tokens-effects.ts`.
 
 **Do:**
+
 - **`createPersonalAccessToken`:** before calling D4H, `findFirst({ where: { provider: "D4H", organizationId, userId } })`. If one exists, throw `TRPCError({ code: "CONFLICT" })` with a new `Messages` entry telling the user to remove the existing token first. (Under OAuth, reconnecting will update the existing row in place rather than conflict. That's the OAuth work's concern, not this guard's.)
 - **Shared refresh helper:** extract the body of `refreshToken`, from the `validateD4HCredential` call through the `$transaction` with `ctx.logEvent`, into a module-level helper that takes `ctx` and the credential record. `refreshToken` calls it. Behaviour doesn't change here; Task 5 changes the helper once.
 - **New `refreshPersonalAccessToken`:** `organizationProcedure({ organization: ["view"] })`, placed just before `refreshToken` (procedures are alphabetical, per `docs/conventions-checklist.md`).
@@ -119,6 +126,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 **Files:** `src/trpc/routers/d4h-access-tokens-router.ts`, `src/trpc/routers/d4h-api-router.ts`, `src/server/d4h-api/client.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`.
 
 **Do:**
+
 - **Create mutations (org and personal):** if `validateD4HCredential` returns `ok: false`, throw `TRPCError({ code: "BAD_REQUEST" })` saying D4H rejected the token, including `response.status` (the number; `statusText` is often empty under undici/HTTP/2). Save nothing and log nothing.
 - **Shared refresh helper (from Task 4):** on a failed whoami, write the new `status` and leave `metadata` as it is. On success, behave as today. The log entry's `diffObject` stays status-only.
 - **`listEquipmentItems`:** check `error` and throw like its siblings do.
@@ -126,6 +134,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - **`listEquipmentKinds`:** read `d4HTeams` from `getD4HTokenMetadata(toD4HCredentialRef(accessToken))`, not `accessToken.metadata`.
 
 **Done when:**
+
 - Tests cover create with a rejected token → `BAD_REQUEST` and no `providerCredential.create`, and a rejected token on **both** `refreshToken` and `refreshPersonalAccessToken` → status updated, metadata unchanged.
 - `grep -n "accessToken.metadata" src/trpc/routers/d4h-api-router.ts` finds nothing.
 - `npm run check` passes.
@@ -135,6 +144,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 **Files:** `src/forms/i3-issue-items/processor.ts`, new `src/forms/i3-issue-items/processor.test.ts`, `src/emails/i3-issue-items-notification.tsx`.
 
 **Do:**
+
 - **`CheckD4HAccessToken`:** use `getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId)`, which throws when the integration is disabled or the user has no token.
 - **`CheckPermissions`:** use the uncached `fetchD4HWhoami(accessToken)` from Task 2.
 - **`CreateEquipmentInD4H`:** check each `POST` response. Keep going past failures, since the items already created can't be rolled back.
@@ -143,6 +153,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
   - If partial success makes that sentence untrue ("not been recorded" when some were), adjust the email's wording for that case.
 
 **Done when:** `processor.test.ts` runs `I3IssueItemsFormProcessor.execute(...)` directly, with `createMockPrisma()` for `i3Template.findMany` and mocks for `@/server/d4h-access-token`, `@/server/d4h-api/client` and `@/server/email`. It covers:
+
 - all creates succeeding → `true`
 - one `POST` failing → a reason naming 1 of M
 - no `Equipment.CREATE` permission → no `POST`
@@ -156,6 +167,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-views/personnel/page.tsx`, `…/personnel/personnel-list.tsx`, `…/d4h-views/teams/page.tsx`, `…/teams/d4h-teams-list.tsx`.
 
 **Do:**
+
 - **Both pages:** replace the `settings.integrations.d4h.syncToken` + `getOrganizationD4HAccessToken` block with `getConfiguredD4HAccessToken(organization.id, UserId.schema.parse(session.user.id))`.
   - That handles a disabled integration or a missing personal token the same way the i3 pages do.
   - The `parse` is deliberate; `i3/members` casts instead.
@@ -164,6 +176,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - **Teams:** pass `{ id, title }` only.
 
 **Done when:** `npm run check` passes. Then in the browser:
+
 - As a user with a personal token, both pages list what that token can see.
 - As a user without one, they show the same not-configured error the i3 pages show.
 - In the personnel page's RSC payload (DevTools → Network, the document or `?_rsc=` response), search for a specific listed member's email address, or their email domain: it doesn't appear.
@@ -183,12 +196,14 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 D4H supports OAuth as well as API keys. AVUT will move to it once D4H has set us up, but nothing here builds it. The aim is that this plan leaves nothing to undo when that work starts.
 
 **What this plan guarantees:**
+
 - **Nothing is keyed on the secret.** Cache keys, tags, refs and `Team_D4H.linkTokenId` all use `credentialId`. An OAuth access token rotates every hour or so, so anything keyed on it would miss the cache or break links.
 - **The secret is read in one place.** Every request's bearer value comes from `getD4HAccessToken(credential)` (Task 2). OAuth changes that function, not its callers.
 - **Validation is one function.** `validateD4HCredential` (Task 2) serves the paste-a-key flow today and the OAuth callback later, which also needs whoami and metadata after the code exchange.
 - **Cached D4H data is per credential.** Refreshing an access token doesn't change who the credential is, so the whoami and roster caches stay valid across refreshes. Reconnecting or replacing a credential is cleared with `revalidateD4HApiCache` (Task 3).
 
 **What the OAuth work will have to do** (for its own spec, not this plan):
+
 - **Token material.** Store the access token, refresh token and access-token expiry encrypted. Either keep them as an encrypted JSON blob in the `token` column, or add columns (a migration). Add a kind discriminator to the metadata with `.default("api-key")`.
 - **Refresh inside the accessor.** When the access token is near expiry, `getD4HAccessToken` refreshes it and writes the new material back.
   - That write can happen inside a `"use cache"` body on a miss. That's allowed, but it has to be safe under concurrency: if D4H rotates refresh tokens, two parallel refreshes would invalidate each other. Use a row lock, or compare-and-swap on `updatedAt`.
@@ -199,6 +214,7 @@ D4H supports OAuth as well as API keys. AVUT will move to it once D4H has set us
 - **The org sync credential.** OAuth grants usually belong to a user, so work out whose grant the org credential is: a designated admin's, a service account's, or a client-credentials grant.
 
 **Questions for D4H:**
+
 - Which grant types are supported: authorization code with PKCE, client credentials?
 - How long do access tokens and refresh tokens live? Are refresh tokens rotated on use?
 - Is there a way to act for an organisation or team, rather than as one user?

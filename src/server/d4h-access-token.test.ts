@@ -4,6 +4,7 @@
  */
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import * as z from "zod";
 
 import { NotConfiguredError } from "@/lib/errors";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -11,7 +12,11 @@ import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
-import { resolveD4HCredential, type D4HCredentialRef } from "./d4h-access-token";
+import {
+    resolveD4HCredential,
+    toD4HCredentialRef,
+    type D4HCredentialRef,
+} from "./d4h-access-token";
 
 // provider-credential imports the real Prisma client; swap in the in-memory one. `vi.hoisted`
 // because vi.mock factories run before the module's own imports.
@@ -130,5 +135,25 @@ describe("resolveD4HCredential", () => {
         { name: "a missing credential", ref: orgRef(ProviderCredentialId.create()) },
     ])("throws NotConfiguredError for $name", async ({ ref }) => {
         await expect(resolveD4HCredential(ref)).rejects.toThrow(NotConfiguredError);
+    });
+
+    describe("toD4HCredentialRef", () => {
+        it.each([
+            { name: "an organization token", ref: orgRef(T.orgCredential) },
+            { name: "a personal token", ref: personalRef(T.personalCredential) },
+        ])("round-trips $name through resolveD4HCredential", async ({ ref }) => {
+            const token = await resolveD4HCredential(ref);
+
+            expect(toD4HCredentialRef(token)).toEqual(ref);
+            expect(await resolveD4HCredential(toD4HCredentialRef(token))).toEqual(token);
+        });
+
+        it("throws for a token with no organizationId", async () => {
+            const token = await resolveD4HCredential(orgRef(T.orgCredential));
+
+            expect(() => toD4HCredentialRef({ ...token, organizationId: null })).toThrow(
+                z.ZodError,
+            );
+        });
     });
 });

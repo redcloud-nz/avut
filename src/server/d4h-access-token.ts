@@ -61,7 +61,11 @@ export function toServerOnlyD4HAccessToken(
  */
 export type D4HCredentialRef = Omit<ProviderCredentialRef, "provider">;
 
-/** The reference to an already-resolved token: its ID and the owner it was resolved for. */
+/**
+ * The reference to an already-resolved token: its ID and the owner it was resolved for.
+ * @throws ZodError if the token has no `organizationId`. It expects an org-scoped token (every
+ * D4H token is loaded through an organization-scoped lookup), so a null here is a broken invariant.
+ */
 export function toD4HCredentialRef(token: D4HAccessToken_ServerOnly): D4HCredentialRef {
     return {
         credentialId: token.id,
