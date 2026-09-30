@@ -123,13 +123,15 @@ object: who did what, when, and the field-level changes.
   "reordered". Object types get a display label from `objectTypeLabel(type)` (humanised,
   `"TeamMembership"` → "Team membership", with overrides where that reads badly, e.g.
   `Session` → "Sign-in session"; acronym runs like `D4H` already humanise correctly). Unknown values fall back to the raw string.
-- **Layout:** `Saratoga.Root` with a single-column list of entries, which is a timeline, not a
-  `Kaga` table: each entry is a heterogeneous block of changes. Each row shows the action
-  (a `Badge`), a "related: Team membership" tag for non-primary entries, the actor, and the
-  timestamp (`usePreferences().formatDateTime`, with `formatRelativeDateTime` muted), then
-  the description if
-  any, then the change list. A "Load more" button at the bottom while `hasNextPage`. The
-  empty state is "No history recorded yet."
+- **Layout** (revised at the visual checkpoint): `Saratoga.Root` with a flat, borderless
+  list of entries (a timeline, not a `Kaga` table), not in a card. Every entry is collapsed by
+  default. Its header is a plain-text sentence with no links or pills ("Added to team Erehwon
+  Logistics by Demo Owner"), with the past-tense action (`actionPastTenseLabel`) and, for
+  related entries, a page-aware phrase (`relatedActionPhrase`). The relative time sits at the
+  end. Below a `@2xl` container width, the header drops to the bare action ("Added to team").
+  The body holds the full timestamp, the actor, the linked refs, the description, then the
+  change list. A "Load more" button at the bottom while `hasNextPage`. The empty state is
+  "No history recorded yet."
 
 ## Tasks
 

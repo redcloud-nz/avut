@@ -6,7 +6,14 @@
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_DISPLAY_PREFERENCES, formatDateTime, type DisplayPreferences } from "./datetime";
-import { describeChange, formatDiffValue, formatFieldPath, objectTypeLabel } from "./diff-format";
+import {
+    actionPastTenseLabel,
+    describeChange,
+    formatDiffValue,
+    formatFieldPath,
+    objectTypeLabel,
+    relatedActionPhrase,
+} from "./diff-format";
 
 /** 2026-02-02 22:36 UTC — next morning (11:36 NZDT) in Auckland. */
 const ISO = "2026-02-02T22:36:00.000Z";
@@ -206,5 +213,32 @@ describe("objectTypeLabel", () => {
     it("humanises an unknown type the same way", () => {
         expect(objectTypeLabel("RetiredWidgetThing")).toBe("Retired widget thing");
         expect(objectTypeLabel("constructor")).toBe("Constructor");
+    });
+});
+
+describe("actionPastTenseLabel", () => {
+    it("puts a known action in the past tense", () => {
+        expect(actionPastTenseLabel("Create")).toBe("Created");
+        expect(actionPastTenseLabel("Update")).toBe("Updated");
+        expect(actionPastTenseLabel("Unpublish")).toBe("Unpublished");
+    });
+
+    it("returns an unknown action unchanged", () => {
+        expect(actionPastTenseLabel("Frobnicate")).toBe("Frobnicate");
+        expect(actionPastTenseLabel("constructor")).toBe("constructor");
+    });
+});
+
+describe("relatedActionPhrase", () => {
+    it("names a team membership change from the page's point of view", () => {
+        expect(relatedActionPhrase("TeamMembership", "Team", "Create")).toBe("Added team member");
+        expect(relatedActionPhrase("TeamMembership", "Person", "Create")).toBe("Added to team");
+        expect(relatedActionPhrase("TeamMembership", "Team", "Delete")).toBe("Removed team member");
+    });
+
+    it("returns undefined when there is no phrase", () => {
+        expect(relatedActionPhrase("TeamMembership", "Team", "Approve")).toBeUndefined();
+        expect(relatedActionPhrase("OrganizationMembership", "Person", "Update")).toBeUndefined();
+        expect(relatedActionPhrase("TeamMembership", "constructor", "Create")).toBeUndefined();
     });
 });

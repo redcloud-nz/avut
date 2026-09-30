@@ -176,3 +176,72 @@ export function describeChange(
 export function objectTypeLabel(type: string): string {
     return ownValue<string>(objectTypeLabelOverrides, type) ?? humanise(type);
 }
+
+/** Past-tense forms of `LogAction`, for "Created by …". Keyed by string: stored rows aren't strict. */
+const actionPastTense: Partial<Record<string, string>> = {
+    Approve: "Approved",
+    Archive: "Archived",
+    Ban: "Banned",
+    Create: "Created",
+    Delete: "Deleted",
+    Impersonate: "Impersonated",
+    Move: "Moved",
+    Publish: "Published",
+    Purge: "Purged",
+    Recover: "Recovered",
+    Restore: "Restored",
+    Revoke: "Revoked",
+    Subscribe: "Subscribed",
+    Unban: "Unbanned",
+    Unpublish: "Unpublished",
+    Unsubscribe: "Unsubscribed",
+    Update: "Updated",
+};
+
+/** The past tense of an action ("Update" → "Updated"); an unknown action comes back as is. */
+export function actionPastTenseLabel(action: string): string {
+    return ownValue(actionPastTense, action) ?? action;
+}
+
+/**
+ * Phrases for a related entry, keyed by the entry's own object type, then the type of the page
+ * it's shown on, then its action. A related entry's bare verb ("Updated") doesn't say what was
+ * updated; these name it from the page's point of view, and read as a sentence with the entry's
+ * other ref after them: the same `TeamMembership` Create reads "Added team member <person>" on
+ * the Team's history and "Added to team <team>" on the Person's.
+ */
+const relatedActionPhrases: Partial<
+    Record<LogObjectType, Partial<Record<LogObjectType, Partial<Record<string, string>>>>>
+> = {
+    TeamMembership: {
+        Team: {
+            Archive: "Archived team member",
+            Create: "Added team member",
+            Delete: "Removed team member",
+            Recover: "Recovered team member",
+            Restore: "Restored team member",
+            Update: "Updated team member",
+        },
+        Person: {
+            Archive: "Archived membership of",
+            Create: "Added to team",
+            Delete: "Removed from team",
+            Recover: "Recovered membership of",
+            Restore: "Restored membership of",
+            Update: "Updated membership of",
+        },
+    },
+};
+
+/**
+ * The phrase for a related entry's action on a page of type `pageType`, or `undefined` when there
+ * isn't one (the caller then shows the bare action plus a "related: <type>" tag). Takes plain
+ * strings for the same reason as `objectTypeLabel`.
+ */
+export function relatedActionPhrase(
+    entryType: string,
+    pageType: string,
+    action: string,
+): string | undefined {
+    return ownValue(ownValue(ownValue(relatedActionPhrases, entryType), pageType), action);
+}

@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { ChevronDownIcon } from "lucide-react";
 import { useId, type ReactNode } from "react";
 
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
@@ -11,14 +12,16 @@ import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import {
+    actionPastTenseLabel,
     describeChange,
     FieldLabels,
     objectTypeLabel,
+    relatedActionPhrase,
     type ChangeDescriptor,
 } from "@/lib/diff-format";
 import { LogObjectType } from "@/lib/schemas/log-entry";
@@ -74,10 +77,14 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
             ) : (
                 <ol
                     aria-labelledby={titleId}
-                    className="divide-y divide-border rounded-lg border border-border"
+                    className="divide-y divide-border border-y border-border"
                 >
                     {entries.map((entry) => (
-                        <ObjectHistoryEntryItem key={entry.id} entry={entry} />
+                        <ObjectHistoryEntryItem
+                            key={entry.id}
+                            entry={entry}
+                            pageType={objectType}
+                        />
                     ))}
                 </ol>
             )}
@@ -99,62 +106,122 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
     );
 }
 
-function ObjectHistoryEntryItem({ entry }: { entry: ObjectHistoryEntry }) {
+function ObjectHistoryEntryItem({
+    entry,
+    pageType,
+}: {
+    entry: ObjectHistoryEntry;
+    pageType: string;
+}) {
     const preferences = usePreferences();
 
     const entryType = LogObjectType.schema.safeParse(entry.objectType);
     const labels = entryType.success ? FieldLabels[entryType.data] : undefined;
 
+    // A related entry with a phrase ("Added to team") names its refs after it, as the sentence's
+    // object ("Added to team Erehwon Logistics by …"); the linked refs are in the details. One
+    // without a phrase names its own type instead ("Updated organisation membership by …").
+    const phrase =
+        entry.relation === "related"
+            ? relatedActionPhrase(entry.objectType, pageType, entry.action)
+            : undefined;
+    const verb =
+        phrase ??
+        (entry.relation === "related"
+            ? `${actionPastTenseLabel(entry.action)} ${lowerFirst(objectTypeLabel(entry.objectType))}`
+            : actionPastTenseLabel(entry.action));
+    // A ref with no name to show (purged, not viewable) is left out of the sentence rather than
+    // standing in as its type ("Added to team team"); the details still list it as unavailable.
+    const inlineNames = phrase ? entry.refs.flatMap((ref) => refName(ref) ?? []) : [];
+
+    // Plain text, read as a sentence: "Added to team Erehwon Logistics by Demo Owner", with only
+    // the relative time after it. In a narrow list (the `<li>` is the container) it drops to the
+    // bare action, "Added to team" / "Updated membership"; the body repeats the ref and actor, so
+    // nothing is lost. Nothing in it is a link (the refs are linked in the body), so the whole
+    // row can be the collapse button. The relative time sits at the row's end, and wraps under
+    // the title when it doesn't fit.
+    const summary = (
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            <span className="@2xl:hidden">{verb.replace(/ of$/, "")}</span>
+            <span className="hidden @2xl:inline">
+                {[verb, ...inlineNames].join(" ")} by {actorText(entry)}
+            </span>
+            <time
+                dateTime={entry.timestamp.toISOString()}
+                className="ml-auto whitespace-nowrap text-muted-foreground"
+            >
+                {preferences.formatRelativeDateTime(entry.timestamp)}
+            </time>
+        </div>
+    );
+
+    // Every entry has a body (its full timestamp, at least), so every row expands.
     return (
-        <li className="space-y-2 px-4 py-3">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <Badge variant={actionBadgeVariant(entry.action)}>{entry.action}</Badge>
-                {entry.relation === "related" && (
-                    <Badge variant="outline">related: {objectTypeLabel(entry.objectType)}</Badge>
-                )}
-                <span className="text-sm font-medium">{actorText(entry)}</span>
-                <span className="ml-auto text-sm">
-                    <time dateTime={entry.timestamp.toISOString()}>
-                        {preferences.formatDateTime(entry.timestamp)}
-                    </time>{" "}
-                    <span className="text-muted-foreground">
-                        ({preferences.formatRelativeDateTime(entry.timestamp)})
-                    </span>
-                </span>
-            </div>
+        <li className="@container">
+            <Collapsible>
+                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-muted/50 sm:px-2">
+                    {summary}
+                    <ChevronDownIcon
+                        className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
+                        aria-hidden
+                    />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-2 px-1 pb-3 sm:px-2">
+                    <p className="text-sm">
+                        <span className="text-muted-foreground">Timestamp</span>{" "}
+                        <time dateTime={entry.timestamp.toISOString()}>
+                            {preferences.formatDateTime(entry.timestamp)}
+                        </time>
+                    </p>
 
-            {entry.refs.length > 0 && (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                    {entry.refs.map((ref, index) => (
-                        <HistoryRef key={index} historyRef={ref} />
-                    ))}
-                </div>
-            )}
+                    <p className="text-sm">
+                        <span className="text-muted-foreground">By</span> {actorText(entry)}
+                    </p>
 
-            {entry.description && <p className="text-sm">{entry.description}</p>}
+                    {entry.refs.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                            {entry.refs.map((ref, index) => (
+                                <HistoryRef key={index} historyRef={ref} />
+                            ))}
+                        </div>
+                    )}
 
-            {entry.changes.length > 0 && (
-                <ul className="space-y-0.5 text-sm">
-                    {entry.changes.map((change, index) => (
-                        <ChangeLine
-                            key={index}
-                            change={describeChange(change, {
-                                labels,
-                                prefs: preferences.display,
-                            })}
-                        />
-                    ))}
-                </ul>
-            )}
+                    {entry.description && <p className="text-sm">{entry.description}</p>}
+
+                    {entry.changes.length > 0 && (
+                        <ul className="space-y-0.5 text-sm">
+                            {entry.changes.map((change, index) => (
+                                <ChangeLine
+                                    key={index}
+                                    change={describeChange(change, {
+                                        labels,
+                                        prefs: preferences.display,
+                                    })}
+                                />
+                            ))}
+                        </ul>
+                    )}
+                </CollapsibleContent>
+            </Collapsible>
         </li>
     );
+}
+
+/**
+ * A ref's name as plain text, for the summary sentence: the person's or team's name, or `null`
+ * when it has none to show (purged, not viewable, or a type that isn't resolved).
+ */
+function refName(historyRef: ObjectHistoryRef): string | null {
+    if ("person" in historyRef && historyRef.person) return historyRef.person.name;
+    if ("team" in historyRef && historyRef.team) return historyRef.team.name;
+    return null;
 }
 
 function HistoryRef({ historyRef }: { historyRef: ObjectHistoryRef }) {
     const typeLabel = objectTypeLabel(historyRef.objectType);
 
-    // Narrowed with `in`, not on `objectType`: the fallback member's branded `string` is still
-    // comparable to "Person"/"Team", so an `objectType` check doesn't discriminate the union.
+    // Narrowed with `in`, not on `objectType`: the fallback member's `objectType` is a plain
+    // `string`, so an `objectType` check doesn't discriminate the union.
     // A null person/team was purged or isn't viewable by the caller.
     const unavailable = <span className="text-muted-foreground">(unavailable)</span>;
     let target: ReactNode = null;
@@ -233,20 +300,14 @@ function actorText(entry: ObjectHistoryEntry): string {
         : actor;
 
     return entry.actorName && entry.operationLabel
-        ? `${withImpersonator} · ${entry.operationLabel}`
+        ? `${withImpersonator} (${entry.operationLabel})`
         : withImpersonator;
 }
 
-function actionBadgeVariant(action: string): "default" | "secondary" | "destructive" {
-    switch (action) {
-        case "Create":
-            return "default";
-        case "Delete":
-        case "Purge":
-        case "Revoke":
-        case "Ban":
-            return "destructive";
-        default:
-            return "secondary";
-    }
+/**
+ * Lower-case a label's first letter for use mid-sentence ("Organisation membership" →
+ * "organisation membership"), leaving a leading acronym alone ("D4H access token").
+ */
+function lowerFirst(label: string): string {
+    return /^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label;
 }
