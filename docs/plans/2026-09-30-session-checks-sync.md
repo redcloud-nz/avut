@@ -97,7 +97,7 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
 
 ## Tasks
 
-- [ ] **1. `listSessionChecks` procedure**
+- [x] **1. `listSessionChecks` procedure** — feat(skill-track): add listSessionChecks for live session sync
   - **Files:** `src/lib/schemas/skill-check.ts`, `src/trpc/routers/skill-check-sessions-router.ts`, `src/trpc/routers/skill-check-sessions-router.test.ts`.
   - **Do:**
     - Add the `SessionCheck` schema (`SkillCheck.schema.extend({ assesseeName, skillName, assessorName })`) and its type, and export `SESSION_CHECKS_LOOKBACK_MS = 10_000`.
@@ -206,6 +206,7 @@ After Task 7, one checkpoint covering Tasks 6 and 7. Use two accounts, or one ac
 - **Session presence** ("who's here now") and push transport. That's #318, which stays parked.
 - **Session configuration changes made elsewhere,** such as a person or skill added by the coordinator. The poll doesn't carry config, so the assigned lists refresh only on reload or on the page's own writes.
 - **Rows hard-deleted outside approval,** such as a cascade from purging a person or skill. The session cache keeps them until the page reloads.
+- **Renames.** Renaming a person or skill doesn't touch `SkillCheck.updatedAt`, so the names on cached rows are only as fresh as each row's last write, or the page load.
 - **A full event history** in the Recent checks dialog, which would need #46's audit logging.
 - **End-user docs** (`content/docs/skill-track/sessions.mdx`). They're the single docs pass after Stage 2, per #336.
 - **Closing #317 and #318.** That's #336's housekeeping, done after this merges.

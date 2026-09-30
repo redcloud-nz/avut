@@ -69,6 +69,28 @@ export const SkillCheck = {
 export type SkillCheck = z.infer<typeof SkillCheck.schema>;
 
 /**
+ * A session's check as `skillCheckSessions.listSessionChecks` returns it: the check with the
+ * names of its assessee, skill and assessor, so it describes itself even once they are no longer
+ * assigned to the session. `assessorName` falls back as `assessorDisplayName` does.
+ */
+export const SessionCheck = {
+    schema: SkillCheck.schema.extend({
+        assesseeName: z.string(),
+        skillName: z.string(),
+        assessorName: z.string(),
+    }),
+} as const;
+
+export type SessionCheck = z.infer<typeof SessionCheck.schema>;
+
+/**
+ * How far `listSessionChecks`' cursor lags the server's clock, in milliseconds. A check stamped
+ * this long before a read began is assumed to have committed by then (commit delay plus clock
+ * skew between server instances stay under it).
+ */
+export const SESSION_CHECKS_LOOKBACK_MS = 10_000;
+
+/**
  * Display name for a check's assessor: the live person, else the name kept when they were
  * purged from the Rubbish bin.
  */

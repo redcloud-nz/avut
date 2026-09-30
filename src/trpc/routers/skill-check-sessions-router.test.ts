@@ -12,7 +12,7 @@ import type { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
-import { SkillCheckId } from "@/lib/schemas/skill-check";
+import { SESSION_CHECKS_LOOKBACK_MS, SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
@@ -210,12 +210,12 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
      */
     function fakeLostApprovalRace() {
         const findUnique = db.skillCheckSession.findUnique.bind(db.skillCheckSession);
-        const findSpy = vi
-            .spyOn(db.skillCheckSession, "findUnique")
-            .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => ({
-                ...(await findUnique(args)),
-                status: "Draft",
-            })) as unknown as typeof findUnique);
+        const findSpy = vi.spyOn(db.skillCheckSession, "findUnique").mockImplementationOnce((async (
+            args: Parameters<typeof findUnique>[0],
+        ) => ({
+            ...(await findUnique(args)),
+            status: "Draft",
+        })) as unknown as typeof findUnique);
         const updateSpy = vi
             .spyOn(db.skillCheckSession, "update")
             .mockRejectedValueOnce(
@@ -2315,5 +2315,280 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
         expect((await checkStatuses(T.draftSession))[T.draftCheck]).toBe("Draft");
+    });
+});
+
+describe("skillCheckSessions.listSessionChecks", () => {
+    // Dataset (T0 = 2026-01-01T00:00:00Z; the clock is frozen at T0 + 120s):
+    //   session         → Draft, with
+    //     liveCheck     → (assessee, skill1, jane), Draft, updated T0
+    //     purgedCheck   → (assessee, skill1, purged assessor "Purged Person"), Draft, updated T0 + 30s
+    //     deletedCheck  → (assessee, skill2, bob), Deleted, updated T0 + 60s
+    //   approvedSession → Include, no checks
+    //   otherOrgSession → a session in another organization
+    const T0 = new Date("2026-01-01T00:00:00.000Z").getTime();
+    const NOW = T0 + 120_000;
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        assessee: PersonId.create(),
+        jane: PersonId.create(),
+        bob: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill1: SkillId.create(),
+        skill2: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+        approvedSession: SkillCheckSessionId.create(),
+        otherOrgSession: SkillCheckSessionId.create(),
+        liveCheck: SkillCheckId.create(),
+        purgedCheck: SkillCheckId.create(),
+        deletedCheck: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: "Test Org", slug: id, createdAt: new Date() },
+            });
+        }
+
+        for (const [id, name] of [
+            [T.assessee, "Assessee"],
+            [T.jane, "Jane"],
+            [T.bob, "Bob"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [T.skill1, "Skill 1"],
+            [T.skill2, "Skill 2"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+
+        for (const [id, organizationId, sessionNumber, status] of [
+            [T.session, T.org, 1, "Draft"],
+            [T.approvedSession, T.org, 2, "Include"],
+            [T.otherOrgSession, T.otherOrg, 1, "Draft"],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId,
+                    name: "Session",
+                    sessionNumber,
+                    status,
+                    startsAt: new Date(),
+                    notes: "",
+                },
+            });
+        }
+
+        for (const [id, skillId, assessorId, assessorLabel, status, offset] of [
+            [T.liveCheck, T.skill1, T.jane, null, "Draft", 0],
+            [T.purgedCheck, T.skill1, null, "Purged Person", "Draft", 30_000],
+            [T.deletedCheck, T.skill2, T.bob, null, "Deleted", 60_000],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId: T.session,
+                    assesseeId: T.assessee,
+                    skillId,
+                    assessorId,
+                    assessorLabel,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                    createdAt: new Date(T0 + offset),
+                    updatedAt: new Date(T0 + offset),
+                },
+            });
+        }
+    });
+
+    beforeEach(() => {
+        vi.useFakeTimers({ now: NOW, toFake: ["Date"] });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    function makeCaller(
+        permissions: Permissions = {
+            organization: ["view"],
+            skillCheckSession: ["view"],
+            skillCheck: ["view"],
+        },
+    ) {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.user }, permissions, prisma: db }),
+        );
+    }
+
+    const iso = (ms: number) => new Date(ms).toISOString();
+
+    it("returns every check without since, Deleted ones included", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        expect(Object.fromEntries(checks.map((c) => [c.id, c.status]))).toEqual({
+            [T.liveCheck]: "Draft",
+            [T.purgedCheck]: "Draft",
+            [T.deletedCheck]: "Deleted",
+        });
+    });
+
+    it("carries the assessee's, skill's and assessor's names", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+        const byId = new Map(checks.map((c) => [c.id, c]));
+
+        expect(byId.get(T.liveCheck)).toMatchObject({
+            assesseeName: "Assessee",
+            skillName: "Skill 1",
+            assessorName: "Jane",
+            updatedAt: iso(T0),
+        });
+        expect(byId.get(T.deletedCheck)).toMatchObject({
+            skillName: "Skill 2",
+            assessorName: "Bob",
+        });
+    });
+
+    it("falls back to assessorLabel for a purged assessor", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        expect(checks.find((c) => c.id === T.purgedCheck)).toMatchObject({
+            assessorId: null,
+            assessorName: "Purged Person",
+        });
+    });
+
+    it("returns only checks updated after since", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            since: iso(T0 + 30_000),
+        });
+
+        // Strictly after: the check stamped exactly at since is left out.
+        expect(checks.map((c) => c.id)).toEqual([T.deletedCheck]);
+    });
+
+    it("sets the cursor to the read's start less the lookback without since", async () => {
+        const { cursor } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        expect(cursor).toBe(iso(NOW - SESSION_CHECKS_LOOKBACK_MS));
+    });
+
+    it("advances the cursor past an older since", async () => {
+        const { cursor } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            since: iso(T0),
+        });
+
+        expect(cursor).toBe(iso(NOW - SESSION_CHECKS_LOOKBACK_MS));
+    });
+
+    it("never moves the cursor earlier than since", async () => {
+        const since = iso(NOW - SESSION_CHECKS_LOOKBACK_MS / 2);
+        const { checks, cursor } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            since,
+        });
+
+        expect(checks).toEqual([]);
+        expect(cursor).toBe(since);
+    });
+
+    it("returns the session's status", async () => {
+        const draft = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+        const approved = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.approvedSession,
+        });
+
+        expect(draft.sessionStatus).toBe("Draft");
+        expect(approved).toMatchObject({ checks: [], sessionStatus: "Include" });
+    });
+
+    it("throws NOT_FOUND for another organization's session", async () => {
+        await expect(
+            makeCaller().listSessionChecks({
+                organizationId: T.org,
+                skillCheckSessionId: T.otherOrgSession,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("throws FORBIDDEN without skillCheck:view", async () => {
+        await expect(
+            makeCaller({ organization: ["view"], skillCheckSession: ["view"] }).listSessionChecks({
+                organizationId: T.org,
+                skillCheckSessionId: T.session,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("throws FORBIDDEN without skillCheckSession:view", async () => {
+        await expect(
+            makeCaller({ organization: ["view"], skillCheck: ["view"] }).listSessionChecks({
+                organizationId: T.org,
+                skillCheckSessionId: T.session,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });

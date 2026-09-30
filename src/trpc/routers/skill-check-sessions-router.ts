@@ -12,7 +12,14 @@ import { diffObject } from "@/lib/diff";
 import { ConflictError, ValidationError } from "@/lib/errors";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
-import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import {
+    assessorDisplayName,
+    SESSION_CHECKS_LOOKBACK_MS,
+    SessionCheck,
+    SkillCheck,
+    SkillCheckId,
+    SkillCheckResultValue,
+} from "@/lib/schemas/skill-check";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import * as SkillChecks from "@/server/services/skill-checks";
@@ -526,6 +533,84 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((person) => PersonRef.schema.parse(person));
             }
+        }),
+
+    /**
+     * List a session's checks, by every assessor, for the entry pages' live sync. The only read
+     * that returns `Deleted` tombstones: they are how a client learns a check was removed. Each
+     * row carries its assessee's, skill's and assessor's names.
+     *
+     * `cursor` is a server-clock watermark to pass back as `since` on the next call, which then
+     * returns only rows with `updatedAt > since`. It is the read's start time less
+     * `SESSION_CHECKS_LOOKBACK_MS`, and never earlier than `since`. The lag is there because
+     * `@updatedAt` is stamped when the app builds a write, not when it commits: a write stamped
+     * just before this read may commit just after it, and clocks differ between server instances.
+     * A row stamped at or before the watermark is taken to have committed by the time the read
+     * began. It isn't the newest row's stamp, since that would stop moving once writes stop and
+     * every poll would re-send the last burst (an approval stamps every check at once). So each
+     * row comes back about once more after the call that first returned it, and the client's merge
+     * has to be idempotent.
+     * @param skillCheckSessionId The session to list checks for.
+     * @param since The `cursor` from the previous call; omit it for every row.
+     * @returns The checks, the next `cursor`, and the session's status (so a poll notices an
+     * approval or reopen made elsewhere).
+     * @throws TRPCError(NOT_FOUND) if the session does not exist.
+     */
+    // Gated on the union of `getSession`'s and `listSkillChecks`' gates; every role with the
+    // first holds the second.
+    listSessionChecks: organizationProcedure({
+        skillCheckSession: ["view"],
+        skillCheck: ["view"],
+    })
+        .input(
+            z.object({
+                skillCheckSessionId: SkillCheckSessionId.schema,
+                since: z.iso.datetime().optional(),
+            }),
+        )
+        .output(
+            z.object({
+                checks: z.array(SessionCheck.schema),
+                cursor: z.iso.datetime(),
+                sessionStatus: SkillCheckSession.schema.shape.status,
+            }),
+        )
+        .query(async ({ ctx, input: { skillCheckSessionId, since } }) => {
+            const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+
+            // Taken before the read, so the watermark can't pass a write the read missed.
+            const readStart = new Date();
+            const checks = await ctx.prisma.skillCheck.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    sessionId: skillCheckSessionId,
+                    ...(since ? { updatedAt: { gt: new Date(since) } } : {}),
+                },
+                include: {
+                    assessee: { select: { name: true } },
+                    skill: { select: { name: true } },
+                    assessor: { select: { name: true } },
+                },
+            });
+
+            const watermark = readStart.getTime() - SESSION_CHECKS_LOOKBACK_MS;
+            const cursor = new Date(
+                since ? Math.max(new Date(since).getTime(), watermark) : watermark,
+            );
+
+            return {
+                checks: checks.map(({ assessee, skill, assessor, ...check }) => ({
+                    ...SkillCheck.fromRecord(check),
+                    assesseeName: assessee.name,
+                    skillName: skill.name,
+                    assessorName: assessorDisplayName({
+                        assessor,
+                        assessorLabel: check.assessorLabel,
+                    }),
+                })),
+                cursor: cursor.toISOString(),
+                sessionStatus: session.status,
+            };
         }),
 
     /**
