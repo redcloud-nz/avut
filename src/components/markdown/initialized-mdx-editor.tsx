@@ -18,7 +18,6 @@ import {
     tablePlugin,
     toolbarPlugin,
     type MDXEditorMethods,
-    type MDXEditorProps,
 } from "@mdxeditor/editor";
 
 import "@mdxeditor/editor/style.css";
@@ -26,6 +25,7 @@ import "./markdown.css";
 
 import { cn } from "@/lib/utils";
 
+import type { MarkdownEditorProps } from "./editor";
 import {
     CreateLinkButton,
     FormatTextToggleGroup,
@@ -34,12 +34,15 @@ import {
 } from "./toolbar";
 
 export default function InitializedMDXEditor({
+    className,
     contentEditableClassName,
     editorRef,
+    fill = false,
     ...props
-}: { editorRef: ForwardedRef<MDXEditorMethods> | null } & MDXEditorProps) {
+}: { editorRef: ForwardedRef<MDXEditorMethods> | null } & MarkdownEditorProps) {
     return (
         <MDXEditor
+            className={cn(fill && "mdxeditor-fill", className)}
             contentEditableClassName={cn(
                 "markdown-content min-h-16 overflow-y-auto",
                 contentEditableClassName,

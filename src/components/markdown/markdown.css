@@ -19,6 +19,38 @@
   padding: 0.25rem;
 }
 
+/*
+ * `<MarkdownEditor fill>`: the editor takes the height it's given (e.g. `flex-1` in a full-height
+ * pane) instead of growing with its content. The editable area fills the space and scrolls, so a
+ * click anywhere above the toolbar lands in it, and the toolbar stays pinned to the bottom.
+ */
+.mdxeditor.mdxeditor-fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.mdxeditor-fill > .mdxeditor-root-contenteditable {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The editable's own parent stays a block: Lexical warns that a flex parent makes Chrome focus
+   the editable on clicks outside it. */
+.mdxeditor-fill > .mdxeditor-root-contenteditable > div {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.mdxeditor-fill [contenteditable] {
+  height: 100%;
+}
+
+.mdxeditor-fill > .mdxeditor-toolbar {
+  flex-shrink: 0;
+}
+
 .markdown-content {
   font-family: var(--font-geist-sans);
   font-size: var(--text-sm);
