@@ -276,4 +276,17 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             expect(invalidatedKeys(effects)).toEqual(expectedInvalidations);
         });
     });
+
+    describe("updateCheckExclusions", () => {
+        it("invalidates only the session's check lists, including the own-checks list", () => {
+            const effects = skillCheckSessionsEffects.updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.session,
+                changes: [],
+            });
+
+            expect(effects.filter((e) => e.type === "write")).toHaveLength(0);
+            expect(invalidatedKeys(effects)).toEqual(["ownSessionChecks", "sessionChecks"]);
+        });
+    });
 });

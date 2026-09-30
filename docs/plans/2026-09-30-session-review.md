@@ -8,6 +8,8 @@
 **D4H:** nothing here depends on a D4H token.
 **Written against:** integration @ 89eb45a2, plus `feat/check-lifecycle` @ a9930de6.
 
+> Superseded in part by [2026-09-30-review-saved-decisions.md](2026-09-30-review-saved-decisions.md): the review page no longer holds a local selection, so approval reads the saved Include/Exclude decisions instead.
+
 ## Direction
 
 The review page is moving towards **summary cards that surface what needs attention**, not a full list of every check. This plan adds the first such card, **Conflicts**. It also moves Approve and Reopen into the page header and puts a confirm dialog in front of Approve. The existing checks list card stays as it is: same table, same checkboxes.

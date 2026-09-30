@@ -15,8 +15,9 @@ import { trpc } from "@/trpc/client";
 /**
  * Returns an `onError` helper for a mutation that writes a skill check session's checks or config,
  * or approves it. A `CONFLICT` from one of those means the session changed under the page: it was
- * approved (the approval lock), or, for `approveSession`, its checks no longer match what the page
- * showed. So it invalidates the session's `getSession` and its `listSkillChecks`: the page picks
+ * approved (the approval lock); for `approveSession`, the session or its checks no longer match
+ * what the page showed; or, for `updateCheckExclusions`, a check the mutation names was deleted
+ * since. So it invalidates the session's `getSession` and its `listSkillChecks`: the page picks
  * up the approval and turns read-only, or shows the checks as they are now. Any other error is
  * left alone.
  *

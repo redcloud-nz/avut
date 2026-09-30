@@ -8,6 +8,8 @@
 **D4H:** nothing here depends on a D4H token.
 **Written against:** integration @ 89eb45a2 (the branch's merge base; `origin/integration` has since moved to 1da71585), plus `feat/session-review` @ 83842a4e.
 
+> Superseded in part by [2026-09-30-review-saved-decisions.md](2026-09-30-review-saved-decisions.md): the page no longer holds a local selection, so the cards' exclusions are saved through their dialogs rather than kept on the page.
+
 ## Direction
 
 The review page shows **summaries and what needs attention**, not just one long table. The conflicts plan added the Conflicts card and moved Approve into the header. This plan adds the rest of #337:

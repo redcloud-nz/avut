@@ -103,10 +103,13 @@ export function SkillsModule_Session_Contents_Card({
                 {conflictCount > 0 && (
                     <Item size="sm" asChild>
                         <Link
-                            href={route("/orgs/[slug]/skill-track/sessions/[session_id]/review", {
-                                slug: organization.slug,
-                                session_id: sessionId,
-                            })}
+                            href={`${route(
+                                "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                {
+                                    slug: organization.slug,
+                                    session_id: sessionId,
+                                },
+                            )}#conflicts`}
                         >
                             <ItemContent>
                                 <ItemTitle>

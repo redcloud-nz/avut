@@ -162,8 +162,10 @@ export function assertSessionCheckTarget(
  * two differ and the approval is refused, so what's approved is what the approver saw.
  *
  * This reads outside the approval's transaction, so it also returns what `approveSession` needs to
- * catch a change between here and its commit: the session's `updatedAt` (which
- * `updateCheckExclusions` bumps) and `checksAsOf`, the latest `updatedAt` among the checks it
+ * catch a change between here and its commit: the session's `updatedAt` (which any write to the
+ * session row bumps: `updateCheckExclusions`, but also `updateSession` and the
+ * `updateSession{Assessees,Assessors,Skills}` writes, so a name or notes edit trips it too) and
+ * `checksAsOf`, the latest `updatedAt` among the checks it
  * read (a check recorded, re-recorded or deleted since has a later one). The session is read
  * before the checks, so a change landing between the two reads errs towards a refusal.
  * @returns How many live checks the approval includes and excludes, the session's `updatedAt`,
@@ -220,12 +222,14 @@ export async function assertApprovalMatchesSavedState(
 }
 
 /**
- * The error for an approval made from a stale view of the session's checks: one was recorded,
- * deleted, excluded or re-included since the approver's page loaded them.
+ * The error for an approval made from a stale view of the session: a check was recorded, deleted,
+ * excluded or re-included since the approver's page loaded them, or the session row itself was
+ * written (any write bumps its `updatedAt`, including a name or notes edit). Worded neutrally
+ * because the approval can't tell which.
  */
 export function staleChecksError(): ConflictError {
     return new ConflictError(
-        `The session's checks changed since you opened this. Review them and approve again.`,
+        `The session changed since you opened this. Review it and approve again.`,
     );
 }
 

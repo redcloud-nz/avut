@@ -493,8 +493,8 @@ export function SkillTrack_SessionReview_Content({
                                     <p>
                                         This session has been approved and is locked.{" "}
                                         <Protect permissions={{ skillCheckSession: ["approve"] }}>
-                                            To change the selection, reopen it with Reopen at the
-                                            top of the page.
+                                            To change what&apos;s included, reopen it with Reopen at
+                                            the top of the page.
                                         </Protect>
                                     </p>
                                 </AlertDescription>

@@ -31,7 +31,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * and excluded.
      *
      * The comparison reads outside the transaction, so the transaction re-checks it: it fails if
-     * the session's `updatedAt` moved (an exclusion was saved) or a check was recorded or
+     * the session's `updatedAt` moved (any write to the session row: an exclusion saved, but also
+     * `updateSession` or an `updateSession{Assessees,Assessors,Skills}` write, so a name or notes
+     * edit trips it too) or a check was recorded or
      * re-recorded since (a `Draft` check the stamps skipped remains). A write committing after the
      * transaction's last check is the stray `Draft` `assertSessionUnlocked` accepts.
      * @throws TRPCError(NOT_FOUND) if the session does not exist.
@@ -67,8 +69,10 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     // Conditional on not already being approved, so two concurrent approvals can't
                     // both commit and double-log: the loser's update matches no row, throws P2025
                     // and rolls its transaction back. Also conditional on the session's
-                    // `updatedAt` as the comparison read it: `updateCheckExclusions` bumps it and
-                    // writes this row first, so an exclusion saved since turns this into P2025 too.
+                    // `updatedAt` as the comparison read it: any write to the session row bumps it
+                    // (`updateCheckExclusions` writes this row first, and `updateSession` and its
+                    // assessee/assessor/skill writes touch it too), so any of those since turns
+                    // this into P2025 too.
                     ctx.prisma.skillCheckSession.update({
                         where: {
                             id: sessionId,
@@ -124,8 +128,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 ])
                 .catch(async (error: unknown) => {
                     if (!isPrismaRecordNotFound(error)) throw error;
-                    // Either someone else approved first, or the checks changed since the
-                    // comparison; the transaction rolled back, so the session's status tells.
+                    // Either someone else approved first, or the session or its checks changed
+                    // since the comparison; the transaction rolled back, so the session's status tells.
                     const current = await SkillChecks.requireSessionById(ctx, sessionId);
                     throw current.status === "Include"
                         ? SkillChecks.sessionLockedError(sessionId)
