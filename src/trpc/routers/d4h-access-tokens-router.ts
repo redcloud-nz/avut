@@ -291,7 +291,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         if (!existing) {
             throw new TRPCError({
                 code: "NOT_FOUND",
-                message: `Personal access token for user ${ctx.auth.user.id} not found.`,
+                message: Messages.personalD4HAccessTokenNotFound(),
             });
         }
 
@@ -422,27 +422,36 @@ export const d4hAccessTokensRouter = createTrpcRouter({
      */
     refreshPersonalAccessToken: organizationProcedure({
         organization: ["view"],
-    }).mutation(async ({ ctx }) => {
-        // Newest first: the dev DB may already hold duplicates from before the one-per-org guard.
-        const record = await ctx.prisma.providerCredential.findFirst({
-            where: { provider: "D4H", organizationId: ctx.organizationId, userId: ctx.userId },
-            orderBy: { createdAt: "desc" },
-        });
-
-        if (!record) {
-            throw new TRPCError({
-                code: "NOT_FOUND",
-                message: Messages.personalD4HAccessTokenNotFound(),
+    })
+        .input(
+            z.object({
+                tokenId: ProviderCredentialId.schema,
+            }),
+        )
+        .mutation(async ({ input, ctx }) => {
+            // Scoped to the caller and org: another user's token, or one in another org, is NOT_FOUND.
+            const record = await ctx.prisma.providerCredential.findFirst({
+                where: {
+                    id: input.tokenId,
+                    provider: "D4H",
+                    organizationId: ctx.organizationId,
+                    userId: ctx.userId,
+                },
             });
-        }
 
-        await refreshD4HCredential(ctx, record);
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personalD4HAccessTokenNotFound(),
+                });
+            }
 
-        const tokenId = ProviderCredentialId.schema.parse(record.id);
-        revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
-        revalidateD4HAccessToken(tokenId);
-        revalidateD4HApiCache(tokenId);
-    }),
+            await refreshD4HCredential(ctx, record);
+
+            revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+            revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
+        }),
 
     refreshToken: organizationProcedure({
         organization: ["update"],

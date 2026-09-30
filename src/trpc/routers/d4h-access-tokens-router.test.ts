@@ -360,7 +360,8 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
         org: OrganizationId.create(),
         user: nanoId16(),
         userWithoutToken: nanoId16(),
-        olderToken: ProviderCredentialId.create(),
+        otherUser: nanoId16(),
+        otherUsersToken: ProviderCredentialId.create(),
         personalToken: ProviderCredentialId.create(),
     };
 
@@ -382,19 +383,18 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
-        // A duplicate from before the one-per-org guard: the newest one is refreshed.
-        await db.providerCredential.create({
-            data: {
-                ...credentialData({ id: T.olderToken, organizationId: T.org, userId: T.user }),
-                createdAt: new Date("2026-01-01T00:00:00Z"),
-            },
-        });
         await db.providerCredential.create({
             data: {
                 ...credentialData({ id: T.personalToken, organizationId: T.org, userId: T.user }),
                 status: "Unauthorized",
-                createdAt: new Date("2026-06-01T00:00:00Z"),
             },
+        });
+        await db.providerCredential.create({
+            data: credentialData({
+                id: T.otherUsersToken,
+                organizationId: T.org,
+                userId: T.otherUser,
+            }),
         });
     });
 
@@ -410,13 +410,27 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
 
     it("throws NOT_FOUND when the caller has no personal token", async () => {
         await expect(
-            makeCaller(T.userWithoutToken).refreshPersonalAccessToken({ organizationId: T.org }),
+            makeCaller(T.userWithoutToken).refreshPersonalAccessToken({
+                organizationId: T.org,
+                tokenId: ProviderCredentialId.create(),
+            }),
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
         expect(validateD4HCredential).not.toHaveBeenCalled();
     });
 
-    it("updates the status and metadata and revalidates every cache keyed on the token", async () => {
+    it("throws NOT_FOUND for another user's token without calling D4H", async () => {
+        await expect(
+            makeCaller().refreshPersonalAccessToken({
+                organizationId: T.org,
+                tokenId: T.otherUsersToken,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+        expect(validateD4HCredential).not.toHaveBeenCalled();
+    });
+
+    it("refreshes the requested token and revalidates every cache keyed on it", async () => {
         vi.mocked(validateD4HCredential).mockResolvedValueOnce({
             ok: true,
             status: 200,
@@ -424,7 +438,10 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
             metadata: refreshedMetadata,
         });
 
-        await makeCaller().refreshPersonalAccessToken({ organizationId: T.org });
+        await makeCaller().refreshPersonalAccessToken({
+            organizationId: T.org,
+            tokenId: T.personalToken,
+        });
 
         const stored = await db.providerCredential.findUniqueOrThrow({
             where: { id: T.personalToken },
@@ -443,14 +460,6 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
         expect(revalidatePersonalD4HAccessTokenForUser).toHaveBeenCalledWith(T.org, T.user);
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
         expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.personalToken);
-
-        // The older duplicate is left alone.
-        const older = await db.providerCredential.findUniqueOrThrow({
-            where: { id: T.olderToken },
-        });
-        expect(older.metadata).toEqual(
-            credentialData({ id: T.olderToken, organizationId: T.org, userId: T.user }).metadata,
-        );
     });
 });
 

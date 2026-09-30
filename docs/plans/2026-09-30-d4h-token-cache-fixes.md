@@ -109,7 +109,9 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 
 **Done when:** the router tests assert `revalidateD4HApiCache` is called with the token ID after refresh and after both deletes, and `revalidateD4HAccessToken` after the personal delete. `npm run check` passes.
 
-### - [ ] 4. Personal tokens: one per org, and a refresh mutation
+### - [x] 4. Personal tokens: one per org, and a refresh mutation
+
+`feat(d4h): one personal token per org, and a personal-token refresh mutation`, `fix(d4h): refresh a specific personal token by id, owner-checked`
 
 **Files:** `src/trpc/routers/d4h-access-tokens-router.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`, `src/trpc/messages.ts`, `src/client/d4h-access-tokens-effects.ts`.
 
@@ -118,12 +120,12 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - **`createPersonalAccessToken`:** before calling D4H, `findFirst({ where: { provider: "D4H", organizationId, userId } })`. If one exists, throw `TRPCError({ code: "CONFLICT" })` with a new `Messages` entry telling the user to remove the existing token first. (Under OAuth, reconnecting will update the existing row in place rather than conflict. That's the OAuth work's concern, not this guard's.)
 - **Shared refresh helper:** extract the body of `refreshToken`, from the `validateD4HCredential` call through the `$transaction` with `ctx.logEvent`, into a module-level helper that takes `ctx` and the credential record. `refreshToken` calls it. Behaviour doesn't change here; Task 5 changes the helper once.
 - **New `refreshPersonalAccessToken`:** `organizationProcedure({ organization: ["view"] })`, placed just before `refreshToken` (procedures are alphabetical, per `docs/conventions-checklist.md`).
-  - Look up the caller's own personal token with `findFirst({ where: { provider: "D4H", organizationId, userId }, orderBy: { createdAt: "desc" } })`. The dev DB may already hold duplicates. `NOT_FOUND` if there's none.
+  - Input takes `tokenId` (`ProviderCredentialId.schema`) alongside `organizationId`. Look it up with `findFirst({ where: { id: tokenId, provider: "D4H", organizationId, userId } })`, so another user's token or one in another org is `NOT_FOUND`, as is a missing one.
   - Call the helper.
   - Then call `revalidatePersonalD4HAccessTokenForUser`, `revalidateD4HAccessToken` and `revalidateD4HApiCache`.
 - **Effects:** add `refreshPersonalAccessToken` → invalidate `listPersonalAccessTokens` (unfiltered `queryFilter()`, since it's an `authenticatedProcedure` with no org input) and `getPersonalAccessToken({ organizationId })`.
 
-**Done when:** tests cover a second create → `CONFLICT` (no D4H call, no insert), refresh with no token → `NOT_FOUND`, and refresh updating metadata and status and calling all three revalidators. `npm run check` passes.
+**Done when:** tests cover a second create → `CONFLICT` (no D4H call, no insert), refresh with a missing or another user's `tokenId` → `NOT_FOUND`, and refresh updating metadata and status and calling all three revalidators. `npm run check` passes.
 
 ### - [ ] 5. Reject bad tokens, check D4H responses, read live metadata
 
@@ -189,7 +191,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 
 **Files:** `src/components/user/user-settings/d4h-access-token-content.tsx`.
 
-**Do:** add a "Refresh" `Button` in the header next to `UserSettings_D4HAccessToken_Menu`, calling `refreshPersonalAccessToken` with `organizationId: token.organization.id` and `meta: { effects: d4hAccessTokensEffects.refreshPersonalAccessToken }`. Use the same `toast.promise` messages as the org token page's `handleRefresh` (`admin/d4h-access-tokens/[token_id]/access-token-content.tsx`). No dialog is needed.
+**Do:** add a "Refresh" `Button` in the header next to `UserSettings_D4HAccessToken_Menu`, calling `refreshPersonalAccessToken` with `organizationId: token.organization.id` and `tokenId: token.id`, and `meta: { effects: d4hAccessTokensEffects.refreshPersonalAccessToken }`. Use the same `toast.promise` messages as the org token page's `handleRefresh` (`admin/d4h-access-tokens/[token_id]/access-token-content.tsx`). No dialog is needed.
 
 **Done when:** `npm run check` passes. On `/user/settings/d4h/access-tokens/<id>`, pressing Refresh shows the toast, and the page's status and teams update without a reload.
 
