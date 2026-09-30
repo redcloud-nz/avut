@@ -6,6 +6,7 @@
 import type { PersonId } from "@/lib/schemas/person";
 import type { SkillId } from "@/lib/schemas/skill";
 import type { SessionCheck, SkillCheck, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import type { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 
 /*
  * Pure helpers for keeping a session's checks in sync across assessors: the session cache
@@ -16,6 +17,17 @@ import type { SessionCheck, SkillCheck, SkillCheckResultValue } from "@/lib/sche
  * server clock, so rows arrive more than once and out of order with local writes, and the merge
  * has to be idempotent.
  */
+
+/**
+ * The session cache's data: `listSessionChecks`' output, cached under its key without `since`.
+ * `checks` holds every assessor's rows, `Deleted` tombstones included, and `cursor` is the
+ * `since` for the next poll.
+ */
+export interface SessionChecksData {
+    checks: SessionCheck[];
+    cursor: string;
+    sessionStatus: SkillCheckSession["status"];
+}
 
 /** Identifies one check on a session's recording page: the (assessee, skill) pair. */
 export type SessionCheckKey = `${PersonId}::${SkillId}`;

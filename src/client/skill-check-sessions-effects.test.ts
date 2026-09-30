@@ -17,17 +17,11 @@ import {
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId, type SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import type { SessionChecksData } from "@/lib/session-checks-sync";
 import { trpc } from "@/trpc/client";
 import type { MutationEffect } from "@/trpc/mutation-effector";
 
 import { skillCheckSessionsEffects } from "./skill-check-sessions-effects";
-
-/** The session cache's data (`listSessionChecks` without `since`). */
-interface SessionChecksData {
-    checks: SessionCheck[];
-    cursor: string;
-    sessionStatus: SkillCheckSession["status"];
-}
 
 /** The write effects in `effects` that target exactly `queryKey`. */
 function writesTo(effects: MutationEffect[], queryKey: readonly unknown[]) {

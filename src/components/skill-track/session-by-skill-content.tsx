@@ -26,6 +26,7 @@ import {
     usePendingChecks,
     useSessionCheckRecorder,
 } from "@/components/skill-track/use-session-check-recorder";
+import { useSessionChecksSync } from "@/components/skill-track/use-session-checks-sync";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -122,6 +123,13 @@ export function SkillTrack_SessionBySkill_Content({
     // Recording also needs `skillCheck: ["create"]` (see `setSessionSkillCheck` and
     // `deleteSessionSkillCheck`), which a caller holding only session update lacks.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
+    // Polls the other assessors' checks (and the caller's own from other devices) while the
+    // recording rows show.
+    useSessionChecksSync({
+        sessionId,
+        selfPersonId: personSelf?.id,
+        enabled: !!personSelf && isAssignedAssessor && canRecordChecks,
+    });
     // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
     // its checks read-only and the record dialog is closed.
     const isApproved = session.status === "Include";
