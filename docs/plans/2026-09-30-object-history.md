@@ -276,6 +276,58 @@ objectType="SkillPackage" …>`, add the history prefetch to its page, and remov
   - **Done when:** `npm run check` passes; both pages render in the browser, and the package
     menu's History item is enabled and navigates.
 
+- [ ] **7. Resolve ids in changes to names** (added at the visual checkpoint, 2026-09-30)
+  - **Why:** `SkillCheckSession` updates log `skills`/`assessees`/`assessors` as arrays of
+    ids, so the history shows "Skills: added QVzbUJCSUj0NM13P" 26 times. Tasks 8 and 9 (in
+    session, visual) group those lines and summarise them, and both need names to read well.
+  - **Files:** `src/lib/schemas/object-history.ts`, `src/server/services/object-history.ts`,
+    `src/server/services/object-history.test.ts`, `src/lib/diff-format.ts`,
+    `src/lib/diff-format.test.ts`, `src/components/history/object-history.tsx`.
+  - **Do:**
+    - **Registry.** In the schema file, add `IdFields: Partial<Record<LogObjectType,
+Record<string, IdFieldTarget>>>`, keyed by the entry's own `objectType`, then the
+      joined change path. `IdFieldTarget` is `"Person" | "Skill"`. Start with
+      `SkillCheckSession: { skills: "Skill", assessees: "Person", assessors: "Person" }`.
+      It's shared, so the client knows which fields to map.
+    - **Output.** Add `names: { Person: Record<string, string>, Skill: Record<string, string> }`
+      to `ObjectHistoryPage.schema`: the resolved names for every id found on that page.
+    - **Service.** `ObjectHistory.list` collects the string ids from `changes` whose entry
+      type and path are in `IdFields`: `arr_add`/`arr_del` `value`, `obj_*` `prev`/`curr`, and
+      array values element by element. It resolves them in one `findMany` per target:
+      - `Person`: filtered on `organizationId: ctx.organizationId`. Fold these ids into the
+        existing Person-ref lookup rather than adding a second query.
+      - `Skill`: filtered on `skillPackage: { OR: [{ organizationId: ctx.organizationId },
+{ subscriptions: { some: { organizationId: ctx.organizationId } } }] }`. A session
+        can use a subscribed package's skills, so a plain org filter would miss them, and the
+        `OR` still stops a stray id from naming another org's skill. Check the relation name
+        on `SkillPackage` for subscriptions in `prisma/schema.prisma`.
+
+      No extra permission gate: whoever can view the page object already sees these names on
+      its own detail page (the session page lists its assessees and skills). An id that isn't
+      found is simply absent from `names`.
+
+    - **Formatter.** Add a `valueLabel?: (value: DiffValue) => string` option to
+      `describeChange`. When given, it is used instead of `formatDiffValue` for scalars, and
+      for each element of an array value.
+    - **Component.** For a change whose entry type and path are in `IdFields`, pass a
+      `valueLabel` that maps an id through `names[target]`, falling back to "(unavailable)".
+
+  - **Done when:**
+    - Service tests cover an `arr_add` of `Person` ids resolving, a subscribed package's
+      `Skill` resolving, another org's skill (neither owned nor subscribed) not resolving, a
+      purged id being absent, and a field not in `IdFields` being left alone.
+    - Formatter tests cover `valueLabel` on scalars and arrays.
+    - `npm run check` passes, and on Session #2's history the skills and assessees show as
+      names.
+
+- [ ] **8. Group array changes per field** · `visual` (in session, at the checkpoint)
+  - One line per field and direction: "Skills: added Knots, Radio procedure, … (26)", not a
+    line per value. `src/lib/diff-format.ts` + the component.
+
+- [ ] **9. A specific sentence for single-list updates** · `visual` (in session, at the checkpoint)
+  - An `Update` whose changes touch only one array field reads "Added 26 skills by …" /
+    "Removed 2 assessors by …", both in the full sentence and in the short title.
+
 ## Out of scope
 
 - **Write-side gaps.** `Skill`/`SkillGroup` entries don't carry a `context` ref to their
