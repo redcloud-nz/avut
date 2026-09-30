@@ -16,14 +16,10 @@ import type { PersonId } from "@/lib/schemas/person";
 import type { SkillId } from "@/lib/schemas/skill";
 import type { SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import type { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { sessionCheckKey, type SessionCheckKey } from "@/lib/session-checks-sync";
 import { trpc, type RouterInput } from "@/trpc/client";
 
-/** Identifies one check on a session's recording page: the (assessee, skill) pair. */
-export type SessionCheckKey = `${PersonId}::${SkillId}`;
-
-export function sessionCheckKey(assesseeId: PersonId, skillId: SkillId): SessionCheckKey {
-    return `${assesseeId}::${skillId}`;
-}
+export { sessionCheckKey, type SessionCheckKey } from "@/lib/session-checks-sync";
 
 type SetVariables = RouterInput["skillCheckSessions"]["setSessionSkillCheck"];
 type DeleteVariables = RouterInput["skillCheckSessions"]["deleteSessionSkillCheck"];
