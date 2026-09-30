@@ -10,12 +10,39 @@ import { QueryClient } from "@tanstack/react-query";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
-import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import {
+    SessionCheck,
+    SkillCheck,
+    SkillCheckId,
+    SkillCheckResultValue,
+} from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId, type SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 import type { MutationEffect } from "@/trpc/mutation-effector";
 
 import { skillCheckSessionsEffects } from "./skill-check-sessions-effects";
+
+/** The session cache's data (`listSessionChecks` without `since`). */
+interface SessionChecksData {
+    checks: SessionCheck[];
+    cursor: string;
+    sessionStatus: SkillCheckSession["status"];
+}
+
+/** The write effects in `effects` that target exactly `queryKey`. */
+function writesTo(effects: MutationEffect[], queryKey: readonly unknown[]) {
+    return effects
+        .filter((e) => e.type === "write")
+        .filter((e) => JSON.stringify(e.queryKey) === JSON.stringify(queryKey));
+}
+
+/** Applies the one write effect in `effects` for `queryKey` to `old`, as the effector would. */
+function applyWriteTo(effects: MutationEffect[], queryKey: readonly unknown[], old: unknown) {
+    const writes = writesTo(effects, queryKey);
+    expect(writes).toHaveLength(1);
+    const [effect] = writes;
+    return typeof effect.data === "function" ? effect.data(old) : effect.data;
+}
 
 describe("skillCheckSessionsEffects (session check writes)", () => {
     const T = {
@@ -54,14 +81,35 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
         ownChecksOnly: true,
     });
 
-    /** Applies the one write effect in `effects` to `old`, as the effector would. */
+    const sessionChecksKey = trpc.skillCheckSessions.listSessionChecks.queryKey({
+        organizationId: T.org,
+        skillCheckSessionId: T.session,
+    });
+
+    /** Applies the one own-checks list write in `effects` to `old`, as the effector would. */
     function applyWrite(effects: MutationEffect[], old: SkillCheck[] | undefined) {
-        const writes = effects.filter((e) => e.type === "write");
-        expect(writes).toHaveLength(1);
-        const [effect] = writes;
-        expect(effect.queryKey).toEqual(ownKey);
-        return typeof effect.data === "function" ? effect.data(old) : effect.data;
+        return applyWriteTo(effects, ownKey, old);
     }
+
+    function withNames(check: SkillCheck, name: string): SessionCheck {
+        return {
+            ...check,
+            assesseeName: `${name} assessee`,
+            skillName: `${name} skill`,
+            assessorName: `${name} assessor`,
+        };
+    }
+
+    function sessionData(checks: SessionCheck[]): SessionChecksData {
+        return { checks, cursor: new Date(0).toISOString(), sessionStatus: "Draft" };
+    }
+
+    const deleteVars = {
+        organizationId: T.org,
+        skillCheckSessionId: T.session,
+        assesseeId: T.alice,
+        skillId: T.skill,
+    };
 
     const setVars = {
         organizationId: T.org,
@@ -115,11 +163,9 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             const bob = makeCheck(T.bob, "Pass");
 
             const next = applyWrite(
-                skillCheckSessionsEffects.deleteSessionSkillCheck({
-                    organizationId: T.org,
-                    skillCheckSessionId: T.session,
-                    assesseeId: T.alice,
-                    skillId: T.skill,
+                skillCheckSessionsEffects.deleteSessionSkillCheck(deleteVars, {
+                    deleted: true,
+                    check: { ...alice, status: "Deleted" },
                 }),
                 [alice, bob],
             );
@@ -131,16 +177,142 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             const old = [makeCheck(T.bob, "Pass")];
 
             const next = applyWrite(
-                skillCheckSessionsEffects.deleteSessionSkillCheck({
-                    organizationId: T.org,
-                    skillCheckSessionId: T.session,
-                    assesseeId: T.alice,
-                    skillId: T.skill,
+                skillCheckSessionsEffects.deleteSessionSkillCheck(deleteVars, {
+                    deleted: false,
+                    check: null,
                 }),
                 old,
             );
 
             expect(next).toBe(old);
+        });
+    });
+
+    describe("session cache", () => {
+        const later = new Date(1_000).toISOString();
+
+        it("set merges the saved row over the cached one, keeping its names", () => {
+            const before = withNames(makeCheck(T.alice, "Fail"), "alice");
+            const other = withNames({ ...makeCheck(T.bob, "Pass"), assessorId: T.bob }, "bob");
+            const saved: SkillCheck = {
+                ...makeCheck(T.alice, "Pass"),
+                id: before.id,
+                updatedAt: later,
+            };
+
+            const next = applyWriteTo(
+                skillCheckSessionsEffects.setSessionSkillCheck(setVars, saved),
+                sessionChecksKey,
+                sessionData([before, other]),
+            ) as SessionChecksData;
+
+            expect(next.checks).toEqual([withNames(saved, "alice"), other]);
+            // Other assessors' rows are the same objects.
+            expect(next.checks[1]).toBe(other);
+        });
+
+        it("set adds an unknown id with empty names", () => {
+            const other = withNames({ ...makeCheck(T.bob, "Pass"), assessorId: T.bob }, "bob");
+            const saved = makeCheck(T.alice, "Pass");
+
+            const next = applyWriteTo(
+                skillCheckSessionsEffects.setSessionSkillCheck(setVars, saved),
+                sessionChecksKey,
+                sessionData([other]),
+            ) as SessionChecksData;
+
+            expect(next.checks).toEqual([
+                other,
+                { ...saved, assesseeName: "", skillName: "", assessorName: "" },
+            ]);
+        });
+
+        it("set keeps the cached data when the cached row is newer", () => {
+            const saved = makeCheck(T.alice, "Pass");
+            const newer = withNames({ ...saved, result: "Fail", updatedAt: later }, "alice");
+            const old = sessionData([newer]);
+
+            expect(
+                applyWriteTo(
+                    skillCheckSessionsEffects.setSessionSkillCheck(setVars, saved),
+                    sessionChecksKey,
+                    old,
+                ),
+            ).toBe(old);
+        });
+
+        it("set leaves an uncached session list uncached", () => {
+            expect(
+                applyWriteTo(
+                    skillCheckSessionsEffects.setSessionSkillCheck(
+                        setVars,
+                        makeCheck(T.alice, "Pass"),
+                    ),
+                    sessionChecksKey,
+                    undefined,
+                ),
+            ).toBeUndefined();
+        });
+
+        it("delete merges the tombstone over the cached live row", () => {
+            const live = withNames(makeCheck(T.alice, "Pass"), "alice");
+            const other = withNames({ ...makeCheck(T.bob, "Pass"), assessorId: T.bob }, "bob");
+            const tombstone: SkillCheck = {
+                ...makeCheck(T.alice, "Pass"),
+                id: live.id,
+                status: "Deleted",
+                updatedAt: later,
+            };
+
+            const next = applyWriteTo(
+                skillCheckSessionsEffects.deleteSessionSkillCheck(deleteVars, {
+                    deleted: true,
+                    check: tombstone,
+                }),
+                sessionChecksKey,
+                sessionData([live, other]),
+            ) as SessionChecksData;
+
+            expect(next.checks).toEqual([withNames(tombstone, "alice"), other]);
+        });
+
+        it("delete adds a tombstone for an unknown id with empty names", () => {
+            const tombstone: SkillCheck = { ...makeCheck(T.alice, "Pass"), status: "Deleted" };
+
+            const next = applyWriteTo(
+                skillCheckSessionsEffects.deleteSessionSkillCheck(deleteVars, {
+                    deleted: true,
+                    check: tombstone,
+                }),
+                sessionChecksKey,
+                sessionData([]),
+            ) as SessionChecksData;
+
+            expect(next.checks).toEqual([
+                { ...tombstone, assesseeName: "", skillName: "", assessorName: "" },
+            ]);
+        });
+
+        it("delete leaves an uncached session list uncached", () => {
+            expect(
+                applyWriteTo(
+                    skillCheckSessionsEffects.deleteSessionSkillCheck(deleteVars, {
+                        deleted: true,
+                        check: { ...makeCheck(T.alice, "Pass"), status: "Deleted" },
+                    }),
+                    sessionChecksKey,
+                    undefined,
+                ),
+            ).toBeUndefined();
+        });
+
+        it("delete writes nothing to the session cache when nothing was deleted", () => {
+            const effects = skillCheckSessionsEffects.deleteSessionSkillCheck(deleteVars, {
+                deleted: false,
+                check: null,
+            });
+
+            expect(writesTo(effects, sessionChecksKey)).toHaveLength(0);
         });
     });
 
@@ -233,17 +405,33 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
 
     /** Applies the `getSession` write in `effects` to `old`. */
     function applyGetSessionWrite(effects: MutationEffect[], old: unknown) {
-        const writes = effects.filter((e) => e.type === "write");
-        expect(writes).toHaveLength(1);
-        const [effect] = writes;
-        expect(effect.queryKey).toEqual(
+        return applyWriteTo(
+            effects,
             trpc.skillCheckSessions.getSession.queryKey({
                 organizationId: T.org,
                 skillCheckSessionId: T.session,
             }),
+            old,
         );
-        return typeof effect.data === "function" ? effect.data(old) : effect.data;
     }
+
+    /** Applies the session cache (`listSessionChecks`) write in `effects` to `old`. */
+    function applySessionChecksWrite(effects: MutationEffect[], old: unknown) {
+        return applyWriteTo(
+            effects,
+            trpc.skillCheckSessions.listSessionChecks.queryKey({
+                organizationId: T.org,
+                skillCheckSessionId: T.session,
+            }),
+            old,
+        );
+    }
+
+    const sessionChecks: SessionChecksData = {
+        checks: [],
+        cursor: new Date(0).toISOString(),
+        sessionStatus: "Draft",
+    };
 
     const expectedInvalidations = ["matrix", "ownSessionChecks", "sessionChecks", "sessions"];
 
@@ -264,16 +452,32 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
         it("invalidates the session's check lists, the sessions list and the competency matrix", () => {
             expect(invalidatedKeys(effects)).toEqual(expectedInvalidations);
         });
+
+        it("sets the session cache's sessionStatus", () => {
+            const old = { ...sessionChecks, sessionStatus: "Include" as const };
+
+            expect(applySessionChecksWrite(effects, old)).toEqual(sessionChecks);
+            expect(applySessionChecksWrite(effects, sessionChecks)).toBe(sessionChecks);
+            expect(applySessionChecksWrite(effects, undefined)).toBeUndefined();
+        });
     });
 
     describe("approveSession", () => {
-        it("invalidates the session's check lists, the sessions list and the competency matrix", () => {
-            const effects = skillCheckSessionsEffects.approveSession(
-                { organizationId: T.org, sessionId: T.session, includedCheckIds: [] },
-                { updated: { ...updated, status: "Include" } },
-            );
+        const effects = skillCheckSessionsEffects.approveSession(
+            { organizationId: T.org, sessionId: T.session, includedCheckIds: [] },
+            { updated: { ...updated, status: "Include" } },
+        );
 
+        it("invalidates the session's check lists, the sessions list and the competency matrix", () => {
             expect(invalidatedKeys(effects)).toEqual(expectedInvalidations);
+        });
+
+        it("sets the session cache's sessionStatus", () => {
+            expect(applySessionChecksWrite(effects, sessionChecks)).toEqual({
+                ...sessionChecks,
+                sessionStatus: "Include",
+            });
+            expect(applySessionChecksWrite(effects, undefined)).toBeUndefined();
         });
     });
 

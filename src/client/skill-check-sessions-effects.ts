@@ -3,6 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import type { SessionCheck, SkillCheck } from "@/lib/schemas/skill-check";
+import type { SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import { mergeSessionChecks } from "@/lib/session-checks-sync";
 import { trpc } from "@/trpc/client";
 import { createEffects, invalidate, write, type MutationEffect } from "@/trpc/mutation-effector";
 
@@ -13,6 +16,58 @@ function ownSessionChecksQueryKey(organizationId: string, sessionId: string) {
         sessionId,
         ownChecksOnly: true,
     });
+}
+
+/** The session cache: every assessor's checks on the session, tombstones included. */
+function sessionChecksQueryKey(organizationId: string, sessionId: string) {
+    return trpc.skillCheckSessions.listSessionChecks.queryKey({
+        organizationId,
+        skillCheckSessionId: sessionId,
+    });
+}
+
+/**
+ * Merges a row a check write returned into the session cache, through the same newer-or-equal
+ * rule as the poll (`mergeSessionChecks`), whether or not its id is already cached. So a stale
+ * poll row that raced the write is rejected by the session merge and never reaches the own-checks
+ * list.
+ *
+ * The write's response carries no names, and an updater only sees `old` for its own key, so the
+ * names come from the cached row with the same id, else `""`. The next poll's copy has the same
+ * `updatedAt` and fills them in; consumers skip a row whose names are still empty. An uncached
+ * session list stays uncached.
+ */
+function mergeIntoSessionChecks(
+    organizationId: string,
+    sessionId: string,
+    check: SkillCheck,
+): MutationEffect {
+    return write(sessionChecksQueryKey(organizationId, sessionId), (old) => {
+        if (!old) return old;
+        const cachedRow = old.checks.find((row) => row.id === check.id);
+        const row: SessionCheck = {
+            ...check,
+            assesseeName: cachedRow?.assesseeName ?? "",
+            skillName: cachedRow?.skillName ?? "",
+            assessorName: cachedRow?.assessorName ?? "",
+        };
+        const { checks } = mergeSessionChecks(old.checks, [row]);
+        return checks === old.checks ? old : { ...old, checks };
+    });
+}
+
+/**
+ * Sets the session cache's `sessionStatus` after an approve or reopen, so the sync hook doesn't
+ * take the caller's own status change for one made elsewhere.
+ */
+function writeSessionChecksStatus(
+    organizationId: string,
+    sessionId: string,
+    status: SkillCheckSession["status"],
+): MutationEffect {
+    return write(sessionChecksQueryKey(organizationId, sessionId), (old) =>
+        old && old.sessionStatus !== status ? { ...old, sessionStatus: status } : old,
+    );
 }
 
 /**
@@ -64,7 +119,9 @@ function invalidateSessionStatusReaders(organizationId: string): MutationEffect[
  * of replacing it. `updateSessionAssessors` merges its
  * `updatedAssessors` in as that `assessors` extension too. `setSessionSkillCheck` and
  * `deleteSessionSkillCheck` edit the caller's own-checks list in place, matching on the
- * (assessee, skill) pair, and invalidate the org's other skill-check lists.
+ * (assessee, skill) pair, merge the returned row into the session cache (`listSessionChecks`), and
+ * invalidate the org's other skill-check lists. `approveSession` and `reopenSession` also set the
+ * session cache's `sessionStatus`.
  */
 export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
     approveSession: (vars, { updated }) => [
@@ -75,6 +132,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             }),
             (old) => (old ? { ...old, ...updated } : old),
         ),
+        writeSessionChecksStatus(vars.organizationId, vars.sessionId, updated.status),
         // approveSession updates every matching skillCheck row server-side (Include/Exclude), so
         // any cached listSkillChecks for this session — including scoped variants like
         // ownChecksOnly — needs to refetch rather than keep showing pre-approval statuses.
@@ -115,13 +173,18 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             }),
         ),
     ],
-    deleteSessionSkillCheck: (vars) => [
+    deleteSessionSkillCheck: (vars, { check: tombstoned }) => [
         write(ownSessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId), (old) => {
             const matches = (check: { assesseeId: string; skillId: string }) =>
                 check.assesseeId === vars.assesseeId && check.skillId === vars.skillId;
             // Nothing to remove: keep the same array, so no subscriber re-renders.
             return old?.some(matches) ? old.filter((check) => !matches(check)) : old;
         }),
+        // Usually the tombstone, but it can be a re-record from the caller's other device; the
+        // merge keeps whichever is newer. Nothing to merge when nothing was deleted.
+        ...(tombstoned
+            ? [mergeIntoSessionChecks(vars.organizationId, vars.skillCheckSessionId, tombstoned)]
+            : []),
         ...invalidateOtherSkillCheckLists(vars.organizationId),
     ],
     reopenSession: (vars, { updated }) => [
@@ -132,6 +195,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             }),
             (old) => (old ? { ...old, ...updated } : old),
         ),
+        writeSessionChecksStatus(vars.organizationId, vars.skillCheckSessionId, updated.status),
         // reopenSession moves the session's Include checks to Pending server-side, so every
         // cached listSkillChecks for it (ownChecksOnly included) refetches.
         invalidate(
@@ -151,6 +215,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                 ? old.map((check) => (matches(check) ? saved : check))
                 : [...old, saved];
         }),
+        mergeIntoSessionChecks(vars.organizationId, vars.skillCheckSessionId, saved),
         ...invalidateOtherSkillCheckLists(vars.organizationId),
     ],
     // updateCheckExclusions moves the session's checks between Exclude and Draft server-side, so
