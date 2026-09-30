@@ -38,7 +38,7 @@ describe("user-notes", () => {
             { id: T.older, userId: T.user, title: "Older", updatedAt: "2026-01-01" },
             { id: T.newer, userId: T.user, title: "Newer", updatedAt: "2026-03-01" },
             { id: T.others, userId: T.otherUser, title: "Not yours", updatedAt: "2026-04-01" },
-            { id: T.toUpdate, userId: T.user, title: "Before", updatedAt: "2025-01-01" },
+            { id: T.toUpdate, userId: T.user, title: "Before", updatedAt: "2025-02-01" },
             { id: T.toDelete, userId: T.user, title: "Doomed", updatedAt: "2025-01-01" },
         ];
         for (const { updatedAt, ...note } of notes) {

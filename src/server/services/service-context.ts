@@ -57,7 +57,7 @@ export type OrgServiceContext = UserServiceContext & {
  * joins it, without threading a `batchId` parameter through every helper in between. Does not
  * create the batch — pass the id from `createLogBatch`.
  */
-export function withBatch<C extends OrgServiceContext>(ctx: C, batchId: string): C {
+export function withBatch<C extends UserServiceContext>(ctx: C, batchId: string): C {
     return {
         ...ctx,
         logEvent: (options, tx) => ctx.logEvent({ ...options, batchId }, tx),

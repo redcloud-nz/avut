@@ -152,7 +152,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 
 `npm run check` passes.
 
-### - [ ] 4. User notes service and router
+### - [x] 4. User notes service and router
+
+`feat(notes): add user notes service and router`, `fix(notes): untie user-note list test and document UserServiceContext`
 
 **Files:** `src/server/services/service-context.ts`, new `src/server/services/user-notes.ts` (+ `.test.ts`), new `src/trpc/routers/user-notes-router.ts` (+ `.test.ts`), `src/trpc/routers/_app.ts`, `src/lib/schemas/log-entry.ts`.
 
