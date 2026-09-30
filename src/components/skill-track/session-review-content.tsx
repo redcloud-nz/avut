@@ -5,7 +5,7 @@
 "use client";
 
 import { ClipboardCheckIcon, LockOpenIcon } from "lucide-react";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
@@ -22,6 +23,13 @@ import { SkillTrack_SessionReview_Coverage } from "@/components/skill-track/sess
 import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -29,7 +37,12 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { findConflicts, initialSelection, reconcileSelection } from "@/lib/skill-check-conflicts";
+import {
+    findConflicts,
+    initialSelection,
+    pairKey,
+    reconcileSelection,
+} from "@/lib/skill-check-conflicts";
 import { coverageBy } from "@/lib/skill-check-coverage";
 import { trpc } from "@/trpc/client";
 
@@ -129,46 +142,89 @@ export function SkillTrack_SessionReview_Content({
         .filter((check) => selected.has(check.id))
         .map((check) => check.id);
     const excludedCount = skillChecks.length - includedCheckIds.length;
-    // What the approval itself included, for the approved view.
-    const storedIncludedCount = useMemo(
-        () => skillChecks.filter((check) => check.status === "Include").length,
+    // Distinct assessee and skill pairs with a check, for the summary strip.
+    const uniqueCheckCount = useMemo(
+        () => new Set(skillChecks.map((check) => pairKey(check.assesseeId, check.skillId))).size,
         [skillChecks],
     );
 
-    // Each person's and each skill's checks and coverage. The entries come from the `all` lists,
-    // so every check is reachable from one; coverage counts only the `assigned` other side.
+    // Include options from the header menu: unticking one drops the people (or skills) with no
+    // checks from the lists and from every figure (card counts, averages, the Coverage tile), for
+    // sessions that were never meant to cover everyone assigned. In the URL so they survive a
+    // reload; `replace` keeps them out of the history.
+    const [includeUnassessedPeople, setIncludeUnassessedPeople] = useQueryState(
+        "unassessedPersonnel",
+        parseAsBoolean.withDefault(true).withOptions({ history: "replace", clearOnDefault: true }),
+    );
+    const [includeUnassessedSkills, setIncludeUnassessedSkills] = useQueryState(
+        "unassessedSkills",
+        parseAsBoolean.withDefault(true).withOptions({ history: "replace", clearOnDefault: true }),
+    );
+    const assessedPeople = useMemo(
+        () => new Set(skillChecks.map((check) => check.assesseeId)),
+        [skillChecks],
+    );
+    const assessedSkills = useMemo(
+        () => new Set(skillChecks.map((check) => check.skillId)),
+        [skillChecks],
+    );
+    // The people and skills the page counts: the `all` lists for the cards, so every check can be
+    // reached from one, and the `assigned` lists for coverage, each less the unassessed when
+    // they're left out.
+    const [listedPeople, countedPeople] = useMemo(
+        () =>
+            includeUnassessedPeople
+                ? [assessees, assignedAssessees]
+                : [
+                      assessees.filter((p) => assessedPeople.has(p.id)),
+                      assignedAssessees.filter((p) => assessedPeople.has(p.id)),
+                  ],
+        [includeUnassessedPeople, assessees, assignedAssessees, assessedPeople],
+    );
+    const [listedSkills, countedSkills] = useMemo(
+        () =>
+            includeUnassessedSkills
+                ? [sessionSkills, assignedSkills]
+                : [
+                      sessionSkills.filter((s) => assessedSkills.has(s.id)),
+                      assignedSkills.filter((s) => assessedSkills.has(s.id)),
+                  ],
+        [includeUnassessedSkills, sessionSkills, assignedSkills, assessedSkills],
+    );
+
+    // Each person's and each skill's checks and coverage, over the other side's counted list.
     const peopleCoverage = useMemo(
         () =>
             coverageBy(
                 "assessee",
-                assessees.map((p) => p.id),
-                assignedSkills.map((s) => s.id),
+                listedPeople.map((p) => p.id),
+                countedSkills.map((s) => s.id),
                 skillChecks,
             ),
-        [assessees, assignedSkills, skillChecks],
+        [listedPeople, countedSkills, skillChecks],
     );
     const skillsCoverage = useMemo(
         () =>
             coverageBy(
                 "skill",
-                sessionSkills.map((s) => s.id),
-                assignedAssessees.map((p) => p.id),
+                listedSkills.map((s) => s.id),
+                countedPeople.map((p) => p.id),
                 skillChecks,
             ),
-        [sessionSkills, assignedAssessees, skillChecks],
+        [listedSkills, countedPeople, skillChecks],
     );
-    // The share of assigned assessee and skill pairs with at least one live check: the assigned
-    // people's covered skills over every assigned pair. The same figure as the Personnel and
+    // The share of counted assessee and skill pairs with at least one live check: the counted
+    // people's covered skills over every counted pair. The same figure as the Personnel and
     // Skills cards' average coverage, give or take anyone no longer assigned.
     const coveragePercent = useMemo(() => {
-        const pairs = assignedAssessees.length * assignedSkills.length;
+        const pairs = countedPeople.length * countedSkills.length;
         if (pairs === 0) return 0;
-        const assigned = new Set(assignedAssessees.map((p) => p.id));
+        const counted = new Set(countedPeople.map((p) => p.id));
         const covered = peopleCoverage
-            .filter((entry) => assigned.has(entry.id))
+            .filter((entry) => counted.has(entry.id))
             .reduce((sum, entry) => sum + entry.covered, 0);
         return Math.round((covered / pairs) * 100);
-    }, [assignedAssessees, assignedSkills, peopleCoverage]);
+    }, [countedPeople, countedSkills, peopleCoverage]);
 
     // Why Approve is disabled, if it is. `null` means it can open the confirm dialog.
     const approveBlockedReason =
@@ -330,6 +386,33 @@ export function SkillTrack_SessionReview_Content({
                                     }
                                 />
                             </Protect>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <DropdownMenuTriggerIcon />
+                                        <span className="sr-only">View options</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-60" align="end">
+                                    <DropdownMenuLabel>Include</DropdownMenuLabel>
+                                    <DropdownMenuCheckboxItem
+                                        checked={includeUnassessedPeople}
+                                        onCheckedChange={(checked) =>
+                                            void setIncludeUnassessedPeople(checked)
+                                        }
+                                    >
+                                        Unassessed personnel
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        checked={includeUnassessedSkills}
+                                        onCheckedChange={(checked) =>
+                                            void setIncludeUnassessedSkills(checked)
+                                        }
+                                    >
+                                        Unassessed skills
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     {/* The same gap between cards as the session page's columns. */}
@@ -363,18 +446,10 @@ export function SkillTrack_SessionReview_Content({
                             }
                         >
                             <SkillTrack_SessionReview_Summary
-                                includedCount={
-                                    showApproval ? storedIncludedCount : includedCheckIds.length
-                                }
-                                excludedCount={
-                                    showApproval
-                                        ? skillChecks.length - storedIncludedCount
-                                        : excludedCount
-                                }
-                                conflictCount={conflicts.length}
-                                unresolvedConflicts={unresolvedConflicts}
+                                uniqueCheckCount={uniqueCheckCount}
+                                personnelCount={assessedPeople.size}
+                                skillCount={assessedSkills.size}
                                 coveragePercent={coveragePercent}
-                                showApproval={showApproval}
                             />
                             <Show when={conflicts.length > 0}>
                                 <SkillTrack_SessionReview_Conflicts
@@ -393,6 +468,8 @@ export function SkillTrack_SessionReview_Content({
                                 id="coverage"
                                 people={peopleCoverage}
                                 skills={skillsCoverage}
+                                peopleCount={assessees.length}
+                                skillsCount={sessionSkills.length}
                                 assesseeById={assesseeById}
                                 skillById={skillById}
                                 assessorById={assessorById}

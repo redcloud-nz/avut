@@ -42,6 +42,10 @@ interface SessionReviewCoverageProps {
     people: Coverage<PersonId, SkillCheck>[];
     /** Coverage per skill, on the same terms. */
     skills: Coverage<SkillId, SkillCheck>[];
+    /** How many people there are with the unassessed counted, when `people` leaves them out. */
+    peopleCount: number;
+    /** How many skills there are with the unassessed counted, when `skills` leaves them out. */
+    skillsCount: number;
     assesseeById: Map<PersonId, PersonRef>;
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
@@ -58,7 +62,7 @@ interface SessionReviewCoverageProps {
 type Subject = { kind: "person"; id: PersonId } | { kind: "skill"; id: SkillId };
 
 /**
- * The review page's People and Skills cards, side by side: each person (or skill) with their
+ * The review page's Personnel and Skills cards, side by side: each person (or skill) with their
  * check count, how much of the session they cover, and how many of their checks are excluded.
  * Clicking one opens its checks in a dialog, where they can be excluded one by one. Everything
  * starts included, so the cards are for spotting gaps and the odd exclusion, not for ticking.
@@ -67,6 +71,8 @@ export function SkillTrack_SessionReview_Coverage({
     id,
     people,
     skills,
+    peopleCount,
+    skillsCount,
     assesseeById,
     skillById,
     ...checkProps
@@ -91,6 +97,7 @@ export function SkillTrack_SessionReview_Coverage({
             <CoverageCard
                 title="Personnel"
                 entries={people}
+                allCount={peopleCount}
                 name={personName}
                 coverageOf="skills"
                 isIncluded={isIncluded}
@@ -100,6 +107,7 @@ export function SkillTrack_SessionReview_Coverage({
             <CoverageCard
                 title="Skills"
                 entries={skills}
+                allCount={skillsCount}
                 name={skillName}
                 coverageOf="people"
                 isIncluded={isIncluded}
@@ -159,6 +167,7 @@ function summary(entry: Coverage<string, SkillCheck>, coverageOf: "skills" | "pe
 function CoverageCard<Id extends string>({
     title,
     entries,
+    allCount,
     name,
     coverageOf,
     isIncluded,
@@ -167,15 +176,19 @@ function CoverageCard<Id extends string>({
 }: {
     title: string;
     entries: Coverage<Id, SkillCheck>[];
+    /** The entry count with the unassessed included, whether or not `entries` leaves them out. */
+    allCount: number;
     name(id: Id): string;
     coverageOf: "skills" | "people";
     isIncluded(check: SkillCheck): boolean;
     conflictCheckIds: ReadonlySet<SkillCheckId>;
     onOpen(id: Id): void;
 }) {
-    const percent = (n: number) =>
-        entries.length === 0 ? 0 : Math.round((n / entries.length) * 100);
+    // How many have checks, out of everyone: leaving the unassessed out of the list would make
+    // this always "N of N", so it counts them regardless, and says so with "Showing".
     const withChecks = entries.filter((entry) => entry.checks.length > 0).length;
+    const withChecksPercent = allCount === 0 ? 0 : Math.round((withChecks / allCount) * 100);
+    const showing = allCount > entries.length;
     // The mean number of the other side each entry covers, and that as a share of the other side.
     const total = entries[0]?.total ?? 0;
     const meanCovered =
@@ -191,17 +204,21 @@ function CoverageCard<Id extends string>({
                     <CardTitle>{title}</CardTitle>
                     <CardDescription>
                         <p>
-                            {withChecks} of {entries.length} ({percent(withChecks)}%){" "}
-                            {withChecks === 1 ? "has" : "have"} checks recorded.
+                            {showing
+                                ? `Showing ${withChecks} of ${allCount} (${withChecksPercent}%) with checks recorded.`
+                                : `${withChecks} of ${allCount} (${withChecksPercent}%) ${withChecks === 1 ? "has" : "have"} checks recorded.`}
                         </p>
                         <p>
-                            Average {meanCovered.toFixed(1)} ({meanPercent}%) coverage
+                            Average {meanCovered.toFixed(1)} checks ({meanPercent}% coverage)
                         </p>
                     </CardDescription>
                     <SkillTrack_SessionReview_CardToggle title={title} />
                 </CardHeader>
                 <CollapsibleContent asChild>
                     <CardContent className="flex flex-col">
+                        {entries.length === 0 && (
+                            <p className="text-sm text-muted-foreground">No checks recorded.</p>
+                        )}
                         {entries.map((entry) => {
                             // Checks left out by hand. A conflict's unpicked checks are left out by the
                             // pick, which the Conflicts card already shows.
