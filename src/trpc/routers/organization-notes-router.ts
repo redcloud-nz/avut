@@ -11,11 +11,6 @@ import * as OrganizationNotes from "@/server/services/organization-notes";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 
-/** A note as `listNotes` returns it: no `content`, plus the author, `null` once purged. */
-const noteListItemSchema = OrganizationNoteData.schema
-    .pick({ id: true, title: true, createdAt: true, updatedAt: true })
-    .extend({ author: z.object({ id: z.string(), name: z.string() }).nullable() });
-
 /**
  * Organization notes. Anyone who can `create` a note can edit or delete their own; editing or
  * deleting someone else's note (or an authorless one) takes `organizationNote: ["update"]` or
@@ -46,7 +41,7 @@ export const organizationNotesRouter = createTrpcRouter({
                 await ctx.hasPermission(ctx.organizationId, { organizationNote: ["delete"] });
             }
 
-            const deleted = await OrganizationNotes.remove(ctx, noteId);
+            const deleted = await OrganizationNotes.remove(ctx, note);
 
             return { deleted };
         }),
@@ -62,7 +57,7 @@ export const organizationNotesRouter = createTrpcRouter({
         }),
 
     listNotes: organizationProcedure({ organizationNote: ["view"] })
-        .output(z.array(noteListItemSchema))
+        .output(z.array(OrganizationNoteData.listItemSchema))
         .query(async ({ ctx }) => {
             return await OrganizationNotes.list(ctx);
         }),
@@ -86,7 +81,7 @@ export const organizationNotesRouter = createTrpcRouter({
                 await ctx.hasPermission(ctx.organizationId, { organizationNote: ["update"] });
             }
 
-            const updated = await OrganizationNotes.update(ctx, noteId, { title, content });
+            const updated = await OrganizationNotes.update(ctx, note, { title, content });
 
             return { updated };
         }),

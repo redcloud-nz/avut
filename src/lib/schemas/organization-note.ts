@@ -42,6 +42,14 @@ export const OrganizationNoteData = {
     /** Unrefined input for updating a note; apply {@link NoteUpdateInput.refine} to the full input. */
     updateSchema: NoteUpdateInput.schema,
 
+    /**
+     * A note as the list shows it: no `content`, plus the author's id and name, or `null` once
+     * the author's account has been purged.
+     */
+    listItemSchema: organizationNoteSchema
+        .pick({ id: true, title: true, createdAt: true, updatedAt: true })
+        .extend({ author: z.object({ id: z.string(), name: z.string() }).nullable() }),
+
     fromRecord: (record: OrganizationNoteRecord): OrganizationNoteData =>
         organizationNoteSchema.parse({
             ...record,
@@ -55,3 +63,5 @@ export type OrganizationNoteData = z.infer<typeof organizationNoteSchema>;
 export type CreateOrganizationNoteData = z.infer<typeof OrganizationNoteData.createSchema>;
 
 export type UpdateOrganizationNoteData = z.infer<typeof OrganizationNoteData.updateSchema>;
+
+export type OrganizationNoteListItem = z.infer<typeof OrganizationNoteData.listItemSchema>;

@@ -11,22 +11,11 @@ import {
     OrganizationNoteData,
     OrganizationNoteId,
     type CreateOrganizationNoteData,
+    type OrganizationNoteListItem,
     type UpdateOrganizationNoteData,
 } from "@/lib/schemas/organization-note";
 
 import type { OrgServiceContext } from "./service-context";
-
-/**
- * A note as the list shows it: no `content`, plus the author's id and name, or `null` once the
- * author's account has been purged.
- */
-export interface OrganizationNoteListItem {
-    id: OrganizationNoteId;
-    title: string;
-    createdAt: string;
-    updatedAt: string;
-    author: { id: string; name: string } | null;
-}
 
 /** List the organization's notes, most recently updated first. */
 export async function list(ctx: OrgServiceContext): Promise<OrganizationNoteListItem[]> {
@@ -116,15 +105,16 @@ export async function create(
 /**
  * Update a note's title and/or body. No-op, returning the existing note unchanged, if neither
  * differs. The log carries the title diff and, when the body changed, only an `obj_mask` marker.
- * Doesn't check who may edit the note; the caller does.
- * @throws NotFoundError if the note does not exist within the organization.
+ *
+ * Takes the note the caller already loaded with `requireById`, which it needs anyway to decide
+ * who may edit it (this doesn't check that). The write stays scoped to the organization.
  */
 export async function update(
     ctx: OrgServiceContext,
-    noteId: OrganizationNoteId,
+    existing: OrganizationNoteData,
     input: UpdateOrganizationNoteData,
 ): Promise<OrganizationNoteData> {
-    const existing = await requireById(ctx, noteId);
+    const noteId = existing.id;
 
     const changes: DiffChange[] =
         input.title === undefined
@@ -155,14 +145,15 @@ export async function update(
 /**
  * Permanently delete a note. Notes aren't in the Rubbish bin, so this is a hard delete; the log
  * entry's description keeps the title.
- * Doesn't check who may delete the note; the caller does.
- * @throws NotFoundError if the note does not exist within the organization.
+ *
+ * Takes the note the caller already loaded with `requireById`, which it needs anyway to decide
+ * who may delete it (this doesn't check that). The write stays scoped to the organization.
  */
 export async function remove(
     ctx: OrgServiceContext,
-    noteId: OrganizationNoteId,
+    existing: OrganizationNoteData,
 ): Promise<OrganizationNoteData> {
-    const existing = await requireById(ctx, noteId);
+    const noteId = existing.id;
 
     await ctx.prisma.$transaction([
         ctx.prisma.organizationNote.delete({

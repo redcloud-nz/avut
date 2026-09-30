@@ -145,10 +145,14 @@ describe("organization-notes", () => {
     describe("update", () => {
         it("logs the title diff and masks the body", async () => {
             const ctx = makeCtx(T.otherOrg);
-            const updated = await OrganizationNotes.update(ctx, T.toUpdate, {
-                title: "After",
-                content: "new body",
-            });
+            const updated = await OrganizationNotes.update(
+                ctx,
+                await OrganizationNotes.requireById(ctx, T.toUpdate),
+                {
+                    title: "After",
+                    content: "new body",
+                },
+            );
 
             expect(updated.title).toBe("After");
             expect(updated.content).toBe("new body");
@@ -163,7 +167,10 @@ describe("organization-notes", () => {
         it("is a no-op when nothing differs", async () => {
             const before = await logEntriesFor(T.older);
 
-            await OrganizationNotes.update(makeCtx(), T.older, { content: "secret body" });
+            const ctx = makeCtx();
+            const existing = await OrganizationNotes.requireById(ctx, T.older);
+
+            await OrganizationNotes.update(ctx, existing, { content: "secret body" });
 
             expect(await logEntriesFor(T.older)).toHaveLength(before.length);
         });
@@ -171,7 +178,12 @@ describe("organization-notes", () => {
 
     describe("remove", () => {
         it("hard-deletes the note and keeps its title in the log", async () => {
-            await OrganizationNotes.remove(makeCtx(T.otherOrg), T.toDelete);
+            const ctx = makeCtx(T.otherOrg);
+
+            await OrganizationNotes.remove(
+                ctx,
+                await OrganizationNotes.requireById(ctx, T.toDelete),
+            );
 
             expect(await db.organizationNote.findUnique({ where: { id: T.toDelete } })).toBeNull();
 

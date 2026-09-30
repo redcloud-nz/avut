@@ -120,7 +120,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - The existing `roleCovers` tests still pass.
 - `npm run check` passes.
 
-### - [ ] 3. Organization notes service and router
+### - [x] 3. Organization notes service and router
+
+`feat(notes): add organization notes service and router`, `fix(notes): share the note list-item schema and skip the second read on write`
 
 **Files:** new `src/server/services/organization-notes.ts` (+ `.test.ts`), new `src/trpc/routers/organization-notes-router.ts` (+ `.test.ts`), `src/trpc/routers/_app.ts`.
 
@@ -158,7 +160,7 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 
 - Add `UserServiceContext` and redefine `OrgServiceContext` on top of it (Decisions → Services), with the doc comment.
 - Add `LogObjectType` `UserNote` → `null`, with `// → "user-notes" once the module is registered (Task 9)`.
-- The service mirrors Task 3's, scoped by `userId: ctx.userId` on every query and write.
+- The service mirrors Task 3's shape as built: `update`/`remove` take the already-loaded note rather than an id, and the list-item schema lives in the schema file (`UserNoteData.listItemSchema`). It's scoped by `userId: ctx.userId` on every query and write.
 - The router `userNotes` uses `authenticatedProcedure`, with the same five procedures. Its `ctx.logEvent` writes `scope: "user"` entries. There's no permission check beyond ownership.
 
 - **Update input:** build it as `NoteUpdateInput.refine(NoteUpdateInput.schema.extend({ noteId: … }))` (`src/lib/schemas/note-fields.ts`). The "at least one field" refine goes on last, because Zod 4 throws when you extend a refined object.

@@ -156,6 +156,18 @@ describe("organizationNotesRouter", () => {
             ).rejects.toMatchObject({ code: "NOT_FOUND" });
         });
 
+        // The author check must never run ahead of org scoping: authoring a note elsewhere
+        // doesn't make it reachable through this organization.
+        it("throws NOT_FOUND to the author for their own note in another organization", async () => {
+            await expect(
+                makeCaller(T.author, MEMBER).updateNote({
+                    organizationId: T.org,
+                    noteId: T.outsider,
+                    title: "Nope",
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
         it("forbids a member from updating someone else's note", async () => {
             await expect(
                 makeCaller(T.member, MEMBER).updateNote({
@@ -216,6 +228,19 @@ describe("organizationNotesRouter", () => {
                     noteId: T.outsider,
                 }),
             ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+
+        it("throws NOT_FOUND to the author for their own note in another organization", async () => {
+            await expect(
+                makeCaller(T.author, MEMBER).deleteNote({
+                    organizationId: T.org,
+                    noteId: T.outsider,
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            expect(
+                await db.organizationNote.findUnique({ where: { id: T.outsider } }),
+            ).not.toBeNull();
         });
 
         it("forbids a member from deleting someone else's note", async () => {
