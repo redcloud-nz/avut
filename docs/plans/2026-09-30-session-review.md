@@ -236,7 +236,7 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 
 ### Task 5: Header Approve/Reopen and the approve confirm dialog `visual`
 
-- [ ] (commit subject goes here once done)
+- [x] feat(skill-track): move Approve and Reopen to the review header, with an approve confirm
 
 **Files:**
 

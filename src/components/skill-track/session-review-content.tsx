@@ -4,30 +4,23 @@
  */
 "use client";
 
-import { ClipboardCheckIcon } from "lucide-react";
-import Link from "next/link";
+import { ClipboardCheckIcon, LockOpenIcon } from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 
-import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
+import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
+import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reopen-session";
 import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
-import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { MutationButton } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import {
@@ -38,6 +31,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -126,34 +120,61 @@ export function SkillTrack_SessionReview_Content({
         (conflict) => !conflict.checks.some((c) => selected.has(c.id)),
     ).length;
 
-    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
-    const mutation = useMutation(
-        trpc.skillCheckSessions.approveSession.mutationOptions({
-            meta: { effects: skillCheckSessionsEffects.approveSession },
-            onError(error) {
-                toast.error(`Failed to approve session: ${error.message}`);
-                refetchSessionOnConflict(error);
-            },
-            onSuccess() {
-                toast.success("Session approved.");
-            },
-        }),
-    );
+    // What Approve would submit: the selected checks, and how many of the session's checks that
+    // leaves out.
+    const includedCheckIds = skillChecks
+        .filter((check) => selected.has(check.id))
+        .map((check) => check.id);
+    const excludedCount = skillChecks.length - includedCheckIds.length;
 
-    // Right after this page's approval, `getSession` flips to `Include` before `listSkillChecks`
+    // Why Approve is disabled, if it is. `null` means it can open the confirm dialog.
+    const approveBlockedReason =
+        skillChecks.length === 0
+            ? "No skill checks to approve"
+            : unresolvedConflicts > 0
+              ? `Resolve ${unresolvedConflicts} ${unresolvedConflicts === 1 ? "conflict" : "conflicts"} to approve`
+              : null;
+
+    // When this page last approved the session (the time it was submitted), set by the approve
+    // dialog's success. Right after it, `getSession` flips to `Include` before `listSkillChecks`
     // has refetched the stamped statuses. Until checks newer than the approval arrive, show
     // `selected` (what was just approved) rather than the stale pre-approval statuses, which
     // would read as all unticked. Any other time, an approved session shows its stored statuses,
     // background refetches included.
-    const awaitingStampedChecks = mutation.isSuccess && checksUpdatedAt < mutation.submittedAt;
+    const [approvedAt, setApprovedAt] = useState<number | null>(null);
+    // The page stays mounted across approve → reopen; forget the old approval once it's reopened.
+    if (!isApproved && approvedAt !== null) setApprovedAt(null);
+    const awaitingStampedChecks = approvedAt !== null && checksUpdatedAt < approvedAt;
     const showApproval = isApproved && !awaitingStampedChecks;
 
-    // The page stays mounted across approve → reopen, so a finished approval would otherwise
-    // leave the button reading "Submitted" once the session is editable again.
-    const { reset: resetMutation } = mutation;
+    // One `?action=` owner for both dialogs on this page: two literal parsers would each read the
+    // other's value as `null`. Reopen opens only on an approved session; Approve only on one that
+    // isn't, and only when it isn't blocked. Both need the approve permission.
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["reopen", "approve"] as const),
+    );
+    const canOpenReopen = canApprove && isApproved;
+    const canOpenApprove = canApprove && !isApproved && approveBlockedReason === null;
+
+    function openAction(next: "reopen" | "approve") {
+        void setAction(next, { history: "push" });
+    }
+    function closeAction(only: "reopen" | "approve") {
+        void setAction((current) => (current === only ? null : current), { history: "replace" });
+    }
+
+    // A pasted `?action=approve` on an approved session or a blocked draft (or `?action=reopen`
+    // on a draft), or a session whose status changed while one was open: clear the param,
+    // replacing the history entry. `open` is masked until it's gone.
+    const staleAction =
+        (action === "approve" && !canOpenApprove) || (action === "reopen" && !canOpenReopen)
+            ? action
+            : null;
     useEffect(() => {
-        if (!isApproved) resetMutation();
-    }, [isApproved, resetMutation]);
+        if (staleAction) closeAction(staleAction);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `closeAction` is rebuilt every render
+    }, [staleAction]);
 
     function toggleCheck(id: SkillCheckId) {
         setSelected((prev) => {
@@ -182,14 +203,6 @@ export function SkillTrack_SessionReview_Content({
             for (const id of groupIds) next.delete(id);
             next.add(checkId);
             return next;
-        });
-    }
-
-    function handleApprove() {
-        mutation.mutate({
-            organizationId: organization.id,
-            sessionId: sessionId,
-            includedCheckIds: [...selected],
         });
     }
 
@@ -222,26 +235,54 @@ export function SkillTrack_SessionReview_Content({
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Review</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                                {isApproved ? (
+                                    <Button variant="outline" onClick={() => openAction("reopen")}>
+                                        <LockOpenIcon /> Reopen
+                                    </Button>
+                                ) : approveBlockedReason ? (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            {/* A disabled button gets no pointer events, so the
+                                                wrapper takes the hover and focus instead. */}
+                                            <span tabIndex={0}>
+                                                <Button disabled>Approve</Button>
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{approveBlockedReason}</TooltipContent>
+                                    </Tooltip>
+                                ) : (
+                                    <Button onClick={() => openAction("approve")}>Approve</Button>
+                                )}
+                                <SkillsModule_ReopenSession_Dialog
+                                    session={session}
+                                    open={canOpenReopen && action === "reopen"}
+                                    onOpenChange={(open) =>
+                                        open ? openAction("reopen") : closeAction("reopen")
+                                    }
+                                />
+                                <SkillsModule_ApproveSession_Dialog
+                                    session={session}
+                                    includedCheckIds={includedCheckIds}
+                                    includedCount={includedCheckIds.length}
+                                    excludedCount={excludedCount}
+                                    onApproved={setApprovedAt}
+                                    open={canOpenApprove && action === "approve"}
+                                    onOpenChange={(open) =>
+                                        open ? openAction("approve") : closeAction("approve")
+                                    }
+                                />
+                            </Protect>
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <Show when={isApproved}>
                         <Alert>
                             <AlertTitle>Approved</AlertTitle>
                             <AlertDescription>
                                 <p>
-                                    This session has been approved. To change the selection, reopen
-                                    it from the{" "}
-                                    <Link
-                                        href={route(
-                                            "/orgs/[slug]/skill-track/sessions/[session_id]",
-                                            {
-                                                slug: organization.slug,
-                                                session_id: sessionId,
-                                            },
-                                        )}
-                                    >
-                                        session page
-                                    </Link>
-                                    .
+                                    This session has been approved and is locked. To change the
+                                    selection, reopen it with Reopen at the top of the page.
                                 </p>
                             </AlertDescription>
                         </Alert>
@@ -312,20 +353,6 @@ export function SkillTrack_SessionReview_Content({
                                     </TableBody>
                                 </Table>
                             </CardContent>
-                            <Show when={!isApproved}>
-                                <CardFooter className="justify-end">
-                                    <MutationButton
-                                        status={mutation.status}
-                                        disabled={!canApprove || unresolvedConflicts > 0}
-                                        onClick={handleApprove}
-                                        text={{
-                                            idle: "Approve",
-                                            pending: "Submitting...",
-                                            success: "Submitted",
-                                        }}
-                                    />
-                                </CardFooter>
-                            </Show>
                         </Card>
                     </Show>
                 </Saratoga.Root>
