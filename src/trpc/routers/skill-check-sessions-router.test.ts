@@ -248,7 +248,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             ).rejects.toMatchObject({ code: "BAD_REQUEST" });
         });
 
-        it("is refused for a role lacking skillCheck create, as skills-admin is", async () => {
+        it("is refused for a role lacking skillCheck create", async () => {
             await expect(
                 makeCaller(T.assessorUser, {
                     organization: ["view"],

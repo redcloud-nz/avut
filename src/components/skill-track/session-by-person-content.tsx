@@ -111,8 +111,7 @@ export function SkillTrack_SessionByPerson_Content({
     const isAssignedAssessor =
         !!personSelf && session.assessors.some((assessor) => assessor.id === personSelf.id);
     // Recording also needs `skillCheck: ["create"]` (see `setSessionSkillCheck` and
-    // `deleteSessionSkillCheck`) — a `skills-admin` can add itself as an assessor without being
-    // able to record.
+    // `deleteSessionSkillCheck`), which a caller holding only session update lacks.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
 
     type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
