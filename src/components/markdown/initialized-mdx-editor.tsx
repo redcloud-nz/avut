@@ -40,9 +40,30 @@ export default function InitializedMDXEditor({
     fill = false,
     ...props
 }: { editorRef: ForwardedRef<MDXEditorMethods> | null } & MarkdownEditorProps) {
+    // `className` goes on a wrapper, not on `MDXEditor`: MDXEditor copies its own `className` onto
+    // the popup container it portals into `<body>`, so a caller's border or sizing would render a
+    // stray box there (a `border` alone adds 2px below the viewport and a page scrollbar).
+    return (
+        <div className={cn(fill && "flex min-h-0 flex-col", className)}>
+            <InitializedMDXEditorInner
+                fill={fill}
+                contentEditableClassName={contentEditableClassName}
+                editorRef={editorRef}
+                {...props}
+            />
+        </div>
+    );
+}
+
+function InitializedMDXEditorInner({
+    contentEditableClassName,
+    editorRef,
+    fill,
+    ...props
+}: { editorRef: ForwardedRef<MDXEditorMethods> | null } & Omit<MarkdownEditorProps, "className">) {
     return (
         <MDXEditor
-            className={cn(fill && "mdxeditor-fill", className)}
+            className={cn(fill && "mdxeditor-fill min-h-0 flex-1")}
             contentEditableClassName={cn(
                 "markdown-content min-h-16 overflow-y-auto",
                 contentEditableClassName,

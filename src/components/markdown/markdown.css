@@ -48,6 +48,12 @@
   height: 100%;
 }
 
+/* The editable area uses the same padding as `RenderMarkdown` (overriding MDXEditor's own), so
+   text sits in the same place whether a note is being read or edited. */
+.mdxeditor [contenteditable].markdown-content {
+  padding: calc(var(--spacing) * 2);
+}
+
 .mdxeditor-fill > .mdxeditor-toolbar {
   flex-shrink: 0;
 }
