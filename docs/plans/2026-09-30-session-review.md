@@ -105,7 +105,7 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 
 ### Task 1: Shared conflict helper
 
-- [ ] (commit subject goes here once done)
+- [x] feat(skill-track): add a shared skill-check conflict helper
 
 **Files:**
 
