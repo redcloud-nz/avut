@@ -44,7 +44,8 @@ model User {
   providerCredentials ProviderCredential[]   @relation("provider_credential_to_user")
   configs           UserConfig[]             @relation("user_config_to_user")
 
-  authoredNotes          Note[]         @relation("note_to_author")
+  authoredOrganizationNotes OrganizationNote[] @relation("organization_note_to_author")
+  notes                     UserNote[]         @relation("user_note_to_user")
   formInstances          FormInstance[] @relation("form_instance_to_user")
   logEntries             LogEntry[]     @relation("log_entry_to_user")
   ownedLogEntries        LogEntry[]     @relation("log_entry_to_owner")
@@ -122,7 +123,7 @@ model Organization {
 
   // Owned records
   logEntries                LogEntry[]                 @relation("log_entry_to_organization")
-  notes                     Note[]                     @relation("note_to_organization")
+  notes                     OrganizationNote[]         @relation("organization_note_to_organization")
   skillChecks               SkillCheck[]               @relation("skill_check_to_organization")
   skillCheckSessions        SkillCheckSession[]        @relation("skill_check_session_to_organization")
   skillPackages             SkillPackage[]             @relation("skill_package_to_organization")
@@ -491,21 +492,33 @@ model TeamMembership_D4H {
 
 // Notes models
 
-model Note {
-  id             String        @id
-  organizationId String?
-  organization   Organization? @relation("note_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  authorId       String
-  author         User          @relation("note_to_author", fields: [authorId], references: [id], onDelete: Cascade)
-  content        String
-  tags           String[]      @default([])
-  properties     Json          @default("{}")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+model OrganizationNote {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("organization_note_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Null once the author's account is purged: an org note belongs to the org, not its author.
+  authorId       String?
+  author         User?        @relation("organization_note_to_author", fields: [authorId], references: [id], onDelete: SetNull)
+  title          String
+  content        String       @default("")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
-  @@index([authorId])
-  @@map("notes")
+  @@map("organization_notes")
+}
+
+model UserNote {
+  id        String   @id
+  userId    String
+  user      User     @relation("user_note_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_notes")
 }
 
 // Skill tracking models
