@@ -13,11 +13,9 @@ import {
     useQueryStates,
 } from "nuqs";
 import { useEffect, useMemo } from "react";
-import { toast } from "sonner";
 
-import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
+import { useIsMutating, useSuspenseQueries } from "@tanstack/react-query";
 
-import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -27,10 +25,16 @@ import { Show } from "@/components/show";
 import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
 import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reopen-session";
 import { SkillsModule_ResolveConflict_Dialog } from "@/components/skill-track/resolve-conflict";
+import {
+    ReviewChecksSubject,
+    SkillsModule_ReviewChecks_Dialog,
+} from "@/components/skill-track/review-checks-dialog";
 import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
-import { SkillTrack_SessionReview_Coverage } from "@/components/skill-track/session-review-coverage";
+import {
+    coverageSummary,
+    SkillTrack_SessionReview_Coverage,
+} from "@/components/skill-track/session-review-coverage";
 import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
-import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,7 +49,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
+import { SkillCheck } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import {
     findConflicts,
@@ -123,26 +127,16 @@ export function SkillTrack_SessionReview_Content({
     // are read-only.
     const canApprove = useHasPermission({ skillCheckSession: ["approve"] });
 
-    // Each decision is saved as it's made: a check is included unless its status is `Exclude`
-    // (`isCheckIncluded`), and Approve approves that saved state. Conflicts are resolved in the
-    // Resolve dialog. Interim until the check dialogs save through Save: a click on a check's
-    // checkbox saves straight away.
-    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
-    const exclusions = useMutation(
-        trpc.skillCheckSessions.updateCheckExclusions.mutationOptions({
-            meta: { effects: skillCheckSessionsEffects.updateCheckExclusions },
-            onError(error) {
-                console.error("Failed to save the review decision:", error);
-                toast.error(`Failed to save: ${error.message}`);
-                refetchSessionOnConflict(error);
-            },
-        }),
-    );
-    function saveExclusions(changes: { skillCheckId: SkillCheckId; excluded: boolean }[]) {
-        exclusions.mutate({ organizationId: organization.id, sessionId, changes });
-    }
-    // Read-only while a save is in flight too, so a second click can't race the first's refetch.
-    const controlsDisabled = isApproved || !canApprove || exclusions.isPending;
+    // Each decision is saved as it's made, by the Resolve and check dialogs' Save: a check is
+    // included unless its status is `Exclude` (`isCheckIncluded`), and Approve approves that saved
+    // state. The check dialogs are read-only on an approved session or for a viewer who can't
+    // approve.
+    const reviewReadOnly = isApproved || !canApprove;
+    // A dialog's save still in flight (it can be closed before the save lands).
+    const savingExclusions =
+        useIsMutating({
+            mutationKey: trpc.skillCheckSessions.updateCheckExclusions.mutationKey(),
+        }) > 0;
 
     const conflicts = useMemo(() => findConflicts(skillChecks), [skillChecks]);
     const conflictCheckIds = useMemo(
@@ -244,7 +238,7 @@ export function SkillTrack_SessionReview_Content({
     // Why Approve is disabled, if it is. `null` means it can open the confirm dialog.
     // While a decision is saving, the saved state (and so what Approve would confirm) is about to
     // change, so wait for it.
-    const approveBlockedReason = exclusions.isPending
+    const approveBlockedReason = savingExclusions
         ? "Saving changes"
         : skillChecks.length === 0
           ? "No skill checks to approve"
@@ -256,10 +250,18 @@ export function SkillTrack_SessionReview_Content({
     // other's value as `null`. Reopen opens only on an approved session; Approve only on one that
     // isn't, and only when it isn't blocked; Resolve only on one that isn't, for a conflict that
     // exists (`&personId=…&skillId=…` name it). All need the approve permission. A successful
-    // approval turns the session approved, which closes Approve here as a stale action.
+    // approval turns the session approved, which closes Approve here as a stale action. The check
+    // dialogs (`review-person&personId=…`, `review-skill&skillId=…`) open for anyone, for a person
+    // or skill with checks, and are read-only where the controls are.
     // One `useQueryStates` for the three, so a close can check all of them in one updater.
     const [{ action, personId, skillId }, setActionParams] = useQueryStates({
-        action: parseAsStringLiteral(["reopen", "approve", "resolve"] as const),
+        action: parseAsStringLiteral([
+            "reopen",
+            "approve",
+            "resolve",
+            "review-person",
+            "review-skill",
+        ] as const),
         personId: parseAsString,
         skillId: parseAsString,
     });
@@ -270,6 +272,17 @@ export function SkillTrack_SessionReview_Content({
             (conflict) => conflict.assesseeId === personId && conflict.skillId === skillId,
         ) ?? null;
     const canOpenResolve = canApprove && !isApproved && resolvingConflict !== null;
+    // The person (or skill) whose checks the check dialog shows: one listed with checks.
+    const reviewingPerson =
+        action === "review-person"
+            ? (peopleCoverage.find((entry) => entry.id === personId && entry.checks.length > 0) ??
+              null)
+            : null;
+    const reviewingSkill =
+        action === "review-skill"
+            ? (skillsCoverage.find((entry) => entry.id === skillId && entry.checks.length > 0) ??
+              null)
+            : null;
 
     function openAction(next: "reopen" | "approve") {
         void setActionParams({ action: next }, { history: "push" });
@@ -280,16 +293,45 @@ export function SkillTrack_SessionReview_Content({
             { history: "push" },
         );
     }
-    // Clears `action` only while it's still `only`, and a resolve's `personId`/`skillId` only
-    // with it: other dialogs use `personId` too.
-    function closeAction(only: "reopen" | "approve" | "resolve") {
+    function openReview(subject: ReviewChecksSubject) {
+        void setActionParams(
+            subject.kind === "person"
+                ? { action: "review-person", personId: subject.id, skillId: null }
+                : { action: "review-skill", personId: null, skillId: subject.id },
+            { history: "push" },
+        );
+    }
+    type Action = NonNullable<typeof action>;
+    // The params besides `action` that `only` owns, cleared with it.
+    function closeParams(only: Action) {
+        switch (only) {
+            case "resolve":
+                return { action: null, personId: null, skillId: null };
+            case "review-person":
+                return { action: null, personId: null };
+            case "review-skill":
+                return { action: null, skillId: null };
+            default:
+                return { action: null };
+        }
+    }
+    // Clears `action` only while it's still `only`, and the `personId`/`skillId` it owns only
+    // with it: other dialogs use them too.
+    function closeAction(only: Action) {
+        void setActionParams((current) => (current.action !== only ? {} : closeParams(only)), {
+            history: "replace",
+        });
+    }
+    // After a save: close the check dialog only if the URL still names the subject saved, so a
+    // save that lands late doesn't close another person's (or another dialog) opened since.
+    function closeReviewedChecks(subject: ReviewChecksSubject) {
+        const only = subject.kind === "person" ? "review-person" : "review-skill";
         void setActionParams(
             (current) =>
-                current.action !== only
-                    ? {}
-                    : only === "resolve"
-                      ? { action: null, personId: null, skillId: null }
-                      : { action: null },
+                current.action === only &&
+                (subject.kind === "person" ? current.personId : current.skillId) === subject.id
+                    ? closeParams(only)
+                    : {},
             { history: "replace" },
         );
     }
@@ -308,13 +350,15 @@ export function SkillTrack_SessionReview_Content({
     }
 
     // A pasted `?action=approve` on an approved session or a blocked draft (or `?action=reopen`
-    // on a draft, or `?action=resolve` for a conflict that doesn't exist), or a session whose
-    // status changed while one was open: clear the params, replacing the history entry. `open` is
-    // masked until they're gone.
+    // on a draft, `?action=resolve` for a conflict that doesn't exist, or a check dialog for a
+    // person or skill with no checks here), or a session whose status changed while one was open:
+    // clear the params, replacing the history entry. `open` is masked until they're gone.
     const staleAction =
         (action === "approve" && !canOpenApprove) ||
         (action === "reopen" && !canOpenReopen) ||
-        (action === "resolve" && !canOpenResolve)
+        (action === "resolve" && !canOpenResolve) ||
+        (action === "review-person" && !reviewingPerson) ||
+        (action === "review-skill" && !reviewingSkill)
             ? action
             : null;
     useEffect(() => {
@@ -322,9 +366,34 @@ export function SkillTrack_SessionReview_Content({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- `closeAction` is rebuilt every render
     }, [staleAction]);
 
-    function toggleCheck(check: SkillCheck) {
-        saveExclusions([{ skillCheckId: check.id, excluded: isCheckIncluded(check) }]);
-    }
+    // The check dialog's subject and its checks, each labelled with the other side's name and
+    // sorted by it.
+    const personName = (id: SkillCheck["assesseeId"]) => assesseeById.get(id)?.name ?? id;
+    const skillName = (id: SkillCheck["skillId"]) => skillById.get(id)?.name ?? id;
+    const review = reviewingPerson
+        ? {
+              action: "review-person" as const,
+              subject: { kind: "person", id: reviewingPerson.id } as const,
+              title: personName(reviewingPerson.id),
+              description: coverageSummary(reviewingPerson, "skills"),
+              rows: reviewingPerson.checks.map((check) => ({
+                  check,
+                  label: skillName(check.skillId),
+              })),
+          }
+        : reviewingSkill
+          ? {
+                action: "review-skill" as const,
+                subject: { kind: "skill", id: reviewingSkill.id } as const,
+                title: skillName(reviewingSkill.id),
+                description: coverageSummary(reviewingSkill, "people"),
+                rows: reviewingSkill.checks.map((check) => ({
+                    check,
+                    label: personName(check.assesseeId),
+                })),
+            }
+          : null;
+    const reviewRows = review?.rows.toSorted((a, b) => a.label.localeCompare(b.label)) ?? [];
 
     return (
         <>
@@ -476,12 +545,27 @@ export function SkillTrack_SessionReview_Content({
                                 skillsCount={sessionSkills.length}
                                 assesseeById={assesseeById}
                                 skillById={skillById}
-                                assessorById={assessorById}
                                 conflictCheckIds={conflictCheckIds}
-                                disabled={controlsDisabled}
-                                toggleCheck={toggleCheck}
+                                onOpen={openReview}
                             />
                         </Show>
+                        {review && (
+                            <SkillsModule_ReviewChecks_Dialog
+                                sessionId={sessionId}
+                                subject={review.subject}
+                                title={review.title}
+                                description={review.description}
+                                rows={reviewRows}
+                                assessorById={assessorById}
+                                conflictCheckIds={conflictCheckIds}
+                                readOnly={reviewReadOnly}
+                                open={action === review.action}
+                                onOpenChange={(open) =>
+                                    open ? undefined : closeAction(review.action)
+                                }
+                                onSaved={closeReviewedChecks}
+                            />
+                        )}
                         {resolvingConflict && (
                             <SkillsModule_ResolveConflict_Dialog
                                 sessionId={sessionId}

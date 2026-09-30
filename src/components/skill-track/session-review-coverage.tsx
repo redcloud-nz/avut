@@ -5,34 +5,16 @@
 "use client";
 
 import { ChevronRightIcon } from "lucide-react";
-import { useState } from "react";
 
+import { ReviewChecksSubject } from "@/components/skill-track/review-checks-dialog";
 import { SkillTrack_SessionReview_CardToggle } from "@/components/skill-track/session-review-card-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
-import {
-    Dialog,
-    DialogBody,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
-import { Label } from "@/components/ui/label";
-import { useOrganization } from "@/hooks/use-organization";
-import { usePreferences } from "@/hooks/use-preferences";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
-import {
-    assessorDisplayName,
-    getSkillCheckResultLabel,
-    SkillCheck,
-    SkillCheckId,
-} from "@/lib/schemas/skill-check";
+import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { isCheckIncluded } from "@/lib/skill-check-conflicts";
 import { Coverage } from "@/lib/skill-check-coverage";
 
@@ -49,25 +31,18 @@ interface SessionReviewCoverageProps {
     skillsCount: number;
     assesseeById: Map<PersonId, PersonRef>;
     skillById: Map<SkillId, SkillRef>;
-    assessorById: Map<PersonId, PersonRef>;
-    /** The checks in a conflict group: their pick is made in the Conflicts card, so here they only show it. */
+    /** The checks in a conflict group: their pick is shown in the Conflicts card, so the excluded counts leave them out. */
     conflictCheckIds: ReadonlySet<SkillCheckId>;
-    /**
-     * True while the session is approved, the viewer can't approve, or a save is in flight: the
-     * checkboxes are read-only.
-     */
-    disabled: boolean;
-    /** Save the check as excluded if it's included, or included if it's excluded. */
-    toggleCheck(check: SkillCheck): void;
+    /** Open a person's (or a skill's) checks in the review dialog, which the page hosts. */
+    onOpen(subject: ReviewChecksSubject): void;
 }
-
-type Subject = { kind: "person"; id: PersonId } | { kind: "skill"; id: SkillId };
 
 /**
  * The review page's Personnel and Skills cards, side by side: each person (or skill) with their
  * check count, how much of the session they cover, and how many of their checks are excluded.
- * Clicking one opens its checks in a dialog, where they can be excluded one by one. Everything
- * starts included, so the cards are for spotting gaps and the odd exclusion, not for ticking.
+ * Clicking one opens its checks in the review dialog (`SkillsModule_ReviewChecks_Dialog`, hosted
+ * by the page), where they can be excluded one by one. Everything starts included, so the cards
+ * are for spotting gaps and the odd exclusion, not for ticking.
  */
 export function SkillTrack_SessionReview_Coverage({
     id,
@@ -77,20 +52,11 @@ export function SkillTrack_SessionReview_Coverage({
     skillsCount,
     assesseeById,
     skillById,
-    ...checkProps
+    conflictCheckIds,
+    onOpen,
 }: SessionReviewCoverageProps) {
-    const [subject, setSubject] = useState<Subject | null>(null);
-
     const personName = (id: PersonId) => assesseeById.get(id)?.name ?? id;
     const skillName = (id: SkillId) => skillById.get(id)?.name ?? id;
-
-    // Looked up on each render, so the dialog follows each saved change and any other refetch.
-    const open =
-        subject?.kind === "person"
-            ? people.find((entry) => entry.id === subject.id)
-            : subject?.kind === "skill"
-              ? skills.find((entry) => entry.id === subject.id)
-              : undefined;
 
     return (
         <div id={id} className="grid scroll-mt-4 gap-4 md:grid-cols-2">
@@ -100,8 +66,8 @@ export function SkillTrack_SessionReview_Coverage({
                 allCount={peopleCount}
                 name={personName}
                 coverageOf="skills"
-                conflictCheckIds={checkProps.conflictCheckIds}
-                onOpen={(id) => setSubject({ kind: "person", id })}
+                conflictCheckIds={conflictCheckIds}
+                onOpen={(id) => onOpen({ kind: "person", id })}
             />
             <CoverageCard
                 title="Skills"
@@ -109,53 +75,18 @@ export function SkillTrack_SessionReview_Coverage({
                 allCount={skillsCount}
                 name={skillName}
                 coverageOf="people"
-                conflictCheckIds={checkProps.conflictCheckIds}
-                onOpen={(id) => setSubject({ kind: "skill", id })}
+                conflictCheckIds={conflictCheckIds}
+                onOpen={(id) => onOpen({ kind: "skill", id })}
             />
-            <Dialog open={open !== undefined} onOpenChange={(next) => !next && setSubject(null)}>
-                {open && subject && (
-                    <DialogContent size="lg">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {subject.kind === "person"
-                                    ? personName(subject.id)
-                                    : skillName(subject.id)}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {summary(open, subject.kind === "person" ? "skills" : "people")}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogBody>
-                            <ul className="flex flex-col gap-3">
-                                {open.checks
-                                    .map((check) => ({
-                                        check,
-                                        label:
-                                            subject.kind === "person"
-                                                ? skillName(check.skillId)
-                                                : personName(check.assesseeId),
-                                    }))
-                                    .toSorted((a, b) => a.label.localeCompare(b.label))
-                                    .map(({ check, label }) => (
-                                        <CheckRow
-                                            key={check.id}
-                                            check={check}
-                                            label={label}
-                                            included={isCheckIncluded(check)}
-                                            {...checkProps}
-                                        />
-                                    ))}
-                            </ul>
-                        </DialogBody>
-                        <DialogFooter showCloseButton />
-                    </DialogContent>
-                )}
-            </Dialog>
         </div>
     );
 }
 
-function summary(entry: Coverage<string, SkillCheck>, coverageOf: "skills" | "people") {
+/** An entry's check count and coverage ("3 checks · 50% of skills"), for its row and its dialog. */
+export function coverageSummary(
+    entry: Coverage<string, SkillCheck>,
+    coverageOf: "skills" | "people",
+) {
     if (entry.checks.length === 0) return "No checks recorded";
     const checks = `${entry.checks.length} ${entry.checks.length === 1 ? "check" : "checks"}`;
     if (entry.total === 0) return checks;
@@ -227,7 +158,7 @@ function CoverageCard<Id extends string>({
                                     <ItemContent>
                                         <ItemTitle>{name(entry.id)}</ItemTitle>
                                         <ItemDescription>
-                                            {summary(entry, coverageOf)}
+                                            {coverageSummary(entry, coverageOf)}
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -257,57 +188,5 @@ function CoverageCard<Id extends string>({
                 </CollapsibleContent>
             </Card>
         </Collapsible>
-    );
-}
-
-function CheckRow({
-    check,
-    label,
-    included,
-    assessorById,
-    conflictCheckIds,
-    disabled,
-    toggleCheck,
-}: {
-    check: SkillCheck;
-    /** The skill's name in a person's dialog, the assessee's in a skill's. */
-    label: string;
-    included: boolean;
-} & Pick<
-    SessionReviewCoverageProps,
-    "assessorById" | "conflictCheckIds" | "disabled" | "toggleCheck"
->) {
-    const organization = useOrganization();
-    const { formatDateTime } = usePreferences();
-    const checkboxId = `check-${check.id}`;
-    const inConflict = conflictCheckIds.has(check.id);
-    const assessor = check.assessorId ? (assessorById.get(check.assessorId) ?? null) : null;
-
-    return (
-        <li className="flex items-start gap-3">
-            <Checkbox
-                id={checkboxId}
-                className="mt-0.5"
-                checked={included}
-                disabled={disabled || inConflict}
-                onCheckedChange={() => toggleCheck(check)}
-            />
-            <div className="flex min-w-0 grow flex-col gap-1 text-sm">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <Label htmlFor={checkboxId} className="leading-snug">
-                        {label}
-                    </Label>
-                    <span>{getSkillCheckResultLabel(organization.settings, check.result)}</span>
-                </div>
-                <div className="text-muted-foreground">
-                    {assessorDisplayName({ assessor, assessorLabel: check.assessorLabel })} ·{" "}
-                    {formatDateTime(check.createdAt)}
-                    {inConflict && " · picked in Conflicts"}
-                </div>
-                {check.notes && (
-                    <p className="wrap-break-word whitespace-pre-wrap">{check.notes}</p>
-                )}
-            </div>
-        </li>
     );
 }
