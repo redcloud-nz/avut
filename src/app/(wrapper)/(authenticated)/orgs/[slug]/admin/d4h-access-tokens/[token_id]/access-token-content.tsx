@@ -5,6 +5,7 @@
 "use client";
 
 import { RefreshCwIcon } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +88,18 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                         </Saratoga.Title>
                         <Saratoga.Actions>
                             <Protect permissions={{ organization: ["update"] }}>
+                                <Button variant="ghost" size="icon" asChild>
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history",
+                                            { slug: organization.slug, token_id: tokenId },
+                                        )}
+                                        aria-label="History"
+                                        title="History"
+                                    >
+                                        <ObjectIcons.History />
+                                    </Link>
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={handleRefresh}>
                                     <RefreshCwIcon />
                                 </Button>

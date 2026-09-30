@@ -687,9 +687,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      */
     // Recording a check within a session the caller assesses needs both halves: a session update
     // and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has no `"update"`
-    // action, and the write is scoped to the caller's own `assessorId`. The `skillCheck` half
-    // keeps `skills-admin` — which holds session update, and so could add itself as an assessor —
-    // from recording checks.
+    // action, and the write is scoped to the caller's own `assessorId`.
     //
     // No `ctx.logEvent` (here or in `deleteSessionSkillCheck`): no skill check write is logged yet,
     // and `SkillCheck` isn't a `LogObjectType`. Tracked in #46.

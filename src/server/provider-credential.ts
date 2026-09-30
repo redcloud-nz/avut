@@ -46,27 +46,51 @@ export function revalidateProviderCredential(credentialId: ProviderCredentialId)
     revalidateTag(`provider-credential-${credentialId}`, { expire: 0 });
 }
 
-export async function getOrganizationProviderCredential({
-    provider,
-    organizationId,
-    credentialId,
-}: {
+/**
+ * Identifies a stored credential together with the owner it must belong to. It holds no secret,
+ * so it is safe to pass as an argument to a `"use cache"` function (where it becomes part of the
+ * cache key).
+ */
+export type ProviderCredentialRef = {
+    provider: Provider;
+    credentialId: ProviderCredentialId;
+    organizationId: OrganizationId;
+    userId: UserId | null; // null → organization credential
+};
+
+/**
+ * Get the credential a reference points to, if it is owned exactly as the reference says.
+ * @returns The decrypted credential, or null if the record is missing, is group-owned, or its
+ * provider, organization, or user doesn't match the reference.
+ * @remarks Only the encrypted record read is cached; the ownership check and decryption run on
+ * every call, so a reference with the wrong owner never gets a cached record back.
+ */
+export async function getProviderCredentialForOwner(
+    ref: ProviderCredentialRef,
+): Promise<ProviderCredential_ServerOnly | null> {
+    const record = await fetchProviderCredential(ref.credentialId);
+
+    if (!record) return null;
+
+    if (record.provider !== ref.provider) return null;
+    if (record.organizationId !== ref.organizationId) return null;
+    // Group-owned credentials (#198) never come back from an owner lookup.
+    if (record.groupId !== null) return null;
+    // Exact match: an organization ref never returns a personal credential (which carries its
+    // organization's ID too), and a personal ref never returns the organization's or another
+    // member's.
+    if (record.userId !== ref.userId) return null;
+
+    return toServerOnlyProviderCredential(record);
+}
+
+/** Get the organization's own credential by ID: `getProviderCredentialForOwner` with no user. */
+export async function getOrganizationProviderCredential(args: {
     provider: Provider;
     organizationId: OrganizationId;
     credentialId: ProviderCredentialId;
 }): Promise<ProviderCredential_ServerOnly | null> {
-    const record = await fetchProviderCredential(credentialId);
-
-    if (!record) return null;
-
-    if (record.provider !== provider) return null;
-    if (record.organizationId !== organizationId) return null;
-    // Group-owned credentials (#198) never come back from an organization lookup.
-    if (record.groupId !== null) return null;
-    // A personal token carries its organization's ID too — it just isn't this lookup's to return.
-    if (record.userId !== null) return null;
-
-    return toServerOnlyProviderCredential(record);
+    return getProviderCredentialForOwner({ ...args, userId: null });
 }
 
 /** Cached separately from decryption so the cache holds the encrypted record, never the

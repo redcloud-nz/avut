@@ -9,6 +9,12 @@ export const Messages = {
 
     d4HAccessTokenNotFound: (tokenId: string) => `D4H Access Token(id=${tokenId}) not found.`,
 
+    d4HAccessTokenRejected: (status: number) =>
+        `D4H rejected the access token (HTTP ${status}). Check the token and server, then try again.`,
+
+    d4HUnavailable: (status: number) =>
+        `Couldn't check the access token: D4H returned an error (HTTP ${status}). Try again later.`,
+
     formInstanceNotFound: (formInstanceId: string) =>
         `FormInstance(id=${formInstanceId}) not found.`,
 
@@ -29,6 +35,12 @@ export const Messages = {
 
     organizationNotFound: (organizationId: string) =>
         `Organization(id=${organizationId}) not found.`,
+
+    personalD4HAccessTokenExists: () =>
+        `You already have a personal D4H access token for this organisation. Remove it before adding a new one.`,
+
+    personalD4HAccessTokenNotFound: () =>
+        `You don't have a personal D4H access token for this organisation.`,
 
     personNotAUser: (personId: string) => `Person(id=${personId}) is not configured as a user.`,
 

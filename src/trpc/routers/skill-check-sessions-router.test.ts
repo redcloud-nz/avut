@@ -298,7 +298,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             expect(check).toMatchObject({ result: "Pass", status: "Include" });
         });
 
-        it("is refused for a role lacking skillCheck create, as skills-admin is", async () => {
+        it("is refused for a role lacking skillCheck create", async () => {
             await expect(
                 makeCaller(T.assessorUser, {
                     organization: ["view"],

@@ -165,8 +165,8 @@ function ChangeSessionAssessors_Body({
         });
     }
 
-    // Only warn someone who could actually record here: an ineligible self row (e.g. a
-    // skills-admin made assessor by createSession) loses nothing by being removed.
+    // Only warn someone who could actually record here: an ineligible self row loses nothing by
+    // being removed.
     const isRemovingSelf =
         !!personSelf &&
         canRecordChecks &&

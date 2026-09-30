@@ -5,6 +5,8 @@
 
 import "server-only";
 
+import { revalidateTag } from "next/cache";
+
 import { NotConfiguredError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HProviderMetadata } from "@/lib/schemas/d4h-provider-metadata";
@@ -20,9 +22,11 @@ import { getOrganizationSettings } from "./cache/organization-settings";
 import {
     getOrganizationProviderCredential,
     getPersonalProviderCredential,
+    getProviderCredentialForOwner,
     revalidatePersonalProviderCredential,
     revalidateProviderCredential,
     toServerOnlyProviderCredential,
+    type ProviderCredentialRef,
 } from "./provider-credential";
 
 /** Flattens a generic `ProviderCredential_ServerOnly` (D4H's metadata union member) back into
@@ -52,6 +56,57 @@ export function toServerOnlyD4HAccessToken(
     return toD4HAccessToken_ServerOnly(toServerOnlyProviderCredential(record));
 }
 
+/**
+ * The bearer value to send to D4H for the given credential. This is the one place the secret is
+ * read: every request gets its `Authorization` header from here (see `getD4HFetchClient`).
+ * @remarks Async because an OAuth credential will refresh its access token here when it is near
+ * expiry. Today every credential is an API key, so it returns the stored key as is.
+ */
+export async function getD4HAccessToken(credential: D4HAccessToken_ServerOnly): Promise<string> {
+    return credential.token;
+}
+
+/**
+ * Identifies a stored D4H credential together with the owner it must belong to
+ * (`userId: null` → the organization's own credential). It holds no secret, so it is what
+ * `"use cache"` functions take in place of a `D4HAccessToken_ServerOnly`.
+ */
+export type D4HCredentialRef = Omit<ProviderCredentialRef, "provider">;
+
+/**
+ * The reference to an already-resolved token: its ID and the owner it was resolved for.
+ * @throws ZodError if the token has no `organizationId`. It expects an org-scoped token (every
+ * D4H token is loaded through an organization-scoped lookup), so a null here is a broken invariant.
+ */
+export function toD4HCredentialRef(token: D4HAccessToken_ServerOnly): D4HCredentialRef {
+    return {
+        credentialId: token.id,
+        organizationId: OrganizationId.schema.parse(token.organizationId),
+        userId: token.userId === null ? null : UserId.schema.parse(token.userId),
+    };
+}
+
+/**
+ * Resolve a reference back to its token, checking that the stored credential is owned exactly
+ * as the reference says.
+ * @throws NotConfiguredError if the credential is missing or owned by anyone else.
+ * @remarks Meant to be called inside `"use cache"` bodies, where a thrown error reaches the
+ * caller as a plain `Error` with its message redacted. Callers resolve the token through a
+ * scoped lookup before they get here, so this throw is defence in depth, not the user-facing
+ * error path.
+ */
+export async function resolveD4HCredential(
+    ref: D4HCredentialRef,
+): Promise<D4HAccessToken_ServerOnly> {
+    const credential = await getProviderCredentialForOwner({ provider: "D4H", ...ref });
+
+    if (!credential) {
+        throw new NotConfiguredError("D4H Access Token not found.");
+    }
+
+    return toD4HAccessToken_ServerOnly(credential);
+}
+
 export async function getOrganizationD4HAccessToken({
     organizationId,
     tokenId,
@@ -70,6 +125,19 @@ export async function getOrganizationD4HAccessToken({
 
 export function revalidateD4HAccessToken(tokenId: ProviderCredentialId) {
     revalidateProviderCredential(tokenId);
+}
+
+/**
+ * The umbrella cache tag every cached D4H API function in `d4h-api/client.ts` carries, alongside
+ * its own specific tag. Clearing it drops everything cached for that credential.
+ */
+export function d4hApiCacheTag(credentialId: ProviderCredentialId): string {
+    return `d4h-api-${credentialId}`;
+}
+
+/** Drop every cached D4H API response for the given credential (on refresh or delete). */
+export function revalidateD4HApiCache(credentialId: ProviderCredentialId) {
+    revalidateTag(d4hApiCacheTag(credentialId), { expire: 0 });
 }
 
 /**

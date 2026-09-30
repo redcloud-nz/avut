@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { Eagle } from "@/components/blocks/eagle";
@@ -10,19 +11,26 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import {
+    d4hApiCacheTag,
+    D4HCredentialRef,
+    getOrganizationD4HAccessToken,
+    resolveD4HCredential,
+    toD4HCredentialRef,
+} from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
 
-async function fetchEquipmentCategories(accessToken: D4HAccessToken_ServerOnly) {
+async function fetchEquipmentCategories(ref: D4HCredentialRef) {
     "use cache";
+    cacheLife("hours");
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
-    const fetchClient = getD4HFetchClient(accessToken);
+    const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
-    const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+    const { d4HTeams } = await getD4HTokenMetadata(ref);
 
     const items = (
         await Promise.all(
@@ -65,7 +73,7 @@ export default async function Admin_D4HAccessToken_EquipmentCategories_Page(
 
     if (!accessToken) notFound();
 
-    const fetched = await fetchEquipmentCategories(accessToken);
+    const fetched = await fetchEquipmentCategories(toD4HCredentialRef(accessToken));
 
     const categories = fetched.map((category) => ({
         raw: category,

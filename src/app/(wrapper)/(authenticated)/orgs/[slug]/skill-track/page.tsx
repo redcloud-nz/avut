@@ -34,6 +34,21 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skill Track">
                     <ItemGroup>
+                        <Protect permissions={{ roleGrant: ["skills-assessor"] }}>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/skill-track/assessors", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Assessors</ItemTitle>
+                                        <ItemDescription>
+                                            Choose which members can record skill checks.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                         <Protect permissions={{ skillPackageSubscription: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/catalogue", { slug })}>

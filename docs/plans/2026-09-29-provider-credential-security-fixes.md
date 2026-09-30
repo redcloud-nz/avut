@@ -257,6 +257,8 @@ legacy path now.
 
 ## Phase 2: Cached D4H functions take a credential reference
 
+Taken over by [`2026-09-30-d4h-token-cache-fixes.md`](2026-09-30-d4h-token-cache-fixes.md).
+
 **Problem.** Five `"use cache"` functions in `src/server/d4h-api/client.ts` take the
 whole `D4HAccessToken_ServerOnly` object, **plaintext `token` included**, as an
 argument:

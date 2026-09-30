@@ -5,7 +5,15 @@
 
 import { describe, expect, it } from "vitest";
 
-import { hasAnyRoleWithPermissions, hasOwnerRole, Permissions, Roles, roles } from "./permissions";
+import {
+    grantableRoleSchema,
+    hasAnyRoleWithPermissions,
+    hasOwnerRole,
+    Permissions,
+    roleCovers,
+    Roles,
+    roles,
+} from "./permissions";
 
 function can(role: keyof typeof Roles, permissions: Permissions): boolean {
     return Roles[role].authorize(permissions).success;
@@ -40,9 +48,8 @@ describe("Roles", () => {
             );
         });
 
-        it("can view items but not issue/inspect/return them", () => {
-            expect(can("i3-admin", { i3Item: ["view"] })).toBe(true);
-            expect(can("i3-admin", { i3Item: ["issue"] })).toBe(false);
+        it("covers i3-editor", () => {
+            expect(roleCovers("i3-admin", "i3-editor")).toBe(true);
         });
     });
 
@@ -94,8 +101,9 @@ describe("Roles", () => {
             }
         });
 
-        it("does not itself record checks, though it can create/manage the session shell", () => {
-            expect(can("skills-admin", { skillCheck: ["create"] })).toBe(false);
+        it("covers skills-assessor and skills-reporter", () => {
+            expect(roleCovers("skills-admin", "skills-assessor")).toBe(true);
+            expect(roleCovers("skills-admin", "skills-reporter")).toBe(true);
         });
     });
 
@@ -165,9 +173,8 @@ describe("Roles", () => {
             }
         });
 
-        it("get zero access to the specialty resources — narrowed to actual admin functions", () => {
+        it("get no module-specific access beyond what member already has", () => {
             for (const role of ["owner", "admin"] as const) {
-                expect(can(role, { d4hEquipment: ["view"] })).toBe(false);
                 expect(can(role, { i3Item: ["view"] })).toBe(false);
                 expect(can(role, { i3Template: ["view"] })).toBe(false);
                 expect(can(role, { skillCheck: ["view"] })).toBe(false);
@@ -222,5 +229,46 @@ describe("hasOwnerRole", () => {
         expect(hasOwnerRole("member,owner")).toBe(true);
         expect(hasOwnerRole("admin,member")).toBe(false);
         expect(hasOwnerRole("")).toBe(false);
+    });
+});
+
+describe("roleCovers", () => {
+    it("holds for owner over admin, but not the reverse", () => {
+        expect(roleCovers("owner", "admin")).toBe(true);
+        expect(roleCovers("admin", "owner")).toBe(false);
+    });
+
+    it("holds for admin over member, but not the reverse", () => {
+        expect(roleCovers("admin", "member")).toBe(true);
+        expect(roleCovers("member", "admin")).toBe(false);
+    });
+
+    it("does not reach across modules", () => {
+        expect(roleCovers("skills-admin", "skills-author")).toBe(false);
+        expect(roleCovers("i3-admin", "skills-reporter")).toBe(false);
+    });
+});
+
+describe("roleGrant", () => {
+    // The delegation rule: a role may hand out only a role it covers, so granting can never give
+    // away more than the granter holds. Full role editors (`member: ["update"]`) are exempt —
+    // they already assign any role through `setOrganizationMemberRole`.
+    it.each(roles)(
+        "%s grants only roles it covers, unless it can edit any member's roles",
+        (role) => {
+            if (can(role, { member: ["update"] })) return;
+            for (const granted of grantableRoleSchema.options) {
+                if (can(role, { roleGrant: [granted] }))
+                    expect(roleCovers(role, granted)).toBe(true);
+            }
+        },
+    );
+
+    it("lets skills-admin, admin and owner grant skills-assessor, and no one else", () => {
+        expect(roles.filter((role) => can(role, { roleGrant: ["skills-assessor"] }))).toEqual([
+            "owner",
+            "admin",
+            "skills-admin",
+        ]);
     });
 });

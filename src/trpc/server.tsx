@@ -11,6 +11,7 @@ import { cache, type ReactNode } from "react";
 import {
     dehydrate,
     HydrationBoundary,
+    type FetchInfiniteQueryOptions,
     type FetchQueryOptions,
     type QueryKey,
 } from "@tanstack/react-query";
@@ -62,6 +63,22 @@ export function prefetch<TQueryFnData, TError, TData, TQueryKey extends QueryKey
     queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
 ) {
     void getServerQueryClient().prefetchQuery(queryOptions);
+}
+
+/**
+ * `prefetch` for an infinite query: warms the first page only.
+ *
+ * Same contract as `prefetch` — not awaited, never throws. The client's
+ * `useSuspenseInfiniteQuery` must pass the same input (the cursor aside) so the keys match.
+ */
+export function prefetchInfinite<
+    TQueryFnData,
+    TError,
+    TData,
+    TQueryKey extends QueryKey,
+    TPageParam,
+>(queryOptions: FetchInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryKey, TPageParam>) {
+    void getServerQueryClient().prefetchInfiniteQuery(queryOptions);
 }
 
 /**
