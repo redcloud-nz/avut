@@ -77,7 +77,7 @@ The review page shows **summaries and what needs attention**, not just one long 
 
 ### Task 1: `findNotAssessed` helper
 
-- [ ] Not started
+- [x] feat(skill-track): add findNotAssessed helper for session coverage
 
 **Files:** `src/lib/skill-check-coverage.ts` (new), `src/lib/skill-check-coverage.test.ts` (new).
 
