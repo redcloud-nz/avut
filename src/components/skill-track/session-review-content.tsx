@@ -316,7 +316,7 @@ export function SkillTrack_SessionReview_Content({
                                 <CardFooter className="justify-end">
                                     <MutationButton
                                         status={mutation.status}
-                                        disabled={unresolvedConflicts > 0}
+                                        disabled={!canApprove || unresolvedConflicts > 0}
                                         onClick={handleApprove}
                                         text={{
                                             idle: "Approve",
@@ -373,27 +373,26 @@ function AssesseeChecks({
         showApproval ? check.status === "Include" : selected.has(check.id);
     const hasChecks = assesseeChecks.length > 0;
 
-    // Select-all covers only the checks outside conflict groups. If every check is in one, it has
-    // nothing to toggle, so it's disabled and just reflects the picks.
+    // Select-all covers only the checks outside conflict groups. If every check is in one, there's
+    // nothing for it to toggle, so it isn't shown.
     const toggleable = assesseeChecks.filter((check) => !conflictCheckIds.has(check.id));
-    const selectAllChecks = toggleable.length > 0 ? toggleable : assesseeChecks;
-    const selectedCount = selectAllChecks.filter(isChecked).length;
+    const selectedCount = toggleable.filter(isChecked).length;
 
     return (
         <>
             <TableRow>
                 <TableCell>
-                    {hasChecks && (
+                    {toggleable.length > 0 && (
                         <Checkbox
                             id={`select-all-${assessee.id}`}
                             checked={
-                                selectedCount === selectAllChecks.length
+                                selectedCount === toggleable.length
                                     ? true
                                     : selectedCount === 0
                                       ? false
                                       : "indeterminate"
                             }
-                            disabled={disabled || toggleable.length === 0}
+                            disabled={disabled}
                             onCheckedChange={() => toggleGroup(toggleable.map((check) => check.id))}
                         />
                     )}

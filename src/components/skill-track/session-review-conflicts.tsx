@@ -5,13 +5,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldLabel,
-    FieldTitle,
-} from "@/components/ui/field";
+import { Field, FieldContent, FieldLabel } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -64,6 +58,7 @@ export function SkillTrack_SessionReview_Conflicts({
         checks.find((c) => (showApproval ? c.status === "Include" : selected.has(c.id)))?.id;
 
     const unresolved = conflicts.filter((conflict) => !pickedId(conflict.checks)).length;
+    const unresolvedText = `${unresolved} ${unresolved === 1 ? "conflict" : "conflicts"}`;
 
     return (
         <Card>
@@ -72,9 +67,12 @@ export function SkillTrack_SessionReview_Conflicts({
                 <CardDescription>
                     {showApproval
                         ? "How each conflict was resolved when the session was approved."
-                        : unresolved > 0
-                          ? `Resolve ${unresolved} ${unresolved === 1 ? "conflict" : "conflicts"} before approving. Pick the check to include for each assessee and skill.`
-                          : "Every conflict has a pick."}
+                        : unresolved === 0
+                          ? "Every conflict has a pick."
+                          : disabled
+                            ? // Not approved, so the controls are disabled for lack of permission.
+                              `${unresolvedText} to resolve.`
+                            : `Resolve ${unresolvedText} before approving. Pick the check to include for each assessee and skill.`}
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-6">
@@ -84,11 +82,17 @@ export function SkillTrack_SessionReview_Conflicts({
                     const assesseeName = assesseeById.get(assesseeId)?.name ?? assesseeId;
                     const skillName = skillById.get(skillId)?.name ?? skillId;
                     const groupIds = conflict.checks.map((c) => c.id);
+                    const headingId = `conflict-group-${conflict.checks[0].id}`;
+                    // Sessions approved before `approveSession` enforced one check per pair can
+                    // hold more than one `Include` in a group; the radio can only show one.
+                    const multipleIncluded =
+                        showApproval &&
+                        conflict.checks.filter((c) => c.status === "Include").length > 1;
 
                     return (
                         <section key={conflict.key} className="flex flex-col gap-2">
                             <div>
-                                <div className="font-medium">
+                                <div id={headingId} className="font-medium">
                                     {assesseeName} · {skillName}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
@@ -98,7 +102,7 @@ export function SkillTrack_SessionReview_Conflicts({
                                 </div>
                             </div>
                             <RadioGroup
-                                aria-label={`${assesseeName}, ${skillName}`}
+                                aria-labelledby={headingId}
                                 value={pickedId(conflict.checks) ?? ""}
                                 onValueChange={(value) => {
                                     const check = conflict.checks.find((c) => c.id === value);
@@ -110,38 +114,59 @@ export function SkillTrack_SessionReview_Conflicts({
                                     const assessor = check.assessorId
                                         ? (assessorById.get(check.assessorId) ?? null)
                                         : null;
+                                    const radioId = `conflict-${check.id}`;
+                                    const detailsId = `conflict-${check.id}-details`;
                                     return (
-                                        <FieldLabel key={check.id} htmlFor={`conflict-${check.id}`}>
+                                        <div
+                                            key={check.id}
+                                            className="rounded-lg border p-2.5 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10"
+                                        >
                                             <Field orientation="horizontal">
                                                 <RadioGroupItem
                                                     value={check.id}
-                                                    id={`conflict-${check.id}`}
+                                                    id={radioId}
+                                                    aria-describedby={detailsId}
                                                 />
                                                 <FieldContent>
-                                                    <FieldTitle>
-                                                        {getSkillCheckResultLabel(
-                                                            organization.settings,
-                                                            check.result,
+                                                    <FieldLabel htmlFor={radioId}>
+                                                        <span className="font-medium">
+                                                            {getSkillCheckResultLabel(
+                                                                organization.settings,
+                                                                check.result,
+                                                            )}
+                                                        </span>
+                                                        <span className="font-normal text-muted-foreground">
+                                                            {assessorDisplayName({
+                                                                assessor,
+                                                                assessorLabel: check.assessorLabel,
+                                                            })}
+                                                        </span>
+                                                    </FieldLabel>
+                                                    <div
+                                                        id={detailsId}
+                                                        className="flex flex-col gap-1 text-sm"
+                                                    >
+                                                        <span className="text-muted-foreground">
+                                                            {formatDateTime(check.createdAt)}
+                                                        </span>
+                                                        {check.notes && (
+                                                            <p className="whitespace-pre-wrap">
+                                                                {check.notes}
+                                                            </p>
                                                         )}
-                                                    </FieldTitle>
-                                                    <FieldDescription>
-                                                        {assessorDisplayName({
-                                                            assessor,
-                                                            assessorLabel: check.assessorLabel,
-                                                        })}{" "}
-                                                        · {formatDateTime(check.createdAt)}
-                                                    </FieldDescription>
-                                                    {check.notes && (
-                                                        <p className="text-sm whitespace-pre-wrap">
-                                                            {check.notes}
-                                                        </p>
-                                                    )}
+                                                    </div>
                                                 </FieldContent>
                                             </Field>
-                                        </FieldLabel>
+                                        </div>
                                     );
                                 })}
                             </RadioGroup>
+                            {multipleIncluded && (
+                                <p className="text-sm text-muted-foreground">
+                                    Approved before conflicts were enforced: more than one check was
+                                    included.
+                                </p>
+                            )}
                         </section>
                     );
                 })}
