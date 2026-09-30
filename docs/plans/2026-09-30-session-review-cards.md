@@ -103,7 +103,7 @@ The review page shows **summaries and what needs attention**, not just one long 
 
 ### Task 2: summary strip and the assigned queries (`visual`)
 
-- [ ] Not started
+- [x] feat(skill-track): add the session review summary strip
 
 **Files:** `src/components/skill-track/session-review-summary.tsx` (new), `src/components/skill-track/session-review-content.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-track/sessions/[session_id]/review/page.tsx`.
 

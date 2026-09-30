@@ -79,11 +79,7 @@ function SummaryTile({
     const content = (
         <div className={cn("flex flex-col gap-1", highlight && "text-destructive")}>
             <span className="text-2xl font-semibold">{value}</span>
-            <span
-                className={cn("text-sm", highlight ? "text-destructive" : "text-muted-foreground")}
-            >
-                {label}
-            </span>
+            <span className={cn("text-sm", !highlight && "text-muted-foreground")}>{label}</span>
         </div>
     );
 

@@ -140,6 +140,11 @@ export function SkillTrack_SessionReview_Content({
         .filter((check) => selected.has(check.id))
         .map((check) => check.id);
     const excludedCount = skillChecks.length - includedCheckIds.length;
+    // What the approval itself included, for the approved view.
+    const storedIncludedCount = useMemo(
+        () => skillChecks.filter((check) => check.status === "Include").length,
+        [skillChecks],
+    );
 
     // The assigned assessee and skill pairs with no live check. Uses the `assigned` lists, not
     // the `all` ones above: a person or skill no longer assigned isn't a gap anyone means to fill.
@@ -358,15 +363,11 @@ export function SkillTrack_SessionReview_Content({
                     >
                         <SkillTrack_SessionReview_Summary
                             includedCount={
-                                showApproval
-                                    ? skillChecks.filter((check) => check.status === "Include")
-                                          .length
-                                    : includedCheckIds.length
+                                showApproval ? storedIncludedCount : includedCheckIds.length
                             }
                             excludedCount={
                                 showApproval
-                                    ? skillChecks.filter((check) => check.status !== "Include")
-                                          .length
+                                    ? skillChecks.length - storedIncludedCount
                                     : excludedCount
                             }
                             conflictCount={conflicts.length}
