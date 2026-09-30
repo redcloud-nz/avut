@@ -5,17 +5,30 @@
  * Path: /orgs/[slug]/notes
  */
 
-"use client";
+import { Hermes } from "@/components/blocks/hermes";
+import { HelpButton } from "@/components/docs/help-button";
+import { Notes_ModuleGate } from "@/components/notes/notes-module-gate";
+import { OrgNotes_Breadcrumbs, OrgNotes_List } from "@/components/notes/org-notes-list";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { NotEnabledError } from "@/lib/errors";
+export default async function Notes_Layout(props: LayoutProps<"/orgs/[slug]/notes">) {
+    const { slug } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
 
-export default function Notes_Layout(props: LayoutProps<"/orgs/[slug]/notes">) {
-    const organization = useOrganization();
+    prefetch(trpc.organizationNotes.listNotes.queryOptions({ organizationId: organization.id }));
 
-    if (!organization.isModuleEnabled("notes")) {
-        throw new NotEnabledError("The Notes module is not enabled for this organization.");
-    }
-
-    return props.children;
+    return (
+        <Notes_ModuleGate>
+            <HydrateClient>
+                <OrgNotes_Breadcrumbs actions={<HelpButton slug="notes" />} />
+                <Hermes.Root>
+                    <Hermes.List>
+                        <OrgNotes_List />
+                    </Hermes.List>
+                    <Hermes.Detail>{props.children}</Hermes.Detail>
+                </Hermes.Root>
+            </HydrateClient>
+        </Notes_ModuleGate>
+    );
 }

@@ -5,14 +5,17 @@
  * Path: /orgs/[slug]/notes
  */
 
-import { PageLoadingSpinner } from "@/components/ui/loading";
+import { RainbowSpinner } from "@/components/ui/loading";
 
 /**
- * Suspense boundary for navigations within the notes module. `notes/layout.tsx` does no
- * blocking data fetch of its own (a synchronous `useOrganization()` check), so this catches
- * every page-to-page navigation beneath it instead of leaving the previous page inert with no
- * feedback while the next one's data resolves. See issue #212.
+ * Suspense boundary for navigations within the notes module. It wraps the layout's `children`,
+ * which render inside `Hermes.Detail`, so it's sized to the detail pane rather than the page: the
+ * navbar and list pane stay put while the next note loads.
  */
 export default function Notes_LoadingPage() {
-    return <PageLoadingSpinner />;
+    return (
+        <div className="flex h-full items-center justify-center">
+            <RainbowSpinner />
+        </div>
+    );
 }

@@ -207,7 +207,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 
 **Done when:** `npm run check` passes. The block is checked visually in Task 7, since it has no consumer yet.
 
-### - [ ] 7. Organization notes: shell and list `visual`
+### - [x] 7. Organization notes: shell and list `visual`
+
+`feat(notes): add org notes shell and list pane`
 
 **Files:**
 
@@ -236,11 +238,21 @@ The `notes` module already exists in the registry, with a placeholder page, and 
   - panes scroll independently
   - no console errors
 
+### - [ ] 7a. Notes module settings card
+
+**Files:** new `src/components/admin/organization-settings/notes-module-settings.tsx`, `src/components/admin/organization-settings/organization-settings-form.tsx`.
+
+**Why:** found while building Task 7. The shared org settings form (org admin and system admin) has cards for D4H Views, I3, Skill Package Builder and Skill Track, but not Notes. With no card, nothing can set `settings.modules.notes.enabled`, so the module couldn't be turned on even with the flag on.
+
+**Do:** follow `i3-module-settings.tsx` exactly: an enable toggle for `modules.notes`. In the form, gate it on `moduleFlags.notes !== false` the way the I3 card and its table-of-contents entry are gated.
+
+**Done when:** `npm run check` passes, and turning Notes on in the org settings UI makes `/orgs/<slug>/notes` render instead of "Not enabled".
+
 ### - [ ] 8. Organization notes: detail, edit, delete `visual`
 
 **Files:**
 
-- New `src/app/(wrapper)/(authenticated)/orgs/[slug]/notes/[note_id]/page.tsx`.
+- `src/app/(wrapper)/(authenticated)/orgs/[slug]/notes/[note_id]/page.tsx` (replaces the placeholder Task 7 added so the typed `route()` calls compile).
 - New in `src/components/notes/`: `note-detail.tsx`, `note-editor.tsx`, `org-note-content.tsx`, `delete-org-note-dialog.tsx`.
 - Possibly `src/components/markdown/*`, as a separate commit.
 
