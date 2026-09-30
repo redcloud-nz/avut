@@ -182,7 +182,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuGroup>
-                        <DropdownMenuItem asChild disabled>
+                        <DropdownMenuItem asChild>
                             <Link
                                 href={route(
                                     "/orgs/[slug]/skill-package-builder/packages/[package_id]/history",

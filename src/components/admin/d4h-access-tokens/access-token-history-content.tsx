@@ -10,38 +10,44 @@ import { Std } from "@/components/blocks/std";
 import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
-export function SkillPackageBuilder_PackageHistory_Content({
-    skillPackageId,
+export function AdminModule_D4HAccessTokenHistory_Content({
+    tokenId,
 }: {
-    skillPackageId: SkillPackageId;
+    tokenId: ProviderCredentialId;
 }) {
     const organization = useOrganization();
 
-    const { data: skillPackage } = useSuspenseQuery(
-        trpc.skillPackageBuilder.getPackage.queryOptions({
+    const { data: accessToken } = useSuspenseQuery(
+        trpc.d4hAccessTokens.getOrganizationAccessToken.queryOptions({
             organizationId: organization.id,
-            skillPackageId,
+            tokenId,
         }),
     );
+
+    const tokenLabel = accessToken.label || `Access Token: ${accessToken.id}`;
 
     return (
         <>
             <Std.Navbar
                 breadcrumbs={[
                     {
-                        label: "Skill Package Builder",
-                        href: route("/orgs/[slug]/skill-package-builder", {
+                        label: "Admin",
+                        href: route("/orgs/[slug]/admin", { slug: organization.slug }),
+                    },
+                    {
+                        label: "D4H Access Tokens",
+                        href: route("/orgs/[slug]/admin/d4h-access-tokens", {
                             slug: organization.slug,
                         }),
                     },
                     {
-                        label: skillPackage.name,
-                        href: route("/orgs/[slug]/skill-package-builder/packages/[package_id]", {
+                        label: tokenLabel,
+                        href: route("/orgs/[slug]/admin/d4h-access-tokens/[token_id]", {
                             slug: organization.slug,
-                            package_id: skillPackageId,
+                            token_id: tokenId,
                         }),
                     },
                     "History",
@@ -49,9 +55,9 @@ export function SkillPackageBuilder_PackageHistory_Content({
             />
             <Std.ScrollContainer>
                 <ObjectHistory
-                    objectType="SkillPackage"
-                    objectId={skillPackageId}
-                    title={`${skillPackage.name} — History`}
+                    objectType="D4HAccessToken"
+                    objectId={tokenId}
+                    title={`${tokenLabel} — History`}
                 />
             </Std.ScrollContainer>
         </>
