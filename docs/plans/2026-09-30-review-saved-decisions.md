@@ -41,7 +41,7 @@ Today the review page keeps every include/exclude decision in the browser tab un
   - input: `{ sessionId, changes: [{ skillCheckId, excluded: boolean }] }`;
   - permission `skillCheckSession: ["approve"]`, as `approveSession`;
   - `assertSessionUnlocked`: an approved session is locked. That check runs before the write, so on its own it can't stop a write racing an approval, and since these writes aren't logged a racing one would be invisible. So **both `updateMany`s are guarded in their `where`**: the session isn't approved (`session: { status: { not: "Include" } }`), and the exclude write only matches `status: { in: ["Draft", "Pending"] }`, the re-include write only `status: "Exclude"`. Update `assertSessionUnlocked`'s doc comment, which justifies the check-then-write race by "at worst a stray Draft check";
-  - every id must be a live check in the session, otherwise `BAD_REQUEST`;
+  - every id must be a live check in the session, otherwise `CONFLICT` (a stale view, most likely a check deleted since the page loaded, so the client's refetch-on-conflict path picks it up; changed from `BAD_REQUEST` in Task 2's review);
   - `excluded: true` sets `Exclude`; `excluded: false` sets `Draft`, but only on a check that is currently `Exclude`. Other statuses are left alone, so re-including a `Pending` check doesn't touch it.
   - The service does the work: `SkillChecks.updateCheckExclusions` in `src/server/services/skill-checks.ts`, one `$transaction` of two `updateMany`s.
 - **No audit log entry for these writes.** The user asked for this: logging every tick would flood the log. It's a deliberate exception to AGENTS.md's "always `ctx.logEvent` after state-changing operations", and a code comment on the procedure says so. The Approve entry records the outcome instead (below).
@@ -53,12 +53,12 @@ Today the review page keeps every include/exclude decision in the browser tab un
 - **`approveSession` approves the saved state:** every live check that isn't `Exclude` is stamped `Include`, the rest `Exclude`.
 - **It still takes `includedCheckIds`, as a confirmation, and still stamps by those ids** (`id: { in: includedCheckIds }` → `Include`, the rest → `Exclude`), as today, not by "status isn't `Exclude`". The comparison below runs outside the transaction, so stamping by ids keeps a check that changes between the comparison and the commit out of an approval nobody confirmed.
 - **The comparison:** The server computes the live non-`Exclude` set, and if it differs from `includedCheckIds` it throws `CONFLICT` ("The session's checks changed since you opened this. Review them and approve again."). That keeps "what you approve is what you saw": a check recorded or excluded by someone else while the confirm dialog is open doesn't slip through.
-- `assertOneIncludedCheckPerPair` stays, run on that set, so an unresolved conflict can't be approved.
+- `SkillChecks.assertApprovalMatchesSavedState` does the comparison and replaces `assertOneIncludedCheckPerPair`: it runs the one-check-per-pair guard on the saved included set, so an unresolved conflict can't be approved (`BAD_REQUEST`). It also returns the session's `updatedAt` and the checks' latest `updatedAt` as read, and the approve transaction re-checks both (the session update is conditional on that `updatedAt`, the stamps skip a check changed since, and a final guard fails if any check is left `Draft`/`Pending`), so a change landing between the comparison and the commit is a `CONFLICT` too.
 - The Approve log description gains the counts: `Approved session "X": 14 included, 2 excluded.`
 
 ### The page
 
-- **No local selection any more.** `selected`, `initialSelection`, `reconcileSelection`, `toggleCheck`, `pick`, and the post-approval stamping workaround (`approving`/`approvedAt`/`awaitingStampedChecks`/`showApproval`) go. "Included" is read from each check's status everywhere: not `Exclude`, or `Include` once approved. Delete the helpers and their tests if nothing else uses them.
+- **No local selection any more.** `selected`, `initialSelection`, `reconcileSelection`, `toggleCheck`, `pick`, and the post-approval stamping workaround (`approving`/`approvedAt`/`awaitingStampedChecks`/`showApproval`) go. "Included" is read from each check's status everywhere, with one rule (`isCheckIncluded`): not `Exclude`, before and after approval. (Reading `Include` once approved would flash every check excluded between the approval and the checks' refetch.) Delete the helpers and their tests if nothing else uses them.
 - **Approve dialog** counts come from saved statuses and it sends the derived `includedCheckIds`. On `CONFLICT` it shows the error and stays open. `meta.effects` only run on success, and today's `useRefetchSessionOnConflict` only refetches `getSession`, so **extend `useRefetchSessionOnConflict` to also invalidate `skillChecks.listSkillChecks` for the session**. The lock `CONFLICT` benefits too. The Resolve and check dialogs use the same hook in their `onError`.
 - **Personnel / Skills check dialog** (Task 4): a mutation dialog, Recipe "nested entity" in `mutation-dialog.md`.
   - `?action=review-person&personId=…` / `?action=review-skill&skillId=…`, owned by the page's single `?action=` parser alongside `reopen` and `approve`.
@@ -94,7 +94,7 @@ Today the review page keeps every include/exclude decision in the browser tab un
 
 ### Task 2: approve the saved state, and the page reads it
 
-- [ ] Not started
+- [x] feat(skill-track): approve the saved review state and read it on the review page
 
 One commit, because each half breaks the page without the other: the server would reject the page's local selection, and the page would have no way to save a decision.
 

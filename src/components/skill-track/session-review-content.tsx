@@ -234,12 +234,15 @@ export function SkillTrack_SessionReview_Content({
     }, [countedPeople, countedSkills, peopleCoverage]);
 
     // Why Approve is disabled, if it is. `null` means it can open the confirm dialog.
-    const approveBlockedReason =
-        skillChecks.length === 0
-            ? "No skill checks to approve"
-            : unresolvedConflicts > 0
-              ? `Resolve ${unresolvedConflicts} ${unresolvedConflicts === 1 ? "conflict" : "conflicts"} to approve`
-              : null;
+    // While a decision is saving, the saved state (and so what Approve would confirm) is about to
+    // change, so wait for it.
+    const approveBlockedReason = exclusions.isPending
+        ? "Saving changes"
+        : skillChecks.length === 0
+          ? "No skill checks to approve"
+          : unresolvedConflicts > 0
+            ? `Resolve ${unresolvedConflicts} ${unresolvedConflicts === 1 ? "conflict" : "conflicts"} to approve`
+            : null;
 
     // One `?action=` owner for both dialogs on this page: two literal parsers would each read the
     // other's value as `null`. Reopen opens only on an approved session; Approve only on one that

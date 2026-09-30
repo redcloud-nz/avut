@@ -161,10 +161,14 @@ export function assertSessionCheckTarget(
  * set, as the page showed it. If a check was recorded, deleted, excluded or re-included since, the
  * two differ and the approval is refused, so what's approved is what the approver saw.
  *
- * This reads outside the approval's transaction, which is why `approveSession` stamps by
- * `includedCheckIds` rather than by status: a check that changes between here and the commit
- * stays out of an approval nobody confirmed.
- * @returns How many live checks the approval includes, and how many it excludes.
+ * This reads outside the approval's transaction, so it also returns what `approveSession` needs to
+ * catch a change between here and its commit: the session's `updatedAt` (which
+ * `updateCheckExclusions` bumps) and `checksAsOf`, the latest `updatedAt` among the checks it
+ * read (a check recorded, re-recorded or deleted since has a later one). The session is read
+ * before the checks, so a change landing between the two reads errs towards a refusal.
+ * @returns How many live checks the approval includes and excludes, the session's `updatedAt`,
+ * and `checksAsOf`.
+ * @throws NotFoundError if the session does not exist.
  * @throws ConflictError if `includedCheckIds` isn't exactly the session's live non-`Exclude` checks.
  * @throws ValidationError if more than one included check shares an assessee and skill, i.e. a
  * conflict is unresolved.
@@ -173,18 +177,27 @@ export async function assertApprovalMatchesSavedState(
     ctx: OrgServiceContext,
     sessionId: SkillCheckSessionId,
     includedCheckIds: SkillCheckId[],
-): Promise<{ includedCount: number; excludedCount: number }> {
+): Promise<{
+    includedCount: number;
+    excludedCount: number;
+    sessionUpdatedAt: Date;
+    checksAsOf: Date;
+}> {
+    const session = await ctx.prisma.skillCheckSession.findUnique({
+        where: { id: sessionId, organizationId: ctx.organizationId },
+        select: { updatedAt: true },
+    });
+    if (!session) throw new NotFoundError(`SkillCheckSession(id=${sessionId}) not found.`);
+
     const checks = await ctx.prisma.skillCheck.findMany({
         where: { organizationId: ctx.organizationId, sessionId, status: { not: "Deleted" } },
-        select: { id: true, assesseeId: true, skillId: true, status: true },
+        select: { id: true, assesseeId: true, skillId: true, status: true, updatedAt: true },
     });
     const included = checks.filter(isCheckIncluded);
 
     const confirmed = new Set<string>(includedCheckIds);
     if (confirmed.size !== included.length || included.some(({ id }) => !confirmed.has(id))) {
-        throw new ConflictError(
-            `The session's checks changed since you opened this. Review them and approve again.`,
-        );
+        throw staleChecksError();
     }
 
     const conflicts = findConflicts(included);
@@ -197,7 +210,23 @@ export async function assertApprovalMatchesSavedState(
         );
     }
 
-    return { includedCount: included.length, excludedCount: checks.length - included.length };
+    const checksAsOf = new Date(Math.max(0, ...checks.map(({ updatedAt }) => updatedAt.getTime())));
+    return {
+        includedCount: included.length,
+        excludedCount: checks.length - included.length,
+        sessionUpdatedAt: session.updatedAt,
+        checksAsOf,
+    };
+}
+
+/**
+ * The error for an approval made from a stale view of the session's checks: one was recorded,
+ * deleted, excluded or re-included since the approver's page loaded them.
+ */
+export function staleChecksError(): ConflictError {
+    return new ConflictError(
+        `The session's checks changed since you opened this. Review them and approve again.`,
+    );
 }
 
 /** One check's exclusion decision, as `updateCheckExclusions` takes it. */
@@ -217,9 +246,10 @@ export interface CheckExclusionChange {
  * session approved by then changes nothing and throws `ConflictError` (see
  * `assertSessionUnlocked`). Only the session's `updatedAt` changes besides the checks.
  * @throws NotFoundError if the session does not exist.
- * @throws ConflictError if the session is approved, up front or by the time the writes run.
- * @throws ValidationError if an id appears more than once, or isn't a live (non-`Deleted`) check in
- * the session.
+ * @throws ConflictError if the session is approved, up front or by the time the writes run, or if
+ * an id isn't a live (non-`Deleted`) check in the session (a stale view: most likely it was deleted
+ * since the page loaded it).
+ * @throws ValidationError if an id appears more than once.
  */
 export async function updateCheckExclusions(
     ctx: OrgServiceContext,
@@ -248,8 +278,10 @@ export async function updateCheckExclusions(
     if (found.length !== uniqueIds.size) {
         const foundIds = new Set(found.map(({ id }) => id));
         const missing = ids.filter((id) => !foundIds.has(id));
-        throw new ValidationError(
-            `SkillCheck(id=${missing.join(", ")}) is not a live check in SkillCheckSession(id=${sessionId}).`,
+        // Most likely deleted since the page loaded it: a stale view, so a conflict, which has
+        // the client refetch the session's checks.
+        throw new ConflictError(
+            `SkillCheck(id=${missing.join(", ")}) is not a live check in SkillCheckSession(id=${sessionId}). Review the session's checks and try again.`,
         );
     }
 

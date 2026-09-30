@@ -1640,6 +1640,8 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
     //   ownSession      → Draft; ownCheck (assessorA) Draft
     //   foreignSession  → Draft; foreignCheck (assessorB) Draft, same assessee and skill
     //   staleSession    → Draft; staleDraft (assessorA) Draft + staleExcluded (assessorB) Exclude
+    //   raceExclusionSession → Draft; exclusionPick (assessorA) Draft + exclusionOther (assessorB) Exclude
+    //   raceRecordSession    → Draft; recordPick (assessorA) Draft + recordOther (assessorB) Exclude
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -1665,6 +1667,12 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
         staleSession: SkillCheckSessionId.create(),
         staleDraft: SkillCheckId.create(),
         staleExcluded: SkillCheckId.create(),
+        raceExclusionSession: SkillCheckSessionId.create(),
+        exclusionPick: SkillCheckId.create(),
+        exclusionOther: SkillCheckId.create(),
+        raceRecordSession: SkillCheckSessionId.create(),
+        recordPick: SkillCheckId.create(),
+        recordOther: SkillCheckId.create(),
     };
 
     const db = createMockPrisma();
@@ -1719,6 +1727,8 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             [T.ownSession, 4],
             [T.foreignSession, 5],
             [T.staleSession, 6],
+            [T.raceExclusionSession, 7],
+            [T.raceRecordSession, 8],
         ] as const) {
             await db.skillCheckSession.create({
                 data: {
@@ -1747,6 +1757,10 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             [T.foreignCheck, T.foreignSession, T.assessorB, "Draft"],
             [T.staleDraft, T.staleSession, T.assessorA, "Draft"],
             [T.staleExcluded, T.staleSession, T.assessorB, "Exclude"],
+            [T.exclusionPick, T.raceExclusionSession, T.assessorA, "Draft"],
+            [T.exclusionOther, T.raceExclusionSession, T.assessorB, "Exclude"],
+            [T.recordPick, T.raceRecordSession, T.assessorA, "Draft"],
+            [T.recordOther, T.raceRecordSession, T.assessorB, "Exclude"],
         ] as const;
         for (const [id, sessionId, assessorId, status] of checks) {
             await db.skillCheck.create({
@@ -1856,6 +1870,76 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
     it("refuses with CONFLICT when an id is from another session", async () => {
         await expectStaleRefused(T.ownSession, [T.ownCheck, T.foreignCheck]);
         expect(await checkStatuses(T.foreignSession)).toEqual({ [T.foreignCheck]: "Draft" });
+    });
+
+    /**
+     * Run `between` right after the approval's comparison reads the checks, before its
+     * transaction: prisma-mock can't interleave two requests, so this stands in for another
+     * request committing in that window.
+     */
+    function interleaveAfterComparison(between: () => Promise<unknown>) {
+        const findMany = db.skillCheck.findMany.bind(db.skillCheck);
+        return vi.spyOn(db.skillCheck, "findMany").mockImplementationOnce((async (
+            args: Parameters<typeof findMany>[0],
+        ) => {
+            const rows = await findMany(args);
+            // Let the clock move on, so the interleaved write's `updatedAt` is later than any
+            // the comparison read, as it would be for a request that comes after.
+            await new Promise((resolve) => setTimeout(resolve, 5));
+            await between();
+            return rows;
+        }) as unknown as typeof findMany);
+    }
+
+    it("refuses with CONFLICT when an exclusion is saved between the comparison and the commit", async () => {
+        const spy = interleaveAfterComparison(() =>
+            makeCaller().updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.raceExclusionSession,
+                changes: [{ skillCheckId: T.exclusionPick, excluded: true }],
+            }),
+        );
+        try {
+            await expect(
+                makeCaller().approveSession({
+                    organizationId: T.org,
+                    sessionId: T.raceExclusionSession,
+                    includedCheckIds: [T.exclusionPick],
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+        } finally {
+            spy.mockRestore();
+        }
+
+        // prisma-mock runs every operation of an array `$transaction` and rolls nothing back, so
+        // the statuses can't be checked here; Postgres rolls the whole approval back. No check is
+        // left Draft for the final guard, so the CONFLICT comes from the session's `updatedAt`
+        // condition alone.
+    });
+
+    it("refuses with CONFLICT when a check is re-recorded between the comparison and the commit", async () => {
+        const spy = interleaveAfterComparison(() =>
+            // What `setSessionSkillCheck` does to an existing check: a new result, back to Draft.
+            db.skillCheck.update({
+                where: { id: T.recordOther },
+                data: { result: "Fail", status: "Draft", updatedAt: new Date(Date.now() + 1000) },
+            }),
+        );
+        try {
+            await expect(
+                makeCaller().approveSession({
+                    organizationId: T.org,
+                    sessionId: T.raceRecordSession,
+                    includedCheckIds: [T.recordPick],
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+        } finally {
+            spy.mockRestore();
+        }
+
+        // As above, only the stamps can be checked: the Exclude stamp skipped the re-recorded
+        // check rather than excluding a result nobody saw.
+        expect((await checkStatuses(T.raceRecordSession))[T.recordOther]).toBe("Draft");
     });
 });
 
@@ -2032,7 +2116,7 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
         expect((await checkStatuses(T.draftSession))[T.pendingCheck]).toBe("Pending");
     });
 
-    it("rejects an id from another session with BAD_REQUEST and writes nothing", async () => {
+    it("rejects an id from another session with CONFLICT and writes nothing", async () => {
         await expect(
             makeCaller().updateCheckExclusions({
                 organizationId: T.org,
@@ -2042,19 +2126,19 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
                     { skillCheckId: T.approvedIncluded, excluded: true },
                 ],
             }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        ).rejects.toMatchObject({ code: "CONFLICT" });
 
         expect((await checkStatuses(T.draftSession))[T.draftCheck]).toBe("Draft");
     });
 
-    it("rejects a Deleted check with BAD_REQUEST", async () => {
+    it("rejects a Deleted check (a stale view) with CONFLICT", async () => {
         await expect(
             makeCaller().updateCheckExclusions({
                 organizationId: T.org,
                 sessionId: T.draftSession,
                 changes: [{ skillCheckId: T.deletedCheck, excluded: true }],
             }),
-        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        ).rejects.toMatchObject({ code: "CONFLICT" });
 
         expect((await checkStatuses(T.draftSession))[T.deletedCheck]).toBe("Deleted");
     });
