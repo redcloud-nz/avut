@@ -656,6 +656,25 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         ]);
     });
 
+    it("leaves the token alone when D4H fails with something other than a rejection", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce({
+            ok: false,
+            status: 503,
+            statusText: "Service Unavailable",
+        });
+        const before = await db.providerCredential.findUniqueOrThrow({ where: { id: T.orgToken } });
+        const entriesBefore = await db.logEntry.count({ where: { objectId: T.orgToken } });
+
+        await expect(
+            makeCaller().refreshToken({ organizationId: T.org, tokenId: T.orgToken }),
+        ).rejects.toMatchObject({ code: "BAD_GATEWAY" });
+
+        const after = await db.providerCredential.findUniqueOrThrow({ where: { id: T.orgToken } });
+        expect(after.status).toBe(before.status);
+        expect(after.metadata).toEqual(before.metadata);
+        expect(await db.logEntry.count({ where: { objectId: T.orgToken } })).toBe(entriesBefore);
+    });
+
     it("refuses to refresh a member's personal token", async () => {
         await expect(
             makeCaller().refreshToken({ organizationId: T.org, tokenId: T.personalToken }),

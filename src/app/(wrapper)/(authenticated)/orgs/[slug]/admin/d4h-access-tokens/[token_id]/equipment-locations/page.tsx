@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -13,6 +14,7 @@ import { route } from "@/lib/routes";
 import { D4HEquipmentLocation } from "@/lib/schemas/d4h/equipment-location";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import {
+    d4hApiCacheTag,
     D4HCredentialRef,
     getOrganizationD4HAccessToken,
     resolveD4HCredential,
@@ -23,6 +25,8 @@ import { requireOrganizationWith } from "@/server/organization-access";
 
 async function fetchEquipmentLocations(ref: D4HCredentialRef) {
     "use cache";
+    cacheLife("hours");
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
     const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 

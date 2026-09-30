@@ -66,6 +66,9 @@ function credentialRejectedError(validation: D4HCredentialValidation): TRPCError
  * it, its new metadata) and log the change. Shared by `refreshToken` (org tokens) and
  * `refreshPersonalAccessToken`. Cache revalidation is left to the caller, since which caches apply
  * depends on the kind of token.
+ *
+ * A failure other than 401/403 says nothing about the token (D4H or the network is failing), so it
+ * throws without writing anything rather than marking a good token as broken.
  */
 async function refreshD4HCredential(
     ctx: AuthenticatedOrganizationContext,
@@ -74,6 +77,9 @@ async function refreshD4HCredential(
     const token = toServerOnlyD4HAccessToken(record);
 
     const validation = await validateD4HCredential(token);
+    if (!validation.ok && validation.status !== 401 && validation.status !== 403) {
+        throw credentialRejectedError(validation);
+    }
     const status = credentialStatus(validation);
 
     // On a failed whoami, record the new status but keep the last known metadata, rather than

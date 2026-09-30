@@ -204,7 +204,7 @@ export const d4hApiRouter = createTrpcRouter({
             const items = (
                 await Promise.all(
                     d4HTeams.map(async (team) => {
-                        const { data, error } = await fetchClient.GET(
+                        const { data, error, response } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/equipment",
                             {
                                 params: {
@@ -220,7 +220,8 @@ export const d4hApiRouter = createTrpcRouter({
                             },
                         );
 
-                        if (error)
+                        // `error` is undefined for a non-ok response with an empty body.
+                        if (!response.ok)
                             throw new Error(`Failed to fetch equipment items for team ${team.id}`, {
                                 cause: error,
                             });
