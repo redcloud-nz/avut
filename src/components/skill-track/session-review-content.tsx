@@ -16,6 +16,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
+import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
 import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
@@ -37,12 +38,14 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { getSkillCheckResultLabel, SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { findConflicts, initialSelection, reconcileSelection } from "@/lib/skill-check-conflicts";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SessionReview_Content({
@@ -86,6 +89,8 @@ export function SkillTrack_SessionReview_Content({
         ],
     });
 
+    const assesseeById = useMemo(() => new Map(assessees.map((p) => [p.id, p])), [assessees]);
+
     const skillById = useMemo(() => new Map(sessionSkills.map((s) => [s.id, s])), [sessionSkills]);
 
     const assessorById = useMemo(() => new Map(assessors.map((p) => [p.id, p])), [assessors]);
@@ -94,24 +99,32 @@ export function SkillTrack_SessionReview_Content({
     // the approval itself (`Include` checks), not `selected` (see `AssesseeChecks`).
     const isApproved = session.status === "Include";
 
-    // The editable view's selection. Preselect everything not explicitly excluded: new `Draft`
-    // checks and the `Pending` ones a reopen left behind (the previous approval's selection), so
-    // re-approving starts from where the last approval left off. The page stays mounted across
-    // approve → reopen, so a check that arrives in a later `skillChecks` (recorded, or re-recorded
-    // over a tombstone, after mount) is preselected the same way; a check already listed keeps
-    // whatever the user made of it, so their unticks survive a refetch.
-    const [selected, setSelected] = useState<Set<SkillCheckId>>(
-        () => new Set(skillChecks.filter((c) => c.status !== "Exclude").map((c) => c.id)),
+    // Whoever can approve resolves conflicts; for anyone else the controls are read-only.
+    const canApprove = useHasPermission({ skillCheckSession: ["approve"] });
+    const controlsDisabled = isApproved || !canApprove;
+
+    // The editable view's selection, shared by the Conflicts card (one pick per conflict group)
+    // and the checks list (everything else). The rules for what starts selected, and how the
+    // selection follows a refetch of the checks, live in `initialSelection`/`reconcileSelection`.
+    // The page stays mounted across approve → reopen and across refetches, so each new
+    // `skillChecks` is reconciled against the previous one rather than reset.
+    const [selected, setSelected] = useState<Set<SkillCheckId>>(() =>
+        initialSelection(skillChecks),
     );
     const [prevSkillChecks, setPrevSkillChecks] = useState(skillChecks);
     if (skillChecks !== prevSkillChecks) {
         setPrevSkillChecks(skillChecks);
-        const prevIds = new Set(prevSkillChecks.map((c) => c.id));
-        const added = skillChecks
-            .filter((c) => !prevIds.has(c.id) && c.status !== "Exclude")
-            .map((c) => c.id);
-        if (added.length > 0) setSelected((prev) => new Set([...prev, ...added]));
+        setSelected((prev) => reconcileSelection(prevSkillChecks, skillChecks, prev));
     }
+
+    const conflicts = useMemo(() => findConflicts(skillChecks), [skillChecks]);
+    const conflictCheckIds = useMemo(
+        () => new Set(conflicts.flatMap((conflict) => conflict.checks.map((c) => c.id))),
+        [conflicts],
+    );
+    const unresolvedConflicts = conflicts.filter(
+        (conflict) => !conflict.checks.some((c) => selected.has(c.id)),
+    ).length;
 
     const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
     const mutation = useMutation(
@@ -159,6 +172,15 @@ export function SkillTrack_SessionReview_Content({
                 if (allSelected) next.delete(id);
                 else next.add(id);
             }
+            return next;
+        });
+    }
+
+    function pick(groupIds: SkillCheckId[], checkId: SkillCheckId) {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            for (const id of groupIds) next.delete(id);
+            next.add(checkId);
             return next;
         });
     }
@@ -238,6 +260,18 @@ export function SkillTrack_SessionReview_Content({
                             </Empty>
                         }
                     >
+                        <Show when={conflicts.length > 0}>
+                            <SkillTrack_SessionReview_Conflicts
+                                conflicts={conflicts}
+                                selected={selected}
+                                pick={pick}
+                                assesseeById={assesseeById}
+                                skillById={skillById}
+                                assessorById={assessorById}
+                                disabled={controlsDisabled}
+                                showApproval={showApproval}
+                            />
+                        </Show>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Review</CardTitle>
@@ -268,7 +302,8 @@ export function SkillTrack_SessionReview_Content({
                                                 skillById={skillById}
                                                 assessorById={assessorById}
                                                 selected={selected}
-                                                disabled={isApproved}
+                                                conflictCheckIds={conflictCheckIds}
+                                                disabled={controlsDisabled}
                                                 showApproval={showApproval}
                                                 toggleCheck={toggleCheck}
                                                 toggleGroup={toggleGroup}
@@ -281,6 +316,7 @@ export function SkillTrack_SessionReview_Content({
                                 <CardFooter className="justify-end">
                                     <MutationButton
                                         status={mutation.status}
+                                        disabled={unresolvedConflicts > 0}
                                         onClick={handleApprove}
                                         text={{
                                             idle: "Approve",
@@ -304,7 +340,12 @@ interface AssesseeChecksProps {
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
     selected: Set<SkillCheckId>;
-    /** True while the session is approved: the checkboxes are read-only. */
+    /**
+     * The checks in a conflict group. Their pick is made in the Conflicts card, so here their
+     * checkboxes only show it, and the assessee's select-all leaves them alone.
+     */
+    conflictCheckIds: ReadonlySet<SkillCheckId>;
+    /** True while the session is approved, or the viewer can't approve: the checkboxes are read-only. */
     disabled: boolean;
     /**
      * Show the approval itself (`Include` checks) rather than the local selection, so a refetch is
@@ -320,8 +361,8 @@ function AssesseeChecks({
     assessee,
     assesseeChecks,
     skillById,
-
     selected,
+    conflictCheckIds,
     disabled,
     showApproval,
     toggleCheck,
@@ -330,9 +371,13 @@ function AssesseeChecks({
     const organization = useOrganization();
     const isChecked = (check: SkillCheck) =>
         showApproval ? check.status === "Include" : selected.has(check.id);
-    const selectedCount = assesseeChecks.filter(isChecked).length;
-
     const hasChecks = assesseeChecks.length > 0;
+
+    // Select-all covers only the checks outside conflict groups. If every check is in one, it has
+    // nothing to toggle, so it's disabled and just reflects the picks.
+    const toggleable = assesseeChecks.filter((check) => !conflictCheckIds.has(check.id));
+    const selectAllChecks = toggleable.length > 0 ? toggleable : assesseeChecks;
+    const selectedCount = selectAllChecks.filter(isChecked).length;
 
     return (
         <>
@@ -342,16 +387,14 @@ function AssesseeChecks({
                         <Checkbox
                             id={`select-all-${assessee.id}`}
                             checked={
-                                selectedCount == assesseeChecks.length
+                                selectedCount === selectAllChecks.length
                                     ? true
                                     : selectedCount === 0
                                       ? false
                                       : "indeterminate"
                             }
-                            disabled={disabled}
-                            onCheckedChange={() =>
-                                toggleGroup(assesseeChecks.map((check) => check.id))
-                            }
+                            disabled={disabled || toggleable.length === 0}
+                            onCheckedChange={() => toggleGroup(toggleable.map((check) => check.id))}
                         />
                     )}
                 </TableCell>
@@ -372,7 +415,7 @@ function AssesseeChecks({
                             <Checkbox
                                 id={`check-${check.id}`}
                                 checked={isChecked(check)}
-                                disabled={disabled}
+                                disabled={disabled || conflictCheckIds.has(check.id)}
                                 onCheckedChange={() => toggleCheck(check.id)}
                             />
                         </TableCell>

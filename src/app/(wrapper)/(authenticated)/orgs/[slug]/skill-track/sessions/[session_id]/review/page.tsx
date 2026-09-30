@@ -63,6 +63,12 @@ export default async function SkillTrack_SessionReview_Page(props: Props) {
             scope: "all",
         }),
     );
+    prefetch(
+        trpc.skillChecks.listSkillChecks.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+        }),
+    );
 
     return (
         <HydrateClient>

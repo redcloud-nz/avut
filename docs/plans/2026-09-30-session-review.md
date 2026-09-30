@@ -198,7 +198,7 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 
 ### Task 4: Conflicts card `visual`
 
-- [ ] (commit subject goes here once done)
+- [x] feat(skill-track): add the Conflicts card to the session review page
 
 **Files:**
 
