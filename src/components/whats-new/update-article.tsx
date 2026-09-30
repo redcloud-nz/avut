@@ -71,6 +71,7 @@ export function UpdateArticle({
                         {...(linkInNewTab && { target: "_blank", rel: "noopener noreferrer" })}
                     >
                         {entry.title}
+                        {linkInNewTab && <span className="sr-only"> (opens in a new tab)</span>}
                     </Link>
                 </Heading>
                 <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">

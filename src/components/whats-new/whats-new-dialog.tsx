@@ -10,7 +10,17 @@
 
 import { ArrowUpRightIcon } from "lucide-react";
 import Link from "next/link";
-import { createContext, ReactNode, use, useEffect, useMemo, useRef, useState } from "react";
+import {
+    createContext,
+    ReactNode,
+    Suspense,
+    use,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
@@ -84,11 +94,31 @@ export function useWhatsNew(): WhatsNewContextValue {
 }
 
 /**
+ * Wraps a What's new consumer (`WhatsNewDialog`, `WhatsNewButton`) so it renders nothing while
+ * `getUnseen` loads, and nothing if it fails. The popup is optional: without the error boundary a
+ * failed prefetch would bubble past the layout to `src/app/error.tsx` and take down every
+ * authenticated page.
+ */
+export function WhatsNewBoundary({ children }: { children: ReactNode }) {
+    return (
+        <ErrorBoundary
+            onError={(error) => console.error("What's new failed to load:", error)}
+            fallback={null}
+        >
+            <Suspense fallback={null}>{children}</Suspense>
+        </ErrorBoundary>
+    );
+}
+
+/**
  * The dialog itself. Opens once, on its own, when `whatsNew.getUnseen` has entries; closing it
  * from `unseen` mode (Got it, the close button, Escape or clicking outside) marks every entry it
  * showed as seen.
  *
- * Reads `getUnseen` with `useSuspenseQuery`, so mount it inside its own `<Suspense fallback={null}>`.
+ * A failed `markSeen` is deliberately silent: the auto-open ref stops the dialog reopening for the
+ * rest of this session, and the entries simply show again on the next full load.
+ *
+ * Reads `getUnseen` with `useSuspenseQuery`, so mount it inside a `WhatsNewBoundary`.
  */
 export function WhatsNewDialog() {
     const { open, view, show, setOpen } = useWhatsNew();
@@ -172,6 +202,7 @@ function WhatsNewDialog_Entries({ entries }: { entries: UpdateEntryData[] }) {
                     <Link href={updatesHref()} target="_blank" rel="noopener noreferrer">
                         See all updates
                         <ArrowUpRightIcon />
+                        <span className="sr-only">(opens in a new tab)</span>
                     </Link>
                 </Button>
                 <DialogClose asChild>

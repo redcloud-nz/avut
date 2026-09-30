@@ -26,7 +26,11 @@ import {
 import { VersionString } from "@/components/ui/version-string";
 import { TimeZoneAutoDetect } from "@/components/user/user-settings/timezone-auto-detect";
 import { WhatsNewButton } from "@/components/whats-new/whats-new-button";
-import { WhatsNewDialog, WhatsNewProvider } from "@/components/whats-new/whats-new-dialog";
+import {
+    WhatsNewBoundary,
+    WhatsNewDialog,
+    WhatsNewProvider,
+} from "@/components/whats-new/whats-new-dialog";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -71,8 +75,8 @@ export default async function AuthenticatedLayout(props: {
     prefetch(trpc.user.listMemberships.queryOptions());
 
     // `WhatsNewDialog` and `WhatsNewButton` both read this via `useSuspenseQuery`, each inside its
-    // own `<Suspense fallback={null}>`. Neither is needed for first paint, so prefetch rather
-    // than await: the popup can open a moment after the page does.
+    // own `WhatsNewBoundary` (renders nothing while loading or on failure). Neither is needed for
+    // first paint, so prefetch rather than await: the popup can open a moment after the page does.
     prefetch(trpc.whatsNew.getUnseen.queryOptions());
 
     return (
@@ -116,9 +120,9 @@ export default async function AuthenticatedLayout(props: {
                         <SidebarFooter>
                             <div className="flex items-center justify-center gap-2 py-1 text-center text-xs text-muted-foreground">
                                 <VersionString layout="stacked" />
-                                <Suspense fallback={null}>
+                                <WhatsNewBoundary>
                                     <WhatsNewButton />
-                                </Suspense>
+                                </WhatsNewBoundary>
                             </div>
                             <Suspense fallback={<UserMenu_Skeleton />}>
                                 <UserMenu />
@@ -129,9 +133,9 @@ export default async function AuthenticatedLayout(props: {
                     {props.modal}
                     {/* Outside `<Sidebar>`: on mobile its offcanvas sheet unmounts its content while
                     closed, so a dialog in there could never open on its own. */}
-                    <Suspense fallback={null}>
+                    <WhatsNewBoundary>
                         <WhatsNewDialog />
-                    </Suspense>
+                    </WhatsNewBoundary>
                     <Std.SidebarInset>{props.children}</Std.SidebarInset>
                 </WhatsNewProvider>
             </SidebarPortalProvider>

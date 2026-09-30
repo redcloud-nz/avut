@@ -18,7 +18,7 @@ import { useWhatsNew } from "./whats-new-dialog";
  * Reopens the What's new dialog from the sidebar footer, with a dot while anything is unseen. It
  * opens the unseen entries while there are some, and the most recent ones otherwise.
  *
- * Reads `getUnseen` with `useSuspenseQuery`, so mount it inside its own `<Suspense fallback={null}>`.
+ * Reads `getUnseen` with `useSuspenseQuery`, so mount it inside a `WhatsNewBoundary`.
  */
 export function WhatsNewButton() {
     const { show } = useWhatsNew();

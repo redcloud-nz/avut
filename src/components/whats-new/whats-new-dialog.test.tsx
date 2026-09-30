@@ -2,7 +2,6 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
-import { Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -11,9 +10,10 @@ import userEvent from "@testing-library/user-event";
 
 import type { UpdateEntryData } from "@/lib/updates-shared";
 import { trpc } from "@/trpc/client";
+import { useMutationEffector } from "@/trpc/mutation-effector";
 
 import { WhatsNewButton } from "./whats-new-button";
-import { WhatsNewDialog, WhatsNewProvider } from "./whats-new-dialog";
+import { WhatsNewBoundary, WhatsNewDialog, WhatsNewProvider } from "./whats-new-dialog";
 
 // The MDX body needs compiled code; the dialog's behaviour doesn't depend on it.
 vi.mock("./update-article", () => ({
@@ -27,7 +27,8 @@ function entry(slug: string, title: string, publishedAt: string): UpdateEntryDat
 const newer = entry("2026-09-30-newer", "Newer update", "2026-09-30");
 const older = entry("2026-09-20-older", "Older update", "2026-09-20");
 
-// The tRPC client batches over `fetch`; stub it to capture the `markSeen` request.
+// The tRPC client batches over `fetch`; stub it to capture the `markSeen` request and answer it
+// with a successful (void) result.
 const fetchMock = vi.fn(
     async (_url: string | URL | Request, _init?: RequestInit) =>
         new Response(JSON.stringify([{ result: { data: { json: null } } }]), {
@@ -39,12 +40,20 @@ function markSeenCalls() {
     return fetchMock.mock.calls.filter(([url]) => String(url).includes("whatsNew.markSeen"));
 }
 
+/** Applies `meta.effects`, as `Providers` does in the app. */
+function Effector({ queryClient }: { queryClient: QueryClient }) {
+    useMutationEffector(queryClient);
+    return null;
+}
+
 function renderWhatsNew({
     unseen,
     recent = [],
+    withEffector = false,
 }: {
     unseen: UpdateEntryData[];
     recent?: UpdateEntryData[];
+    withEffector?: boolean;
 }) {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -54,13 +63,14 @@ function renderWhatsNew({
 
     return render(
         <QueryClientProvider client={queryClient}>
+            {withEffector && <Effector queryClient={queryClient} />}
             <WhatsNewProvider>
-                <Suspense fallback={null}>
+                <WhatsNewBoundary>
                     <WhatsNewButton />
-                </Suspense>
-                <Suspense fallback={null}>
+                </WhatsNewBoundary>
+                <WhatsNewBoundary>
                     <WhatsNewDialog />
-                </Suspense>
+                </WhatsNewBoundary>
             </WhatsNewProvider>
         </QueryClientProvider>,
     );
@@ -111,6 +121,26 @@ describe("WhatsNewDialog", () => {
         await waitFor(() => expect(markSeenCalls()).toHaveLength(1));
         const [, init] = markSeenCalls()[0];
         expect(JSON.parse(String(init?.body))).toEqual({ 0: { json: { through: "2026-09-30" } } });
+    });
+
+    it("clears the button's unseen dot once markSeen succeeds", async () => {
+        const user = userEvent.setup();
+        renderWhatsNew({ unseen: [newer, older], withEffector: true });
+
+        await screen.findByRole("dialog");
+        // The open modal aria-hides the page behind it, hence `hidden: true` here.
+        expect(screen.getByRole("button", { name: /what's new/i, hidden: true })).toHaveTextContent(
+            "(unseen updates)",
+        );
+
+        await user.click(screen.getByRole("button", { name: "Got it" }));
+
+        await waitFor(() => expect(markSeenCalls()).toHaveLength(1));
+        await waitFor(() =>
+            expect(screen.getByRole("button", { name: /what's new/i })).not.toHaveTextContent(
+                "(unseen updates)",
+            ),
+        );
     });
 
     it("shows recent entries from the button, and marks nothing seen on close", async () => {
