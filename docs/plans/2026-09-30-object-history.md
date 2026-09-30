@@ -276,7 +276,7 @@ objectType="SkillPackage" …>`, add the history prefetch to its page, and remov
   - **Done when:** `npm run check` passes; both pages render in the browser, and the package
     menu's History item is enabled and navigates.
 
-- [ ] **7. Resolve ids in changes to names** (added at the visual checkpoint, 2026-09-30)
+- [x] **7. Resolve ids in changes to names** — `feat(history): resolve ids in session changes to names` + `fix(history): resolve skills linked to the org's sessions and test the person ref gate` (added at the visual checkpoint, 2026-09-30)
   - **Why:** `SkillCheckSession` updates log `skills`/`assessees`/`assessors` as arrays of
     ids, so the history shows "Skills: added QVzbUJCSUj0NM13P" 26 times. Tasks 8 and 9 (in
     session, visual) group those lines and summarise them, and both need names to read well.
@@ -284,9 +284,10 @@ objectType="SkillPackage" …>`, add the history prefetch to its page, and remov
     `src/server/services/object-history.test.ts`, `src/lib/diff-format.ts`,
     `src/lib/diff-format.test.ts`, `src/components/history/object-history.tsx`.
   - **Do:**
-    - **Registry.** In the schema file, add `IdFields: Partial<Record<LogObjectType,
-Record<string, IdFieldTarget>>>`, keyed by the entry's own `objectType`, then the
-      joined change path. `IdFieldTarget` is `"Person" | "Skill"`. Start with
+    - **Registry.** In the schema file, add
+      `IdFields: Partial<Record<LogObjectType, Record<string, IdFieldTarget>>>`, keyed by the
+      entry's own `objectType`, then the joined change path. `IdFieldTarget` is
+      `"Person" | "Skill"`. Start with
       `SkillCheckSession: { skills: "Skill", assessees: "Person", assessors: "Person" }`.
       It's shared, so the client knows which fields to map.
     - **Output.** Add `names: { Person: Record<string, string>, Skill: Record<string, string> }`
@@ -296,11 +297,13 @@ Record<string, IdFieldTarget>>>`, keyed by the entry's own `objectType`, then th
       array values element by element. It resolves them in one `findMany` per target:
       - `Person`: filtered on `organizationId: ctx.organizationId`. Fold these ids into the
         existing Person-ref lookup rather than adding a second query.
-      - `Skill`: filtered on `skillPackage: { OR: [{ organizationId: ctx.organizationId },
-{ subscriptions: { some: { organizationId: ctx.organizationId } } }] }`. A session
-        can use a subscribed package's skills, so a plain org filter would miss them, and the
-        `OR` still stops a stray id from naming another org's skill. Check the relation name
-        on `SkillPackage` for subscriptions in `prisma/schema.prisma`.
+      - `Skill`: filtered on an `OR` of three arms: the package is the org's own
+        (`skillPackage: { organizationId }`), the org subscribes to it
+        (`skillPackage: { subscriptions: { some: { organizationId } } }`), or the skill is
+        linked to one of the org's own sessions (`sessions: { some: { organizationId } }`).
+        A session can use a subscribed package's skills, so a plain org filter would miss
+        them. The session arm keeps an old entry readable after the org unsubscribes. The
+        `OR` still stops a stray id from naming another org's skill.
 
       No extra permission gate: whoever can view the page object already sees these names on
       its own detail page (the session page lists its assessees and skills). An id that isn't

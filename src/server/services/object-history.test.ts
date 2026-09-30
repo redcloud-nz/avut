@@ -362,9 +362,13 @@ describe("ObjectHistory.list names for IdFields changes", () => {
         ownPackage: SkillPackageId.create(),
         subscribedPackage: SkillPackageId.create(),
         foreignPackage: SkillPackageId.create(),
+        // Another org's package the org has since unsubscribed from; its skill is still linked
+        // to one of the org's sessions.
+        unsubscribedPackage: SkillPackageId.create(),
         ownSkill: SkillId.create(),
         subscribedSkill: SkillId.create(),
         foreignSkill: SkillId.create(),
+        unsubscribedSkill: SkillId.create(),
     };
 
     const db = createMockPrisma();
@@ -378,6 +382,7 @@ describe("ObjectHistory.list names for IdFields changes", () => {
         { type: "arr_add", path: ["skills"], value: T.ownSkill },
         { type: "arr_add", path: ["skills"], value: T.subscribedSkill },
         { type: "arr_del", path: ["skills"], value: T.foreignSkill },
+        { type: "arr_add", path: ["skills"], value: T.unsubscribedSkill },
         // Not in IdFields, though it holds an id.
         { type: "obj_mod", path: ["name"], prev: "Old", curr: T.bystander },
     ];
@@ -403,6 +408,7 @@ describe("ObjectHistory.list names for IdFields changes", () => {
             [T.ownPackage, T.org, T.ownSkill, "Knots"],
             [T.subscribedPackage, T.otherOrg, T.subscribedSkill, "Radio"],
             [T.foreignPackage, T.otherOrg, T.foreignSkill, "Secret"],
+            [T.unsubscribedPackage, T.otherOrg, T.unsubscribedSkill, "Ropes"],
         ] as const) {
             const skillGroupId = SkillGroupId.create();
             await db.skillPackage.create({
@@ -428,6 +434,22 @@ describe("ObjectHistory.list names for IdFields changes", () => {
                 skillPackageId: T.subscribedPackage,
             },
         });
+        // The org's own session still links the unsubscribed package's skill. The foreign skill
+        // is linked only to the other org's session, which doesn't count.
+        for (const [id, organizationId, skillId] of [
+            [T.session, T.org, T.unsubscribedSkill],
+            [SkillCheckSessionId.create(), T.otherOrg, T.foreignSkill],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId,
+                    name: "Session",
+                    sessionNumber: 1,
+                    skills: { connect: [{ id: skillId }] },
+                },
+            });
+        }
 
         await db.logEntry.create({
             data: {
@@ -448,19 +470,35 @@ describe("ObjectHistory.list names for IdFields changes", () => {
                             objectId: T.session,
                             role: "primary",
                         },
+                        // Also named in `assessees`, so the Person lookup is shared.
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "Person",
+                            objectId: T.assessee,
+                            role: "context",
+                        },
                     ],
                 },
             },
         });
     });
 
-    const listSession = () =>
+    const listSession = (relatedTypes: readonly LogObjectType[] = LogObjectType.values) =>
         ObjectHistory.list(ctx, {
             objectType: "SkillCheckSession",
             objectId: T.session,
-            relatedTypes: LogObjectType.values,
+            relatedTypes,
             limit: 50,
         });
+
+    it("keeps a Person ref gated even when its id also resolves for a change", async () => {
+        const { entries, names } = await listSession(
+            LogObjectType.values.filter((t) => t !== "Person"),
+        );
+
+        expect(entries[0].refs).toEqual([{ objectType: "Person", role: "context", person: null }]);
+        expect(names.Person[T.assessee]).toBe("Ava Assessee");
+    });
 
     it("resolves Person ids in arr_add values and array values, org-scoped", async () => {
         const { names } = await listSession();
@@ -480,7 +518,18 @@ describe("ObjectHistory.list names for IdFields changes", () => {
     it("resolves skills from owned and subscribed packages, but not another org's", async () => {
         const { names } = await listSession();
 
-        expect(names.Skill).toEqual({ [T.ownSkill]: "Knots", [T.subscribedSkill]: "Radio" });
+        expect(names.Skill).toMatchObject({ [T.ownSkill]: "Knots", [T.subscribedSkill]: "Radio" });
+        expect(names.Skill).not.toHaveProperty(T.foreignSkill);
+    });
+
+    it("resolves a skill from an unsubscribed package that's linked to the org's session", async () => {
+        const { names } = await listSession();
+
+        expect(names.Skill).toEqual({
+            [T.ownSkill]: "Knots",
+            [T.subscribedSkill]: "Radio",
+            [T.unsubscribedSkill]: "Ropes",
+        });
     });
 
     it("leaves a field not in IdFields alone", async () => {

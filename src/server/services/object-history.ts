@@ -212,8 +212,10 @@ interface ResolvedNames {
  *   purged, or isn't viewable.
  * - Ids in `IdFields` changes, with no extra gate: whoever can view the page's object already sees
  *   these names on its own detail page (a session lists its assessees and skills). Person ids share
- *   the ref lookup; skills are matched in packages the org owns *or* subscribes to, since a session
- *   can use a subscribed package's skills. An id not found is absent.
+ *   the ref lookup. A skill resolves when its package is the org's own, or one the org subscribes
+ *   to (a session can use a subscribed package's skills), or when it's linked to one of the org's
+ *   own sessions — so an old entry still reads after the org unsubscribes. A stray id naming
+ *   another org's skill matches none of these. An id not found is absent.
  */
 async function resolveNames(
     ctx: ObjectHistoryContext,
@@ -249,16 +251,17 @@ async function resolveNames(
             : ctx.prisma.skill.findMany({
                   where: {
                       id: { in: skillIds },
-                      skillPackage: {
-                          OR: [
-                              { organizationId: ctx.organizationId },
-                              {
+                      OR: [
+                          { skillPackage: { organizationId: ctx.organizationId } },
+                          {
+                              skillPackage: {
                                   subscriptions: {
                                       some: { organizationId: ctx.organizationId },
                                   },
                               },
-                          ],
-                      },
+                          },
+                          { sessions: { some: { organizationId: ctx.organizationId } } },
+                      ],
                   },
                   select: { id: true, name: true },
               }),
