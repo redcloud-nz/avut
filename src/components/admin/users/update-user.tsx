@@ -33,6 +33,7 @@ import {
 import { FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { hasOwnerRole } from "@/lib/permissions";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { type AuthOrganizationMember } from "@/server/auth";
 import { trpc } from "@/trpc/client";
@@ -125,7 +126,10 @@ export function AdminModule_UpdateUser_Dialog({
                             )}
                         >
                             <FieldGroup>
-                                <RoleFields moduleGatedRoles={moduleGatedRoles} />
+                                <RoleFields
+                                    moduleGatedRoles={moduleGatedRoles}
+                                    isOwner={hasOwnerRole(organizationUser.role)}
+                                />
                             </FieldGroup>
                         </form>
                     </FormProvider>

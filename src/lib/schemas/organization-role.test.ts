@@ -41,3 +41,14 @@ describe("OrganizationRole.formatList", () => {
         );
     });
 });
+
+describe("OrganizationRole.groups", () => {
+    it("groups roles by module, each module's admin role first", () => {
+        expect(OrganizationRole.groups.map((g) => [g.title, g.roles])).toEqual([
+            ["Organisation", ["admin", "member"]],
+            ["I3", ["i3-admin", "i3-editor"]],
+            ["Skill Track", ["skills-admin", "skills-assessor", "skills-reporter"]],
+            ["Skill Package Builder", ["skills-author"]],
+        ]);
+    });
+});

@@ -216,7 +216,7 @@ export function SystemAdmin_MemberActionsMenu({
                     </DialogHeader>
                     <DialogBody>
                         <FormProvider {...roleForm}>
-                            <RoleFields moduleGatedRoles={moduleGatedRoles} />
+                            <RoleFields moduleGatedRoles={moduleGatedRoles} isOwner={isOwner} />
                         </FormProvider>
                     </DialogBody>
                     <DialogFooter>

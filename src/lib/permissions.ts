@@ -26,8 +26,11 @@ const statement = {
 export const ac = createAccessControl(statement);
 
 export const Roles = {
-    // Owner: full admin CRUD plus the ability to grant/revoke ownership itself.
+    // Owner: everything `admin` can do, plus deleting the org and granting/revoking ownership
+    // itself.
     owner: ac.newRole({
+        ...memberAc.statements,
+        d4hEquipment: ["view"],
         member: ["view", "create", "update", "delete", "owner"],
         invitation: ["view", "create", "update", "cancel"],
         organization: ["view", "update", "delete"],
@@ -35,9 +38,11 @@ export const Roles = {
         team: ["view", "create", "update", "delete"],
         skillPackageSubscription: ["view"],
     }),
-    // Admin: same admin CRUD as owner, but cannot delete the organization or grant/revoke
-    // ownership.
+    // Admin: everything `member` can do, plus admin CRUD — but cannot delete the organization
+    // or grant/revoke ownership.
     admin: ac.newRole({
+        ...memberAc.statements,
+        d4hEquipment: ["view"],
         member: ["view", "create", "update", "delete"],
         invitation: ["view", "create", "update", "cancel"],
         organization: ["view", "update"],
@@ -62,14 +67,15 @@ export const Roles = {
         organization: ["view"],
         person: ["view"],
     }),
-    // Manages I3 templates — creation, editing and deletion (incl. trash/restore/purge).
-    // Everyday issue/inspect/return work stays on `i3-editor`; this is the specialty role
-    // for maintaining the templates themselves.
+    // The I3 module's admin role: everything `i3-editor` can do, plus managing I3 templates —
+    // creation, editing and deletion (incl. trash/restore/purge).
     "i3-admin": ac.newRole({
         d4hEquipment: ["view"],
-        i3Item: ["view"],
+        i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view", "create", "update", "delete"],
+        member: ["view"],
         organization: ["view"],
+        person: ["view"],
     }),
     "skills-assessor": ac.newRole({
         organization: ["view"],
@@ -81,17 +87,16 @@ export const Roles = {
         skillCheck: ["view", "create"],
         skillCheckSession: ["view", "create", "update"],
     }),
-    // Administers the assessment workflow (approves/cleans up sessions, deletes erroneous
-    // checks) — does not itself create/assess checks. Only role with `subscribe`.
+    // The Skill Track module's admin role: everything `skills-assessor` and `skills-reporter`
+    // can do, plus administering the assessment workflow (approves/cleans up sessions, deletes
+    // erroneous checks). Only role with `subscribe`.
     "skills-admin": ac.newRole({
         organization: ["view"],
-        // Managing a session's shell means picking its assessors and assessees — the session
-        // pages list personnel and teams, so without these the role can't open them.
         person: ["view"],
         team: ["view"],
         skillPackageSubscription: ["view", "subscribe"],
         skillCheckSession: ["view", "create", "update", "delete", "approve"],
-        skillCheck: ["view", "delete"],
+        skillCheck: ["view", "create", "delete"],
     }),
     // Creates and publishes skill packages (assessment templates) for the org to subscribe
     // to — not to be confused with performing assessments.
@@ -154,6 +159,20 @@ export function hasOwnerRole(stored: string): boolean {
  * substitute for a second `auth.api.hasPermission` round trip. Used by `createTrpcContext` and
  * `requireOrganizationWith`.
  */
+/**
+ * Whether `role` grants everything `other` does — holding both is then no different from
+ * holding `role` alone. A role covers itself. Compared statement by statement rather than
+ * through `authorize`, which treats an empty action list as unauthorized.
+ */
+export function roleCovers(role: Role, other: Role): boolean {
+    const granted: Partial<Record<string, readonly string[]>> = Roles[role].statements;
+    return Object.entries(
+        Roles[other].statements as Partial<Record<string, readonly string[]>>,
+    ).every(([resource, actions = []]) =>
+        actions.every((action) => granted[resource]?.includes(action)),
+    );
+}
+
 export function hasAnyRoleWithPermissions(
     roles: Role[],
     requiredPermissions: Permissions,
