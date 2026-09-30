@@ -127,7 +127,9 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 
 **Done when:** tests cover a second create → `CONFLICT` (no D4H call, no insert), refresh with a missing or another user's `tokenId` → `NOT_FOUND`, and refresh updating metadata and status and calling all three revalidators. `npm run check` passes.
 
-### - [ ] 5. Reject bad tokens, check D4H responses, read live metadata
+### - [x] 5. Reject bad tokens, check D4H responses, read live metadata
+
+`fix(d4h): reject bad tokens, check D4H responses, read live metadata`, `fix(d4h): tell token rejections from D4H errors, never store an empty status`
 
 **Files:** `src/trpc/routers/d4h-access-tokens-router.ts`, `src/trpc/routers/d4h-api-router.ts`, `src/server/d4h-api/client.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`.
 

@@ -181,6 +181,30 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
         expect(await db.providerCredential.findUnique({ where: { id: tokenId } })).toBeNull();
         expect(await db.logEntry.count({ where: { organizationId: T.org } })).toBe(logCountBefore);
     });
+
+    it("reports a D4H error that isn't a rejection as BAD_GATEWAY, saving nothing", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce({
+            ok: false,
+            status: 503,
+            statusText: "Service Unavailable",
+        });
+        const tokenId = ProviderCredentialId.create();
+
+        const error = await makeCaller()
+            .createOrganizationAccessToken({
+                organizationId: T.org,
+                tokenId,
+                create: { serverCode: "us" as D4HServerCode, label: "Down", token: "good-key" },
+            })
+            .catch((e: unknown) => e);
+
+        expect(error).toMatchObject({
+            code: "BAD_GATEWAY",
+            message: expect.stringContaining("503"),
+        });
+        expect((error as Error).message).not.toMatch(/rejected/);
+        expect(await db.providerCredential.findUnique({ where: { id: tokenId } })).toBeNull();
+    });
 });
 
 describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
@@ -548,6 +572,7 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         user: nanoId16(),
         orgToken: ProviderCredentialId.create(),
         rejectedToken: ProviderCredentialId.create(),
+        noStatusTextToken: ProviderCredentialId.create(),
         member: nanoId16(),
         personalToken: ProviderCredentialId.create(),
     };
@@ -566,6 +591,9 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
                 ...credentialData({ id: T.rejectedToken, organizationId: T.org, userId: null }),
                 metadata: storedMetadata,
             },
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.noStatusTextToken, organizationId: T.org, userId: null }),
         });
         await db.providerCredential.create({
             data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.member }),
@@ -604,6 +632,27 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         expect(entries).toHaveLength(1);
         expect(entries[0].changes).toEqual([
             { type: "obj_mod", path: ["status"], prev: "OK", curr: "Unauthorized" },
+        ]);
+        expect(entries[0].description).not.toMatch(/Refreshed/);
+    });
+
+    it("stores the HTTP status when D4H sends no status text", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce({
+            ok: false,
+            status: 401,
+            statusText: "",
+        });
+
+        await makeCaller().refreshToken({ organizationId: T.org, tokenId: T.noStatusTextToken });
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.noStatusTextToken },
+        });
+        expect(stored.status).toBe("HTTP 401");
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.noStatusTextToken } });
+        expect(entries[0].changes).toEqual([
+            { type: "obj_mod", path: ["status"], prev: "OK", curr: "HTTP 401" },
         ]);
     });
 
