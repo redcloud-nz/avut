@@ -5,7 +5,13 @@
 "use client";
 
 import { ClipboardCheckIcon, LockOpenIcon } from "lucide-react";
-import { parseAsBoolean, parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+import {
+    parseAsBoolean,
+    parseAsString,
+    parseAsStringLiteral,
+    useQueryState,
+    useQueryStates,
+} from "nuqs";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -251,12 +257,12 @@ export function SkillTrack_SessionReview_Content({
     // isn't, and only when it isn't blocked; Resolve only on one that isn't, for a conflict that
     // exists (`&personId=…&skillId=…` name it). All need the approve permission. A successful
     // approval turns the session approved, which closes Approve here as a stale action.
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["reopen", "approve", "resolve"] as const),
-    );
-    const [personId, setPersonId] = useQueryState("personId", parseAsString);
-    const [skillId, setSkillId] = useQueryState("skillId", parseAsString);
+    // One `useQueryStates` for the three, so a close can check all of them in one updater.
+    const [{ action, personId, skillId }, setActionParams] = useQueryStates({
+        action: parseAsStringLiteral(["reopen", "approve", "resolve"] as const),
+        personId: parseAsString,
+        skillId: parseAsString,
+    });
     const canOpenReopen = canApprove && isApproved;
     const canOpenApprove = canApprove && !isApproved && approveBlockedReason === null;
     const resolvingConflict =
@@ -266,19 +272,39 @@ export function SkillTrack_SessionReview_Content({
     const canOpenResolve = canApprove && !isApproved && resolvingConflict !== null;
 
     function openAction(next: "reopen" | "approve") {
-        void setAction(next, { history: "push" });
+        void setActionParams({ action: next }, { history: "push" });
     }
     function openResolve(conflict: SkillCheckConflict<SkillCheck>) {
-        void setPersonId(conflict.assesseeId, { history: "push" });
-        void setSkillId(conflict.skillId, { history: "push" });
-        void setAction("resolve", { history: "push" });
+        void setActionParams(
+            { action: "resolve", personId: conflict.assesseeId, skillId: conflict.skillId },
+            { history: "push" },
+        );
     }
+    // Clears `action` only while it's still `only`, and a resolve's `personId`/`skillId` only
+    // with it: other dialogs use `personId` too.
     function closeAction(only: "reopen" | "approve" | "resolve") {
-        void setAction((current) => (current === only ? null : current), { history: "replace" });
-        if (only === "resolve") {
-            void setPersonId(null, { history: "replace" });
-            void setSkillId(null, { history: "replace" });
-        }
+        void setActionParams(
+            (current) =>
+                current.action !== only
+                    ? {}
+                    : only === "resolve"
+                      ? { action: null, personId: null, skillId: null }
+                      : { action: null },
+            { history: "replace" },
+        );
+    }
+    // After a save: close the Resolve dialog only if the URL still names the conflict saved, so
+    // a save that lands late doesn't close another conflict (or another dialog) opened since.
+    function closeResolvedConflict(conflict: SkillCheckConflict<SkillCheck>) {
+        void setActionParams(
+            (current) =>
+                current.action === "resolve" &&
+                current.personId === conflict.assesseeId &&
+                current.skillId === conflict.skillId
+                    ? { action: null, personId: null, skillId: null }
+                    : {},
+            { history: "replace" },
+        );
     }
 
     // A pasted `?action=approve` on an approved session or a blocked draft (or `?action=reopen`
@@ -471,6 +497,7 @@ export function SkillTrack_SessionReview_Content({
                                 assessorById={assessorById}
                                 open={canOpenResolve && action === "resolve"}
                                 onOpenChange={(open) => (open ? undefined : closeAction("resolve"))}
+                                onResolved={closeResolvedConflict}
                             />
                         )}
                     </div>

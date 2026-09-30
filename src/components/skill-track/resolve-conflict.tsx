@@ -69,6 +69,7 @@ export function SkillsModule_ResolveConflict_Dialog({
     assesseeName,
     skillName,
     assessorById,
+    onResolved,
     ...props
 }: ComponentProps<typeof Dialog> & {
     sessionId: SkillCheckSessionId;
@@ -76,11 +77,24 @@ export function SkillsModule_ResolveConflict_Dialog({
     assesseeName: string;
     skillName: string;
     assessorById: Map<PersonId, PersonRef>;
+    /**
+     * A save for `conflict` succeeded. The host closes the dialog only if the URL still names that
+     * conflict, so a late save doesn't close whatever is open by then.
+     */
+    onResolved(conflict: SkillCheckConflict<SkillCheck>): void;
 }) {
     const organization = useOrganization();
     const { formatDateTime } = usePreferences();
 
     const [choice, setChoice] = useState<Choice | null>(() => savedChoice(conflict.checks));
+    const saved = savedChoice(conflict.checks);
+    // The choice as it stands against the current checks: a picked check that has gone since (a
+    // refetch after a `CONFLICT` can drop a deleted one) counts as no choice, rather than letting
+    // Save exclude everything.
+    const effectiveChoice =
+        choice === EXCLUDE_ALL || conflict.checks.some((check) => check.id === choice)
+            ? choice
+            : null;
 
     const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
     const mutation = useMutation(
@@ -88,11 +102,13 @@ export function SkillsModule_ResolveConflict_Dialog({
             meta: { effects: skillCheckSessionsEffects.updateCheckExclusions },
             onError(error) {
                 console.error("Failed to resolve conflict:", error);
+                // A toast as well as the in-dialog alert: the refetch can unmount the dialog (the
+                // conflict is gone), taking the alert with it.
+                toast.error(`Failed to resolve conflict: ${error.message}`);
                 refetchSessionOnConflict(error);
             },
             onSuccess() {
                 toast.success("Conflict resolved");
-                props.onOpenChange?.(false);
             },
         }),
     );
@@ -106,24 +122,28 @@ export function SkillsModule_ResolveConflict_Dialog({
     }, [props.open, conflict.key]);
 
     function handleSave() {
-        if (choice === null) return;
-        mutation.mutate({
-            organizationId: organization.id,
-            sessionId,
-            changes: conflict.checks.map((check) => ({
-                skillCheckId: check.id,
-                excluded: check.id !== choice,
-            })),
-        });
+        if (effectiveChoice === null) return;
+        // The conflict this save is for: by the time it lands, Back/Forward may have moved the
+        // dialog to another one, which the host then leaves open.
+        const savedConflict = conflict;
+        mutation.mutate(
+            {
+                organizationId: organization.id,
+                sessionId,
+                changes: conflict.checks.map((check) => ({
+                    skillCheckId: check.id,
+                    excluded: check.id !== effectiveChoice,
+                })),
+            },
+            { onSuccess: () => onResolved(savedConflict) },
+        );
     }
-
-    const headingId = `resolve-conflict-${conflict.key}`;
 
     return (
         <Dialog {...props}>
             <DialogContent size="xl">
                 <DialogHeader>
-                    <DialogTitle id={headingId}>
+                    <DialogTitle>
                         {assesseeName} · {skillName}
                     </DialogTitle>
                     <DialogDescription>
@@ -132,8 +152,8 @@ export function SkillsModule_ResolveConflict_Dialog({
                 </DialogHeader>
                 <DialogBody className="flex flex-col gap-4">
                     <RadioGroup
-                        aria-labelledby={headingId}
-                        value={choice ?? ""}
+                        aria-label={`Resolution for ${assesseeName} · ${skillName}`}
+                        value={effectiveChoice ?? ""}
                         onValueChange={(value) => {
                             if (value === EXCLUDE_ALL) setChoice(EXCLUDE_ALL);
                             else {
@@ -220,7 +240,7 @@ export function SkillsModule_ResolveConflict_Dialog({
                     <MutationButton
                         type="button"
                         status={mutation.status}
-                        disabled={choice === null}
+                        disabled={effectiveChoice === null || effectiveChoice === saved}
                         text={{ idle: "Save", pending: "Saving", success: "Saved" }}
                         onClick={handleSave}
                     />
