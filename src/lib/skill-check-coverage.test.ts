@@ -5,60 +5,57 @@
 
 import { describe, expect, it } from "vitest";
 
-import { findNotAssessed, type CoverageCheckFields } from "./skill-check-coverage";
+import { coverageBy, type CoverageCheckFields } from "./skill-check-coverage";
 
 function check(assesseeId: string, skillId: string, status = "Draft"): CoverageCheckFields {
     return { assesseeId, skillId, status };
 }
 
-describe("findNotAssessed", () => {
-    it("lists every assessee with every skill when there are no checks", () => {
-        expect(findNotAssessed(["p1", "p2"], ["s1", "s2"], [])).toEqual([
-            { assesseeId: "p1", skillIds: ["s1", "s2"] },
-            { assesseeId: "p2", skillIds: ["s1", "s2"] },
+describe("coverageBy", () => {
+    it("lists every id, with no checks and nothing covered, when there are no checks", () => {
+        expect(coverageBy("assessee", ["p1", "p2"], ["s1", "s2"], [])).toEqual([
+            { id: "p1", checks: [], covered: 0, total: 2 },
+            { id: "p2", checks: [], covered: 0, total: 2 },
         ]);
     });
 
-    it("returns nothing when every pair has a check", () => {
-        const checks = [
-            check("p1", "s1"),
-            check("p1", "s2", "Include"),
-            check("p2", "s1", "Exclude"),
-            check("p2", "s2"),
-        ];
+    it("groups checks by assessee and counts the distinct skills covered", () => {
+        const a = check("p1", "s1");
+        const b = check("p1", "s1", "Include"); // a second assessor on the same skill
+        const c = check("p1", "s2");
+        const d = check("p2", "s2");
 
-        expect(findNotAssessed(["p1", "p2"], ["s1", "s2"], checks)).toEqual([]);
-    });
-
-    it("counts a pair covered only by a Deleted check as not assessed", () => {
-        const checks = [check("p1", "s1", "Deleted"), check("p1", "s2")];
-
-        expect(findNotAssessed(["p1"], ["s1", "s2"], checks)).toEqual([
-            { assesseeId: "p1", skillIds: ["s1"] },
+        expect(coverageBy("assessee", ["p1", "p2"], ["s1", "s2", "s3"], [a, b, c, d])).toEqual([
+            { id: "p1", checks: [a, b, c], covered: 2, total: 3 },
+            { id: "p2", checks: [d], covered: 1, total: 3 },
         ]);
     });
 
-    it("ignores checks for assessees or skills not in the lists", () => {
-        const checks = [check("p1", "s1"), check("p9", "s2"), check("p1", "s9")];
+    it("groups checks by skill and counts the distinct assessees covered", () => {
+        const a = check("p1", "s1");
+        const b = check("p2", "s1");
 
-        expect(findNotAssessed(["p1"], ["s1", "s2"], checks)).toEqual([
-            { assesseeId: "p1", skillIds: ["s2"] },
+        expect(coverageBy("skill", ["s1", "s2"], ["p1", "p2"], [a, b])).toEqual([
+            { id: "s1", checks: [a, b], covered: 2, total: 2 },
+            { id: "s2", checks: [], covered: 0, total: 2 },
         ]);
     });
 
-    it("follows the order of the input lists", () => {
-        expect(findNotAssessed(["p2", "p1"], ["s3", "s1", "s2"], [check("p1", "s1")])).toEqual([
-            { assesseeId: "p2", skillIds: ["s3", "s1", "s2"] },
-            { assesseeId: "p1", skillIds: ["s3", "s2"] },
+    it("ignores Deleted checks", () => {
+        expect(coverageBy("assessee", ["p1"], ["s1"], [check("p1", "s1", "Deleted")])).toEqual([
+            { id: "p1", checks: [], covered: 0, total: 1 },
         ]);
     });
 
-    it("leaves out an assessee with no gaps", () => {
-        const checks = [check("p1", "s1"), check("p1", "s2"), check("p2", "s1")];
+    it("keeps checks on unassigned skills but doesn't count them as coverage", () => {
+        const retired = check("p1", "retired");
 
-        expect(findNotAssessed(["p1", "p2", "p3"], ["s1", "s2"], checks)).toEqual([
-            { assesseeId: "p2", skillIds: ["s2"] },
-            { assesseeId: "p3", skillIds: ["s1", "s2"] },
+        expect(coverageBy("assessee", ["p1"], ["s1"], [retired])).toEqual([
+            { id: "p1", checks: [retired], covered: 0, total: 1 },
         ]);
+    });
+
+    it("keeps the order of the ids", () => {
+        expect(coverageBy("skill", ["s2", "s1"], [], []).map((c) => c.id)).toEqual(["s2", "s1"]);
     });
 });

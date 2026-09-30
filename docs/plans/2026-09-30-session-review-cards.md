@@ -18,7 +18,27 @@ The review page shows **summaries and what needs attention**, not just one long 
 
 ## Decisions
 
-### Summary strip
+### Revised at the visual checkpoint (2026-09-30)
+
+Tasks 1–4 were built as first planned, then reworked with the user at the visual checkpoint. The design below is what shipped; the task list keeps the original tasks, and the rework is its own commit.
+
+- **The checks list card is gone.** The general case is accepting everything, so listing every check is noise. Checks start selected, as before.
+- **Personnel and Skills cards, side by side** (stacked on a phone), replacing both the checks list and the Not assessed card:
+  - Each lists every person (or skill) from the `"all"` lists, so every check can be reached from one, including people and skills no longer assigned.
+  - Each item shows its name and "N checks · X% of skills" (or "of people"), or "No checks recorded". Coverage is the share of the **assigned** other side with at least one live check.
+  - A "N excluded" badge counts checks excluded by hand. Conflict checks don't count; their pick shows in the Conflicts card.
+  - The description reads "5 of 32 (16%) have checks recorded." then "Average 0.4 (1%) coverage": the mean number of the other side covered, and that as a percentage.
+  - Clicking an item with checks opens a dialog of its checks (result, assessor, time, notes), each with a checkbox to exclude it. Conflict checks are disabled there and marked "picked in Conflicts". Read-only when approved or without the approve permission.
+  - "Personnel", not "People", is the user's terminology choice.
+- **The pure helper is `coverageBy(by, ids, assignedOtherIds, checks)`** in `src/lib/skill-check-coverage.ts`, replacing `findNotAssessed`.
+- **Summary strip:** Included, Excluded, Conflicts, and **Coverage**: the percentage of assigned assessee and skill pairs with a live check. It links to the Personnel and Skills cards.
+- **Collapsible cards:** Conflicts, Personnel and Skills have a collapse toggle in the header (`SkillTrack_SessionReview_CardToggle`). It uses the up/down chevron pair, not a sideways chevron, which reads as "go somewhere". They start open and the state isn't remembered.
+- **Spacing:** everything under the header sits in one `gap-4` column, matching the session page's cards.
+- **Page order:** header, Approved alert, summary strip, Conflicts, Personnel and Skills.
+
+### As first planned
+
+#### Summary strip
 
 - A row of four small stat tiles, directly under the page header (below the Approved alert when there is one): **Included**, **Excluded**, **Conflicts**, **Not assessed**.
   - Four across from `md` up, 2×2 below.
@@ -34,7 +54,7 @@ The review page shows **summaries and what needs attention**, not just one long 
 - **The tile is a small local component** in the new summary file, built on `Item variant="outline"`. `StatCard` doesn't fit: it needs an icon and a typed `Route`, and it's sized for the dashboard.
 - **No strip when there are no checks.** The existing empty state ("No skill checks have been recorded for this session yet.") still replaces everything below the header, the Not assessed card included. That's deliberate: with no checks every assigned pair is a gap, and listing them all says nothing the empty state doesn't.
 
-### Not assessed
+#### Not assessed
 
 - A **not-assessed pair** is a currently **assigned** assessee and a currently **assigned** skill that have no live (non-`Deleted`) check in the session.
   - "Assigned" is the `scope: "assigned"` lists from `listSessionAssessees` and `listSessionSkills`, not the `"all"` lists the page already loads. The `"all"` lists also hold people and skills that are no longer assigned but still have checks, and those would count as gaps that no one intends to fill.
@@ -48,7 +68,7 @@ The review page shows **summaries and what needs attention**, not just one long 
 - **No collapse control.** A long list just makes the card longer. We can add one if big sessions need it.
 - **Where it sits:** after the checks list. It's informational, so it comes below the cards that need action.
 
-### Checks list
+#### Checks list
 
 - **One layout at every width.** The table goes. In its place, the card lists one section per assessee who has checks.
   - A section header row with the assessee's select-all checkbox (same rules as today: it toggles only the checks outside conflict groups, and it isn't shown when every check is in one) and the assessee's name.
@@ -64,7 +84,7 @@ The review page shows **summaries and what needs attention**, not just one long 
 - **No Show filter.** The Conflicts card and the summary strip cover what it was for. See Out of scope.
 - **No new logic.** Selection, `toggleCheck`, `toggleGroup`, `isChecked` and the conflict handling don't change; only the markup does.
 
-### Page order
+#### Page order
 
 1. Header (Approve or Reopen)
 2. Approved alert (when approved)

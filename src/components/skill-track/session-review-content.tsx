@@ -18,30 +18,19 @@ import { Show } from "@/components/show";
 import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
 import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reopen-session";
 import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
-import { SkillTrack_SessionReview_NotAssessed } from "@/components/skill-track/session-review-not-assessed";
+import { SkillTrack_SessionReview_Coverage } from "@/components/skill-track/session-review-coverage";
 import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
-import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
-import { PersonId, PersonRef } from "@/lib/schemas/person";
-import { SkillId, SkillRef } from "@/lib/schemas/skill";
-import {
-    assessorDisplayName,
-    getSkillCheckResultLabel,
-    SkillCheck,
-    SkillCheckId,
-} from "@/lib/schemas/skill-check";
+import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { findConflicts, initialSelection, reconcileSelection } from "@/lib/skill-check-conflicts";
-import { findNotAssessed } from "@/lib/skill-check-coverage";
+import { coverageBy } from "@/lib/skill-check-coverage";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SessionReview_Content({
@@ -146,18 +135,40 @@ export function SkillTrack_SessionReview_Content({
         [skillChecks],
     );
 
-    // The assigned assessee and skill pairs with no live check. Uses the `assigned` lists, not
-    // the `all` ones above: a person or skill no longer assigned isn't a gap anyone means to fill.
-    const notAssessed = useMemo(
+    // Each person's and each skill's checks and coverage. The entries come from the `all` lists,
+    // so every check is reachable from one; coverage counts only the `assigned` other side.
+    const peopleCoverage = useMemo(
         () =>
-            findNotAssessed(
-                assignedAssessees.map((p) => p.id),
+            coverageBy(
+                "assessee",
+                assessees.map((p) => p.id),
                 assignedSkills.map((s) => s.id),
                 skillChecks,
             ),
-        [assignedAssessees, assignedSkills, skillChecks],
+        [assessees, assignedSkills, skillChecks],
     );
-    const notAssessedCount = notAssessed.reduce((sum, entry) => sum + entry.skillIds.length, 0);
+    const skillsCoverage = useMemo(
+        () =>
+            coverageBy(
+                "skill",
+                sessionSkills.map((s) => s.id),
+                assignedAssessees.map((p) => p.id),
+                skillChecks,
+            ),
+        [sessionSkills, assignedAssessees, skillChecks],
+    );
+    // The share of assigned assessee and skill pairs with at least one live check: the assigned
+    // people's covered skills over every assigned pair. The same figure as the Personnel and
+    // Skills cards' average coverage, give or take anyone no longer assigned.
+    const coveragePercent = useMemo(() => {
+        const pairs = assignedAssessees.length * assignedSkills.length;
+        if (pairs === 0) return 0;
+        const assigned = new Set(assignedAssessees.map((p) => p.id));
+        const covered = peopleCoverage
+            .filter((entry) => assigned.has(entry.id))
+            .reduce((sum, entry) => sum + entry.covered, 0);
+        return Math.round((covered / pairs) * 100);
+    }, [assignedAssessees, assignedSkills, peopleCoverage]);
 
     // Why Approve is disabled, if it is. `null` means it can open the confirm dialog.
     const approveBlockedReason =
@@ -237,18 +248,6 @@ export function SkillTrack_SessionReview_Content({
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
             else next.add(id);
-            return next;
-        });
-    }
-
-    function toggleGroup(checkIds: SkillCheckId[]) {
-        const allSelected = checkIds.every((id) => selected.has(id));
-        setSelected((prev) => {
-            const next = new Set(prev);
-            for (const id of checkIds) {
-                if (allSelected) next.delete(id);
-                else next.add(id);
-            }
             return next;
         });
     }
@@ -333,237 +332,80 @@ export function SkillTrack_SessionReview_Content({
                             </Protect>
                         </Saratoga.Actions>
                     </Saratoga.Header>
-                    <Show when={isApproved}>
-                        <Alert>
-                            <AlertTitle>Approved</AlertTitle>
-                            <AlertDescription>
-                                <p>
-                                    This session has been approved and is locked.{" "}
-                                    <Protect permissions={{ skillCheckSession: ["approve"] }}>
-                                        To change the selection, reopen it with Reopen at the top of
-                                        the page.
-                                    </Protect>
-                                </p>
-                            </AlertDescription>
-                        </Alert>
-                    </Show>
+                    {/* The same gap between cards as the session page's columns. */}
+                    <div className="flex flex-col gap-4">
+                        <Show when={isApproved}>
+                            <Alert>
+                                <AlertTitle>Approved</AlertTitle>
+                                <AlertDescription>
+                                    <p>
+                                        This session has been approved and is locked.{" "}
+                                        <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                                            To change the selection, reopen it with Reopen at the
+                                            top of the page.
+                                        </Protect>
+                                    </p>
+                                </AlertDescription>
+                            </Alert>
+                        </Show>
 
-                    <Show
-                        when={skillChecks.length > 0}
-                        fallback={
-                            <Empty>
-                                <EmptyMedia>
-                                    <ClipboardCheckIcon className="size-12 text-muted-foreground" />
-                                </EmptyMedia>
-                                <EmptyDescription>
-                                    No skill checks have been recorded for this session yet.
-                                </EmptyDescription>
-                            </Empty>
-                        }
-                    >
-                        <SkillTrack_SessionReview_Summary
-                            includedCount={
-                                showApproval ? storedIncludedCount : includedCheckIds.length
+                        <Show
+                            when={skillChecks.length > 0}
+                            fallback={
+                                <Empty>
+                                    <EmptyMedia>
+                                        <ClipboardCheckIcon className="size-12 text-muted-foreground" />
+                                    </EmptyMedia>
+                                    <EmptyDescription>
+                                        No skill checks have been recorded for this session yet.
+                                    </EmptyDescription>
+                                </Empty>
                             }
-                            excludedCount={
-                                showApproval
-                                    ? skillChecks.length - storedIncludedCount
-                                    : excludedCount
-                            }
-                            conflictCount={conflicts.length}
-                            unresolvedConflicts={unresolvedConflicts}
-                            notAssessedCount={notAssessedCount}
-                            showApproval={showApproval}
-                        />
-                        <Show when={conflicts.length > 0}>
-                            <SkillTrack_SessionReview_Conflicts
-                                id="conflicts"
-                                conflicts={conflicts}
-                                selected={selected}
-                                pick={pick}
+                        >
+                            <SkillTrack_SessionReview_Summary
+                                includedCount={
+                                    showApproval ? storedIncludedCount : includedCheckIds.length
+                                }
+                                excludedCount={
+                                    showApproval
+                                        ? skillChecks.length - storedIncludedCount
+                                        : excludedCount
+                                }
+                                conflictCount={conflicts.length}
+                                unresolvedConflicts={unresolvedConflicts}
+                                coveragePercent={coveragePercent}
+                                showApproval={showApproval}
+                            />
+                            <Show when={conflicts.length > 0}>
+                                <SkillTrack_SessionReview_Conflicts
+                                    id="conflicts"
+                                    conflicts={conflicts}
+                                    selected={selected}
+                                    pick={pick}
+                                    assesseeById={assesseeById}
+                                    skillById={skillById}
+                                    assessorById={assessorById}
+                                    disabled={controlsDisabled}
+                                    showApproval={showApproval}
+                                />
+                            </Show>
+                            <SkillTrack_SessionReview_Coverage
+                                id="coverage"
+                                people={peopleCoverage}
+                                skills={skillsCoverage}
                                 assesseeById={assesseeById}
                                 skillById={skillById}
                                 assessorById={assessorById}
+                                selected={selected}
+                                conflictCheckIds={conflictCheckIds}
                                 disabled={controlsDisabled}
                                 showApproval={showApproval}
+                                toggleCheck={toggleCheck}
                             />
                         </Show>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Checks</CardTitle>
-                                <CardDescription>
-                                    {isApproved
-                                        ? "The selected skill checks were included in the session approval. Only they count towards the session results."
-                                        : "Select the skill checks you want to include in the session approval. Only the selected checks will be included in the session results."}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex flex-col divide-y">
-                                {assessees.map((assessee) => {
-                                    // Assessees with no checks are left out: their gaps show in
-                                    // the Not assessed card.
-                                    const assesseeChecks = skillChecks.filter(
-                                        (check) => check.assesseeId === assessee.id,
-                                    );
-                                    if (assesseeChecks.length === 0) return null;
-                                    return (
-                                        <AssesseeChecks
-                                            key={assessee.id}
-                                            assessee={assessee}
-                                            assesseeChecks={assesseeChecks}
-                                            skillById={skillById}
-                                            assessorById={assessorById}
-                                            selected={selected}
-                                            conflictCheckIds={conflictCheckIds}
-                                            disabled={controlsDisabled}
-                                            showApproval={showApproval}
-                                            toggleCheck={toggleCheck}
-                                            toggleGroup={toggleGroup}
-                                        />
-                                    );
-                                })}
-                            </CardContent>
-                        </Card>
-                        <Show when={notAssessed.length > 0}>
-                            <SkillTrack_SessionReview_NotAssessed
-                                id="not-assessed"
-                                notAssessed={notAssessed}
-                                assesseeById={assesseeById}
-                                skillById={skillById}
-                            />
-                        </Show>
-                    </Show>
+                    </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
-    );
-}
-
-interface AssesseeChecksProps {
-    assessee: PersonRef;
-    assesseeChecks: SkillCheck[];
-    skillById: Map<SkillId, SkillRef>;
-    assessorById: Map<PersonId, PersonRef>;
-    selected: Set<SkillCheckId>;
-    /**
-     * The checks in a conflict group. Their pick is made in the Conflicts card, so here their
-     * checkboxes only show it, and the assessee's select-all leaves them alone.
-     */
-    conflictCheckIds: ReadonlySet<SkillCheckId>;
-    /** True while the session is approved, or the viewer can't approve: the checkboxes are read-only. */
-    disabled: boolean;
-    /**
-     * Show the approval itself (`Include` checks) rather than the local selection, so a refetch is
-     * reflected and a check that raced the approval in as `Draft` isn't shown ticked. False while
-     * the checks are still refetching after an approval, when `selected` is the better answer.
-     */
-    showApproval: boolean;
-    toggleCheck(id: SkillCheckId): void;
-    toggleGroup(ids: SkillCheckId[]): void;
-}
-
-function AssesseeChecks({
-    assessee,
-    assesseeChecks,
-    skillById,
-    assessorById,
-    selected,
-    conflictCheckIds,
-    disabled,
-    showApproval,
-    toggleCheck,
-    toggleGroup,
-}: AssesseeChecksProps) {
-    const organization = useOrganization();
-    const { formatDateTime } = usePreferences();
-    const isChecked = (check: SkillCheck) =>
-        showApproval ? check.status === "Include" : selected.has(check.id);
-
-    // Select-all covers only the checks outside conflict groups. If every check is in one, there's
-    // nothing for it to toggle, so it isn't shown.
-    const toggleable = assesseeChecks.filter((check) => !conflictCheckIds.has(check.id));
-    const selectedCount = toggleable.filter(isChecked).length;
-
-    const skillName = (check: SkillCheck) => skillById.get(check.skillId)?.name ?? check.skillId;
-    // By skill name, the same order as the Not assessed card.
-    const sortedChecks = assesseeChecks.toSorted((a, b) =>
-        skillName(a).localeCompare(skillName(b)),
-    );
-
-    const selectAllId = `select-all-${assessee.id}`;
-
-    return (
-        <section className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
-            <div className="flex items-center gap-3">
-                {toggleable.length > 0 ? (
-                    <>
-                        <Checkbox
-                            id={selectAllId}
-                            checked={
-                                selectedCount === toggleable.length
-                                    ? true
-                                    : selectedCount === 0
-                                      ? false
-                                      : "indeterminate"
-                            }
-                            disabled={disabled}
-                            onCheckedChange={() => toggleGroup(toggleable.map((check) => check.id))}
-                        />
-                        {/* The name is a heading first: it shouldn't dim with a read-only select-all. */}
-                        <Label
-                            htmlFor={selectAllId}
-                            className="text-base leading-snug peer-disabled:cursor-default peer-disabled:opacity-100"
-                        >
-                            {assessee.name}
-                        </Label>
-                    </>
-                ) : (
-                    <span className="text-base leading-snug font-medium">{assessee.name}</span>
-                )}
-            </div>
-            <ul className="flex flex-col gap-3">
-                {sortedChecks.map((check) => {
-                    const checkboxId = `check-${check.id}`;
-                    const assessor = check.assessorId
-                        ? (assessorById.get(check.assessorId) ?? null)
-                        : null;
-                    return (
-                        <li key={check.id} className="flex items-start gap-3">
-                            <Checkbox
-                                id={checkboxId}
-                                className="mt-0.5"
-                                checked={isChecked(check)}
-                                disabled={disabled || conflictCheckIds.has(check.id)}
-                                onCheckedChange={() => toggleCheck(check.id)}
-                            />
-                            <div className="flex min-w-0 grow flex-col gap-1 text-sm">
-                                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                                    <Label htmlFor={checkboxId} className="leading-snug">
-                                        {skillName(check)}
-                                    </Label>
-                                    <span>
-                                        {getSkillCheckResultLabel(
-                                            organization.settings,
-                                            check.result,
-                                        )}
-                                    </span>
-                                </div>
-                                <div className="text-muted-foreground">
-                                    {assessorDisplayName({
-                                        assessor,
-                                        assessorLabel: check.assessorLabel,
-                                    })}{" "}
-                                    · {formatDateTime(check.createdAt)}
-                                </div>
-                                {check.notes && (
-                                    <p className="wrap-break-word whitespace-pre-wrap">
-                                        {check.notes}
-                                    </p>
-                                )}
-                            </div>
-                        </li>
-                    );
-                })}
-            </ul>
-        </section>
     );
 }

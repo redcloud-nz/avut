@@ -16,22 +16,22 @@ interface SessionReviewSummaryProps {
     conflictCount: number;
     /** Conflict groups with no pick yet. Ignored when `showApproval`. */
     unresolvedConflicts: number;
-    /** Assigned assessee and skill pairs with no live check. */
-    notAssessedCount: number;
+    /** The share of assigned assessee and skill pairs with a live check, as a whole percentage. */
+    coveragePercent: number;
     /** The approval is shown: every conflict was resolved at approval, so show the total. */
     showApproval: boolean;
 }
 
 /**
- * The review page's summary strip: four count tiles above the cards. Conflicts and Not assessed
- * link to their cards when there's anything in them.
+ * The review page's summary strip: four tiles above the cards. Conflicts and Coverage
+ * link to their cards (Conflicts only when there are any).
  */
 export function SkillTrack_SessionReview_Summary({
     includedCount,
     excludedCount,
     conflictCount,
     unresolvedConflicts,
-    notAssessedCount,
+    coveragePercent,
     showApproval,
 }: SessionReviewSummaryProps) {
     const showUnresolved = !showApproval && unresolvedConflicts > 0;
@@ -54,11 +54,7 @@ export function SkillTrack_SessionReview_Summary({
                     href={conflictCount > 0 ? "#conflicts" : undefined}
                 />
             )}
-            <SummaryTile
-                value={notAssessedCount}
-                label="Not assessed"
-                href={notAssessedCount > 0 ? "#not-assessed" : undefined}
-            />
+            <SummaryTile value={`${coveragePercent}%`} label="Coverage" href="#coverage" />
         </div>
     );
 }
@@ -69,7 +65,7 @@ function SummaryTile({
     href,
     highlight = false,
 }: {
-    value: number;
+    value: number | string;
     label: string;
     /** An in-page link to the tile's card. Leave it out when there's no card to go to. */
     href?: `#${string}`;
