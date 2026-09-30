@@ -706,6 +706,33 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
+     * Save the review page's include/exclude decisions for an unapproved session's checks:
+     * `excluded: true` sets a `Draft` or `Pending` check to `Exclude`, `excluded: false` sets an
+     * `Exclude` check back to `Draft`. Other statuses are left alone. `approveSession` then
+     * approves the saved state.
+     * @throws TRPCError(NOT_FOUND) if the session does not exist.
+     * @throws TRPCError(CONFLICT) if the session is approved.
+     * @throws TRPCError(BAD_REQUEST) if a `skillCheckId` is repeated, or isn't a live check in the
+     * session.
+     */
+    // No `ctx.logEvent`, deliberately, as an exception to the rule that state changes are logged:
+    // the review page saves each tick as it's made, and logging every one would flood the log.
+    // `approveSession`'s entry records the outcome (how many checks were included and excluded).
+    updateCheckExclusions: organizationProcedure({ skillCheckSession: ["approve"] })
+        .input(
+            z.object({
+                sessionId: SkillCheckSessionId.schema,
+                changes: z.array(
+                    z.object({ skillCheckId: SkillCheckId.schema, excluded: z.boolean() }),
+                ),
+            }),
+        )
+        .output(z.void())
+        .mutation(async ({ ctx, input: { sessionId, changes } }) => {
+            await SkillChecks.updateCheckExclusions(ctx, sessionId, changes);
+        }),
+
+    /**
      * Update a skill check session's name, date and notes. Not subject to the approval lock.
      * @param skillCheckSessionId The ID of the skill check session to update.
      * @param update The fields to update on the skill check session.

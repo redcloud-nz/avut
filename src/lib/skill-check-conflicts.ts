@@ -67,6 +67,16 @@ export function findConflicts<T extends ConflictCheckFields>(checks: T[]): Skill
     return conflicts;
 }
 
+/**
+ * Whether a conflict is resolved: at most one of its checks isn't `Exclude`, so either one check
+ * is picked and the rest are excluded, or every check is excluded. It's read from saved statuses,
+ * so a conflict can be resolved without anyone picking, e.g. when a reopen carries over the
+ * previous approval's pick.
+ */
+export function isConflictResolved(conflict: SkillCheckConflict<ConflictCheckFields>): boolean {
+    return conflict.checks.filter((check) => check.status !== "Exclude").length <= 1;
+}
+
 /** The fields the selection rules read: conflict detection's, plus when the check last changed. */
 export interface SelectionCheckFields extends ConflictCheckFields {
     updatedAt: string;

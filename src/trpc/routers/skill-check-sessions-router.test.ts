@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TRPCError } from "@trpc/server";
 
@@ -1826,5 +1826,256 @@ describe("skillCheckSessions.approveSession conflicts", () => {
         expect(updated.status).toBe("Include");
         expect(await checkStatuses(T.ownSession)).toEqual({ [T.ownCheck]: "Include" });
         expect(await checkStatuses(T.foreignSession)).toEqual({ [T.foreignCheck]: "Draft" });
+    });
+});
+
+describe("skillCheckSessions.updateCheckExclusions", () => {
+    // Dataset: one assessee and assessor, a check per skill so each has its own unique key.
+    //   draftSession    → Draft; draftCheck (skillA) Draft, pendingCheck (skillB) Pending,
+    //                     excludedCheck (skillC) Exclude, deletedCheck (skillD) Deleted
+    //   approvedSession → Include; approvedIncluded (skillA) Include, approvedExcluded (skillB) Exclude
+    // Tests change statuses, so `resetStatuses` puts them back before each one.
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        assessor: PersonId.create(),
+        assessee: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skillA: SkillId.create(),
+        skillB: SkillId.create(),
+        skillC: SkillId.create(),
+        skillD: SkillId.create(),
+        draftSession: SkillCheckSessionId.create(),
+        draftCheck: SkillCheckId.create(),
+        pendingCheck: SkillCheckId.create(),
+        excludedCheck: SkillCheckId.create(),
+        deletedCheck: SkillCheckId.create(),
+        approvedSession: SkillCheckSessionId.create(),
+        approvedIncluded: SkillCheckId.create(),
+        approvedExcluded: SkillCheckId.create(),
+    };
+
+    const initialStatuses = [
+        [T.draftCheck, T.draftSession, T.skillA, "Draft"],
+        [T.pendingCheck, T.draftSession, T.skillB, "Pending"],
+        [T.excludedCheck, T.draftSession, T.skillC, "Exclude"],
+        [T.deletedCheck, T.draftSession, T.skillD, "Deleted"],
+        [T.approvedIncluded, T.approvedSession, T.skillA, "Include"],
+        [T.approvedExcluded, T.approvedSession, T.skillB, "Exclude"],
+    ] as const;
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.assessor, "Assessor"],
+            [T.assessee, "Assessee"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const id of [T.skillA, T.skillB, T.skillC, T.skillD]) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name: id,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+
+        for (const [id, sessionNumber, status] of [
+            [T.draftSession, 1, "Draft"],
+            [T.approvedSession, 2, "Include"],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Session ${sessionNumber}`,
+                    sessionNumber,
+                    startsAt: new Date(),
+                    endsAt: new Date(),
+                    notes: "",
+                    status,
+                    assessors: { connect: [{ id: T.assessor }] },
+                    assessees: { connect: [{ id: T.assessee }] },
+                    skills: {
+                        connect: [T.skillA, T.skillB, T.skillC, T.skillD].map((id) => ({ id })),
+                    },
+                },
+            });
+        }
+
+        for (const [id, sessionId, skillId, status] of initialStatuses) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId,
+                    assesseeId: T.assessee,
+                    assessorId: T.assessor,
+                    skillId,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                },
+            });
+        }
+    });
+
+    beforeEach(async () => {
+        for (const [id, , , status] of initialStatuses) {
+            await db.skillCheck.update({ where: { id }, data: { status } });
+        }
+    });
+
+    function makeCaller(permissions: Permissions = { skillCheckSession: ["approve"] }) {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...permissions },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function checkStatuses(sessionId: SkillCheckSessionId) {
+        const rows = await db.skillCheck.findMany({ where: { sessionId } });
+        return Object.fromEntries(rows.map(({ id, status }) => [id, status]));
+    }
+
+    it("excludes Draft and Pending checks and re-includes an Exclude check as Draft, without logging", async () => {
+        await makeCaller().updateCheckExclusions({
+            organizationId: T.org,
+            sessionId: T.draftSession,
+            changes: [
+                { skillCheckId: T.draftCheck, excluded: true },
+                { skillCheckId: T.pendingCheck, excluded: true },
+                { skillCheckId: T.excludedCheck, excluded: false },
+            ],
+        });
+
+        expect(await checkStatuses(T.draftSession)).toEqual({
+            [T.draftCheck]: "Exclude",
+            [T.pendingCheck]: "Exclude",
+            [T.excludedCheck]: "Draft",
+            [T.deletedCheck]: "Deleted",
+        });
+        expect(await db.logEntry.findMany({ where: { organizationId: T.org } })).toEqual([]);
+    });
+
+    it("leaves a Pending check alone when re-including it", async () => {
+        await makeCaller().updateCheckExclusions({
+            organizationId: T.org,
+            sessionId: T.draftSession,
+            changes: [{ skillCheckId: T.pendingCheck, excluded: false }],
+        });
+
+        expect((await checkStatuses(T.draftSession))[T.pendingCheck]).toBe("Pending");
+    });
+
+    it("rejects an id from another session with BAD_REQUEST and writes nothing", async () => {
+        await expect(
+            makeCaller().updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.draftSession,
+                changes: [
+                    { skillCheckId: T.draftCheck, excluded: true },
+                    { skillCheckId: T.approvedIncluded, excluded: true },
+                ],
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+        expect((await checkStatuses(T.draftSession))[T.draftCheck]).toBe("Draft");
+    });
+
+    it("rejects a Deleted check with BAD_REQUEST", async () => {
+        await expect(
+            makeCaller().updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.draftSession,
+                changes: [{ skillCheckId: T.deletedCheck, excluded: true }],
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+        expect((await checkStatuses(T.draftSession))[T.deletedCheck]).toBe("Deleted");
+    });
+
+    it("refuses an approved session with CONFLICT", async () => {
+        await expect(
+            makeCaller().updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.approvedSession,
+                changes: [{ skillCheckId: T.approvedIncluded, excluded: true }],
+            }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("leaves an approved session's checks alone even when the lock check saw it unapproved", async () => {
+        // prisma-mock can't interleave a concurrent approval, so make the up-front lock check
+        // read the approved session as Draft, as it would if the approval committed just after.
+        const approved = await db.skillCheckSession.findUniqueOrThrow({
+            where: { id: T.approvedSession },
+        });
+        const spy = vi
+            .spyOn(db.skillCheckSession, "findUnique")
+            .mockResolvedValueOnce({ ...approved, status: "Draft" });
+        try {
+            await makeCaller().updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.approvedSession,
+                changes: [
+                    { skillCheckId: T.approvedIncluded, excluded: true },
+                    { skillCheckId: T.approvedExcluded, excluded: false },
+                ],
+            });
+        } finally {
+            spy.mockRestore();
+        }
+
+        expect(await checkStatuses(T.approvedSession)).toEqual({
+            [T.approvedIncluded]: "Include",
+            [T.approvedExcluded]: "Exclude",
+        });
+    });
+
+    it("throws FORBIDDEN without skillCheckSession:approve", async () => {
+        await expect(
+            makeCaller({ skillCheckSession: ["update"] }).updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.draftSession,
+                changes: [{ skillCheckId: T.draftCheck, excluded: true }],
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+        expect((await checkStatuses(T.draftSession))[T.draftCheck]).toBe("Draft");
     });
 });

@@ -45,8 +45,10 @@ export async function requireSessionById(
  * date and notes stay editable, and it can still be deleted.
  *
  * Check-then-write, not transactional: a write racing an approval can still land a `Draft` check
- * in an approved session. That's accepted — only `Include` checks count, and the stray check shows
- * up for review on the next reopen.
+ * in an approved session. For recording that's accepted — only `Include` checks count, and the
+ * stray check shows up for review on the next reopen. A write that changes a check's status can't
+ * lean on that, since it could overwrite an approval's `Include`/`Exclude` stamp; such a write
+ * (`updateCheckExclusions`) also guards its own `where` on the session not being approved.
  * @throws ConflictError if the session is approved.
  */
 export function assertSessionUnlocked(session: Pick<SkillCheckSession, "id" | "status">): void {
@@ -182,6 +184,81 @@ export async function assertOneIncludedCheckPerPair(
             `pair(s) in SkillCheckSession(id=${sessionId}); e.g. Person(id=${first.assesseeId}) ` +
             `and Skill(id=${first.skillId}): checks ${first.checks.map(({ id }) => id).join(", ")}.`,
     );
+}
+
+/** One check's exclusion decision, as `updateCheckExclusions` takes it. */
+export interface CheckExclusionChange {
+    skillCheckId: SkillCheckId;
+    excluded: boolean;
+}
+
+/**
+ * Save the review page's exclusion decisions for an unapproved session's checks. `excluded: true`
+ * sets a `Draft` or `Pending` check to `Exclude`; `excluded: false` sets an `Exclude` check back to
+ * `Draft`. Any other status is left alone, so re-including a `Pending` check doesn't touch it.
+ *
+ * Both writes also require, in their `where`, that the session isn't approved, so a write racing
+ * an approval can't overwrite its stamps (see `assertSessionUnlocked`). A write that loses that
+ * race matches no rows and changes nothing.
+ * @throws NotFoundError if the session does not exist.
+ * @throws ConflictError if the session is approved.
+ * @throws ValidationError if an id appears more than once, or isn't a live (non-`Deleted`) check in
+ * the session.
+ */
+export async function updateCheckExclusions(
+    ctx: OrgServiceContext,
+    sessionId: SkillCheckSessionId,
+    changes: CheckExclusionChange[],
+): Promise<void> {
+    const session = await requireSessionById(ctx, sessionId);
+    assertSessionUnlocked(session);
+
+    const ids = changes.map(({ skillCheckId }) => skillCheckId);
+    const uniqueIds = new Set(ids);
+    if (uniqueIds.size !== ids.length) {
+        throw new ValidationError(`A skill check appears more than once in the changes.`);
+    }
+    if (ids.length === 0) return;
+
+    const found = await ctx.prisma.skillCheck.findMany({
+        where: {
+            organizationId: ctx.organizationId,
+            sessionId,
+            id: { in: ids },
+            status: { not: "Deleted" },
+        },
+        select: { id: true },
+    });
+    if (found.length !== uniqueIds.size) {
+        const foundIds = new Set(found.map(({ id }) => id));
+        const missing = ids.filter((id) => !foundIds.has(id));
+        throw new ValidationError(
+            `SkillCheck(id=${missing.join(", ")}) is not a live check in SkillCheckSession(id=${sessionId}).`,
+        );
+    }
+
+    const excludeIds = changes.filter((c) => c.excluded).map((c) => c.skillCheckId);
+    const includeIds = changes.filter((c) => !c.excluded).map((c) => c.skillCheckId);
+    const unapprovedSession = {
+        organizationId: ctx.organizationId,
+        sessionId,
+        session: { status: { not: "Include" } },
+    } satisfies Prisma.SkillCheckWhereInput;
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.skillCheck.updateMany({
+            where: {
+                ...unapprovedSession,
+                id: { in: excludeIds },
+                status: { in: ["Draft", "Pending"] },
+            },
+            data: { status: "Exclude" },
+        }),
+        ctx.prisma.skillCheck.updateMany({
+            where: { ...unapprovedSession, id: { in: includeIds }, status: "Exclude" },
+            data: { status: "Draft" },
+        }),
+    ]);
 }
 
 /**

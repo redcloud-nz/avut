@@ -9,6 +9,7 @@ import {
     findConflicts,
     groupChecksByPair,
     initialSelection,
+    isConflictResolved,
     pairKey,
     reconcileSelection,
     type ConflictCheckFields,
@@ -129,6 +130,27 @@ describe("findConflicts", () => {
         ];
 
         expect(findConflicts(checks).map((c) => c.key)).toEqual(["p2:s1", "p1:s1"]);
+    });
+});
+
+describe("isConflictResolved", () => {
+    function conflict(...statuses: Status[]) {
+        const checks = statuses.map((status, i) => check(`c${i}`, "p1", "s1", `a${i}`, status));
+        return { key: "p1:s1", assesseeId: "p1", skillId: "s1", checks };
+    }
+
+    it("is unresolved while more than one check isn't Exclude", () => {
+        expect(isConflictResolved(conflict("Draft", "Pending"))).toBe(false);
+        expect(isConflictResolved(conflict("Draft", "Draft", "Exclude"))).toBe(false);
+    });
+
+    it("is resolved with one check picked and the rest excluded", () => {
+        expect(isConflictResolved(conflict("Exclude", "Pending"))).toBe(true);
+        expect(isConflictResolved(conflict("Draft", "Exclude", "Exclude"))).toBe(true);
+    });
+
+    it("is resolved with every check excluded", () => {
+        expect(isConflictResolved(conflict("Exclude", "Exclude"))).toBe(true);
     });
 });
 

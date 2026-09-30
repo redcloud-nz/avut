@@ -153,6 +153,16 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
         }),
         ...invalidateOtherSkillCheckLists(vars.organizationId),
     ],
+    // updateCheckExclusions moves the session's checks between Exclude and Draft server-side, so
+    // every cached listSkillChecks for it refetches, as for approveSession.
+    updateCheckExclusions: (vars) => [
+        invalidate(
+            trpc.skillChecks.listSkillChecks.queryFilter({
+                organizationId: vars.organizationId,
+                sessionId: vars.sessionId,
+            }),
+        ),
+    ],
     updateSession: (vars, { updated }) => [
         write(
             trpc.skillCheckSessions.getSession.queryKey({
