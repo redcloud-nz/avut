@@ -80,6 +80,7 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleRefresh}
+                                disabled={refreshMutation.isPending}
                                 aria-label="Refresh"
                                 title="Refresh"
                             >

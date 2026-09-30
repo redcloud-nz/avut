@@ -193,7 +193,9 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - As a user without one, they show the same not-configured error the i3 pages show.
 - In the personnel page's RSC payload (DevTools → Network, the document or `?_rsc=` response), search for a specific listed member's email address, or their email domain: it doesn't appear.
 
-### - [ ] 8. Refresh button for personal tokens `visual`
+### - [x] 8. Refresh button for personal tokens `visual`
+
+`feat(d4h): refresh button on the personal token detail page`, `fix(d4h): disable the personal token refresh button while it runs`
 
 **Files:** `src/components/user/user-settings/d4h-access-token-content.tsx`.
 
