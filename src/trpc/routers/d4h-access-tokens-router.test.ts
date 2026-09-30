@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
+import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import {
@@ -14,6 +15,7 @@ import {
     revalidateD4HApiCache,
     revalidatePersonalD4HAccessTokenForUser,
 } from "@/server/d4h-access-token";
+import { validateD4HCredential } from "@/server/d4h-api/client";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -150,6 +152,8 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
     const T = {
         org: OrganizationId.create(),
         user: nanoId16(),
+        userWithToken: nanoId16(),
+        existingToken: ProviderCredentialId.create(),
     };
 
     const db = createMockPrisma();
@@ -158,12 +162,19 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
+        await db.providerCredential.create({
+            data: credentialData({
+                id: T.existingToken,
+                organizationId: T.org,
+                userId: T.userWithToken,
+            }),
+        });
     });
 
-    function makeCaller() {
+    function makeCaller(userId: string = T.user) {
         return d4hAccessTokensRouter.createCaller(
             createAuthenticatedMockContext({
-                user: { id: T.user },
+                user: { id: userId },
                 permissions: { organization: ["view"] },
                 prisma: db,
             }),
@@ -193,6 +204,21 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
 
         expect(JSON.stringify(changes)).not.toContain("another-super-secret-key");
         expect(changes).toContainEqual({ type: "obj_mask", path: ["token"] });
+    });
+
+    it("refuses a second personal token in the same organization", async () => {
+        const tokenId = ProviderCredentialId.create();
+
+        await expect(
+            makeCaller(T.userWithToken).createPersonalAccessToken({
+                organizationId: T.org,
+                tokenId,
+                create: { serverCode: "us" as D4HServerCode, token: "second-key" },
+            }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+
+        expect(validateD4HCredential).not.toHaveBeenCalled();
+        expect(await db.providerCredential.findUnique({ where: { id: tokenId } })).toBeNull();
     });
 });
 
@@ -326,6 +352,105 @@ describe("d4hAccessTokensRouter.deletePersonalAccessToken", () => {
         expect(revalidatePersonalD4HAccessTokenForUser).toHaveBeenCalledWith(T.org, T.user);
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
         expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.personalToken);
+    });
+});
+
+describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        userWithoutToken: nanoId16(),
+        olderToken: ProviderCredentialId.create(),
+        personalToken: ProviderCredentialId.create(),
+    };
+
+    const refreshedMetadata: D4HAccessTokenMetadata = {
+        d4HTeams: [
+            {
+                id: 42,
+                title: "Refreshed Team",
+                resourceType: "Team",
+                permissions: { Equipment: { CREATE: true } },
+            },
+        ],
+        d4HOrganisations: [],
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        // A duplicate from before the one-per-org guard: the newest one is refreshed.
+        await db.providerCredential.create({
+            data: {
+                ...credentialData({ id: T.olderToken, organizationId: T.org, userId: T.user }),
+                createdAt: new Date("2026-01-01T00:00:00Z"),
+            },
+        });
+        await db.providerCredential.create({
+            data: {
+                ...credentialData({ id: T.personalToken, organizationId: T.org, userId: T.user }),
+                status: "Unauthorized",
+                createdAt: new Date("2026-06-01T00:00:00Z"),
+            },
+        });
+    });
+
+    function makeCaller(userId: string = T.user) {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: userId },
+                permissions: { organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("throws NOT_FOUND when the caller has no personal token", async () => {
+        await expect(
+            makeCaller(T.userWithoutToken).refreshPersonalAccessToken({ organizationId: T.org }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+        expect(validateD4HCredential).not.toHaveBeenCalled();
+    });
+
+    it("updates the status and metadata and revalidates every cache keyed on the token", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            metadata: refreshedMetadata,
+        });
+
+        await makeCaller().refreshPersonalAccessToken({ organizationId: T.org });
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.personalToken },
+        });
+        expect(stored.status).toBe("OK");
+        expect(stored.metadata).toEqual({
+            provider: "D4H",
+            serverCode: "us",
+            ...refreshedMetadata,
+        });
+
+        const entries = await db.logEntry.findMany({ where: { organizationId: T.org } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].objectId).toBe(T.personalToken);
+
+        expect(revalidatePersonalD4HAccessTokenForUser).toHaveBeenCalledWith(T.org, T.user);
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
+        expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.personalToken);
+
+        // The older duplicate is left alone.
+        const older = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.olderToken },
+        });
+        expect(older.metadata).toEqual(
+            credentialData({ id: T.olderToken, organizationId: T.org, userId: T.user }).metadata,
+        );
     });
 });
 

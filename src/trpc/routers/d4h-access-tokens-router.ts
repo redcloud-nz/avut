@@ -14,7 +14,10 @@ import { DiffChange, diffObject } from "@/lib/diff";
 import { D4HAccessToken, D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import {
+    ProviderCredentialId,
+    type ProviderCredentialRecord,
+} from "@/lib/schemas/provider-credential";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings";
 import {
     revalidateD4HAccessToken,
@@ -25,8 +28,49 @@ import {
 import { validateD4HCredential } from "@/server/d4h-api/client";
 import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
 
-import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
+import {
+    authenticatedProcedure,
+    createTrpcRouter,
+    organizationProcedure,
+    type AuthenticatedOrganizationContext,
+} from "../init";
 import { Messages } from "../messages";
+
+/**
+ * Re-validate a stored D4H credential against D4H, then save its new status and metadata and log
+ * the change. Shared by `refreshToken` (org tokens) and `refreshPersonalAccessToken`. Cache
+ * revalidation is left to the caller, since which caches apply depends on the kind of token.
+ */
+async function refreshD4HCredential(
+    ctx: AuthenticatedOrganizationContext,
+    record: ProviderCredentialRecord,
+) {
+    const token = toServerOnlyD4HAccessToken(record);
+
+    const validation = await validateD4HCredential(token);
+
+    const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
+        d4HTeams: [],
+        d4HOrganisations: [],
+    };
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.providerCredential.update({
+            where: { id: record.id },
+            data: {
+                metadata: { provider: "D4H", serverCode: token.serverCode, ...metadata },
+                status: validation.statusText,
+            },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "D4HAccessToken",
+            objectId: record.id,
+            changes: diffObject({ status: record.status }, { status: validation.statusText }),
+            description: "Refreshed D4H access token metadata.",
+        }),
+    ]);
+}
 
 /**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
@@ -112,6 +156,18 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         )
         .output(z.object({ created: D4HAccessToken.schema }))
         .mutation(async ({ ctx, input: { tokenId, create } }) => {
+            // One personal token per user per org, so lookups by (org, user) are unambiguous.
+            // No unique index backs this: a race or a direct DB write can still add a duplicate.
+            const existing = await ctx.prisma.providerCredential.findFirst({
+                where: { provider: "D4H", organizationId: ctx.organizationId, userId: ctx.userId },
+            });
+            if (existing) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: Messages.personalD4HAccessTokenExists(),
+                });
+            }
+
             const label = `Personal token for ${ctx.auth.user.name}`;
 
             const token = {
@@ -361,6 +417,33 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }));
         }),
 
+    /**
+     * Re-check the current user's personal D4H access token against D4H and update its status and metadata.
+     */
+    refreshPersonalAccessToken: organizationProcedure({
+        organization: ["view"],
+    }).mutation(async ({ ctx }) => {
+        // Newest first: the dev DB may already hold duplicates from before the one-per-org guard.
+        const record = await ctx.prisma.providerCredential.findFirst({
+            where: { provider: "D4H", organizationId: ctx.organizationId, userId: ctx.userId },
+            orderBy: { createdAt: "desc" },
+        });
+
+        if (!record) {
+            throw new TRPCError({
+                code: "NOT_FOUND",
+                message: Messages.personalD4HAccessTokenNotFound(),
+            });
+        }
+
+        await refreshD4HCredential(ctx, record);
+
+        const tokenId = ProviderCredentialId.schema.parse(record.id);
+        revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+        revalidateD4HAccessToken(tokenId);
+        revalidateD4HApiCache(tokenId);
+    }),
+
     refreshToken: organizationProcedure({
         organization: ["update"],
     })
@@ -385,34 +468,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     message: Messages.d4HAccessTokenNotFound(input.tokenId),
                 });
 
-            const token = toServerOnlyD4HAccessToken(record);
-
-            const validation = await validateD4HCredential(token);
-
-            const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
-                d4HTeams: [],
-                d4HOrganisations: [],
-            };
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.providerCredential.update({
-                    where: { id: input.tokenId },
-                    data: {
-                        metadata: { provider: "D4H", serverCode: token.serverCode, ...metadata },
-                        status: validation.statusText,
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "D4HAccessToken",
-                    objectId: input.tokenId,
-                    changes: diffObject(
-                        { status: record.status },
-                        { status: validation.statusText },
-                    ),
-                    description: "Refreshed D4H access token metadata.",
-                }),
-            ]);
+            await refreshD4HCredential(ctx, record);
 
             revalidateD4HAccessToken(input.tokenId);
             revalidateD4HApiCache(input.tokenId);

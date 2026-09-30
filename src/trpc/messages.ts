@@ -33,6 +33,12 @@ export const Messages = {
     organizationNotFound: (organizationId: string) =>
         `Organization(id=${organizationId}) not found.`,
 
+    personalD4HAccessTokenExists: () =>
+        `You already have a personal D4H access token for this organisation. Remove it before adding a new one.`,
+
+    personalD4HAccessTokenNotFound: () =>
+        `You don't have a personal D4H access token for this organisation.`,
+
     personNotAUser: (personId: string) => `Person(id=${personId}) is not configured as a user.`,
 
     personNotFound: (personId: string) => `Person(id=${personId}) not found.`,
