@@ -14,12 +14,14 @@
  * No server imports: this module runs in the browser too.
  */
 
+import type { SkillCheck } from "@/lib/schemas/skill-check";
+
 /** The fields conflict detection reads. Structural, so raw Prisma rows and `SkillCheck`s both fit. */
 export interface ConflictCheckFields {
     id: string;
     assesseeId: string;
     skillId: string;
-    status: string;
+    status: SkillCheck["status"];
 }
 
 export interface SkillCheckConflict<T extends ConflictCheckFields> {
@@ -142,10 +144,9 @@ export function reconcileSelection<T extends SelectionCheckFields>(
         const prevGroup = prevGroups.get(key);
 
         if (group.length > 1) {
+            // A lone previous check can't match: the signature lists every member.
             const unchanged =
-                prevGroup !== undefined &&
-                prevGroup.length > 1 &&
-                groupSignature(prevGroup) === groupSignature(group);
+                prevGroup !== undefined && groupSignature(prevGroup) === groupSignature(group);
             if (unchanged) {
                 for (const c of group) if (selected.has(c.id)) result.add(c.id);
             } else {

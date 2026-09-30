@@ -11,14 +11,17 @@ import {
     initialSelection,
     pairKey,
     reconcileSelection,
+    type ConflictCheckFields,
 } from "./skill-check-conflicts";
+
+type Status = ConflictCheckFields["status"];
 
 interface TestCheck {
     id: string;
     assesseeId: string;
     skillId: string;
     assessorId: string | null;
-    status: string;
+    status: Status;
 }
 
 function check(
@@ -26,7 +29,7 @@ function check(
     assesseeId: string,
     skillId: string,
     assessorId: string | null,
-    status = "Draft",
+    status: Status = "Draft",
 ): TestCheck {
     return { id, assesseeId, skillId, assessorId, status };
 }
@@ -133,7 +136,7 @@ interface SelectionTestCheck {
     id: string;
     assesseeId: string;
     skillId: string;
-    status: string;
+    status: Status;
     updatedAt: string;
 }
 
@@ -144,7 +147,7 @@ function sc(
     id: string,
     assesseeId: string,
     skillId: string,
-    status: string,
+    status: Status,
     updatedAt = T0,
 ): SelectionTestCheck {
     return { id, assesseeId, skillId, status, updatedAt };
@@ -225,6 +228,20 @@ describe("reconcileSelection", () => {
         const next = [sc("c1", "p1", "s1", "Pending"), sc("c2", "p1", "s1", "Draft", T1)];
 
         expect(ids(reconcileSelection(prev, next, new Set(["c1"])))).toEqual([]);
+    });
+
+    it("re-picks the lone Pending check when a reopen changes the group", () => {
+        const prev = [sc("c1", "p1", "s1", "Include"), sc("c2", "p1", "s1", "Exclude")];
+        const next = [sc("c1", "p1", "s1", "Pending", T1), sc("c2", "p1", "s1", "Exclude")];
+
+        expect(ids(reconcileSelection(prev, next, new Set<string>()))).toEqual(["c1"]);
+    });
+
+    it("picks the Pending check when a lone Pending check gains an Exclude member", () => {
+        const prev = [sc("c1", "p1", "s1", "Pending")];
+        const next = [sc("c1", "p1", "s1", "Pending"), sc("c2", "p1", "s1", "Exclude")];
+
+        expect(ids(reconcileSelection(prev, next, new Set<string>()))).toEqual(["c1"]);
     });
 
     it("keeps the user's pick in an unchanged group", () => {
