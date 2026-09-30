@@ -25,6 +25,7 @@ import { teamsRouter } from "./teams-router";
 import { trashRouter } from "./trash-router";
 import { userRouter } from "./user-router";
 import { usersRouter } from "./users-router";
+import { whatsNewRouter } from "./whats-new-router";
 
 export const appRouter = createTrpcRouter({
     d4hAccessTokens: d4hAccessTokensRouter,
@@ -45,6 +46,7 @@ export const appRouter = createTrpcRouter({
     trash: trashRouter,
     user: userRouter,
     users: usersRouter,
+    whatsNew: whatsNewRouter,
 });
 
 export type AppRouter = typeof appRouter;
