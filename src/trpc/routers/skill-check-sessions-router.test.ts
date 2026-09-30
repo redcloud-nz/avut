@@ -1626,6 +1626,7 @@ describe("skillCheckSessions.reopenSession", () => {
 describe("skillCheckSessions.approveSession conflicts", () => {
     // Dataset: assessorA and assessorB may both assess assessee on skill in every session below.
     //   conflictSession → Draft; checkA (assessorA) + checkB (assessorB), both Draft
+    //   pickSession     → Draft; pickCheckA (assessorA) + pickCheckB (assessorB), both Draft
     //   deletedSession  → Draft; liveCheck (assessorA) Draft + deadCheck (assessorB) Deleted
     //   ownSession      → Draft; ownCheck (assessorA) Draft
     //   foreignSession  → Draft; foreignCheck (assessorB) Draft, same assessee and skill
@@ -1641,6 +1642,9 @@ describe("skillCheckSessions.approveSession conflicts", () => {
         conflictSession: SkillCheckSessionId.create(),
         checkA: SkillCheckId.create(),
         checkB: SkillCheckId.create(),
+        pickSession: SkillCheckSessionId.create(),
+        pickCheckA: SkillCheckId.create(),
+        pickCheckB: SkillCheckId.create(),
         deletedSession: SkillCheckSessionId.create(),
         liveCheck: SkillCheckId.create(),
         deadCheck: SkillCheckId.create(),
@@ -1697,9 +1701,10 @@ describe("skillCheckSessions.approveSession conflicts", () => {
 
         for (const [id, sessionNumber] of [
             [T.conflictSession, 1],
-            [T.deletedSession, 2],
-            [T.ownSession, 3],
-            [T.foreignSession, 4],
+            [T.pickSession, 2],
+            [T.deletedSession, 3],
+            [T.ownSession, 4],
+            [T.foreignSession, 5],
         ] as const) {
             await db.skillCheckSession.create({
                 data: {
@@ -1720,6 +1725,8 @@ describe("skillCheckSessions.approveSession conflicts", () => {
         const checks = [
             [T.checkA, T.conflictSession, T.assessorA, "Draft"],
             [T.checkB, T.conflictSession, T.assessorB, "Draft"],
+            [T.pickCheckA, T.pickSession, T.assessorA, "Draft"],
+            [T.pickCheckB, T.pickSession, T.assessorB, "Draft"],
             [T.liveCheck, T.deletedSession, T.assessorA, "Draft"],
             [T.deadCheck, T.deletedSession, T.assessorB, "Deleted"],
             [T.ownCheck, T.ownSession, T.assessorA, "Draft"],
@@ -1774,19 +1781,27 @@ describe("skillCheckSessions.approveSession conflicts", () => {
             [T.checkA]: "Draft",
             [T.checkB]: "Draft",
         });
+        const entries = await db.logEntry.findMany({
+            where: {
+                objectType: "SkillCheckSession",
+                objectId: T.conflictSession,
+                action: "Approve",
+            },
+        });
+        expect(entries).toHaveLength(0);
     });
 
     it("approves with one of the pair included, stamping Include and Exclude", async () => {
         const { updated } = await makeCaller().approveSession({
             organizationId: T.org,
-            sessionId: T.conflictSession,
-            includedCheckIds: [T.checkA],
+            sessionId: T.pickSession,
+            includedCheckIds: [T.pickCheckA],
         });
 
         expect(updated.status).toBe("Include");
-        expect(await checkStatuses(T.conflictSession)).toEqual({
-            [T.checkA]: "Include",
-            [T.checkB]: "Exclude",
+        expect(await checkStatuses(T.pickSession)).toEqual({
+            [T.pickCheckA]: "Include",
+            [T.pickCheckB]: "Exclude",
         });
     });
 
