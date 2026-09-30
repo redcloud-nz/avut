@@ -13,6 +13,7 @@ import { SkillId } from "@/lib/schemas/skill";
 import type { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { findConflicts } from "@/lib/skill-check-conflicts";
+import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -48,7 +49,8 @@ export async function requireSessionById(
  * in an approved session. For recording that's accepted — only `Include` checks count, and the
  * stray check shows up for review on the next reopen. A write that changes a check's status can't
  * lean on that, since it could overwrite an approval's `Include`/`Exclude` stamp; such a write
- * (`updateCheckExclusions`) also guards its own `where` on the session not being approved.
+ * (`updateCheckExclusions`) opens its transaction with a conditional update of the session row,
+ * which serializes it with `approveSession`'s own session write.
  * @throws ConflictError if the session is approved.
  */
 export function assertSessionUnlocked(session: Pick<SkillCheckSession, "id" | "status">): void {
@@ -197,11 +199,13 @@ export interface CheckExclusionChange {
  * sets a `Draft` or `Pending` check to `Exclude`; `excluded: false` sets an `Exclude` check back to
  * `Draft`. Any other status is left alone, so re-including a `Pending` check doesn't touch it.
  *
- * Both writes also require, in their `where`, that the session isn't approved, so a write racing
- * an approval can't overwrite its stamps (see `assertSessionUnlocked`). A write that loses that
- * race matches no rows and changes nothing.
+ * The transaction starts with a conditional write to the session row (not approved), which takes
+ * that row's lock. `approveSession` writes the same row first, so an approval and these writes
+ * can't interleave: one commits before the other starts writing checks, and a call that finds the
+ * session approved by then changes nothing and throws `ConflictError` (see
+ * `assertSessionUnlocked`). Only the session's `updatedAt` changes besides the checks.
  * @throws NotFoundError if the session does not exist.
- * @throws ConflictError if the session is approved.
+ * @throws ConflictError if the session is approved, up front or by the time the writes run.
  * @throws ValidationError if an id appears more than once, or isn't a live (non-`Deleted`) check in
  * the session.
  */
@@ -239,26 +243,40 @@ export async function updateCheckExclusions(
 
     const excludeIds = changes.filter((c) => c.excluded).map((c) => c.skillCheckId);
     const includeIds = changes.filter((c) => !c.excluded).map((c) => c.skillCheckId);
-    const unapprovedSession = {
-        organizationId: ctx.organizationId,
-        sessionId,
-        session: { status: { not: "Include" } },
-    } satisfies Prisma.SkillCheckWhereInput;
+    const inSession = { organizationId: ctx.organizationId, sessionId };
 
-    await ctx.prisma.$transaction([
-        ctx.prisma.skillCheck.updateMany({
-            where: {
-                ...unapprovedSession,
-                id: { in: excludeIds },
-                status: { in: ["Draft", "Pending"] },
-            },
-            data: { status: "Exclude" },
-        }),
-        ctx.prisma.skillCheck.updateMany({
-            where: { ...unapprovedSession, id: { in: includeIds }, status: "Exclude" },
-            data: { status: "Draft" },
-        }),
-    ]);
+    await ctx.prisma
+        .$transaction([
+            // Conditional on the session not being approved, and first, so it takes the session's
+            // row lock before any check is written. `approveSession` also writes the session row
+            // first, so the two run one after the other: if an approval commits first, this
+            // update re-reads the session, matches no row and throws P2025, rolling back.
+            // `updatedAt` is the only field it touches.
+            ctx.prisma.skillCheckSession.update({
+                where: {
+                    id: sessionId,
+                    organizationId: ctx.organizationId,
+                    status: { not: "Include" },
+                },
+                data: { updatedAt: new Date() },
+            }),
+            ctx.prisma.skillCheck.updateMany({
+                where: {
+                    ...inSession,
+                    id: { in: excludeIds },
+                    status: { in: ["Draft", "Pending"] },
+                },
+                data: { status: "Exclude" },
+            }),
+            ctx.prisma.skillCheck.updateMany({
+                where: { ...inSession, id: { in: includeIds }, status: "Exclude" },
+                data: { status: "Draft" },
+            }),
+        ])
+        .catch((error: unknown) => {
+            if (isPrismaRecordNotFound(error)) throw sessionLockedError(sessionId);
+            throw error;
+        });
 }
 
 /**

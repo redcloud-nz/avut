@@ -2039,32 +2039,38 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
         ).rejects.toMatchObject({ code: "CONFLICT" });
     });
 
-    it("leaves an approved session's checks alone even when the lock check saw it unapproved", async () => {
-        // prisma-mock can't interleave a concurrent approval, so make the up-front lock check
-        // read the approved session as Draft, as it would if the approval committed just after.
+    it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
+        // prisma-mock can't interleave a concurrent approval, so make the up-front lock check read
+        // the approved session as Draft, as it would if the approval committed just after, and
+        // fake the session write's lost race.
         const approved = await db.skillCheckSession.findUniqueOrThrow({
             where: { id: T.approvedSession },
         });
-        const spy = vi
+        const findSpy = vi
             .spyOn(db.skillCheckSession, "findUnique")
             .mockResolvedValueOnce({ ...approved, status: "Draft" });
+        const updateSpy = vi
+            .spyOn(db.skillCheckSession, "update")
+            .mockRejectedValueOnce(
+                Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+            );
         try {
-            await makeCaller().updateCheckExclusions({
-                organizationId: T.org,
-                sessionId: T.approvedSession,
-                changes: [
-                    { skillCheckId: T.approvedIncluded, excluded: true },
-                    { skillCheckId: T.approvedExcluded, excluded: false },
-                ],
-            });
+            await expect(
+                makeCaller().updateCheckExclusions({
+                    organizationId: T.org,
+                    sessionId: T.approvedSession,
+                    changes: [
+                        { skillCheckId: T.approvedIncluded, excluded: true },
+                        { skillCheckId: T.approvedExcluded, excluded: false },
+                    ],
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
         } finally {
-            spy.mockRestore();
+            findSpy.mockRestore();
+            updateSpy.mockRestore();
         }
-
-        expect(await checkStatuses(T.approvedSession)).toEqual({
-            [T.approvedIncluded]: "Include",
-            [T.approvedExcluded]: "Exclude",
-        });
+        // No assertion on the checks: prisma-mock doesn't roll back an array `$transaction` when
+        // one of its statements rejects, as Postgres does.
     });
 
     it("throws FORBIDDEN without skillCheckSession:approve", async () => {

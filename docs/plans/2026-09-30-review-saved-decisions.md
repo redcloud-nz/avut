@@ -80,7 +80,7 @@ Today the review page keeps every include/exclude decision in the browser tab un
 
 ### Task 1: `updateCheckExclusions` and resolved-conflict helper
 
-- [ ] Not started
+- [x] fix(skill-track): serialize exclusion writes with approval on the session row
 
 **Files:** `src/lib/skill-check-conflicts.ts`, `src/lib/skill-check-conflicts.test.ts`, `src/client/skill-check-sessions-effects.ts`, `src/server/services/skill-checks.ts`, `src/server/services/skill-checks.test.ts` (if the service has tests for similar functions), `src/trpc/routers/skill-check-sessions-router.ts`, `src/trpc/routers/skill-check-sessions-router.test.ts`.
 

@@ -722,9 +722,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         .input(
             z.object({
                 sessionId: SkillCheckSessionId.schema,
-                changes: z.array(
-                    z.object({ skillCheckId: SkillCheckId.schema, excluded: z.boolean() }),
-                ),
+                changes: z
+                    .array(z.object({ skillCheckId: SkillCheckId.schema, excluded: z.boolean() }))
+                    .max(1000),
             }),
         )
         .output(z.void())
