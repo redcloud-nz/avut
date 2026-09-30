@@ -27,6 +27,35 @@ describe("RenderMarkdown", () => {
         expect(img).not.toHaveAttribute("onerror");
     });
 
+    it("removes <iframe> and <svg>", () => {
+        const { container } = render(
+            <RenderMarkdown
+                markdown={'<iframe src="https://x"></iframe>\n\n<svg><circle r="1" /></svg>'}
+            />,
+        );
+        expect(container.querySelector("iframe")).toBeNull();
+        expect(container.querySelector("svg")).toBeNull();
+    });
+
+    it("strips inline styles", () => {
+        const { container } = render(<RenderMarkdown markdown={'<p style="color:red">x</p>'} />);
+        expect(container.querySelector("p")).not.toHaveAttribute("style");
+    });
+
+    it("strips data: image sources", () => {
+        const { container } = render(
+            <RenderMarkdown markdown={'<img src="data:image/png;base64,AAAA">'} />,
+        );
+        const img = container.querySelector("img");
+        expect(img).not.toBeNull();
+        expect(img).not.toHaveAttribute("src");
+    });
+
+    it("prefixes raw ids so they can't clobber page globals", () => {
+        const { container } = render(<RenderMarkdown markdown={'<a id="x">x</a>'} />);
+        expect(container.querySelector("a")).toHaveAttribute("id", "user-content-x");
+    });
+
     it("still renders a GFM table and a link", () => {
         const markdown = [
             "| A | B |",

@@ -175,7 +175,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 
 `npm run check` passes.
 
-### - [ ] 5. Sanitize rendered markdown
+### - [x] 5. Sanitize rendered markdown
+
+`feat(markdown): sanitize rendered markdown`, `fix(markdown): document the footnote id double-prefix and test what only the sanitizer strips`
 
 **Files:** `src/components/markdown/render.tsx`, new `src/components/markdown/render.test.tsx`.
 

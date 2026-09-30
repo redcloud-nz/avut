@@ -18,8 +18,11 @@ import "./markdown.css";
 
 /**
  * `rehype-raw` stays because the editor's underline button saves `<u>` as raw HTML. Everything raw
- * HTML lets through is then sanitized: GitHub's default schema, which already covers GFM output
- * (table `align`, task-list checkboxes, footnotes), plus `u`.
+ * HTML lets through is then sanitized: GitHub's default schema plus `u`. The schema keeps GFM table
+ * `align` and task-list checkboxes. Footnote attributes survive too, but the ref and backref links
+ * don't resolve: mdast-util-to-hast already prefixes footnote ids with `user-content-`, and the
+ * sanitizer's `clobberPrefix` adds it to ids again (not hrefs). The editor has no footnote plugin,
+ * so that's accepted rather than dropping `id` from `clobber`.
  */
 const sanitizeSchema: SanitizeSchema = {
     ...defaultSchema,
