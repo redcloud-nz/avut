@@ -217,7 +217,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Team: "org-admin",
     TeamMembership: "org-admin",
     User: null,
-    UserNote: null, // → "user-notes" once the module is registered (Task 9)
+    UserNote: "user-notes",
     UserSettings: "profile",
 };
 

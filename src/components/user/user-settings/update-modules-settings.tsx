@@ -92,7 +92,9 @@ export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: 
                                     </FieldContent>
                                     <Controller
                                         control={form.control}
-                                        name={`${module.id}.enabled`}
+                                        // Only configurable (non-`alwaysOn`) modules are listed, and
+                                        // those are the ones `UserSettings.modules` has keys for.
+                                        name={`${module.id as keyof UserSettings["modules"]}.enabled`}
                                         render={({ field }) => (
                                             <Switch
                                                 id={`${module.id}-module-enabled`}
