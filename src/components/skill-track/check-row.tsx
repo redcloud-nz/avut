@@ -16,6 +16,7 @@ import {
     type SkillCheckResultOption,
     type SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
+import type { OtherAssessorCheck } from "@/lib/session-checks-sync";
 import { cn } from "@/lib/utils";
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
@@ -43,6 +44,11 @@ interface CheckRowProps {
      * can't be written to until it's reopened).
      */
     disabled?: boolean;
+    /**
+     * The other assessors' live checks on this (assessee, skill) pair (from
+     * `otherAssessorChecks`), shown as "Also checked by …" under the title. Never the caller's own.
+     */
+    otherChecks?: OtherAssessorCheck[];
 }
 
 const QUICK_BUTTONS = [
@@ -67,6 +73,9 @@ const QUICK_BUTTONS = [
  * While a write is pending the row shows the pending value dimmed, with its buttons disabled, so
  * two writes to one check can't reorder. With `disabled` the row shows its saved result and every
  * button, `More` included, is disabled.
+ *
+ * With `otherChecks`, an "Also checked by Jane (Competent), …" line goes under the title, using the
+ * org's result labels.
  */
 export function SkillTrack_CheckRow({
     title,
@@ -79,6 +88,7 @@ export function SkillTrack_CheckRow({
     onRemove,
     onOpenDialog,
     disabled = false,
+    otherChecks,
 }: CheckRowProps) {
     const isPending = pending !== undefined;
     const shownResult = isPending ? pending : (check?.result ?? null);
@@ -91,6 +101,12 @@ export function SkillTrack_CheckRow({
     });
     const showsLabel =
         shownResult !== null && !buttons.some((button) => button.result === shownResult);
+
+    const alsoCheckedBy = otherChecks?.length
+        ? `Also checked by ${otherChecks
+              .map(({ assessorName, result }) => `${assessorName} (${resultLabel(result)})`)
+              .join(", ")}`
+        : null;
 
     function handleTap(result: SkillCheckResultValue) {
         if (result !== shownResult) {
@@ -105,10 +121,18 @@ export function SkillTrack_CheckRow({
 
     return (
         <div className="flex items-center gap-2">
-            {description ? (
+            {description || alsoCheckedBy ? (
                 <FieldContent className="grow">
                     <FieldLabel>{title}</FieldLabel>
-                    <FieldDescription>{description}</FieldDescription>
+                    {description && (
+                        // `nth-last-2:mt-0` undoes FieldDescription's pull-up when the marker follows.
+                        <FieldDescription className="nth-last-2:mt-0">
+                            {description}
+                        </FieldDescription>
+                    )}
+                    {alsoCheckedBy && (
+                        <p className="text-xs text-muted-foreground">{alsoCheckedBy}</p>
+                    )}
                 </FieldContent>
             ) : (
                 <FieldLabel className="grow">{title}</FieldLabel>

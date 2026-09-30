@@ -5,7 +5,7 @@
 "use client";
 
 import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as R from "remeda";
 import { match } from "ts-pattern";
 
@@ -51,6 +51,11 @@ import {
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import {
+    otherAssessorChecks,
+    type OtherAssessorCheck,
+    type SessionCheckKey,
+} from "@/lib/session-checks-sync";
 import { trpc } from "@/trpc/client";
 
 /** The (assessee, skill) check the record dialog is open on. */
@@ -116,11 +121,19 @@ export function SkillTrack_SessionByPerson_Content({
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
     // Polls the other assessors' checks (and the caller's own from other devices) while the
     // recording rows show.
-    useSessionChecksSync({
+    const sessionChecks = useSessionChecksSync({
         sessionId,
         selfPersonId: personSelf?.id,
         enabled: !!personSelf && isAssignedAssessor && canRecordChecks,
     });
+    // The "Also checked by" markers, keyed by (assessee, skill).
+    const otherChecksByKey = useMemo(
+        () =>
+            personSelf
+                ? otherAssessorChecks(sessionChecks?.checks ?? [], personSelf.id)
+                : new Map<SessionCheckKey, OtherAssessorCheck[]>(),
+        [sessionChecks?.checks, personSelf],
+    );
     // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
     // its checks read-only and the record dialog is closed.
     const isApproved = session.status === "Include";
@@ -391,6 +404,9 @@ export function SkillTrack_SessionByPerson_Content({
                                                     )}
                                                     resultOptions={resultOptions}
                                                     resultLabel={resultLabel}
+                                                    otherChecks={otherChecksByKey.get(
+                                                        sessionCheckKey(personId, skill.id),
+                                                    )}
                                                     onRecord={(value) =>
                                                         record({
                                                             assesseeId: personId,

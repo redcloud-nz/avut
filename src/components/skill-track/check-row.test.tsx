@@ -48,6 +48,27 @@ function renderRow(props: Partial<RowProps> = {}) {
 }
 
 describe("SkillTrack_CheckRow", () => {
+    it("lists the other assessors' checks under the title with the org's labels", () => {
+        renderRow({
+            description: "Adult and child",
+            otherChecks: [
+                { assessorName: "Bob", result: "Fail" },
+                { assessorName: "Jane", result: "StrongPass" },
+            ],
+        });
+
+        expect(screen.getByText("Adult and child")).toBeInTheDocument();
+        expect(
+            screen.getByText("Also checked by Bob (Not Yet), Jane (Excellent)"),
+        ).toBeInTheDocument();
+    });
+
+    it("shows no marker when there are no other checks", () => {
+        renderRow({ otherChecks: [] });
+
+        expect(screen.queryByText(/Also checked by/)).not.toBeInTheDocument();
+    });
+
     it("records the mid tier when an inactive button is tapped, keeping notes", async () => {
         const { onRecord } = renderRow({ check: { result: "Fail", notes: "Keep" } });
 
