@@ -10,7 +10,7 @@
 "use client";
 
 import { useSelectedLayoutSegment } from "next/navigation";
-import { ComponentProps } from "react";
+import { ComponentProps, ReactNode, ViewTransition } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -34,5 +34,35 @@ export function HermesRoot({ children, className, ...props }: ComponentProps<"di
         >
             {children}
         </div>
+    );
+}
+
+/**
+ * Wraps the detail pane's content in a `ViewTransition` keyed on the selected record, so switching
+ * records (or going back to the index) crossfades the pane.
+ *
+ * The key lives here, above the route's page segment, not in the page. Next keeps recently left
+ * pages mounted in a hidden `<Activity>` (its back/forward cache), and a `ViewTransition` inside
+ * the page only formed an old/new pair on some navigations; on the rest the old record vanished
+ * and the new one faded in from blank. Keyed here, every switch is a pair.
+ *
+ * No `Suspense` boundary may sit between this and the record's content (so no `loading.tsx` for
+ * the record route): a boundary mounted under the new key shows its fallback at once, and the
+ * crossfade goes to the spinner. Without one, the navigation holds the old record until the new
+ * one is ready.
+ */
+export function HermesDetailTransition({ children }: { children: ReactNode }) {
+    const segment = useSelectedLayoutSegment();
+
+    return (
+        <ViewTransition
+            key={segment ?? ""}
+            name="hermes-detail"
+            share="auto"
+            enter="auto"
+            default="none"
+        >
+            <div className="h-full">{children}</div>
+        </ViewTransition>
     );
 }

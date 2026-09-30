@@ -115,7 +115,6 @@ export function NotesList({
                         <li key={note.id}>
                             <Link
                                 href={hrefFor(note.id)}
-                                prefetch={true}
                                 aria-current={note.id === selectedId ? "page" : undefined}
                                 className={cn(
                                     "flex flex-col gap-0.5 border-b px-4 py-3 hover:bg-muted/50",

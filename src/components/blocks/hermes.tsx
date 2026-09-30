@@ -12,8 +12,13 @@
  * At `md` and up both panes show side by side. Below `md` only the active one does: the list
  * when nothing is selected, the detail when a record is.
  *
- * Suspense: `Hermes.List` has its own boundary. `Hermes.Detail` has none, since the route's
- * `loading.tsx` already wraps the layout's `children` inside it; make that a pane-sized fallback.
+ * Switching records crossfades the detail pane: `Hermes.Detail` wraps its children in a
+ * `ViewTransition` keyed on the selected segment (see `HermesDetailTransition`).
+ *
+ * Suspense: `Hermes.List` has its own boundary. `Hermes.Detail` has none, and the route must not
+ * add one with a `loading.tsx`: a fallback mounted under the new key would be what the crossfade
+ * shows. Without one, a record navigation keeps the old record on screen until the new one is
+ * ready, and a hard load falls back to `Std.SidebarInset`'s spinner.
  */
 
 import { ComponentProps, Suspense } from "react";
@@ -21,7 +26,7 @@ import { ComponentProps, Suspense } from "react";
 import { RainbowSpinner } from "@/components/ui/loading";
 import { cn } from "@/lib/utils";
 
-import { HermesRoot } from "./hermes-root";
+import { HermesDetailTransition, HermesRoot } from "./hermes-root";
 
 const paneScroll =
     "overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]";
@@ -63,7 +68,7 @@ function HermesDetail({ children, className, ...props }: ComponentProps<"main">)
             )}
             {...props}
         >
-            {children}
+            <HermesDetailTransition>{children}</HermesDetailTransition>
         </main>
     );
 }

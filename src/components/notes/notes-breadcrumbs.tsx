@@ -7,7 +7,7 @@
 
 import type { Route } from "next";
 import { useSelectedLayoutSegment } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 import { Std } from "@/components/blocks/std";
 
@@ -29,12 +29,18 @@ export function NotesBreadcrumbs({ notes, listHref, actions }: NotesBreadcrumbsP
     const selectedId = useSelectedLayoutSegment();
     const selected = selectedId === null ? undefined : notes.find((note) => note.id === selectedId);
 
+    // Deleting a note drops it from the list before the navigation away lands, so hold on to the
+    // last title seen for the selected note rather than falling back to "Note" for a frame.
+    const [lastSeen, setLastSeen] = useState<{ id: string; title: string } | null>(null);
+    if (selected && (lastSeen?.id !== selected.id || lastSeen.title !== selected.title)) {
+        setLastSeen({ id: selected.id, title: selected.title });
+    }
+    const title = selected?.title ?? (lastSeen?.id === selectedId ? lastSeen.title : "Note");
+
     return (
         <Std.Navbar
             breadcrumbs={
-                selectedId === null
-                    ? ["Notes"]
-                    : [{ label: "Notes", href: listHref }, selected?.title ?? "Note"]
+                selectedId === null ? ["Notes"] : [{ label: "Notes", href: listHref }, title]
             }
             actions={actions}
         />
