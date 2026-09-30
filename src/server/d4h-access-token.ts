@@ -55,6 +55,16 @@ export function toServerOnlyD4HAccessToken(
 }
 
 /**
+ * The bearer value to send to D4H for the given credential. This is the one place the secret is
+ * read: every request gets its `Authorization` header from here (see `getD4HFetchClient`).
+ * @remarks Async because an OAuth credential will refresh its access token here when it is near
+ * expiry. Today every credential is an API key, so it returns the stored key as is.
+ */
+export async function getD4HAccessToken(credential: D4HAccessToken_ServerOnly): Promise<string> {
+    return credential.token;
+}
+
+/**
  * Identifies a stored D4H credential together with the owner it must belong to
  * (`userId: null` → the organization's own credential). It holds no secret, so it is what
  * `"use cache"` functions take in place of a `D4HAccessToken_ServerOnly`.

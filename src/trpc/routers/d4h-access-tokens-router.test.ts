@@ -49,10 +49,12 @@ function credentialData({
 vi.mock("server-only", () => ({}));
 
 vi.mock("@/server/d4h-api/client", () => ({
-    getD4HFetchClient: vi.fn(() => ({
-        GET: vi.fn(async () => ({ data: undefined, response: { statusText: "OK" } })),
+    validateD4HCredential: vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        metadata: { d4HTeams: [], d4HOrganisations: [] },
     })),
-    getD4HTokenMetadata: vi.fn(async () => ({ d4HTeams: [], d4HOrganisations: [] })),
 }));
 
 vi.mock("@/server/d4h-access-token", () => ({

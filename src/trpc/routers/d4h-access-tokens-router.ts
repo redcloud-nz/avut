@@ -13,7 +13,6 @@ import { D4HServerCode } from "@/lib/d4h-servers";
 import { DiffChange, diffObject } from "@/lib/diff";
 import { D4HAccessToken, D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
-import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings";
@@ -22,7 +21,7 @@ import {
     revalidatePersonalD4HAccessTokenForUser,
     toServerOnlyD4HAccessToken,
 } from "@/server/d4h-access-token";
-import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { validateD4HCredential } from "@/server/d4h-api/client";
 import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
 
 import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
@@ -60,14 +59,12 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             } satisfies D4HAccessToken_ServerOnly;
 
             // Check the token and fetch metadata
-            const fetchClient = getD4HFetchClient(token);
-            const { data, response } = await fetchClient.GET("/v3/whoami");
+            const validation = await validateD4HCredential(token);
 
-            const metadata: D4HAccessTokenMetadata = data
-                ? await getD4HTokenMetadata(token, {
-                      whoami: D4HWhoami.schema.parse(data),
-                  })
-                : { d4HTeams: [], d4HOrganisations: [] };
+            const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
+                d4HTeams: [],
+                d4HOrganisations: [],
+            };
 
             const changes: DiffChange[] = [
                 ...diffObject({}, R.omit(create, ["token"])),
@@ -83,7 +80,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         userId: null,
                         label: create.label,
                         token: encryptDBValue(create.token),
-                        status: response.statusText,
+                        status: validation.statusText,
                         expiresAt: addYears(new Date(), 10),
                         metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
@@ -126,14 +123,12 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             } satisfies D4HAccessToken_ServerOnly;
 
             // Check the token and fetch metadata
-            const fetchClient = getD4HFetchClient(token);
-            const { data, response } = await fetchClient.GET("/v3/whoami");
+            const validation = await validateD4HCredential(token);
 
-            const metadata: D4HAccessTokenMetadata = data
-                ? await getD4HTokenMetadata(token, {
-                      whoami: D4HWhoami.schema.parse(data),
-                  })
-                : { d4HTeams: [], d4HOrganisations: [] };
+            const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
+                d4HTeams: [],
+                d4HOrganisations: [],
+            };
 
             const changes: DiffChange[] = [
                 ...diffObject({}, R.omit(create, ["token"])),
@@ -149,7 +144,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         userId: ctx.userId,
                         label,
                         token: encryptDBValue(create.token),
-                        status: response.statusText,
+                        status: validation.statusText,
                         expiresAt: addYears(new Date(), 10),
                         metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
@@ -386,28 +381,29 @@ export const d4hAccessTokensRouter = createTrpcRouter({
 
             const token = toServerOnlyD4HAccessToken(record);
 
-            const fetchClient = getD4HFetchClient(token);
-            const { data, response } = await fetchClient.GET("/v3/whoami");
+            const validation = await validateD4HCredential(token);
 
-            const metadata: D4HAccessTokenMetadata = data
-                ? await getD4HTokenMetadata(token, {
-                      whoami: D4HWhoami.schema.parse(data),
-                  })
-                : { d4HTeams: [], d4HOrganisations: [] };
+            const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
+                d4HTeams: [],
+                d4HOrganisations: [],
+            };
 
             await ctx.prisma.$transaction([
                 ctx.prisma.providerCredential.update({
                     where: { id: input.tokenId },
                     data: {
                         metadata: { provider: "D4H", serverCode: token.serverCode, ...metadata },
-                        status: response.statusText,
+                        status: validation.statusText,
                     },
                 }),
                 ctx.logEvent({
                     action: "Update",
                     objectType: "D4HAccessToken",
                     objectId: input.tokenId,
-                    changes: diffObject({ status: record.status }, { status: response.statusText }),
+                    changes: diffObject(
+                        { status: record.status },
+                        { status: validation.statusText },
+                    ),
                     description: "Refreshed D4H access token metadata.",
                 }),
             ]);

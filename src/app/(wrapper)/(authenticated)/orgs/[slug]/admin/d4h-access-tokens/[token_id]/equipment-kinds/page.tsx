@@ -14,7 +14,7 @@ import { route } from "@/lib/routes";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
 
@@ -23,7 +23,7 @@ async function fetchEquipmentKinds(accessToken: D4HAccessToken_ServerOnly) {
 
     const fetchClient = getD4HFetchClient(accessToken);
 
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const teams = await getD4HTeamsAccessibleWithToken(toD4HCredentialRef(accessToken));
 
     const kinds = (
         await Promise.all(

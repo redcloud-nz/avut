@@ -13,7 +13,7 @@ import { route } from "@/lib/routes";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentLocation } from "@/lib/schemas/d4h/equipment-location";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
 
@@ -22,7 +22,7 @@ async function fetchEquipmentLocations(accessToken: D4HAccessToken_ServerOnly) {
 
     const fetchClient = getD4HFetchClient(accessToken);
 
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const teams = await getD4HTeamsAccessibleWithToken(toD4HCredentialRef(accessToken));
 
     const items = (
         await Promise.all(

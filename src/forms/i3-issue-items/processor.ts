@@ -8,7 +8,7 @@ import "server-only";
 import { createElement } from "react";
 
 import I3IssueItemsNotificationEmail from "@/emails/i3-issue-items-notification";
-import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
+import { getPersonalD4HAccessTokenForUser, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { fetchD4HWhoamiCached, getD4HFetchClient } from "@/server/d4h-api/client";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
@@ -88,7 +88,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
         stageName: "CheckPermissions",
         stageFn: async (ctx, { accessToken }) => {
             // Check if the user has permission to create equipment in D4H for the recipient team, which is required to save issued items to D4H.
-            const whoami = await fetchD4HWhoamiCached(accessToken);
+            const whoami = await fetchD4HWhoamiCached(toD4HCredentialRef(accessToken));
 
             const userMembershipInRecipientTeam = whoami.members.find(
                 (m) => m.owner.id === ctx.formData.recipient.teamId,

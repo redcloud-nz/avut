@@ -8,7 +8,7 @@
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import { requireOrganization } from "@/server/organization-access";
 
@@ -37,7 +37,7 @@ export default async function D4HViewsModules_Personnel_Page(
         throw new Error("D4H Access Token not found");
     }
 
-    const teams = await getD4HTeamsWithMembers(accessToken);
+    const teams = await getD4HTeamsWithMembers(toD4HCredentialRef(accessToken));
 
     const members = teams.flatMap((t) => t.members.map((m) => ({ ...m, team: t })));
 

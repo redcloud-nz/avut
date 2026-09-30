@@ -12,7 +12,7 @@ import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
 
@@ -36,7 +36,7 @@ export default async function Admin_D4HAccessToken_Members_Page(
 
     const fetchClient = getD4HFetchClient(accessToken);
 
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const teams = await getD4HTeamsAccessibleWithToken(toD4HCredentialRef(accessToken));
 
     const members = (
         await Promise.all(
