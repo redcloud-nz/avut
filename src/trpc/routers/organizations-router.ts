@@ -10,7 +10,13 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import type { ModuleId } from "@/lib/modules";
-import { hasOwnerRole, roleSchema } from "@/lib/permissions";
+import {
+    grantableRoleSchema,
+    hasOwnerRole,
+    parseStoredRoles,
+    roleCovers,
+    roleSchema,
+} from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -26,6 +32,28 @@ import { Messages } from "../messages";
 
 /** A membership whose account isn't in the Rubbish bin — the row is kept for recovery. */
 const activeMember = { user: { status: { not: "Deleted" as const } } };
+
+/**
+ * The caller's organization's membership row for `userId`, skipping a Deleted (Rubbish bin)
+ * account.
+ * @throws TRPCError(NOT_FOUND) if the user isn't an active member.
+ */
+async function requireActiveMembership(
+    ctx: { prisma: PrismaClient; organizationId: OrganizationId },
+    userId: UserId,
+) {
+    const membership = await ctx.prisma.organizationUser.findFirst({
+        where: { organizationId: ctx.organizationId, userId, ...activeMember },
+        select: { id: true, role: true },
+    });
+    if (!membership) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "That user is not a member of this organisation.",
+        });
+    }
+    return membership;
+}
 
 /**
  * Throws `NOT_FOUND` if the user does not exist (surfaces a clear error before an FK violation),
@@ -316,6 +344,43 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
+     * Grant one role to an existing member, leaving the rest of their role set untouched. Gated
+     * per role by `roleGrant` rather than `member: ["update"]`, so a module admin can hand out
+     * the roles it covers (e.g. `skills-admin` → `skills-assessor`) without being able to edit
+     * anything else about a membership. Granting a role the member already holds is a no-op.
+     */
+    grantMemberRole: organizationProcedure()
+        .input(z.object({ userId: UserId.schema, role: grantableRoleSchema }))
+        .mutation(async ({ ctx, input }) => {
+            await ctx.hasPermission(ctx.organizationId, { roleGrant: [input.role] });
+
+            const membership = await requireActiveMembership(ctx, input.userId);
+            if (OrganizationRole.includes(membership.role, input.role)) {
+                return { id: membership.id };
+            }
+
+            const role = [...membership.role.split(",").filter(Boolean), input.role].join(",");
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: { id: membership.id },
+                    data: { role },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Granted ${OrganizationRole.displayNames[input.role]} to user ${input.userId}`,
+                }),
+            ]);
+
+            await revalidateOrganizationUser(input.userId);
+
+            return { id: membership.id };
+        }),
+
+    /**
      * Lists every member of the organization, shaped like Better Auth's own
      * `authClient.organization.listMembers` — a plain Prisma read of the same
      * `organization_users` table Better Auth's organization plugin already writes to.
@@ -341,6 +406,47 @@ export const organizationsRouter = createTrpcRouter({
             }));
         },
     ),
+
+    /**
+     * Lists the organization's members for granting or revoking `role` — only what the grant
+     * page needs, since a caller holding `roleGrant` alone (e.g. `skills-admin`) has no
+     * `member: ["view"]` and shouldn't see anyone's full role set. `coveredBy` names another role
+     * the member holds that already includes `role`, which makes granting it redundant.
+     */
+    listMembersForRoleGrant: organizationProcedure()
+        .input(z.object({ role: grantableRoleSchema }))
+        .query(async ({ ctx, input }) => {
+            await ctx.hasPermission(ctx.organizationId, { roleGrant: [input.role] });
+
+            const members = await ctx.prisma.organizationUser.findMany({
+                where: { organizationId: ctx.organizationId, ...activeMember },
+                select: {
+                    userId: true,
+                    role: true,
+                    personId: true,
+                    user: { select: { name: true, email: true } },
+                },
+            });
+
+            return members
+                .map((member) => {
+                    const roles = parseStoredRoles(member.role);
+                    return {
+                        userId: member.userId,
+                        name: member.user.name,
+                        email: member.user.email,
+                        personId: member.personId,
+                        holdsRole: roles.includes(input.role),
+                        coveredBy:
+                            roles.find(
+                                (other) => other !== input.role && roleCovers(other, input.role),
+                            ) ?? null,
+                        // Revoking a member's only role would leave the membership empty.
+                        isOnlyRole: roles.length === 1 && roles[0] === input.role,
+                    };
+                })
+                .sort((a, b) => a.name.localeCompare(b.name));
+        }),
 
     listOrganizations: systemAdminProcedure.query(async ({ ctx }) => {
         const rows = await ctx.prisma.organization.findMany({
@@ -519,6 +625,52 @@ export const organizationsRouter = createTrpcRouter({
                     objectId: membership.id,
                     changes: [],
                     description: `Removed owner status from user ${input.userId}`,
+                }),
+            ]);
+
+            await revalidateOrganizationUser(input.userId);
+
+            return { id: membership.id };
+        }),
+
+    /**
+     * Revoke one role from an existing member — the reciprocal of `grantMemberRole`, under the
+     * same `roleGrant` permission. Revoking a role the member doesn't hold is a no-op; revoking
+     * their only role is refused, since a membership always holds at least one (an admin
+     * removes the member instead).
+     */
+    revokeMemberRole: organizationProcedure()
+        .input(z.object({ userId: UserId.schema, role: grantableRoleSchema }))
+        .mutation(async ({ ctx, input }) => {
+            await ctx.hasPermission(ctx.organizationId, { roleGrant: [input.role] });
+
+            const membership = await requireActiveMembership(ctx, input.userId);
+            if (!OrganizationRole.includes(membership.role, input.role)) {
+                return { id: membership.id };
+            }
+
+            const remaining = membership.role
+                .split(",")
+                .filter((role) => role !== "" && role !== input.role);
+            if (remaining.length === 0) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `${OrganizationRole.displayNames[input.role]} is this member's only role, so it can't be revoked.`,
+                });
+            }
+            const role = remaining.join(",");
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: { id: membership.id },
+                    data: { role },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Revoked ${OrganizationRole.displayNames[input.role]} from user ${input.userId}`,
                 }),
             ]);
 

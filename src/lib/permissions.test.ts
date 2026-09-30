@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    grantableRoleSchema,
     hasAnyRoleWithPermissions,
     hasOwnerRole,
     Permissions,
@@ -245,5 +246,29 @@ describe("roleCovers", () => {
     it("does not reach across modules", () => {
         expect(roleCovers("skills-admin", "skills-author")).toBe(false);
         expect(roleCovers("i3-admin", "skills-reporter")).toBe(false);
+    });
+});
+
+describe("roleGrant", () => {
+    // The delegation rule: a role may hand out only a role it covers, so granting can never give
+    // away more than the granter holds. Full role editors (`member: ["update"]`) are exempt —
+    // they already assign any role through `setOrganizationMemberRole`.
+    it.each(roles)(
+        "%s grants only roles it covers, unless it can edit any member's roles",
+        (role) => {
+            if (can(role, { member: ["update"] })) return;
+            for (const granted of grantableRoleSchema.options) {
+                if (can(role, { roleGrant: [granted] }))
+                    expect(roleCovers(role, granted)).toBe(true);
+            }
+        },
+    );
+
+    it("lets skills-admin, admin and owner grant skills-assessor, and no one else", () => {
+        expect(roles.filter((role) => can(role, { roleGrant: ["skills-assessor"] }))).toEqual([
+            "owner",
+            "admin",
+            "skills-admin",
+        ]);
     });
 });

@@ -17,6 +17,32 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * users pages (`update-user.tsx`/`delete-user.tsx`), which read the member list via
  * `listMembers`.
  */
+/**
+ * A single-role grant/revoke (`grantMemberRole`/`revokeMemberRole`) changes the member's roles
+ * as `setOrganizationMemberRole` does, and also who can be picked as a session assessor.
+ */
+function memberRoleGrantEffects(vars: { organizationId: string; userId: string }) {
+    return [
+        invalidate(
+            trpc.organizations.listMembersForRoleGrant.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+        invalidate(
+            trpc.organizations.getMyRoles.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
+            trpc.skillCheckSessions.listEligibleAssessors.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+    ];
+}
+
 export const organizationsEffects = createEffects<"organizations">()({
     addOrganizationMember: (vars) => [
         invalidate(
@@ -31,6 +57,7 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
     ],
     createOrganization: () => [invalidate(trpc.organizations.listOrganizations.queryFilter())],
+    grantMemberRole: (vars) => memberRoleGrantEffects(vars),
     makeOwner: (vars) => [
         invalidate(
             trpc.organizations.getOrganizationAsAdmin.queryFilter({
@@ -67,6 +94,7 @@ export const organizationsEffects = createEffects<"organizations">()({
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
         ),
     ],
+    revokeMemberRole: (vars) => memberRoleGrantEffects(vars),
     setOrganizationMemberRole: (vars) => [
         invalidate(
             trpc.organizations.getOrganizationAsAdmin.queryFilter({

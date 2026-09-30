@@ -16,6 +16,12 @@ const statement = {
     member: ["view", "create", "update", "delete", "owner"],
     organization: ["view", "update", "delete"],
     person: ["view", "create", "update", "delete"],
+    // Granting and revoking one role on an existing member, independently of the rest of their
+    // role set — each action is the role it hands out. A role may only hold a `roleGrant` for a
+    // role it covers (`roleCovers`), so granting can never hand out more than the granter holds;
+    // `member: ["update"]` (the full role editor) is the one exception. Only the roles delegated
+    // so far are listed; add one here to let its module admin hand it out.
+    roleGrant: ["skills-assessor"],
     skillPackageSubscription: ["view", "subscribe"],
     skillCheck: ["view", "create", "delete"],
     skillCheckSession: ["view", "create", "update", "delete", "approve"],
@@ -36,6 +42,7 @@ export const Roles = {
         organization: ["view", "update", "delete"],
         person: ["view", "create", "update", "delete"],
         team: ["view", "create", "update", "delete"],
+        roleGrant: ["skills-assessor"],
         skillPackageSubscription: ["view"],
     }),
     // Admin: everything `member` can do, plus admin CRUD — but cannot delete the organization
@@ -48,6 +55,7 @@ export const Roles = {
         organization: ["view", "update"],
         person: ["view", "create", "update", "delete"],
         team: ["view", "create", "update", "delete"],
+        roleGrant: ["skills-assessor"],
         skillPackageSubscription: ["view"],
     }),
     member: ac.newRole({
@@ -94,6 +102,7 @@ export const Roles = {
         organization: ["view"],
         person: ["view"],
         team: ["view"],
+        roleGrant: ["skills-assessor"],
         skillPackageSubscription: ["view", "subscribe"],
         skillCheckSession: ["view", "create", "update", "delete", "approve"],
         skillCheck: ["view", "create", "delete"],
@@ -122,6 +131,11 @@ export type Permissions = {
 };
 
 export type Role = keyof typeof Roles;
+
+/** A role that can be granted on its own through `roleGrant` — see the statement above. */
+export const grantableRoleSchema = z.enum(statement.roleGrant);
+
+export type GrantableRole = z.infer<typeof grantableRoleSchema>;
 
 export const roles = Object.keys(Roles) as Role[];
 

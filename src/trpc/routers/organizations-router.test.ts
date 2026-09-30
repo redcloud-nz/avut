@@ -6,6 +6,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
+import type { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
@@ -1000,5 +1001,145 @@ describe("organizations.listOrganizations", () => {
         expect(empty.memberCount).toBe(0);
         expect(empty.ownerCount).toBe(0);
         expect(empty.enabledModules).toEqual([]);
+    });
+});
+
+describe("organizations.grantMemberRole / revokeMemberRole / listMembersForRoleGrant", () => {
+    // Dataset: a skills-admin (the granter), a plain member, a member whose only role is
+    // skills-assessor, a member already covered by skills-admin, and a Deleted account.
+    const T = {
+        granter: UserId.create(),
+        member: UserId.create(),
+        assessorOnly: UserId.create(),
+        covered: UserId.create(),
+        deleted: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    const grantPermissions: Permissions = {
+        organization: ["view"],
+        roleGrant: ["skills-assessor"],
+    };
+
+    function callerWith(permissions: Permissions) {
+        return organizationsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.granter }, permissions, prisma: db }),
+        );
+    }
+
+    async function storedRole(userId: UserId) {
+        const row = await db.organizationUser.findFirst({
+            where: { organizationId: T.org, userId },
+            select: { role: true },
+        });
+        return row?.role;
+    }
+
+    beforeEach(async () => {
+        await db.organizationUser.deleteMany({});
+        await db.user.deleteMany({});
+        await db.organization.deleteMany({});
+
+        const users: [UserId, string, "Active" | "Deleted", string][] = [
+            [T.granter, "Gina Granter", "Active", "skills-admin"],
+            [T.member, "Mo Member", "Active", "member"],
+            [T.assessorOnly, "Ash Assessor", "Active", "skills-assessor"],
+            [T.covered, "Cam Covered", "Active", "member,skills-admin"],
+            [T.deleted, "Dee Deleted", "Deleted", "member"],
+        ];
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "grant-org", createdAt: new Date() },
+        });
+        for (const [id, name, status, role] of users) {
+            await db.user.create({
+                data: { id, name, email: `${id}@x.test`, emailVerified: true, status },
+            });
+            await db.organizationUser.create({
+                data: { id: nanoId16(), organizationId: T.org, userId: id, role },
+            });
+        }
+    });
+
+    it("grants the role alongside the member's existing roles", async () => {
+        await callerWith(grantPermissions).grantMemberRole({
+            organizationId: T.org,
+            userId: T.member,
+            role: "skills-assessor",
+        });
+        expect(await storedRole(T.member)).toBe("member,skills-assessor");
+    });
+
+    it("revokes only that role", async () => {
+        await db.organizationUser.updateMany({
+            where: { userId: T.member },
+            data: { role: "member,skills-assessor" },
+        });
+        await callerWith(grantPermissions).revokeMemberRole({
+            organizationId: T.org,
+            userId: T.member,
+            role: "skills-assessor",
+        });
+        expect(await storedRole(T.member)).toBe("member");
+    });
+
+    it("refuses to revoke a member's only role", async () => {
+        await expect(
+            callerWith(grantPermissions).revokeMemberRole({
+                organizationId: T.org,
+                userId: T.assessorOnly,
+                role: "skills-assessor",
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        expect(await storedRole(T.assessorOnly)).toBe("skills-assessor");
+    });
+
+    it("refuses a caller without roleGrant for that role, even with member:view", async () => {
+        const caller = callerWith({ organization: ["view"], member: ["view"] });
+        await expect(
+            caller.grantMemberRole({
+                organizationId: T.org,
+                userId: T.member,
+                role: "skills-assessor",
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            caller.listMembersForRoleGrant({ organizationId: T.org, role: "skills-assessor" }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("doesn't reach a Deleted account", async () => {
+        await expect(
+            callerWith(grantPermissions).grantMemberRole({
+                organizationId: T.org,
+                userId: T.deleted,
+                role: "skills-assessor",
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("lists active members by name, with whether each holds or is covered for the role", async () => {
+        const rows = await callerWith(grantPermissions).listMembersForRoleGrant({
+            organizationId: T.org,
+            role: "skills-assessor",
+        });
+        expect(
+            rows.map(({ name, holdsRole, coveredBy, isOnlyRole }) => ({
+                name,
+                holdsRole,
+                coveredBy,
+                isOnlyRole,
+            })),
+        ).toEqual([
+            { name: "Ash Assessor", holdsRole: true, coveredBy: null, isOnlyRole: true },
+            { name: "Cam Covered", holdsRole: false, coveredBy: "skills-admin", isOnlyRole: false },
+            {
+                name: "Gina Granter",
+                holdsRole: false,
+                coveredBy: "skills-admin",
+                isOnlyRole: false,
+            },
+            { name: "Mo Member", holdsRole: false, coveredBy: null, isOnlyRole: false },
+        ]);
     });
 });
