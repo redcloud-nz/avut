@@ -7,40 +7,33 @@
 
 import { ReactNode } from "react";
 
-import { Saratoga } from "@/components/blocks/saratoga";
 import { RenderMarkdown } from "@/components/markdown/render";
-import { usePreferences } from "@/hooks/use-preferences";
+import { cn } from "@/lib/utils";
+
+import { NoteCard, noteTitleClassName } from "./note-card";
 
 interface NoteDetailProps {
     note: { title: string; content: string; updatedAt: string };
     /** Shown after the updated time, e.g. the author of an org note. Omit for personal notes. */
     byline?: ReactNode;
-    /** The Edit/Delete controls the caller is allowed to show. */
+    /** The controls the caller is allowed to show: the Edit button and the actions menu. */
     actions?: ReactNode;
 }
 
 /** A note in view mode: its title, when it was last updated, and its rendered markdown. */
 export function NoteDetail({ note, byline, actions }: NoteDetailProps) {
-    const { formatRelativeDateTime } = usePreferences();
-
     return (
-        <Saratoga.Root>
-            <Saratoga.Header className="items-start">
-                <div className="min-w-0">
-                    <Saratoga.Title>{note.title}</Saratoga.Title>
-                    <p className="text-xs text-muted-foreground">
-                        updated {formatRelativeDateTime(note.updatedAt)}
-                        {byline && <> · {byline}</>}
-                    </p>
-                </div>
-                {actions && <Saratoga.Actions>{actions}</Saratoga.Actions>}
-            </Saratoga.Header>
-
+        <NoteCard
+            note={note}
+            byline={byline}
+            actions={actions}
+            title={<h1 className={cn(noteTitleClassName, "border-transparent")}>{note.title}</h1>}
+        >
             {note.content.trim() === "" ? (
-                <p className="py-4 text-sm text-muted-foreground">This note is empty.</p>
+                <p className="markdown-content text-muted-foreground">This note is empty.</p>
             ) : (
-                <RenderMarkdown markdown={note.content} className="px-0! py-2!" />
+                <RenderMarkdown markdown={note.content} />
             )}
-        </Saratoga.Root>
+        </NoteCard>
     );
 }

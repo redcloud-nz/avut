@@ -5,13 +5,14 @@
 
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 
-import { Saratoga } from "@/components/blocks/saratoga";
 import { MarkdownEditor } from "@/components/markdown/editor";
 import { Button, MutationButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { NoteTitle } from "@/lib/schemas/note-fields";
+import { cn } from "@/lib/utils";
+
+import { NoteCard, noteTitleClassName } from "./note-card";
 
 export interface NoteEditorValues {
     title: string;
@@ -20,7 +21,9 @@ export interface NoteEditorValues {
 
 interface NoteEditorProps {
     /** The note as saved; the editor starts from it. */
-    note: NoteEditorValues;
+    note: NoteEditorValues & { updatedAt: string };
+    /** Shown after the updated time, as in view mode. */
+    byline?: ReactNode;
     /** Called with the fields that changed; not called when nothing did. */
     onSave: (changes: Partial<NoteEditorValues>) => void;
     onCancel: () => void;
@@ -29,11 +32,11 @@ interface NoteEditorProps {
 }
 
 /**
- * A note in edit mode: a title input above the markdown editor, with Save and Cancel. Saving is
- * explicit (no autosave). The editor holds its own draft, so remount it (e.g. with a `key`) to
- * start over from a different note.
+ * A note in edit mode: the same card as view mode, with the title and body made editable in
+ * place and Cancel/Save where the Edit controls were. Saving is explicit (no autosave). The editor
+ * holds its own draft, so remount it (e.g. with a `key`) to start over from a different note.
  */
-export function NoteEditor({ note, onSave, onCancel, status }: NoteEditorProps) {
+export function NoteEditor({ note, byline, onSave, onCancel, status }: NoteEditorProps) {
     const [title, setTitle] = useState(note.title);
     const [content, setContent] = useState(note.content);
     const [titleError, setTitleError] = useState<string | null>(null);
@@ -64,26 +67,31 @@ export function NoteEditor({ note, onSave, onCancel, status }: NoteEditorProps) 
     }
 
     return (
-        <Saratoga.Root className="h-full">
-            <form onSubmit={handleSubmit} className="flex h-full flex-col gap-2">
-                <Saratoga.Header className="items-start">
-                    <div className="min-w-0 flex-1">
-                        <Input
-                            aria-label="Title"
-                            aria-invalid={titleError !== null}
-                            value={title}
-                            onChange={(event) => setTitle(event.target.value)}
-                            maxLength={200}
-                            ref={titleRef}
-                            autoFocus
-                            className="text-base font-semibold md:text-base"
-                        />
-                        {titleError && (
-                            <p className="mt-1 text-xs text-destructive">{titleError}</p>
+        <form onSubmit={handleSubmit} className="h-full">
+            <NoteCard
+                note={note}
+                byline={
+                    titleError ? <span className="text-destructive">{titleError}</span> : byline
+                }
+                className="h-full"
+                title={
+                    <input
+                        aria-label="Title"
+                        aria-invalid={titleError !== null}
+                        value={title}
+                        onChange={(event) => setTitle(event.target.value)}
+                        maxLength={200}
+                        ref={titleRef}
+                        autoFocus
+                        className={cn(
+                            noteTitleClassName,
+                            "border-dashed border-input outline-none focus:border-ring aria-invalid:border-destructive",
                         )}
-                    </div>
-                    <Saratoga.Actions>
-                        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+                    />
+                }
+                actions={
+                    <>
+                        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
                             Cancel
                         </Button>
                         <MutationButton
@@ -92,16 +100,16 @@ export function NoteEditor({ note, onSave, onCancel, status }: NoteEditorProps) 
                             status={status}
                             text={{ idle: "Save", pending: "Saving", success: "Saved" }}
                         />
-                    </Saratoga.Actions>
-                </Saratoga.Header>
-
+                    </>
+                }
+            >
                 <MarkdownEditor
                     markdown={note.content}
                     onChange={setContent}
                     fill
-                    className="min-h-0 flex-1 rounded-lg border"
+                    className="min-h-0 flex-1"
                 />
-            </form>
-        </Saratoga.Root>
+            </NoteCard>
+        </form>
     );
 }

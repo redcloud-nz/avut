@@ -17,6 +17,7 @@ import { Hermes } from "@/components/blocks/hermes";
 import { describeError, ErrorDescriptions } from "@/components/errors/describe-error";
 import { ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { EntityActionMenu } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationNoteData, OrganizationNoteId } from "@/lib/schemas/organization-note";
@@ -94,6 +95,7 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     const editing = edit && canEdit;
+    const byline = note.authorId === null ? "Unknown author" : author?.name;
 
     function openEditor() {
         void setEdit(true, { history: "push" });
@@ -110,32 +112,45 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
     return (
         <>
             {editing ? (
-                <OrgNote_Editor note={note} onDone={closeEditor} />
+                <OrgNote_Editor note={note} byline={byline} onDone={closeEditor} />
             ) : (
                 <NoteDetail
                     note={note}
-                    byline={note.authorId === null ? "Unknown author" : author?.name}
+                    byline={byline}
                     actions={
-                        (canEdit || canDelete) && (
-                            <>
-                                {canEdit && (
-                                    <Button variant="outline" size="sm" onClick={openEditor}>
-                                        <ObjectIcons.Edit />
-                                        Edit
-                                    </Button>
-                                )}
-                                {canDelete && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        aria-label="Delete note"
-                                        onClick={() => handleDeleteOpenChange(true)}
-                                    >
-                                        <ObjectIcons.Delete />
-                                    </Button>
-                                )}
-                            </>
-                        )
+                        <>
+                            {canEdit && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Edit note"
+                                    onClick={openEditor}
+                                >
+                                    <ObjectIcons.Edit />
+                                </Button>
+                            )}
+                            <EntityActionMenu
+                                category="Notes"
+                                width="w-44"
+                                actions={[
+                                    {
+                                        verb: "update",
+                                        label: "Edit",
+                                        icon: <ObjectIcons.Edit />,
+                                        onSelect: openEditor,
+                                        disabled: !canEdit,
+                                    },
+                                    {
+                                        verb: "delete",
+                                        label: "Delete",
+                                        icon: <ObjectIcons.Delete />,
+                                        onSelect: () => handleDeleteOpenChange(true),
+                                        disabled: !canDelete,
+                                        destructive: true,
+                                    },
+                                ]}
+                            />
+                        </>
                     }
                 />
             )}
@@ -154,7 +169,15 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
  * Edit mode. Owns the update mutation, so both it and the draft start fresh each time the editor
  * opens.
  */
-function OrgNote_Editor({ note, onDone }: { note: OrganizationNoteData; onDone: () => void }) {
+function OrgNote_Editor({
+    note,
+    byline,
+    onDone,
+}: {
+    note: OrganizationNoteData;
+    byline: string | undefined;
+    onDone: () => void;
+}) {
     const organization = useOrganization();
 
     const mutation = useMutation(
@@ -173,6 +196,7 @@ function OrgNote_Editor({ note, onDone }: { note: OrganizationNoteData; onDone: 
     return (
         <NoteEditor
             note={note}
+            byline={byline}
             status={mutation.status}
             onCancel={onDone}
             onSave={(changes) =>
