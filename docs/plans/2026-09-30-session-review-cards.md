@@ -139,7 +139,7 @@ The review page shows **summaries and what needs attention**, not just one long 
 
 ### Task 4: checks list with details, one layout for every width (`visual`)
 
-- [ ] Not started
+- [x] feat(skill-track): replace the session review table with a per-assessee checks list
 
 **Files:** `src/components/skill-track/session-review-content.tsx`.
 

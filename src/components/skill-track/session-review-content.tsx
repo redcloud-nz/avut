@@ -508,12 +508,16 @@ function AssesseeChecks({
                             disabled={disabled}
                             onCheckedChange={() => toggleGroup(toggleable.map((check) => check.id))}
                         />
-                        <Label htmlFor={selectAllId} className="text-base leading-snug">
+                        {/* The name is a heading first: it shouldn't dim with a read-only select-all. */}
+                        <Label
+                            htmlFor={selectAllId}
+                            className="text-base leading-snug peer-disabled:cursor-default peer-disabled:opacity-100"
+                        >
                             {assessee.name}
                         </Label>
                     </>
                 ) : (
-                    <span className="font-medium">{assessee.name}</span>
+                    <span className="text-base leading-snug font-medium">{assessee.name}</span>
                 )}
             </div>
             <ul className="flex flex-col gap-3">
