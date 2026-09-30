@@ -9,6 +9,9 @@ export const Messages = {
 
     d4HAccessTokenNotFound: (tokenId: string) => `D4H Access Token(id=${tokenId}) not found.`,
 
+    d4HAccessTokenRejected: (status: number) =>
+        `D4H rejected the access token (HTTP ${status}). Check the token and server, then try again.`,
+
     formInstanceNotFound: (formInstanceId: string) =>
         `FormInstance(id=${formInstanceId}) not found.`,
 

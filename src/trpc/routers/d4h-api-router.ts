@@ -204,7 +204,7 @@ export const d4hApiRouter = createTrpcRouter({
             const items = (
                 await Promise.all(
                     d4HTeams.map(async (team) => {
-                        const { data } = await fetchClient.GET(
+                        const { data, error } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/equipment",
                             {
                                 params: {
@@ -219,6 +219,11 @@ export const d4hApiRouter = createTrpcRouter({
                                 },
                             },
                         );
+
+                        if (error)
+                            throw new Error(`Failed to fetch equipment items for team ${team.id}`, {
+                                cause: error,
+                            });
 
                         return (data as D4HListResponse).results.map((raw) => {
                             const item = D4HEquipmentItem.schema.parse(raw);
@@ -243,7 +248,7 @@ export const d4hApiRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = accessToken.metadata;
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
 
             const kinds = (
                 await Promise.all(

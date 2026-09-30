@@ -48,6 +48,24 @@ function credentialData({
     };
 }
 
+/** Stored metadata that isn't empty, so a test can tell "kept" from "overwritten with empty lists". */
+const storedMetadata = {
+    provider: "D4H",
+    serverCode: "us",
+    d4HTeams: [
+        {
+            id: 7,
+            title: "Stored Team",
+            resourceType: "Team",
+            permissions: { Equipment: { CREATE: true } },
+        },
+    ],
+    d4HOrganisations: [],
+};
+
+/** What `validateD4HCredential` returns for a token D4H refuses. */
+const rejected = { ok: false, status: 401, statusText: "Unauthorized" } as const;
+
 // d4h-access-tokens-router reaches @/server/auth at import time via ../init. It also imports
 // @/server/d4h-api/client and @/server/d4h-access-token, both of which pull in next/cache and
 // are not exercised by these tests (they cover the audit-log redaction, not live D4H calls or
@@ -146,6 +164,23 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
         const stored = await db.providerCredential.findUniqueOrThrow({ where: { id: tokenId } });
         expect(stored.token).not.toBe("super-secret-d4h-key");
     });
+
+    it("rejects a token D4H refuses, saving and logging nothing", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce(rejected);
+        const tokenId = ProviderCredentialId.create();
+        const logCountBefore = await db.logEntry.count({ where: { organizationId: T.org } });
+
+        await expect(
+            makeCaller().createOrganizationAccessToken({
+                organizationId: T.org,
+                tokenId,
+                create: { serverCode: "us" as D4HServerCode, label: "Bad", token: "bad-key" },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringContaining("401") });
+
+        expect(await db.providerCredential.findUnique({ where: { id: tokenId } })).toBeNull();
+        expect(await db.logEntry.count({ where: { organizationId: T.org } })).toBe(logCountBefore);
+    });
 });
 
 describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
@@ -219,6 +254,23 @@ describe("d4hAccessTokensRouter.createPersonalAccessToken", () => {
 
         expect(validateD4HCredential).not.toHaveBeenCalled();
         expect(await db.providerCredential.findUnique({ where: { id: tokenId } })).toBeNull();
+    });
+
+    it("rejects a token D4H refuses, saving and logging nothing", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce(rejected);
+        const tokenId = ProviderCredentialId.create();
+        const logCountBefore = await db.logEntry.count({ where: { organizationId: T.org } });
+
+        await expect(
+            makeCaller(nanoId16()).createPersonalAccessToken({
+                organizationId: T.org,
+                tokenId,
+                create: { serverCode: "us" as D4HServerCode, token: "bad-key" },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringContaining("401") });
+
+        expect(await db.providerCredential.findUnique({ where: { id: tokenId } })).toBeNull();
+        expect(await db.logEntry.count({ where: { organizationId: T.org } })).toBe(logCountBefore);
     });
 });
 
@@ -363,6 +415,8 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
         otherUser: nanoId16(),
         otherUsersToken: ProviderCredentialId.create(),
         personalToken: ProviderCredentialId.create(),
+        userWithRejectedToken: nanoId16(),
+        rejectedToken: ProviderCredentialId.create(),
     };
 
     const refreshedMetadata: D4HAccessTokenMetadata = {
@@ -395,6 +449,16 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
                 organizationId: T.org,
                 userId: T.otherUser,
             }),
+        });
+        await db.providerCredential.create({
+            data: {
+                ...credentialData({
+                    id: T.rejectedToken,
+                    organizationId: T.org,
+                    userId: T.userWithRejectedToken,
+                }),
+                metadata: storedMetadata,
+            },
         });
     });
 
@@ -461,6 +525,21 @@ describe("d4hAccessTokensRouter.refreshPersonalAccessToken", () => {
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
         expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.personalToken);
     });
+
+    it("records a rejected token's status but keeps its metadata", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce(rejected);
+
+        await makeCaller(T.userWithRejectedToken).refreshPersonalAccessToken({
+            organizationId: T.org,
+            tokenId: T.rejectedToken,
+        });
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.rejectedToken },
+        });
+        expect(stored.status).toBe("Unauthorized");
+        expect(stored.metadata).toEqual(storedMetadata);
+    });
 });
 
 describe("d4hAccessTokensRouter.refreshToken", () => {
@@ -468,6 +547,7 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         org: OrganizationId.create(),
         user: nanoId16(),
         orgToken: ProviderCredentialId.create(),
+        rejectedToken: ProviderCredentialId.create(),
         member: nanoId16(),
         personalToken: ProviderCredentialId.create(),
     };
@@ -480,6 +560,12 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         });
         await db.providerCredential.create({
             data: credentialData({ id: T.orgToken, organizationId: T.org, userId: null }),
+        });
+        await db.providerCredential.create({
+            data: {
+                ...credentialData({ id: T.rejectedToken, organizationId: T.org, userId: null }),
+                metadata: storedMetadata,
+            },
         });
         await db.providerCredential.create({
             data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.member }),
@@ -501,6 +587,24 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
 
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.orgToken);
         expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.orgToken);
+    });
+
+    it("records a rejected token's status but keeps its metadata", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce(rejected);
+
+        await makeCaller().refreshToken({ organizationId: T.org, tokenId: T.rejectedToken });
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.rejectedToken },
+        });
+        expect(stored.status).toBe("Unauthorized");
+        expect(stored.metadata).toEqual(storedMetadata);
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.rejectedToken } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].changes).toEqual([
+            { type: "obj_mod", path: ["status"], prev: "OK", curr: "Unauthorized" },
+        ]);
     });
 
     it("refuses to refresh a member's personal token", async () => {

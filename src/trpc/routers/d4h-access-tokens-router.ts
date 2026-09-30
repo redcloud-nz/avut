@@ -37,9 +37,10 @@ import {
 import { Messages } from "../messages";
 
 /**
- * Re-validate a stored D4H credential against D4H, then save its new status and metadata and log
- * the change. Shared by `refreshToken` (org tokens) and `refreshPersonalAccessToken`. Cache
- * revalidation is left to the caller, since which caches apply depends on the kind of token.
+ * Re-validate a stored D4H credential against D4H, then save its new status (and, if D4H accepted
+ * it, its new metadata) and log the change. Shared by `refreshToken` (org tokens) and
+ * `refreshPersonalAccessToken`. Cache revalidation is left to the caller, since which caches apply
+ * depends on the kind of token.
  */
 async function refreshD4HCredential(
     ctx: AuthenticatedOrganizationContext,
@@ -49,18 +50,16 @@ async function refreshD4HCredential(
 
     const validation = await validateD4HCredential(token);
 
-    const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
-        d4HTeams: [],
-        d4HOrganisations: [],
-    };
+    // On a failed whoami, record the new status but keep the last known metadata, rather than
+    // overwriting it with empty lists.
+    const metadata = validation.metadata
+        ? { provider: "D4H", serverCode: token.serverCode, ...validation.metadata }
+        : undefined;
 
     await ctx.prisma.$transaction([
         ctx.prisma.providerCredential.update({
             where: { id: record.id },
-            data: {
-                metadata: { provider: "D4H", serverCode: token.serverCode, ...metadata },
-                status: validation.statusText,
-            },
+            data: { metadata, status: validation.statusText },
         }),
         ctx.logEvent({
             action: "Update",
@@ -103,8 +102,14 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
-            // Check the token and fetch metadata
+            // Check the token and fetch metadata. A token D4H rejects is never saved.
             const validation = await validateD4HCredential(token);
+            if (!validation.ok) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: Messages.d4HAccessTokenRejected(validation.status),
+                });
+            }
 
             const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
                 d4HTeams: [],
@@ -179,8 +184,14 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
-            // Check the token and fetch metadata
+            // Check the token and fetch metadata. A token D4H rejects is never saved.
             const validation = await validateD4HCredential(token);
+            if (!validation.ok) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: Messages.d4HAccessTokenRejected(validation.status),
+                });
+            }
 
             const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
                 d4HTeams: [],

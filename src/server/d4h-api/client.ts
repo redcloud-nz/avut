@@ -190,7 +190,7 @@ export async function getD4HTeamMembers(
 
     const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
-    const { data } = await fetchClient.GET("/v3/{context}/{contextId}/members", {
+    const { data, response } = await fetchClient.GET("/v3/{context}/{contextId}/members", {
         params: {
             path: {
                 context: "team",
@@ -201,6 +201,11 @@ export async function getD4HTeamMembers(
             },
         },
     });
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch members of D4H team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+        );
+    }
     return z.object({ results: D4HMember.schema.array() }).parse(data).results;
 }
 
