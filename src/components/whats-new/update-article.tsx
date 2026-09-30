@@ -39,11 +39,21 @@ interface UpdateArticleProps {
     entry: UpdateEntryData;
     /** The title's heading level: `h2` on `/docs/updates` (under its `h1`), `h3` where it nests deeper. */
     headingLevel?: "h2" | "h3";
+    /**
+     * Open the title's link to the entry on `/docs/updates` in a new tab. The in-app dialog sets
+     * this: that page sits outside the app shell, so following it in place would leave the app.
+     */
+    linkInNewTab?: boolean;
     className?: string;
 }
 
 /** One update entry: an anchored title, its date and version, and the MDX body. */
-export function UpdateArticle({ entry, headingLevel = "h2", className }: UpdateArticleProps) {
+export function UpdateArticle({
+    entry,
+    headingLevel = "h2",
+    linkInNewTab = false,
+    className,
+}: UpdateArticleProps) {
     const Heading = headingLevel;
 
     return (
@@ -55,7 +65,11 @@ export function UpdateArticle({ entry, headingLevel = "h2", className }: UpdateA
                         headingLevel === "h2" ? "text-2xl" : "text-xl",
                     )}
                 >
-                    <Link href={updatesHref(entry.slug)} className="hover:underline">
+                    <Link
+                        href={updatesHref(entry.slug)}
+                        className="hover:underline"
+                        {...(linkInNewTab && { target: "_blank", rel: "noopener noreferrer" })}
+                    >
                         {entry.title}
                     </Link>
                 </Heading>
