@@ -269,7 +269,7 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 
 ### Task 6: Conflict count on the session page `visual`
 
-- [ ] (commit subject goes here once done)
+- [x] feat(skill-track): show unresolved conflicts on the session's Contents card
 
 **Files:**
 

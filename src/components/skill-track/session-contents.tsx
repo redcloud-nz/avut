@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, TriangleAlertIcon } from "lucide-react";
 import Link from "next/link";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -15,10 +15,18 @@ import {
     type SessionConfigAction,
 } from "@/components/skill-track/session-config-dialogs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemMedia,
+    ItemTitle,
+} from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { findConflicts } from "@/lib/skill-check-conflicts";
 import { trpc } from "@/trpc/client";
 
 export function SkillsModule_Session_Contents_Card({
@@ -54,6 +62,9 @@ export function SkillsModule_Session_Contents_Card({
 
     // An approved session's config is locked until it's reopened.
     const isApproved = session.status === "Include";
+
+    // Conflicts only need attention before approval; once approved, each one has been resolved.
+    const conflictCount = isApproved ? 0 : findConflicts(skillChecks).length;
 
     return (
         <Card>
@@ -93,6 +104,33 @@ export function SkillsModule_Session_Contents_Card({
                         </ItemActions>
                     </Link>
                 </Item>
+                {conflictCount > 0 && (
+                    <Item size="sm" asChild>
+                        <Link
+                            href={route("/orgs/[slug]/skill-track/sessions/[session_id]/review", {
+                                slug: organization.slug,
+                                session_id: sessionId,
+                            })}
+                        >
+                            <ItemMedia
+                                variant="icon"
+                                className="text-amber-600 dark:text-amber-400"
+                            >
+                                <TriangleAlertIcon />
+                            </ItemMedia>
+                            <ItemContent>
+                                <ItemTitle>
+                                    {conflictCount} unresolved{" "}
+                                    {conflictCount === 1 ? "conflict" : "conflicts"}
+                                </ItemTitle>
+                                <ItemDescription>resolve before approving</ItemDescription>
+                            </ItemContent>
+                            <ItemActions>
+                                <ChevronRightIcon className="size-4" />
+                            </ItemActions>
+                        </Link>
+                    </Item>
+                )}
             </CardContent>
         </Card>
     );
