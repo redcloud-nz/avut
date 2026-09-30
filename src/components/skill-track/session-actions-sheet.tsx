@@ -19,6 +19,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useId, useRef, useState } from "react";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
+
 import { Protect } from "@/components/protect";
 import {
     SessionConfigAction,
@@ -41,6 +43,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { trpc } from "@/trpc/client";
 
 type SessionEntryMode = "by-person" | "by-skill";
 
@@ -80,6 +83,9 @@ const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] 
  * as a sibling of the sheet (anything inside `SheetContent` unmounts when the sheet closes).
  * The item that opened the dialog is gone by then, so the dialogs return focus to the Actions
  * button on close.
+ *
+ * The Configure items are disabled while the session is approved: its config is locked until it's
+ * reopened.
  */
 export function SkillTrack_SessionActionsSheet({
     sessionId,
@@ -92,6 +98,13 @@ export function SkillTrack_SessionActionsSheet({
 }) {
     const organization = useOrganization();
     const { open: openConfigDialog } = useSessionConfigAction();
+    const { data: session } = useSuspenseQuery(
+        trpc.skillCheckSessions.getSession.queryOptions({
+            organizationId: organization.id,
+            skillCheckSessionId: sessionId,
+        }),
+    );
+    const isApproved = session.status === "Include";
 
     const [sheetOpen, setSheetOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -169,7 +182,7 @@ export function SkillTrack_SessionActionsSheet({
                                             >
                                                 <button
                                                     type="button"
-                                                    disabled={!hasPermission}
+                                                    disabled={!hasPermission || isApproved}
                                                     onClick={() => handleConfigure(action)}
                                                 >
                                                     <ItemMedia variant="icon">

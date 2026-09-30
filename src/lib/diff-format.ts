@@ -287,6 +287,7 @@ const actionPastTense: Partial<Record<string, string>> = {
     Publish: "Published",
     Purge: "Purged",
     Recover: "Recovered",
+    Reopen: "Reopened",
     Restore: "Restored",
     Revoke: "Revoked",
     Subscribe: "Subscribed",

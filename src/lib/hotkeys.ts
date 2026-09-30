@@ -40,6 +40,8 @@ export const ActionHotkey = {
     // W for oWner — O is already `recover`.
     "make-owner": "Alt+W",
     "remove-owner": "Alt+W",
+    // K for unlocK — R is `restore` and O is `recover`. Reopens an approved session.
+    reopen: "Alt+K",
 } as const satisfies Record<string, string>;
 
 export type ActionVerb = keyof typeof ActionHotkey;

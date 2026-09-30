@@ -76,6 +76,9 @@ export type LogScope = (typeof logScopeValues)[number];
  * `Restore` and `Recover` distinguish the two soft-delete return paths: `Restore`
  * is Archived → Active, `Recover` is Deleted (trash) → Active. `Purge` is the permanent removal
  * of a Deleted record from the Rubbish bin, by hand or by the daily auto-purge.
+ *
+ * `Reopen` undoes an `Approve`: an approved skill check session goes back to Draft so its checks
+ * can be changed and approved again.
  */
 const logActionValues = [
     "Approve",
@@ -88,6 +91,7 @@ const logActionValues = [
     "Publish",
     "Purge",
     "Recover",
+    "Reopen",
     "Restore",
     "Revoke",
     "Subscribe",

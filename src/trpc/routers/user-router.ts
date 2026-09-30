@@ -295,6 +295,7 @@ export const userRouter = createTrpcRouter({
                 where: {
                     organizationId: { in: organizationIds },
                     createdAt: { gte: since },
+                    status: { not: "Deleted" },
                 },
                 _count: true,
             });

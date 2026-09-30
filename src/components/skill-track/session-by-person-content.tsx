@@ -113,6 +113,9 @@ export function SkillTrack_SessionByPerson_Content({
     // Recording also needs `skillCheck: ["create"]` (see `setSessionSkillCheck` and
     // `deleteSessionSkillCheck`), which a caller holding only session update lacks.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
+    // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
+    // its checks read-only and the record dialog is closed.
+    const isApproved = session.status === "Include";
 
     type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
     const [selected, setSelected] = useState<Selected>(null);
@@ -142,6 +145,12 @@ export function SkillTrack_SessionByPerson_Content({
             !sessionSkills.some((skill) => skill.id === target.skillId))
     ) {
         setTarget(null);
+        setDialogOpen(false);
+    }
+
+    // Close the dialog when the session is approved under it (during render, like the resets
+    // above), so a later reopen doesn't pop it back up.
+    if (isApproved && dialogOpen) {
         setDialogOpen(false);
     }
 
@@ -271,6 +280,15 @@ export function SkillTrack_SessionByPerson_Content({
                                 )
                             }
                         >
+                            <Show when={isApproved}>
+                                <Alert>
+                                    <AlertTitle>Approved</AlertTitle>
+                                    <AlertDescription>
+                                        This session is approved. Reopen it to record or change
+                                        checks.
+                                    </AlertDescription>
+                                </Alert>
+                            </Show>
                             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
                                 <div>
                                     <FieldGroup className="block lg:hidden">
@@ -381,6 +399,7 @@ export function SkillTrack_SessionByPerson_Content({
                                                     onOpenDialog={() =>
                                                         openDialog(personId, skill.id)
                                                     }
+                                                    disabled={isApproved}
                                                 />
                                             );
 

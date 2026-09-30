@@ -263,6 +263,10 @@ describe("actionPastTenseLabel", () => {
         expect(actionPastTenseLabel("Unpublish")).toBe("Unpublished");
     });
 
+    it("puts Reopen in the past tense", () => {
+        expect(actionPastTenseLabel("Reopen")).toBe("Reopened");
+    });
+
     it("returns an unknown action unchanged", () => {
         expect(actionPastTenseLabel("Frobnicate")).toBe("Frobnicate");
         expect(actionPastTenseLabel("constructor")).toBe("constructor");

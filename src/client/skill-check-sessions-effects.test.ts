@@ -11,7 +11,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
-import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillCheckSessionId, type SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 import type { MutationEffect } from "@/trpc/mutation-effector";
 
@@ -44,6 +44,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             notes,
             status: "Draft",
             createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
         };
     }
 
@@ -169,5 +170,123 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
 
         expect(matched).toHaveLength(3);
         expect(matched).toEqual(expect.arrayContaining([sessionKey, orgKey, recentKey]));
+    });
+});
+
+describe("skillCheckSessionsEffects (session status changes)", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        session: SkillCheckSessionId.create(),
+        otherSession: SkillCheckSessionId.create(),
+    };
+
+    const updated: SkillCheckSession = {
+        id: T.session,
+        organizationId: T.org,
+        sessionNumber: 1,
+        name: "Session 1",
+        date: new Date(0).toISOString(),
+        notes: "",
+        status: "Draft",
+        createdAt: new Date(0).toISOString(),
+        updatedAt: new Date(0).toISOString(),
+    };
+
+    /** Seeds one query per key and returns the keys each effect's invalidations match. */
+    function invalidatedKeys(effects: MutationEffect[]) {
+        const queryClient = new QueryClient();
+        const keys = {
+            sessionChecks: trpc.skillChecks.listSkillChecks.queryKey({
+                organizationId: T.org,
+                sessionId: T.session,
+            }),
+            ownSessionChecks: trpc.skillChecks.listSkillChecks.queryKey({
+                organizationId: T.org,
+                sessionId: T.session,
+                ownChecksOnly: true,
+            }),
+            otherSessionChecks: trpc.skillChecks.listSkillChecks.queryKey({
+                organizationId: T.org,
+                sessionId: T.otherSession,
+            }),
+            sessions: trpc.skillCheckSessions.listSessions.queryKey({ organizationId: T.org }),
+            matrix: trpc.skillChecks.getCompetencyMatrix.queryKey({ organizationId: T.org }),
+            otherOrgSessions: trpc.skillCheckSessions.listSessions.queryKey({
+                organizationId: T.otherOrg,
+            }),
+            otherOrgMatrix: trpc.skillChecks.getCompetencyMatrix.queryKey({
+                organizationId: T.otherOrg,
+            }),
+        };
+        for (const key of Object.values(keys)) queryClient.setQueryData(key, []);
+
+        const matched = effects
+            .filter((e) => e.type === "invalidate")
+            .flatMap((e) => queryClient.getQueryCache().findAll(e.filter))
+            .map((query) => query.queryKey);
+        return Object.entries(keys)
+            .filter(([, key]) => matched.some((m) => JSON.stringify(m) === JSON.stringify(key)))
+            .map(([name]) => name)
+            .sort();
+    }
+
+    /** Applies the `getSession` write in `effects` to `old`. */
+    function applyGetSessionWrite(effects: MutationEffect[], old: unknown) {
+        const writes = effects.filter((e) => e.type === "write");
+        expect(writes).toHaveLength(1);
+        const [effect] = writes;
+        expect(effect.queryKey).toEqual(
+            trpc.skillCheckSessions.getSession.queryKey({
+                organizationId: T.org,
+                skillCheckSessionId: T.session,
+            }),
+        );
+        return typeof effect.data === "function" ? effect.data(old) : effect.data;
+    }
+
+    const expectedInvalidations = ["matrix", "ownSessionChecks", "sessionChecks", "sessions"];
+
+    describe("reopenSession", () => {
+        const effects = skillCheckSessionsEffects.reopenSession(
+            { organizationId: T.org, skillCheckSessionId: T.session },
+            { updated },
+        );
+
+        it("merges the reopened session into getSession, keeping its assessors", () => {
+            const assessors = [{ id: PersonId.create(), name: "Assessor" }];
+            const old = { ...updated, status: "Include" as const, assessors };
+
+            expect(applyGetSessionWrite(effects, old)).toEqual({ ...updated, assessors });
+            expect(applyGetSessionWrite(effects, undefined)).toBeUndefined();
+        });
+
+        it("invalidates the session's check lists, the sessions list and the competency matrix", () => {
+            expect(invalidatedKeys(effects)).toEqual(expectedInvalidations);
+        });
+    });
+
+    describe("approveSession", () => {
+        it("invalidates the session's check lists, the sessions list and the competency matrix", () => {
+            const effects = skillCheckSessionsEffects.approveSession(
+                { organizationId: T.org, sessionId: T.session, includedCheckIds: [] },
+                { updated: { ...updated, status: "Include" } },
+            );
+
+            expect(invalidatedKeys(effects)).toEqual(expectedInvalidations);
+        });
+    });
+
+    describe("updateCheckExclusions", () => {
+        it("invalidates only the session's check lists, including the own-checks list", () => {
+            const effects = skillCheckSessionsEffects.updateCheckExclusions({
+                organizationId: T.org,
+                sessionId: T.session,
+                changes: [],
+            });
+
+            expect(effects.filter((e) => e.type === "write")).toHaveLength(0);
+            expect(invalidatedKeys(effects)).toEqual(["ownSessionChecks", "sessionChecks"]);
+        });
     });
 });

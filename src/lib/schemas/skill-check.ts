@@ -53,14 +53,16 @@ export const SkillCheck = {
         skillId: SkillId.schema,
         result: SkillCheckResultValue.schema,
         notes: z.string(),
-        status: z.enum(["Draft", "Include", "Exclude"]),
+        status: z.enum(["Draft", "Pending", "Include", "Exclude", "Deleted"]),
         createdAt: z.iso.datetime(),
+        updatedAt: z.iso.datetime(),
     }),
 
     fromRecord: (record: SkillCheckRecord) =>
         SkillCheck.schema.parse({
             ...record,
             createdAt: record.createdAt.toISOString(),
+            updatedAt: record.updatedAt.toISOString(),
         }),
 } as const;
 
@@ -79,8 +81,10 @@ export function assessorDisplayName(check: {
 
 export const SKILL_CHECK_STATUS_LABELS: Record<string, string> = {
     Draft: "Draft",
+    Pending: "Pending review",
     Include: "Approved",
     Exclude: "Excluded",
+    Deleted: "Deleted",
 };
 
 /** One selectable result value with the org's label for it. */
