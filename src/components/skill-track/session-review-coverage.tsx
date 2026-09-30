@@ -136,7 +136,7 @@ function CoverageCard<Id extends string>({
                                 : `${withChecks} of ${allCount} (${withChecksPercent}%) ${withChecks === 1 ? "has" : "have"} checks recorded.`}
                         </p>
                         <p>
-                            Average {meanCovered.toFixed(1)} checks ({meanPercent}% coverage)
+                            Average {meanCovered.toFixed(1)} {coverageOf} ({meanPercent}% coverage)
                         </p>
                     </CardDescription>
                     <SkillTrack_SessionReview_CardToggle title={title} />
