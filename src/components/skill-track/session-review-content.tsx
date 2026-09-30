@@ -137,12 +137,16 @@ export function SkillTrack_SessionReview_Content({
 
     // Showing this page's own approval before its stamped checks arrive. The approve mutation's
     // cache effects run before the dialog hears it succeeded: they write `getSession` as `Include`
-    // and then await the `listSkillChecks` refetch. So from submit until the mutation settles
-    // (`approving`), and after that until checks fetched since the submit (`approvedAt`) are in,
-    // show `selected` (what was just approved) rather than the pre-approval statuses, which would
-    // read as all unticked. Any other time, an approved session shows its stored statuses,
-    // background refetches included. A failed approval clears both: on a conflict the refetch
-    // brings in someone else's approval, which should show as stored.
+    // and then await the `listSkillChecks` refetch. So from submit until checks fetched since the
+    // submit (`approvedAt`) are in, show `selected` (what was just approved) rather than the
+    // pre-approval statuses, which would read as all unticked. The stamped checks switch straight
+    // to stored statuses, without waiting for the mutation to settle: they reset the conflict
+    // picks in `selected`, so holding `selected` until then would flash the radios empty. (A
+    // background fetch that lands between submit and commit could end the wait early; the
+    // effector's invalidate cancels in-flight fetches, so that window is negligible.) Any other
+    // time, an approved session shows its stored statuses, background refetches included. A
+    // failed approval clears the stamp: on a conflict the refetch brings in someone else's
+    // approval, which should show as stored. `approving` only keeps the dialog open.
     const [approving, setApproving] = useState(false);
     const [approvedAt, setApprovedAt] = useState<number | null>(null);
     function handleApproving(submittedAt: number) {
@@ -161,8 +165,7 @@ export function SkillTrack_SessionReview_Content({
         setPrevIsApproved(isApproved);
         if (!isApproved) setApprovedAt(null);
     }
-    const awaitingStampedChecks =
-        approving || (approvedAt !== null && checksUpdatedAt < approvedAt);
+    const awaitingStampedChecks = approvedAt !== null && checksUpdatedAt < approvedAt;
     const showApproval = isApproved && !awaitingStampedChecks;
 
     // One `?action=` owner for both dialogs on this page: two literal parsers would each read the
