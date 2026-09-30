@@ -47,7 +47,10 @@ function compareNotes(sort: SortKey) {
             case "created":
                 return b.createdAt.localeCompare(a.createdAt);
             case "title":
-                return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+                return a.title.localeCompare(b.title, undefined, {
+                    numeric: true,
+                    sensitivity: "base",
+                });
         }
     };
 }
