@@ -12,7 +12,7 @@ import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import type { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { findConflicts } from "@/lib/skill-check-conflicts";
+import { findConflicts, isCheckIncluded } from "@/lib/skill-check-conflicts";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
@@ -155,37 +155,49 @@ export function assertSessionCheckTarget(
 }
 
 /**
- * Ensure an approval includes at most one check per assessee and skill. Only the session's live
- * checks among `includedCheckIds` count: ids from another session, and `Deleted` checks, are
- * ignored, just as approval's stamping ignores them.
- * @throws ValidationError if more than one included check shares an assessee and skill.
+ * Check an approval against the session's saved state, and count what it approves. The review
+ * page saves each exclusion as it's made, so an approval takes the session as saved: every live
+ * check that isn't `Exclude` is included. `includedCheckIds` is the approver's confirmation of that
+ * set, as the page showed it. If a check was recorded, deleted, excluded or re-included since, the
+ * two differ and the approval is refused, so what's approved is what the approver saw.
+ *
+ * This reads outside the approval's transaction, which is why `approveSession` stamps by
+ * `includedCheckIds` rather than by status: a check that changes between here and the commit
+ * stays out of an approval nobody confirmed.
+ * @returns How many live checks the approval includes, and how many it excludes.
+ * @throws ConflictError if `includedCheckIds` isn't exactly the session's live non-`Exclude` checks.
+ * @throws ValidationError if more than one included check shares an assessee and skill, i.e. a
+ * conflict is unresolved.
  */
-export async function assertOneIncludedCheckPerPair(
+export async function assertApprovalMatchesSavedState(
     ctx: OrgServiceContext,
     sessionId: SkillCheckSessionId,
     includedCheckIds: SkillCheckId[],
-): Promise<void> {
-    if (includedCheckIds.length < 2) return;
-
+): Promise<{ includedCount: number; excludedCount: number }> {
     const checks = await ctx.prisma.skillCheck.findMany({
-        where: {
-            organizationId: ctx.organizationId,
-            sessionId,
-            id: { in: includedCheckIds },
-            status: { not: "Deleted" },
-        },
+        where: { organizationId: ctx.organizationId, sessionId, status: { not: "Deleted" } },
         select: { id: true, assesseeId: true, skillId: true, status: true },
     });
+    const included = checks.filter(isCheckIncluded);
 
-    const conflicts = findConflicts(checks);
-    if (conflicts.length === 0) return;
+    const confirmed = new Set<string>(includedCheckIds);
+    if (confirmed.size !== included.length || included.some(({ id }) => !confirmed.has(id))) {
+        throw new ConflictError(
+            `The session's checks changed since you opened this. Review them and approve again.`,
+        );
+    }
 
-    const [first] = conflicts;
-    throw new ValidationError(
-        `Approval includes more than one check for ${conflicts.length} assessee and skill ` +
-            `pair(s) in SkillCheckSession(id=${sessionId}); e.g. Person(id=${first.assesseeId}) ` +
-            `and Skill(id=${first.skillId}): checks ${first.checks.map(({ id }) => id).join(", ")}.`,
-    );
+    const conflicts = findConflicts(included);
+    if (conflicts.length > 0) {
+        const [first] = conflicts;
+        throw new ValidationError(
+            `Approval includes more than one check for ${conflicts.length} assessee and skill ` +
+                `pair(s) in SkillCheckSession(id=${sessionId}); e.g. Person(id=${first.assesseeId}) ` +
+                `and Skill(id=${first.skillId}): checks ${first.checks.map(({ id }) => id).join(", ")}.`,
+        );
+    }
+
+    return { includedCount: included.length, excludedCount: checks.length - included.length };
 }
 
 /** One check's exclusion decision, as `updateCheckExclusions` takes it. */

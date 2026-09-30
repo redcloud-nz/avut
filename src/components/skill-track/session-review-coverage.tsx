@@ -33,6 +33,7 @@ import {
     SkillCheck,
     SkillCheckId,
 } from "@/lib/schemas/skill-check";
+import { isCheckIncluded } from "@/lib/skill-check-conflicts";
 import { Coverage } from "@/lib/skill-check-coverage";
 
 interface SessionReviewCoverageProps {
@@ -49,14 +50,15 @@ interface SessionReviewCoverageProps {
     assesseeById: Map<PersonId, PersonRef>;
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
-    selected: ReadonlySet<SkillCheckId>;
     /** The checks in a conflict group: their pick is made in the Conflicts card, so here they only show it. */
     conflictCheckIds: ReadonlySet<SkillCheckId>;
-    /** True while the session is approved, or the viewer can't approve: the checkboxes are read-only. */
+    /**
+     * True while the session is approved, the viewer can't approve, or a save is in flight: the
+     * checkboxes are read-only.
+     */
     disabled: boolean;
-    /** Show the approval itself (`Include` checks) rather than the local selection. */
-    showApproval: boolean;
-    toggleCheck(id: SkillCheckId): void;
+    /** Save the check as excluded if it's included, or included if it's excluded. */
+    toggleCheck(check: SkillCheck): void;
 }
 
 type Subject = { kind: "person"; id: PersonId } | { kind: "skill"; id: SkillId };
@@ -78,13 +80,11 @@ export function SkillTrack_SessionReview_Coverage({
     ...checkProps
 }: SessionReviewCoverageProps) {
     const [subject, setSubject] = useState<Subject | null>(null);
-    const isIncluded = (check: SkillCheck) =>
-        checkProps.showApproval ? check.status === "Include" : checkProps.selected.has(check.id);
 
     const personName = (id: PersonId) => assesseeById.get(id)?.name ?? id;
     const skillName = (id: SkillId) => skillById.get(id)?.name ?? id;
 
-    // Looked up on each render, so the dialog follows the selection and any refetch.
+    // Looked up on each render, so the dialog follows each saved change and any other refetch.
     const open =
         subject?.kind === "person"
             ? people.find((entry) => entry.id === subject.id)
@@ -100,7 +100,6 @@ export function SkillTrack_SessionReview_Coverage({
                 allCount={peopleCount}
                 name={personName}
                 coverageOf="skills"
-                isIncluded={isIncluded}
                 conflictCheckIds={checkProps.conflictCheckIds}
                 onOpen={(id) => setSubject({ kind: "person", id })}
             />
@@ -110,7 +109,6 @@ export function SkillTrack_SessionReview_Coverage({
                 allCount={skillsCount}
                 name={skillName}
                 coverageOf="people"
-                isIncluded={isIncluded}
                 conflictCheckIds={checkProps.conflictCheckIds}
                 onOpen={(id) => setSubject({ kind: "skill", id })}
             />
@@ -143,7 +141,7 @@ export function SkillTrack_SessionReview_Coverage({
                                             key={check.id}
                                             check={check}
                                             label={label}
-                                            included={isIncluded(check)}
+                                            included={isCheckIncluded(check)}
                                             {...checkProps}
                                         />
                                     ))}
@@ -170,7 +168,6 @@ function CoverageCard<Id extends string>({
     allCount,
     name,
     coverageOf,
-    isIncluded,
     conflictCheckIds,
     onOpen,
 }: {
@@ -180,7 +177,6 @@ function CoverageCard<Id extends string>({
     allCount: number;
     name(id: Id): string;
     coverageOf: "skills" | "people";
-    isIncluded(check: SkillCheck): boolean;
     conflictCheckIds: ReadonlySet<SkillCheckId>;
     onOpen(id: Id): void;
 }) {
@@ -223,7 +219,8 @@ function CoverageCard<Id extends string>({
                             // Checks left out by hand. A conflict's unpicked checks are left out by the
                             // pick, which the Conflicts card already shows.
                             const excluded = entry.checks.filter(
-                                (check) => !conflictCheckIds.has(check.id) && !isIncluded(check),
+                                (check) =>
+                                    !conflictCheckIds.has(check.id) && !isCheckIncluded(check),
                             ).length;
                             const content = (
                                 <>
@@ -293,7 +290,7 @@ function CheckRow({
                 className="mt-0.5"
                 checked={included}
                 disabled={disabled || inConflict}
-                onCheckedChange={() => toggleCheck(check.id)}
+                onCheckedChange={() => toggleCheck(check)}
             />
             <div className="flex min-w-0 grow flex-col gap-1 text-sm">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3">

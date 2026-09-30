@@ -28,35 +28,26 @@ import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
 /**
- * Confirm approving a session with the review page's selection. A state-transition confirm, so a
- * plain `Dialog` rather than an `AlertDialog`; host-driven (`open`/`onOpenChange` from the review
- * page, which owns `?action=approve` alongside `?action=reopen`).
+ * Confirm approving a session as saved. A state-transition confirm, so a plain `Dialog` rather
+ * than an `AlertDialog`; host-driven (`open`/`onOpenChange` from the review page, which owns
+ * `?action=approve` alongside `?action=reopen`).
  *
- * The page keeps showing its selection while an approval is in flight and until checks fetched
- * after it arrive: `onApproving` gets the submit time just before the mutation starts, and
- * `onApproveSettled` reports how it ended. The mutation's cache effects (which write `getSession`
- * as approved and await the `listSkillChecks` refetch) run before its `onSuccess`/`onSettled`, so
- * the page can't wait for success to start showing its selection.
- *
- * The dialog stays open while its approval is pending (the page doesn't treat the session turning
- * approved as a stale `?action=approve` meanwhile), and closes itself on success.
+ * The page derives `includedCheckIds` and the counts from the checks' saved statuses, and the
+ * server approves only if its saved state still matches those ids. If it doesn't (someone recorded
+ * or excluded a check meanwhile) the approval fails with `CONFLICT`: the error is shown, the
+ * dialog stays open, and the refetch brings in the checks as they are now, for another look.
  */
 export function SkillsModule_ApproveSession_Dialog({
     session,
     includedCheckIds,
-    includedCount,
     excludedCount,
-    onApproving,
-    onApproveSettled,
     ...props
 }: ComponentProps<typeof Dialog> & {
     session: SkillCheckSession;
     includedCheckIds: SkillCheckId[];
-    includedCount: number;
     excludedCount: number;
-    onApproving?: (submittedAt: number) => void;
-    onApproveSettled?: (ok: boolean) => void;
 }) {
+    const includedCount = includedCheckIds.length;
     const organization = useOrganization();
 
     const refetchSessionOnConflict = useRefetchSessionOnConflict(session.id);
@@ -67,7 +58,6 @@ export function SkillsModule_ApproveSession_Dialog({
                 console.error("Failed to approve session:", error);
                 toast.error(`Failed to approve session: ${error.message}`);
                 refetchSessionOnConflict(error);
-                onApproveSettled?.(false);
             },
             onSuccess() {
                 toast.success(
@@ -76,7 +66,6 @@ export function SkillsModule_ApproveSession_Dialog({
                     </>,
                 );
                 props.onOpenChange?.(false);
-                onApproveSettled?.(true);
             },
         }),
     );
@@ -89,7 +78,6 @@ export function SkillsModule_ApproveSession_Dialog({
     }, [props.open]);
 
     function handleApprove() {
-        onApproving?.(Date.now());
         mutation.mutate({
             organizationId: organization.id,
             sessionId: session.id,

@@ -6,10 +6,12 @@
 
 import { ClipboardCheckIcon, LockOpenIcon } from "lucide-react";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { toast } from "sonner";
 
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -21,6 +23,7 @@ import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reop
 import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
 import { SkillTrack_SessionReview_Coverage } from "@/components/skill-track/session-review-coverage";
 import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
+import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,13 +38,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { SkillCheckId } from "@/lib/schemas/skill-check";
+import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import {
     findConflicts,
-    initialSelection,
+    isCheckIncluded,
+    isConflictResolved,
     pairKey,
-    reconcileSelection,
 } from "@/lib/skill-check-conflicts";
 import { coverageBy } from "@/lib/skill-check-coverage";
 import { trpc } from "@/trpc/client";
@@ -58,7 +61,7 @@ export function SkillTrack_SessionReview_Content({
         { data: assessees },
         { data: assessors },
         { data: sessionSkills },
-        { data: skillChecks, dataUpdatedAt: checksUpdatedAt },
+        { data: skillChecks },
         { data: assignedAssessees },
         { data: assignedSkills },
     ] = useSuspenseQueries({
@@ -105,27 +108,33 @@ export function SkillTrack_SessionReview_Content({
 
     const assessorById = useMemo(() => new Map(assessors.map((p) => [p.id, p])), [assessors]);
 
-    // An approved session is locked until it's reopened: its checkboxes are read-only and show
-    // the approval itself (`Include` checks), not `selected` (see `AssesseeChecks`).
+    // An approved session is locked until it's reopened: its controls are read-only.
     const isApproved = session.status === "Include";
 
-    // Whoever can approve resolves conflicts; for anyone else the controls are read-only.
+    // Whoever can approve resolves conflicts and excludes checks; for anyone else the controls
+    // are read-only.
     const canApprove = useHasPermission({ skillCheckSession: ["approve"] });
-    const controlsDisabled = isApproved || !canApprove;
 
-    // The editable view's selection, shared by the Conflicts card (one pick per conflict group)
-    // and the checks list (everything else). The rules for what starts selected, and how the
-    // selection follows a refetch of the checks, live in `initialSelection`/`reconcileSelection`.
-    // The page stays mounted across approve → reopen and across refetches, so each new
-    // `skillChecks` is reconciled against the previous one rather than reset.
-    const [selected, setSelected] = useState<Set<SkillCheckId>>(() =>
-        initialSelection(skillChecks),
+    // Each decision is saved as it's made: a check is included unless its status is `Exclude`
+    // (`isCheckIncluded`), and Approve approves that saved state. Interim until the Resolve and
+    // check dialogs save through Save: a click on a conflict's radio or a check's checkbox saves
+    // straight away.
+    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
+    const exclusions = useMutation(
+        trpc.skillCheckSessions.updateCheckExclusions.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.updateCheckExclusions },
+            onError(error) {
+                console.error("Failed to save the review decision:", error);
+                toast.error(`Failed to save: ${error.message}`);
+                refetchSessionOnConflict(error);
+            },
+        }),
     );
-    const [prevSkillChecks, setPrevSkillChecks] = useState(skillChecks);
-    if (skillChecks !== prevSkillChecks) {
-        setPrevSkillChecks(skillChecks);
-        setSelected((prev) => reconcileSelection(prevSkillChecks, skillChecks, prev));
+    function saveExclusions(changes: { skillCheckId: SkillCheckId; excluded: boolean }[]) {
+        exclusions.mutate({ organizationId: organization.id, sessionId, changes });
     }
+    // Read-only while a save is in flight too, so a second click can't race the first's refetch.
+    const controlsDisabled = isApproved || !canApprove || exclusions.isPending;
 
     const conflicts = useMemo(() => findConflicts(skillChecks), [skillChecks]);
     const conflictCheckIds = useMemo(
@@ -133,14 +142,12 @@ export function SkillTrack_SessionReview_Content({
         [conflicts],
     );
     const unresolvedConflicts = conflicts.filter(
-        (conflict) => !conflict.checks.some((c) => selected.has(c.id)),
+        (conflict) => !isConflictResolved(conflict),
     ).length;
 
-    // What Approve would submit: the selected checks, and how many of the session's checks that
+    // What Approve confirms: the saved included checks, and how many of the session's checks that
     // leaves out.
-    const includedCheckIds = skillChecks
-        .filter((check) => selected.has(check.id))
-        .map((check) => check.id);
+    const includedCheckIds = skillChecks.filter(isCheckIncluded).map((check) => check.id);
     const excludedCount = skillChecks.length - includedCheckIds.length;
     // Distinct assessee and skill pairs with a check, for the summary strip.
     const uniqueCheckCount = useMemo(
@@ -234,51 +241,16 @@ export function SkillTrack_SessionReview_Content({
               ? `Resolve ${unresolvedConflicts} ${unresolvedConflicts === 1 ? "conflict" : "conflicts"} to approve`
               : null;
 
-    // Showing this page's own approval before its stamped checks arrive. The approve mutation's
-    // cache effects run before the dialog hears it succeeded: they write `getSession` as `Include`
-    // and then await the `listSkillChecks` refetch. So from submit until checks fetched since the
-    // submit (`approvedAt`) are in, show `selected` (what was just approved) rather than the
-    // pre-approval statuses, which would read as all unticked. The stamped checks switch straight
-    // to stored statuses, without waiting for the mutation to settle: they reset the conflict
-    // picks in `selected`, so holding `selected` until then would flash the radios empty. (A
-    // background fetch that lands between submit and commit could end the wait early; the
-    // effector's invalidate cancels in-flight fetches, so that window is negligible.) Any other
-    // time, an approved session shows its stored statuses, background refetches included. A
-    // failed approval clears the stamp: on a conflict the refetch brings in someone else's
-    // approval, which should show as stored. `approving` only keeps the dialog open.
-    const [approving, setApproving] = useState(false);
-    const [approvedAt, setApprovedAt] = useState<number | null>(null);
-    function handleApproving(submittedAt: number) {
-        setApproving(true);
-        setApprovedAt(submittedAt);
-    }
-    function handleApproveSettled(ok: boolean) {
-        setApproving(false);
-        if (!ok) setApprovedAt(null);
-    }
-    // The page stays mounted across approve → reopen; forget the old approval once the session
-    // goes from approved to unapproved (not merely while it's unapproved, which would wipe the
-    // stamp of an approval still in flight).
-    const [prevIsApproved, setPrevIsApproved] = useState(isApproved);
-    if (isApproved !== prevIsApproved) {
-        setPrevIsApproved(isApproved);
-        if (!isApproved) setApprovedAt(null);
-    }
-    const awaitingStampedChecks = approvedAt !== null && checksUpdatedAt < approvedAt;
-    const showApproval = isApproved && !awaitingStampedChecks;
-
     // One `?action=` owner for both dialogs on this page: two literal parsers would each read the
     // other's value as `null`. Reopen opens only on an approved session; Approve only on one that
-    // isn't, and only when it isn't blocked. Both need the approve permission. While the dialog's
-    // own approval is pending, the session turning approved (or the stamped checks reshuffling the
-    // conflict picks) isn't a reason to close it; it closes itself on success.
+    // isn't, and only when it isn't blocked. Both need the approve permission. A successful
+    // approval turns the session approved, which closes Approve here as a stale action.
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["reopen", "approve"] as const),
     );
     const canOpenReopen = canApprove && isApproved;
-    const canOpenApprove =
-        canApprove && (approving || (!isApproved && approveBlockedReason === null));
+    const canOpenApprove = canApprove && !isApproved && approveBlockedReason === null;
 
     function openAction(next: "reopen" | "approve") {
         void setAction(next, { history: "push" });
@@ -299,22 +271,12 @@ export function SkillTrack_SessionReview_Content({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- `closeAction` is rebuilt every render
     }, [staleAction]);
 
-    function toggleCheck(id: SkillCheckId) {
-        setSelected((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
+    function toggleCheck(check: SkillCheck) {
+        saveExclusions([{ skillCheckId: check.id, excluded: isCheckIncluded(check) }]);
     }
 
     function pick(groupIds: SkillCheckId[], checkId: SkillCheckId) {
-        setSelected((prev) => {
-            const next = new Set(prev);
-            for (const id of groupIds) next.delete(id);
-            next.add(checkId);
-            return next;
-        });
+        saveExclusions(groupIds.map((id) => ({ skillCheckId: id, excluded: id !== checkId })));
     }
 
     return (
@@ -376,10 +338,7 @@ export function SkillTrack_SessionReview_Content({
                                 <SkillsModule_ApproveSession_Dialog
                                     session={session}
                                     includedCheckIds={includedCheckIds}
-                                    includedCount={includedCheckIds.length}
                                     excludedCount={excludedCount}
-                                    onApproving={handleApproving}
-                                    onApproveSettled={handleApproveSettled}
                                     open={canOpenApprove && action === "approve"}
                                     onOpenChange={(open) =>
                                         open ? openAction("approve") : closeAction("approve")
@@ -455,13 +414,12 @@ export function SkillTrack_SessionReview_Content({
                                 <SkillTrack_SessionReview_Conflicts
                                     id="conflicts"
                                     conflicts={conflicts}
-                                    selected={selected}
                                     pick={pick}
                                     assesseeById={assesseeById}
                                     skillById={skillById}
                                     assessorById={assessorById}
                                     disabled={controlsDisabled}
-                                    showApproval={showApproval}
+                                    isApproved={isApproved}
                                 />
                             </Show>
                             <SkillTrack_SessionReview_Coverage
@@ -473,10 +431,8 @@ export function SkillTrack_SessionReview_Content({
                                 assesseeById={assesseeById}
                                 skillById={skillById}
                                 assessorById={assessorById}
-                                selected={selected}
                                 conflictCheckIds={conflictCheckIds}
                                 disabled={controlsDisabled}
-                                showApproval={showApproval}
                                 toggleCheck={toggleCheck}
                             />
                         </Show>

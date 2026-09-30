@@ -19,7 +19,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/co
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { findConflicts } from "@/lib/skill-check-conflicts";
+import { findConflicts, isConflictResolved } from "@/lib/skill-check-conflicts";
 import { trpc } from "@/trpc/client";
 
 export function SkillsModule_Session_Contents_Card({
@@ -56,8 +56,11 @@ export function SkillsModule_Session_Contents_Card({
     // An approved session's config is locked until it's reopened.
     const isApproved = session.status === "Include";
 
-    // Conflicts only need attention before approval; once approved, each one has been resolved.
-    const conflictCount = isApproved ? 0 : findConflicts(skillChecks).length;
+    // Only unresolved conflicts need attention, and only before approval; once approved, each one
+    // has been resolved.
+    const conflictCount = isApproved
+        ? 0
+        : findConflicts(skillChecks).filter((conflict) => !isConflictResolved(conflict)).length;
 
     return (
         <Card>

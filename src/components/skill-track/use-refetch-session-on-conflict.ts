@@ -13,10 +13,12 @@ import type { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
 /**
- * Returns an `onError` helper for a mutation that writes a skill check session's checks or config.
- * A `CONFLICT` from one of those means the session was approved under the page (the approval lock),
- * so it invalidates the session's `getSession`: the page picks up the approval and turns
- * read-only. Any other error is left alone.
+ * Returns an `onError` helper for a mutation that writes a skill check session's checks or config,
+ * or approves it. A `CONFLICT` from one of those means the session changed under the page: it was
+ * approved (the approval lock), or, for `approveSession`, its checks no longer match what the page
+ * showed. So it invalidates the session's `getSession` and its `listSkillChecks`: the page picks
+ * up the approval and turns read-only, or shows the checks as they are now. Any other error is
+ * left alone.
  *
  * `meta.effects` only runs on success, which is why this is done by hand.
  */
@@ -31,6 +33,12 @@ export function useRefetchSessionOnConflict(sessionId: SkillCheckSessionId) {
                 trpc.skillCheckSessions.getSession.queryFilter({
                     organizationId: organization.id,
                     skillCheckSessionId: sessionId,
+                }),
+            );
+            void queryClient.invalidateQueries(
+                trpc.skillChecks.listSkillChecks.queryFilter({
+                    organizationId: organization.id,
+                    sessionId,
                 }),
             );
         },

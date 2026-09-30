@@ -19,52 +19,56 @@ import {
     SkillCheck,
     SkillCheckId,
 } from "@/lib/schemas/skill-check";
-import { SkillCheckConflict } from "@/lib/skill-check-conflicts";
+import {
+    isCheckIncluded,
+    isConflictResolved,
+    SkillCheckConflict,
+} from "@/lib/skill-check-conflicts";
 
 interface SessionReviewConflictsProps {
     /** The card's element id, for in-page links to it. */
     id?: string;
     conflicts: SkillCheckConflict<SkillCheck>[];
-    selected: ReadonlySet<SkillCheckId>;
-    /** Make `checkId` the group's pick, replacing whichever of `groupIds` was picked before. */
+    /** Save `checkId` as the group's pick, excluding the rest of `groupIds`. */
     pick(groupIds: SkillCheckId[], checkId: SkillCheckId): void;
     assesseeById: Map<PersonId, PersonRef>;
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
-    /** True while the session is approved, or the viewer can't approve: the radios are read-only. */
-    disabled: boolean;
     /**
-     * Show the approval itself (each group's `Include` check) rather than `selected`. While a
-     * session is approved its conflict groups have no pick in `selected`, so this is the record
-     * of how each conflict was resolved.
+     * True while the session is approved, the viewer can't approve, or a save is in flight: the
+     * radios are read-only.
      */
-    showApproval: boolean;
+    disabled: boolean;
+    /** The session is approved: each group's included check is the approval's record of it. */
+    isApproved: boolean;
 }
 
 /**
  * The review page's Conflicts card: one radio group per assessee and skill with more than one
- * live check, for picking which check the approval includes.
+ * live check, for picking which check the approval includes. The pick is read from saved
+ * statuses: a group's one included check, if it has exactly one.
  */
 export function SkillTrack_SessionReview_Conflicts({
     id,
     conflicts,
-    selected,
     pick,
     assesseeById,
     skillById,
     assessorById,
     disabled,
-    showApproval,
+    isApproved,
 }: SessionReviewConflictsProps) {
     const organization = useOrganization();
     const { formatDateTime } = usePreferences();
 
-    const pickedId = (checks: SkillCheck[]): SkillCheckId | undefined =>
-        checks.find((c) => (showApproval ? c.status === "Include" : selected.has(c.id)))?.id;
+    const pickedId = (checks: SkillCheck[]): SkillCheckId | undefined => {
+        const included = checks.filter(isCheckIncluded);
+        return included.length === 1 ? included[0].id : undefined;
+    };
 
-    const unresolved = conflicts.filter((conflict) => !pickedId(conflict.checks)).length;
+    const unresolved = conflicts.filter((conflict) => !isConflictResolved(conflict)).length;
     const plural = (n: number) => `${n} ${n === 1 ? "conflict" : "conflicts"}`;
-    const description = showApproval
+    const description = isApproved
         ? `${plural(conflicts.length)} resolved at approval`
         : unresolved > 0
           ? `${unresolved} unresolved ${unresolved === 1 ? "conflict" : "conflicts"}`
@@ -90,7 +94,7 @@ export function SkillTrack_SessionReview_Conflicts({
                             // Sessions approved before `approveSession` enforced one check per pair can
                             // hold more than one `Include` in a group; the radio can only show one.
                             const multipleIncluded =
-                                showApproval &&
+                                isApproved &&
                                 conflict.checks.filter((c) => c.status === "Include").length > 1;
 
                             return (

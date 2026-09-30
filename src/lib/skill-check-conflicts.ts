@@ -68,91 +68,20 @@ export function findConflicts<T extends ConflictCheckFields>(checks: T[]): Skill
 }
 
 /**
- * Whether a conflict is resolved: at most one of its checks isn't `Exclude`, so either one check
+ * Whether a live check is included, read from its saved status: anything but `Exclude`. Before
+ * approval that's `Draft` or `Pending` (the review page saves an exclusion as `Exclude`); after
+ * it, the approval's `Include` stamp. `approveSession` compares its confirmation against this.
+ */
+export function isCheckIncluded(check: Pick<ConflictCheckFields, "status">): boolean {
+    return check.status !== "Exclude";
+}
+
+/**
+ * Whether a conflict is resolved: at most one of its checks is included, so either one check
  * is picked and the rest are excluded, or every check is excluded. It's read from saved statuses,
  * so a conflict can be resolved without anyone picking, e.g. when a reopen carries over the
  * previous approval's pick.
  */
 export function isConflictResolved(conflict: SkillCheckConflict<ConflictCheckFields>): boolean {
-    return conflict.checks.filter((check) => check.status !== "Exclude").length <= 1;
-}
-
-/** The fields the selection rules read: conflict detection's, plus when the check last changed. */
-export interface SelectionCheckFields extends ConflictCheckFields {
-    updatedAt: string;
-}
-
-/**
- * A conflict group's identity for reconciling the selection: its members' `id:status:updatedAt`,
- * sorted. A member joining, leaving or being re-recorded changes it.
- */
-function groupSignature(checks: SelectionCheckFields[]): string {
-    return checks
-        .map((c) => `${c.id}:${c.status}:${c.updatedAt}`)
-        .sort()
-        .join("|");
-}
-
-/** A check outside any conflict group starts ticked unless it's `Exclude`. */
-function startsTicked(check: SelectionCheckFields): boolean {
-    return check.status !== "Exclude";
-}
-
-/**
- * Add a group's starting selection to `into`: a lone check if it starts ticked. A conflict group
- * starts with nothing picked, even after a reopen: the reviewer always makes the pick.
- */
-function addInitial<T extends SelectionCheckFields>(group: T[], into: Set<T["id"]>) {
-    if (group.length === 1 && startsTicked(group[0])) into.add(group[0].id);
-}
-
-/**
- * The review page's starting selection. A check outside any conflict group is ticked unless it's
- * `Exclude`. A conflict group starts with nothing picked. `Deleted` checks are never selected.
- */
-export function initialSelection<T extends SelectionCheckFields>(checks: T[]): Set<T["id"]> {
-    const selected = new Set<T["id"]>();
-    for (const group of groupChecksByPair(checks).values()) addInitial(group, selected);
-    return selected;
-}
-
-/**
- * Carry the selection across a refetch of the checks, from `prevChecks` to `nextChecks`.
- *
- * - A conflict group whose signature is unchanged keeps the user's pick.
- * - A conflict group that's new, or whose signature changed (a member joined, left, or was
- *   re-recorded), loses its pick.
- * - A check that was already on its own keeps the user's tick or untick.
- * - Any other check outside a group (new, or left behind by a shrinking group) is ticked unless
- *   it's `Exclude`.
- *
- * Ids no longer among the live checks are dropped.
- */
-export function reconcileSelection<T extends SelectionCheckFields>(
-    prevChecks: T[],
-    nextChecks: T[],
-    selected: ReadonlySet<T["id"]>,
-): Set<T["id"]> {
-    const prevGroups = groupChecksByPair(prevChecks);
-    const result = new Set<T["id"]>();
-
-    for (const [key, group] of groupChecksByPair(nextChecks)) {
-        const prevGroup = prevGroups.get(key);
-
-        if (group.length > 1) {
-            // A lone previous check can't match: the signature lists every member.
-            const unchanged =
-                prevGroup !== undefined && groupSignature(prevGroup) === groupSignature(group);
-            if (unchanged) {
-                for (const c of group) if (selected.has(c.id)) result.add(c.id);
-            }
-            continue;
-        }
-
-        const check = group[0];
-        const wasAlone = prevGroup?.length === 1 && prevGroup[0].id === check.id;
-        if (wasAlone ? selected.has(check.id) : startsTicked(check)) result.add(check.id);
-    }
-
-    return result;
+    return conflict.checks.filter(isCheckIncluded).length <= 1;
 }

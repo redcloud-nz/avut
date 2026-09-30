@@ -22,13 +22,18 @@ import { Messages } from "../messages";
 
 export const skillCheckSessionsRouter = createTrpcRouter({
     /**
-     * Approves a session. In one transaction: purges the session's `Deleted` tombstones, stamps
-     * `includedCheckIds` Include and every other check Exclude, and moves the session to Include
-     * status. No `Pending` or `Deleted` check survives an approval.
+     * Approves a session as saved: every live check that isn't `Exclude` is included, the rest
+     * excluded. `includedCheckIds` confirms that set as the review page showed it, and must match
+     * it exactly (`SkillChecks.assertApprovalMatchesSavedState`). In one transaction: purges the
+     * session's `Deleted` tombstones, stamps `includedCheckIds` Include and every other check
+     * Exclude (by id rather than by status, so a check that changes after the comparison stays out
+     * of the approval), and moves the session to Include status. No `Pending` or `Deleted` check
+     * survives an approval. The log entry records how many checks were included and excluded.
      * @throws TRPCError(NOT_FOUND) if the session does not exist.
-     * @throws TRPCError(CONFLICT) if the session is already approved — reopen it first.
-     * @throws TRPCError(BAD_REQUEST) if `includedCheckIds` holds more than one of the session's
-     * live checks for the same assessee and skill.
+     * @throws TRPCError(CONFLICT) if the session is already approved (reopen it first), or if
+     * `includedCheckIds` isn't the session's saved set of included checks.
+     * @throws TRPCError(BAD_REQUEST) if more than one included check shares an assessee and
+     * skill, i.e. a conflict is unresolved.
      */
     approveSession: organizationProcedure({ skillCheckSession: ["approve"] })
         .input(
@@ -43,7 +48,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
 
             const session = await SkillChecks.requireSessionById(ctx, sessionId);
             SkillChecks.assertSessionUnlocked(session);
-            await SkillChecks.assertOneIncludedCheckPerPair(ctx, sessionId, includedCheckIds);
+            const { includedCount, excludedCount } =
+                await SkillChecks.assertApprovalMatchesSavedState(ctx, sessionId, includedCheckIds);
 
             await ctx.prisma
                 .$transaction([
@@ -83,7 +89,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         action: "Approve",
                         objectType: "SkillCheckSession",
                         objectId: sessionId,
-                        description: `Approved session "${session.name}".`,
+                        description: `Approved session "${session.name}": ${includedCount} included, ${excludedCount} excluded.`,
                     }),
                 ])
                 .catch((error: unknown) => {

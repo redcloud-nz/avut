@@ -1609,6 +1609,15 @@ describe("skillCheckSessions.reopenSession", () => {
         });
         expect(entries).toHaveLength(1);
 
+        // Swap the saved decisions, then approve them.
+        await caller.updateCheckExclusions({
+            organizationId: T.org,
+            sessionId: T.approvedSession,
+            changes: [
+                { skillCheckId: T.includedCheck, excluded: true },
+                { skillCheckId: T.excludedCheck, excluded: false },
+            ],
+        });
         const { updated: reapproved } = await caller.approveSession({
             organizationId: T.org,
             sessionId: T.approvedSession,
@@ -1623,13 +1632,14 @@ describe("skillCheckSessions.reopenSession", () => {
     });
 });
 
-describe("skillCheckSessions.approveSession conflicts", () => {
+describe("skillCheckSessions.approveSession saved state and conflicts", () => {
     // Dataset: assessorA and assessorB may both assess assessee on skill in every session below.
-    //   conflictSession → Draft; checkA (assessorA) + checkB (assessorB), both Draft
-    //   pickSession     → Draft; pickCheckA (assessorA) + pickCheckB (assessorB), both Draft
+    //   conflictSession → Draft; checkA (assessorA) + checkB (assessorB), both Draft (unresolved)
+    //   pickSession     → Draft; pickCheckA (assessorA) Draft + pickCheckB (assessorB) Exclude
     //   deletedSession  → Draft; liveCheck (assessorA) Draft + deadCheck (assessorB) Deleted
     //   ownSession      → Draft; ownCheck (assessorA) Draft
     //   foreignSession  → Draft; foreignCheck (assessorB) Draft, same assessee and skill
+    //   staleSession    → Draft; staleDraft (assessorA) Draft + staleExcluded (assessorB) Exclude
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -1652,6 +1662,9 @@ describe("skillCheckSessions.approveSession conflicts", () => {
         ownCheck: SkillCheckId.create(),
         foreignSession: SkillCheckSessionId.create(),
         foreignCheck: SkillCheckId.create(),
+        staleSession: SkillCheckSessionId.create(),
+        staleDraft: SkillCheckId.create(),
+        staleExcluded: SkillCheckId.create(),
     };
 
     const db = createMockPrisma();
@@ -1705,6 +1718,7 @@ describe("skillCheckSessions.approveSession conflicts", () => {
             [T.deletedSession, 3],
             [T.ownSession, 4],
             [T.foreignSession, 5],
+            [T.staleSession, 6],
         ] as const) {
             await db.skillCheckSession.create({
                 data: {
@@ -1726,11 +1740,13 @@ describe("skillCheckSessions.approveSession conflicts", () => {
             [T.checkA, T.conflictSession, T.assessorA, "Draft"],
             [T.checkB, T.conflictSession, T.assessorB, "Draft"],
             [T.pickCheckA, T.pickSession, T.assessorA, "Draft"],
-            [T.pickCheckB, T.pickSession, T.assessorB, "Draft"],
+            [T.pickCheckB, T.pickSession, T.assessorB, "Exclude"],
             [T.liveCheck, T.deletedSession, T.assessorA, "Draft"],
             [T.deadCheck, T.deletedSession, T.assessorB, "Deleted"],
             [T.ownCheck, T.ownSession, T.assessorA, "Draft"],
             [T.foreignCheck, T.foreignSession, T.assessorB, "Draft"],
+            [T.staleDraft, T.staleSession, T.assessorA, "Draft"],
+            [T.staleExcluded, T.staleSession, T.assessorB, "Exclude"],
         ] as const;
         for (const [id, sessionId, assessorId, status] of checks) {
             await db.skillCheck.create({
@@ -1791,7 +1807,7 @@ describe("skillCheckSessions.approveSession conflicts", () => {
         expect(entries).toHaveLength(0);
     });
 
-    it("approves with one of the pair included, stamping Include and Exclude", async () => {
+    it("approves the saved state when the ids match: the pick Include, the Exclude check stays Exclude, the log has the counts", async () => {
         const { updated } = await makeCaller().approveSession({
             organizationId: T.org,
             sessionId: T.pickSession,
@@ -1803,28 +1819,42 @@ describe("skillCheckSessions.approveSession conflicts", () => {
             [T.pickCheckA]: "Include",
             [T.pickCheckB]: "Exclude",
         });
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillCheckSession", objectId: T.pickSession, action: "Approve" },
+        });
+        expect(entries.map((entry) => entry.description)).toEqual([
+            `Approved session "Session 2": 1 included, 1 excluded.`,
+        ]);
     });
 
-    it("doesn't count an included Deleted check towards a conflict", async () => {
-        const { updated } = await makeCaller().approveSession({
-            organizationId: T.org,
-            sessionId: T.deletedSession,
-            includedCheckIds: [T.liveCheck, T.deadCheck],
-        });
+    async function expectStaleRefused(
+        sessionId: SkillCheckSessionId,
+        includedCheckIds: SkillCheckId[],
+    ) {
+        const before = await checkStatuses(sessionId);
+        await expect(
+            makeCaller().approveSession({ organizationId: T.org, sessionId, includedCheckIds }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
 
-        expect(updated.status).toBe("Include");
-        expect(await checkStatuses(T.deletedSession)).toEqual({ [T.liveCheck]: "Include" });
+        const session = await db.skillCheckSession.findUnique({ where: { id: sessionId } });
+        expect(session?.status).toBe("Draft");
+        expect(await checkStatuses(sessionId)).toEqual(before);
+    }
+
+    it("refuses with CONFLICT when a check was recorded or re-included since, and writes nothing", async () => {
+        await expectStaleRefused(T.staleSession, []);
     });
 
-    it("doesn't count an id from another session towards a conflict", async () => {
-        const { updated } = await makeCaller().approveSession({
-            organizationId: T.org,
-            sessionId: T.ownSession,
-            includedCheckIds: [T.ownCheck, T.foreignCheck],
-        });
+    it("refuses with CONFLICT when a check was excluded since", async () => {
+        await expectStaleRefused(T.staleSession, [T.staleDraft, T.staleExcluded]);
+    });
 
-        expect(updated.status).toBe("Include");
-        expect(await checkStatuses(T.ownSession)).toEqual({ [T.ownCheck]: "Include" });
+    it("refuses with CONFLICT when an included check was deleted since", async () => {
+        await expectStaleRefused(T.deletedSession, [T.liveCheck, T.deadCheck]);
+    });
+
+    it("refuses with CONFLICT when an id is from another session", async () => {
+        await expectStaleRefused(T.ownSession, [T.ownCheck, T.foreignCheck]);
         expect(await checkStatuses(T.foreignSession)).toEqual({ [T.foreignCheck]: "Draft" });
     });
 });
