@@ -4,14 +4,18 @@
  */
 "use client";
 
+import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { toast } from "sonner";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
+import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
@@ -35,7 +39,27 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
     );
     const token = tokens.find((t) => t.id === tokenId);
 
+    const refreshMutation = useMutation(
+        trpc.d4hAccessTokens.refreshPersonalAccessToken.mutationOptions({
+            meta: { effects: d4hAccessTokensEffects.refreshPersonalAccessToken },
+        }),
+    );
+
     if (!token) notFound();
+
+    const handleRefresh = () => {
+        toast.promise(
+            refreshMutation.mutateAsync({
+                organizationId: token.organization.id,
+                tokenId: token.id,
+            }),
+            {
+                loading: "Refreshing token metadata...",
+                success: "Token metadata refreshed",
+                error: (error) => "Failed to refresh token metadata: " + error.message,
+            },
+        );
+    };
 
     return (
         <>
@@ -52,6 +76,15 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                     <Saratoga.Header>
                         <Saratoga.Title>D4H Personal Access Token</Saratoga.Title>
                         <Saratoga.Actions>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleRefresh}
+                                aria-label="Refresh"
+                                title="Refresh"
+                            >
+                                <RefreshCwIcon />
+                            </Button>
                             <UserSettings_D4HAccessToken_Menu token={token} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
