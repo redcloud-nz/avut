@@ -423,7 +423,6 @@ export const organizationsRouter = createTrpcRouter({
                 select: {
                     userId: true,
                     role: true,
-                    personId: true,
                     user: { select: { name: true, email: true } },
                 },
             });
@@ -435,7 +434,6 @@ export const organizationsRouter = createTrpcRouter({
                         userId: member.userId,
                         name: member.user.name,
                         email: member.user.email,
-                        personId: member.personId,
                         holdsRole: roles.includes(input.role),
                         coveredBy:
                             roles.find(
@@ -608,8 +606,17 @@ export const organizationsRouter = createTrpcRouter({
 
             const role = membership.role
                 .split(",")
-                .filter((r) => r !== "owner")
+                .filter((r) => r !== "" && r !== "owner")
                 .join(",");
+            // An owner may hold no other role (see `setOrganizationMemberRole`), but a membership
+            // without `owner` needs at least one.
+            if (role === "") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message:
+                        "Owner is this member's only role. Give them another role before removing their ownership.",
+                });
+            }
 
             // No last-owner check: the caller is an owner and can't target themselves, but two owners
             // removing each other concurrently can still leave the org ownerless. That's allowed; a
@@ -692,7 +699,9 @@ export const organizationsRouter = createTrpcRouter({
         { member: ["update"] },
         { allowSystemAdmin: true },
     )
-        .input(z.object({ userId: UserId.schema, roles: OrganizationRole.assignmentSchema }))
+        // `roleSetSchema` rather than `assignmentSchema`: an owner may hold no other role, so
+        // the non-empty rule is checked below, once the membership is known.
+        .input(z.object({ userId: UserId.schema, roles: OrganizationRole.roleSetSchema }))
         .mutation(async ({ ctx, input }) => {
             const membership = await ctx.prisma.organizationUser.findFirst({
                 where: { organizationId: ctx.organizationId, userId: input.userId },
@@ -703,6 +712,10 @@ export const organizationsRouter = createTrpcRouter({
                     code: "NOT_FOUND",
                     message: "That user is not a member of this organisation.",
                 });
+            }
+
+            if (input.roles.length === 0 && !hasOwnerRole(membership.role)) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: "Choose at least one role." });
             }
 
             // Ownership is out-of-band here — preserve it if the member already has it.

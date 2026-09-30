@@ -16,7 +16,7 @@ import { useMutation } from "@tanstack/react-query";
 import { organizationsEffects } from "@/client/organizations-effects";
 import {
     invitationRoles,
-    invitationRolesSchema,
+    memberRolesSchema,
     RoleFields,
     type InvitationRolesFormValues,
 } from "@/components/admin/invitations/invitation-role-fields";
@@ -63,11 +63,11 @@ interface Member {
 }
 
 /**
- * The role form's values for a stored role set. `owner` sits outside this schema (granted and
- * revoked separately), so it's dropped here — the form only ever edits the non-owner roles.
+ * The role form's values for a stored role set — see `OrganizationRole.formDefaults`, which
+ * drops `owner` (granted and revoked separately) and any role another held role already covers.
  */
 function roleFormValues(stored: string): InvitationRolesFormValues {
-    return { roles: OrganizationRole.parseStored(stored) };
+    return { roles: OrganizationRole.formDefaults(stored) };
 }
 
 /**
@@ -105,7 +105,7 @@ export function SystemAdmin_MemberActionsMenu({
     const isOwner = hasOwnerRole(member.role);
 
     const roleForm = useForm({
-        resolver: zodResolver(invitationRolesSchema),
+        resolver: zodResolver(memberRolesSchema(isOwner)),
         defaultValues: roleFormValues(member.role),
     });
 

@@ -165,15 +165,6 @@ export function hasOwnerRole(stored: string): boolean {
 }
 
 /**
- * Whether any of the given roles authorizes every one of `requiredPermissions`.
- *
- * Mirrors `useHasPermission`'s client-side union of roles and Better Auth's own
- * `hasPermissionFn` semantics (granted if a single role authorises the full request) — that
- * agreement is what makes evaluating locally, against a role lookup already in hand, a safe
- * substitute for a second `auth.api.hasPermission` round trip. Used by `createTrpcContext` and
- * `requireOrganizationWith`.
- */
-/**
  * Whether `role` grants everything `other` does — holding both is then no different from
  * holding `role` alone. A role covers itself. Compared statement by statement rather than
  * through `authorize`, which treats an empty action list as unauthorized.
@@ -187,6 +178,15 @@ export function roleCovers(role: Role, other: Role): boolean {
     );
 }
 
+/**
+ * Whether any of the given roles authorizes every one of `requiredPermissions`.
+ *
+ * Mirrors `useHasPermission`'s client-side union of roles and Better Auth's own
+ * `hasPermissionFn` semantics (granted if a single role authorises the full request) — that
+ * agreement is what makes evaluating locally, against a role lookup already in hand, a safe
+ * substitute for a second `auth.api.hasPermission` round trip. Used by `createTrpcContext` and
+ * `requireOrganizationWith`.
+ */
 export function hasAnyRoleWithPermissions(
     roles: Role[],
     requiredPermissions: Permissions,

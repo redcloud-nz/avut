@@ -7,17 +7,6 @@ import { trpc } from "@/trpc/client";
 import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
 /**
- * Cache effects for `organizations` router mutations, keyed by procedure name.
- *
- * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
- * The membership mutations (`allowSystemAdmin`) were originally only called from the
- * system-administration console, so they invalidate this router's own
- * `getOrganizationAsAdmin`/`listOrganizations` and `users.getUser` queries.
- * `removeOrganizationMember`/`setOrganizationMemberRole` are now also called from the org-admin
- * users pages (`update-user.tsx`/`delete-user.tsx`), which read the member list via
- * `listMembers`.
- */
-/**
  * A single-role grant/revoke (`grantMemberRole`/`revokeMemberRole`) changes the member's roles
  * as `setOrganizationMemberRole` does, and also who can be picked as a session assessor.
  */
@@ -43,6 +32,17 @@ function memberRoleGrantEffects(vars: { organizationId: string; userId: string }
     ];
 }
 
+/**
+ * Cache effects for `organizations` router mutations, keyed by procedure name.
+ *
+ * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
+ * The membership mutations (`allowSystemAdmin`) were originally only called from the
+ * system-administration console, so they invalidate this router's own
+ * `getOrganizationAsAdmin`/`listOrganizations` and `users.getUser` queries.
+ * `removeOrganizationMember`/`setOrganizationMemberRole` are now also called from the org-admin
+ * users pages (`update-user.tsx`/`delete-user.tsx`), which read the member list via
+ * `listMembers`.
+ */
 export const organizationsEffects = createEffects<"organizations">()({
     addOrganizationMember: (vars) => [
         invalidate(
@@ -54,6 +54,11 @@ export const organizationsEffects = createEffects<"organizations">()({
         invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
         invalidate(
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
+            trpc.organizations.listMembersForRoleGrant.queryFilter({
+                organizationId: vars.organizationId,
+            }),
         ),
     ],
     createOrganization: () => [invalidate(trpc.organizations.listOrganizations.queryFilter())],
@@ -69,6 +74,11 @@ export const organizationsEffects = createEffects<"organizations">()({
         invalidate(
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
         ),
+        invalidate(
+            trpc.organizations.listMembersForRoleGrant.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
     ],
     removeOrganizationMember: (vars) => [
         invalidate(
@@ -80,6 +90,11 @@ export const organizationsEffects = createEffects<"organizations">()({
         invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
         invalidate(
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
+            trpc.organizations.listMembersForRoleGrant.queryFilter({
+                organizationId: vars.organizationId,
+            }),
         ),
     ],
     removeOwner: (vars) => [
@@ -93,6 +108,11 @@ export const organizationsEffects = createEffects<"organizations">()({
         invalidate(
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
         ),
+        invalidate(
+            trpc.organizations.listMembersForRoleGrant.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
     ],
     revokeMemberRole: (vars) => memberRoleGrantEffects(vars),
     setOrganizationMemberRole: (vars) => [
@@ -105,6 +125,11 @@ export const organizationsEffects = createEffects<"organizations">()({
         invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
         invalidate(
             trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
+            trpc.organizations.listMembersForRoleGrant.queryFilter({
+                organizationId: vars.organizationId,
+            }),
         ),
     ],
 });

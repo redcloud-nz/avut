@@ -6,7 +6,7 @@
 import * as z from "zod";
 
 import { Modules, type OrganizationModuleId } from "@/lib/modules";
-import type { Role } from "@/lib/permissions";
+import { roleCovers, type Role } from "@/lib/permissions";
 
 /**
  * Module ids that can actually gate a role. Excludes `org-admin` — it's `alwaysOn` and has no
@@ -132,6 +132,10 @@ function roleGroups(): OrganizationRoleGroup[] {
     return groups;
 }
 
+const roleSetSchema = z
+    .array(organizationRoleSchema)
+    .refine((roles) => new Set(roles).size === roles.length, "Roles must not repeat.");
+
 export const OrganizationRole = {
     schema: organizationRoleSchema,
 
@@ -181,14 +185,35 @@ export const OrganizationRole = {
     },
 
     /**
+     * A member's non-owner roles with no repeats, possibly none — the shape an owner's role set
+     * takes, since `owner` alone is a valid membership. `owner` is handled entirely outside this
+     * schema (see `makeOwner`/`removeOwner`).
+     */
+    roleSetSchema,
+
+    /**
      * A member's complete role set as submitted from a form: at least one role, no repeats.
      * `owner` is handled entirely outside this schema (see `makeOwner`/`removeOwner`).
      * Membership rows store this comma-joined — see `serialize`.
      */
-    assignmentSchema: z
-        .array(organizationRoleSchema)
-        .refine((roles) => new Set(roles).size === roles.length, "Roles must not repeat.")
-        .refine((roles) => roles.length > 0, "Choose at least one role."),
+    assignmentSchema: roleSetSchema.refine(
+        (roles) => roles.length > 0,
+        "Choose at least one role.",
+    ),
+
+    /**
+     * The non-owner roles a role form starts from for a stored (comma-joined)
+     * `OrganizationUser.role` value: `parseStored`, less any role another stored non-owner role
+     * already covers. The picker shows those covered and locked, so leaving them in the value
+     * would keep a redundant role no one could untick. A role only `owner` covers is kept: it's
+     * what the member falls back to if their ownership is removed (`removeOwner`).
+     */
+    formDefaults(stored: string): OrganizationRole[] {
+        const roles = OrganizationRole.parseStored(stored);
+        return roles.filter(
+            (role) => !roles.some((other) => other !== role && roleCovers(other, role)),
+        );
+    },
 
     /** The stored `OrganizationUser.role` value for a role set: comma-joined. */
     serialize(roles: OrganizationRole[]): string {

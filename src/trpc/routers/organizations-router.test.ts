@@ -1143,3 +1143,95 @@ describe("organizations.grantMemberRole / revokeMemberRole / listMembersForRoleG
         ]);
     });
 });
+
+describe("organizations.setOrganizationMemberRole — empty role sets", () => {
+    const T = {
+        owner: UserId.create(),
+        member: UserId.create(),
+        caller: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+    const caller = () =>
+        organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.caller },
+                permissions: { organization: ["view"], member: ["update"] },
+                prisma: db,
+            }),
+        );
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "empty-org", createdAt: new Date() },
+        });
+        for (const [id, role] of [
+            [T.owner, "owner,admin"],
+            [T.member, "member"],
+        ] as const) {
+            await db.user.create({
+                data: { id, name: `U-${id}`, email: `${id}@x.test`, emailVerified: true },
+            });
+            await db.organizationUser.create({
+                data: { id: OrganizationUserId.create(), organizationId: T.org, userId: id, role },
+            });
+        }
+    });
+
+    it("lets an owner hold no other role", async () => {
+        await caller().setOrganizationMemberRole({
+            organizationId: T.org,
+            userId: T.owner,
+            roles: [],
+        });
+        const row = await db.organizationUser.findFirst({ where: { userId: T.owner } });
+        expect(row?.role).toBe("owner");
+    });
+
+    it("refuses an empty role set for anyone else", async () => {
+        await expect(
+            caller().setOrganizationMemberRole({
+                organizationId: T.org,
+                userId: T.member,
+                roles: [],
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+});
+
+describe("organizations.removeOwner — owner-only memberships", () => {
+    const T = { caller: UserId.create(), target: UserId.create(), org: OrganizationId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "owner-only-org", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: T.target, name: "Target", email: "t@x.test", emailVerified: true },
+        });
+        await db.organizationUser.create({
+            data: {
+                id: OrganizationUserId.create(),
+                organizationId: T.org,
+                userId: T.target,
+                role: "owner",
+            },
+        });
+    });
+
+    it("refuses to leave a membership with no roles", async () => {
+        const caller = organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.caller },
+                permissions: { organization: ["view"], member: ["owner"] },
+                prisma: db,
+            }),
+        );
+        await expect(
+            caller.removeOwner({ organizationId: T.org, userId: T.target }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        const row = await db.organizationUser.findFirst({ where: { userId: T.target } });
+        expect(row?.role).toBe("owner");
+    });
+});

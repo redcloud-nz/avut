@@ -52,3 +52,23 @@ describe("OrganizationRole.groups", () => {
         ]);
     });
 });
+
+describe("OrganizationRole.formDefaults", () => {
+    it("drops roles another stored non-owner role covers", () => {
+        expect(OrganizationRole.formDefaults("skills-admin,skills-assessor,i3-editor")).toEqual([
+            "skills-admin",
+            "i3-editor",
+        ]);
+    });
+
+    it("keeps a role only owner covers — the member keeps it if ownership is removed", () => {
+        expect(OrganizationRole.formDefaults("owner,admin")).toEqual(["admin"]);
+    });
+
+    it("keeps roles nothing else covers", () => {
+        expect(OrganizationRole.formDefaults("member,skills-assessor")).toEqual([
+            "member",
+            "skills-assessor",
+        ]);
+    });
+});

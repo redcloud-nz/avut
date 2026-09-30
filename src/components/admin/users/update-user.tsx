@@ -14,7 +14,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { organizationsEffects } from "@/client/organizations-effects";
 import {
-    invitationRolesSchema,
+    memberRolesSchema,
     RoleFields,
 } from "@/components/admin/invitations/invitation-role-fields";
 import { ObjectIcons } from "@/components/icons";
@@ -48,12 +48,13 @@ export function AdminModule_UpdateUser_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
-    // `owner` sits outside this schema (granted and revoked separately) — parsing the stored
-    // role drops it, so this dialog only ever edits the non-owner roles.
-    const roleDefaults = { roles: OrganizationRole.parseStored(organizationUser.role) };
+    // `formDefaults` drops `owner` (granted and revoked separately) and any role another held
+    // role already covers, so this dialog only ever edits the non-owner roles.
+    const isOwner = hasOwnerRole(organizationUser.role);
+    const roleDefaults = { roles: OrganizationRole.formDefaults(organizationUser.role) };
 
     const form = useForm({
-        resolver: zodResolver(invitationRolesSchema),
+        resolver: zodResolver(memberRolesSchema(isOwner)),
         defaultValues: roleDefaults,
     });
 
@@ -126,10 +127,7 @@ export function AdminModule_UpdateUser_Dialog({
                             )}
                         >
                             <FieldGroup>
-                                <RoleFields
-                                    moduleGatedRoles={moduleGatedRoles}
-                                    isOwner={hasOwnerRole(organizationUser.role)}
-                                />
+                                <RoleFields moduleGatedRoles={moduleGatedRoles} isOwner={isOwner} />
                             </FieldGroup>
                         </form>
                     </FormProvider>

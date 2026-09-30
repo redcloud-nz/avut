@@ -33,6 +33,15 @@ export const invitationRolesSchema = z.object({
 
 export type InvitationRolesFormValues = z.infer<typeof invitationRolesSchema>;
 
+/**
+ * The role form schema for editing an existing member. An owner may hold no other role —
+ * `owner` alone is a valid membership, and the picker shows Admin and Member as covered by it —
+ * so the non-empty rule applies only to everyone else.
+ */
+export function memberRolesSchema(isOwner: boolean) {
+    return isOwner ? z.object({ roles: OrganizationRole.roleSetSchema }) : invitationRolesSchema;
+}
+
 /** The roles a role-assignment form submits. */
 export function invitationRoles(values: InvitationRolesFormValues): OrganizationRole[] {
     return values.roles;
@@ -62,22 +71,6 @@ export function InvitationRoleFields() {
     );
 }
 
-/**
- * The role fields themselves, with no dependency on an organization provider — the caller says
- * which module-gated roles are available. `InvitationRoleFields` supplies them from the current
- * organization's settings; the system-admin screens, which sit outside any one organization,
- * supply them from the organization they are acting on.
- *
- * A multi-select over every role, in one card per `OrganizationRole.groups` entry (a module
- * with none of its roles available is left out). The only invariant is at least one role
- * checked (`OrganizationRole.assignmentSchema`'s non-empty refinement). `owner` is never offered
- * here — it's granted/revoked separately (see `makeOwner`/`removeOwner`) — but `isOwner` counts
- * it towards what the member already holds.
- *
- * A role another held role already covers (`roleCovers` — Skills Admin covers Skills Assessor,
- * Owner covers Admin) shows checked and disabled, since holding it adds nothing; checking a
- * role drops any role it covers from the value.
- */
 /** `roles` with `role` checked or unchecked; checking it drops any role it covers. */
 function withRole(
     roles: OrganizationRole[],
@@ -89,6 +82,22 @@ function withRole(
         : roles.filter((r) => r !== role);
 }
 
+/**
+ * The role fields themselves, with no dependency on an organization provider — the caller says
+ * which module-gated roles are available. `InvitationRoleFields` supplies them from the current
+ * organization's settings; the system-admin screens, which sit outside any one organization,
+ * supply them from the organization they are acting on.
+ *
+ * A multi-select over every role, in one card per `OrganizationRole.groups` entry (a module
+ * with none of its roles available is left out). The only invariant is at least one role
+ * checked (`OrganizationRole.assignmentSchema`'s non-empty refinement), which an owner is exempt
+ * from (see `memberRolesSchema`). `owner` is never offered here — it's granted/revoked separately
+ * (see `makeOwner`/`removeOwner`) — but `isOwner` counts it towards what the member already holds.
+ *
+ * A role another held role already covers (`roleCovers` — Skills Admin covers Skills Assessor,
+ * Owner covers Admin) shows checked and disabled, since holding it adds nothing; checking a
+ * role drops any role it covers from the value.
+ */
 export function RoleFields({
     moduleGatedRoles,
     isOwner = false,
@@ -120,10 +129,12 @@ export function RoleFields({
                                     // otherwise clips the ring when this card leads the dialog.
                                     className="first:mt-px"
                                     role="group"
-                                    aria-labelledby={`role-group-${group.title}`}
+                                    aria-labelledby={`role-group-${group.moduleId ?? "organisation"}`}
                                 >
                                     <CardHeader>
-                                        <CardTitle id={`role-group-${group.title}`}>
+                                        <CardTitle
+                                            id={`role-group-${group.moduleId ?? "organisation"}`}
+                                        >
                                             {group.title}
                                         </CardTitle>
                                     </CardHeader>
