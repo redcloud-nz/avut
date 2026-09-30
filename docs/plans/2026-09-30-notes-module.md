@@ -30,6 +30,8 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 | Audit logging                    | New `LogObjectType`s `OrganizationNote` (module `notes`) and `UserNote` (module `user-notes`, mapped to `null` until Task 9 registers the module). Each write is paired with `ctx.logEvent` in `$transaction([...])` (`docs/patterns/transactional-writes.md`). An update logs `diffObject({ title }, { title })`, plus a bare `{ type: "obj_mask", path: ["content"] }` when the content changed, as `d4h-access-tokens-router.ts` does for `token`. The body is never copied into the log. A delete's `description` carries the title.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Create flow                      | A **New note** button calls `createNote({ title: "Untitled note" })` directly, with no dialog. It then `router.push`es to the new note with `?edit=true`. That avoids the `?action=` dialog, which `<ViewTransition>` doesn't fire through (#224), and a scratch pad shouldn't make you name a note before writing it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Edit                             | An inline toggle on the detail pane, driven by a nuqs `edit` boolean (`parseAsBoolean`), so a new note opens in edit mode and a refresh keeps it. View mode shows `RenderMarkdown`. Edit mode shows a title `Input` and `MarkdownEditor`, with Save and Cancel. Saving is explicit; there's no autosave.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Note card (2026-10-01)           | Replaces the earlier view/edit layout, after the first visual check. A note is always a card (`note-card.tsx`) that view mode and edit mode fill identically, so Edit only makes the title and body editable in place and nothing moves. View mode's controls are a pencil icon button (only for someone who can edit) and an `EntityActionMenu` with Edit and Delete (disabled, not hidden, when not permitted). Edit mode shows Cancel/Save in their place. The user wants to revisit the look later.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| History (2026-10-01)             | Notes get History pages like teams and people (#341), reached from a History item in the actions menu. Org notes register `OrganizationNote` in `HistoryObjects` and reuse `history.listObjectHistory`. Personal notes need the first **user-scoped** history: `history.listOwnObjectHistory` on `authenticatedProcedure`, reading the caller's own `scope: "user"` entries (`ownerId: ctx.userId`) for `UserNote`, with `ObjectHistory` taught to take either query. The history routes are `…/notes/[note_id]/history`, which render in the `Hermes` detail pane.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Gating Edit/Delete on the client | "Author **or** permission" can't be expressed with `<Protect>`, so this is a justified inline check (`docs/patterns/protect-permission-gating.md`). `useHasPermission` combined with the session user id must mirror the server rule. Edit shows for the author, or for a holder of `organizationNote: ["update"]`. Delete shows for the author, or for a holder of `["delete"]`. The owner can always edit and delete a user note.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Delete UI                        | A confirm dialog on the detail pane, following `docs/patterns/mutation-dialog.md` (`?action=delete`). On success it `router.replace`s to the list route. That deliberately differs from the pattern doc's `router.push`: `replace` swaps out the dialog's `?action=delete` entry instead of adding one more after it. History ends up `[/notes, /notes/x, /notes]`, so Back still reaches the deleted note's URL. Once the replace has landed, the dialog drops that note's cached `getNote` and records its id as deleted (`src/components/notes/deleted-notes.ts`), and the detail pane then shows "This note was deleted.". Dropping `getNote` alone isn't enough: Back re-renders the page from Next's router cache, and its `HydrateClient` puts back the `getNote` it was first rendered with. The pane shows the same message when `getNote` comes back `NOT_FOUND` (a note someone else deleted). It's fine that the view transition doesn't fire through the dialog here.                                                                                                                                                                                                                                                                                                                         |
 | Cache effects                    | `src/client/organization-notes-effects.ts` and `src/client/user-notes-effects.ts`, built with `createEffects<"organizationNotes" \| "userNotes">()` (`src/trpc/mutation-effector.tsx`, conventions checklist). Update writes `getNote` and invalidates `listNotes`. Create `write`s the returned row into `getNote`, so the new note opens without a fetch, and does **not** set `meta.navigates`: `listNotes` lives in the still-mounted layout, so a navigating mutation would only mark it stale and the new note would be missing from the list until something else refetched it. Create therefore waits for the list refetch before pushing. Delete sets `meta.navigates`, so it doesn't refetch the deleted note's still-mounted `getNote` (which would come back `NOT_FOUND` through `useSuspenseQuery`), and removes the note from `listNotes` with a `write` updater so the list is right without a refetch.                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -276,13 +278,40 @@ The `notes` module already exists in the registry, with a placeholder page, and 
   - a member who isn't the author sees no Edit or Delete
   - no console errors
 
+### - [ ] 8a. Org note history `visual`
+
+**Files:**
+
+- `src/lib/schemas/object-history.ts`
+- new `src/app/(wrapper)/(authenticated)/orgs/[slug]/notes/[note_id]/history/page.tsx`
+- new `src/components/notes/org-note-history-content.tsx`
+- `src/components/notes/org-note-content.tsx` (the History menu item)
+- `src/components/notes/notes-breadcrumbs.tsx` (the "History" crumb)
+- tests: `src/trpc/routers/history-router.test.ts`
+
+**Do:** follow the team history page (`orgs/[slug]/admin/teams/[team_id]/history/page.tsx`, `team-history-content.tsx`, and the History item in `team-menu.tsx`).
+
+- **Registry:** add `OrganizationNote` to `historyObjectTypeValues` and to `HistoryObjects` with `{ organizationNote: ["view"] }`, the same permission `organizationNotes.getNote` requires, with a comment naming it the way the other entries do.
+- **Page:** under the notes layout, so it renders inside `Hermes.Detail` beside the list.
+  - It renders `ObjectHistory` in the pane, not `Std.Navbar` + `Std.ScrollContainer`. The layout already supplies the navbar, and the pane already scrolls.
+  - Apply the same `isModuleUsable` check as `[note_id]/page.tsx` before any fetch.
+  - Prefetch `getNote` and the history infinite query with the same input as the client, per the team page.
+- **Menu:** add a History link above the Actions group via `EntityActionMenu`'s `before`, as in `team-menu.tsx`.
+- **Breadcrumbs:** on the history route, show `Notes › <title> › History`, with the title linking back to the note. `NotesBreadcrumbs` reads the segment below `[note_id]` for this.
+
+**Done when:**
+
+- A history-router test shows a member can read an `OrganizationNote`'s history, and a caller without `organizationNote: ["view"]` gets `FORBIDDEN`.
+- `npm run check` passes.
+- In a browser: create a note, edit its title and body, then open History from the menu. The page lists Created, then Updated with the title diff and "content changed", with no body text. The breadcrumb links back to the note, and the list stays alongside.
+
 ### - [ ] 9. Personal notes: module, flag and UI `visual`
 
 **Files:**
 
 - `src/lib/modules.ts`, `src/lib/schemas/log-entry.ts`, `src/server/module-flags.ts`.
 - `src/app/(wrapper)/(authenticated)/layout.tsx`, `src/components/nav/scope-sidebar-modules.tsx`.
-- New under `src/app/(wrapper)/(authenticated)/user/notes/`: `layout.tsx`, `page.tsx`, `loading.tsx`, `[note_id]/page.tsx`.
+- New under `src/app/(wrapper)/(authenticated)/user/notes/`: `layout.tsx`, `page.tsx`, `[note_id]/page.tsx`. **No `loading.tsx`**: Task 8 found a Suspense fallback under the notes route always flashes and breaks the crossfade (Decisions → Suspense).
 - New `src/client/user-notes-effects.ts`.
 - New in `src/components/notes/`: `user-notes-list.tsx`, `user-note-content.tsx`, `delete-user-note-dialog.tsx`.
 
@@ -299,6 +328,37 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - `npm run check` passes.
 - The Tasks 7–8 browser checks pass on `/user/notes`, apart from the permission check.
 - Notes appears in the user-scope sidebar when the flag is on.
+
+### - [ ] 9a. Personal note history `visual`
+
+**Files:**
+
+- `src/lib/schemas/object-history.ts`
+- `src/server/services/object-history.ts` (+ its test)
+- `src/trpc/routers/history-router.ts` (+ its test)
+- `src/components/history/object-history.tsx`
+- new `src/app/(wrapper)/(authenticated)/user/notes/[note_id]/history/page.tsx`
+- new `src/components/notes/user-note-history-content.tsx`
+- `src/components/notes/user-note-content.tsx` (the History menu item)
+
+**Do:** add the first user-scoped history (Decisions → History), then the page, as in Task 8a.
+
+- **Types:** a separate `OwnHistoryObjectType` enum, holding only `UserNote` for now. Keep it apart from the org `HistoryObjectType`, so neither procedure can be asked for the other scope's types.
+- **Service:** add a user-scoped list alongside `ObjectHistory.list`.
+  - It takes `{ prisma, userId }` and filters `scope: "user", ownerId: ctx.userId`, **never** `organizationId`.
+  - Reuse the org list's paging, row mapping and ref handling. Refactor to a shared internal helper rather than duplicating them.
+  - Related-entry gating doesn't apply: every row is the caller's own.
+- **Router:** `listOwnObjectHistory` on `authenticatedProcedure`, with the same input and output shape as `listObjectHistory` minus `organizationId`. Keep procedures alphabetical.
+- **Component:** `ObjectHistory` takes which query to run. For example, a `scope: "organization" | "user"` prop, or the infinite query options passed in. Pick the smaller change, and keep the org call sites unchanged.
+
+**Done when:**
+
+- Tests show that:
+  - the owner sees their `UserNote` history
+  - another user's note returns no entries (not someone else's rows)
+  - org-scoped entries never appear in `listOwnObjectHistory`
+- `npm run check` passes.
+- The Task 8a browser check passes on `/user/notes/<id>/history`.
 
 ### - [ ] 10. Help docs
 
@@ -326,5 +386,5 @@ The page is in the flag-gated `notes` section, which is right, because personal 
 - Parallel routes (`@list`/`@detail`). Revisit when `Hermes` backs a heavier list.
 - Moving personnel or skill packages onto `Hermes`.
 - A named shared-element morph (list row → detail title).
-- Object-history panels (#341) for notes.
+- Storing past versions of a note's body, or restoring them. History shows who changed what and when, but body changes are recorded only as "content changed". This is a candidate follow-up issue.
 - A separate flag for personal notes.
