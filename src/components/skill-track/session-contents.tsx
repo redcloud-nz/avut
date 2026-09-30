@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ChevronRightIcon, TriangleAlertIcon } from "lucide-react";
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -15,14 +15,7 @@ import {
     type SessionConfigAction,
 } from "@/components/skill-track/session-config-dialogs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemMedia,
-    ItemTitle,
-} from "@/components/ui/item";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -112,18 +105,13 @@ export function SkillsModule_Session_Contents_Card({
                                 session_id: sessionId,
                             })}
                         >
-                            <ItemMedia
-                                variant="icon"
-                                className="text-amber-600 dark:text-amber-400"
-                            >
-                                <TriangleAlertIcon />
-                            </ItemMedia>
                             <ItemContent>
                                 <ItemTitle>
-                                    {conflictCount} unresolved{" "}
-                                    {conflictCount === 1 ? "conflict" : "conflicts"}
+                                    {conflictCount} {conflictCount === 1 ? "Conflict" : "Conflicts"}
                                 </ItemTitle>
-                                <ItemDescription>resolve before approving</ItemDescription>
+                                <ItemDescription>
+                                    {conflictCount === 1 ? "needs resolving" : "need resolving"}
+                                </ItemDescription>
                             </ItemContent>
                             <ItemActions>
                                 <ChevronRightIcon className="size-4" />
