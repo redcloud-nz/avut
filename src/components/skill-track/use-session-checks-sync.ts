@@ -56,7 +56,8 @@ interface SessionChecksInput {
  * refetches the session once, which is accepted.
  *
  * TanStack runs the `queryFn` of whichever observer set its options last, so every observer of
- * this cache builds its options here, with the same inputs.
+ * this cache builds its options here, with the same inputs. `staleTime: 0` lives here for the
+ * same reason.
  */
 export function sessionChecksQueryOptions({
     organizationId,
@@ -75,6 +76,9 @@ export function sessionChecksQueryOptions({
 
     return {
         ...base,
+        // Always stale, overriding the app-wide 10-minute default, so a window focus, a remount or
+        // a new observer (the Recent checks dialog) refetches. Each refetch is a small delta.
+        staleTime: 0,
         queryFn: async ({ client, signal }: QueryFunctionContext): Promise<SessionChecksData> => {
             const since = client.getQueryData(base.queryKey)?.cursor;
             const response = await trpcClient.skillCheckSessions.listSessionChecks.query(

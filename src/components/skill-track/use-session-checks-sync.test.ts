@@ -3,9 +3,11 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -22,7 +24,7 @@ import type { SessionChecksData } from "@/lib/session-checks-sync";
 import { trpc } from "@/trpc/client";
 import type { MutationEffect } from "@/trpc/mutation-effector";
 
-import { sessionChecksQueryOptions } from "./use-session-checks-sync";
+import { sessionChecksQueryOptions, useSessionChecksSync } from "./use-session-checks-sync";
 
 const { listSessionChecksQuery } = vi.hoisted(() => ({
     listSessionChecksQuery:
@@ -33,6 +35,10 @@ const { listSessionChecksQuery } = vi.hoisted(() => ({
             ) => Promise<SessionChecksData>
         >(),
 }));
+
+const organizationRef = vi.hoisted(() => ({ id: "" }));
+
+vi.mock("@/hooks/use-organization", () => ({ useOrganization: () => organizationRef }));
 
 vi.mock("@/trpc/client", async (importOriginal) => ({
     ...(await importOriginal<typeof import("@/trpc/client")>()),
@@ -258,5 +264,59 @@ describe("sessionChecksQueryOptions (delta queryFn)", () => {
         await pending;
 
         expect(ownData()).toEqual([]);
+    });
+
+    describe("useSessionChecksSync", () => {
+        const getSessionKey = trpc.skillCheckSessions.getSession.queryKey({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        function renderSync() {
+            organizationRef.id = T.org;
+            const wrapper = ({ children }: { children: ReactNode }) =>
+                createElement(QueryClientProvider, { client: queryClient }, children);
+            return renderHook(
+                () =>
+                    useSessionChecksSync({
+                        sessionId: T.session,
+                        selfPersonId: T.self,
+                        enabled: true,
+                    }),
+                { wrapper },
+            );
+        }
+
+        /** How many times `getSession` for the session has been invalidated. */
+        function getSessionInvalidations(spy: { mock: { calls: unknown[][] } }) {
+            return spy.mock.calls.filter(
+                ([filters]) =>
+                    JSON.stringify((filters as { queryKey?: unknown }).queryKey) ===
+                    JSON.stringify(getSessionKey),
+            ).length;
+        }
+
+        it("refetches the session once when a poll reports a status changed elsewhere", async () => {
+            // Only `status` is read from the cached session.
+            queryClient.setQueryData(getSessionKey, { status: "Draft" } as never);
+            const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+            listSessionChecksQuery.mockResolvedValue({
+                ...response([], 1_000),
+                sessionStatus: "Include",
+            });
+
+            const { result, unmount } = renderSync();
+            await waitFor(() => expect(result.current?.sessionStatus).toBe("Include"));
+            await waitFor(() => expect(getSessionInvalidations(invalidate)).toBe(1));
+
+            // The refetched session now matches, and a second poll reports the same status.
+            queryClient.setQueryData(getSessionKey, { status: "Include" } as never);
+            await act(() => queryClient.refetchQueries({ queryKey: sessionChecksKey }));
+
+            expect(listSessionChecksQuery).toHaveBeenCalledTimes(2);
+            expect(getSessionInvalidations(invalidate)).toBe(1);
+            unmount();
+        });
     });
 });

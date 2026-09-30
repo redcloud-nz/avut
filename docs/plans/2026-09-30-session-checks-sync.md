@@ -163,7 +163,7 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
 
     `npm run check` passes.
 
-- [ ] **5. Sync hook and page wiring**
+- [x] **5. Sync hook and page wiring** — feat(skill-track): poll session checks on the entry pages; fix(skill-track): make the session checks query always stale
   - **Files:** `src/components/skill-track/use-session-checks-sync.ts` (new), a test beside it, `src/components/skill-track/use-refetch-session-on-conflict.ts`, and the two entry-page content files.
   - **Do:**
     - Export `sessionChecksQueryOptions({ organizationId, sessionId, selfPersonId })`. It spreads `trpc.skillCheckSessions.listSessionChecks.queryOptions({ organizationId, skillCheckSessionId })` and replaces `queryFn` with the delta `queryFn` from Decisions → Client cache: read the cursor, fetch through `trpcClient` with the `signal`, re-read through the context's `client` after the response, merge, patch the own-checks list with `setQueryData`, and keep the later cursor.
