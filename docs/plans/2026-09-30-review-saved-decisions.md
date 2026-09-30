@@ -109,7 +109,7 @@ One commit, because each half breaks the page without the other: the server woul
 
 ### Task 3: Conflicts card rows and the Resolve dialog (`visual`)
 
-- [ ] Not started
+- [x] feat(skill-track): resolve conflicts in a dialog from compact Conflicts rows
 
 **Files:** `src/components/skill-track/session-review-conflicts.tsx`, `src/components/skill-track/resolve-conflict.tsx` (new), `src/components/skill-track/session-review-content.tsx`.
 
@@ -119,7 +119,7 @@ One commit, because each half breaks the page without the other: the server woul
 
 ### Task 4: Personnel / Skills check dialogs save (`visual`)
 
-- [ ] Not started
+- [x] feat(skill-track): save check exclusions through Personnel/Skills dialogs
 
 **Files:** `src/components/skill-track/session-review-coverage.tsx`, `src/components/skill-track/session-review-content.tsx`, possibly a new `src/components/skill-track/review-checks-dialog.tsx`.
 

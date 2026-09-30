@@ -72,7 +72,7 @@ export function SkillTrack_SessionReview_Conflicts({
                     <SkillTrack_SessionReview_CardToggle title="Conflicts" />
                 </CardHeader>
                 <CollapsibleContent asChild>
-                    <CardContent className="flex flex-col">
+                    <CardContent className="flex flex-col has-data-[slot=item]:-my-2.5 has-data-[slot=item]:px-1">
                         {conflicts.map((conflict) => {
                             // The group's own ids are plain strings; its checks carry the branded ones.
                             const { assesseeId, skillId } = conflict.checks[0];
@@ -82,7 +82,7 @@ export function SkillTrack_SessionReview_Conflicts({
                             return (
                                 <Item key={conflict.key} size="sm">
                                     {/* Full width on a phone, so the button wraps below the text. */}
-                                    <ItemContent className="max-sm:basis-full">
+                                    <ItemContent>
                                         <ItemTitle>
                                             {assesseeName} · {skillName}
                                         </ItemTitle>

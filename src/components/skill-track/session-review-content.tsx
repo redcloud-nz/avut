@@ -253,7 +253,7 @@ export function SkillTrack_SessionReview_Content({
     // approval turns the session approved, which closes Approve here as a stale action. The check
     // dialogs (`review-person&personId=…`, `review-skill&skillId=…`) open for anyone, for a person
     // or skill with checks, and are read-only where the controls are.
-    // One `useQueryStates` for the three, so a close can check all of them in one updater.
+    // One `useQueryStates` for every dialog's params, so a close can check all of them in one updater.
     const [{ action, personId, skillId }, setActionParams] = useQueryStates({
         action: parseAsStringLiteral([
             "reopen",
@@ -302,18 +302,12 @@ export function SkillTrack_SessionReview_Content({
         );
     }
     type Action = NonNullable<typeof action>;
-    // The params besides `action` that `only` owns, cleared with it.
+    // Closing a dialog that uses `personId`/`skillId` clears both, so a hand-edited URL leaves
+    // no stray id behind.
     function closeParams(only: Action) {
-        switch (only) {
-            case "resolve":
-                return { action: null, personId: null, skillId: null };
-            case "review-person":
-                return { action: null, personId: null };
-            case "review-skill":
-                return { action: null, skillId: null };
-            default:
-                return { action: null };
-        }
+        return only === "reopen" || only === "approve"
+            ? { action: null }
+            : { action: null, personId: null, skillId: null };
     }
     // Clears `action` only while it's still `only`, and the `personId`/`skillId` it owns only
     // with it: other dialogs use them too.
@@ -386,7 +380,7 @@ export function SkillTrack_SessionReview_Content({
                 action: "review-skill" as const,
                 subject: { kind: "skill", id: reviewingSkill.id } as const,
                 title: skillName(reviewingSkill.id),
-                description: coverageSummary(reviewingSkill, "people"),
+                description: coverageSummary(reviewingSkill, "personnel"),
                 rows: reviewingSkill.checks.map((check) => ({
                     check,
                     label: personName(check.assesseeId),

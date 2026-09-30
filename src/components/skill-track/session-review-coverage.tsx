@@ -74,7 +74,7 @@ export function SkillTrack_SessionReview_Coverage({
                 entries={skills}
                 allCount={skillsCount}
                 name={skillName}
-                coverageOf="people"
+                coverageOf="personnel"
                 conflictCheckIds={conflictCheckIds}
                 onOpen={(id) => onOpen({ kind: "skill", id })}
             />
@@ -85,7 +85,7 @@ export function SkillTrack_SessionReview_Coverage({
 /** An entry's check count and coverage ("3 checks · 50% of skills"), for its row and its dialog. */
 export function coverageSummary(
     entry: Coverage<string, SkillCheck>,
-    coverageOf: "skills" | "people",
+    coverageOf: "skills" | "personnel",
 ) {
     if (entry.checks.length === 0) return "No checks recorded";
     const checks = `${entry.checks.length} ${entry.checks.length === 1 ? "check" : "checks"}`;
@@ -107,7 +107,7 @@ function CoverageCard<Id extends string>({
     /** The entry count with the unassessed included, whether or not `entries` leaves them out. */
     allCount: number;
     name(id: Id): string;
-    coverageOf: "skills" | "people";
+    coverageOf: "skills" | "personnel";
     conflictCheckIds: ReadonlySet<SkillCheckId>;
     onOpen(id: Id): void;
 }) {
@@ -142,7 +142,7 @@ function CoverageCard<Id extends string>({
                     <SkillTrack_SessionReview_CardToggle title={title} />
                 </CardHeader>
                 <CollapsibleContent asChild>
-                    <CardContent className="flex flex-col">
+                    <CardContent className="flex flex-col has-data-[slot=item]:-my-2.5 has-data-[slot=item]:px-1">
                         {entries.length === 0 && (
                             <p className="text-sm text-muted-foreground">No checks recorded.</p>
                         )}
