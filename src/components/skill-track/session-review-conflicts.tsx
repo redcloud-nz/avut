@@ -4,20 +4,19 @@
  */
 "use client";
 
+import { Protect } from "@/components/protect";
 import { SkillTrack_SessionReview_CardToggle } from "@/components/skill-track/session-review-card-toggle";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
-import { usePreferences } from "@/hooks/use-preferences";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import {
     assessorDisplayName,
     getSkillCheckResultLabel,
     SkillCheck,
-    SkillCheckId,
 } from "@/lib/schemas/skill-check";
 import {
     isCheckIncluded,
@@ -29,42 +28,32 @@ interface SessionReviewConflictsProps {
     /** The card's element id, for in-page links to it. */
     id?: string;
     conflicts: SkillCheckConflict<SkillCheck>[];
-    /** Save `checkId` as the group's pick, excluding the rest of `groupIds`. */
-    pick(groupIds: SkillCheckId[], checkId: SkillCheckId): void;
+    /** Open the Resolve dialog for a conflict. */
+    onResolve(conflict: SkillCheckConflict<SkillCheck>): void;
     assesseeById: Map<PersonId, PersonRef>;
     skillById: Map<SkillId, SkillRef>;
     assessorById: Map<PersonId, PersonRef>;
-    /**
-     * True while the session is approved, the viewer can't approve, or a save is in flight: the
-     * radios are read-only.
-     */
-    disabled: boolean;
-    /** The session is approved: each group's included check is the approval's record of it. */
+    /** The session is approved: each conflict's included check is the approval's record of it. */
     isApproved: boolean;
 }
 
 /**
- * The review page's Conflicts card: one radio group per assessee and skill with more than one
- * live check, for picking which check the approval includes. The pick is read from saved
- * statuses: a group's one included check, if it has exactly one.
+ * The review page's Conflicts card: one compact row per assessee and skill with more than one
+ * live check. Each row's status is read from saved statuses (Unresolved, the picked check, or all
+ * excluded), and its Resolve button opens the Resolve dialog.
  */
 export function SkillTrack_SessionReview_Conflicts({
     id,
     conflicts,
-    pick,
+    onResolve,
     assesseeById,
     skillById,
     assessorById,
-    disabled,
     isApproved,
 }: SessionReviewConflictsProps) {
     const organization = useOrganization();
-    const { formatDateTime } = usePreferences();
-
-    const pickedId = (checks: SkillCheck[]): SkillCheckId | undefined => {
-        const included = checks.filter(isCheckIncluded);
-        return included.length === 1 ? included[0].id : undefined;
-    };
+    const resultLabel = (result: SkillCheck["result"]) =>
+        getSkillCheckResultLabel(organization.settings, result);
 
     const unresolved = conflicts.filter((conflict) => !isConflictResolved(conflict)).length;
     const plural = (n: number) => `${n} ${n === 1 ? "conflict" : "conflicts"}`;
@@ -83,113 +72,47 @@ export function SkillTrack_SessionReview_Conflicts({
                     <SkillTrack_SessionReview_CardToggle title="Conflicts" />
                 </CardHeader>
                 <CollapsibleContent asChild>
-                    <CardContent className="flex flex-col gap-6">
+                    <CardContent className="flex flex-col">
                         {conflicts.map((conflict) => {
                             // The group's own ids are plain strings; its checks carry the branded ones.
                             const { assesseeId, skillId } = conflict.checks[0];
                             const assesseeName = assesseeById.get(assesseeId)?.name ?? assesseeId;
                             const skillName = skillById.get(skillId)?.name ?? skillId;
-                            const groupIds = conflict.checks.map((c) => c.id);
-                            const headingId = `conflict-group-${conflict.checks[0].id}`;
-                            // Sessions approved before `approveSession` enforced one check per pair can
-                            // hold more than one `Include` in a group; the radio can only show one.
-                            const multipleIncluded =
-                                isApproved &&
-                                conflict.checks.filter((c) => c.status === "Include").length > 1;
 
                             return (
-                                <section key={conflict.key} className="flex flex-col gap-2">
-                                    <div>
-                                        <div id={headingId} className="font-medium">
+                                <Item key={conflict.key} size="sm">
+                                    {/* Full width on a phone, so the button wraps below the text. */}
+                                    <ItemContent className="max-sm:basis-full">
+                                        <ItemTitle>
                                             {assesseeName} · {skillName}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground">
-                                            {agreementLabel(conflict.checks, (result) =>
-                                                getSkillCheckResultLabel(
-                                                    organization.settings,
-                                                    result,
-                                                ),
-                                            )}
-                                        </div>
-                                    </div>
-                                    <RadioGroup
-                                        aria-labelledby={headingId}
-                                        value={pickedId(conflict.checks) ?? ""}
-                                        onValueChange={(value) => {
-                                            const check = conflict.checks.find(
-                                                (c) => c.id === value,
-                                            );
-                                            if (check) pick(groupIds, check.id);
-                                        }}
-                                        disabled={disabled}
-                                        // Side by side from `md`, like a merge tool's panes. `auto-fit`
-                                        // gives two checks half the width each and three a third, and
-                                        // wraps a larger group onto further rows of equal-height panes.
-                                        className="md:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))]"
-                                    >
-                                        {conflict.checks.map((check) => {
-                                            const assessor = check.assessorId
-                                                ? (assessorById.get(check.assessorId) ?? null)
-                                                : null;
-                                            const radioId = `conflict-${check.id}`;
-                                            const detailsId = `conflict-${check.id}-details`;
-                                            return (
-                                                <div
-                                                    key={check.id}
-                                                    className="flex flex-col overflow-hidden rounded-lg border has-data-checked:border-primary/40 has-data-checked:bg-primary/5 dark:has-data-checked:border-primary/30 dark:has-data-checked:bg-primary/10"
+                                        </ItemTitle>
+                                        <ItemDescription>
+                                            {agreementLabel(conflict.checks, resultLabel)}
+                                            {" · "}
+                                            <ConflictStatus
+                                                checks={conflict.checks}
+                                                isApproved={isApproved}
+                                                assessorById={assessorById}
+                                                resultLabel={resultLabel}
+                                            />
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    {!isApproved && (
+                                        <Protect permissions={{ skillCheckSession: ["approve"] }}>
+                                            <ItemActions>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => onResolve(conflict)}
                                                 >
-                                                    <Field
-                                                        orientation="horizontal"
-                                                        className="border-b bg-muted/40 px-3 py-2"
-                                                    >
-                                                        <RadioGroupItem
-                                                            value={check.id}
-                                                            id={radioId}
-                                                            aria-describedby={detailsId}
-                                                        />
-                                                        <FieldLabel
-                                                            htmlFor={radioId}
-                                                            className="flex grow flex-wrap justify-between gap-x-3"
-                                                        >
-                                                            <span className="font-medium">
-                                                                {getSkillCheckResultLabel(
-                                                                    organization.settings,
-                                                                    check.result,
-                                                                )}
-                                                            </span>
-                                                            <span className="font-normal text-muted-foreground">
-                                                                {assessorDisplayName({
-                                                                    assessor,
-                                                                    assessorLabel:
-                                                                        check.assessorLabel,
-                                                                })}
-                                                            </span>
-                                                        </FieldLabel>
-                                                    </Field>
-                                                    <div
-                                                        id={detailsId}
-                                                        className="flex flex-col gap-1 px-3 py-2 text-sm"
-                                                    >
-                                                        <span className="text-muted-foreground">
-                                                            {formatDateTime(check.createdAt)}
-                                                        </span>
-                                                        {check.notes && (
-                                                            <p className="whitespace-pre-wrap">
-                                                                {check.notes}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </RadioGroup>
-                                    {multipleIncluded && (
-                                        <p className="text-sm text-muted-foreground">
-                                            Approved before conflicts were enforced: more than one
-                                            check was included.
-                                        </p>
+                                                    {isConflictResolved(conflict)
+                                                        ? "Change"
+                                                        : "Resolve"}
+                                                </Button>
+                                            </ItemActions>
+                                        </Protect>
                                     )}
-                                </section>
+                                </Item>
                             );
                         })}
                     </CardContent>
@@ -197,6 +120,38 @@ export function SkillTrack_SessionReview_Conflicts({
             </Card>
         </Collapsible>
     );
+}
+
+/** "Unresolved", "Picked: Competent, Jane Smith", or "All excluded", from saved statuses. */
+function ConflictStatus({
+    checks,
+    isApproved,
+    assessorById,
+    resultLabel,
+}: {
+    checks: SkillCheck[];
+    isApproved: boolean;
+    assessorById: Map<PersonId, PersonRef>;
+    resultLabel: (result: SkillCheck["result"]) => string;
+}) {
+    const included = checks.filter(isCheckIncluded);
+    if (included.length === 0) return <>All excluded</>;
+    if (included.length === 1) {
+        const [picked] = included;
+        const assessor = picked.assessorId ? (assessorById.get(picked.assessorId) ?? null) : null;
+        return (
+            <>
+                Picked: {resultLabel(picked.result)},{" "}
+                {assessorDisplayName({ assessor, assessorLabel: picked.assessorLabel })}
+            </>
+        );
+    }
+    // Sessions approved before `approveSession` enforced one check per pair can hold more than
+    // one `Include` in a conflict.
+    if (isApproved) {
+        return <>{included.length} included, approved before conflicts were enforced</>;
+    }
+    return <span className="text-destructive">Unresolved</span>;
 }
 
 /** "Both: Competent", "All 3: Competent", or "Results differ". */

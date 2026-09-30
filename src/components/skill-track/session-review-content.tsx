@@ -5,7 +5,7 @@
 "use client";
 
 import { ClipboardCheckIcon, LockOpenIcon } from "lucide-react";
-import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
+import { parseAsBoolean, parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -20,6 +20,7 @@ import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
 import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reopen-session";
+import { SkillsModule_ResolveConflict_Dialog } from "@/components/skill-track/resolve-conflict";
 import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
 import { SkillTrack_SessionReview_Coverage } from "@/components/skill-track/session-review-coverage";
 import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
@@ -45,6 +46,7 @@ import {
     isCheckIncluded,
     isConflictResolved,
     pairKey,
+    SkillCheckConflict,
 } from "@/lib/skill-check-conflicts";
 import { coverageBy } from "@/lib/skill-check-coverage";
 import { trpc } from "@/trpc/client";
@@ -116,9 +118,9 @@ export function SkillTrack_SessionReview_Content({
     const canApprove = useHasPermission({ skillCheckSession: ["approve"] });
 
     // Each decision is saved as it's made: a check is included unless its status is `Exclude`
-    // (`isCheckIncluded`), and Approve approves that saved state. Interim until the Resolve and
-    // check dialogs save through Save: a click on a conflict's radio or a check's checkbox saves
-    // straight away.
+    // (`isCheckIncluded`), and Approve approves that saved state. Conflicts are resolved in the
+    // Resolve dialog. Interim until the check dialogs save through Save: a click on a check's
+    // checkbox saves straight away.
     const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
     const exclusions = useMutation(
         trpc.skillCheckSessions.updateCheckExclusions.mutationOptions({
@@ -244,29 +246,49 @@ export function SkillTrack_SessionReview_Content({
             ? `Resolve ${unresolvedConflicts} ${unresolvedConflicts === 1 ? "conflict" : "conflicts"} to approve`
             : null;
 
-    // One `?action=` owner for both dialogs on this page: two literal parsers would each read the
+    // One `?action=` owner for every dialog on this page: two literal parsers would each read the
     // other's value as `null`. Reopen opens only on an approved session; Approve only on one that
-    // isn't, and only when it isn't blocked. Both need the approve permission. A successful
+    // isn't, and only when it isn't blocked; Resolve only on one that isn't, for a conflict that
+    // exists (`&personId=…&skillId=…` name it). All need the approve permission. A successful
     // approval turns the session approved, which closes Approve here as a stale action.
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["reopen", "approve"] as const),
+        parseAsStringLiteral(["reopen", "approve", "resolve"] as const),
     );
+    const [personId, setPersonId] = useQueryState("personId", parseAsString);
+    const [skillId, setSkillId] = useQueryState("skillId", parseAsString);
     const canOpenReopen = canApprove && isApproved;
     const canOpenApprove = canApprove && !isApproved && approveBlockedReason === null;
+    const resolvingConflict =
+        conflicts.find(
+            (conflict) => conflict.assesseeId === personId && conflict.skillId === skillId,
+        ) ?? null;
+    const canOpenResolve = canApprove && !isApproved && resolvingConflict !== null;
 
     function openAction(next: "reopen" | "approve") {
         void setAction(next, { history: "push" });
     }
-    function closeAction(only: "reopen" | "approve") {
+    function openResolve(conflict: SkillCheckConflict<SkillCheck>) {
+        void setPersonId(conflict.assesseeId, { history: "push" });
+        void setSkillId(conflict.skillId, { history: "push" });
+        void setAction("resolve", { history: "push" });
+    }
+    function closeAction(only: "reopen" | "approve" | "resolve") {
         void setAction((current) => (current === only ? null : current), { history: "replace" });
+        if (only === "resolve") {
+            void setPersonId(null, { history: "replace" });
+            void setSkillId(null, { history: "replace" });
+        }
     }
 
     // A pasted `?action=approve` on an approved session or a blocked draft (or `?action=reopen`
-    // on a draft), or a session whose status changed while one was open: clear the param,
-    // replacing the history entry. `open` is masked until it's gone.
+    // on a draft, or `?action=resolve` for a conflict that doesn't exist), or a session whose
+    // status changed while one was open: clear the params, replacing the history entry. `open` is
+    // masked until they're gone.
     const staleAction =
-        (action === "approve" && !canOpenApprove) || (action === "reopen" && !canOpenReopen)
+        (action === "approve" && !canOpenApprove) ||
+        (action === "reopen" && !canOpenReopen) ||
+        (action === "resolve" && !canOpenResolve)
             ? action
             : null;
     useEffect(() => {
@@ -276,10 +298,6 @@ export function SkillTrack_SessionReview_Content({
 
     function toggleCheck(check: SkillCheck) {
         saveExclusions([{ skillCheckId: check.id, excluded: isCheckIncluded(check) }]);
-    }
-
-    function pick(groupIds: SkillCheckId[], checkId: SkillCheckId) {
-        saveExclusions(groupIds.map((id) => ({ skillCheckId: id, excluded: id !== checkId })));
     }
 
     return (
@@ -417,11 +435,10 @@ export function SkillTrack_SessionReview_Content({
                                 <SkillTrack_SessionReview_Conflicts
                                     id="conflicts"
                                     conflicts={conflicts}
-                                    pick={pick}
+                                    onResolve={openResolve}
                                     assesseeById={assesseeById}
                                     skillById={skillById}
                                     assessorById={assessorById}
-                                    disabled={controlsDisabled}
                                     isApproved={isApproved}
                                 />
                             </Show>
@@ -439,6 +456,23 @@ export function SkillTrack_SessionReview_Content({
                                 toggleCheck={toggleCheck}
                             />
                         </Show>
+                        {resolvingConflict && (
+                            <SkillsModule_ResolveConflict_Dialog
+                                sessionId={sessionId}
+                                conflict={resolvingConflict}
+                                assesseeName={
+                                    assesseeById.get(resolvingConflict.checks[0].assesseeId)
+                                        ?.name ?? resolvingConflict.assesseeId
+                                }
+                                skillName={
+                                    skillById.get(resolvingConflict.checks[0].skillId)?.name ??
+                                    resolvingConflict.skillId
+                                }
+                                assessorById={assessorById}
+                                open={canOpenResolve && action === "resolve"}
+                                onOpenChange={(open) => (open ? undefined : closeAction("resolve"))}
+                            />
+                        )}
                     </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>
