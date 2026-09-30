@@ -249,7 +249,7 @@ describe("skill-checks", () => {
         //   multiRole     → Active, linked, "member,skills-assessor"     → eligible
         //   unlinked      → Active, no OrganizationUser                  → excluded
         //   memberOnly    → Active, linked, "member"                     → excluded
-        //   skillsAdmin   → Active, linked, "skills-admin"               → excluded
+        //   skillsAdmin   → Active, linked, "skills-admin"               → eligible
         //   archived      → Archived, linked, "skills-assessor"          → excluded
         //   outsider      → in T.otherOrg, linked, "skills-assessor"     → excluded
         const P = {
@@ -310,6 +310,7 @@ describe("skill-checks", () => {
         it("returns only active, linked people whose role can record checks, sorted by name", async () => {
             expect(await listEligibleAssessors(ctx())).toEqual([
                 { id: P.multiRole, name: "Amy MultiRole" },
+                { id: P.skillsAdmin, name: "Skills Admin" },
                 { id: P.assessor, name: "Zed Assessor" },
             ]);
         });
