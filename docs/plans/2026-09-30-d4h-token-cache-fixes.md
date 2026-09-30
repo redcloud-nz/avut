@@ -5,7 +5,7 @@
 **DB:** no schema change, no migration, no data change. No `db:branch`.
 **Written against:** integration @ 89eb45a2
 **Source:** the 2026-09-29 review of how D4H tokens and data are accessed, cached and passed to the client (conversation, no issue). Takes over Phase 2 of [`2026-09-29-provider-credential-security-fixes.md`](2026-09-29-provider-credential-security-fixes.md), whose Phase 1 has shipped.
-**Depends on:** the generic owner-checked lookup (`ProviderCredentialRef`, `getProviderCredentialForOwner` in `src/server/provider-credential.ts`), being built separately on `.claude/worktrees/provider-credential-owner`. Merge it (or integration, once it's landed) before Task 1.
+**Depends on:** the generic owner-checked lookup (`ProviderCredentialRef`, `getProviderCredentialForOwner` in `src/server/provider-credential.ts`), built separately and **already merged into this branch** (8c904ef5). It ships in this branch's PR.
 **Forward-compatible with:** D4H OAuth, which is expected later but not designed yet. See [OAuth readiness](#oauth-readiness).
 
 The token itself never reaches the client, and that plan's Phase 1 fixed revocation, page permissions and ownership checks. What's left is in the D4H API cache layer and a few consumers:
@@ -49,7 +49,7 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 
 **Do:** the D4H side of the earlier plan's Phase 2 design, on top of the generic `getProviderCredentialForOwner` (see **Depends on**). No callers change yet.
 
-- **Before starting,** confirm `ProviderCredentialRef` and `getProviderCredentialForOwner` exist in `src/server/provider-credential.ts`. If the separate branch hasn't been merged, stop and report. Don't rebuild it here.
+- **Before starting,** confirm `ProviderCredentialRef` and `getProviderCredentialForOwner` exist in `src/server/provider-credential.ts`. They're merged in (8c904ef5); if they're somehow missing, stop and report. Don't rebuild them here.
 - **`d4h-access-token.ts`:** add `D4HCredentialRef = Omit<ProviderCredentialRef, "provider">`, `toD4HCredentialRef(token)` and `resolveD4HCredential(ref)`. The last one calls `getProviderCredentialForOwner({ provider: "D4H", ...ref })` + `toD4HAccessToken_ServerOnly`, and throws `NotConfiguredError` when that returns `null`.
 - **Earlier plan:** under its `## Phase 2` heading, add one line saying it's taken over by this plan, with a link.
 
