@@ -307,7 +307,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - `npm run check` passes.
 - In a browser: create a note, edit its title and body, then open History from the menu. The page lists Created, then Updated with the title diff and "content changed", with no body text. The breadcrumb links back to the note, and the list stays alongside.
 
-### - [ ] 9. Personal notes: module, flag and UI `visual`
+### - [x] 9. Personal notes: module, flag and UI `visual`
+
+`feat(notes): add personal notes`, `fix(modules): type configurable user modules against their settings keys`
 
 **Files:**
 

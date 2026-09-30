@@ -4,8 +4,9 @@
  *
  * Static sidebar content for the user and system scopes — unlike org modules, these aren't
  * gated by any per-org settings, so there's nothing to fetch and no provider needed: just render
- * by path. The one input is the user modules' flag state, resolved by the authenticated layout. The org scope's module list is rendered separately, via `SidebarPortal`
- * from `orgs/[slug]/layout.tsx` — see `org-sidebar-modules.tsx` for why.
+ * by path. The one input is the user modules' flag state, resolved by the authenticated layout.
+ * The org scope's module list is rendered separately, via `SidebarPortal` from
+ * `orgs/[slug]/layout.tsx` — see `org-sidebar-modules.tsx` for why.
  */
 
 "use client";
