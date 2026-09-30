@@ -148,7 +148,7 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
 
     `npm run check` passes.
 
-- [ ] **4. Write effects feed the session cache**
+- [x] **4. Write effects feed the session cache** — feat(skill-track): feed check writes into the session checks cache; fix(skill-track): keep a re-recorded check in the own list after delete
   - **Files:** `src/client/skill-check-sessions-effects.ts`, `src/client/skill-check-sessions-effects.test.ts`.
   - **Do:**
     - Add a `write` of the session cache key to `setSessionSkillCheck` and `deleteSessionSkillCheck`. It merges the returned row through `mergeSessionChecks`, whether or not the id is already cached. Names come from the cached row with the same id, else `""`. The delete effect skips when `check` is null.
@@ -168,6 +168,8 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
   - **Do:**
     - Export `sessionChecksQueryOptions({ organizationId, sessionId, selfPersonId })`. It spreads `trpc.skillCheckSessions.listSessionChecks.queryOptions({ organizationId, skillCheckSessionId })` and replaces `queryFn` with the delta `queryFn` from Decisions → Client cache: read the cursor, fetch through `trpcClient` with the `signal`, re-read through the context's `client` after the response, merge, patch the own-checks list with `setQueryData`, and keep the later cursor.
     - Export `useSessionChecksSync({ sessionId, selfPersonId, enabled })`. It calls `useQuery` with those options and `refetchInterval: 10_000`, runs the `sessionStatus` comparison in a `useEffect`, and returns the query's `data`.
+    - On the **first load** (the re-read after the response finds no cached data), skip the own-list patch entirely. The own list has its own query. And an own-list delete made while that first load was in flight left no tombstone in the session cache (an uncached list stays uncached), so patching would bring the stale live row back. From the second response on, the effects have written every local write into the session cache.
+    - Take the response's `sessionStatus` as it comes. A poll in flight across a local approve or reopen can briefly put back the old status. The `useEffect` then sees a mismatch with `getSession` and does one extra invalidation, which refetches the truth, and that's accepted.
     - The comment on the `useQuery` says why it isn't a suspense query.
     - Factor the invalidation out of `useRefetchSessionOnConflict` into a shared helper that both use.
     - Export `useSessionChecks({ sessionId, selfPersonId, enabled, refetchInterval? })` for other observers. It uses the same options builder.
@@ -176,7 +178,8 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
     - the first call has no `since` and a later call passes the cursor;
     - a cache write made while the fetch was in flight survives the merge;
     - the own list is patched;
-    - the create → poll starts → delete → poll returns the stale live row sequence leaves the check gone from both caches.
+    - the create → poll starts → delete → poll returns the stale live row sequence leaves the check gone from both caches;
+    - a delete made during the first load doesn't come back in the own list.
 
     `npm run check` passes.
 

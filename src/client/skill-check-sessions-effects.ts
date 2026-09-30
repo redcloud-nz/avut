@@ -5,7 +5,7 @@
 
 import type { SessionCheck, SkillCheck } from "@/lib/schemas/skill-check";
 import type { SkillCheckSession } from "@/lib/schemas/skill-check-session";
-import { mergeSessionChecks } from "@/lib/session-checks-sync";
+import { mergeSessionChecks, patchOwnChecks } from "@/lib/session-checks-sync";
 import { trpc } from "@/trpc/client";
 import { createEffects, invalidate, write, type MutationEffect } from "@/trpc/mutation-effector";
 
@@ -175,6 +175,16 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
     ],
     deleteSessionSkillCheck: (vars, { check: tombstoned }) => [
         write(ownSessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId), (old) => {
+            // The re-read found a live row: the caller's other device re-recorded the check after
+            // the delete. Keep it, through the same stamp-guarded patch as the poll. The row's
+            // assessor is the caller (so `assessorId` is set; it's only null for a purged assessor).
+            if (tombstoned && tombstoned.status !== "Deleted" && tombstoned.assessorId) {
+                return patchOwnChecks(
+                    old,
+                    [{ ...tombstoned, assesseeName: "", skillName: "", assessorName: "" }],
+                    tombstoned.assessorId,
+                );
+            }
             const matches = (check: { assesseeId: string; skillId: string }) =>
                 check.assesseeId === vars.assesseeId && check.skillId === vars.skillId;
             // Nothing to remove: keep the same array, so no subscriber re-renders.

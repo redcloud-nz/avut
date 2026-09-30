@@ -186,6 +186,26 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
 
             expect(next).toBe(old);
         });
+
+        it("keeps a row re-recorded on another device after the delete", () => {
+            const alice = makeCheck(T.alice, "Fail");
+            const bob = makeCheck(T.bob, "Pass");
+            const rerecorded: SkillCheck = {
+                ...alice,
+                result: "Pass",
+                updatedAt: new Date(1_000).toISOString(),
+            };
+
+            const next = applyWrite(
+                skillCheckSessionsEffects.deleteSessionSkillCheck(deleteVars, {
+                    deleted: true,
+                    check: rerecorded,
+                }),
+                [alice, bob],
+            );
+
+            expect(next).toEqual([rerecorded, bob]);
+        });
     });
 
     describe("session cache", () => {
