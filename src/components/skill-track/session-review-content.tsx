@@ -25,21 +25,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHeadCell,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId, SkillRef } from "@/lib/schemas/skill";
-import { getSkillCheckResultLabel, SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
+import {
+    assessorDisplayName,
+    getSkillCheckResultLabel,
+    SkillCheck,
+    SkillCheckId,
+} from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { findConflicts, initialSelection, reconcileSelection } from "@/lib/skill-check-conflicts";
 import { findNotAssessed } from "@/lib/skill-check-coverage";
@@ -391,43 +390,37 @@ export function SkillTrack_SessionReview_Content({
                         </Show>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Review</CardTitle>
+                                <CardTitle>Checks</CardTitle>
                                 <CardDescription>
                                     {isApproved
                                         ? "The selected skill checks were included in the session approval. Only they count towards the session results."
                                         : "Select the skill checks you want to include in the session approval. Only the selected checks will be included in the session results."}
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHeadCell></TableHeadCell>
-                                            <TableHeadCell>Assessee</TableHeadCell>
-                                            <TableHeadCell>Skill</TableHeadCell>
-                                            <TableHeadCell>Result</TableHeadCell>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {assessees.map((assessee) => (
-                                            <AssesseeChecks
-                                                key={assessee.id}
-                                                assessee={assessee}
-                                                assesseeChecks={skillChecks.filter(
-                                                    (check) => check.assesseeId === assessee.id,
-                                                )}
-                                                skillById={skillById}
-                                                assessorById={assessorById}
-                                                selected={selected}
-                                                conflictCheckIds={conflictCheckIds}
-                                                disabled={controlsDisabled}
-                                                showApproval={showApproval}
-                                                toggleCheck={toggleCheck}
-                                                toggleGroup={toggleGroup}
-                                            />
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                            <CardContent className="flex flex-col divide-y">
+                                {assessees.map((assessee) => {
+                                    // Assessees with no checks are left out: their gaps show in
+                                    // the Not assessed card.
+                                    const assesseeChecks = skillChecks.filter(
+                                        (check) => check.assesseeId === assessee.id,
+                                    );
+                                    if (assesseeChecks.length === 0) return null;
+                                    return (
+                                        <AssesseeChecks
+                                            key={assessee.id}
+                                            assessee={assessee}
+                                            assesseeChecks={assesseeChecks}
+                                            skillById={skillById}
+                                            assessorById={assessorById}
+                                            selected={selected}
+                                            conflictCheckIds={conflictCheckIds}
+                                            disabled={controlsDisabled}
+                                            showApproval={showApproval}
+                                            toggleCheck={toggleCheck}
+                                            toggleGroup={toggleGroup}
+                                        />
+                                    );
+                                })}
                             </CardContent>
                         </Card>
                         <Show when={notAssessed.length > 0}>
@@ -472,6 +465,7 @@ function AssesseeChecks({
     assessee,
     assesseeChecks,
     skillById,
+    assessorById,
     selected,
     conflictCheckIds,
     disabled,
@@ -480,22 +474,30 @@ function AssesseeChecks({
     toggleGroup,
 }: AssesseeChecksProps) {
     const organization = useOrganization();
+    const { formatDateTime } = usePreferences();
     const isChecked = (check: SkillCheck) =>
         showApproval ? check.status === "Include" : selected.has(check.id);
-    const hasChecks = assesseeChecks.length > 0;
 
     // Select-all covers only the checks outside conflict groups. If every check is in one, there's
     // nothing for it to toggle, so it isn't shown.
     const toggleable = assesseeChecks.filter((check) => !conflictCheckIds.has(check.id));
     const selectedCount = toggleable.filter(isChecked).length;
 
+    const skillName = (check: SkillCheck) => skillById.get(check.skillId)?.name ?? check.skillId;
+    // By skill name, the same order as the Not assessed card.
+    const sortedChecks = assesseeChecks.toSorted((a, b) =>
+        skillName(a).localeCompare(skillName(b)),
+    );
+
+    const selectAllId = `select-all-${assessee.id}`;
+
     return (
-        <>
-            <TableRow>
-                <TableCell>
-                    {toggleable.length > 0 && (
+        <section className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0">
+            <div className="flex items-center gap-3">
+                {toggleable.length > 0 ? (
+                    <>
                         <Checkbox
-                            id={`select-all-${assessee.id}`}
+                            id={selectAllId}
                             checked={
                                 selectedCount === toggleable.length
                                     ? true
@@ -506,37 +508,58 @@ function AssesseeChecks({
                             disabled={disabled}
                             onCheckedChange={() => toggleGroup(toggleable.map((check) => check.id))}
                         />
-                    )}
-                </TableCell>
-                <TableCell className="font-medium" colSpan={2}>
-                    {assessee.name}
-                </TableCell>
-                {!hasChecks && (
-                    <TableCell className="text-muted-foreground">
-                        No skill checks recorded
-                    </TableCell>
+                        <Label htmlFor={selectAllId} className="text-base leading-snug">
+                            {assessee.name}
+                        </Label>
+                    </>
+                ) : (
+                    <span className="font-medium">{assessee.name}</span>
                 )}
-            </TableRow>
-            {assesseeChecks.map((check) => {
-                const skill = skillById.get(check.skillId);
-                return (
-                    <TableRow key={check.id}>
-                        <TableCell>
+            </div>
+            <ul className="flex flex-col gap-3">
+                {sortedChecks.map((check) => {
+                    const checkboxId = `check-${check.id}`;
+                    const assessor = check.assessorId
+                        ? (assessorById.get(check.assessorId) ?? null)
+                        : null;
+                    return (
+                        <li key={check.id} className="flex items-start gap-3">
                             <Checkbox
-                                id={`check-${check.id}`}
+                                id={checkboxId}
+                                className="mt-0.5"
                                 checked={isChecked(check)}
                                 disabled={disabled || conflictCheckIds.has(check.id)}
                                 onCheckedChange={() => toggleCheck(check.id)}
                             />
-                        </TableCell>
-                        <TableCell></TableCell>
-                        <TableCell>{skill?.name ?? check.skillId}</TableCell>
-                        <TableCell>
-                            {getSkillCheckResultLabel(organization.settings, check.result)}
-                        </TableCell>
-                    </TableRow>
-                );
-            })}
-        </>
+                            <div className="flex min-w-0 grow flex-col gap-1 text-sm">
+                                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                                    <Label htmlFor={checkboxId} className="leading-snug">
+                                        {skillName(check)}
+                                    </Label>
+                                    <span>
+                                        {getSkillCheckResultLabel(
+                                            organization.settings,
+                                            check.result,
+                                        )}
+                                    </span>
+                                </div>
+                                <div className="text-muted-foreground">
+                                    {assessorDisplayName({
+                                        assessor,
+                                        assessorLabel: check.assessorLabel,
+                                    })}{" "}
+                                    · {formatDateTime(check.createdAt)}
+                                </div>
+                                {check.notes && (
+                                    <p className="wrap-break-word whitespace-pre-wrap">
+                                        {check.notes}
+                                    </p>
+                                )}
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
+        </section>
     );
 }
