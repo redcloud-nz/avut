@@ -33,6 +33,21 @@ export const HistoryObjectType = {
 export type HistoryObjectType = (typeof historyObjectTypeValues)[number];
 
 /**
+ * The user-scoped object types that have a History page: the caller's own records, read from
+ * their `scope: "user"` log (`history.listOwnObjectHistory`). Kept apart from
+ * `HistoryObjectType`, so neither procedure can be asked for the other scope's types. Needs no
+ * permission entry: every row it reads is the caller's own.
+ */
+const ownHistoryObjectTypeValues = ["UserNote"] as const satisfies readonly LogObjectType[];
+
+export const OwnHistoryObjectType = {
+    values: ownHistoryObjectTypeValues,
+    schema: z.enum(ownHistoryObjectTypeValues),
+} as const;
+
+export type OwnHistoryObjectType = (typeof ownHistoryObjectTypeValues)[number];
+
+/**
  * Who may read an object's history: whoever can view the object. Each entry is the permission
  * the detail page's own getter already requires, so anyone on the detail page can open its
  * History page without a separate `<Protect>`.

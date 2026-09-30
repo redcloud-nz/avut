@@ -5,6 +5,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
@@ -14,7 +15,13 @@ import { sessionQueryOptions } from "@/client/auth-queries";
 import { userNotesEffects } from "@/client/user-notes-effects";
 import { ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { EntityActionMenu } from "@/components/ui/menu-action";
+import { route } from "@/lib/routes";
 import { UserNoteData, UserNoteId } from "@/lib/schemas/user-note";
 import { trpc } from "@/trpc/client";
 
@@ -86,6 +93,22 @@ function UserNote_Body({ noteId }: { noteId: UserNoteId }) {
                             <EntityActionMenu
                                 category="Notes"
                                 width="w-44"
+                                before={
+                                    <>
+                                        <DropdownMenuGroup>
+                                            <DropdownMenuItem asChild>
+                                                <Link
+                                                    href={route("/user/notes/[note_id]/history", {
+                                                        note_id: note.id,
+                                                    })}
+                                                >
+                                                    <ObjectIcons.History /> History
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuGroup>
+                                        <DropdownMenuSeparator />
+                                    </>
+                                }
                                 actions={[
                                     {
                                         verb: "update",
