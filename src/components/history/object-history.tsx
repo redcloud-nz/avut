@@ -166,7 +166,9 @@ function ObjectHistoryEntryItem({
     // row can be the collapse button. The relative time sits at the row's end, and wraps under
     // the title when it doesn't fit.
     const summary = (
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+        // A `<span>`, not a `<div>`: it sits inside the trigger `<button>`, which allows only
+        // phrasing content.
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             <span className="@2xl:hidden">{verb.replace(/ of$/, "")}</span>
             <span className="hidden @2xl:inline">
                 {[verb, ...inlineNames].join(" ")} — {actorText(entry)}
@@ -177,7 +179,7 @@ function ObjectHistoryEntryItem({
             >
                 {preferences.formatRelativeDateTime(entry.timestamp)}
             </time>
-        </div>
+        </span>
     );
 
     // Every entry has a body (its full timestamp, at least), so every row expands.

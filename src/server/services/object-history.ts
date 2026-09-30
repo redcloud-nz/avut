@@ -114,23 +114,27 @@ export async function list(
         collectIdFieldIds(page.map((row, index) => ({ row, changes: changes[index] }))),
     );
 
-    const entries = page.map(
-        (row, index): ObjectHistoryEntry => ({
+    const entries = page.map((row, index): ObjectHistoryEntry => {
+        const opLabel = row.batch ? operationLabel(row.batch.operationKey) : null;
+        // An unattended run's `actorLabel` is its operation's label, not a person's, so it isn't
+        // an actor name; returning it as one would read "D4H team sync (D4H team sync)".
+        const label = stripEmail(row.actorLabel);
+        return {
             id: row.id,
             sequence: row.sequence,
             action: row.action,
             objectType: row.objectType,
             objectId: row.objectId,
             relation: isAskedFor(row) ? "primary" : "related",
-            actorName: row.user?.name ?? stripEmail(row.actorLabel),
+            actorName: row.user?.name ?? (label === opLabel ? null : label),
             impersonatorName: row.impersonator?.name ?? null,
-            operationLabel: row.batch ? operationLabel(row.batch.operationKey) : null,
+            operationLabel: opLabel,
             description: row.description,
             timestamp: row.timestamp,
             changes: changes[index],
             refs: refRows[index].map((ref) => toRef(ref, names)),
-        }),
-    );
+        };
+    });
 
     return {
         entries,

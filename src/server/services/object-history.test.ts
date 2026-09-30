@@ -30,6 +30,7 @@ describe("ObjectHistory.list", () => {
         impersonator: UserId.create(),
         person: PersonId.create(),
         otherPerson: PersonId.create(),
+        unattendedPerson: PersonId.create(),
         team: TeamId.create(),
         // Referenced by a log entry, but the row itself has been purged.
         purgedTeam: TeamId.create(),
@@ -56,6 +57,7 @@ describe("ObjectHistory.list", () => {
         purgedRefs: 6,
         otherOrg: 7,
         unrelated: 8,
+        unattended: 9,
     };
 
     async function log(entry: {
@@ -192,6 +194,17 @@ describe("ObjectHistory.list", () => {
             objectId: T.otherPerson,
             refs: [{ objectType: "SkillPackage", objectId: T.skillPackage }],
         });
+        // An unattended run (e.g. the Rubbish bin auto-purge): no user, and `actorLabel` is the
+        // operation's label, not a person's.
+        await log({
+            sequence: SEQ.unattended,
+            userId: null,
+            actorLabel: "D4H team sync",
+            batchId: T.batch,
+            action: "Update",
+            objectType: "Person",
+            objectId: T.unattendedPerson,
+        });
     });
 
     const listPerson = (
@@ -277,6 +290,19 @@ describe("ObjectHistory.list", () => {
 
         expect(batched.impersonatorName).toBe("Ima Admin");
         expect(batched.operationLabel).toBe("D4H team sync");
+    });
+
+    it("gives an unattended run no actor name, only its operation label", async () => {
+        const { entries } = await ObjectHistory.list(ctx, {
+            objectType: "Person",
+            objectId: T.unattendedPerson,
+            relatedTypes: allTypes,
+            limit: 50,
+        });
+
+        expect(entries).toHaveLength(1);
+        expect(entries[0].actorName).toBeNull();
+        expect(entries[0].operationLabel).toBe("D4H team sync");
     });
 
     it("reads malformed changes as none", async () => {
