@@ -123,7 +123,7 @@ The review page shows **summaries and what needs attention**, not just one long 
 
 ### Task 3: Not assessed card (`visual`)
 
-- [ ] Not started
+- [x] feat(skill-track): add the session review Not assessed card
 
 **Files:** `src/components/skill-track/session-review-not-assessed.tsx` (new), `src/components/skill-track/session-review-content.tsx`.
 

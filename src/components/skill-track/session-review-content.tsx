@@ -18,6 +18,7 @@ import { Show } from "@/components/show";
 import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
 import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reopen-session";
 import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
+import { SkillTrack_SessionReview_NotAssessed } from "@/components/skill-track/session-review-not-assessed";
 import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -429,6 +430,14 @@ export function SkillTrack_SessionReview_Content({
                                 </Table>
                             </CardContent>
                         </Card>
+                        <Show when={notAssessed.length > 0}>
+                            <SkillTrack_SessionReview_NotAssessed
+                                id="not-assessed"
+                                notAssessed={notAssessed}
+                                assesseeById={assesseeById}
+                                skillById={skillById}
+                            />
+                        </Show>
                     </Show>
                 </Saratoga.Root>
             </Std.ScrollContainer>
