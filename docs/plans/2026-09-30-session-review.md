@@ -48,17 +48,15 @@ Other cards from #337 come later: the summary counts, "Not assessed", and check 
 ### What starts selected
 
 - **A check outside any conflict group** starts ticked unless it's `Exclude`. That's today's rule. It covers a first review, `Pending` checks after a reopen, and checks recorded since.
-- **A conflict group** starts with nothing picked, with one exception:
-  - If the group has **exactly one** `Pending` check and **no** `Draft` check, that `Pending` check starts picked. It was included before the reopen, and nothing in the group has been recorded or edited since.
-  - Two or more `Pending` checks start with nothing picked. That happens in sessions approved before Task 3's guard, which can hold two `Include` checks on one pair; a reopen turns both into `Pending`.
-  - Any `Draft` check in the group means it needs a fresh pick. A check added after the reopen is `Draft`, and so is one edited after it.
+- **A conflict group always starts with nothing picked**, even after a reopen. The reviewer always makes the pick.
+  - This changed at the visual check (2026-09-30). The plan first followed #335 and pre-picked the one `Pending` check after a reopen; the user preferred no pre-selection.
 
 ### Keeping the selection right when the checks refetch
 
 The page stays mounted while the checks refetch, so it has to apply the same rules to new data.
 
 - **Each conflict group has a signature:** its members' `id:status:updatedAt`, sorted.
-- **When a group's signature changes,** its ids are removed from `selected` and the starting rules apply again.
+- **When a group's signature changes,** its ids are removed from `selected`, leaving it unpicked.
   - A re-record keeps the row's id but changes its `status` and `updatedAt`, so it clears the pick.
   - A check joining or leaving the group does too.
 - **An unchanged group** keeps the user's pick.
@@ -69,13 +67,12 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 ### The Conflicts card
 
 - **It only appears when the session has at least one conflict.** It sits above the checks list card.
-- **The header** reads "Conflicts". Its description says how many are left to resolve, for example "Resolve 2 conflicts before approving." When all are picked, it says so instead.
+- **The header** reads "Conflicts". Its description is a count: "2 unresolved conflicts", "All 2 conflicts resolved", or "2 conflicts resolved at approval" on an approved session.
 - **Each group shows** the assessee and skill, and a line saying whether the results agree: "Both: Competent", "All 3: Competent" or "Results differ".
-- **One `RadioGroup` item per check** (`src/components/ui/radio-group.tsx`), showing:
-  - the result;
-  - the assessor (`assessorDisplayName` from `src/lib/schemas/skill-check.ts`). Build its `assessor` from the page's `assessorById` map; it falls back to `assessorLabel` for purged assessors.
+- **One `RadioGroup` item per check** (`src/components/ui/radio-group.tsx`), as a pane. From `md`, the panes sit side by side like a merge tool's, in an `auto-fit` grid, so any number of checks share the row and a large group wraps. On a phone they stack. Each pane shows:
+  - a header strip with the radio, the result next to it, and the assessor (`assessorDisplayName` from `src/lib/schemas/skill-check.ts`) on the right. Build its `assessor` from the page's `assessorById` map; it falls back to `assessorLabel` for purged assessors.
   - the time recorded (`formatDateTime`, with the viewer's preferences from `usePreferences()` in `src/hooks/use-preferences`);
-  - the notes, in full. Conflict notes are usually why one check gets picked.
+  - the notes in full, only when there are some.
 - **When the session is approved,** the radios are disabled and show the stored `Include` check. This is the record of how each conflict was resolved.
 
 ### The header: Approve, Reopen and who can act

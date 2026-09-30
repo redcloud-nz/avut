@@ -181,36 +181,18 @@ describe("initialSelection", () => {
     });
 
     describe("conflict groups", () => {
-        it("picks nothing when the group has no Pending check", () => {
+        it("picks nothing, whatever the members' statuses", () => {
             const checks = [
                 sc("c1", "p1", "s1", "Draft"),
                 sc("c2", "p1", "s1", "Include"),
                 sc("c3", "p1", "s1", "Exclude"),
+                sc("c4", "p2", "s1", "Pending"),
+                sc("c5", "p2", "s1", "Exclude"),
+                sc("c6", "p3", "s1", "Draft"),
             ];
 
-            expect(ids(initialSelection(checks))).toEqual([]);
-        });
-
-        it("picks the Pending check when there's exactly one and no Draft", () => {
-            const checks = [
-                sc("c1", "p1", "s1", "Pending"),
-                sc("c2", "p1", "s1", "Exclude"),
-                sc("c3", "p2", "s1", "Draft"),
-            ];
-
-            expect(ids(initialSelection(checks))).toEqual(["c1", "c3"]);
-        });
-
-        it("picks nothing when the group has two Pending checks", () => {
-            const checks = [sc("c1", "p1", "s1", "Pending"), sc("c2", "p1", "s1", "Pending")];
-
-            expect(ids(initialSelection(checks))).toEqual([]);
-        });
-
-        it("picks nothing when the group has one Pending and one Draft", () => {
-            const checks = [sc("c1", "p1", "s1", "Pending"), sc("c2", "p1", "s1", "Draft")];
-
-            expect(ids(initialSelection(checks))).toEqual([]);
+            // Only the lone check is ticked; neither group gets a pick, not even after a reopen.
+            expect(ids(initialSelection(checks))).toEqual(["c6"]);
         });
     });
 });
@@ -230,18 +212,11 @@ describe("reconcileSelection", () => {
         expect(ids(reconcileSelection(prev, next, new Set(["c1"])))).toEqual([]);
     });
 
-    it("re-picks the lone Pending check when a reopen changes the group", () => {
+    it("leaves a group unpicked when a reopen changes it", () => {
         const prev = [sc("c1", "p1", "s1", "Include"), sc("c2", "p1", "s1", "Exclude")];
         const next = [sc("c1", "p1", "s1", "Pending", T1), sc("c2", "p1", "s1", "Exclude")];
 
-        expect(ids(reconcileSelection(prev, next, new Set<string>()))).toEqual(["c1"]);
-    });
-
-    it("picks the Pending check when a lone Pending check gains an Exclude member", () => {
-        const prev = [sc("c1", "p1", "s1", "Pending")];
-        const next = [sc("c1", "p1", "s1", "Pending"), sc("c2", "p1", "s1", "Exclude")];
-
-        expect(ids(reconcileSelection(prev, next, new Set<string>()))).toEqual(["c1"]);
+        expect(ids(reconcileSelection(prev, next, new Set<string>()))).toEqual([]);
     });
 
     it("keeps the user's pick in an unchanged group", () => {

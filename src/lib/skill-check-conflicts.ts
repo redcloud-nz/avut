@@ -89,30 +89,16 @@ function startsTicked(check: SelectionCheckFields): boolean {
 }
 
 /**
- * A conflict group's starting pick: its one `Pending` check if it has exactly one and no `Draft`
- * (included before a reopen, nothing recorded or edited since), otherwise nothing.
+ * Add a group's starting selection to `into`: a lone check if it starts ticked. A conflict group
+ * starts with nothing picked, even after a reopen: the reviewer always makes the pick.
  */
-function initialPick<T extends SelectionCheckFields>(group: T[]): T["id"] | null {
-    const pending = group.filter((c) => c.status === "Pending");
-    if (pending.length !== 1) return null;
-    if (group.some((c) => c.status === "Draft")) return null;
-    return pending[0].id;
-}
-
-/** Add a group's starting selection to `into`: its pick if a conflict, else the check if ticked. */
 function addInitial<T extends SelectionCheckFields>(group: T[], into: Set<T["id"]>) {
-    if (group.length > 1) {
-        const pick = initialPick(group);
-        if (pick !== null) into.add(pick);
-    } else if (startsTicked(group[0])) {
-        into.add(group[0].id);
-    }
+    if (group.length === 1 && startsTicked(group[0])) into.add(group[0].id);
 }
 
 /**
  * The review page's starting selection. A check outside any conflict group is ticked unless it's
- * `Exclude`. A conflict group starts with nothing picked, unless it has exactly one `Pending`
- * check and no `Draft`, which is then picked. `Deleted` checks are never selected.
+ * `Exclude`. A conflict group starts with nothing picked. `Deleted` checks are never selected.
  */
 export function initialSelection<T extends SelectionCheckFields>(checks: T[]): Set<T["id"]> {
     const selected = new Set<T["id"]>();
@@ -125,7 +111,7 @@ export function initialSelection<T extends SelectionCheckFields>(checks: T[]): S
  *
  * - A conflict group whose signature is unchanged keeps the user's pick.
  * - A conflict group that's new, or whose signature changed (a member joined, left, or was
- *   re-recorded), loses its pick, and the starting rules apply again.
+ *   re-recorded), loses its pick.
  * - A check that was already on its own keeps the user's tick or untick.
  * - Any other check outside a group (new, or left behind by a shrinking group) is ticked unless
  *   it's `Exclude`.
@@ -149,8 +135,6 @@ export function reconcileSelection<T extends SelectionCheckFields>(
                 prevGroup !== undefined && groupSignature(prevGroup) === groupSignature(group);
             if (unchanged) {
                 for (const c of group) if (selected.has(c.id)) result.add(c.id);
-            } else {
-                addInitial(group, result);
             }
             continue;
         }

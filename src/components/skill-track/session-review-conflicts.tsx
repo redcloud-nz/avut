@@ -5,7 +5,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldContent, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -58,22 +58,18 @@ export function SkillTrack_SessionReview_Conflicts({
         checks.find((c) => (showApproval ? c.status === "Include" : selected.has(c.id)))?.id;
 
     const unresolved = conflicts.filter((conflict) => !pickedId(conflict.checks)).length;
-    const unresolvedText = `${unresolved} ${unresolved === 1 ? "conflict" : "conflicts"}`;
+    const plural = (n: number) => `${n} ${n === 1 ? "conflict" : "conflicts"}`;
+    const description = showApproval
+        ? `${plural(conflicts.length)} resolved at approval`
+        : unresolved > 0
+          ? `${unresolved} unresolved ${unresolved === 1 ? "conflict" : "conflicts"}`
+          : `All ${plural(conflicts.length)} resolved`;
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Conflicts</CardTitle>
-                <CardDescription>
-                    {showApproval
-                        ? "How each conflict was resolved when the session was approved."
-                        : unresolved === 0
-                          ? "Every conflict has a pick."
-                          : disabled
-                            ? // Not approved, so the controls are disabled for lack of permission.
-                              `${unresolvedText} to resolve.`
-                            : `Resolve ${unresolvedText} before approving. Pick the check to include for each assessee and skill.`}
-                </CardDescription>
+                <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-6">
                 {conflicts.map((conflict) => {
@@ -109,6 +105,10 @@ export function SkillTrack_SessionReview_Conflicts({
                                     if (check) pick(groupIds, check.id);
                                 }}
                                 disabled={disabled}
+                                // Side by side from `md`, like a merge tool's panes. `auto-fit`
+                                // gives two checks half the width each and three a third, and
+                                // wraps a larger group onto further rows of equal-height panes.
+                                className="md:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))]"
                             >
                                 {conflict.checks.map((check) => {
                                     const assessor = check.assessorId
@@ -119,44 +119,48 @@ export function SkillTrack_SessionReview_Conflicts({
                                     return (
                                         <div
                                             key={check.id}
-                                            className="rounded-lg border p-2.5 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10"
+                                            className="flex flex-col overflow-hidden rounded-lg border has-data-checked:border-primary/40 has-data-checked:bg-primary/5 dark:has-data-checked:border-primary/30 dark:has-data-checked:bg-primary/10"
                                         >
-                                            <Field orientation="horizontal">
+                                            <Field
+                                                orientation="horizontal"
+                                                className="border-b bg-muted/40 px-3 py-2"
+                                            >
                                                 <RadioGroupItem
                                                     value={check.id}
                                                     id={radioId}
                                                     aria-describedby={detailsId}
                                                 />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor={radioId}>
-                                                        <span className="font-medium">
-                                                            {getSkillCheckResultLabel(
-                                                                organization.settings,
-                                                                check.result,
-                                                            )}
-                                                        </span>
-                                                        <span className="font-normal text-muted-foreground">
-                                                            {assessorDisplayName({
-                                                                assessor,
-                                                                assessorLabel: check.assessorLabel,
-                                                            })}
-                                                        </span>
-                                                    </FieldLabel>
-                                                    <div
-                                                        id={detailsId}
-                                                        className="flex flex-col gap-1 text-sm"
-                                                    >
-                                                        <span className="text-muted-foreground">
-                                                            {formatDateTime(check.createdAt)}
-                                                        </span>
-                                                        {check.notes && (
-                                                            <p className="whitespace-pre-wrap">
-                                                                {check.notes}
-                                                            </p>
+                                                <FieldLabel
+                                                    htmlFor={radioId}
+                                                    className="flex grow flex-wrap justify-between gap-x-3"
+                                                >
+                                                    <span className="font-medium">
+                                                        {getSkillCheckResultLabel(
+                                                            organization.settings,
+                                                            check.result,
                                                         )}
-                                                    </div>
-                                                </FieldContent>
+                                                    </span>
+                                                    <span className="font-normal text-muted-foreground">
+                                                        {assessorDisplayName({
+                                                            assessor,
+                                                            assessorLabel: check.assessorLabel,
+                                                        })}
+                                                    </span>
+                                                </FieldLabel>
                                             </Field>
+                                            <div
+                                                id={detailsId}
+                                                className="flex flex-col gap-1 px-3 py-2 text-sm"
+                                            >
+                                                <span className="text-muted-foreground">
+                                                    {formatDateTime(check.createdAt)}
+                                                </span>
+                                                {check.notes && (
+                                                    <p className="whitespace-pre-wrap">
+                                                        {check.notes}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
