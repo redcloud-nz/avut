@@ -5,6 +5,8 @@
 
 import "server-only";
 
+import { revalidateTag } from "next/cache";
+
 import { NotConfiguredError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HProviderMetadata } from "@/lib/schemas/d4h-provider-metadata";
@@ -123,6 +125,19 @@ export async function getOrganizationD4HAccessToken({
 
 export function revalidateD4HAccessToken(tokenId: ProviderCredentialId) {
     revalidateProviderCredential(tokenId);
+}
+
+/**
+ * The umbrella cache tag every cached D4H API function in `d4h-api/client.ts` carries, alongside
+ * its own specific tag. Clearing it drops everything cached for that credential.
+ */
+export function d4hApiCacheTag(credentialId: ProviderCredentialId): string {
+    return `d4h-api-${credentialId}`;
+}
+
+/** Drop every cached D4H API response for the given credential (on refresh or delete). */
+export function revalidateD4HApiCache(credentialId: ProviderCredentialId) {
+    revalidateTag(d4hApiCacheTag(credentialId), { expire: 0 });
 }
 
 /**

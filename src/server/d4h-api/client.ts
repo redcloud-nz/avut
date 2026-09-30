@@ -19,6 +19,7 @@ import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
 import { D4HTeamDetail, D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
 import {
+    d4hApiCacheTag,
     getD4HAccessToken,
     resolveD4HCredential,
     type D4HCredentialRef,
@@ -69,6 +70,7 @@ export async function fetchD4HWhoamiCached(ref: D4HCredentialRef): Promise<D4HWh
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${ref.credentialId}-whoami`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
     return fetchD4HWhoami(await resolveD4HCredential(ref));
 }
@@ -140,6 +142,7 @@ export async function getD4HTokenMetadata(ref: D4HCredentialRef): Promise<D4HAcc
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${ref.credentialId}-metadata`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
     const token = await resolveD4HCredential(ref);
     return computeD4HTokenMetadata(token, await fetchD4HWhoamiCached(ref));
@@ -183,6 +186,7 @@ export async function getD4HTeamMembers(
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${ref.credentialId}-teams-${d4hTeamId}-members`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
     const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
@@ -247,6 +251,7 @@ export async function fetchD4HTeamDetailCached(
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${ref.credentialId}-teams-${d4hTeamId}-detail`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
     const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
@@ -275,6 +280,7 @@ export async function fetchD4HOrganisationCached(
     "use cache";
     cacheLife("hours");
     cacheTag(`d4h-api-${ref.credentialId}-organisations-${d4hOrganisationId}`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
     const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 

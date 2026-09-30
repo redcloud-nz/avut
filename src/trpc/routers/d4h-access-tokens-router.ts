@@ -18,6 +18,7 @@ import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings";
 import {
     revalidateD4HAccessToken,
+    revalidateD4HApiCache,
     revalidatePersonalD4HAccessTokenForUser,
     toServerOnlyD4HAccessToken,
 } from "@/server/d4h-access-token";
@@ -215,6 +216,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             // Neither is a Prisma operation, so they can't join the $transaction above.
             // Drop the cached credential so the deleted token stops working immediately.
             revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
             // Revalidate organization settings in case this token was being used.
             await revalidateOrganizationSettings(ctx.organizationId);
         }),
@@ -250,6 +252,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         ]);
 
         revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+        // Personal refs resolve through the ID-tagged credential cache too, so clear that as well.
+        const tokenId = ProviderCredentialId.schema.parse(existing.id);
+        revalidateD4HAccessToken(tokenId);
+        revalidateD4HApiCache(tokenId);
     }),
 
     /**
@@ -409,5 +415,6 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             ]);
 
             revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
         }),
 });

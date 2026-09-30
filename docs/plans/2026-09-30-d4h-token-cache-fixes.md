@@ -93,7 +93,9 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 - Existing router and sync tests pass.
 - `npm run check` passes.
 
-### - [ ] 3. Invalidate D4H API caches on refresh and delete
+### - [x] 3. Invalidate D4H API caches on refresh and delete
+
+`fix(d4h): invalidate cached D4H API data on token refresh and delete`
 
 **Files:** `src/server/d4h-api/client.ts`, `src/server/d4h-access-token.ts`, `src/trpc/routers/d4h-access-tokens-router.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`.
 

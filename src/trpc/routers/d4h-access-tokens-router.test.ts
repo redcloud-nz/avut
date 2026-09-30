@@ -9,7 +9,11 @@ import { D4HServerCode } from "@/lib/d4h-servers";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { revalidateD4HAccessToken } from "@/server/d4h-access-token";
+import {
+    revalidateD4HAccessToken,
+    revalidateD4HApiCache,
+    revalidatePersonalD4HAccessTokenForUser,
+} from "@/server/d4h-access-token";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -59,6 +63,7 @@ vi.mock("@/server/d4h-api/client", () => ({
 
 vi.mock("@/server/d4h-access-token", () => ({
     revalidateD4HAccessToken: vi.fn(),
+    revalidateD4HApiCache: vi.fn(),
     revalidatePersonalD4HAccessTokenForUser: vi.fn(),
     toServerOnlyD4HAccessToken: vi.fn((record: { id: string }) => ({
         id: record.id,
@@ -238,6 +243,7 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
 
         expect(await db.providerCredential.findUnique({ where: { id: T.otherToken } })).toBeNull();
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.otherToken);
+        expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.otherToken);
 
         // The sync token's config entry is untouched.
         const config = await db.organizationConfig.findUnique({
@@ -266,6 +272,7 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
             }),
         ).toBeNull();
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.syncToken);
+        expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.syncToken);
     });
 
     it("refuses to delete a member's personal token", async () => {
@@ -279,6 +286,46 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
         expect(
             await db.providerCredential.findUnique({ where: { id: T.personalToken } }),
         ).not.toBeNull();
+    });
+});
+
+describe("d4hAccessTokensRouter.deletePersonalAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        personalToken: ProviderCredentialId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.user }),
+        });
+    });
+
+    function makeCaller() {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("deletes the caller's token and revalidates every cache keyed on it", async () => {
+        await makeCaller().deletePersonalAccessToken({ organizationId: T.org });
+
+        expect(
+            await db.providerCredential.findUnique({ where: { id: T.personalToken } }),
+        ).toBeNull();
+        expect(revalidatePersonalD4HAccessTokenForUser).toHaveBeenCalledWith(T.org, T.user);
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
+        expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.personalToken);
     });
 });
 
@@ -315,10 +362,11 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         );
     }
 
-    it("revalidates the cached credential", async () => {
+    it("revalidates the cached credential and its D4H API cache", async () => {
         await makeCaller().refreshToken({ organizationId: T.org, tokenId: T.orgToken });
 
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.orgToken);
+        expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.orgToken);
     });
 
     it("refuses to refresh a member's personal token", async () => {
