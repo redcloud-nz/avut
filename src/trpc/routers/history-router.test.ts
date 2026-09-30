@@ -179,6 +179,20 @@ describe("history.listObjectHistory", () => {
         expect(ObjectHistory.list).not.toHaveBeenCalled();
     });
 
+    it("leaves out OrganizationNote for a caller without organizationNote:view", async () => {
+        const caller = historyRouter.createCaller({
+            ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
+            hasPermission: async (_organizationId, required) => {
+                if (required.organizationNote) throw new TRPCError({ code: "FORBIDDEN" });
+                assertHasPermissionResult(Roles.member.authorize(required), required);
+            },
+        });
+
+        await caller.listObjectHistory(personInput);
+
+        expect(lastRelatedTypes()).not.toContain("OrganizationNote");
+    });
+
     it("rejects an object type with no History page", async () => {
         await expect(
             makeCaller("admin").listObjectHistory({

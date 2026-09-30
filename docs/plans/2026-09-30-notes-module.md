@@ -278,7 +278,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
   - a member who isn't the author sees no Edit or Delete
   - no console errors
 
-### - [ ] 8a. Org note history `visual`
+### - [x] 8a. Org note history `visual`
+
+`feat(notes): add org note history`, `fix(notes): show a deleted note's history as deleted`
 
 **Files:**
 
@@ -313,7 +315,7 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - `src/app/(wrapper)/(authenticated)/layout.tsx`, `src/components/nav/scope-sidebar-modules.tsx`.
 - New under `src/app/(wrapper)/(authenticated)/user/notes/`: `layout.tsx`, `page.tsx`, `[note_id]/page.tsx`. **No `loading.tsx`**: Task 8 found a Suspense fallback under the notes route always flashes and breaks the crossfade (Decisions → Suspense).
 - New `src/client/user-notes-effects.ts`.
-- New in `src/components/notes/`: `user-notes-list.tsx`, `user-note-content.tsx`, `delete-user-note-dialog.tsx`.
+- New in `src/components/notes/`: `user-notes-list.tsx`, `user-note-content.tsx`, `delete-user-note-dialog.tsx`. Reuse `note-gone-boundary.tsx` (pass the user id as `scopeId`) and `NotesBreadcrumbs`' `noteHref` prop, both added in Task 8a.
 
 **Do:**
 

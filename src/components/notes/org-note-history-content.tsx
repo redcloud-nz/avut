@@ -12,15 +12,32 @@ import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { trpc } from "@/trpc/client";
 
+import { isNoteNotFound, NoteGoneBoundary } from "./note-gone-boundary";
+
 /**
  * An org note's History, in the notes detail pane. The notes layout supplies the navbar (whose
- * breadcrumbs lead back to the note), and the pane scrolls, so this renders only the history.
+ * breadcrumbs lead back to the note), and the pane scrolls, so this renders only the history. A
+ * note that's gone says so instead, as on the note itself (see `NoteGoneBoundary`).
  */
 export function OrgNoteHistory_Content({ noteId }: { noteId: OrganizationNoteId }) {
     const organization = useOrganization();
 
+    return (
+        <NoteGoneBoundary scopeId={organization.id} noteId={noteId}>
+            <OrgNoteHistory_Body noteId={noteId} />
+        </NoteGoneBoundary>
+    );
+}
+
+function OrgNoteHistory_Body({ noteId }: { noteId: OrganizationNoteId }) {
+    const organization = useOrganization();
+
     const { data: note } = useSuspenseQuery(
-        trpc.organizationNotes.getNote.queryOptions({ organizationId: organization.id, noteId }),
+        trpc.organizationNotes.getNote.queryOptions(
+            { organizationId: organization.id, noteId },
+            // A missing note won't turn up on a retry, so go straight to "deleted".
+            { retry: (count, error) => !isNoteNotFound(error) && count < 3 },
+        ),
     );
 
     return (

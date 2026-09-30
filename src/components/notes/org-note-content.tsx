@@ -7,15 +7,12 @@
 
 import Link from "next/link";
 import { parseAsBoolean, parseAsStringLiteral, useQueryState } from "nuqs";
-import { ErrorBoundary } from "react-error-boundary";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { sessionQueryOptions } from "@/client/auth-queries";
 import { organizationNotesEffects } from "@/client/organization-notes-effects";
-import { Hermes } from "@/components/blocks/hermes";
-import { describeError, ErrorDescriptions } from "@/components/errors/describe-error";
 import { ObjectIcons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,42 +28,22 @@ import { OrganizationNoteData, OrganizationNoteId } from "@/lib/schemas/organiza
 import { trpc } from "@/trpc/client";
 
 import { OrgNotes_DeleteNote_Dialog } from "./delete-org-note-dialog";
-import { useIsDeletedNote } from "./deleted-notes";
 import { NoteDetail } from "./note-detail";
 import { NoteEditor } from "./note-editor";
-
-function isNotFound(error: unknown) {
-    return describeError(error) === ErrorDescriptions.NotFound;
-}
+import { isNoteNotFound, NoteGoneBoundary } from "./note-gone-boundary";
 
 /**
  * The detail pane for one org note: view mode by default, edit mode while `?edit=true`. Switching
- * notes crossfades the pane via `Hermes.Detail`.
- *
- * A note that's gone (deleted here and reached again with Back, or deleted by someone else) says
- * so in the pane rather than falling through to the route's error page. Other errors still
- * propagate.
+ * notes crossfades the pane via `Hermes.Detail`. A note that's gone says so in the pane (see
+ * `NoteGoneBoundary`).
  */
 export function OrgNote_Content({ noteId }: { noteId: OrganizationNoteId }) {
     const organization = useOrganization();
-    const deleted = useIsDeletedNote(organization.id, noteId);
-
-    const deletedMessage = (
-        <Hermes.Placeholder className="flex">This note was deleted.</Hermes.Placeholder>
-    );
-
-    if (deleted) return deletedMessage;
 
     return (
-        <ErrorBoundary
-            resetKeys={[noteId]}
-            fallbackRender={({ error }) => {
-                if (!isNotFound(error)) throw error;
-                return deletedMessage;
-            }}
-        >
+        <NoteGoneBoundary scopeId={organization.id} noteId={noteId}>
             <OrgNote_Body noteId={noteId} />
-        </ErrorBoundary>
+        </NoteGoneBoundary>
     );
 }
 
@@ -80,7 +57,7 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
             trpc.organizationNotes.getNote.queryOptions(
                 { organizationId: organization.id, noteId },
                 // A missing note won't turn up on a retry, so go straight to "deleted".
-                { retry: (count, error) => !isNotFound(error) && count < 3 },
+                { retry: (count, error) => !isNoteNotFound(error) && count < 3 },
             ),
             trpc.organizationNotes.listNotes.queryOptions({ organizationId: organization.id }),
             sessionQueryOptions(),
