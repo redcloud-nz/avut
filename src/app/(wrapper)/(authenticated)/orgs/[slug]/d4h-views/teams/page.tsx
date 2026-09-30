@@ -7,37 +7,30 @@
 
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
-import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
+import { UserId } from "@/lib/schemas/user";
+import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { requireOrganization } from "@/server/organization-access";
 
-import { D4HViewsModule_Teams_List } from "./d4h-teams-list";
+import { D4HViewsModule_Teams_List, type D4HViewsModule_Teams_Row } from "./d4h-teams-list";
 
 export default async function D4HViewsModule_Teams_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/teams`>,
 ) {
     const { slug } = await props.params;
-    const { organization, settings } = await requireOrganization(slug);
+    const { organization, session, settings } = await requireOrganization(slug);
 
     if (settings.modules["d4h-views"].enabled === false)
         throw new Error("D4H Views module is not enabled for this organization.");
 
-    const accessTokenId = settings.integrations.d4h.syncToken;
+    const accessToken = await getConfiguredD4HAccessToken(
+        organization.id,
+        UserId.schema.parse(session.user.id),
+    );
 
-    if (!accessTokenId)
-        throw new Error("D4H Views module is not configured properly. No sync token found.");
-
-    const token = await getOrganizationD4HAccessToken({
-        organizationId: organization.id,
-        tokenId: ProviderCredentialId.schema.parse(accessTokenId),
-    });
-
-    if (!token) {
-        throw new Error("Token not found");
-    }
-
-    const teams = await getD4HTeamsAccessibleWithToken(toD4HCredentialRef(token));
+    const teams: D4HViewsModule_Teams_Row[] = (
+        await getD4HTeamsAccessibleWithToken(toD4HCredentialRef(accessToken))
+    ).map((team) => ({ id: team.id, title: team.title }));
 
     return (
         <>

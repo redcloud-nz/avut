@@ -172,7 +172,9 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 
 `npm run check` passes.
 
-### - [ ] 7. D4H Views reads with the viewer's personal token `visual`
+### - [x] 7. D4H Views reads with the viewer's personal token `visual`
+
+`fix(d4h-views): read with the viewer's personal token, send only displayed fields`
 
 **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-views/personnel/page.tsx`, `…/personnel/personnel-list.tsx`, `…/d4h-views/teams/page.tsx`, `…/teams/d4h-teams-list.tsx`.
 

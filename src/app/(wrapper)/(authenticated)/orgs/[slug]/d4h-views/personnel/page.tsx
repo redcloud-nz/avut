@@ -7,39 +7,41 @@
 
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
-import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
+import { UserId } from "@/lib/schemas/user";
+import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTeamsWithMembers } from "@/server/d4h-api/client";
 import { requireOrganization } from "@/server/organization-access";
 
-import { D4HViewsModules_Personnel_List } from "./personnel-list";
+import {
+    D4HViewsModules_Personnel_List,
+    type D4HViewsModules_Personnel_Row,
+} from "./personnel-list";
 
 export default async function D4HViewsModules_Personnel_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/personnel`>,
 ) {
     const { slug } = await props.params;
-    const { organization, settings } = await requireOrganization(slug);
+    const { organization, session, settings } = await requireOrganization(slug);
 
     if (settings.modules["d4h-views"].enabled === false)
         throw new Error("D4H Views module is not enabled for this organization.");
 
-    const accessTokenId = settings.integrations.d4h.syncToken;
-
-    if (!accessTokenId)
-        throw new Error("D4H Views module is not configured properly. No sync token found.");
-
-    const accessToken = await getOrganizationD4HAccessToken({
-        tokenId: ProviderCredentialId.schema.parse(accessTokenId),
-        organizationId: organization.id,
-    });
-
-    if (!accessToken) {
-        throw new Error("D4H Access Token not found");
-    }
+    const accessToken = await getConfiguredD4HAccessToken(
+        organization.id,
+        UserId.schema.parse(session.user.id),
+    );
 
     const teams = await getD4HTeamsWithMembers(toD4HCredentialRef(accessToken));
 
-    const members = teams.flatMap((t) => t.members.map((m) => ({ ...m, team: t })));
+    // Only the displayed columns cross to the client — no email or other member detail.
+    const members: D4HViewsModules_Personnel_Row[] = teams.flatMap((team) =>
+        team.members.map((member) => ({
+            id: member.id,
+            name: member.name,
+            status: member.status,
+            team: { id: team.id, title: team.title },
+        })),
+    );
 
     return (
         <>
@@ -50,7 +52,7 @@ export default async function D4HViewsModules_Personnel_Page(
                 ]}
             />
             <Std.ScrollContainer>
-                <D4HViewsModules_Personnel_List members={members} teams={teams} />
+                <D4HViewsModules_Personnel_List members={members} />
             </Std.ScrollContainer>
         </>
     );

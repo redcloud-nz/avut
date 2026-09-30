@@ -21,15 +21,18 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HTeamRef } from "@/lib/schemas/d4h/team";
 
+export type D4HViewsModules_Personnel_Row = Pick<D4HMember, "id" | "name" | "status"> & {
+    team: Pick<D4HTeamRef, "id" | "title">;
+};
+
 interface D4HViewsModules_Personnel_ListProps {
-    members: (D4HMember & { team: D4HTeamRef })[];
-    teams: D4HTeamRef[];
+    members: D4HViewsModules_Personnel_Row[];
 }
 
 export function D4HViewsModules_Personnel_List({ members }: D4HViewsModules_Personnel_ListProps) {
     const columns = useMemo(
         () =>
-            Kaga.defineColumns<D4HMember & { team: D4HTeamRef }>((columnHelper) => [
+            Kaga.defineColumns<D4HViewsModules_Personnel_Row>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: "Name",
                     cell: (ctx) => ctx.getValue(),
