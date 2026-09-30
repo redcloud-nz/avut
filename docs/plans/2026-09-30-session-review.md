@@ -134,7 +134,7 @@ The page stays mounted while the checks refetch, so it has to apply the same rul
 
 ### Task 2: Selection rules as pure functions
 
-- [ ] (commit subject goes here once done)
+- [x] feat(skill-track): add the review page's selection rules to the conflict helper
 
 **Files:**
 
