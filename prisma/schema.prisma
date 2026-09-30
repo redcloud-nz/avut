@@ -20,29 +20,32 @@ datasource db {
 // Authentication Models
 
 model User {
-  id                String                   @id
-  name              String
-  email             String
-  emailVerified     Boolean                  @default(false)
-  image             String?
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
-  role              String?
-  banned            Boolean?                 @default(false)
-  banReason         String?
-  banExpires        DateTime?
+  id                  String                   @id
+  name                String
+  email               String
+  emailVerified       Boolean                  @default(false)
+  image               String?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  role                String?
+  banned              Boolean?                 @default(false)
+  banReason           String?
+  banExpires          DateTime?
   /// `Deleted` = in the system Rubbish bin: can't sign in, purged after a fixed 14 days (#296).
   /// Distinct from `banned`, which blocks access but keeps the account indefinitely.
-  status            RecordStatus             @default(Active)
+  status              RecordStatus             @default(Active)
   /// Who put a `Deleted` account in the bin: `Self` (closed it) may restore it on sign-in;
   /// `Admin` has to ask an administrator. Null while the account isn't deleted.
-  deletedBy         AccountDeletedBy?
-  sessions          Session[]                @relation("session_to_user")
-  accounts          Account[]                @relation("account_to_user")
-  organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
-  invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
-  providerCredentials ProviderCredential[]   @relation("provider_credential_to_user")
-  configs           UserConfig[]             @relation("user_config_to_user")
+  deletedBy           AccountDeletedBy?
+  /// The "what's new" read cursor: entries published on or before it count as seen. Null falls
+  /// back to `createdAt`, so new users don't get the backlog. See `src/lib/updates.ts`.
+  lastSeenUpdatesAt   DateTime?
+  sessions            Session[]                @relation("session_to_user")
+  accounts            Account[]                @relation("account_to_user")
+  organizationUsers   OrganizationUser[]       @relation("organization_user_to_user")
+  invitations         OrganizationInvitation[] @relation("organization_invitation_to_inviter")
+  providerCredentials ProviderCredential[]     @relation("provider_credential_to_user")
+  configs             UserConfig[]             @relation("user_config_to_user")
 
   authoredNotes          Note[]         @relation("note_to_author")
   formInstances          FormInstance[] @relation("form_instance_to_user")

@@ -51,7 +51,7 @@ A per-user "what's new" dialog. It opens once, automatically, whenever there are
 
     Test against fixture entries (`vi.mock("content-collections", …)`), not the real corpus.
 
-- [ ] **2. `User.lastSeenUpdatesAt` migration**
+- [x] **2. `User.lastSeenUpdatesAt` migration** — feat(whats-new): add User.lastSeenUpdatesAt read cursor
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<timestamp>_user_last_seen_updates_at/migration.sql` (new)
   - **Do:** Add `lastSeenUpdatesAt DateTime?` to `model User`, with a `///` doc comment: the "what's new" read cursor, null falls back to `createdAt`, see `src/lib/updates.ts`. Don't touch `src/server/auth.ts` `additionalFields`. Run `npm run db:branch whats-new` first (see the DB note above), then, **with the user's permission**, `npm run prisma migrate dev --name user_last_seen_updates_at`.
   - **Done when:** the migration contains only the `ADD COLUMN`, `npm run check` passes, and `npm run prisma migrate status` shows it applied on `avut_whats_new`.
