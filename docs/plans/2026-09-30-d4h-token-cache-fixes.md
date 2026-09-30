@@ -64,7 +64,9 @@ The token itself never reaches the client, and that plan's Phase 1 fixed revocat
 
 **Note for this and the next task:** `"use cache"` is a no-op under Vitest, and in production an error thrown inside a cached body crosses the cache boundary through Flight. It arrives as a plain `Error`, and its message is redacted. The unit tests can't show that. No code or test may rely on the class or message of an error thrown inside a cached body. Callers already resolve the token through a scoped lookup before they reach a cached function, so `resolveD4HCredential` throwing in there is defence in depth, not the user-facing error path.
 
-### - [ ] 2. Cached D4H functions take a credential reference
+### - [x] 2. Cached D4H functions take a credential reference
+
+`refactor(d4h): key cached D4H functions on a credential reference`, `refactor(d4h): key dev-page cached equipment fetches on a credential ref`
 
 **Files:** `src/server/d4h-api/client.ts`, `src/trpc/routers/d4h-api-router.ts`, `src/trpc/routers/d4h-access-tokens-router.ts`, `src/server/services/d4h-team-sync.ts`, `src/forms/i3-issue-items/processor.ts`, pages under `src/app/(wrapper)/(authenticated)/orgs/[slug]/` (`i3/members`, `i3/equipment-kinds`, `d4h-views/teams`, `d4h-views/personnel`, `admin/d4h-access-tokens/[token_id]/{organisation,equipment-categories,equipment-items,equipment-kinds,equipment-locations,members}`); tests: `src/trpc/routers/teams-router.test.ts`, `src/trpc/routers/d4h-access-tokens-router.test.ts`. `src/trpc/routers/teams-router.ts` is likely unchanged: it passes the resolved token to `D4HTeamSync`, which converts.
 
@@ -231,4 +233,4 @@ D4H supports OAuth as well as API keys. AVUT will move to it once D4H has set us
 - **Binding the ciphertext to the credential ID with GCM AAD.** Not chosen. It would need a re-encryption of existing rows, and it fits better with the key-rotation spec (`docs/specs/2026-09-29-db-encryption-key-rotation.md`).
 - **React taint.** Still skipped, per the earlier plan's Phase 3.
 - **Deleting personal tokens when a member leaves the org.** Still deferred, per the earlier plan.
-- **The `DEVELOPMENT ONLY` token pages** get only Task 2's mechanical signature change. Their raw `fetchClient` calls are left as they are.
+- **The `DEVELOPMENT ONLY` token pages** get only Task 2's mechanical signature change. Their raw `fetchClient` calls are left as they are. The page-local `"use cache"` functions on the equipment-categories, equipment-kinds and equipment-locations pages take a `D4HCredentialRef` too, resolving it with `resolveD4HCredential` inside the cache scope.

@@ -11,19 +11,23 @@ import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
-import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
+import {
+    D4HCredentialRef,
+    getOrganizationD4HAccessToken,
+    resolveD4HCredential,
+    toD4HCredentialRef,
+} from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
 
-async function fetchEquipmentKinds(accessToken: D4HAccessToken_ServerOnly) {
+async function fetchEquipmentKinds(ref: D4HCredentialRef) {
     "use cache";
 
-    const fetchClient = getD4HFetchClient(accessToken);
+    const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
-    const teams = await getD4HTeamsAccessibleWithToken(toD4HCredentialRef(accessToken));
+    const teams = await getD4HTeamsAccessibleWithToken(ref);
 
     const kinds = (
         await Promise.all(
@@ -69,7 +73,7 @@ export default async function Admin_D4HAccessToken_EquipmentKinds_Page(
 
     if (!accessToken) notFound();
 
-    const fetched = await fetchEquipmentKinds(accessToken);
+    const fetched = await fetchEquipmentKinds(toD4HCredentialRef(accessToken));
 
     const kinds = fetched.map((kind) => ({
         raw: kind,
