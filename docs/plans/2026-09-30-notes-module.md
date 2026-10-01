@@ -333,7 +333,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - The Tasks 7–8 browser checks pass on `/user/notes`, apart from the permission check.
 - Notes appears in the user-scope sidebar when the flag is on.
 
-### - [ ] 9a. Personal note history `visual`
+### - [x] 9a. Personal note history `visual`
+
+`feat(notes): add personal note history`
 
 **Files:**
 
