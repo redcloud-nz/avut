@@ -334,7 +334,10 @@ export const skillChecksRouter = createTrpcRouter({
                     result: true,
                     checkedAt: true,
                 },
-                orderBy: { checkedAt: "desc" },
+                // Every check in a session shares the session's date, so `checkedAt` ties are
+                // common (two sessions on one day); the last recorded wins, then the id, so the
+                // pick is deterministic.
+                orderBy: [{ checkedAt: "desc" }, { recordedAt: "desc" }, { id: "desc" }],
             });
 
             const latestByKey = new Map<string, (typeof allChecks)[number]>();

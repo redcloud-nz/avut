@@ -1606,3 +1606,123 @@ describe("skillChecks.getCompetencyMatrix — a session check's date", () => {
         ]);
     });
 });
+
+describe("skillChecks.getCompetencyMatrix — checks with the same checkedAt", () => {
+    // Dataset: assessee has Include checks from three assessors, all checked on SAME_DAY (as for
+    // two sessions on one day), on two skills:
+    //   skillA: earlierA (recorded 09:00, Fail) is seeded before laterA (recorded 10:00, Pass)
+    //   skillB: lowB and highB recorded at the same moment; lowB (the smaller id) seeded first
+    // Seeding the losers first means insertion order alone would pick them.
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        assessee: PersonId.create(),
+        assessor1: PersonId.create(),
+        assessor2: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skillA: SkillId.create(),
+        skillB: SkillId.create(),
+        earlierA: SkillCheckId.create(),
+        laterA: SkillCheckId.create(),
+        lowB: SkillCheckId.schema.parse("0000000000000000"),
+        highB: SkillCheckId.schema.parse("zzzzzzzzzzzzzzzz"),
+    };
+    const SAME_DAY = new Date("2025-06-01T00:00:00.000Z");
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.assessee, "Pat Assessee"],
+            [T.assessor1, "Assessor One"],
+            [T.assessor2, "Assessor Two"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillPackageSubscription.create({
+            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [T.skillA, "Skill A"],
+            [T.skillB, "Skill B"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                    frequency: 12,
+                },
+            });
+        }
+        for (const [id, assessorId, skillId, result, recordedAt] of [
+            [T.earlierA, T.assessor1, T.skillA, "Fail", "2025-06-01T09:00:00.000Z"],
+            [T.laterA, T.assessor2, T.skillA, "Pass", "2025-06-01T10:00:00.000Z"],
+            [T.lowB, T.assessor1, T.skillB, "Fail", "2025-06-01T09:00:00.000Z"],
+            [T.highB, T.assessor2, T.skillB, "Pass", "2025-06-01T09:00:00.000Z"],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    assesseeId: T.assessee,
+                    assessorId,
+                    skillId,
+                    result,
+                    notes: "",
+                    status: "Include",
+                    checkedAt: SAME_DAY,
+                    recordedAt: new Date(recordedAt),
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillChecksRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillCheck: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("picks the later recorded check, then the higher id", async () => {
+        const { competencies } = await makeCaller().getCompetencyMatrix({
+            organizationId: T.org,
+            personId: T.assessee,
+        });
+
+        const bySkill = Object.fromEntries(competencies.map((c) => [c.skillId, c.checkId]));
+        expect(bySkill).toEqual({ [T.skillA]: T.laterA, [T.skillB]: T.highB });
+    });
+});

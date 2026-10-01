@@ -44,8 +44,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * `updateSession{Assessees,Assessors,Skills}` write, so a name or notes edit trips it too), or
      * a check was recorded, re-recorded or deleted since (a later `recordedAt`: a `Draft`,
      * `Pending` or `Deleted` row the stamps and the purge skipped remains). Neither the stamps nor
-     * the purge move a check's `recordedAt` or `checkedAt`. A check write that comes after the approval finds
-     * the session approved in its own `lockUnapprovedSession` and is refused.
+     * the purge move a check's `recordedAt` or `checkedAt`. A check write that comes after the
+     * approval finds the session approved in its own `lockUnapprovedSession` and is refused.
      * @throws TRPCError(NOT_FOUND) if the session does not exist.
      * @throws TRPCError(CONFLICT) if the session is already approved (reopen it first), or if
      * `includedCheckIds` isn't the session's saved set of included checks, up front or by the

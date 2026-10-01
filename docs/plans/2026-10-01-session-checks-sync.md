@@ -240,7 +240,7 @@ Tasks 1–7 were built as first planned, with `updatedAt` as the sync cursor. At
 
 **Before Task 8 (orchestrator):** stop 3109, ask the user to stop 3000 and Prisma Studio, and run `npm run db:branch session-checks-sync`. After Task 8's schema and migration are written, apply them with `npm run prisma migrate dev` (with the user's go-ahead) and confirm it generates no further migration.
 
-- [ ] **8. Replace `SkillCheck.createdAt`/`updatedAt` with `checkedAt`/`recordedAt`**
+- [x] **8. Replace `SkillCheck.createdAt`/`updatedAt` with `checkedAt`/`recordedAt`** — feat(skill-track): replace SkillCheck createdAt/updatedAt with checkedAt/recordedAt; fix(skill-track): break checkedAt ties in the competency matrix deterministically
   - **Why one task:** the rename touches the Prisma model and the shared `SkillCheck` Zod schema, so nothing typechecks until every reader and writer has moved. It's mechanical apart from the writers and the guard.
   - **Files:**
     - `prisma/schema.prisma` and a new `prisma/migrations/<timestamp>_skill_check_checked_recorded_at/migration.sql`;
