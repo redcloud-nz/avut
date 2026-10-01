@@ -308,7 +308,7 @@ Tasks 1–7 were built as first planned, with `updatedAt` as the sync cursor. At
 
     `npm run check` passes.
 
-- [ ] **10. Skill description moves into the record dialog** `visual`
+- [x] **10. Skill description moves into the record dialog** `visual` — feat(skill-track): show the skill description in the record dialog only; fix(skill-track): include the skill description in the record dialog's accessible description
   - **Files:** `src/components/skill-track/session-actions-sheet.tsx`, `record-check-dialog.tsx`, `session-by-person-content.tsx`, `session-by-skill-content.tsx`, and `check-row.tsx` (plus `check-row.test.tsx`).
   - **Do:**
     - Remove the sheet's "Show" section and `SessionEntryView`'s `showSkillDescription`/`onShowSkillDescriptionChange`, and both pages' state for them.

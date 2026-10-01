@@ -84,10 +84,17 @@ export function SkillTrack_RecordCheckDialog({
             <DialogContent mobile="sheet">
                 <DialogHeader>
                     <DialogTitle>{personName}</DialogTitle>
-                    <DialogDescription>{skillName}</DialogDescription>
-                    {skillDescription && (
-                        <p className="text-xs text-muted-foreground">{skillDescription}</p>
-                    )}
+                    <DialogDescription>
+                        {skillName}
+                        {skillDescription && (
+                            // Inside DialogDescription so it's part of the dialog's accessible
+                            // description. The space keeps the two apart when read as one string.
+                            <>
+                                {" "}
+                                <span className="block text-xs">{skillDescription}</span>
+                            </>
+                        )}
+                    </DialogDescription>
                 </DialogHeader>
                 <RecordCheck_Body
                     // Radix unmounts the content on close, which resets the body on every reopen.
