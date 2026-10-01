@@ -32,15 +32,8 @@ import {
 } from "@/components/skill-track/use-session-checks-sync";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemGroup,
-    ItemTitle,
-} from "@/components/ui/item";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { RainbowSpinner } from "@/components/ui/loading";
 import {
     Select,
@@ -192,7 +185,6 @@ export function SkillTrack_SessionBySkill_Content({
         getSkillCheckResultLabel(organization.settings, value);
 
     const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
-    const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // Group the session skills (the left-hand picker) by skill package and group (for the
     // "by-package-group" order). Packages are sorted by name, groups by sequence; skills keep the
@@ -223,12 +215,6 @@ export function SkillTrack_SessionBySkill_Content({
     // Session skills that are no longer in the assessable set (e.g. subscription removed).
     const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
 
-    function skillDescription(skillId: SkillId) {
-        return showSkillDescription
-            ? assessableSkillById.get(skillId)?.description || undefined
-            : undefined;
-    }
-
     const renderSkillItem = (skill: (typeof sessionSkills)[number]) => (
         <Item
             key={skill.id}
@@ -242,9 +228,6 @@ export function SkillTrack_SessionBySkill_Content({
             >
                 <ItemContent>
                     <ItemTitle>{skill.name}</ItemTitle>
-                    {skillDescription(skill.id) && (
-                        <ItemDescription>{skillDescription(skill.id)}</ItemDescription>
-                    )}
                 </ItemContent>
 
                 <ItemActions>
@@ -286,8 +269,6 @@ export function SkillTrack_SessionBySkill_Content({
                         view={{
                             skillOrder,
                             onSkillOrderChange: setSkillOrder,
-                            showSkillDescription,
-                            onShowSkillDescriptionChange: setShowSkillDescription,
                         }}
                     />
                     <HelpButton slug="skill-track/sessions" />
@@ -433,11 +414,6 @@ export function SkillTrack_SessionBySkill_Content({
                                                         .exhaustive()}
                                                 </SelectContent>
                                             </Select>
-                                            {selected && skillDescription(selected.skillId) && (
-                                                <FieldDescription>
-                                                    {skillDescription(selected.skillId)}
-                                                </FieldDescription>
-                                            )}
                                         </Field>
                                     </FieldGroup>
                                     <ItemGroup className="hidden lg:block">
@@ -553,6 +529,10 @@ export function SkillTrack_SessionBySkill_Content({
                                                 sessionSkills.find(
                                                     (skill) => skill.id === target.skillId,
                                                 )?.name ?? ""
+                                            }
+                                            skillDescription={
+                                                assessableSkillById.get(target.skillId)
+                                                    ?.description || undefined
                                             }
                                             personName={
                                                 assignedPersonnel.find(

@@ -50,24 +50,16 @@ function renderRow(props: Partial<RowProps> = {}) {
 describe("SkillTrack_CheckRow", () => {
     it("lists the other assessors' checks under the title with the org's labels", () => {
         renderRow({
-            description: "Adult and child",
             otherChecks: [
                 { assessorName: "Bob", result: "Fail" },
                 { assessorName: "Jane", result: "StrongPass" },
             ],
         });
 
-        expect(screen.getByText("Adult and child")).toBeInTheDocument();
+        expect(screen.getByText("CPR")).toBeInTheDocument();
         expect(
             screen.getByText("Also checked by Bob (Not Yet), Jane (Excellent)"),
         ).toBeInTheDocument();
-    });
-
-    it("shows the title and the marker on a row without a description", () => {
-        renderRow({ otherChecks: [{ assessorName: "Jane", result: "Pass" }] });
-
-        expect(screen.getByText("CPR")).toBeInTheDocument();
-        expect(screen.getByText("Also checked by Jane (Competent)")).toBeInTheDocument();
     });
 
     it("shows no marker when there are no other checks", () => {

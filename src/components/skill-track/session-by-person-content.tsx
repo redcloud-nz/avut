@@ -183,7 +183,6 @@ export function SkillTrack_SessionByPerson_Content({
         getSkillCheckResultLabel(organization.settings, value);
 
     const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
-    const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // Group the session skills by skill package and group (for the "by-package-group" order).
     // Packages are sorted by name, groups by sequence; skills keep the alphabetical order of
@@ -246,8 +245,6 @@ export function SkillTrack_SessionByPerson_Content({
                         view={{
                             skillOrder,
                             onSkillOrderChange: setSkillOrder,
-                            showSkillDescription,
-                            onShowSkillDescriptionChange: setShowSkillDescription,
                         }}
                     />
                     <HelpButton slug="skill-track/sessions" />
@@ -384,12 +381,6 @@ export function SkillTrack_SessionByPerson_Content({
                                                 <SkillTrack_CheckRow
                                                     key={skill.id}
                                                     title={skill.name}
-                                                    description={
-                                                        showSkillDescription
-                                                            ? assessableSkillById.get(skill.id)
-                                                                  ?.description || undefined
-                                                            : undefined
-                                                    }
                                                     check={getSavedCheck(personId, skill.id)}
                                                     pending={pendingChecks.get(
                                                         sessionCheckKey(personId, skill.id),
@@ -485,6 +476,10 @@ export function SkillTrack_SessionByPerson_Content({
                                                 sessionSkills.find(
                                                     (skill) => skill.id === target.skillId,
                                                 )?.name ?? ""
+                                            }
+                                            skillDescription={
+                                                assessableSkillById.get(target.skillId)
+                                                    ?.description || undefined
                                             }
                                             personName={
                                                 assignedPersonnel.find(

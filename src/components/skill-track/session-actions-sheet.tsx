@@ -33,7 +33,6 @@ import {
     useRecentChecksAction,
 } from "@/components/skill-track/session-recent-checks-dialog";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Item, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -58,8 +57,6 @@ export type SessionSkillOrder = "alphabetical" | "by-package-group";
 export interface SessionEntryView {
     skillOrder: SessionSkillOrder;
     onSkillOrderChange: (skillOrder: SessionSkillOrder) => void;
-    showSkillDescription: boolean;
-    onShowSkillDescriptionChange: (show: boolean) => void;
 }
 
 const CONFIG_ITEMS: { action: SessionConfigAction; label: string; icon: LucideIcon }[] = [
@@ -125,7 +122,6 @@ export function SkillTrack_SessionActionsSheet({
     const recordHeadingId = useId();
     const activityHeadingId = useId();
     const orderHeadingId = useId();
-    const showHeadingId = useId();
     const idPrefix = useId();
 
     // Set while a "change X" item hands over to its dialog, so the closing sheet doesn't pull
@@ -306,30 +302,6 @@ export function SkillTrack_SessionActionsSheet({
                                     </Field>
                                 ))}
                             </RadioGroup>
-                        </section>
-
-                        <section aria-labelledby={showHeadingId} className="flex flex-col gap-2">
-                            <h3
-                                id={showHeadingId}
-                                className="px-3 text-xs font-medium text-muted-foreground"
-                            >
-                                Show
-                            </h3>
-                            <Field orientation="horizontal" className="px-3">
-                                <Checkbox
-                                    id={`${idPrefix}-show-description`}
-                                    checked={view.showSkillDescription}
-                                    onCheckedChange={(checked) =>
-                                        view.onShowSkillDescriptionChange(checked === true)
-                                    }
-                                />
-                                <FieldLabel
-                                    htmlFor={`${idPrefix}-show-description`}
-                                    className="font-normal"
-                                >
-                                    Skill Description
-                                </FieldLabel>
-                            </Field>
                         </section>
                     </div>
                 </SheetContent>

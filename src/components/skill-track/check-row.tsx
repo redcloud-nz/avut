@@ -9,7 +9,7 @@ import { MessageSquareTextIcon, MoreHorizontalIcon } from "lucide-react";
 
 import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
-import { FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { FieldContent, FieldLabel } from "@/components/ui/field";
 import {
     SKILL_CHECK_FAIL_TIERS,
     SKILL_CHECK_PASS_TIERS,
@@ -23,7 +23,6 @@ type CheckValue = { result: SkillCheckResultValue; notes: string };
 
 interface CheckRowProps {
     title: string;
-    description?: string;
     /** The caller's saved check for this row, or null if there isn't one. */
     check: CheckValue | null;
     /**
@@ -79,7 +78,6 @@ const QUICK_BUTTONS = [
  */
 export function SkillTrack_CheckRow({
     title,
-    description,
     check,
     pending,
     resultOptions,
@@ -121,18 +119,10 @@ export function SkillTrack_CheckRow({
 
     return (
         <div className="flex items-center gap-2">
-            {description || alsoCheckedBy ? (
+            {alsoCheckedBy ? (
                 <FieldContent className="grow">
                     <FieldLabel>{title}</FieldLabel>
-                    {description && (
-                        // `nth-last-2:mt-0` undoes FieldDescription's pull-up when the marker follows.
-                        <FieldDescription className="nth-last-2:mt-0">
-                            {description}
-                        </FieldDescription>
-                    )}
-                    {alsoCheckedBy && (
-                        <p className="text-xs text-muted-foreground">{alsoCheckedBy}</p>
-                    )}
+                    <p className="text-xs text-muted-foreground">{alsoCheckedBy}</p>
                 </FieldContent>
             ) : (
                 <FieldLabel className="grow">{title}</FieldLabel>

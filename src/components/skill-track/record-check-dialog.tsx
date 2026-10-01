@@ -40,6 +40,8 @@ interface RecordCheckDialogProps {
      */
     targetKey: string;
     skillName: string;
+    /** The skill's description, shown under the skill name when it's set. */
+    skillDescription?: string;
     personName: string;
     /** The caller's saved check for this assessee and skill, or null if there isn't one. */
     current: CheckValue | null;
@@ -57,7 +59,8 @@ interface RecordCheckDialogProps {
 /**
  * Records one skill check for an (assessee, skill) pair on a session's recording page: one
  * button per enabled result stages it, with a notes field and Cancel / Delete / Save. Save is
- * enabled once the staged pair differs from `current`.
+ * enabled once the staged pair differs from `current`. The header shows the person, the skill, and
+ * the skill's description when there is one; this is the only place the entry pages show it.
  *
  * Controlled and mutation-free: the host owns `open` and supplies `onRecord`/`onDelete` from
  * `useSessionCheckRecorder`. The host should keep its target in place while closing (set `open`
@@ -68,6 +71,7 @@ export function SkillTrack_RecordCheckDialog({
     onOpenChange,
     targetKey,
     skillName,
+    skillDescription,
     personName,
     current,
     resultOptions,
@@ -81,6 +85,9 @@ export function SkillTrack_RecordCheckDialog({
                 <DialogHeader>
                     <DialogTitle>{personName}</DialogTitle>
                     <DialogDescription>{skillName}</DialogDescription>
+                    {skillDescription && (
+                        <p className="text-xs text-muted-foreground">{skillDescription}</p>
+                    )}
                 </DialogHeader>
                 <RecordCheck_Body
                     // Radix unmounts the content on close, which resets the body on every reopen.
