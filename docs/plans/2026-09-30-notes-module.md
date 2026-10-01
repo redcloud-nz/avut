@@ -366,7 +366,9 @@ The `notes` module already exists in the registry, with a placeholder page, and 
 - `npm run check` passes.
 - The Task 8a browser check passes on `/user/notes/<id>/history`.
 
-### - [ ] 10. Help docs
+### - [ ] 10. Help docs (deferred)
+
+**Deferred (2026-10-01)** by the user until after another round of notes changes, so the docs are written once against the final UI. `content/docs/notes/index.mdx` still says notes "save as you type"; it ships unchanged in this branch.
 
 **Files:** `content/docs/notes/index.mdx`.
 
