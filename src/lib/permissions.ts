@@ -15,6 +15,9 @@ const statement = {
     invitation: ["view", "create", "update", "cancel"],
     member: ["view", "create", "update", "delete", "owner"],
     organization: ["view", "update", "delete"],
+    // Every role holds `view` + `create`. `update`/`delete` mean "any note": an author edits or
+    // deletes their own note with `create` alone (the router checks `authorId` first).
+    organizationNote: ["view", "create", "update", "delete"],
     person: ["view", "create", "update", "delete"],
     // Granting and revoking one role on an existing member, independently of the rest of their
     // role set — each action is the role it hands out. A role may only hold a `roleGrant` for a
@@ -40,6 +43,7 @@ export const Roles = {
         member: ["view", "create", "update", "delete", "owner"],
         invitation: ["view", "create", "update", "cancel"],
         organization: ["view", "update", "delete"],
+        organizationNote: ["view", "create", "update", "delete"],
         person: ["view", "create", "update", "delete"],
         team: ["view", "create", "update", "delete"],
         roleGrant: ["skills-assessor"],
@@ -53,6 +57,7 @@ export const Roles = {
         member: ["view", "create", "update", "delete"],
         invitation: ["view", "create", "update", "cancel"],
         organization: ["view", "update"],
+        organizationNote: ["view", "create", "update", "delete"],
         person: ["view", "create", "update", "delete"],
         team: ["view", "create", "update", "delete"],
         roleGrant: ["skills-assessor"],
@@ -62,6 +67,7 @@ export const Roles = {
         ...memberAc.statements,
         d4hEquipment: ["view"],
         organization: ["view"],
+        organizationNote: ["view", "create"],
         person: ["view"],
         skillPackageSubscription: ["view"],
         team: ["view"],
@@ -73,6 +79,7 @@ export const Roles = {
         // Paired with `person: ["view"]` — the user↔person link procedures require both.
         member: ["view"],
         organization: ["view"],
+        organizationNote: ["view", "create"],
         person: ["view"],
     }),
     // The I3 module's admin role: everything `i3-editor` can do, plus managing I3 templates —
@@ -83,10 +90,12 @@ export const Roles = {
         i3Template: ["view", "create", "update", "delete"],
         member: ["view"],
         organization: ["view"],
+        organizationNote: ["view", "create"],
         person: ["view"],
     }),
     "skills-assessor": ac.newRole({
         organization: ["view"],
+        organizationNote: ["view", "create"],
         skillPackageSubscription: ["view"],
         // Recording a check — in a session or standalone — means picking the assessee and
         // assessor from the org's personnel, so an assessor needs to read personnel records.
@@ -100,6 +109,7 @@ export const Roles = {
     // erroneous checks). Only role with `subscribe`.
     "skills-admin": ac.newRole({
         organization: ["view"],
+        organizationNote: ["view", "create"],
         person: ["view"],
         team: ["view"],
         roleGrant: ["skills-assessor"],
@@ -113,11 +123,13 @@ export const Roles = {
         // `organizationProcedure` forces `organization: ["view"]` into every requirement, and
         // the org layout gates on it too — without this the role cannot reach anything.
         organization: ["view"],
+        organizationNote: ["view", "create"],
         skillPackage: ["view", "create", "update", "delete", "publish"],
     }),
-    // Pure read-only reporting surface.
+    // Read-only reporting surface for skill checks.
     "skills-reporter": ac.newRole({
         organization: ["view"],
+        organizationNote: ["view", "create"],
         skillCheck: ["view"],
         skillCheckSession: ["view"],
         skillPackageSubscription: ["view"],

@@ -7,7 +7,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { UserId } from "@/lib/schemas/user";
+import { UserNoteId } from "@/lib/schemas/user-note";
 import { recordLogEntry } from "@/server/log-entry";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
@@ -135,6 +137,31 @@ describe("UserAccounts", () => {
         await UserAccounts.purge(ctx, id);
         expect(await db.user.findUnique({ where: { id } })).toBeNull();
         expect(await db.organizationUser.count({ where: { organizationId: org } })).toBe(0);
+    });
+
+    it("purge keeps the account's org notes, authorless, and deletes its personal notes", async () => {
+        const id = UserId.create();
+        const org = OrganizationId.create();
+        const orgNote = OrganizationNoteId.create();
+        await db.user.create({
+            data: { id, name: "Note Taker", email: `${id}@example.com`, status: "Deleted" },
+        });
+        await db.organization.create({
+            data: { id: org, name: "Notes SAR", slug: org, createdAt: new Date() },
+        });
+        await db.organizationNote.create({
+            data: { id: orgNote, organizationId: org, authorId: id, title: "Org note" },
+        });
+        await db.userNote.create({
+            data: { id: UserNoteId.create(), userId: id, title: "Personal note" },
+        });
+
+        await UserAccounts.purge(ctx, id);
+
+        expect(await db.organizationNote.findUnique({ where: { id: orgNote } })).toMatchObject({
+            authorId: null,
+        });
+        expect(await db.userNote.count({ where: { userId: id } })).toBe(0);
     });
 
     it("purge refuses an account that isn't in the Rubbish bin", async () => {

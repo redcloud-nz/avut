@@ -36,38 +36,106 @@ import {
     type ObjectHistoryEntry,
     type ObjectHistoryPage,
     type ObjectHistoryRef,
+    type OwnHistoryObjectType,
 } from "@/lib/schemas/object-history";
 import { trpc } from "@/trpc/client";
 
-export interface ObjectHistoryProps {
-    objectType: HistoryObjectType;
+export type ObjectHistoryProps = {
     objectId: string;
     /** The page heading. Defaults to "History". */
     title?: ReactNode;
-}
+} & (
+    | {
+          /** An organization's object, read with `history.listObjectHistory`. The default. */
+          scope?: "organization";
+          objectType: HistoryObjectType;
+      }
+    | {
+          /** One of the caller's own records, read with `history.listOwnObjectHistory`. */
+          scope: "user";
+          objectType: OwnHistoryObjectType;
+      }
+);
 
 /**
  * An object's History page body: every audit-log entry about it (and related entries that
  * mention it), newest first, with a "Load more" button while older pages remain.
  *
+ * `scope` picks the query: an organization's log (the default, inside an organization) or the
+ * caller's own (`scope="user"`, which needs no organization).
+ *
  * The page's `page.tsx` prefetches the first page with `prefetchInfinite` and the same input
  * (no `limit`), so the keys match and this doesn't suspend on a cold fetch.
  */
-export function ObjectHistory({ objectType, objectId, title = "History" }: ObjectHistoryProps) {
-    const organization = useOrganization();
-    const titleId = useId();
+export function ObjectHistory(props: ObjectHistoryProps) {
+    return props.scope === "user" ? (
+        <OwnObjectHistory {...props} />
+    ) : (
+        <OrgObjectHistory {...props} />
+    );
+}
 
-    const { data, hasNextPage, fetchNextPage, isFetchingNextPage } = useSuspenseInfiniteQuery(
+// No `staleTime` override on either query: Suspense would clamp one below 1s anyway. Freshness
+// comes from the page's RSC `prefetchInfinite`, which reruns on each navigation, and hydration
+// overwrites the cache with its newer data.
+
+function OrgObjectHistory({
+    objectType,
+    objectId,
+    title,
+}: {
+    objectType: HistoryObjectType;
+    objectId: string;
+    title?: ReactNode;
+}) {
+    const organization = useOrganization();
+
+    const query = useSuspenseInfiniteQuery(
         trpc.history.listObjectHistory.infiniteQueryOptions(
             { organizationId: organization.id, objectType, objectId },
-            {
-                getNextPageParam: (page) => page.nextCursor ?? undefined,
-                // No `staleTime` override: Suspense would clamp one below 1s anyway. Freshness
-                // comes from the page's RSC `prefetchInfinite`, which reruns on each navigation,
-                // and hydration overwrites the cache with its newer data.
-            },
+            { getNextPageParam: (page) => page.nextCursor ?? undefined },
         ),
     );
+
+    return <ObjectHistoryList query={query} pageType={objectType} title={title} />;
+}
+
+function OwnObjectHistory({
+    objectType,
+    objectId,
+    title,
+}: {
+    objectType: OwnHistoryObjectType;
+    objectId: string;
+    title?: ReactNode;
+}) {
+    const query = useSuspenseInfiniteQuery(
+        trpc.history.listOwnObjectHistory.infiniteQueryOptions(
+            { objectType, objectId },
+            { getNextPageParam: (page) => page.nextCursor ?? undefined },
+        ),
+    );
+
+    return <ObjectHistoryList query={query} pageType={objectType} title={title} />;
+}
+
+interface HistoryQuery {
+    data: { pages: ObjectHistoryPage[] };
+    hasNextPage: boolean;
+    fetchNextPage: () => Promise<unknown>;
+    isFetchingNextPage: boolean;
+}
+
+function ObjectHistoryList({
+    query: { data, hasNextPage, fetchNextPage, isFetchingNextPage },
+    pageType,
+    title = "History",
+}: {
+    query: HistoryQuery;
+    pageType: string;
+    title?: ReactNode;
+}) {
+    const titleId = useId();
 
     const entries = data.pages.flatMap((page) => page.entries);
     // Each page resolves the ids on it; an id means the same record on every page, so merge them.
@@ -98,7 +166,7 @@ export function ObjectHistory({ objectType, objectId, title = "History" }: Objec
                         <ObjectHistoryEntryItem
                             key={entry.id}
                             entry={entry}
-                            pageType={objectType}
+                            pageType={pageType}
                             names={names}
                         />
                     ))}

@@ -8,6 +8,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { nanoId16 } from "@/lib/id";
 import type { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
@@ -768,11 +769,12 @@ describe("organizations.getOrganizationAsAdmin", () => {
                 updatedAt: new Date(),
             },
         });
-        await db.note.create({
+        await db.organizationNote.create({
             data: {
-                id: nanoId16(),
+                id: OrganizationNoteId.create(),
                 organizationId: T.org,
                 authorId: T.owner,
+                title: "Hello",
                 content: "hi",
                 createdAt: new Date(),
                 updatedAt: new Date(),

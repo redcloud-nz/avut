@@ -5,20 +5,14 @@
  *  Path: /(wrapper)
  */
 
-import { Suspense, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
-import { ImpersonationBanner } from "@/components/system/admin/impersonation-banner";
 
+// `ImpersonationBanner` is disabled (#347). Rendered here, above the authenticated layout,
+// its `useSuspenseQuery(getSession)` ran during server rendering before the authenticated
+// layout's session was hydrated, cached `null`, and made every session read below it render as
+// signed out on the server: a hydration mismatch on every authenticated page.
 export default function AppLayout(props: { children: ReactNode }) {
-    return (
-        <AppProviders>
-            {/* `null` fallback matches the banner's own non-impersonating steady state, so
-                there's nothing to flash while `getSession` resolves. */}
-            <Suspense fallback={null}>
-                <ImpersonationBanner />
-            </Suspense>
-            {props.children}
-        </AppProviders>
-    );
+    return <AppProviders>{props.children}</AppProviders>;
 }

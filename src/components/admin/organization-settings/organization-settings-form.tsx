@@ -14,6 +14,7 @@ import { D4HViewsModule_SettingsCard } from "./d4h-views-module-settings";
 import { EmailIntegration_SettingsCard } from "./email-integration-settings";
 import { General_SettingsCard } from "./general-settings";
 import { I3Module_SettingsCard } from "./i3-module-settings";
+import { NotesModule_SettingsCard } from "./notes-module-settings";
 import { Personnel_SettingsCard } from "./personnel-settings";
 import { RubbishBin_SettingsCard } from "./rubbish-bin-settings";
 import { SkillPackageBuilderModule_SettingsCard } from "./skill-package-builder-module-settings";
@@ -78,6 +79,14 @@ export function OrganizationSettingsForm({
                         />
                     </div>
                 )}
+                {moduleFlags.notes !== false && (
+                    <div id="module-notes" className="scroll-mt-4">
+                        <NotesModule_SettingsCard
+                            organizationId={organizationId}
+                            settings={settings}
+                        />
+                    </div>
+                )}
                 <div id="module-skill-package-builder" className="scroll-mt-4">
                     <SkillPackageBuilderModule_SettingsCard
                         organizationId={organizationId}
@@ -98,7 +107,7 @@ export function OrganizationSettingsForm({
 /**
  * Matches the section (and, for "Modules", per-module card) `id`s above — passed to
  * `Saratoga.Contents` by the page. Takes `moduleFlags` so the "Modules" children stay in sync
- * with which cards the form itself actually renders (e.g. `i3`, gated the same way above).
+ * with which cards the form itself actually renders (`i3` and `notes`, gated the same way above).
  */
 export function getOrganizationSettingsFormSections(
     moduleFlags: ModuleFlagState,
@@ -114,6 +123,7 @@ export function getOrganizationSettingsFormSections(
             children: [
                 { id: "module-d4h-views", label: "D4H Views" },
                 ...(moduleFlags.i3 !== false ? [{ id: "module-i3", label: "I3" }] : []),
+                ...(moduleFlags.notes !== false ? [{ id: "module-notes", label: "Notes" }] : []),
                 { id: "module-skill-package-builder", label: "Skill Package Builder" },
                 { id: "module-skill-track", label: "Skill Track" },
             ],

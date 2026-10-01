@@ -25,12 +25,10 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldContent, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
-import { userModules as allUserModules, configurableUserModuleIds } from "@/lib/modules";
+import { configurableUserModules } from "@/lib/modules";
 import { UserSettings } from "@/lib/schemas/user-settings";
 
 import { useUserSettingsMutation } from "./use-user-settings-mutation";
-
-const userModules = allUserModules.filter((m) => configurableUserModuleIds.includes(m.id));
 
 /** `?action=update-modules` — self-triggered (Recipe A): the trigger button lives in this dialog. */
 export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: UserSettings }) {
@@ -83,7 +81,7 @@ export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: 
                 <DialogBody>
                     <form id="update-modules-settings-form" onSubmit={handleSubmit}>
                         <FieldGroup>
-                            {userModules.map((module) => (
+                            {configurableUserModules.map((module) => (
                                 <Field key={module.id} orientation="horizontal">
                                     <FieldContent>
                                         <FieldLabel htmlFor={`${module.id}-module-enabled`}>
