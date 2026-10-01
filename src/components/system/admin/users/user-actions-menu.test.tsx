@@ -126,7 +126,6 @@ describe("SystemAdmin_UserActions_Menu", () => {
     });
 
     const cases: Array<[string, Record<string, unknown>, string]> = [
-        ["impersonate", { banned: false }, "Impersonate user"],
         ["ban", { banned: false }, "Ban user"],
         ["unban", { banned: true }, "Unban user"],
         ["promote", { role: "user" }, "Promote to admin"],
@@ -143,5 +142,20 @@ describe("SystemAdmin_UserActions_Menu", () => {
         ];
         expect(dialogs).toHaveLength(1);
         expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    });
+
+    // Impersonation is switched off until #347 is fixed.
+    it("shows Impersonate disabled, and ?action=impersonate opens no dialog", async () => {
+        const user = userEvent.setup();
+        renderMenu(makeUser({ banned: false }), "?action=impersonate");
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("button"));
+        expect(screen.getByRole("menuitem", { name: /Impersonate/ })).toHaveAttribute(
+            "aria-disabled",
+            "true",
+        );
     });
 });
