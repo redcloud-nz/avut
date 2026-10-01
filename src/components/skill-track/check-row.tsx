@@ -39,11 +39,6 @@ interface CheckRowProps {
     /** Opens the host's `SkillTrack_RecordCheckDialog` for this row. */
     onOpenDialog: () => void;
     /**
-     * Read-only: the saved result still shows, but every button is disabled (an approved session
-     * can't be written to until it's reopened).
-     */
-    disabled?: boolean;
-    /**
      * The other assessors' live checks on this (assessee, skill) pair (from
      * `otherAssessorChecks`), shown as "Also checked by …" under the title. Never the caller's own.
      */
@@ -70,8 +65,7 @@ const QUICK_BUTTONS = [
  *   buttons. `More` opens the dialog, which records any result, notes, or deletes.
  *
  * While a write is pending the row shows the pending value dimmed, with its buttons disabled, so
- * two writes to one check can't reorder. With `disabled` the row shows its saved result and every
- * button, `More` included, is disabled.
+ * two writes to one check can't reorder.
  *
  * With `otherChecks`, an "Also checked by Jane (Competent), …" line goes under the title, using the
  * org's result labels.
@@ -85,7 +79,6 @@ export function SkillTrack_CheckRow({
     onRecord,
     onRemove,
     onOpenDialog,
-    disabled = false,
     otherChecks,
 }: CheckRowProps) {
     const isPending = pending !== undefined;
@@ -154,7 +147,7 @@ export function SkillTrack_CheckRow({
                                 size="icon"
                                 aria-label={ariaLabel}
                                 aria-pressed={active}
-                                disabled={isPending || disabled}
+                                disabled={isPending}
                                 onClick={() => handleTap(result)}
                             >
                                 <SkillCheckResultIcon result={result} />
@@ -167,7 +160,7 @@ export function SkillTrack_CheckRow({
                     variant="ghost"
                     size="icon"
                     aria-label="More options"
-                    disabled={isPending || disabled}
+                    disabled={isPending}
                     onClick={onOpenDialog}
                 >
                     <MoreHorizontalIcon />

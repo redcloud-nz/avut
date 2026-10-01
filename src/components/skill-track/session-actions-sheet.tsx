@@ -215,6 +215,11 @@ export function SkillTrack_SessionActionsSheet({
                             >
                                 Record
                             </h3>
+                            {isApproved && (
+                                <p className="px-3 text-xs text-muted-foreground">
+                                    Locked while the session is approved
+                                </p>
+                            )}
                             <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                                 {MODE_ITEMS.map(({ mode: itemMode, label, icon: Icon }) => {
                                     const current = itemMode === mode;

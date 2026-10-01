@@ -153,18 +153,6 @@ describe("SkillTrack_CheckRow", () => {
         expect(screen.getByRole("button", { name: "More options" })).toBeDisabled();
     });
 
-    it("disables every button, More included, but still shows the result when disabled", () => {
-        renderRow({ check: { result: "Pass", notes: "" }, disabled: true });
-
-        expect(screen.getByRole("button", { name: "Competent" })).toBeDisabled();
-        expect(screen.getByRole("button", { name: "Competent" })).toHaveAttribute(
-            "aria-pressed",
-            "true",
-        );
-        expect(screen.getByRole("button", { name: "Not Yet Competent" })).toBeDisabled();
-        expect(screen.getByRole("button", { name: "More options" })).toBeDisabled();
-    });
-
     it("shows a pending delete as unrecorded, without the notes indicator", () => {
         renderRow({ check: { result: "Pass", notes: "Some notes" }, pending: null });
 

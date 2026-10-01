@@ -317,7 +317,7 @@ Tasks 1–7 were built as first planned, with `updatedAt` as the sync cursor. At
     - By-skill also shows descriptions in its skill picker list and under the skill `Select`, through `skillDescription()`, which reads `showSkillDescription`. **Decided (2026-10-01):** remove both, along with `skillDescription()`. The record dialog is the only place a skill description shows.
   - **Done when:** the sheet has no Show section; the rows, by-skill's picker and its `Select` show no description; and the dialog shows the description on both pages. `npm run check` passes.
 
-- [ ] **11. Approved sessions lock the entry pages** `visual`
+- [x] **11. Approved sessions lock the entry pages** `visual` — feat(skill-track): lock the entry pages while a session is approved; refactor(skill-track): share the approved entry-page message and explain the locked links
   - **Files:** `session-by-person-content.tsx`, `session-by-skill-content.tsx`, `session-actions-sheet.tsx`, `session-content.tsx`.
   - **Do:**
     - When `session.status === "Include"`, each entry page renders only a centred message in place of everything under the navbar: an `Empty` with "This session has been approved." and a link button to the session page via `route("/orgs/[slug]/skill-track/sessions/[session_id]", …)`. This replaces the "Approved" alert, the read-only rows, and the "No linked person" / "Not an assigned assessor" / "Cannot record" alerts: an approved session says only that.

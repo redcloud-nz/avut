@@ -4,8 +4,7 @@
  */
 "use client";
 
-import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon, LockIcon } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import * as R from "remeda";
 import { match } from "ts-pattern";
@@ -22,6 +21,7 @@ import {
     SessionSkillOrder,
     SkillTrack_SessionActionsSheet,
 } from "@/components/skill-track/session-actions-sheet";
+import { SkillTrack_SessionApprovedEmpty } from "@/components/skill-track/session-approved-empty";
 import {
     sessionCheckKey,
     usePendingChecks,
@@ -32,15 +32,7 @@ import {
     useSessionChecksSync,
 } from "@/components/skill-track/use-session-checks-sync";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-    Empty,
-    EmptyContent,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { RainbowSpinner } from "@/components/ui/loading";
@@ -128,8 +120,10 @@ export function SkillTrack_SessionBySkill_Content({
     // Recording also needs `skillCheck: ["create"]` (see `setSessionSkillCheck` and
     // `deleteSessionSkillCheck`), which a caller holding only session update lacks.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
-    // Polls the other assessors' checks (and the caller's own from other devices) while the
-    // recording rows show.
+    // Polls the other assessors' checks (and the caller's own from other devices) while the caller
+    // could record, approved or not. When the session is approved or reopened elsewhere, the page
+    // locks, or unlocks, on the next poll for a recording assessor; anyone else sees it on focus
+    // or reload.
     const sessionChecks = useSessionChecksSync({
         sessionId,
         selfPersonId: personSelf?.id,
@@ -138,8 +132,7 @@ export function SkillTrack_SessionBySkill_Content({
     // The "Also checked by" markers, keyed by (assessee, skill).
     const otherChecksByKey = useOtherAssessorChecks(sessionChecks, personSelf?.id);
     // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
-    // only a message in place of its content, and the record dialog is closed. The sync above stays
-    // enabled while approved, so a reopen made elsewhere brings the content back on the next poll.
+    // only a message in place of its content, and the record dialog is closed.
     const isApproved = session.status === "Include";
 
     type Selected = { skillId: SkillId; status: "Loading" | "Selected" } | null;
@@ -290,29 +283,7 @@ export function SkillTrack_SessionBySkill_Content({
             <>
                 {navbar}
                 <Std.ScrollContainer className="flex">
-                    <Empty>
-                        <EmptyHeader>
-                            <EmptyMedia variant="icon">
-                                <LockIcon />
-                            </EmptyMedia>
-                            <EmptyTitle>This session has been approved.</EmptyTitle>
-                            <EmptyDescription>
-                                Reopen it to record or change checks.
-                            </EmptyDescription>
-                        </EmptyHeader>
-                        <EmptyContent>
-                            <Button variant="outline" asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                                        slug: organization.slug,
-                                        session_id: sessionId,
-                                    })}
-                                >
-                                    Back to session
-                                </Link>
-                            </Button>
-                        </EmptyContent>
-                    </Empty>
+                    <SkillTrack_SessionApprovedEmpty sessionId={sessionId} />
                 </Std.ScrollContainer>
             </>
         );

@@ -115,10 +115,10 @@ export function sessionChecksQueryOptions({
  *
  * When a response's `sessionStatus` differs from the cached `getSession`'s, the session was
  * approved or reopened elsewhere, so it refetches the session (`refetchSession`) and the page
- * turns read-only, or editable again, without first hitting a `CONFLICT`.
+ * locks, or unlocks, without first hitting a `CONFLICT`.
  *
- * Enable it only while the recording rows show. It keeps polling on an approved session, which is
- * how a reopen gets noticed.
+ * Enable it while the caller could record (a linked, assigned assessor who can create checks),
+ * approved or not. It keeps polling on an approved session, which is how a reopen gets noticed.
  *
  * @returns the session cache's data, `undefined` until the first response.
  */

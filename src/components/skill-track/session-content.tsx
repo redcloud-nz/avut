@@ -90,6 +90,9 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                             reopened, so the entry pages have nothing to record. */}
                                         {isApproved ? (
                                             <>
+                                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                                    Locked while the session is approved
+                                                </DropdownMenuLabel>
                                                 <DropdownMenuItem disabled>
                                                     By Person
                                                 </DropdownMenuItem>
