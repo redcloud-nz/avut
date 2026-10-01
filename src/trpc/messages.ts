@@ -33,9 +33,6 @@ export const Messages = {
     notCheckAssessor: (skillCheckId: string) =>
         `You are not the assessor who recorded SkillCheck(id=${skillCheckId}).`,
 
-    notSessionAssessor: (sessionId: string) =>
-        `You are not an assigned assessor for SkillCheckSession(id=${sessionId}).`,
-
     organizationNotFound: (organizationId: string) =>
         `Organization(id=${organizationId}) not found.`,
 
@@ -48,6 +45,9 @@ export const Messages = {
     personNotAUser: (personId: string) => `Person(id=${personId}) is not configured as a user.`,
 
     personNotFound: (personId: string) => `Person(id=${personId}) not found.`,
+
+    sessionCheckNotAllowed: (sessionId: string) =>
+        `Cannot create a check in SkillCheckSession(id=${sessionId}) here: record session checks through the session.`,
 
     skillCheckNotFound: (skillCheckId: string) => `SkillCheck(id=${skillCheckId}) not found.`,
 

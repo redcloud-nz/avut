@@ -6,11 +6,14 @@
 import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { hasAnyRoleWithPermissions, parseStoredRoles } from "@/lib/permissions";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
+import type { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { findConflicts, isCheckIncluded } from "@/lib/skill-check-conflicts";
+import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -37,6 +40,64 @@ export async function requireSessionById(
 }
 
 /**
+ * The single lock rule for a skill check session: an approved session (`status === "Include"`)
+ * accepts no writes to its checks or its configuration (assessees, skills, assessors) until it is
+ * reopened. Every procedure that writes either calls this after loading the session. Its name,
+ * date and notes stay editable, and it can still be deleted.
+ *
+ * Check-then-write, so on its own it can't stop a write racing an approval: a write whose check
+ * passed just before an approval committed would still land, and could overwrite the approval's
+ * `Include`/`Exclude` stamp or leave an unreviewed check in an approved session. So every write to
+ * a session's checks also opens its `$transaction` with `lockUnapprovedSession`, which serializes
+ * it with `approveSession` and refuses it once the session is approved. The configuration writes
+ * (`updateSession{Assessees,Assessors,Skills}`) rely on this check alone.
+ * @throws ConflictError if the session is approved.
+ */
+export function assertSessionUnlocked(session: Pick<SkillCheckSession, "id" | "status">): void {
+    if (session.status === "Include") throw sessionLockedError(session.id);
+}
+
+/**
+ * The error `assertSessionUnlocked` throws, for a write that finds the session approved some
+ * other way (e.g. a conditional update that lost a race with an approval).
+ */
+export function sessionLockedError(sessionId: SkillCheckSessionId): ConflictError {
+    return new ConflictError(
+        `SkillCheckSession(id=${sessionId}) is approved. Reopen it to make changes.`,
+    );
+}
+
+/**
+ * The statement that opens every `$transaction` writing a session's checks: a conditional update
+ * of the session row (not approved), which takes that row's lock before any check is written.
+ * `approveSession` writes the same row first, so the two can't interleave: one commits before the
+ * other starts writing checks. If an approval commits first, this re-reads the session, matches no
+ * row and throws P2025 (map it with `rethrowSessionLocked`), rolling the whole write back.
+ *
+ * `updatedAt` is the only field it touches, and bumping it matters too: `approveSession` is
+ * conditional on the `updatedAt` its comparison read, so a check recorded, edited or deleted while
+ * the Approve dialog is open makes that approval refuse. That's intended: the approver reviews the
+ * change and approves again.
+ */
+export function lockUnapprovedSession(ctx: OrgServiceContext, sessionId: SkillCheckSessionId) {
+    return ctx.prisma.skillCheckSession.update({
+        where: { id: sessionId, organizationId: ctx.organizationId, status: { not: "Include" } },
+        data: { updatedAt: new Date() },
+    });
+}
+
+/**
+ * A `.catch` handler for a `$transaction` opened by `lockUnapprovedSession`: its P2025 becomes
+ * `sessionLockedError`. Only for a transaction none of whose other statements can throw P2025.
+ */
+export function rethrowSessionLocked(sessionId: SkillCheckSessionId) {
+    return (error: unknown): never => {
+        if (isPrismaRecordNotFound(error)) throw sessionLockedError(sessionId);
+        throw error;
+    };
+}
+
+/**
  * A skill check session together with the ids of its assessees and skills, as loaded by
  * `requireSessionAssessor` — enough to validate a single check's target without another query.
  */
@@ -53,9 +114,9 @@ export type SessionWithMembers = SkillCheckSession & {
  * @throws ValidationError if the caller has no linked person record in the organization.
  * @throws ForbiddenError if the caller's person is not an assigned assessor for the session.
  *
- * The messages are local literals worded like `Messages.noLinkedPersonRecord` /
- * `Messages.notSessionAssessor` (`src/trpc/messages.ts`) — a domain service can't depend on
- * `src/trpc/`. Keep them in sync by hand.
+ * The no-linked-person message is a local literal worded like `Messages.noLinkedPersonRecord`
+ * (`src/trpc/messages.ts`) — a domain service can't depend on `src/trpc/`. Keep them in sync by
+ * hand.
  */
 export async function requireSessionAssessor(
     ctx: OrgServiceContext,
@@ -121,6 +182,165 @@ export function assertSessionCheckTarget(
             `Skill(id=${target.skillId}) is not a skill of SkillCheckSession(id=${session.id}).`,
         );
     }
+}
+
+/**
+ * Check an approval against the session's saved state, and count what it approves. The review
+ * page saves each exclusion as it's made, so an approval takes the session as saved: every live
+ * check that isn't `Exclude` is included. `includedCheckIds` is the approver's confirmation of that
+ * set, as the page showed it. If a check was recorded, deleted, excluded or re-included since, the
+ * two differ and the approval is refused, so what's approved is what the approver saw.
+ *
+ * This reads outside the approval's transaction, so it also returns what `approveSession` needs to
+ * catch a change between here and its commit: the session's `updatedAt` (which any write to the
+ * session row bumps: every check write, through `lockUnapprovedSession`, but also `updateSession`
+ * and the `updateSession{Assessees,Assessors,Skills}` writes, so a name or notes edit trips it too)
+ * and `checksAsOf`, the latest `updatedAt` among the session's checks, tombstones included (a check
+ * recorded, re-recorded or deleted since has a later one; a tombstone left before this read
+ * doesn't). The session is read before the checks, so a change landing between the two reads errs
+ * towards a refusal.
+ * @returns How many live checks the approval includes and excludes, the session's `updatedAt`,
+ * and `checksAsOf`.
+ * @throws NotFoundError if the session does not exist.
+ * @throws ConflictError if `includedCheckIds` isn't exactly the session's live non-`Exclude` checks.
+ * @throws ValidationError if more than one included check shares an assessee and skill, i.e. a
+ * conflict is unresolved.
+ */
+export async function assertApprovalMatchesSavedState(
+    ctx: OrgServiceContext,
+    sessionId: SkillCheckSessionId,
+    includedCheckIds: SkillCheckId[],
+): Promise<{
+    includedCount: number;
+    excludedCount: number;
+    sessionUpdatedAt: Date;
+    checksAsOf: Date;
+}> {
+    const session = await ctx.prisma.skillCheckSession.findUnique({
+        where: { id: sessionId, organizationId: ctx.organizationId },
+        select: { updatedAt: true },
+    });
+    if (!session) throw new NotFoundError(`SkillCheckSession(id=${sessionId}) not found.`);
+
+    // Tombstones too, but only for `checksAsOf`: the comparison is over the live checks.
+    const rows = await ctx.prisma.skillCheck.findMany({
+        where: { organizationId: ctx.organizationId, sessionId },
+        select: { id: true, assesseeId: true, skillId: true, status: true, updatedAt: true },
+    });
+    const checks = rows.filter(({ status }) => status !== "Deleted");
+    const included = checks.filter(isCheckIncluded);
+
+    const confirmed = new Set<string>(includedCheckIds);
+    if (confirmed.size !== included.length || included.some(({ id }) => !confirmed.has(id))) {
+        throw staleChecksError();
+    }
+
+    const conflicts = findConflicts(included);
+    if (conflicts.length > 0) {
+        const [first] = conflicts;
+        throw new ValidationError(
+            `Approval includes more than one check for ${conflicts.length} assessee and skill ` +
+                `pair(s) in SkillCheckSession(id=${sessionId}); e.g. Person(id=${first.assesseeId}) ` +
+                `and Skill(id=${first.skillId}): checks ${first.checks.map(({ id }) => id).join(", ")}.`,
+        );
+    }
+
+    const checksAsOf = new Date(Math.max(0, ...rows.map(({ updatedAt }) => updatedAt.getTime())));
+    return {
+        includedCount: included.length,
+        excludedCount: checks.length - included.length,
+        sessionUpdatedAt: session.updatedAt,
+        checksAsOf,
+    };
+}
+
+/**
+ * The error for an approval made from a stale view of the session: a check was recorded, deleted,
+ * excluded or re-included since the approver's page loaded them, or the session row itself was
+ * written (any write bumps its `updatedAt`, including a name or notes edit). Worded neutrally
+ * because the approval can't tell which.
+ */
+export function staleChecksError(): ConflictError {
+    return new ConflictError(
+        `The session changed since you opened this. Review it and approve again.`,
+    );
+}
+
+/** One check's exclusion decision, as `updateCheckExclusions` takes it. */
+export interface CheckExclusionChange {
+    skillCheckId: SkillCheckId;
+    excluded: boolean;
+}
+
+/**
+ * Save the review page's exclusion decisions for an unapproved session's checks. `excluded: true`
+ * sets a `Draft` or `Pending` check to `Exclude`; `excluded: false` sets an `Exclude` check back to
+ * `Draft`. Any other status is left alone, so re-including a `Pending` check doesn't touch it.
+ *
+ * The transaction opens with `lockUnapprovedSession`, so an approval and these writes can't
+ * interleave, and a call that finds the session approved by then changes nothing and throws
+ * `ConflictError`. Only the session's `updatedAt` changes besides the checks.
+ * @throws NotFoundError if the session does not exist.
+ * @throws ConflictError if the session is approved, up front or by the time the writes run, or if
+ * an id isn't a live (non-`Deleted`) check in the session (a stale view: most likely it was deleted
+ * since the page loaded it).
+ * @throws ValidationError if an id appears more than once.
+ */
+export async function updateCheckExclusions(
+    ctx: OrgServiceContext,
+    sessionId: SkillCheckSessionId,
+    changes: CheckExclusionChange[],
+): Promise<void> {
+    const session = await requireSessionById(ctx, sessionId);
+    assertSessionUnlocked(session);
+
+    const ids = changes.map(({ skillCheckId }) => skillCheckId);
+    const uniqueIds = new Set(ids);
+    if (uniqueIds.size !== ids.length) {
+        throw new ValidationError(`A skill check appears more than once in the changes.`);
+    }
+    if (ids.length === 0) return;
+
+    const found = await ctx.prisma.skillCheck.findMany({
+        where: {
+            organizationId: ctx.organizationId,
+            sessionId,
+            id: { in: ids },
+            status: { not: "Deleted" },
+        },
+        select: { id: true },
+    });
+    if (found.length !== uniqueIds.size) {
+        const foundIds = new Set(found.map(({ id }) => id));
+        const missing = ids.filter((id) => !foundIds.has(id));
+        // Most likely deleted since the page loaded it: a stale view, so a conflict, which has
+        // the client refetch the session's checks.
+        throw new ConflictError(
+            `SkillCheck(id=${missing.join(", ")}) is not a live check in SkillCheckSession(id=${sessionId}). Review the session's checks and try again.`,
+        );
+    }
+
+    const excludeIds = changes.filter((c) => c.excluded).map((c) => c.skillCheckId);
+    const includeIds = changes.filter((c) => !c.excluded).map((c) => c.skillCheckId);
+    const inSession = { organizationId: ctx.organizationId, sessionId };
+
+    await ctx.prisma
+        .$transaction([
+            lockUnapprovedSession(ctx, sessionId),
+            ctx.prisma.skillCheck.updateMany({
+                where: {
+                    ...inSession,
+                    id: { in: excludeIds },
+                    status: { in: ["Draft", "Pending"] },
+                },
+                data: { status: "Exclude" },
+            }),
+            ctx.prisma.skillCheck.updateMany({
+                where: { ...inSession, id: { in: includeIds }, status: "Exclude" },
+                data: { status: "Draft" },
+            }),
+        ])
+        .catch(rethrowSessionLocked(sessionId));
 }
 
 /**

@@ -33,6 +33,13 @@ import { type RouterOutput } from "@/trpc/client";
 type SystemAdminUser = RouterOutput["users"]["getUser"];
 
 /**
+ * Impersonation is switched off until #347 is fixed: with `ImpersonationBanner` disabled, an
+ * impersonating admin would get no on-screen sign of it and no way to stop. The item stays in
+ * the menu, disabled, and `?action=impersonate` no longer opens the dialog.
+ */
+const IMPERSONATION_ENABLED = false;
+
+/**
  * Actions dropdown for a system-admin user detail page — mirrors how org member actions
  * live only on the org detail page. The users list links each name to this page; it has no
  * per-row action menu of its own.
@@ -86,7 +93,10 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
                         <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
                     ) : (
                         <>
-                            <DropdownMenuItem onSelect={() => open("impersonate")}>
+                            <DropdownMenuItem
+                                disabled={!IMPERSONATION_ENABLED}
+                                onSelect={() => open("impersonate")}
+                            >
                                 <VenetianMaskIcon /> Impersonate
                             </DropdownMenuItem>
                             {isAdmin ? (
@@ -117,11 +127,13 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
 
             {!isSelf && (
                 <>
-                    <SystemAdmin_ImpersonateUser_Dialog
-                        user={user}
-                        open={action === "impersonate"}
-                        onOpenChange={(next) => (next ? undefined : close())}
-                    />
+                    {IMPERSONATION_ENABLED && (
+                        <SystemAdmin_ImpersonateUser_Dialog
+                            user={user}
+                            open={action === "impersonate"}
+                            onOpenChange={(next) => (next ? undefined : close())}
+                        />
+                    )}
                     <SystemAdmin_BanUser_Dialog
                         user={target}
                         action={action === "unban" ? "unban" : "ban"}

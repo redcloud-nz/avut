@@ -63,6 +63,26 @@ export default async function SkillTrack_SessionReview_Page(props: Props) {
             scope: "all",
         }),
     );
+    prefetch(
+        trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    prefetch(
+        trpc.skillCheckSessions.listSessionSkills.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    prefetch(
+        trpc.skillChecks.listSkillChecks.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+        }),
+    );
 
     return (
         <HydrateClient>

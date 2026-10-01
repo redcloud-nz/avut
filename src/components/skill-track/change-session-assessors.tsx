@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
+import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -113,12 +114,14 @@ function ChangeSessionAssessors_Body({
     // Staged changes, keyed by person id: true = add, false = remove.
     const [changes, setChanges] = useState<Record<PersonId, boolean>>({});
 
+    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
     const mutation = useMutation(
         trpc.skillCheckSessions.updateSessionAssessors.mutationOptions({
             meta: { effects: skillCheckSessionsEffects.updateSessionAssessors },
             onError(error) {
                 console.error("Failed to update session assessors:", error);
                 toast.error(`Failed to update session assessors: ${error.message}`);
+                refetchSessionOnConflict(error);
             },
             onSuccess() {
                 toast.success("Session assessors updated");

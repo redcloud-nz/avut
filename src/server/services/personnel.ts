@@ -327,8 +327,12 @@ export async function getDeleteImpact(
         ctx.prisma.teamMembership.count({
             where: { organizationId: ctx.organizationId, personId, status: "Active" },
         }),
-        ctx.prisma.skillCheck.count({ where: { assesseeId: personId } }),
-        ctx.prisma.skillCheck.count({ where: { assessorId: personId } }),
+        ctx.prisma.skillCheck.count({
+            where: { assesseeId: personId, status: { not: "Deleted" } },
+        }),
+        ctx.prisma.skillCheck.count({
+            where: { assessorId: personId, status: { not: "Deleted" } },
+        }),
     ]);
 
     return { teamCount, skillCheckCount: assesseeCount + assessorCount };

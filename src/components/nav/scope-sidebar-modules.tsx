@@ -3,9 +3,10 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
  * Static sidebar content for the user and system scopes — unlike org modules, these aren't
- * gated by any per-org settings or flags, so there's nothing to fetch and no provider needed:
- * just render by path. The org scope's module list is rendered separately, via `SidebarPortal`
- * from `orgs/[slug]/layout.tsx` — see `org-sidebar-modules.tsx` for why.
+ * gated by any per-org settings, so there's nothing to fetch and no provider needed: just render
+ * by path. The one input is the user modules' flag state, resolved by the authenticated layout.
+ * The org scope's module list is rendered separately, via `SidebarPortal` from
+ * `orgs/[slug]/layout.tsx` — see `org-sidebar-modules.tsx` for why.
  */
 
 "use client";
@@ -24,38 +25,45 @@ const USER_MODULE_SIDEBAR: Partial<Record<UserModuleId, ReactNode>> = {
     profile: <Profile_Sidebar_Menu />,
 };
 
-export function ScopeSidebar_Modules() {
+interface ScopeSidebar_ModulesProps {
+    /** Whether each user module's flag is on for this deployment; flagged-off modules are hidden. */
+    userModuleFlags: Record<UserModuleId, boolean>;
+}
+
+export function ScopeSidebar_Modules({ userModuleFlags }: ScopeSidebar_ModulesProps) {
     const pathname = usePathname();
 
     if (pathname === "/user" || pathname.startsWith("/user/")) {
         return (
             <NavSection>
-                {userModules.map((mod) => {
-                    const Icon = mod.icon;
-                    const subItems = USER_MODULE_SIDEBAR[mod.id];
+                {userModules
+                    .filter((mod) => userModuleFlags[mod.id])
+                    .map((mod) => {
+                        const Icon = mod.icon;
+                        const subItems = USER_MODULE_SIDEBAR[mod.id];
 
-                    if (!subItems) {
+                        if (!subItems) {
+                            return (
+                                <NavItem
+                                    key={mod.id}
+                                    icon={<Icon />}
+                                    label={mod.label}
+                                    href={mod.href()}
+                                />
+                            );
+                        }
+
                         return (
-                            <NavItem
+                            <NavCollapsible
                                 key={mod.id}
                                 icon={<Icon />}
                                 label={mod.label}
                                 href={mod.href()}
-                            />
+                            >
+                                {subItems}
+                            </NavCollapsible>
                         );
-                    }
-
-                    return (
-                        <NavCollapsible
-                            key={mod.id}
-                            icon={<Icon />}
-                            label={mod.label}
-                            href={mod.href()}
-                        >
-                            {subItems}
-                        </NavCollapsible>
-                    );
-                })}
+                    })}
             </NavSection>
         );
     }

@@ -39,6 +39,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { formatDate } from "@/lib/datetime";
 import { route } from "@/lib/routes";
+import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
@@ -155,7 +156,10 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                         <DLDetails>{session.notes}</DLDetails>
 
                                         <DLTerm>Status</DLTerm>
-                                        <DLDetails>{session.status}</DLDetails>
+                                        <DLDetails>
+                                            {SKILL_CHECK_STATUS_LABELS[session.status] ??
+                                                session.status}
+                                        </DLDetails>
 
                                         <DLTerm>Assessor</DLTerm>
                                         <DLDetails>

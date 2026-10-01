@@ -153,6 +153,7 @@ export function SkillTrack_SessionChecks_Content({
                     meta: {
                         columnOptions: [
                             { label: "Draft", value: "Draft" },
+                            { label: "Pending review", value: "Pending" },
                             { label: "Approved", value: "Include" },
                             { label: "Excluded", value: "Exclude" },
                         ],

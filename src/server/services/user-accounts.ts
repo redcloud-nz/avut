@@ -228,7 +228,12 @@ export async function purge(ctx: SystemServiceContext, userId: UserId): Promise<
         ctx.prisma.organizationUser.deleteMany({ where: { userId } }),
         ctx.prisma.organizationInvitation.deleteMany({ where: { inviterId: userId } }),
         ctx.prisma.providerCredential.deleteMany({ where: { userId } }),
-        ctx.prisma.note.deleteMany({ where: { authorId: userId } }),
+        // Org notes belong to the org, so they outlive their author; personal notes don't.
+        ctx.prisma.organizationNote.updateMany({
+            where: { authorId: userId },
+            data: { authorId: null },
+        }),
+        ctx.prisma.userNote.deleteMany({ where: { userId } }),
         ctx.prisma.userConfig.deleteMany({ where: { userId } }),
         ctx.logSystemEvent({
             action: "Purge",

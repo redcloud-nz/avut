@@ -26,6 +26,11 @@ importing another router's helper is the symptom that led here. Piloted on
 organizationId, userId, logEvent }` — not `AuthenticatedOrganizationContext`. The tRPC type
   structurally satisfies it, so no adapter is needed at call sites; the point is that a service
   stays callable from a Server Component or a test with no tRPC context to build.
+- A user-scoped service (one acting on the caller's own records, with no organization — e.g.
+  `user-notes.ts`) takes `UserServiceContext` (`service-context.ts`) — `{ prisma, userId,
+logEvent }` — which `authenticatedProcedure`'s context satisfies exactly. An `OrgServiceContext`
+  satisfies it structurally too, but don't pass one: its `logEvent` writes to the organization's
+  log, so the user's entry would be filed under the org.
 - A multi-entry operation binds its `LogBatch` once with `withBatch(ctx, batchId)`
   (`service-context.ts`) rather than threading a `batchId` parameter through every helper it
   calls — every `ctx.logEvent` made through the returned context joins that batch automatically.

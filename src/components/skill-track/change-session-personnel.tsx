@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
+import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -98,12 +99,14 @@ function ChangeSessionPersonnel_Body({
     // membership, so a person on several teams toggles in every section.
     const [changes, setChanges] = useState<Record<PersonId, boolean>>({});
 
+    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
     const mutation = useMutation(
         trpc.skillCheckSessions.updateSessionAssessees.mutationOptions({
             meta: { effects: skillCheckSessionsEffects.updateSessionAssessees },
             onError(error) {
                 console.error("Failed to update session personnel:", error);
                 toast.error(`Failed to update session personnel: ${error.message}`);
+                refetchSessionOnConflict(error);
             },
             onSuccess() {
                 toast.success("Session personnel updated");

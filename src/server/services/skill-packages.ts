@@ -638,7 +638,9 @@ export async function getSkillDeleteImpact(
 ): Promise<{ skillCheckCount: number }> {
     await requireSkillById(ctx, skillId);
 
-    const skillCheckCount = await ctx.prisma.skillCheck.count({ where: { skillId } });
+    const skillCheckCount = await ctx.prisma.skillCheck.count({
+        where: { skillId, status: { not: "Deleted" } },
+    });
 
     return { skillCheckCount };
 }
