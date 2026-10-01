@@ -23,7 +23,7 @@ A per-user "what's new" dialog. It opens once, automatically, whenever there are
 - **UI.**
   - An auto-opening `Dialog` (`size="xl"`) lists all unseen entries newest first: title, date and the MDX body rendered with `docsMdxComponents`. Its footer has "See all updates" and "Got it".
   - "See all updates" opens `/docs/updates` in a new tab, as `help-sheet.tsx` does for docs, because `/docs/updates` sits outside the app shell.
-  - A small "What's new" button next to `VersionString` in the sidebar footer reopens the same dialog and carries a dot while any entry is unseen. It opens the unseen list while there is one, and otherwise the 10 most recent entries ("recent" mode, which marks nothing seen).
+  - The `VersionString` in the sidebar footer is itself the reopen button (changed from a separate button beside it at the visual check) and carries a dot while any entry is unseen. A "What's new" item in the user menu opens it too. It opens the unseen list while there is one, and otherwise the 10 most recent entries ("recent" mode, which marks nothing seen).
   - Entry dates are formatted as calendar dates in UTC, so a date-only `publishedAt` doesn't show as the previous day west of UTC.
   - The dialog's open state is local React state held in a context provider, not a nuqs `?action=` param. It isn't a mutation dialog, and opening it automatically on load shouldn't push a history entry.
 - **Docs page.** `/docs/updates` is one changelog-style page with every entry in full, newest first. Each entry has an `id={slug}` anchor, and the page is linked from the docs sidebar under "Glossary". It's a static segment beside `docs/[[...slug]]`, like `docs/glossary`.
@@ -92,7 +92,7 @@ A per-user "what's new" dialog. It opens once, automatically, whenever there are
     - **Sidebar.** Add a "What's new" link to `DocsSidebar`, under "Glossary", in the same style.
   - **Done when:** `/docs/updates` renders the seed entry signed out, `/docs/updates#<slug>` scrolls to it, the sidebar link highlights while you're on the page, and `npm run check` passes.
 
-- [ ] **6. What's new dialog, auto-open and footer button** · `visual`
+- [x] **6. What's new dialog, auto-open and footer button** — feat(whats-new): What's new dialog, auto-open and footer button; fix(whats-new): isolate popup failures and label new-tab links; feat(whats-new): open What's new from the version string and user menu · `visual`
   - **Files:** `src/components/whats-new/whats-new-dialog.tsx` (new, with the context provider), `src/components/whats-new/whats-new-button.tsx` (new), `src/components/whats-new/whats-new-dialog.test.tsx` (new), `src/client/whats-new-effects.ts` (new), `src/app/(wrapper)/(authenticated)/layout.tsx`
   - **Do:** Read `docs/patterns/detail-page-data-fetching.md` (prefetch + `useSuspenseQuery`) and `docs/patterns/mutation-dialog.md` (dialog shape, `meta.effects`), but keep open state local (see Decisions). Build:
     - **`WhatsNewProvider`.** Holds the open state and mode (`unseen` / `recent`) and exposes `open()` to the button through context. It wraps the sidebar and the dialog in the layout.

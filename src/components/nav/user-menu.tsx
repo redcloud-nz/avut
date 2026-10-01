@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WhatsNewMenuItem } from "@/components/whats-new/whats-new-button";
 import { getUserInitials } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
@@ -112,6 +113,7 @@ export function UserMenu() {
                                     <span>Settings</span>
                                 </Link>
                             </DropdownMenuItem>
+                            <WhatsNewMenuItem />
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>

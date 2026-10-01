@@ -2,8 +2,8 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * The "What's new" dialog, its auto-open, and the context the sidebar footer's
- * button opens it through. See docs/plans/2026-09-30-whats-new-popup.md.
+ * The "What's new" dialog, its auto-open, and the context its triggers (the
+ * sidebar footer's version button, the user menu item) open it through. See docs/plans/2026-09-30-whats-new-popup.md.
  */
 
 "use client";
@@ -60,9 +60,10 @@ interface WhatsNewContextValue {
 const WhatsNewContext = createContext<WhatsNewContextValue | null>(null);
 
 /**
- * Holds the dialog's open state and view, shared by `WhatsNewDialog` and `WhatsNewButton`. The
- * two mount apart (the button in the sidebar footer, the dialog outside `<Sidebar>`, whose mobile
- * sheet unmounts its content while closed), so the state lives above both.
+ * Holds the dialog's open state and view, shared by `WhatsNewDialog` and the triggers in
+ * `whats-new-button.tsx`. They mount apart (the triggers in the sidebar footer and user menu, the
+ * dialog outside `<Sidebar>`, whose mobile sheet unmounts its content while closed), so the state
+ * lives above them all.
  *
  * Local state rather than a `?action=` param: this isn't a mutation dialog, and opening it
  * automatically on load shouldn't push a history entry.
@@ -94,7 +95,7 @@ export function useWhatsNew(): WhatsNewContextValue {
 }
 
 /**
- * Wraps a What's new consumer (`WhatsNewDialog`, `WhatsNewButton`) so it renders nothing while
+ * Wraps a What's new consumer (`WhatsNewDialog`, the version button's unseen dot) so it renders nothing while
  * `getUnseen` loads, and nothing if it fails. The popup is optional: without the error boundary a
  * failed prefetch would bubble past the layout to `src/app/error.tsx` and take down every
  * authenticated page.

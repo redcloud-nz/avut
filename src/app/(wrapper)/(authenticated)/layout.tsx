@@ -23,9 +23,8 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar";
-import { VersionString } from "@/components/ui/version-string";
 import { TimeZoneAutoDetect } from "@/components/user/user-settings/timezone-auto-detect";
-import { WhatsNewButton } from "@/components/whats-new/whats-new-button";
+import { WhatsNewVersionButton } from "@/components/whats-new/whats-new-button";
 import {
     WhatsNewBoundary,
     WhatsNewDialog,
@@ -74,9 +73,10 @@ export default async function AuthenticatedLayout(props: {
     // prefetching here removes the round trip that would otherwise show as its skeleton.
     prefetch(trpc.user.listMemberships.queryOptions());
 
-    // `WhatsNewDialog` and `WhatsNewButton` both read this via `useSuspenseQuery`, each inside its
-    // own `WhatsNewBoundary` (renders nothing while loading or on failure). Neither is needed for
-    // first paint, so prefetch rather than await: the popup can open a moment after the page does.
+    // `WhatsNewDialog` and the version button's unseen dot both read this via `useSuspenseQuery`,
+    // each inside its own `WhatsNewBoundary` (renders nothing while loading or on failure). Neither
+    // is needed for first paint, so prefetch rather than await: the popup can open a moment after
+    // the page does.
     prefetch(trpc.whatsNew.getUnseen.queryOptions());
 
     return (
@@ -118,11 +118,8 @@ export default async function AuthenticatedLayout(props: {
                             </div>
                         </SidebarContent>
                         <SidebarFooter>
-                            <div className="flex items-center justify-center gap-2 py-1 text-center text-xs text-muted-foreground">
-                                <VersionString layout="stacked" />
-                                <WhatsNewBoundary>
-                                    <WhatsNewButton />
-                                </WhatsNewBoundary>
+                            <div className="flex justify-center text-center text-xs text-muted-foreground">
+                                <WhatsNewVersionButton />
                             </div>
                             <Suspense fallback={<UserMenu_Skeleton />}>
                                 <UserMenu />

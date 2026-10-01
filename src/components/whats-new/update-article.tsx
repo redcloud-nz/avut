@@ -62,7 +62,7 @@ export function UpdateArticle({
                 <Heading
                     className={cn(
                         "font-semibold tracking-tight",
-                        headingLevel === "h2" ? "text-2xl" : "text-xl",
+                        headingLevel === "h2" ? "text-2xl" : "text-base",
                     )}
                 >
                     <Link

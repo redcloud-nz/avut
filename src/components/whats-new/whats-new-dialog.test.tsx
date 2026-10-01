@@ -12,7 +12,7 @@ import type { UpdateEntryData } from "@/lib/updates-shared";
 import { trpc } from "@/trpc/client";
 import { useMutationEffector } from "@/trpc/mutation-effector";
 
-import { WhatsNewButton } from "./whats-new-button";
+import { WhatsNewVersionButton } from "./whats-new-button";
 import { WhatsNewBoundary, WhatsNewDialog, WhatsNewProvider } from "./whats-new-dialog";
 
 // The MDX body needs compiled code; the dialog's behaviour doesn't depend on it.
@@ -65,9 +65,7 @@ function renderWhatsNew({
         <QueryClientProvider client={queryClient}>
             {withEffector && <Effector queryClient={queryClient} />}
             <WhatsNewProvider>
-                <WhatsNewBoundary>
-                    <WhatsNewButton />
-                </WhatsNewBoundary>
+                <WhatsNewVersionButton />
                 <WhatsNewBoundary>
                     <WhatsNewDialog />
                 </WhatsNewBoundary>
