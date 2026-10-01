@@ -105,7 +105,12 @@ export function NoteEditor({ note, byline, onSave, onCancel, status }: NoteEdito
             >
                 <MarkdownEditor
                     markdown={note.content}
-                    onChange={setContent}
+                    onChange={(markdown, initialMarkdownNormalize) => {
+                        // The editor reports its own normalised copy of the stored body once on
+                        // load. That isn't an edit, and treating it as one would save and log a
+                        // spurious "content changed".
+                        if (!initialMarkdownNormalize) setContent(markdown);
+                    }}
                     fill
                     className="min-h-0 flex-1"
                 />

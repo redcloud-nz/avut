@@ -33,6 +33,13 @@ import { type RouterOutput } from "@/trpc/client";
 type SystemAdminUser = RouterOutput["users"]["getUser"];
 
 /**
+ * Impersonation is switched off until #347 is fixed: with `ImpersonationBanner` disabled, an
+ * impersonating admin would get no on-screen sign of it and no way to stop. The item stays in
+ * the menu, disabled, and `?action=impersonate` no longer opens the dialog.
+ */
+const IMPERSONATION_ENABLED = false;
+
+/**
  * Actions dropdown for a system-admin user detail page — mirrors how org member actions
  * live only on the org detail page. The users list links each name to this page; it has no
  * per-row action menu of its own.
@@ -44,13 +51,6 @@ type SystemAdminUser = RouterOutput["users"]["getUser"];
  * hidden when the row user is the signed-in operator — the tRPC procedures refuse a self-target
  * anyway, this just keeps them off the menu.
  */
-/**
- * Impersonation is switched off until #347 is fixed: with `ImpersonationBanner` disabled, an
- * impersonating admin would get no on-screen sign of it and no way to stop. The item stays in
- * the menu, disabled, and `?action=impersonate` no longer opens the dialog.
- */
-const IMPERSONATION_ENABLED = false;
-
 export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }) {
     const { data: currentUser } = useUser();
     const isSelf = currentUser?.id === user.id;
