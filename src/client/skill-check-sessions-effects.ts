@@ -34,7 +34,7 @@ function sessionChecksQueryKey(organizationId: string, sessionId: string) {
  *
  * The write's response carries no names, and an updater only sees `old` for its own key, so the
  * names come from the cached row with the same id, else `""`. The next poll's copy has the same
- * `updatedAt` and fills them in; consumers skip a row whose names are still empty. An uncached
+ * `recordedAt` and fills them in; consumers skip a row whose names are still empty. An uncached
  * session list stays uncached.
  */
 function mergeIntoSessionChecks(

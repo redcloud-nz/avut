@@ -93,12 +93,16 @@ export const skillChecksRouter = createTrpcRouter({
                 });
             }
 
+            // A standalone check has no session date, so it was checked when it's recorded.
+            const now = new Date();
             const record = await ctx.prisma.skillCheck.create({
                 data: {
                     id: skillCheckId,
                     organizationId: ctx.organizationId,
                     sessionId: null,
                     ...create,
+                    checkedAt: now,
+                    recordedAt: now,
                 },
             });
 
@@ -151,7 +155,7 @@ export const skillChecksRouter = createTrpcRouter({
                                 organizationId: ctx.organizationId,
                                 status: { not: "Deleted" },
                             },
-                            data: { status: "Deleted" },
+                            data: { status: "Deleted", recordedAt: new Date() },
                         }),
                     ])
                     .catch(rethrowSessionCheckRace(ctx, sessionId, skillCheckId));
@@ -328,9 +332,9 @@ export const skillChecksRouter = createTrpcRouter({
                     assesseeId: true,
                     skillId: true,
                     result: true,
-                    createdAt: true,
+                    checkedAt: true,
                 },
-                orderBy: { createdAt: "desc" },
+                orderBy: { checkedAt: "desc" },
             });
 
             const latestByKey = new Map<string, (typeof allChecks)[number]>();
@@ -348,7 +352,7 @@ export const skillChecksRouter = createTrpcRouter({
                 const neverExpires = skill.frequency <= 0;
                 let expiresAt: Date | null = null;
                 if (!neverExpires) {
-                    expiresAt = new Date(check.createdAt);
+                    expiresAt = new Date(check.checkedAt);
                     expiresAt.setMonth(expiresAt.getMonth() + skill.frequency);
                 }
                 return {
@@ -356,7 +360,7 @@ export const skillChecksRouter = createTrpcRouter({
                     skillId: check.skillId as SkillId,
                     checkId: check.id as SkillCheckId,
                     result: check.result,
-                    checkedAt: check.createdAt.toISOString(),
+                    checkedAt: check.checkedAt.toISOString(),
                     expiresAt: expiresAt ? expiresAt.toISOString() : null,
                     isCurrent: neverExpires || expiresAt! > now,
                 };
@@ -397,7 +401,8 @@ export const skillChecksRouter = createTrpcRouter({
 
     /**
      * Lists skill checks recorded within the last month, with resolved names for assessee,
-     * assessor, skill, and session. Ordered by createdAt descending.
+     * assessor, skill, and session. Filtered and ordered (newest first) by `checkedAt`: these are
+     * assessments that happened, not data entry.
      */
     listRecentChecks: organizationProcedure({ skillCheck: ["view"] })
         .output(
@@ -419,7 +424,7 @@ export const skillChecksRouter = createTrpcRouter({
             const checks = await ctx.prisma.skillCheck.findMany({
                 where: {
                     organizationId: ctx.organizationId,
-                    createdAt: { gte: since },
+                    checkedAt: { gte: since },
                     status: { not: "Deleted" },
                 },
                 include: {
@@ -428,7 +433,7 @@ export const skillChecksRouter = createTrpcRouter({
                     skill: { select: { id: true, name: true } },
                     session: { select: { id: true, name: true } },
                 },
-                orderBy: { createdAt: "desc" },
+                orderBy: { checkedAt: "desc" },
             });
 
             return checks.map((check) => ({
@@ -497,6 +502,9 @@ export const skillChecksRouter = createTrpcRouter({
      * A check within a session also needs the session unlocked, and the caller still an assigned
      * assessor of it; the edit moves it to `Draft`, so a `Pending` or `Exclude` check in a
      * reopened session goes back for fresh review.
+     *
+     * Either way the edit moves `recordedAt` and leaves `checkedAt` alone: standalone checks have
+     * no edit UI yet, and nothing here says when the reassessment happened.
      * @throws TRPCError(NOT_FOUND) if the check does not exist or is `Deleted`.
      * @throws TRPCError(FORBIDDEN) if the caller did not record the check, or is no longer an
      * assigned assessor of its session.
@@ -544,7 +552,7 @@ export const skillChecksRouter = createTrpcRouter({
             }
 
             // Guarded so a delete landing after the pre-check isn't revived as `Draft` (with a
-            // stale `createdAt`); the lost race surfaces as NOT_FOUND.
+            // stale `checkedAt`); the lost race surfaces as NOT_FOUND.
             const where = {
                 id: skillCheckId,
                 organizationId: ctx.organizationId,
@@ -553,7 +561,7 @@ export const skillChecksRouter = createTrpcRouter({
 
             if (!existing.sessionId) {
                 const record = await ctx.prisma.skillCheck
-                    .update({ where, data: update })
+                    .update({ where, data: { ...update, recordedAt: new Date() } })
                     .catch(rethrowSkillCheckGone(skillCheckId));
                 return SkillCheck.fromRecord(record);
             }
@@ -566,7 +574,10 @@ export const skillChecksRouter = createTrpcRouter({
                 .$transaction([
                     // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
                     SkillChecks.lockUnapprovedSession(ctx, sessionId),
-                    ctx.prisma.skillCheck.update({ where, data: { ...update, status: "Draft" } }),
+                    ctx.prisma.skillCheck.update({
+                        where,
+                        data: { ...update, status: "Draft", recordedAt: new Date() },
+                    }),
                 ])
                 .catch(rethrowSessionCheckRace(ctx, sessionId, skillCheckId));
 

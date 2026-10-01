@@ -195,10 +195,11 @@ export function assertSessionCheckTarget(
  * catch a change between here and its commit: the session's `updatedAt` (which any write to the
  * session row bumps: every check write, through `lockUnapprovedSession`, but also `updateSession`
  * and the `updateSession{Assessees,Assessors,Skills}` writes, so a name or notes edit trips it too)
- * and `checksAsOf`, the latest `updatedAt` among the session's checks, tombstones included (a check
- * recorded, re-recorded or deleted since has a later one; a tombstone left before this read
- * doesn't). The session is read before the checks, so a change landing between the two reads errs
- * towards a refusal.
+ * and `checksAsOf`, the latest `recordedAt` among the session's checks, tombstones included (a
+ * check recorded, re-recorded or deleted since has a later one; a tombstone left before this read
+ * doesn't). Exclusions don't move `recordedAt`, but they bump the session's `updatedAt`. The
+ * session is read before the checks, so a change landing between the two reads errs towards a
+ * refusal.
  * @returns How many live checks the approval includes and excludes, the session's `updatedAt`,
  * and `checksAsOf`.
  * @throws NotFoundError if the session does not exist.
@@ -225,7 +226,7 @@ export async function assertApprovalMatchesSavedState(
     // Tombstones too, but only for `checksAsOf`: the comparison is over the live checks.
     const rows = await ctx.prisma.skillCheck.findMany({
         where: { organizationId: ctx.organizationId, sessionId },
-        select: { id: true, assesseeId: true, skillId: true, status: true, updatedAt: true },
+        select: { id: true, assesseeId: true, skillId: true, status: true, recordedAt: true },
     });
     const checks = rows.filter(({ status }) => status !== "Deleted");
     const included = checks.filter(isCheckIncluded);
@@ -245,7 +246,7 @@ export async function assertApprovalMatchesSavedState(
         );
     }
 
-    const checksAsOf = new Date(Math.max(0, ...rows.map(({ updatedAt }) => updatedAt.getTime())));
+    const checksAsOf = new Date(Math.max(0, ...rows.map(({ recordedAt }) => recordedAt.getTime())));
     return {
         includedCount: included.length,
         excludedCount: checks.length - included.length,

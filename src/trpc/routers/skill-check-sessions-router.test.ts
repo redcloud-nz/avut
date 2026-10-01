@@ -55,6 +55,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
         approvedSession: SkillCheckSessionId.create(),
         approvedCheck: SkillCheckId.create(),
     };
+    const SESSION_DATE = new Date("2026-03-14T00:00:00.000Z");
 
     const db = createMockPrisma();
 
@@ -128,8 +129,8 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 organizationId: T.org,
                 name: "Session",
                 sessionNumber: 1,
-                startsAt: new Date(),
-                endsAt: new Date(),
+                startsAt: SESSION_DATE,
+                endsAt: SESSION_DATE,
                 notes: "",
                 assessors: {
                     connect: [{ id: T.assessorPerson }, { id: T.secondAssessorPerson }],
@@ -149,6 +150,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 skillId: T.skill2,
                 result: "Fail",
                 notes: "Second assessor's check",
+                checkedAt: new Date(),
             },
         });
 
@@ -180,6 +182,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 result: "Pass",
                 notes: "",
                 status: "Include",
+                checkedAt: new Date(),
             },
         });
     });
@@ -341,6 +344,36 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             expect(after.updatedAt.getTime()).toBeGreaterThan(before.updatedAt.getTime());
         });
 
+        it("stamps checkedAt with the session's date and recordedAt with now, on create and update", async () => {
+            const caller = makeCaller(T.assessorUser);
+            const first = new Date("2026-10-01T09:00:00.000Z");
+            const second = new Date("2026-10-01T09:05:00.000Z");
+            vi.useFakeTimers({ now: first, toFake: ["Date"] });
+            try {
+                const created = await caller.setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill1,
+                    result: "Pass",
+                    notes: "",
+                });
+                expect(created.checkedAt).toBe(SESSION_DATE.toISOString());
+                expect(created.recordedAt).toBe(first.toISOString());
+
+                vi.setSystemTime(second);
+                const updated = await caller.setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill1,
+                    result: "Fail",
+                    notes: "",
+                });
+                expect(updated.id).toBe(created.id);
+                expect(updated.checkedAt).toBe(SESSION_DATE.toISOString());
+                expect(updated.recordedAt).toBe(second.toISOString());
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
         it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
             const restore = fakeLostApprovalRace();
             try {
@@ -390,8 +423,8 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 deleted: true,
                 check: expect.objectContaining({ id: recorded.id, status: "Deleted" }),
             });
-            expect(new Date(result.check!.updatedAt).getTime()).toBeGreaterThanOrEqual(
-                new Date(recorded.updatedAt).getTime(),
+            expect(new Date(result.check!.recordedAt).getTime()).toBeGreaterThanOrEqual(
+                new Date(recorded.recordedAt).getTime(),
             );
 
             const remaining = await db.skillCheck.findMany({
@@ -413,6 +446,34 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 deleted: false,
                 check: null,
             });
+        });
+
+        it("moves the tombstone's recordedAt and leaves its checkedAt", async () => {
+            const caller = makeCaller(T.assessorUser);
+            const recordTime = new Date("2026-10-01T10:00:00.000Z");
+            const deleteTime = new Date("2026-10-01T10:05:00.000Z");
+            vi.useFakeTimers({ now: recordTime, toFake: ["Date"] });
+            try {
+                await caller.setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill2,
+                    result: "Pass",
+                    notes: "",
+                });
+
+                vi.setSystemTime(deleteTime);
+                const { check } = await caller.deleteSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill2,
+                });
+                expect(check).toMatchObject({
+                    status: "Deleted",
+                    checkedAt: SESSION_DATE.toISOString(),
+                    recordedAt: deleteTime.toISOString(),
+                });
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it("returns deleted: false when the caller has no check to delete", async () => {
@@ -789,6 +850,7 @@ describe("skillCheckSessions reads ignore Deleted checks", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -1155,6 +1217,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                 skillId: T.skill,
                 result: "Pass",
                 notes: "",
+                checkedAt: new Date(),
             },
         });
     });
@@ -1305,6 +1368,7 @@ describe("skillCheckSessions tombstones", () => {
         doomedDeadCheck: SkillCheckId.create(),
     };
     const aYearAgo = new Date("2025-09-30T00:00:00.000Z");
+    const sessionDate = new Date("2026-09-01T00:00:00.000Z");
 
     const db = createMockPrisma();
 
@@ -1376,8 +1440,8 @@ describe("skillCheckSessions tombstones", () => {
                     organizationId: T.org,
                     name: `Session ${sessionNumber}`,
                     sessionNumber,
-                    startsAt: new Date(),
-                    endsAt: new Date(),
+                    startsAt: sessionDate,
+                    endsAt: sessionDate,
                     notes: "",
                     assessors: { connect: [{ id: T.assessor }] },
                     assessees: { connect: [{ id: T.assessee }] },
@@ -1405,7 +1469,8 @@ describe("skillCheckSessions tombstones", () => {
                     result: "Pass",
                     notes: "Old notes",
                     status,
-                    createdAt: aYearAgo,
+                    checkedAt: aYearAgo,
+                    recordedAt: aYearAgo,
                 },
             });
         }
@@ -1431,7 +1496,7 @@ describe("skillCheckSessions tombstones", () => {
         assesseeId: T.assessee,
     };
 
-    it("re-recording over a tombstone revives the same row as Draft with a new createdAt", async () => {
+    it("re-recording over a tombstone revives the same row as Draft, re-stamped", async () => {
         const revived = await makeCaller().setSessionSkillCheck({
             ...target,
             skillId: T.skillB,
@@ -1445,10 +1510,11 @@ describe("skillCheckSessions tombstones", () => {
             result: "Fail",
             notes: "Again",
         });
-        expect(new Date(revived.createdAt).getTime()).toBeGreaterThan(aYearAgo.getTime());
+        expect(revived.checkedAt).toBe(sessionDate.toISOString());
+        expect(new Date(revived.recordedAt).getTime()).toBeGreaterThan(aYearAgo.getTime());
     });
 
-    it("re-recording over a live Pending check makes it Draft and keeps its createdAt", async () => {
+    it("re-recording over a live Pending check makes it Draft, re-stamped", async () => {
         const updated = await makeCaller().setSessionSkillCheck({
             ...target,
             skillId: T.skillA,
@@ -1457,7 +1523,8 @@ describe("skillCheckSessions tombstones", () => {
         });
 
         expect(updated).toMatchObject({ id: T.pendingCheck, status: "Draft", result: "Fail" });
-        expect(updated.createdAt).toBe(aYearAgo.toISOString());
+        expect(updated.checkedAt).toBe(sessionDate.toISOString());
+        expect(new Date(updated.recordedAt).getTime()).toBeGreaterThan(aYearAgo.getTime());
     });
 
     it("deleting and re-recording a check brings back the same row", async () => {
@@ -1488,7 +1555,7 @@ describe("skillCheckSessions tombstones", () => {
         // `checksAsOf` covers it, so the purge takes it rather than the guard tripping on it.
         await db.skillCheck.update({
             where: { id: T.deadCheck },
-            data: { updatedAt: new Date(Date.now() + 1000) },
+            data: { recordedAt: new Date(Date.now() + 1000) },
         });
 
         await makeCaller().approveSession({
@@ -1620,6 +1687,7 @@ describe("skillCheckSessions.reopenSession", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -1638,6 +1706,16 @@ describe("skillCheckSessions.reopenSession", () => {
     async function checkStatuses() {
         const rows = await db.skillCheck.findMany({ where: { sessionId: T.approvedSession } });
         return Object.fromEntries(rows.map((row) => [row.id, row.status]));
+    }
+
+    async function checkStamps() {
+        const rows = await db.skillCheck.findMany({ where: { sessionId: T.approvedSession } });
+        return Object.fromEntries(
+            rows.map(({ id, checkedAt, recordedAt }) => [
+                id,
+                { checkedAt: checkedAt.toISOString(), recordedAt: recordedAt.toISOString() },
+            ]),
+        );
     }
 
     it("refuses a Draft session with CONFLICT", async () => {
@@ -1679,6 +1757,9 @@ describe("skillCheckSessions.reopenSession", () => {
 
     it("moves the session to Draft and its Include checks to Pending, leaving Exclude, logs Reopen, and lets it be approved again", async () => {
         const caller = makeCaller();
+        const stampsBefore = await checkStamps();
+        await new Promise((resolve) => setTimeout(resolve, 5));
+
         const { updated } = await caller.reopenSession({
             organizationId: T.org,
             skillCheckSessionId: T.approvedSession,
@@ -1701,6 +1782,8 @@ describe("skillCheckSessions.reopenSession", () => {
             },
         });
         expect(entries).toHaveLength(1);
+        // Reopen moves neither stamp: they belong to the assessors' writes.
+        expect(await checkStamps()).toEqual(stampsBefore);
 
         // Swap the saved decisions, then approve them.
         await caller.updateCheckExclusions({
@@ -1722,6 +1805,8 @@ describe("skillCheckSessions.reopenSession", () => {
             [T.includedCheck]: "Exclude",
             [T.excludedCheck]: "Include",
         });
+        // Nor do the exclusions or the approval.
+        expect(await checkStamps()).toEqual(stampsBefore);
     });
 });
 
@@ -1874,6 +1959,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -1983,7 +2069,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             args: Parameters<typeof findMany>[0],
         ) => {
             const rows = await findMany(args);
-            // Let the clock move on, so the interleaved write's `updatedAt` is later than any
+            // Let the clock move on, so the interleaved write's `recordedAt` is later than any
             // the comparison read, as it would be for a request that comes after.
             await new Promise((resolve) => setTimeout(resolve, 5));
             await between();
@@ -2022,7 +2108,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             // What `setSessionSkillCheck` does to an existing check: a new result, back to Draft.
             db.skillCheck.update({
                 where: { id: T.recordOther },
-                data: { result: "Fail", status: "Draft", updatedAt: new Date(Date.now() + 1000) },
+                data: { result: "Fail", status: "Draft", recordedAt: new Date(Date.now() + 1000) },
             }),
         );
         try {
@@ -2048,7 +2134,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             // the refusal here comes from the final guard.
             db.skillCheck.update({
                 where: { id: T.deletePick },
-                data: { status: "Deleted", updatedAt: new Date(Date.now() + 1000) },
+                data: { status: "Deleted", recordedAt: new Date(Date.now() + 1000) },
             }),
         );
         try {
@@ -2186,6 +2272,7 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -2329,9 +2416,9 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
 describe("skillCheckSessions.listSessionChecks", () => {
     // Dataset (T0 = 2026-01-01T00:00:00Z; the clock is frozen at T0 + 120s):
     //   session         → Draft, with
-    //     liveCheck     → (assessee, skill1, jane), Draft, updated T0
-    //     purgedCheck   → (assessee, skill1, purged assessor "Purged Person"), Draft, updated T0 + 30s
-    //     deletedCheck  → (assessee, skill2, bob), Deleted, updated T0 + 60s
+    //     liveCheck     → (assessee, skill1, jane), Draft, recorded T0
+    //     purgedCheck   → (assessee, skill1, purged assessor "Purged Person"), Draft, recorded T0 + 30s
+    //     deletedCheck  → (assessee, skill2, bob), Deleted, recorded T0 + 60s
     //   approvedSession → Include, no checks
     //   otherOrgSession → a session in another organization
     const T0 = new Date("2026-01-01T00:00:00.000Z").getTime();
@@ -2444,8 +2531,8 @@ describe("skillCheckSessions.listSessionChecks", () => {
                     result: "Pass",
                     notes: "",
                     status,
-                    createdAt: new Date(T0 + offset),
-                    updatedAt: new Date(T0 + offset),
+                    checkedAt: new Date(T0 + offset),
+                    recordedAt: new Date(T0 + offset),
                 },
             });
         }
@@ -2497,7 +2584,7 @@ describe("skillCheckSessions.listSessionChecks", () => {
             assesseeName: "Assessee",
             skillName: "Skill 1",
             assessorName: "Jane",
-            updatedAt: iso(T0),
+            recordedAt: iso(T0),
         });
         expect(byId.get(T.deletedCheck)).toMatchObject({
             skillName: "Skill 2",
@@ -2517,7 +2604,7 @@ describe("skillCheckSessions.listSessionChecks", () => {
         });
     });
 
-    it("returns only checks updated after since", async () => {
+    it("returns only checks recorded after since", async () => {
         const { checks } = await makeCaller().listSessionChecks({
             organizationId: T.org,
             skillCheckSessionId: T.session,

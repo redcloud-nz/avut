@@ -133,7 +133,7 @@ function SessionRecentChecks_Body({ sessionId }: { sessionId: SkillCheckSessionI
 
     const named = data.checks
         .filter(hasNames)
-        .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+        .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
     const shown = named.slice(0, RECENT_CHECKS_LIMIT);
 
     return (
@@ -185,8 +185,8 @@ function RecentCheckItem({ check }: { check: SessionCheck }) {
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
-                <time dateTime={check.updatedAt} className="text-xs text-muted-foreground">
-                    {formatRelativeDateTime(check.updatedAt)}
+                <time dateTime={check.recordedAt} className="text-xs text-muted-foreground">
+                    {formatRelativeDateTime(check.recordedAt)}
                 </time>
             </ItemActions>
         </Item>

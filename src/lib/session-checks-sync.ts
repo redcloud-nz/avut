@@ -13,7 +13,7 @@ import type { SkillCheckSession } from "@/lib/schemas/skill-check-session";
  * (`listSessionChecks`) and the caller's own-checks list (`listSkillChecks` with
  * `ownChecksOnly`). No React or tRPC here, so the merge rules can be tested on their own.
  *
- * The one merge rule everywhere is "newer-or-equal `updatedAt` wins": the poll's cursor lags the
+ * The one merge rule everywhere is "newer-or-equal `recordedAt` wins": the poll's cursor lags the
  * server clock, so rows arrive more than once and out of order with local writes, and the merge
  * has to be idempotent.
  */
@@ -36,8 +36,8 @@ export function sessionCheckKey(assesseeId: PersonId, skillId: SkillId): Session
     return `${assesseeId}::${skillId}`;
 }
 
-function stamp(check: { updatedAt: string }): number {
-    return Date.parse(check.updatedAt);
+function stamp(check: { recordedAt: string }): number {
+    return Date.parse(check.recordedAt);
 }
 
 /**
@@ -56,7 +56,7 @@ function sameFields<T extends object>(a: T, b: T): boolean {
 
 /**
  * Merges `incoming` rows into a session's cached checks, per id: a row replaces the cached one
- * when its `updatedAt` is the same or later, and a row with an unknown id is added. An equal stamp
+ * when its `recordedAt` is the same or later, and a row with an unknown id is added. An equal stamp
  * is the same version of the row, which lets a poll's copy fill in the names on a row a local
  * write added without them. `Deleted` tombstones are kept like any other row, so a stale live row
  * can't bring a removed check back.
@@ -108,8 +108,8 @@ function toSkillCheck(check: SessionCheck): SkillCheck {
  * or removed on another device shows up here. Only rows whose `assessorId` is `selfPersonId`
  * count, matched to own rows by their (assessee, skill) pair.
  *
- * - A live row replaces the own row, or is added, when its `updatedAt` is at least the own row's.
- * - A `Deleted` row removes the own row when its `updatedAt` is at least the own row's.
+ * - A live row replaces the own row, or is added, when its `recordedAt` is at least the own row's.
+ * - A `Deleted` row removes the own row when its `recordedAt` is at least the own row's.
  *
  * So a poll response that was in flight can't undo a newer local write. A live row whose
  * `SkillCheck` fields equal the own row's is skipped, which covers an identical re-send and a

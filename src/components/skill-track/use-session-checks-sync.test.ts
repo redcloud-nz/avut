@@ -80,7 +80,7 @@ describe("sessionChecksQueryOptions (delta queryFn)", () => {
         assessorId: PersonId,
         assesseeId: PersonId,
         result: SkillCheckResultValue,
-        updatedAt: number,
+        recordedAt: number,
         overrides: Partial<SkillCheck> = {},
     ): SkillCheck {
         return {
@@ -94,8 +94,8 @@ describe("sessionChecksQueryOptions (delta queryFn)", () => {
             result,
             notes: "",
             status: "Draft",
-            createdAt: iso(0),
-            updatedAt: iso(updatedAt),
+            checkedAt: iso(0),
+            recordedAt: iso(recordedAt),
             ...overrides,
         };
     }
@@ -198,7 +198,7 @@ describe("sessionChecksQueryOptions (delta queryFn)", () => {
         const saved = makeCheck(T.self, T.alice, "Pass", 3_000);
         recordCheck(saved);
 
-        const bobUpdated = { ...bobByOther, result: "Fail" as const, updatedAt: iso(2_000) };
+        const bobUpdated = { ...bobByOther, result: "Fail" as const, recordedAt: iso(2_000) };
         inFlight.resolve(response([bobUpdated], 2_000));
         await pending;
 
@@ -235,7 +235,7 @@ describe("sessionChecksQueryOptions (delta queryFn)", () => {
         listSessionChecksQuery.mockReturnValueOnce(inFlight.promise);
         const pending = poll();
 
-        const tombstone = { ...created, status: "Deleted" as const, updatedAt: iso(3_000) };
+        const tombstone = { ...created, status: "Deleted" as const, recordedAt: iso(3_000) };
         deleteCheck(tombstone);
 
         // The poll read the row before the delete.
@@ -256,7 +256,7 @@ describe("sessionChecksQueryOptions (delta queryFn)", () => {
         listSessionChecksQuery.mockReturnValueOnce(inFlight.promise);
         const pending = poll();
 
-        deleteCheck({ ...existing, status: "Deleted", updatedAt: iso(2_000) });
+        deleteCheck({ ...existing, status: "Deleted", recordedAt: iso(2_000) });
         expect(ownData()).toEqual([]);
 
         // The first load read the row before the delete.

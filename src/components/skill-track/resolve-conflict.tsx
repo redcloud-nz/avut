@@ -211,7 +211,7 @@ export function SkillsModule_ResolveConflict_Dialog({
                                             className="flex flex-col gap-1 px-3 py-2 text-sm"
                                         >
                                             <span className="text-muted-foreground">
-                                                {formatDateTime(check.createdAt)}
+                                                {formatDateTime(check.recordedAt)}
                                             </span>
                                             {check.notes && (
                                                 <p className="whitespace-pre-wrap">{check.notes}</p>

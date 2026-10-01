@@ -64,8 +64,8 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             result,
             notes,
             status: "Draft",
-            createdAt: new Date(0).toISOString(),
-            updatedAt: new Date(0).toISOString(),
+            checkedAt: new Date(0).toISOString(),
+            recordedAt: new Date(0).toISOString(),
         };
     }
 
@@ -187,7 +187,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             const rerecorded: SkillCheck = {
                 ...alice,
                 result: "Pass",
-                updatedAt: new Date(1_000).toISOString(),
+                recordedAt: new Date(1_000).toISOString(),
             };
 
             const next = applyWrite(
@@ -211,7 +211,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             const saved: SkillCheck = {
                 ...makeCheck(T.alice, "Pass"),
                 id: before.id,
-                updatedAt: later,
+                recordedAt: later,
             };
 
             const next = applyWriteTo(
@@ -243,7 +243,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
 
         it("set keeps the cached data when the cached row is newer", () => {
             const saved = makeCheck(T.alice, "Pass");
-            const newer = withNames({ ...saved, result: "Fail", updatedAt: later }, "alice");
+            const newer = withNames({ ...saved, result: "Fail", recordedAt: later }, "alice");
             const old = sessionData([newer]);
 
             expect(
@@ -275,7 +275,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
                 ...makeCheck(T.alice, "Pass"),
                 id: live.id,
                 status: "Deleted",
-                updatedAt: later,
+                recordedAt: later,
             };
 
             const next = applyWriteTo(

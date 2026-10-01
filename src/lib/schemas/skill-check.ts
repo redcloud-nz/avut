@@ -54,15 +54,17 @@ export const SkillCheck = {
         result: SkillCheckResultValue.schema,
         notes: z.string(),
         status: z.enum(["Draft", "Pending", "Include", "Exclude", "Deleted"]),
-        createdAt: z.iso.datetime(),
-        updatedAt: z.iso.datetime(),
+        /** When the assessment happened: the session's date, or a standalone check's creation. */
+        checkedAt: z.iso.datetime(),
+        /** When an assessor last recorded or removed the check; approval doesn't move it. */
+        recordedAt: z.iso.datetime(),
     }),
 
     fromRecord: (record: SkillCheckRecord) =>
         SkillCheck.schema.parse({
             ...record,
-            createdAt: record.createdAt.toISOString(),
-            updatedAt: record.updatedAt.toISOString(),
+            checkedAt: record.checkedAt.toISOString(),
+            recordedAt: record.recordedAt.toISOString(),
         }),
 } as const;
 
@@ -84,7 +86,7 @@ export const SessionCheck = {
 export type SessionCheck = z.infer<typeof SessionCheck.schema>;
 
 /**
- * How far `listSessionChecks`' cursor lags the server's clock, in milliseconds. A check stamped
+ * How far `listSessionChecks`' cursor lags the server's clock, in milliseconds. A check recorded
  * this long before a read began is assumed to have committed by then (commit delay plus clock
  * skew between server instances stay under it).
  */

@@ -46,8 +46,8 @@ function sessionCheck(overrides: Partial<SessionCheck> = {}): SessionCheck {
         result: "Pass",
         notes: "",
         status: "Draft",
-        createdAt: T0,
-        updatedAt: T1,
+        checkedAt: T0,
+        recordedAt: T1,
         assesseeName: "Alice",
         skillName: "Knots",
         assessorName: "Self",
@@ -69,8 +69,8 @@ describe("mergeSessionChecks", () => {
     });
 
     it("ignores an older row", () => {
-        const cached = sessionCheck({ updatedAt: T2, result: "Fail" });
-        const older = { ...cached, updatedAt: T1, result: "Pass" as const };
+        const cached = sessionCheck({ recordedAt: T2, result: "Fail" });
+        const older = { ...cached, recordedAt: T1, result: "Pass" as const };
         const input = [cached];
         const { checks, applied } = mergeSessionChecks(input, [older]);
         expect(checks).toBe(input);
@@ -78,8 +78,8 @@ describe("mergeSessionChecks", () => {
     });
 
     it("applies a newer row", () => {
-        const cached = sessionCheck({ updatedAt: T1 });
-        const newer = { ...cached, updatedAt: T2, result: "Fail" as const };
+        const cached = sessionCheck({ recordedAt: T1 });
+        const newer = { ...cached, recordedAt: T2, result: "Fail" as const };
         const { checks, applied } = mergeSessionChecks([cached], [newer]);
         expect(checks).toEqual([newer]);
         expect(applied).toEqual([newer]);
@@ -108,8 +108,8 @@ describe("mergeSessionChecks", () => {
     });
 
     it("keeps a tombstone that blocks a stale live row", () => {
-        const live = sessionCheck({ updatedAt: T1 });
-        const tombstone = { ...live, status: "Deleted" as const, updatedAt: T2 };
+        const live = sessionCheck({ recordedAt: T1 });
+        const tombstone = { ...live, status: "Deleted" as const, recordedAt: T2 };
         const afterDelete = mergeSessionChecks([live], [tombstone]).checks;
         expect(afterDelete).toEqual([tombstone]);
 
@@ -121,7 +121,7 @@ describe("mergeSessionChecks", () => {
     it("leaves untouched rows in place", () => {
         const a = sessionCheck({ assessorId: T.jane });
         const b = sessionCheck({ assessorId: T.bob });
-        const newerB = { ...b, updatedAt: T2 };
+        const newerB = { ...b, recordedAt: T2 };
         const { checks } = mergeSessionChecks([a, b], [newerB]);
         expect(checks[0]).toBe(a);
         expect(checks[1]).toBe(newerB);
@@ -147,9 +147,9 @@ describe("patchOwnChecks", () => {
     });
 
     it("replaces the own row with a newer or equal live row", () => {
-        const row = sessionCheck({ updatedAt: T1 });
+        const row = sessionCheck({ recordedAt: T1 });
         const own = [stripNames(row)];
-        const newer = { ...row, updatedAt: T2, result: "Fail" as const };
+        const newer = { ...row, recordedAt: T2, result: "Fail" as const };
         expect(patchOwnChecks(own, [newer], T.self)).toEqual([stripNames(newer)]);
 
         const equal = { ...row, notes: "same stamp" };
@@ -157,18 +157,18 @@ describe("patchOwnChecks", () => {
     });
 
     it("ignores an older live row", () => {
-        const current = stripNames(sessionCheck({ updatedAt: T2 }));
+        const current = stripNames(sessionCheck({ recordedAt: T2 }));
         const own = [current];
-        const older = sessionCheck({ id: current.id, updatedAt: T1, result: "Fail" });
+        const older = sessionCheck({ id: current.id, recordedAt: T1, result: "Fail" });
         expect(patchOwnChecks(own, [older], T.self)).toBe(own);
     });
 
     it("removes the own row for a newer or equal tombstone", () => {
-        const row = sessionCheck({ updatedAt: T1 });
+        const row = sessionCheck({ recordedAt: T1 });
         const other = stripNames(sessionCheck({ assesseeId: T.assessee2 }));
         const own = [stripNames(row), other];
 
-        const newer = { ...row, status: "Deleted" as const, updatedAt: T2 };
+        const newer = { ...row, status: "Deleted" as const, recordedAt: T2 };
         expect(patchOwnChecks(own, [newer], T.self)).toEqual([other]);
 
         const equal = { ...row, status: "Deleted" as const };
@@ -176,9 +176,9 @@ describe("patchOwnChecks", () => {
     });
 
     it("ignores an older tombstone", () => {
-        const current = stripNames(sessionCheck({ updatedAt: T2 }));
+        const current = stripNames(sessionCheck({ recordedAt: T2 }));
         const own = [current];
-        const tombstone = sessionCheck({ id: current.id, updatedAt: T1, status: "Deleted" });
+        const tombstone = sessionCheck({ id: current.id, recordedAt: T1, status: "Deleted" });
         expect(patchOwnChecks(own, [tombstone], T.self)).toBe(own);
     });
 
