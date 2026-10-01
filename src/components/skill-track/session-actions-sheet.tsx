@@ -86,8 +86,8 @@ const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] 
  * the sheet closes). The item that opened the dialog is gone by then, so the dialogs return focus
  * to the Actions button on close.
  *
- * The Configure items are disabled while the session is approved: its config is locked until it's
- * reopened. Recent checks stays available to anyone who can open the sheet.
+ * The Configure and Record items are disabled while the session is approved: its config and checks
+ * are locked until it's reopened. Recent checks stays available to anyone who can open the sheet.
  */
 export function SkillTrack_SessionActionsSheet({
     sessionId,
@@ -218,25 +218,45 @@ export function SkillTrack_SessionActionsSheet({
                             <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
                                 {MODE_ITEMS.map(({ mode: itemMode, label, icon: Icon }) => {
                                     const current = itemMode === mode;
+                                    const content = (
+                                        <>
+                                            <ItemMedia variant="icon">
+                                                <Icon />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                                <ItemTitle>{label}</ItemTitle>
+                                            </ItemContent>
+                                        </>
+                                    );
                                     return (
                                         <Item
                                             key={itemMode}
                                             asChild
                                             size="sm"
                                             variant={current ? "outline" : "default"}
+                                            className={
+                                                isApproved
+                                                    ? "text-left disabled:opacity-50"
+                                                    : undefined
+                                            }
                                         >
-                                            <Link
-                                                href={modeHrefs[itemMode]}
-                                                aria-current={current ? "page" : undefined}
-                                                onClick={() => setSheetOpen(false)}
-                                            >
-                                                <ItemMedia variant="icon">
-                                                    <Icon />
-                                                </ItemMedia>
-                                                <ItemContent>
-                                                    <ItemTitle>{label}</ItemTitle>
-                                                </ItemContent>
-                                            </Link>
+                                            {isApproved ? (
+                                                <button
+                                                    type="button"
+                                                    disabled
+                                                    aria-current={current ? "page" : undefined}
+                                                >
+                                                    {content}
+                                                </button>
+                                            ) : (
+                                                <Link
+                                                    href={modeHrefs[itemMode]}
+                                                    aria-current={current ? "page" : undefined}
+                                                    onClick={() => setSheetOpen(false)}
+                                                >
+                                                    {content}
+                                                </Link>
+                                            )}
                                         </Item>
                                     );
                                 })}
