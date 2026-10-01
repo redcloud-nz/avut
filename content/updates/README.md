@@ -51,9 +51,10 @@ dismissed, so ties count as seen. To keep an entry from being hidden:
 - Date it the day it merges, in UTC — `publishedAt` is read as 00:00 UTC, so a
   New Zealand morning is still the previous day.
 - Never date it earlier than the newest existing entry, and never in the future.
-- If that date is already taken by an entry that shipped in an earlier
-  release, use the next day — even if that puts it a day in the future. That's
-  harmless; being hidden isn't.
+- If an entry with that date is already merged — released or not, since
+  integration and previews show entries as soon as they merge — use the next
+  day, even if that puts it a day in the future. That's harmless; being hidden
+  isn't. (Two entries in the same PR can share a date: they're shown together.)
 
 ## Not the release notes
 
