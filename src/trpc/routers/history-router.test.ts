@@ -10,8 +10,10 @@ import { TRPCError } from "@trpc/server";
 import { Roles, type Role } from "@/lib/permissions";
 import { LogEntryId, LogEntryObjectId, LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
+import { UserNoteId } from "@/lib/schemas/user-note";
 import * as ObjectHistory from "@/server/services/object-history";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -31,6 +33,7 @@ describe("history.listObjectHistory", () => {
         org: OrganizationId.create(),
         user: UserId.create(),
         person: PersonId.create(),
+        note: OrganizationNoteId.create(),
         tokenId: "d4h-token-id",
     };
 
@@ -65,6 +68,29 @@ describe("history.listObjectHistory", () => {
                             id: LogEntryObjectId.create(),
                             objectType: "Person",
                             objectId: T.person,
+                            role: "primary",
+                        },
+                    ],
+                },
+            },
+        });
+        await db.logEntry.create({
+            data: {
+                id: LogEntryId.create(),
+                scope: "organization",
+                organizationId: T.org,
+                sequence: 2,
+                action: "Create",
+                objectType: "OrganizationNote",
+                objectId: T.note,
+                actorLabel: "Una User <una@example.com>",
+                changes: [],
+                objects: {
+                    create: [
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "OrganizationNote",
+                            objectId: T.note,
                             role: "primary",
                         },
                     ],
@@ -124,6 +150,48 @@ describe("history.listObjectHistory", () => {
             nextCursor: null,
             names: { Person: {}, Skill: {} },
         });
+    });
+
+    const noteInput = {
+        organizationId: T.org,
+        objectType: "OrganizationNote",
+        objectId: T.note,
+    } as const;
+
+    it("lets a member read an OrganizationNote's history", async () => {
+        const page = await makeCaller("member").listObjectHistory(noteInput);
+
+        expect(page.entries.map((entry) => entry.objectId)).toEqual([T.note]);
+    });
+
+    it("refuses an OrganizationNote's history to a caller without organizationNote:view", async () => {
+        // Every role holds `organizationNote:view`, so deny just that on top of `member`.
+        const caller = historyRouter.createCaller({
+            ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
+            hasPermission: async (_organizationId, required) => {
+                if (required.organizationNote) throw new TRPCError({ code: "FORBIDDEN" });
+                assertHasPermissionResult(Roles.member.authorize(required), required);
+            },
+        });
+
+        await expect(caller.listObjectHistory(noteInput)).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+        expect(ObjectHistory.list).not.toHaveBeenCalled();
+    });
+
+    it("leaves out OrganizationNote for a caller without organizationNote:view", async () => {
+        const caller = historyRouter.createCaller({
+            ...createAuthenticatedMockContext({ user: { id: T.user }, prisma: db }),
+            hasPermission: async (_organizationId, required) => {
+                if (required.organizationNote) throw new TRPCError({ code: "FORBIDDEN" });
+                assertHasPermissionResult(Roles.member.authorize(required), required);
+            },
+        });
+
+        await caller.listObjectHistory(personInput);
+
+        expect(lastRelatedTypes()).not.toContain("OrganizationNote");
     });
 
     it("rejects an object type with no History page", async () => {
@@ -190,5 +258,99 @@ describe("history.listObjectHistory", () => {
         expect(relatedTypes).not.toContain("TeamMembership");
         expect(relatedTypes).not.toContain("Team");
         expect(relatedTypes).toEqual(expect.arrayContaining(["Person", "OrganizationMembership"]));
+    });
+});
+
+describe("history.listOwnObjectHistory", () => {
+    const T = {
+        org: OrganizationId.create(),
+        owner: UserId.create(),
+        other: UserId.create(),
+        note: UserNoteId.create(),
+        otherNote: UserNoteId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    async function log(entry: {
+        sequence: number;
+        objectId: string;
+        scope: "user" | "organization";
+        ownerId?: UserId;
+        organizationId?: OrganizationId;
+    }) {
+        await db.logEntry.create({
+            data: {
+                id: LogEntryId.create(),
+                action: "Create",
+                objectType: "UserNote",
+                changes: [],
+                ...entry,
+                objects: {
+                    create: [
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "UserNote",
+                            objectId: entry.objectId,
+                            role: "primary",
+                        },
+                    ],
+                },
+            },
+        });
+    }
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await log({ sequence: 1, objectId: T.note, scope: "user", ownerId: T.owner });
+        await log({ sequence: 2, objectId: T.otherNote, scope: "user", ownerId: T.other });
+        // The owner's note id, in an organization's log.
+        await log({ sequence: 3, objectId: T.note, scope: "organization", organizationId: T.org });
+    });
+
+    function makeCaller(userId: UserId) {
+        return historyRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: userId }, prisma: db }),
+        );
+    }
+
+    it("lets the owner read their UserNote's history", async () => {
+        const page = await makeCaller(T.owner).listOwnObjectHistory({
+            objectType: "UserNote",
+            objectId: T.note,
+        });
+
+        expect(page.entries.map((entry) => entry.sequence)).toEqual([1]);
+        expect(page.nextCursor).toBeNull();
+    });
+
+    it("returns no entries for another user's note", async () => {
+        const page = await makeCaller(T.owner).listOwnObjectHistory({
+            objectType: "UserNote",
+            objectId: T.otherNote,
+        });
+
+        expect(page.entries).toEqual([]);
+    });
+
+    it("never returns org-scoped entries", async () => {
+        const page = await makeCaller(T.owner).listOwnObjectHistory({
+            objectType: "UserNote",
+            objectId: T.note,
+        });
+
+        expect(page.entries.map((entry) => entry.sequence)).not.toContain(3);
+    });
+
+    it("rejects an org object type", async () => {
+        await expect(
+            makeCaller(T.owner).listOwnObjectHistory({
+                // @ts-expect-error — not an `OwnHistoryObjectType`
+                objectType: "OrganizationNote",
+                objectId: T.note,
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 });

@@ -23,8 +23,10 @@ function isValidTimeZone(value: string): boolean {
 
 const userSettingsSchema = z.object({
     /**
-     * Per-user module preferences, mirroring `OrganizationSettings.modules` — keyed by
-     * `UserModuleId` rather than `OrganizationModuleId`. Every user module is currently
+     * Per-user module preferences, mirroring `OrganizationSettings.modules` — keyed by the
+     * configurable (non-`alwaysOn`) `UserModuleId`s rather than `OrganizationModuleId`. A
+     * compile-time check in `src/lib/modules.ts` requires an entry for each of those; the
+     * `user-dashboard` and `profile` entries predate `alwaysOn`. Every user module is currently
      * `alwaysOn` (see `src/lib/modules.ts`), so nothing reads `enabled` to gate access yet;
      * this exists so a module can grow per-user options later without a schema migration,
      * per issue #93.

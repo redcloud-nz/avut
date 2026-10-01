@@ -18,6 +18,7 @@ import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscrip
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { UserId } from "@/lib/schemas/user";
+import { UserNoteId } from "@/lib/schemas/user-note";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
 import * as ObjectHistory from "./object-history";
@@ -563,5 +564,164 @@ describe("ObjectHistory.list names for IdFields changes", () => {
 
         expect(names.Person).not.toHaveProperty(T.bystander);
         expect(entries[0].changes).toEqual(changes);
+    });
+});
+
+describe("ObjectHistory.listOwn", () => {
+    const T = {
+        org: OrganizationId.create(),
+        owner: UserId.create(),
+        other: UserId.create(),
+        note: UserNoteId.create(),
+        otherNote: UserNoteId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    /** Sequences of the seeded entries, oldest first. */
+    const SEQ = {
+        create: 1,
+        update: 2,
+        // The same note id in another user's log.
+        otherOwner: 3,
+        // The same note id in an organization's log.
+        orgScoped: 4,
+        otherNote: 5,
+    };
+
+    async function log(entry: {
+        sequence: number;
+        scope: "user" | "organization";
+        ownerId?: UserId;
+        organizationId?: OrganizationId;
+        action: string;
+        objectId: string;
+        changes?: DiffChange[];
+    }) {
+        const { changes = [], ...rest } = entry;
+        await db.logEntry.create({
+            data: {
+                id: LogEntryId.create(),
+                userId: entry.ownerId ?? T.owner,
+                objectType: "UserNote",
+                changes: changes as never,
+                ...rest,
+                objects: {
+                    create: [
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "UserNote",
+                            objectId: entry.objectId,
+                            role: "primary",
+                        },
+                    ],
+                },
+            },
+        });
+    }
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: T.org, slug: T.org, createdAt: new Date() },
+        });
+        for (const [id, name] of [
+            [T.owner, "Oona Owner"],
+            [T.other, "Otto Other"],
+        ] as const) {
+            await db.user.create({ data: { id, name, email: `${id}@example.com` } });
+        }
+
+        await log({
+            sequence: SEQ.create,
+            scope: "user",
+            ownerId: T.owner,
+            action: "Create",
+            objectId: T.note,
+            changes: [{ type: "obj_add", path: ["title"], curr: "Shopping" }],
+        });
+        await log({
+            sequence: SEQ.update,
+            scope: "user",
+            ownerId: T.owner,
+            action: "Update",
+            objectId: T.note,
+            changes: [{ type: "obj_mask", path: ["content"] }],
+        });
+        await log({
+            sequence: SEQ.otherOwner,
+            scope: "user",
+            ownerId: T.other,
+            action: "Update",
+            objectId: T.note,
+        });
+        await log({
+            sequence: SEQ.orgScoped,
+            scope: "organization",
+            organizationId: T.org,
+            action: "Update",
+            objectId: T.note,
+        });
+        await log({
+            sequence: SEQ.otherNote,
+            scope: "user",
+            ownerId: T.other,
+            action: "Create",
+            objectId: T.otherNote,
+        });
+    });
+
+    const listOwn = (
+        userId: UserId,
+        objectId: string,
+        overrides: { cursor?: number; limit?: number } = {},
+    ) =>
+        ObjectHistory.listOwn(
+            { prisma: db, userId },
+            { objectType: "UserNote", objectId, limit: 50, ...overrides },
+        );
+
+    it("returns the owner's own entries about their note, newest first", async () => {
+        const { entries, nextCursor, names } = await listOwn(T.owner, T.note);
+
+        expect(entries.map((e) => [e.sequence, e.action, e.relation])).toEqual([
+            [SEQ.update, "Update", "primary"],
+            [SEQ.create, "Create", "primary"],
+        ]);
+        expect(entries[0]).toMatchObject({
+            actorName: "Oona Owner",
+            changes: [{ type: "obj_mask", path: ["content"] }],
+            refs: [],
+        });
+        expect(nextCursor).toBeNull();
+        expect(names).toEqual({ Person: {}, Skill: {} });
+    });
+
+    it("returns nothing for another user's note", async () => {
+        const { entries } = await listOwn(T.owner, T.otherNote);
+
+        expect(entries).toEqual([]);
+    });
+
+    it("never returns another user's or an organization's entries about the same id", async () => {
+        const sequences = (await listOwn(T.owner, T.note)).entries.map((e) => e.sequence);
+
+        expect(sequences).not.toContain(SEQ.otherOwner);
+        expect(sequences).not.toContain(SEQ.orgScoped);
+    });
+
+    it("reads only the caller's own log, even for an id someone else also logged", async () => {
+        const { entries } = await listOwn(T.other, T.note);
+
+        expect(entries.map((e) => e.sequence)).toEqual([SEQ.otherOwner]);
+    });
+
+    it("pages by sequence", async () => {
+        const first = await listOwn(T.owner, T.note, { limit: 1 });
+        expect(first.entries.map((e) => e.sequence)).toEqual([SEQ.update]);
+        expect(first.nextCursor).toBe(SEQ.update);
+
+        const second = await listOwn(T.owner, T.note, { limit: 1, cursor: SEQ.update });
+        expect(second.entries.map((e) => e.sequence)).toEqual([SEQ.create]);
+        expect(second.nextCursor).toBeNull();
     });
 });

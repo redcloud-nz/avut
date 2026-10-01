@@ -13,11 +13,13 @@ import {
     HistoryObjects,
     HistoryObjectType,
     ObjectHistoryPage,
+    OwnHistoryObjectType,
     RelatedEntryPermissions,
 } from "@/lib/schemas/object-history";
 import * as ObjectHistory from "@/server/services/object-history";
 
 import {
+    authenticatedProcedure,
     createTrpcRouter,
     organizationProcedure,
     type AuthenticatedOrganizationContext,
@@ -98,6 +100,33 @@ export const historyRouter = createTrpcRouter({
                 objectType: input.objectType,
                 objectId: input.objectId,
                 relatedTypes: await allowedRelatedTypes(ctx),
+                cursor: input.cursor,
+                limit: input.limit,
+            });
+        }),
+
+    /**
+     * One page of the history of one of the caller's own records, newest first, from their
+     * `scope: "user"` log. The same shape as `listObjectHistory`, with no organization.
+     *
+     * Needs no permission check: it only ever reads the caller's own entries, so another user's
+     * record has no history here (an empty page, not `FORBIDDEN`).
+     */
+    listOwnObjectHistory: authenticatedProcedure
+        .input(
+            z.object({
+                objectType: OwnHistoryObjectType.schema,
+                objectId: z.string().min(1),
+                /** Named `cursor` so `infiniteQueryOptions` pages through it. */
+                cursor: z.number().int().optional(),
+                limit: z.number().int().min(1).max(100).default(50),
+            }),
+        )
+        .output(ObjectHistoryPage.schema)
+        .query(async ({ ctx, input }) => {
+            return await ObjectHistory.listOwn(ctx, {
+                objectType: input.objectType,
+                objectId: input.objectId,
                 cursor: input.cursor,
                 limit: input.limit,
             });

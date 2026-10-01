@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/sidebar";
 import { VersionString } from "@/components/ui/version-string";
 import { TimeZoneAutoDetect } from "@/components/user/user-settings/timezone-auto-detect";
+import { resolveUserModuleFlags } from "@/server/module-flags";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -57,11 +58,16 @@ export default async function AuthenticatedLayout(props: {
     // still-pending query from suspending whole card subtrees on first paint. Costs little:
     // `settings.getUserSettings` is `"use cache"`-tagged per user.
     //
-    // Neither depends on the other's result, so run them concurrently rather than paying for
-    // two sequential round trips.
-    await Promise.all([
+    // The user modules' flag state lets the sidebar hide a flagged-off module. It runs after
+    // `requireSession()`, whose request read makes the render dynamic: flag evaluation uses
+    // `Math.random()`, which prerendering rejects.
+    //
+    // None depends on another's result, so run them concurrently rather than paying for
+    // sequential round trips.
+    const [, , userModuleFlags] = await Promise.all([
         fetchQuery(trpc.user.getSession.queryOptions()),
         fetchQuery(trpc.settings.getUserSettings.queryOptions()),
+        resolveUserModuleFlags(),
     ]);
 
     // `ScopeSwitcher` reads this via `useSuspenseQuery` on every authenticated page —
@@ -101,7 +107,7 @@ export default async function AuthenticatedLayout(props: {
                             </Suspense>
                         </div>
                         <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
-                            <ScopeSidebar_Modules />
+                            <ScopeSidebar_Modules userModuleFlags={userModuleFlags} />
                             <SidebarPortalOutlet />
                         </div>
                     </SidebarContent>

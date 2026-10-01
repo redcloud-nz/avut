@@ -15,6 +15,7 @@ import "server-only";
 
 import * as z from "zod";
 
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { DiffChange, type DiffValues } from "@/lib/diff";
 import { Operations } from "@/lib/operations";
 import type { LogObjectType } from "@/lib/schemas/log-entry";
@@ -26,27 +27,38 @@ import {
     type ObjectHistoryEntry,
     type ObjectHistoryPage,
     type ObjectHistoryRef,
+    type OwnHistoryObjectType,
 } from "@/lib/schemas/object-history";
 import { PersonId, type PersonRef } from "@/lib/schemas/person";
 import { TeamId, type TeamRef } from "@/lib/schemas/team";
 
-import type { OrgServiceContext } from "./service-context";
+import type { OrgServiceContext, UserServiceContext } from "./service-context";
 
 /** Reading the log needs no actor and writes nothing. */
 export type ObjectHistoryContext = Pick<OrgServiceContext, "prisma" | "organizationId">;
 
-export interface ListObjectHistoryInput {
-    objectType: HistoryObjectType;
+/** Reading the caller's own log: no organization, and nothing written. */
+export type OwnObjectHistoryContext = Pick<UserServiceContext, "prisma" | "userId">;
+
+interface PageInput {
     objectId: string;
+    /** The `sequence` of the last entry on the previous page. */
+    cursor?: number;
+    limit: number;
+}
+
+export interface ListObjectHistoryInput extends PageInput {
+    objectType: HistoryObjectType;
     /**
      * The object types whose *related* entries the caller may see — the mapped types in
      * `RelatedEntryPermissions` the caller holds, plus every type that map doesn't list. Entries
      * about the object itself always pass. Also gates `Person`/`Team` ref name resolution.
      */
     relatedTypes: readonly LogObjectType[];
-    /** The `sequence` of the last entry on the previous page. */
-    cursor?: number;
-    limit: number;
+}
+
+export interface ListOwnObjectHistoryInput extends PageInput {
+    objectType: OwnHistoryObjectType;
 }
 
 const changesSchema = z.array(DiffChange.schema).catch([]);
@@ -57,6 +69,49 @@ const changesSchema = z.array(DiffChange.schema).catch([]);
  *
  * - Always org-scoped: a `SkillPackage` shared through subscriptions never shows another org's
  *   entries about it.
+ * - Paged, and each entry mapped, as `listPage` describes.
+ */
+export async function list(
+    ctx: ObjectHistoryContext,
+    { objectType, objectId, relatedTypes, cursor, limit }: ListObjectHistoryInput,
+): Promise<ObjectHistoryPage> {
+    return await listPage(
+        ctx.prisma,
+        {
+            organizationId: ctx.organizationId,
+            OR: [{ objectType, objectId }, { objectType: { in: [...relatedTypes] } }],
+        },
+        { objectType, objectId, cursor, limit },
+        (refs, idFieldIds) => resolveNames(ctx, refs, relatedTypes, idFieldIds),
+    );
+}
+
+/**
+ * Every entry in the caller's own `scope: "user"` log about one of their records, or mentioning
+ * it through a ref, newest first. Never reads another user's log or any organization's.
+ *
+ * - No related-entry gating: every row is the caller's own.
+ * - Ref and `IdFields` names aren't resolved, since there's no organization to scope a lookup
+ *   to: a `Person`/`Team` ref comes back `null`, and `names` is empty. No user-scoped entry
+ *   carries either today.
+ * - Paged, and each entry mapped, as `listPage` describes.
+ */
+export async function listOwn(
+    ctx: OwnObjectHistoryContext,
+    { objectType, objectId, cursor, limit }: ListOwnObjectHistoryInput,
+): Promise<ObjectHistoryPage> {
+    return await listPage(
+        ctx.prisma,
+        { scope: "user", ownerId: ctx.userId },
+        { objectType, objectId, cursor, limit },
+        async () => emptyNames(),
+    );
+}
+
+/**
+ * One page of the entries matching `scopeWhere` that are about the object or mention it through
+ * a ref, newest first.
+ *
  * - Paged keyset-style on `sequence`. `sequence` is drawn at INSERT, not commit, so a
  *   concurrently committed lower row can be missed from an older page. That's acceptable for a
  *   human-read "Load more"; don't reuse this as a sync cursor.
@@ -64,16 +119,18 @@ const changesSchema = z.array(DiffChange.schema).catch([]);
  *   user's deletion (`onDelete: SetNull`) — `actorLabel` with its trailing ` <email>` stripped.
  *   Never an email.
  * - `changes` that fail to parse come back as `[]`.
+ * - `resolve` names the page's refs and `IdFields` ids.
  */
-export async function list(
-    ctx: ObjectHistoryContext,
-    { objectType, objectId, relatedTypes, cursor, limit }: ListObjectHistoryInput,
+async function listPage(
+    prisma: PrismaClient,
+    scopeWhere: Prisma.LogEntryWhereInput,
+    { objectType, objectId, cursor, limit }: PageInput & { objectType: LogObjectType },
+    resolve: (refs: StoredRef[], idFieldIds: IdFieldIds) => Promise<ResolvedNames>,
 ): Promise<ObjectHistoryPage> {
-    const rows = await ctx.prisma.logEntry.findMany({
+    const rows = await prisma.logEntry.findMany({
         where: {
-            organizationId: ctx.organizationId,
+            ...scopeWhere,
             objects: { some: { objectType, objectId } },
-            OR: [{ objectType, objectId }, { objectType: { in: [...relatedTypes] } }],
             ...(cursor === undefined ? {} : { sequence: { lt: cursor } }),
         },
         orderBy: { sequence: "desc" },
@@ -107,10 +164,8 @@ export async function list(
 
     const changes = page.map((row) => changesSchema.parse(row.changes));
 
-    const names = await resolveNames(
-        ctx,
+    const names = await resolve(
         refRows.flat(),
-        relatedTypes,
         collectIdFieldIds(page.map((row, index) => ({ row, changes: changes[index] }))),
     );
 
@@ -207,6 +262,15 @@ interface ResolvedNames {
     idFieldPersons: Map<string, string>;
     /** Names for the `Skill` ids in `IdFields` changes. */
     idFieldSkills: Map<string, string>;
+}
+
+function emptyNames(): ResolvedNames {
+    return {
+        persons: new Map(),
+        teams: new Map(),
+        idFieldPersons: new Map(),
+        idFieldSkills: new Map(),
+    };
 }
 
 /**

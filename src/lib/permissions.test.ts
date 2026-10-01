@@ -28,6 +28,23 @@ describe("Roles", () => {
         expect(can(role, { organization: ["view"] })).toBe(true);
     });
 
+    // A member may hold only a module role (e.g. `i3-editor`), so every role — not just the
+    // org-wide ones — has to be able to read and write its own notes.
+    it.each(roles)("%s can view and create organization notes", (role) => {
+        expect(can(role, { organizationNote: ["view", "create"] })).toBe(true);
+    });
+
+    it("lets only owner and admin update or delete any organization note", () => {
+        expect(roles.filter((role) => can(role, { organizationNote: ["update"] }))).toEqual([
+            "owner",
+            "admin",
+        ]);
+        expect(roles.filter((role) => can(role, { organizationNote: ["delete"] }))).toEqual([
+            "owner",
+            "admin",
+        ]);
+    });
+
     describe("i3-editor", () => {
         // getLinkedPerson / listPersonLinks / getLinkedUser all require both halves.
         it("can read the user↔person link", () => {

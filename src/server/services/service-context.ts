@@ -25,13 +25,16 @@ export interface LogEventOptions {
 }
 
 /**
- * The narrow context every domain service (`src/server/services/*.ts`) takes. Reachable from a
- * tRPC procedure, a Server Component, or a test — `AuthenticatedOrganizationContext`
- * (`src/trpc/init.ts`) `satisfies` this, so there is no adapter at call sites.
+ * The narrow context a user-scoped domain service takes — one acting on the calling user's own
+ * records, with no organization. `AuthenticatedContext` (`authenticatedProcedure` in
+ * `src/trpc/init.ts`) satisfies it exactly, and its `logEvent` writes `scope: "user"` entries.
+ *
+ * An `OrgServiceContext` satisfies this too, structurally, but its `logEvent` writes to the
+ * organization's log — so passing one would file a user's entry under the org. Call user-scoped
+ * services only from `authenticatedProcedure` (or an equivalent user context).
  */
-export interface OrgServiceContext {
+export interface UserServiceContext {
     prisma: PrismaClient;
-    organizationId: OrganizationId;
     userId: UserId;
     logEvent: (
         options: LogEventOptions,
@@ -40,11 +43,21 @@ export interface OrgServiceContext {
 }
 
 /**
+ * The narrow context every organization-scoped domain service (`src/server/services/*.ts`)
+ * takes. Reachable from a tRPC procedure, a Server Component, or a test —
+ * `AuthenticatedOrganizationContext` (`src/trpc/init.ts`) `satisfies` this, so there is no
+ * adapter at call sites. Its `logEvent` writes `scope: "organization"` entries.
+ */
+export type OrgServiceContext = UserServiceContext & {
+    organizationId: OrganizationId;
+};
+
+/**
  * Binds an existing `LogBatch` so every `ctx.logEvent` call made through the returned context
  * joins it, without threading a `batchId` parameter through every helper in between. Does not
  * create the batch — pass the id from `createLogBatch`.
  */
-export function withBatch<C extends OrgServiceContext>(ctx: C, batchId: string): C {
+export function withBatch<C extends UserServiceContext>(ctx: C, batchId: string): C {
     return {
         ...ctx,
         logEvent: (options, tx) => ctx.logEvent({ ...options, batchId }, tx),

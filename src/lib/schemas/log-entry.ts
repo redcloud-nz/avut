@@ -123,6 +123,7 @@ const logObjectTypeValues = [
     "Organization",
     "OrganizationInvitation",
     "OrganizationMembership",
+    "OrganizationNote",
     "OrganizationSettings",
     "Person",
     "Session", // DORMANT — reverted databaseHooks wire
@@ -133,6 +134,7 @@ const logObjectTypeValues = [
     "Team",
     "TeamMembership",
     "User",
+    "UserNote",
     "UserSettings",
 ] as const;
 
@@ -208,6 +210,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Organization: "org-admin",
     OrganizationInvitation: "org-admin",
     OrganizationMembership: "org-admin",
+    OrganizationNote: "notes",
     OrganizationSettings: "org-admin",
     Person: "org-admin",
     Session: null,
@@ -218,6 +221,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Team: "org-admin",
     TeamMembership: "org-admin",
     User: null,
+    UserNote: "user-notes",
     UserSettings: "profile",
 };
 
