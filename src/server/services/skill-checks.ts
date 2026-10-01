@@ -42,8 +42,9 @@ export async function requireSessionById(
 /**
  * The single lock rule for a skill check session: an approved session (`status === "Include"`)
  * accepts no writes to its checks or its configuration (assessees, skills, assessors) until it is
- * reopened. Every procedure that writes either calls this after loading the session. Its name,
- * date and notes stay editable, and it can still be deleted.
+ * reopened. Every procedure that writes either calls this after loading the session. Its name
+ * and notes stay editable, and it can still be deleted. Its date is locked too: `updateSession`
+ * calls this when the date changes, since that re-stamps the checks' `checkedAt`.
  *
  * Check-then-write, so on its own it can't stop a write racing an approval: a write whose check
  * passed just before an approval committed would still land, and could overwrite the approval's

@@ -238,7 +238,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             }),
         ),
     ],
-    updateSession: (vars, { updated }) => [
+    updateSession: (vars, { updated, dateChanged }) => [
         write(
             trpc.skillCheckSessions.getSession.queryKey({
                 organizationId: vars.organizationId,
@@ -251,6 +251,28 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                 organizationId: vars.organizationId,
             }),
         ),
+        // A date change re-stamps every check's `checkedAt` server-side, so the reads that show or
+        // order by it refetch: the session's check lists, the competency matrix and recent checks.
+        ...(dateChanged
+            ? [
+                  invalidate(
+                      trpc.skillChecks.listSkillChecks.queryFilter({
+                          organizationId: vars.organizationId,
+                          sessionId: vars.skillCheckSessionId,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.skillChecks.getCompetencyMatrix.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.skillChecks.listRecentChecks.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+              ]
+            : []),
     ],
     updateSessionAssessees: (vars, { updatedAssessees, updatedSession }) => [
         write(

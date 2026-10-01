@@ -906,11 +906,21 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Update a skill check session's name, date and notes. Not subject to the approval lock.
+     * Update a skill check session's name, date and notes. The name and notes stay editable while
+     * the session is approved; the date is locked while approved, so approved competency dates only
+     * move through a reopen, which goes back through review.
+     *
+     * A date change re-stamps `checkedAt` on every check in the session, tombstones included (so a
+     * revived tombstone doesn't carry the old date), and leaves `recordedAt` alone. It needs no log
+     * entry of its own: the session's Update entry records the date change. Its transaction opens
+     * with `SkillChecks.lockUnapprovedSession`, so an approval landing after the pre-check refuses
+     * it rather than moving an approved session's dates.
      * @param skillCheckSessionId The ID of the skill check session to update.
      * @param update The fields to update on the skill check session.
-     * @returns The updated skill check session.
+     * @returns The updated skill check session, and whether its date (and so its checks'
+     *   `checkedAt`) changed.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
+     * @throws TRPCError(CONFLICT) if the date changes while the session is approved.
      */
     updateSession: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -919,15 +929,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 update: SkillCheckSession.modifiableSchema,
             }),
         )
-        .output(z.object({ updated: SkillCheckSession.schema }))
+        .output(z.object({ updated: SkillCheckSession.schema, dateChanged: z.boolean() }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
             const existing = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
 
             const changes = diffObject(SkillCheckSession.modifiableSchema.parse(existing), update);
 
-            if (changes.length == 0) return { updated: existing }; // No changes
+            if (changes.length == 0) return { updated: existing, dateChanged: false }; // No changes
 
-            const [updated] = await ctx.prisma.$transaction([
+            const date = new Date(update.date);
+            const dateChanged = new Date(existing.date).getTime() !== date.getTime();
+            if (dateChanged) SkillChecks.assertSessionUnlocked(existing);
+
+            // Thunks, so each branch builds its statements in transaction order.
+            const updateSessionRow = () =>
                 ctx.prisma.skillCheckSession.update({
                     where: {
                         id: skillCheckSessionId,
@@ -936,20 +951,38 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     include: {},
                     data: {
                         name: update.name,
-                        startsAt: new Date(update.date),
-                        endsAt: new Date(update.date),
+                        startsAt: date,
+                        endsAt: date,
                         notes: update.notes,
                     },
-                }),
+                });
+            const logEntry = () =>
                 ctx.logEvent({
                     action: "Update",
                     objectType: "SkillCheckSession",
                     objectId: skillCheckSessionId,
                     changes,
-                }),
-            ]);
+                });
 
-            return { updated: SkillCheckSession.fromRecord(updated) };
+            if (!dateChanged) {
+                const [updated] = await ctx.prisma.$transaction([updateSessionRow(), logEntry()]);
+                return { updated: SkillCheckSession.fromRecord(updated), dateChanged };
+            }
+
+            const [, updated] = await ctx.prisma
+                .$transaction([
+                    // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                    updateSessionRow(),
+                    ctx.prisma.skillCheck.updateMany({
+                        where: { organizationId, sessionId: skillCheckSessionId },
+                        data: { checkedAt: date },
+                    }),
+                    logEntry(),
+                ])
+                .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
+
+            return { updated: SkillCheckSession.fromRecord(updated), dateChanged };
         }),
 
     /**

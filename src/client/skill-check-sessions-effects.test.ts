@@ -398,6 +398,7 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             }),
             sessions: trpc.skillCheckSessions.listSessions.queryKey({ organizationId: T.org }),
             matrix: trpc.skillChecks.getCompetencyMatrix.queryKey({ organizationId: T.org }),
+            recentChecks: trpc.skillChecks.listRecentChecks.queryKey({ organizationId: T.org }),
             otherOrgSessions: trpc.skillCheckSessions.listSessions.queryKey({
                 organizationId: T.otherOrg,
             }),
@@ -492,6 +493,38 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
                 sessionStatus: "Include",
             });
             expect(applySessionChecksWrite(effects, undefined)).toBeUndefined();
+        });
+    });
+
+    describe("updateSession", () => {
+        const vars = {
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            update: { name: updated.name, date: updated.date, notes: updated.notes },
+        };
+
+        it("invalidates only the sessions list when the date is unchanged", () => {
+            const effects = skillCheckSessionsEffects.updateSession(vars, {
+                updated,
+                dateChanged: false,
+            });
+
+            expect(invalidatedKeys(effects)).toEqual(["sessions"]);
+        });
+
+        it("also invalidates the checkedAt readers when the date changed", () => {
+            const effects = skillCheckSessionsEffects.updateSession(vars, {
+                updated,
+                dateChanged: true,
+            });
+
+            expect(invalidatedKeys(effects)).toEqual([
+                "matrix",
+                "ownSessionChecks",
+                "recentChecks",
+                "sessionChecks",
+                "sessions",
+            ]);
         });
     });
 
