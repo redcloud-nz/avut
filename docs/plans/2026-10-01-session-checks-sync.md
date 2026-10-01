@@ -291,7 +291,7 @@ Tasks 1–7 were built as first planned, with `updatedAt` as the sync cursor. At
       - `getCompetencyMatrix`'s `checkedAt` is the session date for a session check.
     - The migration applies cleanly to the branch DB (orchestrator).
 
-- [ ] **9. Re-stamp `checkedAt` when a session's date changes**
+- [x] **9. Re-stamp `checkedAt` when a session's date changes** — feat(skill-track): re-stamp checkedAt when a session's date changes; fix(skill-track): refuse a check write that races a session date change
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts` and its test; `src/server/services/skill-checks.ts` (`assertSessionUnlocked`'s doc); `src/client/skill-check-sessions-effects.ts` and its test; `src/components/skill-track/update-session.tsx`.
   - **Decided (2026-10-01): an approved session's date is locked.** `updateSession` stays outside the approval lock for name and notes. But a date change on an approved session throws the lock's `CONFLICT` (`SkillChecks.sessionLockedError`), so approved competency dates only move through a reopen, which goes back through review.
   - **Do:**

@@ -39,7 +39,8 @@ export function refetchSession(
 /**
  * Returns an `onError` helper for a mutation that writes a skill check session's checks or config,
  * or approves it. A `CONFLICT` from one of those means the session changed under the page: it was
- * approved (the approval lock); for `approveSession`, the session or its checks no longer match
+ * approved (the approval lock); for `setSessionSkillCheck`, approved or its date changed; for
+ * `approveSession`, the session or its checks no longer match
  * what the page showed; or, for `updateCheckExclusions`, a check the mutation names was deleted
  * since. So it refetches the session (`refetchSession`). Any other error is left alone.
  *

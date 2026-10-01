@@ -374,6 +374,39 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             }
         });
 
+        it("refuses with CONFLICT when the session's date moved after it was read", async () => {
+            // Fake a date change committing between the up-front read and the write: the read
+            // sees the session's old date, so the lock's `startsAt` condition misses.
+            const staleDate = new Date("2026-03-01T00:00:00.000Z");
+            const findUnique = db.skillCheckSession.findUnique.bind(db.skillCheckSession);
+            const findSpy = vi
+                .spyOn(db.skillCheckSession, "findUnique")
+                .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => ({
+                    ...(await findUnique(args)),
+                    startsAt: staleDate,
+                })) as unknown as typeof findUnique);
+            const updateSpy = vi.spyOn(db.skillCheckSession, "update");
+            try {
+                await expect(
+                    makeCaller(T.assessorUser).setSessionSkillCheck({
+                        ...target,
+                        skillId: T.skill2,
+                        result: "Fail",
+                        notes: "Old date",
+                    }),
+                ).rejects.toMatchObject({
+                    code: "CONFLICT",
+                    message: expect.stringContaining("changed since you opened it"),
+                });
+                expect(updateSpy.mock.calls[0][0].where).toMatchObject({ startsAt: staleDate });
+            } finally {
+                findSpy.mockRestore();
+                updateSpy.mockRestore();
+            }
+            // No assertion on the checks: prisma-mock doesn't roll back an array `$transaction`
+            // when one of its statements rejects, as Postgres does.
+        });
+
         it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
             const restore = fakeLostApprovalRace();
             try {

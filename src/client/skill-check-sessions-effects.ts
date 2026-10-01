@@ -271,6 +271,20 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                           organizationId: vars.organizationId,
                       }),
                   ),
+                  // The session cache too, but by hand: invalidating it would only run a delta
+                  // poll, which can't see the re-stamp (it leaves `recordedAt` alone). The server
+                  // set every row in the session to the new date, so do the same here.
+                  write(
+                      sessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId),
+                      (old) =>
+                          old && {
+                              ...old,
+                              checks: old.checks.map((check) => ({
+                                  ...check,
+                                  checkedAt: updated.date,
+                              })),
+                          },
+                  ),
               ]
             : []),
     ],

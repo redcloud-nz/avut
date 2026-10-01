@@ -79,23 +79,59 @@ export function sessionLockedError(sessionId: SkillCheckSessionId): ConflictErro
  * conditional on the `updatedAt` its comparison read, so a check recorded, edited or deleted while
  * the Approve dialog is open makes that approval refuse. That's intended: the approver reviews the
  * change and approves again.
+ *
+ * `expectedDate` also requires the session's date to still be the one the caller read, for a write
+ * that copies it (`setSessionSkillCheck`'s `checkedAt`). `updateSession` re-stamps the checks under
+ * this same row lock when the date changes, so without it a check written just after a date change
+ * committed would keep the old date for good. With it, P2025 means "approved, or the date moved":
+ * map it with `rethrowSessionChanged`, not `rethrowSessionLocked`.
  */
-export function lockUnapprovedSession(ctx: OrgServiceContext, sessionId: SkillCheckSessionId) {
+export function lockUnapprovedSession(
+    ctx: OrgServiceContext,
+    sessionId: SkillCheckSessionId,
+    { expectedDate }: { expectedDate?: Date } = {},
+) {
     return ctx.prisma.skillCheckSession.update({
-        where: { id: sessionId, organizationId: ctx.organizationId, status: { not: "Include" } },
+        where: {
+            id: sessionId,
+            organizationId: ctx.organizationId,
+            status: { not: "Include" },
+            ...(expectedDate ? { startsAt: expectedDate } : {}),
+        },
         data: { updatedAt: new Date() },
     });
 }
 
 /**
  * A `.catch` handler for a `$transaction` opened by `lockUnapprovedSession`: its P2025 becomes
- * `sessionLockedError`. Only for a transaction none of whose other statements can throw P2025.
+ * `sessionLockedError`. Only for a transaction none of whose later statements can miss (throw
+ * P2025) once the lock has matched. A later update of the session row itself is fine: the lock
+ * holds that row.
  */
 export function rethrowSessionLocked(sessionId: SkillCheckSessionId) {
     return (error: unknown): never => {
         if (isPrismaRecordNotFound(error)) throw sessionLockedError(sessionId);
         throw error;
     };
+}
+
+/**
+ * `rethrowSessionLocked` for a transaction opened by `lockUnapprovedSession` with `expectedDate`,
+ * whose P2025 means the session was approved or its date changed since the caller read it. The
+ * same proviso on later statements applies.
+ */
+export function rethrowSessionChanged(sessionId: SkillCheckSessionId) {
+    return (error: unknown): never => {
+        if (isPrismaRecordNotFound(error)) throw sessionChangedError(sessionId);
+        throw error;
+    };
+}
+
+/** The error `rethrowSessionChanged` throws: the session was approved or its date changed. */
+export function sessionChangedError(sessionId: SkillCheckSessionId): ConflictError {
+    return new ConflictError(
+        `SkillCheckSession(id=${sessionId}) changed since you opened it. Reload and try again.`,
+    );
 }
 
 /**

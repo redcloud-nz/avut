@@ -526,6 +526,53 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
                 "sessions",
             ]);
         });
+
+        it("re-stamps checkedAt on the session cache's rows only when the date changed", () => {
+            const newDate = new Date(86_400_000).toISOString();
+            const moved = { ...updated, date: newDate };
+            const row: SessionCheck = {
+                id: SkillCheckId.create(),
+                organizationId: T.org,
+                sessionId: T.session,
+                assesseeId: PersonId.create(),
+                assessorId: PersonId.create(),
+                assessorLabel: null,
+                skillId: SkillId.create(),
+                result: "Pass",
+                notes: "",
+                status: "Deleted",
+                checkedAt: new Date(0).toISOString(),
+                recordedAt: new Date(0).toISOString(),
+                assesseeName: "Assessee",
+                skillName: "Skill",
+                assessorName: "Assessor",
+            };
+            const old: SessionChecksData = { ...sessionChecks, checks: [row] };
+
+            const effects = skillCheckSessionsEffects.updateSession(vars, {
+                updated: moved,
+                dateChanged: true,
+            });
+            expect(applySessionChecksWrite(effects, old)).toEqual({
+                ...old,
+                checks: [{ ...row, checkedAt: newDate }],
+            });
+            expect(applySessionChecksWrite(effects, undefined)).toBeUndefined();
+
+            const unchanged = skillCheckSessionsEffects.updateSession(vars, {
+                updated,
+                dateChanged: false,
+            });
+            expect(
+                writesTo(
+                    unchanged,
+                    trpc.skillCheckSessions.listSessionChecks.queryKey({
+                        organizationId: T.org,
+                        skillCheckSessionId: T.session,
+                    }),
+                ),
+            ).toHaveLength(0);
+        });
     });
 
     describe("updateCheckExclusions", () => {

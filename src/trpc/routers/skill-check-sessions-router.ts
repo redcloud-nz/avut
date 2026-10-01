@@ -813,7 +813,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * is not part of the session.
      * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
      * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
-     * runs.
+     * runs, or its date changed since it was read (so `checkedAt` would carry the old date).
      */
     // Recording a check within a session the caller assesses needs both halves: a session update
     // and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has no `"update"`
@@ -853,8 +853,12 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             const stamps = { checkedAt: new Date(session.date), recordedAt: new Date() };
             const [, check] = await ctx.prisma
                 .$transaction([
-                    // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
-                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                    // Serializes with `approveSession` and `updateSession`'s date change, and
+                    // refuses once the date `checkedAt` copies has moved; see
+                    // `SkillChecks.lockUnapprovedSession`.
+                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId, {
+                        expectedDate: stamps.checkedAt,
+                    }),
                     // Upsert on the unique key, so a double tap can't race two creates.
                     ctx.prisma.skillCheck.upsert({
                         where: { assesseeId_assessorId_sessionId_skillId: key },
@@ -872,7 +876,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         },
                     }),
                 ])
-                .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
+                .catch(SkillChecks.rethrowSessionChanged(skillCheckSessionId));
 
             return SkillCheck.fromRecord(check);
         }),
@@ -971,7 +975,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
 
             const [, updated] = await ctx.prisma
                 .$transaction([
-                    // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                    // Serializes with `approveSession` and with `setSessionSkillCheck`, whose lock
+                    // also checks the date; see `SkillChecks.lockUnapprovedSession`. Once it has
+                    // matched, it holds the session row, so `updateSessionRow` can't miss.
                     SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
                     updateSessionRow(),
                     ctx.prisma.skillCheck.updateMany({

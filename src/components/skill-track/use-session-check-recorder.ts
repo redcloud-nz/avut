@@ -34,8 +34,9 @@ type DeleteVariables = RouterInput["skillCheckSessions"]["deleteSessionSkillChec
  *   check. An approved session's `Include` checks can't be deleted in the first place (the lock),
  *   and any other status needs a fresh review anyway, so Undo is offered whatever the removed
  *   check's status was.
- * - A `CONFLICT` from either write means the session was approved under the page. Both then
- *   invalidate the session's `getSession`, so the page picks up the approval and turns read-only.
+ * - A `CONFLICT` from either write means the session was approved under the page, or (for
+ *   `record`) its date changed. Both then invalidate the session's `getSession`, so the page picks
+ *   up the approval and turns read-only, or picks up the new date for the next write.
  *
  * Every toast lives in the `useMutation` options rather than in per-call `mutate` callbacks:
  * TanStack fires per-call callbacks only for the observer's latest mutation, so a second delete
