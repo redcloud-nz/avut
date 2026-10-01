@@ -1,10 +1,10 @@
 # Session checks sync: cross-assessor live progress on the entry pages
 
-**Date:** 2026-09-30
+**Date:** 2026-10-01 (first written 2026-09-30; revised at the visual checkpoint, see [Revised at the visual checkpoint](#revised-at-the-visual-checkpoint-2026-10-01))
 **Issue:** [#319](https://github.com/redcloud-nz/avut/issues/319), client half, which is Stage 2 of [#336](https://github.com/redcloud-nz/avut/issues/336). Stage 1 (PR #346) already added `SkillCheck.updatedAt`, the `Deleted` tombstone and the `status: { not: "Deleted" }` filters.
 **Branch:** `feat/session-checks-sync`
 **Worktree:** `.claude/worktrees/session-checks-sync`, with its dev server on 3109 (its `.dev-port`).
-**DB:** no migration, on the shared `avut`. The existing `@@index([sessionId])` is enough at session sizes, which run to hundreds or low thousands of rows.
+**DB:** Tasks 1–7 needed no migration. Task 8 adds one, so before it the orchestrator runs `npm run db:branch session-checks-sync`, which needs the user's 3000 server, Prisma Studio and this worktree's 3109 server stopped. `migrate dev` against the branch DB needs the user's go-ahead. The existing `@@index([sessionId])` is enough at session sizes, which run to hundreds or low thousands of rows.
 **D4H:** nothing here depends on a D4H token.
 **Written against:** integration @ c59cc113
 
@@ -19,6 +19,42 @@ An assessor on `by-person` or `by-skill` sees, within about 10 seconds:
 A **Recent checks** dialog in the Actions sheet lists the session's checks, newest first.
 
 ## Decisions
+
+### Revised at the visual checkpoint (2026-10-01)
+
+Tasks 1–7 were built as first planned, with `updatedAt` as the sync cursor. At the visual checkpoint the user found that approval re-stamps every check's `updatedAt`, so the Recent checks order means nothing after an approve or reopen. Using `createdAt` instead was considered and rejected: on every other model it means "when the row was first created", and moving it on each write would be misleading. The decisions below replace the `updatedAt` cursor. Where the sections further down say `updatedAt`, read `recordedAt`.
+
+- **`SkillCheck` drops `createdAt` and `updatedAt`, and gains two purpose-named fields:**
+
+  | Field        | Meaning                                                                                               | Written by                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Not touched by                                     |
+  | ------------ | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+  | `recordedAt` | When an assessor last recorded or removed the check. It's the sync cursor and the Recent checks time. | Every assessor write, set explicitly: `createSkillCheck`, both write paths of `updateSkillCheck` (standalone and session), `setSessionSkillCheck` (both upsert branches), and the tombstone writes in `deleteSessionSkillCheck` and `deleteSkillCheck`. `DateTime @default(now())`, **not** `@updatedAt`.                                                                                                                                                        | approve, reopen, exclusions, the Rubbish-bin purge |
+  | `checkedAt`  | When the assessment happened. Competency expiry, the competency matrix and the reports use it.        | A session check: the session's date (`new Date(session.date)` from the `SkillCheckSession` DTO, which is always set), set by `setSessionSkillCheck`, and re-stamped on the session's checks when `updateSession` changes the date (see Task 9). A standalone check: now, at `createSkillCheck`, which only creates standalone checks (it refuses a `sessionId`). `updateSkillCheck` leaves it alone. `DateTime`, with no default, so every writer has to set it. | everything else                                    |
+
+- **`updatedAt` on `SkillCheckSession` stays.** It's the session row's own, and the approval guard still relies on it.
+- **An approved session's date is locked.** Its name and notes stay editable. Approved competency dates can then only move through a reopen, which goes back through review. When an unlocked session's date changes, `updateSession` re-stamps its checks' `checkedAt` (Task 9).
+- **The approval guard moves to `recordedAt`.**
+  - `assertApprovalMatchesSavedState`'s `checksAsOf`, and `approveSession`'s `unchangedSince` and tombstone-purge conditions, compare `recordedAt` instead of the checks' `updatedAt`.
+  - The guard exists to catch a check recorded, re-recorded or deleted since the review loaded, which is exactly what `recordedAt` tracks.
+  - Exclusion and config edits don't touch `recordedAt`. The guard still catches them through the session row's `updatedAt`, which `lockUnapprovedSession`, `updateCheckExclusions` and the config writes bump.
+- **Standalone checks can't be edited in the UI.** `updateSkillCheck` is only reached through the unused `getSkillChecksCollection`. That's why `updateSkillCheck` moves `recordedAt` but leaves `checkedAt` alone, the conservative choice. A follow-up issue adds a `date` (`checkedAt`) field to the standalone create and update forms.
+- **`listRecentChecks` filters and sorts on `checkedAt`.** It's about assessments that happened, not data entry.
+- **`getCompetencyMatrix` orders by `checkedAt`.** It's still a single-table query and needs no join to the session.
+- **The user router's 24-hour activity counts** (`user-router.ts`, a `skillCheck.groupBy` on `createdAt`) move to `recordedAt`: they count data entry. They now also count re-records.
+- **The delta carries assessor writes only.** Approve, reopen and exclusions no longer move the cursor field, so a check's `Include`/`Exclude`/`Pending` status never reaches `listSessionChecks`. And a poll that was in flight can leave a pre-approval status in the session cache or the own list. Nothing renders a check's status from either cache except `Deleted`, and consumers mustn't start to. Session-level changes reach clients through `sessionStatus`. `listSessionChecks`'s JSDoc and the "Why not the newest row's stamp" paragraph below are updated to match: an approval no longer re-stamps every check.
+- **Display:**
+  - The review page's checks dialog and the conflict resolver show `recordedAt`, as the time the check was recorded.
+  - The checks list shows `checkedAt`.
+  - The Recent checks dialog sorts and shows `recordedAt`.
+- **Migration backfill:**
+  - `recordedAt = "updatedAt"` for `Draft` and `Deleted` rows, since approve and reopen never re-stamp those. For other rows it's `createdAt`, because the old `updatedAt` there was re-stamped by approval. That's slightly early for an approved check that was edited before approval, an accepted inaccuracy in old data. Strictly, `Draft` also covers an exclusion undone on the review page, which bumped `updatedAt` too. That's close enough.
+  - `checkedAt = session.startsAt ?? createdAt`. This deliberately moves existing session checks' competency dates to their session's date.
+  - The columns are added nullable, backfilled, then set `NOT NULL`, the same shape as Stage 1's migration.
+- **Renames don't reach the delta** (as before), and neither does the purge's `assessorLabel` write any more. Both only show on reload.
+- **The entry pages, once a session is approved:**
+  - `by-person` and `by-skill` replace their whole content with a centred message ("This session has been approved.") and a link back to the session page. This replaces today's "Approved" alert above the read-only rows. A page already open gets there on the next poll through `sessionStatus` and, after a reopen, comes back the same way.
+  - The By Person and By Skill links on the session page (`session-content.tsx`) and in the Actions sheet's Record section are disabled while the session is approved.
+- **Skill description:** the Actions sheet's "Show: Skill Description" option and both pages' `showSkillDescription` state go. The row has no room for a description beside the marker. Instead, the record-check dialog always shows the skill's description under its title.
 
 ### Server
 
@@ -200,16 +236,115 @@ A **Recent checks** dialog in the Actions sheet lists the session's checks, newe
     - Results use the org's labels. A tombstone reads "Removed by X", muted.
   - **Done when:** the dialog opens from the sheet on both pages, lists newest first, shows removed checks, updates while open (including for a viewer who isn't recording), and Back closes it. `npm run check` passes.
 
-## Visual checkpoint
+### Added at the visual checkpoint (2026-10-01)
 
-After Task 7, one checkpoint covering Tasks 6 and 7. Use two accounts, or one account in two browsers, both assigned assessors on one unapproved session. Record on one and watch the other.
+**Before Task 8 (orchestrator):** stop 3109, ask the user to stop 3000 and Prisma Studio, and run `npm run db:branch session-checks-sync`. After Task 8's schema and migration are written, apply them with `npm run prisma migrate dev` (with the user's go-ahead) and confirm it generates no further migration.
+
+- [ ] **8. Replace `SkillCheck.createdAt`/`updatedAt` with `checkedAt`/`recordedAt`**
+  - **Why one task:** the rename touches the Prisma model and the shared `SkillCheck` Zod schema, so nothing typechecks until every reader and writer has moved. It's mechanical apart from the writers and the guard.
+  - **Files:**
+    - `prisma/schema.prisma` and a new `prisma/migrations/<timestamp>_skill_check_checked_recorded_at/migration.sql`;
+    - `src/lib/schemas/skill-check.ts`;
+    - `src/trpc/routers/skill-checks-router.ts`, `src/trpc/routers/skill-check-sessions-router.ts`, `src/server/services/skill-checks.ts`;
+    - `src/lib/session-checks-sync.ts`, `src/components/skill-track/use-session-checks-sync.ts`, `src/client/skill-check-sessions-effects.ts`;
+    - `src/components/skill-track/session-recent-checks-dialog.tsx`, `review-checks-dialog.tsx`, `resolve-conflict.tsx`, and `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-track/checks/checks-list.tsx`;
+    - `src/trpc/routers/user-router.ts` (the 24-hour activity `groupBy`);
+    - `prisma/seed-demo.ts`: its `createMany` sets both `checkedAt: when` and `recordedAt: when`, not just the default;
+    - every affected test, including those that create skill checks and will stop typechecking without `checkedAt`: `src/server/services/personnel.test.ts`, `skill-packages.test.ts`, `trash.test.ts`, `src/trpc/routers/skill-checks-router.test.ts` and `skill-check-sessions-router.test.ts`.
+
+    `git grep -nE '\b(createdAt|updatedAt)\b'` over `src` and `prisma/seed-demo.ts` finds the rest. Be careful to change only `SkillCheck`'s fields: `SkillCheckSession` and the other models keep theirs.
+
+  - **Do:**
+    - **Schema:**
+      - Replace the two fields with `checkedAt DateTime` and `recordedAt DateTime @default(now())`. Each gets a doc comment saying what it means and who writes it, from Decisions → Revised.
+      - Write `migration.sql` by hand, following `prisma/migrations/20260930000000_skill_check_lifecycle/migration.sql`:
+        - add both columns as nullable `TIMESTAMP(3)`;
+        - backfill `"recordedAt"` with `CASE WHEN status IN ('Draft', 'Deleted') THEN "updatedAt" ELSE "createdAt" END`, and `"checkedAt"` with `COALESCE((SELECT s."startsAt" FROM "skill_check_sessions" s WHERE s.id = c."sessionId"), c."createdAt")`;
+        - set both `NOT NULL`, with `recordedAt`'s default `CURRENT_TIMESTAMP`;
+        - drop `"createdAt"` and `"updatedAt"`.
+      - Run `npx prisma generate`. **Don't** run `migrate dev`; the orchestrator applies it.
+    - **Zod:** `SkillCheck.schema` and `fromRecord` swap to `checkedAt`/`recordedAt` (ISO strings).
+    - **Writers:** follow the Decisions table.
+      - `setSessionSkillCheck` sets `recordedAt: now` and `checkedAt: new Date(session.date)` in both upsert branches. `session` is the DTO `requireSessionAssessor` already returns. Its tombstone-only `createdAt` `updateMany` goes, since the upsert now covers it, so the transaction's destructuring becomes `[, check]`.
+      - The tombstone writes in `deleteSessionSkillCheck` and `deleteSkillCheck` set `recordedAt: now`.
+      - `createSkillCheck`, which only creates standalone checks, sets both to now.
+      - `updateSkillCheck` sets `recordedAt: now` only, on both its write paths: the standalone `update` and the session-branch `update` inside its `$transaction`.
+      - `approveSession`, `reopenSession`, `updateCheckExclusions` and `trash.ts`'s purge set neither.
+    - **Approval guard:** `assertApprovalMatchesSavedState` (`checksAsOf` reads `recordedAt`) and `approveSession` (`unchangedSince` and the tombstone purge filter on `recordedAt`). Update the doc comments that describe them.
+    - **Readers:**
+      - `getCompetencyMatrix` selects and orders by `checkedAt`, and computes `checkedAt` and `expiresAt` from it.
+      - `listRecentChecks` filters and orders by `checkedAt`.
+      - `listSessionChecks` filters on `recordedAt > since`.
+      - The UI shows the field named in Decisions → Display.
+      - `user-router.ts`'s 24-hour activity `groupBy` filters on `recordedAt`.
+    - **Sync code:** `mergeSessionChecks`, `patchOwnChecks`, the effects and the dialog compare and sort by `recordedAt`. Rename `updatedAt` to `recordedAt` in their doc comments. Update `listSessionChecks`'s JSDoc as in Decisions → Revised ("The delta carries assessor writes only").
+    - **Order of work:** schema and migration, `prisma generate`, the Zod schema, the server writers, the guard, the server readers, the sync code, the UI, then the tests.
+  - **Done when:**
+    - `npm run check -- --all` passes;
+    - the existing approval-guard tests pass against `recordedAt`;
+    - new router tests assert:
+      - `setSessionSkillCheck` writes `checkedAt` as the session's `startsAt` and `recordedAt` as now;
+      - a tombstone write moves `recordedAt` only;
+      - `approveSession`/`reopenSession` move neither field;
+      - `createSkillCheck` sets both to now;
+      - both `updateSkillCheck` paths move `recordedAt` and not `checkedAt`;
+      - `getCompetencyMatrix`'s `checkedAt` is the session date for a session check.
+    - The migration applies cleanly to the branch DB (orchestrator).
+
+- [ ] **9. Re-stamp `checkedAt` when a session's date changes**
+  - **Files:** `src/trpc/routers/skill-check-sessions-router.ts` and its test; `src/server/services/skill-checks.ts` (`assertSessionUnlocked`'s doc); `src/client/skill-check-sessions-effects.ts` and its test; `src/components/skill-track/update-session.tsx`.
+  - **Decided (2026-10-01): an approved session's date is locked.** `updateSession` stays outside the approval lock for name and notes. But a date change on an approved session throws the lock's `CONFLICT` (`SkillChecks.sessionLockedError`), so approved competency dates only move through a reopen, which goes back through review.
+  - **Do:**
+    - In `updateSession`, refuse a date change while `existing.status === "Include"`, with `sessionLockedError`. Update its JSDoc ("Not subject to the approval lock" becomes "the name and notes are; the date is locked while approved") and `assertSessionUnlocked`'s doc to match.
+    - `update-session.tsx` disables the date field while the session is approved, with a short description saying why ("Reopen the session to change its date.").
+    - **Race:** the `updateMany` below only runs on an unapproved session, but an approval can land between the pre-check and the write. Open the `$transaction` with `SkillChecks.lockUnapprovedSession` when the date changes, mapped with `rethrowSessionLocked`, as the check writes do.\*\*
+    - In `updateSession`, when the date changes (`new Date(existing.date).getTime() !== new Date(update.date).getTime()`; `existing` is the DTO, with `date` and no `startsAt`), add a `skillCheck.updateMany({ where: { organizationId, sessionId }, data: { checkedAt: new Date(update.date) } })` to the existing `$transaction`. That's every row in the session, tombstones included, so a revived tombstone doesn't carry the old date.
+    - It doesn't touch `recordedAt`. It needs no separate log entry: the session's own Update entry records the date change.
+    - The `updateSession` effect also invalidates `getCompetencyMatrix`, `listRecentChecks` and the session's `listSkillChecks` when the date changed, since `checkedAt` has moved.
+  - **Done when:** tests show:
+    - a date edit moves every check's `checkedAt` and no `recordedAt`;
+    - a name-only edit leaves `checkedAt` alone;
+    - a date edit on an approved session is refused with `CONFLICT`, while a name or notes edit on it still succeeds.
+
+    `npm run check` passes.
+
+- [ ] **10. Skill description moves into the record dialog** `visual`
+  - **Files:** `src/components/skill-track/session-actions-sheet.tsx`, `record-check-dialog.tsx`, `session-by-person-content.tsx`, `session-by-skill-content.tsx`, and `check-row.tsx` (plus `check-row.test.tsx`).
+  - **Do:**
+    - Remove the sheet's "Show" section and `SessionEntryView`'s `showSkillDescription`/`onShowSkillDescriptionChange`, and both pages' state for them.
+    - `SkillTrack_CheckRow` loses its `description` prop. The title column's `description || alsoCheckedBy` branch becomes marker-only, and the `FieldDescription` override goes with the description.
+    - `SkillTrack_RecordCheckDialog` gets a `skillDescription?: string` prop and shows it under the title when it's set. Both pages pass `assessableSkillById.get(skillId)?.description`, using the map both already build.
+    - By-skill also shows descriptions in its skill picker list and under the skill `Select`, through `skillDescription()`, which reads `showSkillDescription`. **Decided (2026-10-01):** remove both, along with `skillDescription()`. The record dialog is the only place a skill description shows.
+  - **Done when:** the sheet has no Show section; the rows, by-skill's picker and its `Select` show no description; and the dialog shows the description on both pages. `npm run check` passes.
+
+- [ ] **11. Approved sessions lock the entry pages** `visual`
+  - **Files:** `session-by-person-content.tsx`, `session-by-skill-content.tsx`, `session-actions-sheet.tsx`, `session-content.tsx`.
+  - **Do:**
+    - When `session.status === "Include"`, each entry page renders only a centred message in place of everything under the navbar: an `Empty` with "This session has been approved." and a link button to the session page via `route("/orgs/[slug]/skill-track/sessions/[session_id]", …)`. This replaces the "Approved" alert, the read-only rows, and the "No linked person" / "Not an assigned assessor" / "Cannot record" alerts: an approved session says only that.
+    - The navbar and its Actions sheet stay, so Recent checks is still reachable.
+    - `useSessionChecksSync` stays enabled through the approved state, so a reopen brings the content back on the next poll. Don't gate its `enabled` on `isApproved`. The live switch only happens for a recording assessor, whose poll is on. Anyone else sees the change on reload, which is acceptable: they couldn't record anyway.
+    - Disable the By Person and By Skill entries while approved:
+      - In `session-content.tsx` they're `DropdownMenuItem asChild` + `Link` under a "Record" dropdown. Render `<DropdownMenuItem disabled>` without the `Link` while approved, as `session-menu.tsx` does with `disabled`.
+      - In the Actions sheet, render the Record items as a disabled `<button>` inside `Item asChild`, like the Configure items, in place of the `Link`.
+  - **Done when:**
+    - approving in another browser replaces a recording assessor's open entry page with the message within about 10 s;
+    - reopening brings it back;
+    - the four links are disabled while approved.
+
+    `npm run check` passes.
+
+## Visual checkpoints
+
+1. After Task 7, covering Tasks 6 and 7. Use two accounts, or one account in two browsers, both assigned assessors on one unapproved session. Record on one and watch the other. **Done 2026-10-01.** It produced the revisions above.
+2. After Task 11, covering Tasks 10 and 11, plus the Recent checks order after an approve and reopen (Task 8).
 
 ## Out of scope
 
 - **Session presence** ("who's here now") and push transport. That's #318, which stays parked.
 - **Session configuration changes made elsewhere,** such as a person or skill added by the coordinator. The poll doesn't carry config, so the assigned lists refresh only on reload or on the page's own writes.
 - **Rows hard-deleted outside approval,** such as a cascade from purging a person or skill. The session cache keeps them until the page reloads.
-- **Renames.** Renaming a person or skill doesn't touch `SkillCheck.updatedAt`, so the names on cached rows are only as fresh as each row's last write, or the page load.
+- **Renames.** Renaming a person or skill doesn't touch `SkillCheck.recordedAt` (or, before Task 8, `updatedAt`), so the names on cached rows are only as fresh as each row's last write, or the page load.
 - **A full event history** in the Recent checks dialog, which would need #46's audit logging.
 - **End-user docs** (`content/docs/skill-track/sessions.mdx`). They're the single docs pass after Stage 2, per #336.
+- **A `date` field on the standalone check create and update forms,** and an edit UI for standalone checks. That's a follow-up issue, which also covers the unused `getSkillChecksCollection`.
 - **Closing #317 and #318.** That's #336's housekeeping, done after this merges.
