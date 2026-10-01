@@ -160,19 +160,19 @@ official results. Clicking **Approve** sets the session's status and stamps
 each check as included or excluded to match your selection.
 
 <Callout>
-  Approving isn't a lock. You can come back to Review, change which checks are included, and approve
-  again at any time — nothing prevents further edits after the first approval.
+  Approving locks the session. To change it, reopen it from the session menu: its included checks go
+  back to **Pending review**, and you can record, review and approve again.
 </Callout>
 
 ## Session status
 
-A session's status appears in the sessions list as one of three raw values —
-**Draft**, **Include**, or **Exclude** — while the per-check table on a
-session's Checks page shows the friendlier **Draft**, **Approved**, and
-**Excluded**. They're the same three states:
+A session is **Draft** while it's being worked on and **Approved** once it's
+approved. Each of its checks has a status too, shown on the session's Checks
+page:
 
-| Status  | Meaning                                       |
-| ------- | --------------------------------------------- |
-| Draft   | Still being worked on; not yet approved.      |
-| Include | Approved — its results count in reports.      |
-| Exclude | Explicitly excluded; its results don't count. |
+| Status         | Meaning                                                           |
+| -------------- | ----------------------------------------------------------------- |
+| Draft          | Recorded but not yet reviewed.                                    |
+| Pending review | Included in an earlier approval, before the session was reopened. |
+| Approved       | Included in the approval — its result counts in reports.          |
+| Excluded       | Left out of the approval; its result doesn't count.               |

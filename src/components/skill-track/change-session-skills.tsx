@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
+import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -112,12 +113,14 @@ function ChangeSessionSkills_Body({
     const [changes, setChanges] = useState<Record<SkillId, boolean>>({});
     const [showSkillDescriptions, setShowSkillDescriptions] = useState(false);
 
+    const refetchSessionOnConflict = useRefetchSessionOnConflict(sessionId);
     const mutation = useMutation(
         trpc.skillCheckSessions.updateSessionSkills.mutationOptions({
             meta: { effects: skillCheckSessionsEffects.updateSessionSkills },
             onError(error) {
                 console.error("Failed to update session skills:", error);
                 toast.error(`Failed to update session skills: ${error.message}`);
+                refetchSessionOnConflict(error);
             },
             onSuccess() {
                 toast.success("Session skills updated");

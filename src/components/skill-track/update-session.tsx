@@ -49,7 +49,6 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
             name: session.name,
             date: session.date,
             notes: session.notes,
-            status: session.status,
         },
     });
 
@@ -86,7 +85,6 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                 name: session.name,
                 date: session.date,
                 notes: session.notes,
-                status: session.status,
             });
             mutation.reset();
         }

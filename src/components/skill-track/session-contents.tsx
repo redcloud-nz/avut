@@ -19,6 +19,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/co
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { findConflicts, isConflictResolved } from "@/lib/skill-check-conflicts";
 import { trpc } from "@/trpc/client";
 
 export function SkillsModule_Session_Contents_Card({
@@ -52,6 +53,15 @@ export function SkillsModule_Session_Contents_Card({
             ],
         });
 
+    // An approved session's config is locked until it's reopened.
+    const isApproved = session.status === "Include";
+
+    // Only unresolved conflicts need attention, and only before approval; once approved, each one
+    // has been resolved.
+    const conflictCount = isApproved
+        ? 0
+        : findConflicts(skillChecks).filter((conflict) => !isConflictResolved(conflict)).length;
+
     return (
         <Card>
             <CardHeader>
@@ -59,10 +69,19 @@ export function SkillsModule_Session_Contents_Card({
             </CardHeader>
 
             <CardContent className="px-2 -my-2">
-                <ConfigRow action="change-personnel" title={`${assessees.length} Personnel`} />
-                <ConfigRow action="change-skills" title={`${skills.length} Skills`} />
+                <ConfigRow
+                    action="change-personnel"
+                    locked={isApproved}
+                    title={`${assessees.length} Personnel`}
+                />
+                <ConfigRow
+                    action="change-skills"
+                    locked={isApproved}
+                    title={`${skills.length} Skills`}
+                />
                 <ConfigRow
                     action="change-assessors"
+                    locked={isApproved}
                     title={`${session.assessors.length} Assessors`}
                 />
                 <Item size="sm" asChild>
@@ -81,6 +100,31 @@ export function SkillsModule_Session_Contents_Card({
                         </ItemActions>
                     </Link>
                 </Item>
+                {conflictCount > 0 && (
+                    <Item size="sm" asChild>
+                        <Link
+                            href={`${route(
+                                "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                {
+                                    slug: organization.slug,
+                                    session_id: sessionId,
+                                },
+                            )}#conflicts`}
+                        >
+                            <ItemContent>
+                                <ItemTitle>
+                                    {conflictCount} {conflictCount === 1 ? "Conflict" : "Conflicts"}
+                                </ItemTitle>
+                                <ItemDescription>
+                                    {conflictCount === 1 ? "needs resolving" : "need resolving"}
+                                </ItemDescription>
+                            </ItemContent>
+                            <ItemActions>
+                                <ChevronRightIcon className="size-4" />
+                            </ItemActions>
+                        </Link>
+                    </Item>
+                )}
             </CardContent>
         </Card>
     );
@@ -88,10 +132,18 @@ export function SkillsModule_Session_Contents_Card({
 
 /**
  * A Contents row for one of the session's config lists. Updaters get a button that opens the
- * list's dialog (hosted by `SkillTrack_SessionConfigDialogs` on the page); everyone else gets the
- * same row as plain text.
+ * list's dialog (hosted by `SkillTrack_SessionConfigDialogs` on the page); everyone else, and
+ * everyone while the session is `locked` (approved), gets the same row as plain text.
  */
-function ConfigRow({ action, title }: { action: SessionConfigAction; title: string }) {
+function ConfigRow({
+    action,
+    title,
+    locked,
+}: {
+    action: SessionConfigAction;
+    title: string;
+    locked: boolean;
+}) {
     const { open } = useSessionConfigAction();
 
     const content = (
@@ -105,7 +157,7 @@ function ConfigRow({ action, title }: { action: SessionConfigAction; title: stri
         <Protect
             permissions={{ skillCheckSession: ["update"] }}
             render={(hasPermission) =>
-                hasPermission ? (
+                hasPermission && !locked ? (
                     <Item size="sm" asChild className="cursor-pointer text-left hover:bg-muted">
                         <button type="button" aria-haspopup="dialog" onClick={() => open(action)}>
                             {content}
