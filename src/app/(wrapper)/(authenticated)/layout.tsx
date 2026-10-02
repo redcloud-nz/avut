@@ -23,8 +23,13 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar";
-import { VersionString } from "@/components/ui/version-string";
 import { TimeZoneAutoDetect } from "@/components/user/user-settings/timezone-auto-detect";
+import { WhatsNewVersionButton } from "@/components/whats-new/whats-new-button";
+import {
+    WhatsNewBoundary,
+    WhatsNewDialog,
+    WhatsNewProvider,
+} from "@/components/whats-new/whats-new-dialog";
 import { resolveUserModuleFlags } from "@/server/module-flags";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -74,6 +79,12 @@ export default async function AuthenticatedLayout(props: {
     // prefetching here removes the round trip that would otherwise show as its skeleton.
     prefetch(trpc.user.listMemberships.queryOptions());
 
+    // `WhatsNewDialog` and the version button's unseen dot both read this via `useSuspenseQuery`,
+    // each inside its own `WhatsNewBoundary` (renders nothing while loading or on failure). Neither
+    // is needed for first paint, so prefetch rather than await: the popup can open a moment after
+    // the page does.
+    prefetch(trpc.whatsNew.getUnseen.queryOptions());
+
     return (
         <HydrateClient>
             {/* Redirects to sign-in if the session is revoked or expires after first paint —
@@ -83,46 +94,53 @@ export default async function AuthenticatedLayout(props: {
                 saved preference — see the component's own docstring. Renders nothing. */}
             <TimeZoneAutoDetect />
             <SidebarPortalProvider>
-                <Sidebar>
-                    <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
-                        <div className="w-[100px]">
-                            <Image
-                                src="/avut-logo.svg"
-                                alt="A.V.U.T. Logo"
-                                width={99}
-                                height={33}
-                                loading="eager"
-                                className="dark:invert"
-                            />
-                        </div>
-                        <div>
-                            <NotificationsMenu />
-                            <ModeToggle />
-                        </div>
-                    </SidebarHeader>
-                    <SidebarContent className="overflow-hidden">
-                        <div className="px-1 pt-1">
-                            <Suspense fallback={<ScopeSwitcher_Skeleton />}>
-                                <ScopeSwitcher />
+                <WhatsNewProvider>
+                    <Sidebar>
+                        <SidebarHeader className="flex flex-row items-center justify-between border-b h-(--header-height)">
+                            <div className="w-[100px]">
+                                <Image
+                                    src="/avut-logo.svg"
+                                    alt="A.V.U.T. Logo"
+                                    width={99}
+                                    height={33}
+                                    loading="eager"
+                                    className="dark:invert"
+                                />
+                            </div>
+                            <div>
+                                <NotificationsMenu />
+                                <ModeToggle />
+                            </div>
+                        </SidebarHeader>
+                        <SidebarContent className="overflow-hidden">
+                            <div className="px-1 pt-1">
+                                <Suspense fallback={<ScopeSwitcher_Skeleton />}>
+                                    <ScopeSwitcher />
+                                </Suspense>
+                            </div>
+                            <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
+                                <ScopeSidebar_Modules userModuleFlags={userModuleFlags} />
+                                <SidebarPortalOutlet />
+                            </div>
+                        </SidebarContent>
+                        <SidebarFooter>
+                            <div className="flex justify-center text-center text-xs text-muted-foreground">
+                                <WhatsNewVersionButton />
+                            </div>
+                            <Suspense fallback={<UserMenu_Skeleton />}>
+                                <UserMenu />
                             </Suspense>
-                        </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
-                            <ScopeSidebar_Modules userModuleFlags={userModuleFlags} />
-                            <SidebarPortalOutlet />
-                        </div>
-                    </SidebarContent>
-                    <SidebarFooter>
-                        <div className="py-1 text-center text-xs text-muted-foreground">
-                            <VersionString layout="stacked" />
-                        </div>
-                        <Suspense fallback={<UserMenu_Skeleton />}>
-                            <UserMenu />
-                        </Suspense>
-                    </SidebarFooter>
-                    <SidebarRail />
-                </Sidebar>
-                {props.modal}
-                <Std.SidebarInset>{props.children}</Std.SidebarInset>
+                        </SidebarFooter>
+                        <SidebarRail />
+                    </Sidebar>
+                    {props.modal}
+                    {/* Outside `<Sidebar>`: on mobile its offcanvas sheet unmounts its content while
+                    closed, so a dialog in there could never open on its own. */}
+                    <WhatsNewBoundary>
+                        <WhatsNewDialog />
+                    </WhatsNewBoundary>
+                    <Std.SidebarInset>{props.children}</Std.SidebarInset>
+                </WhatsNewProvider>
             </SidebarPortalProvider>
         </HydrateClient>
     );
