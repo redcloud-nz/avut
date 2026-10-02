@@ -245,6 +245,8 @@ function KagaTableToolbar<TData extends RowData>({
             <KagaSearchHotkey />
             <InputGroup className={cn("grow bg-background")}>
                 <InputGroupInput
+                    name="search"
+                    aria-label="Search table"
                     placeholder="Search..."
                     value={table.getState().globalFilter ?? ""}
                     onChange={(ev) => table.setGlobalFilter(ev.target.value)}

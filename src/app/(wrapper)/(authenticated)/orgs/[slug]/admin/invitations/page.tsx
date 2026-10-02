@@ -9,6 +9,8 @@ import { AdminModule_Invitations_List } from "@/components/admin/invitations/inv
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: `Invitations`,
@@ -18,9 +20,12 @@ export default async function AdminModule_Invitations_Page(
     props: PageProps<"/orgs/[slug]/admin/invitations">,
 ) {
     const { slug } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    prefetch(trpc.invitations.listInvitations.queryOptions({ organizationId: organization.id }));
 
     return (
-        <>
+        <HydrateClient>
             <Std.Navbar
                 breadcrumbs={[
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
@@ -34,6 +39,6 @@ export default async function AdminModule_Invitations_Page(
             <Std.ScrollContainer>
                 <AdminModule_Invitations_List />
             </Std.ScrollContainer>
-        </>
+        </HydrateClient>
     );
 }

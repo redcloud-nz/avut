@@ -101,8 +101,8 @@ export default async function AuthenticatedLayout(props: {
                                 <Image
                                     src="/avut-logo.svg"
                                     alt="A.V.U.T. Logo"
-                                    width={100}
-                                    height={100 / 3}
+                                    width={99}
+                                    height={33}
                                     loading="eager"
                                     className="dark:invert"
                                 />

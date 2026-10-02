@@ -132,8 +132,9 @@ export default function HomePage() {
                     <Image
                         src="/mascot/artie-welcome-cutout.png"
                         alt="Artie the mascot, waving"
-                        width={360}
-                        height={360}
+                        width={370}
+                        height={270}
+                        loading="eager"
                         className="mx-auto w-full max-w-[280px] md:max-w-[360px] md:justify-self-end"
                     />
                 </div>

@@ -8,7 +8,7 @@ import { LockOpenIcon } from "lucide-react";
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { ObjectIcons } from "@/components/icons";
+import { ObjectIcons, SessionReviewIcon } from "@/components/icons";
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -27,9 +27,10 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
     const organization = useOrganization();
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["reopen", "delete"] as const),
+        parseAsStringLiteral(["update", "reopen", "delete"] as const),
     );
 
+    const canUpdate = useHasPermission({ skillCheckSession: ["update"] });
     const canReopen = useHasPermission({ skillCheckSession: ["approve"] });
     const canDelete = useHasPermission({ skillCheckSession: ["delete"] });
 
@@ -37,6 +38,15 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
     const isApproved = session.status === "Include";
 
     const actions: MenuActionProps[] = [
+        // Not disabled when approved: `updateSession` only refuses a date change, and the
+        // dialog locks that field itself. The dialog lives on the Session Details card.
+        {
+            verb: "update",
+            label: "Edit",
+            icon: <ObjectIcons.Edit />,
+            onSelect: () => setAction("update", { history: "push" }),
+            disabled: !canUpdate,
+        },
         ...(isApproved
             ? [
                   {
@@ -78,6 +88,19 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
                                     )}
                                 >
                                     <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={route(
+                                        "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                        {
+                                            slug: organization.slug,
+                                            session_id: session.id,
+                                        },
+                                    )}
+                                >
+                                    <SessionReviewIcon /> Review
                                 </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
