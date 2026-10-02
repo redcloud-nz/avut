@@ -142,6 +142,7 @@ describe("Trash service", () => {
                 skillId: T.sharedSkill,
                 result: "Pass",
                 notes: "",
+                checkedAt: new Date(),
             },
         });
         // Recorded by another org that subscribed to the package.
@@ -154,6 +155,7 @@ describe("Trash service", () => {
                 skillId: T.sharedSkill,
                 result: "Pass",
                 notes: "",
+                checkedAt: new Date(),
             },
         });
         // A tombstone from that org too, which the blocker's count leaves out.
@@ -167,6 +169,7 @@ describe("Trash service", () => {
                 result: "Pass",
                 notes: "",
                 status: "Deleted",
+                checkedAt: new Date(),
             },
         });
 

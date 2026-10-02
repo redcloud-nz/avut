@@ -45,7 +45,6 @@ export function DocsCheckRowDemo() {
             <div className="p-4">
                 <SkillTrack_CheckRow
                     title={SKILL_NAME}
-                    description={SKILL_DESCRIPTION}
                     check={check}
                     pending={undefined}
                     resultOptions={DEMO_RESULT_OPTIONS}
@@ -60,6 +59,7 @@ export function DocsCheckRowDemo() {
                 onOpenChange={setDialogOpen}
                 targetKey="demo"
                 skillName={SKILL_NAME}
+                skillDescription={SKILL_DESCRIPTION}
                 personName="Alex Example"
                 current={check}
                 resultOptions={DEMO_RESULT_OPTIONS}

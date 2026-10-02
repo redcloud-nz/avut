@@ -52,6 +52,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
             skillCheckSessionId: sessionId,
         }),
     );
+    const isApproved = session.status === "Include";
 
     return (
         <>
@@ -85,32 +86,50 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                 <DropdownMenuContent className="w-40" align="end">
                                     <DropdownMenuGroup>
                                         <DropdownMenuLabel>Record skill checks</DropdownMenuLabel>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
-                                                    {
-                                                        slug: organization.slug,
-                                                        session_id: session.id,
-                                                    },
-                                                )}
-                                            >
-                                                By Person
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
-                                                    {
-                                                        slug: organization.slug,
-                                                        session_id: session.id,
-                                                    },
-                                                )}
-                                            >
-                                                By Skill
-                                            </Link>
-                                        </DropdownMenuItem>
+                                        {/* An approved session's checks are locked until it's
+                                            reopened, so the entry pages have nothing to record. */}
+                                        {isApproved ? (
+                                            <>
+                                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                                    Locked while the session is approved
+                                                </DropdownMenuLabel>
+                                                <DropdownMenuItem disabled>
+                                                    By Person
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem disabled>
+                                                    By Skill
+                                                </DropdownMenuItem>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                                                            {
+                                                                slug: organization.slug,
+                                                                session_id: session.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        By Person
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                                            {
+                                                                slug: organization.slug,
+                                                                session_id: session.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        By Skill
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
                                     </DropdownMenuGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>

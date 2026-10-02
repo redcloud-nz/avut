@@ -289,12 +289,13 @@ export const userRouter = createTrpcRouter({
 
             // Skill checks aren't written through `ctx.logEvent` (no `LogEntry` row per
             // check), so they're invisible to the log-entry-backed counts below — count
-            // them directly off `SkillCheck` instead.
+            // them directly off `SkillCheck` instead. By `recordedAt`, since this counts data
+            // entry, so a re-recorded check counts again.
             const skillCheckCounts = await ctx.prisma.skillCheck.groupBy({
                 by: ["organizationId"],
                 where: {
                     organizationId: { in: organizationIds },
-                    createdAt: { gte: since },
+                    recordedAt: { gte: since },
                     status: { not: "Deleted" },
                 },
                 _count: true,

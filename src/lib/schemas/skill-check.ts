@@ -54,19 +54,43 @@ export const SkillCheck = {
         result: SkillCheckResultValue.schema,
         notes: z.string(),
         status: z.enum(["Draft", "Pending", "Include", "Exclude", "Deleted"]),
-        createdAt: z.iso.datetime(),
-        updatedAt: z.iso.datetime(),
+        /** When the assessment happened: the session's date, or a standalone check's creation. */
+        checkedAt: z.iso.datetime(),
+        /** When an assessor last recorded or removed the check; approval doesn't move it. */
+        recordedAt: z.iso.datetime(),
     }),
 
     fromRecord: (record: SkillCheckRecord) =>
         SkillCheck.schema.parse({
             ...record,
-            createdAt: record.createdAt.toISOString(),
-            updatedAt: record.updatedAt.toISOString(),
+            checkedAt: record.checkedAt.toISOString(),
+            recordedAt: record.recordedAt.toISOString(),
         }),
 } as const;
 
 export type SkillCheck = z.infer<typeof SkillCheck.schema>;
+
+/**
+ * A session's check as `skillCheckSessions.listSessionChecks` returns it: the check with the
+ * names of its assessee, skill and assessor, so it describes itself even once they are no longer
+ * assigned to the session. `assessorName` falls back as `assessorDisplayName` does.
+ */
+export const SessionCheck = {
+    schema: SkillCheck.schema.extend({
+        assesseeName: z.string(),
+        skillName: z.string(),
+        assessorName: z.string(),
+    }),
+} as const;
+
+export type SessionCheck = z.infer<typeof SessionCheck.schema>;
+
+/**
+ * How far `listSessionChecks`' cursor lags the server's clock, in milliseconds. A check recorded
+ * this long before a read began is assumed to have committed by then (commit delay plus clock
+ * skew between server instances stay under it).
+ */
+export const SESSION_CHECKS_LOOKBACK_MS = 10_000;
 
 /**
  * Display name for a check's assessor: the live person, else the name kept when they were

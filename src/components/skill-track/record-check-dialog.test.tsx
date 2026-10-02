@@ -62,6 +62,21 @@ describe("SkillTrack_RecordCheckDialog", () => {
         expect(screen.getByText("CPR")).toBeInTheDocument();
     });
 
+    it("adds the skill description to the dialog's accessible description when set", () => {
+        renderDialog({ skillDescription: "Adult and child" });
+
+        expect(screen.getByText("Adult and child")).toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Alice" })).toHaveAccessibleDescription(
+            "CPR Adult and child",
+        );
+    });
+
+    it("describes the dialog with the skill name alone when there's no skill description", () => {
+        renderDialog({ skillDescription: undefined });
+
+        expect(screen.getByRole("dialog", { name: "Alice" })).toHaveAccessibleDescription("CPR");
+    });
+
     it("renders only the enabled results", () => {
         renderDialog();
 

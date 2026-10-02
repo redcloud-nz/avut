@@ -21,22 +21,20 @@ import {
     SessionSkillOrder,
     SkillTrack_SessionActionsSheet,
 } from "@/components/skill-track/session-actions-sheet";
+import { SkillTrack_SessionApprovedEmpty } from "@/components/skill-track/session-approved-empty";
 import {
     sessionCheckKey,
     usePendingChecks,
     useSessionCheckRecorder,
 } from "@/components/skill-track/use-session-check-recorder";
+import {
+    useOtherAssessorChecks,
+    useSessionChecksSync,
+} from "@/components/skill-track/use-session-checks-sync";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemGroup,
-    ItemTitle,
-} from "@/components/ui/item";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { RainbowSpinner } from "@/components/ui/loading";
 import {
     Select,
@@ -122,8 +120,19 @@ export function SkillTrack_SessionBySkill_Content({
     // Recording also needs `skillCheck: ["create"]` (see `setSessionSkillCheck` and
     // `deleteSessionSkillCheck`), which a caller holding only session update lacks.
     const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
+    // Polls the other assessors' checks (and the caller's own from other devices) while the caller
+    // could record, approved or not. When the session is approved or reopened elsewhere, the page
+    // locks, or unlocks, on the next poll for a recording assessor; anyone else sees it on focus
+    // or reload.
+    const sessionChecks = useSessionChecksSync({
+        sessionId,
+        selfPersonId: personSelf?.id,
+        enabled: !!personSelf && isAssignedAssessor && canRecordChecks,
+    });
+    // The "Also checked by" markers, keyed by (assessee, skill).
+    const otherChecksByKey = useOtherAssessorChecks(sessionChecks, personSelf?.id);
     // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
-    // its checks read-only and the record dialog is closed.
+    // only a message in place of its content, and the record dialog is closed.
     const isApproved = session.status === "Include";
 
     type Selected = { skillId: SkillId; status: "Loading" | "Selected" } | null;
@@ -179,7 +188,6 @@ export function SkillTrack_SessionBySkill_Content({
         getSkillCheckResultLabel(organization.settings, value);
 
     const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
-    const [showSkillDescription, setShowSkillDescription] = useState(false);
 
     // Group the session skills (the left-hand picker) by skill package and group (for the
     // "by-package-group" order). Packages are sorted by name, groups by sequence; skills keep the
@@ -210,12 +218,6 @@ export function SkillTrack_SessionBySkill_Content({
     // Session skills that are no longer in the assessable set (e.g. subscription removed).
     const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
 
-    function skillDescription(skillId: SkillId) {
-        return showSkillDescription
-            ? assessableSkillById.get(skillId)?.description || undefined
-            : undefined;
-    }
-
     const renderSkillItem = (skill: (typeof sessionSkills)[number]) => (
         <Item
             key={skill.id}
@@ -229,9 +231,6 @@ export function SkillTrack_SessionBySkill_Content({
             >
                 <ItemContent>
                     <ItemTitle>{skill.name}</ItemTitle>
-                    {skillDescription(skill.id) && (
-                        <ItemDescription>{skillDescription(skill.id)}</ItemDescription>
-                    )}
                 </ItemContent>
 
                 <ItemActions>
@@ -241,45 +240,58 @@ export function SkillTrack_SessionBySkill_Content({
         </Item>
     );
 
+    const navbar = (
+        <Std.Navbar>
+            <Std.Breadcrumbs
+                breadcrumbs={[
+                    {
+                        label: "Skill Track",
+                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Sessions",
+                        href: route("/orgs/[slug]/skill-track/sessions", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
+                        label: session.name || session.id,
+                        href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
+                            slug: organization.slug,
+                            session_id: sessionId,
+                        }),
+                    },
+                    "By Skill",
+                ]}
+            />
+            <div className="flex items-center justify-end gap-1 grow">
+                <SkillTrack_SessionActionsSheet
+                    sessionId={sessionId}
+                    mode="by-skill"
+                    view={{
+                        skillOrder,
+                        onSkillOrderChange: setSkillOrder,
+                    }}
+                />
+                <HelpButton slug="skill-track/sessions" />
+            </div>
+        </Std.Navbar>
+    );
+
+    if (isApproved) {
+        return (
+            <>
+                {navbar}
+                <Std.ScrollContainer className="flex">
+                    <SkillTrack_SessionApprovedEmpty sessionId={sessionId} />
+                </Std.ScrollContainer>
+            </>
+        );
+    }
+
     return (
         <>
-            <Std.Navbar>
-                <Std.Breadcrumbs
-                    breadcrumbs={[
-                        {
-                            label: "Skill Track",
-                            href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                        },
-                        {
-                            label: "Sessions",
-                            href: route("/orgs/[slug]/skill-track/sessions", {
-                                slug: organization.slug,
-                            }),
-                        },
-                        {
-                            label: session.name || session.id,
-                            href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                                slug: organization.slug,
-                                session_id: sessionId,
-                            }),
-                        },
-                        "By Skill",
-                    ]}
-                />
-                <div className="flex items-center justify-end gap-1 grow">
-                    <SkillTrack_SessionActionsSheet
-                        sessionId={sessionId}
-                        mode="by-skill"
-                        view={{
-                            skillOrder,
-                            onSkillOrderChange: setSkillOrder,
-                            showSkillDescription,
-                            onShowSkillDescriptionChange: setShowSkillDescription,
-                        }}
-                    />
-                    <HelpButton slug="skill-track/sessions" />
-                </div>
-            </Std.Navbar>
+            {navbar}
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
@@ -320,15 +332,6 @@ export function SkillTrack_SessionBySkill_Content({
                                 )
                             }
                         >
-                            <Show when={isApproved}>
-                                <Alert>
-                                    <AlertTitle>Approved</AlertTitle>
-                                    <AlertDescription>
-                                        This session is approved. Reopen it to record or change
-                                        checks.
-                                    </AlertDescription>
-                                </Alert>
-                            </Show>
                             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
                                 <div>
                                     <FieldGroup className="block lg:hidden">
@@ -420,11 +423,6 @@ export function SkillTrack_SessionBySkill_Content({
                                                         .exhaustive()}
                                                 </SelectContent>
                                             </Select>
-                                            {selected && skillDescription(selected.skillId) && (
-                                                <FieldDescription>
-                                                    {skillDescription(selected.skillId)}
-                                                </FieldDescription>
-                                            )}
                                         </Field>
                                     </FieldGroup>
                                     <ItemGroup className="hidden lg:block">
@@ -503,6 +501,9 @@ export function SkillTrack_SessionBySkill_Content({
                                                         )}
                                                         resultOptions={resultOptions}
                                                         resultLabel={resultLabel}
+                                                        otherChecks={otherChecksByKey.get(
+                                                            sessionCheckKey(person.id, skillId),
+                                                        )}
                                                         onRecord={(value) =>
                                                             record({
                                                                 assesseeId: person.id,
@@ -519,7 +520,6 @@ export function SkillTrack_SessionBySkill_Content({
                                                         onOpenDialog={() =>
                                                             openDialog(person.id, skillId)
                                                         }
-                                                        disabled={isApproved}
                                                     />
                                                 ))}
                                             </>
@@ -537,6 +537,10 @@ export function SkillTrack_SessionBySkill_Content({
                                                 sessionSkills.find(
                                                     (skill) => skill.id === target.skillId,
                                                 )?.name ?? ""
+                                            }
+                                            skillDescription={
+                                                assessableSkillById.get(target.skillId)
+                                                    ?.description || undefined
                                             }
                                             personName={
                                                 assignedPersonnel.find(

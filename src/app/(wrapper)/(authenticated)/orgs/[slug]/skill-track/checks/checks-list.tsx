@@ -95,7 +95,7 @@ export default function SkillTrack_ChecksList() {
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
-                col.accessor("createdAt", {
+                col.accessor("checkedAt", {
                     header: "Date",
                     cell: (ctx) => formatDate(ctx.getValue()),
                     enableSorting: true,
@@ -123,7 +123,7 @@ export default function SkillTrack_ChecksList() {
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
-            sorting: [{ id: "createdAt", desc: true }],
+            sorting: [{ id: "checkedAt", desc: true }],
         },
     });
 

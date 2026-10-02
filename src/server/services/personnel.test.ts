@@ -755,6 +755,7 @@ describe("Personnel.archive / restore / recover / deleteRecord", () => {
                 result: "Pass",
                 notes: "",
                 status: "Include",
+                checkedAt: new Date(),
             },
         });
     });
