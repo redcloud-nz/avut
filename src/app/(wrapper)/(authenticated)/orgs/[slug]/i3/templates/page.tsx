@@ -29,27 +29,25 @@ export default async function I3Module_TemplateList_Page(
 
     return (
         <HydrateClient>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
-                        "Templates",
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <Saratoga.Root>
-                        <Saratoga.Header>
-                            <Saratoga.Title>I3 Templates</Saratoga.Title>
-                            <Saratoga.Actions>
-                                <Protect permissions={{ i3Template: ["create"] }}>
-                                    <I3Module_CreateTemplate_Dialog />
-                                </Protect>
-                            </Saratoga.Actions>
-                        </Saratoga.Header>
-                        <I3Module_TemplateList />
-                    </Saratoga.Root>
-                </Std.ScrollContainer>
-            </>
+            <Std.Navbar
+                breadcrumbs={[
+                    { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
+                    "Templates",
+                ]}
+            />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>I3 Templates</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Protect permissions={{ i3Template: ["create"] }}>
+                                <I3Module_CreateTemplate_Dialog />
+                            </Protect>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <I3Module_TemplateList />
+                </Saratoga.Root>
+            </Std.ScrollContainer>
         </HydrateClient>
     );
 }

@@ -140,7 +140,8 @@ export function I3Module_IssueItems_FormInstanceList() {
                                                     {(instance.formData as I3IssueItemsFormData)
                                                         .recipient?.name || "No Recipient"}
                                                 </ItemTitle>
-                                                <ItemDescription>
+                                                {/* The relative time can tick over between SSR and hydration. */}
+                                                <ItemDescription suppressHydrationWarning>
                                                     {itemCount == 0
                                                         ? "No items"
                                                         : itemCount === 1

@@ -14,10 +14,9 @@ import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export default async function Organization_Index_Page(props: PageProps<"/orgs/[slug]">) {
     const { slug } = await props.params;
-    const [{ organization, settings, roles }, moduleFlags] = await Promise.all([
-        requireOrganization(slug),
-        resolveModuleFlags(),
-    ]);
+    const { organization, settings, roles } = await requireOrganization(slug);
+    // After the session read: flag evaluation calls `Math.random()`, which prerendering rejects.
+    const moduleFlags = await resolveModuleFlags();
     const organizationId = organization.id;
 
     // Prefetch exactly what the stat cards will read — each gated on the same permission as
