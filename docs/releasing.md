@@ -55,7 +55,14 @@ sentences plus highlights — the actual PR list gets appended automatically
 (see [Release notes](#release-notes) below). The `/avut-release` skill drafts
 it from the commit range.
 
+Review what's shipping for user-facing changes, and add a
+[`content/updates/`](../content/updates/README.md) entry for each one that
+doesn't already have one — that's what users see in the in-app "What's new"
+dialog. It's reviewed, not enforced: not every release has user-facing
+changes, and entries can also land earlier with the feature's own PR.
+
 ```bash
+git add docs/releases/v0.8.md content/updates/   # new files — `commit -a` won't pick them up
 git commit -am "chore(release): v0.8 (Laburnum)"
 git push -u origin release/v0.8
 gh pr create --repo redcloud-nz/avut --base production --head release/v0.8 \
