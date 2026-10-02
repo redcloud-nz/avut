@@ -58,6 +58,7 @@ export function PublicHeader({
                         alt="A.V.U.T."
                         width={96}
                         height={32}
+                        loading="eager"
                         className="h-auto w-24 dark:invert"
                     />
                 </Link>

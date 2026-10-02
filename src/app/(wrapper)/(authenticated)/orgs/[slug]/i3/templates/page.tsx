@@ -9,6 +9,8 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { route } from "@/lib/routes";
+import { requireOrganizationWith } from "@/server/organization-access";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 import { I3Module_CreateTemplate_Dialog } from "./create-template";
 import { I3Module_TemplateList } from "./templates-list";
@@ -21,8 +23,12 @@ export default async function I3Module_TemplateList_Page(
     props: PageProps<"/orgs/[slug]/i3/templates">,
 ) {
     const { slug } = await props.params;
+    const { organization } = await requireOrganizationWith(slug, { i3Template: ["view"] });
+
+    prefetch(trpc.i3.listTemplates.queryOptions({ organizationId: organization.id }));
+
     return (
-        <>
+        <HydrateClient>
             <>
                 <Std.Navbar
                     breadcrumbs={[
@@ -44,6 +50,6 @@ export default async function I3Module_TemplateList_Page(
                     </Saratoga.Root>
                 </Std.ScrollContainer>
             </>
-        </>
+        </HydrateClient>
     );
 }

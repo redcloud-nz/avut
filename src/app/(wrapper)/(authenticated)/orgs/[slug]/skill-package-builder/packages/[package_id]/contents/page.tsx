@@ -11,6 +11,7 @@ import { SkillPackageBuilder_PackageContents_Content } from "@/components/skill-
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { getOrganizationBySlug } from "@/server/cache/organization";
+import { requireOrganizationWith } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/contents`>;
@@ -32,7 +33,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function SkillPackageBuilder_PackageContents_Page(props: Props) {
     const { slug, package_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { skillPackage: ["view"] });
 
     const skillPackageId = SkillPackageId.schema.parse(package_id);
 
