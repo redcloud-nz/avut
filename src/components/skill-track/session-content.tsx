@@ -133,19 +133,6 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                     </DropdownMenuGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button variant="outline" asChild>
-                                <Link
-                                    href={route(
-                                        "/orgs/[slug]/skill-track/sessions/[session_id]/review",
-                                        {
-                                            slug: organization.slug,
-                                            session_id: session.id,
-                                        },
-                                    )}
-                                >
-                                    Review
-                                </Link>
-                            </Button>
                             <SkillsModule_SessionMenu session={session} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
@@ -178,11 +165,6 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                         <DLDetails>
                                             {SKILL_CHECK_STATUS_LABELS[session.status] ??
                                                 session.status}
-                                        </DLDetails>
-
-                                        <DLTerm>Assessor</DLTerm>
-                                        <DLDetails>
-                                            {session.assessors.map((a) => a.name).join(", ") || "—"}
                                         </DLDetails>
                                     </DL>
                                 </CardContent>
