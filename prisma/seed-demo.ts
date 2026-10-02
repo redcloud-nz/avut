@@ -549,7 +549,8 @@ async function createSessions(
                     result,
                     notes: result === "Pass" || result === "StrongPass" ? "" : pick(FAIL_NOTES),
                     status: "Include",
-                    createdAt: when,
+                    checkedAt: when,
+                    recordedAt: when,
                 });
             }
         }

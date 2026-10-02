@@ -9,20 +9,20 @@ import { MessageSquareTextIcon, MoreHorizontalIcon } from "lucide-react";
 
 import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
-import { FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { FieldContent, FieldLabel } from "@/components/ui/field";
 import {
     SKILL_CHECK_FAIL_TIERS,
     SKILL_CHECK_PASS_TIERS,
     type SkillCheckResultOption,
     type SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
+import type { OtherAssessorCheck } from "@/lib/session-checks-sync";
 import { cn } from "@/lib/utils";
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
 
 interface CheckRowProps {
     title: string;
-    description?: string;
     /** The caller's saved check for this row, or null if there isn't one. */
     check: CheckValue | null;
     /**
@@ -39,10 +39,10 @@ interface CheckRowProps {
     /** Opens the host's `SkillTrack_RecordCheckDialog` for this row. */
     onOpenDialog: () => void;
     /**
-     * Read-only: the saved result still shows, but every button is disabled (an approved session
-     * can't be written to until it's reopened).
+     * The other assessors' live checks on this (assessee, skill) pair (from
+     * `otherAssessorChecks`), shown as "Also checked by …" under the title. Never the caller's own.
      */
-    disabled?: boolean;
+    otherChecks?: OtherAssessorCheck[];
 }
 
 const QUICK_BUTTONS = [
@@ -65,12 +65,13 @@ const QUICK_BUTTONS = [
  *   buttons. `More` opens the dialog, which records any result, notes, or deletes.
  *
  * While a write is pending the row shows the pending value dimmed, with its buttons disabled, so
- * two writes to one check can't reorder. With `disabled` the row shows its saved result and every
- * button, `More` included, is disabled.
+ * two writes to one check can't reorder.
+ *
+ * With `otherChecks`, an "Also checked by Jane (Competent), …" line goes under the title, using the
+ * org's result labels.
  */
 export function SkillTrack_CheckRow({
     title,
-    description,
     check,
     pending,
     resultOptions,
@@ -78,7 +79,7 @@ export function SkillTrack_CheckRow({
     onRecord,
     onRemove,
     onOpenDialog,
-    disabled = false,
+    otherChecks,
 }: CheckRowProps) {
     const isPending = pending !== undefined;
     const shownResult = isPending ? pending : (check?.result ?? null);
@@ -91,6 +92,12 @@ export function SkillTrack_CheckRow({
     });
     const showsLabel =
         shownResult !== null && !buttons.some((button) => button.result === shownResult);
+
+    const alsoCheckedBy = otherChecks?.length
+        ? `Also checked by ${otherChecks
+              .map(({ assessorName, result }) => `${assessorName} (${resultLabel(result)})`)
+              .join(", ")}`
+        : null;
 
     function handleTap(result: SkillCheckResultValue) {
         if (result !== shownResult) {
@@ -105,10 +112,10 @@ export function SkillTrack_CheckRow({
 
     return (
         <div className="flex items-center gap-2">
-            {description ? (
+            {alsoCheckedBy ? (
                 <FieldContent className="grow">
                     <FieldLabel>{title}</FieldLabel>
-                    <FieldDescription>{description}</FieldDescription>
+                    <p className="text-xs text-muted-foreground">{alsoCheckedBy}</p>
                 </FieldContent>
             ) : (
                 <FieldLabel className="grow">{title}</FieldLabel>
@@ -140,7 +147,7 @@ export function SkillTrack_CheckRow({
                                 size="icon"
                                 aria-label={ariaLabel}
                                 aria-pressed={active}
-                                disabled={isPending || disabled}
+                                disabled={isPending}
                                 onClick={() => handleTap(result)}
                             >
                                 <SkillCheckResultIcon result={result} />
@@ -153,7 +160,7 @@ export function SkillTrack_CheckRow({
                     variant="ghost"
                     size="icon"
                     aria-label="More options"
-                    disabled={isPending || disabled}
+                    disabled={isPending}
                     onClick={onOpenDialog}
                 >
                     <MoreHorizontalIcon />

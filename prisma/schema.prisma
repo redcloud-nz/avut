@@ -658,8 +658,16 @@ model SkillCheck {
   result         SkillCheckResult
   notes          String
   status         SkillCheckStatus   @default(Draft)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  /// When the assessment happened. Competency expiry, the competency matrix and the reports use it.
+  /// A session check takes the session's date (set by `setSessionSkillCheck`, re-stamped when the
+  /// session's date changes); a standalone check takes the time it was created. No default, so
+  /// every writer has to set it.
+  checkedAt      DateTime
+  /// When an assessor last recorded or removed the check: the session checks sync cursor and the
+  /// Recent checks time. Set explicitly by every assessor write (create, update, record, and the
+  /// tombstone writes). Deliberately not `@updatedAt`: approve, reopen, exclusions and the Rubbish
+  /// bin purge leave it alone.
+  recordedAt     DateTime           @default(now())
 
   @@unique([assesseeId, assessorId, sessionId, skillId])
   @@index([organizationId])

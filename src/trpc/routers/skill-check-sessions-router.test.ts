@@ -12,7 +12,7 @@ import type { Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
-import { SkillCheckId } from "@/lib/schemas/skill-check";
+import { SESSION_CHECKS_LOOKBACK_MS, SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
@@ -55,6 +55,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
         approvedSession: SkillCheckSessionId.create(),
         approvedCheck: SkillCheckId.create(),
     };
+    const SESSION_DATE = new Date("2026-03-14T00:00:00.000Z");
 
     const db = createMockPrisma();
 
@@ -128,8 +129,8 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 organizationId: T.org,
                 name: "Session",
                 sessionNumber: 1,
-                startsAt: new Date(),
-                endsAt: new Date(),
+                startsAt: SESSION_DATE,
+                endsAt: SESSION_DATE,
                 notes: "",
                 assessors: {
                     connect: [{ id: T.assessorPerson }, { id: T.secondAssessorPerson }],
@@ -149,6 +150,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 skillId: T.skill2,
                 result: "Fail",
                 notes: "Second assessor's check",
+                checkedAt: new Date(),
             },
         });
 
@@ -180,6 +182,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 result: "Pass",
                 notes: "",
                 status: "Include",
+                checkedAt: new Date(),
             },
         });
     });
@@ -341,6 +344,69 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             expect(after.updatedAt.getTime()).toBeGreaterThan(before.updatedAt.getTime());
         });
 
+        it("stamps checkedAt with the session's date and recordedAt with now, on create and update", async () => {
+            const caller = makeCaller(T.assessorUser);
+            const first = new Date("2026-10-01T09:00:00.000Z");
+            const second = new Date("2026-10-01T09:05:00.000Z");
+            vi.useFakeTimers({ now: first, toFake: ["Date"] });
+            try {
+                const created = await caller.setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill1,
+                    result: "Pass",
+                    notes: "",
+                });
+                expect(created.checkedAt).toBe(SESSION_DATE.toISOString());
+                expect(created.recordedAt).toBe(first.toISOString());
+
+                vi.setSystemTime(second);
+                const updated = await caller.setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill1,
+                    result: "Fail",
+                    notes: "",
+                });
+                expect(updated.id).toBe(created.id);
+                expect(updated.checkedAt).toBe(SESSION_DATE.toISOString());
+                expect(updated.recordedAt).toBe(second.toISOString());
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it("refuses with CONFLICT when the session's date moved after it was read", async () => {
+            // Fake a date change committing between the up-front read and the write: the read
+            // sees the session's old date, so the lock's `startsAt` condition misses.
+            const staleDate = new Date("2026-03-01T00:00:00.000Z");
+            const findUnique = db.skillCheckSession.findUnique.bind(db.skillCheckSession);
+            const findSpy = vi
+                .spyOn(db.skillCheckSession, "findUnique")
+                .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => ({
+                    ...(await findUnique(args)),
+                    startsAt: staleDate,
+                })) as unknown as typeof findUnique);
+            const updateSpy = vi.spyOn(db.skillCheckSession, "update");
+            try {
+                await expect(
+                    makeCaller(T.assessorUser).setSessionSkillCheck({
+                        ...target,
+                        skillId: T.skill2,
+                        result: "Fail",
+                        notes: "Old date",
+                    }),
+                ).rejects.toMatchObject({
+                    code: "CONFLICT",
+                    message: expect.stringContaining("changed since you opened it"),
+                });
+                expect(updateSpy.mock.calls[0][0].where).toMatchObject({ startsAt: staleDate });
+            } finally {
+                findSpy.mockRestore();
+                updateSpy.mockRestore();
+            }
+            // No assertion on the checks: prisma-mock doesn't roll back an array `$transaction`
+            // when one of its statements rejects, as Postgres does.
+        });
+
         it("reports a session approved after the lock check (P2025) as CONFLICT", async () => {
             const restore = fakeLostApprovalRace();
             try {
@@ -386,7 +452,13 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             });
 
             const result = await caller.deleteSessionSkillCheck({ ...target, skillId: T.skill2 });
-            expect(result).toEqual({ deleted: true });
+            expect(result).toEqual({
+                deleted: true,
+                check: expect.objectContaining({ id: recorded.id, status: "Deleted" }),
+            });
+            expect(new Date(result.check!.recordedAt).getTime()).toBeGreaterThanOrEqual(
+                new Date(recorded.recordedAt).getTime(),
+            );
 
             const remaining = await db.skillCheck.findMany({
                 where: { sessionId: T.session, assesseeId: T.assessee, skillId: T.skill2 },
@@ -405,7 +477,36 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             // Nothing live is left on the caller's key, so a second delete finds nothing.
             expect(await caller.deleteSessionSkillCheck({ ...target, skillId: T.skill2 })).toEqual({
                 deleted: false,
+                check: null,
             });
+        });
+
+        it("moves the tombstone's recordedAt and leaves its checkedAt", async () => {
+            const caller = makeCaller(T.assessorUser);
+            const recordTime = new Date("2026-10-01T10:00:00.000Z");
+            const deleteTime = new Date("2026-10-01T10:05:00.000Z");
+            vi.useFakeTimers({ now: recordTime, toFake: ["Date"] });
+            try {
+                await caller.setSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill2,
+                    result: "Pass",
+                    notes: "",
+                });
+
+                vi.setSystemTime(deleteTime);
+                const { check } = await caller.deleteSessionSkillCheck({
+                    ...target,
+                    skillId: T.skill2,
+                });
+                expect(check).toMatchObject({
+                    status: "Deleted",
+                    checkedAt: SESSION_DATE.toISOString(),
+                    recordedAt: deleteTime.toISOString(),
+                });
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it("returns deleted: false when the caller has no check to delete", async () => {
@@ -414,7 +515,7 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                 skillId: T.skill2,
             });
 
-            expect(result).toEqual({ deleted: false });
+            expect(result).toEqual({ deleted: false, check: null });
         });
 
         it("rejects a user who is not an assigned assessor with FORBIDDEN", async () => {
@@ -782,6 +883,7 @@ describe("skillCheckSessions reads ignore Deleted checks", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -1148,6 +1250,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                 skillId: T.skill,
                 result: "Pass",
                 notes: "",
+                checkedAt: new Date(),
             },
         });
     });
@@ -1257,14 +1360,230 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
     });
 
     describe("updateSession", () => {
-        it("still edits an approved session's name, date and notes", async () => {
-            const { updated } = await makeCaller().updateSession({
+        it("still edits an approved session's name and notes", async () => {
+            const existing = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.approvedSession },
+            });
+
+            const { updated, dateChanged } = await makeCaller().updateSession({
                 organizationId: T.org,
                 skillCheckSessionId: T.approvedSession,
-                update: { name: "Renamed", date: new Date().toISOString(), notes: "After" },
+                update: { name: "Renamed", date: existing.startsAt!.toISOString(), notes: "After" },
             });
 
             expect(updated).toMatchObject({ name: "Renamed", notes: "After", status: "Include" });
+            expect(dateChanged).toBe(false);
+        });
+
+        it("refuses a date change on an approved session with CONFLICT", async () => {
+            await expect(
+                makeCaller().updateSession({
+                    organizationId: T.org,
+                    skillCheckSessionId: T.approvedSession,
+                    update: {
+                        name: "Renamed",
+                        date: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                        notes: "After",
+                    },
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+        });
+
+        it("reports a date change on a session approved after the pre-check (P2025) as CONFLICT", async () => {
+            // prisma-mock can't interleave a concurrent approval, so fake the lost race's error.
+            const spy = vi
+                .spyOn(db.skillCheckSession, "update")
+                .mockRejectedValueOnce(
+                    Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+                );
+            try {
+                await expect(
+                    makeCaller().updateSession({
+                        organizationId: T.org,
+                        skillCheckSessionId: T.racedSession,
+                        update: {
+                            name: "Session 4",
+                            date: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                            notes: "",
+                        },
+                    }),
+                ).rejects.toMatchObject({ code: "CONFLICT" });
+            } finally {
+                spy.mockRestore();
+            }
+        });
+    });
+});
+
+describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
+    // Dataset:
+    //   session      → Draft, dated SESSION_DATE; liveCheck (Pending) + deadCheck (Deleted),
+    //                  both recorded RECORDED_AT
+    //   otherSession → Draft, dated SESSION_DATE; otherCheck, which no edit of session touches
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        person: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skillA: SkillId.create(),
+        skillB: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+        liveCheck: SkillCheckId.create(),
+        deadCheck: SkillCheckId.create(),
+        otherSession: SkillCheckSessionId.create(),
+        otherCheck: SkillCheckId.create(),
+    };
+    const SESSION_DATE = new Date("2026-03-14T00:00:00.000Z");
+    const NEW_DATE = new Date("2026-04-02T00:00:00.000Z");
+    const RECORDED_AT = new Date("2026-03-14T09:30:00.000Z");
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Test Org", slug: T.org, createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Person",
+                email: `${T.person}@example.com`,
+            },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const id of [T.skillA, T.skillB]) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name: id,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+        for (const [id, sessionNumber] of [
+            [T.session, 1],
+            [T.otherSession, 2],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Session ${sessionNumber}`,
+                    sessionNumber,
+                    status: "Draft",
+                    startsAt: SESSION_DATE,
+                    endsAt: SESSION_DATE,
+                    notes: "",
+                },
+            });
+        }
+        for (const [id, sessionId, skillId, status] of [
+            [T.liveCheck, T.session, T.skillA, "Pending"],
+            [T.deadCheck, T.session, T.skillB, "Deleted"],
+            [T.otherCheck, T.otherSession, T.skillA, "Pending"],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId,
+                    assesseeId: T.person,
+                    assessorId: T.person,
+                    skillId,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                    checkedAt: SESSION_DATE,
+                    recordedAt: RECORDED_AT,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], skillCheckSession: ["update"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function checkStamps() {
+        const rows = await db.skillCheck.findMany({
+            where: { id: { in: [T.liveCheck, T.deadCheck, T.otherCheck] } },
+        });
+        return Object.fromEntries(
+            rows.map((row) => [
+                row.id,
+                {
+                    checkedAt: row.checkedAt.toISOString(),
+                    recordedAt: row.recordedAt.toISOString(),
+                },
+            ]),
+        );
+    }
+
+    it("leaves checkedAt alone on a name-only edit", async () => {
+        const { dateChanged } = await makeCaller().updateSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            update: { name: "Renamed", date: SESSION_DATE.toISOString(), notes: "" },
+        });
+
+        expect(dateChanged).toBe(false);
+        const stamps = await checkStamps();
+        for (const id of [T.liveCheck, T.deadCheck, T.otherCheck]) {
+            expect(stamps[id]).toEqual({
+                checkedAt: SESSION_DATE.toISOString(),
+                recordedAt: RECORDED_AT.toISOString(),
+            });
+        }
+    });
+
+    it("moves every check's checkedAt on a date edit, tombstones included, and no recordedAt", async () => {
+        const { updated, dateChanged } = await makeCaller().updateSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            update: { name: "Renamed", date: NEW_DATE.toISOString(), notes: "" },
+        });
+
+        expect(dateChanged).toBe(true);
+        expect(updated.date).toBe(NEW_DATE.toISOString());
+        const stamps = await checkStamps();
+        for (const id of [T.liveCheck, T.deadCheck]) {
+            expect(stamps[id]).toEqual({
+                checkedAt: NEW_DATE.toISOString(),
+                recordedAt: RECORDED_AT.toISOString(),
+            });
+        }
+        expect(stamps[T.otherCheck]).toEqual({
+            checkedAt: SESSION_DATE.toISOString(),
+            recordedAt: RECORDED_AT.toISOString(),
         });
     });
 });
@@ -1298,6 +1617,7 @@ describe("skillCheckSessions tombstones", () => {
         doomedDeadCheck: SkillCheckId.create(),
     };
     const aYearAgo = new Date("2025-09-30T00:00:00.000Z");
+    const sessionDate = new Date("2026-09-01T00:00:00.000Z");
 
     const db = createMockPrisma();
 
@@ -1369,8 +1689,8 @@ describe("skillCheckSessions tombstones", () => {
                     organizationId: T.org,
                     name: `Session ${sessionNumber}`,
                     sessionNumber,
-                    startsAt: new Date(),
-                    endsAt: new Date(),
+                    startsAt: sessionDate,
+                    endsAt: sessionDate,
                     notes: "",
                     assessors: { connect: [{ id: T.assessor }] },
                     assessees: { connect: [{ id: T.assessee }] },
@@ -1398,7 +1718,8 @@ describe("skillCheckSessions tombstones", () => {
                     result: "Pass",
                     notes: "Old notes",
                     status,
-                    createdAt: aYearAgo,
+                    checkedAt: aYearAgo,
+                    recordedAt: aYearAgo,
                 },
             });
         }
@@ -1424,7 +1745,7 @@ describe("skillCheckSessions tombstones", () => {
         assesseeId: T.assessee,
     };
 
-    it("re-recording over a tombstone revives the same row as Draft with a new createdAt", async () => {
+    it("re-recording over a tombstone revives the same row as Draft, re-stamped", async () => {
         const revived = await makeCaller().setSessionSkillCheck({
             ...target,
             skillId: T.skillB,
@@ -1438,10 +1759,11 @@ describe("skillCheckSessions tombstones", () => {
             result: "Fail",
             notes: "Again",
         });
-        expect(new Date(revived.createdAt).getTime()).toBeGreaterThan(aYearAgo.getTime());
+        expect(revived.checkedAt).toBe(sessionDate.toISOString());
+        expect(new Date(revived.recordedAt).getTime()).toBeGreaterThan(aYearAgo.getTime());
     });
 
-    it("re-recording over a live Pending check makes it Draft and keeps its createdAt", async () => {
+    it("re-recording over a live Pending check makes it Draft, re-stamped", async () => {
         const updated = await makeCaller().setSessionSkillCheck({
             ...target,
             skillId: T.skillA,
@@ -1450,7 +1772,8 @@ describe("skillCheckSessions tombstones", () => {
         });
 
         expect(updated).toMatchObject({ id: T.pendingCheck, status: "Draft", result: "Fail" });
-        expect(updated.createdAt).toBe(aYearAgo.toISOString());
+        expect(updated.checkedAt).toBe(sessionDate.toISOString());
+        expect(new Date(updated.recordedAt).getTime()).toBeGreaterThan(aYearAgo.getTime());
     });
 
     it("deleting and re-recording a check brings back the same row", async () => {
@@ -1464,6 +1787,7 @@ describe("skillCheckSessions tombstones", () => {
 
         expect(await caller.deleteSessionSkillCheck({ ...target, skillId: T.skillC })).toEqual({
             deleted: true,
+            check: expect.objectContaining({ id: recorded.id, status: "Deleted" }),
         });
         const again = await caller.setSessionSkillCheck({
             ...target,
@@ -1480,7 +1804,7 @@ describe("skillCheckSessions tombstones", () => {
         // `checksAsOf` covers it, so the purge takes it rather than the guard tripping on it.
         await db.skillCheck.update({
             where: { id: T.deadCheck },
-            data: { updatedAt: new Date(Date.now() + 1000) },
+            data: { recordedAt: new Date(Date.now() + 1000) },
         });
 
         await makeCaller().approveSession({
@@ -1612,6 +1936,7 @@ describe("skillCheckSessions.reopenSession", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -1630,6 +1955,16 @@ describe("skillCheckSessions.reopenSession", () => {
     async function checkStatuses() {
         const rows = await db.skillCheck.findMany({ where: { sessionId: T.approvedSession } });
         return Object.fromEntries(rows.map((row) => [row.id, row.status]));
+    }
+
+    async function checkStamps() {
+        const rows = await db.skillCheck.findMany({ where: { sessionId: T.approvedSession } });
+        return Object.fromEntries(
+            rows.map(({ id, checkedAt, recordedAt }) => [
+                id,
+                { checkedAt: checkedAt.toISOString(), recordedAt: recordedAt.toISOString() },
+            ]),
+        );
     }
 
     it("refuses a Draft session with CONFLICT", async () => {
@@ -1671,6 +2006,9 @@ describe("skillCheckSessions.reopenSession", () => {
 
     it("moves the session to Draft and its Include checks to Pending, leaving Exclude, logs Reopen, and lets it be approved again", async () => {
         const caller = makeCaller();
+        const stampsBefore = await checkStamps();
+        await new Promise((resolve) => setTimeout(resolve, 5));
+
         const { updated } = await caller.reopenSession({
             organizationId: T.org,
             skillCheckSessionId: T.approvedSession,
@@ -1693,6 +2031,8 @@ describe("skillCheckSessions.reopenSession", () => {
             },
         });
         expect(entries).toHaveLength(1);
+        // Reopen moves neither stamp: they belong to the assessors' writes.
+        expect(await checkStamps()).toEqual(stampsBefore);
 
         // Swap the saved decisions, then approve them.
         await caller.updateCheckExclusions({
@@ -1714,6 +2054,8 @@ describe("skillCheckSessions.reopenSession", () => {
             [T.includedCheck]: "Exclude",
             [T.excludedCheck]: "Include",
         });
+        // Nor do the exclusions or the approval.
+        expect(await checkStamps()).toEqual(stampsBefore);
     });
 });
 
@@ -1866,6 +2208,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -1975,7 +2318,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             args: Parameters<typeof findMany>[0],
         ) => {
             const rows = await findMany(args);
-            // Let the clock move on, so the interleaved write's `updatedAt` is later than any
+            // Let the clock move on, so the interleaved write's `recordedAt` is later than any
             // the comparison read, as it would be for a request that comes after.
             await new Promise((resolve) => setTimeout(resolve, 5));
             await between();
@@ -2014,7 +2357,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             // What `setSessionSkillCheck` does to an existing check: a new result, back to Draft.
             db.skillCheck.update({
                 where: { id: T.recordOther },
-                data: { result: "Fail", status: "Draft", updatedAt: new Date(Date.now() + 1000) },
+                data: { result: "Fail", status: "Draft", recordedAt: new Date(Date.now() + 1000) },
             }),
         );
         try {
@@ -2040,7 +2383,7 @@ describe("skillCheckSessions.approveSession saved state and conflicts", () => {
             // the refusal here comes from the final guard.
             db.skillCheck.update({
                 where: { id: T.deletePick },
-                data: { status: "Deleted", updatedAt: new Date(Date.now() + 1000) },
+                data: { status: "Deleted", recordedAt: new Date(Date.now() + 1000) },
             }),
         );
         try {
@@ -2178,6 +2521,7 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
                     result: "Pass",
                     notes: "",
                     status,
+                    checkedAt: new Date(),
                 },
             });
         }
@@ -2315,5 +2659,280 @@ describe("skillCheckSessions.updateCheckExclusions", () => {
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
 
         expect((await checkStatuses(T.draftSession))[T.draftCheck]).toBe("Draft");
+    });
+});
+
+describe("skillCheckSessions.listSessionChecks", () => {
+    // Dataset (T0 = 2026-01-01T00:00:00Z; the clock is frozen at T0 + 120s):
+    //   session         → Draft, with
+    //     liveCheck     → (assessee, skill1, jane), Draft, recorded T0
+    //     purgedCheck   → (assessee, skill1, purged assessor "Purged Person"), Draft, recorded T0 + 30s
+    //     deletedCheck  → (assessee, skill2, bob), Deleted, recorded T0 + 60s
+    //   approvedSession → Include, no checks
+    //   otherOrgSession → a session in another organization
+    const T0 = new Date("2026-01-01T00:00:00.000Z").getTime();
+    const NOW = T0 + 120_000;
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        assessee: PersonId.create(),
+        jane: PersonId.create(),
+        bob: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill1: SkillId.create(),
+        skill2: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+        approvedSession: SkillCheckSessionId.create(),
+        otherOrgSession: SkillCheckSessionId.create(),
+        liveCheck: SkillCheckId.create(),
+        purgedCheck: SkillCheckId.create(),
+        deletedCheck: SkillCheckId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: "Test Org", slug: id, createdAt: new Date() },
+            });
+        }
+
+        for (const [id, name] of [
+            [T.assessee, "Assessee"],
+            [T.jane, "Jane"],
+            [T.bob, "Bob"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com` },
+            });
+        }
+
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [T.skill1, "Skill 1"],
+            [T.skill2, "Skill 2"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+
+        for (const [id, organizationId, sessionNumber, status] of [
+            [T.session, T.org, 1, "Draft"],
+            [T.approvedSession, T.org, 2, "Include"],
+            [T.otherOrgSession, T.otherOrg, 1, "Draft"],
+        ] as const) {
+            await db.skillCheckSession.create({
+                data: {
+                    id,
+                    organizationId,
+                    name: "Session",
+                    sessionNumber,
+                    status,
+                    startsAt: new Date(),
+                    notes: "",
+                },
+            });
+        }
+
+        for (const [id, skillId, assessorId, assessorLabel, status, offset] of [
+            [T.liveCheck, T.skill1, T.jane, null, "Draft", 0],
+            [T.purgedCheck, T.skill1, null, "Purged Person", "Draft", 30_000],
+            [T.deletedCheck, T.skill2, T.bob, null, "Deleted", 60_000],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId: T.session,
+                    assesseeId: T.assessee,
+                    skillId,
+                    assessorId,
+                    assessorLabel,
+                    result: "Pass",
+                    notes: "",
+                    status,
+                    checkedAt: new Date(T0 + offset),
+                    recordedAt: new Date(T0 + offset),
+                },
+            });
+        }
+    });
+
+    beforeEach(() => {
+        vi.useFakeTimers({ now: NOW, toFake: ["Date"] });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    function makeCaller(
+        permissions: Permissions = {
+            organization: ["view"],
+            skillCheckSession: ["view"],
+            skillCheck: ["view"],
+        },
+    ) {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.user }, permissions, prisma: db }),
+        );
+    }
+
+    const iso = (ms: number) => new Date(ms).toISOString();
+
+    it("returns every check without since, Deleted ones included", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        expect(Object.fromEntries(checks.map((c) => [c.id, c.status]))).toEqual({
+            [T.liveCheck]: "Draft",
+            [T.purgedCheck]: "Draft",
+            [T.deletedCheck]: "Deleted",
+        });
+    });
+
+    it("carries the assessee's, skill's and assessor's names", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+        const byId = new Map(checks.map((c) => [c.id, c]));
+
+        expect(byId.get(T.liveCheck)).toMatchObject({
+            assesseeName: "Assessee",
+            skillName: "Skill 1",
+            assessorName: "Jane",
+            recordedAt: iso(T0),
+        });
+        expect(byId.get(T.deletedCheck)).toMatchObject({
+            skillName: "Skill 2",
+            assessorName: "Bob",
+        });
+    });
+
+    it("falls back to assessorLabel for a purged assessor", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        expect(checks.find((c) => c.id === T.purgedCheck)).toMatchObject({
+            assessorId: null,
+            assessorName: "Purged Person",
+        });
+    });
+
+    it("returns only checks recorded after since", async () => {
+        const { checks } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            since: iso(T0 + 30_000),
+        });
+
+        // Strictly after: the check stamped exactly at since is left out.
+        expect(checks.map((c) => c.id)).toEqual([T.deletedCheck]);
+    });
+
+    it("sets the cursor to the read's start less the lookback without since", async () => {
+        const { cursor } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+
+        expect(cursor).toBe(iso(NOW - SESSION_CHECKS_LOOKBACK_MS));
+    });
+
+    it("advances the cursor past an older since", async () => {
+        const { cursor } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            since: iso(T0),
+        });
+
+        expect(cursor).toBe(iso(NOW - SESSION_CHECKS_LOOKBACK_MS));
+    });
+
+    it("never moves the cursor earlier than since", async () => {
+        const since = iso(NOW - SESSION_CHECKS_LOOKBACK_MS / 2);
+        const { checks, cursor } = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            since,
+        });
+
+        expect(checks).toEqual([]);
+        expect(cursor).toBe(since);
+    });
+
+    it("returns the session's status", async () => {
+        const draft = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+        });
+        const approved = await makeCaller().listSessionChecks({
+            organizationId: T.org,
+            skillCheckSessionId: T.approvedSession,
+        });
+
+        expect(draft.sessionStatus).toBe("Draft");
+        expect(approved).toMatchObject({ checks: [], sessionStatus: "Include" });
+    });
+
+    it("throws NOT_FOUND for another organization's session", async () => {
+        await expect(
+            makeCaller().listSessionChecks({
+                organizationId: T.org,
+                skillCheckSessionId: T.otherOrgSession,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("throws FORBIDDEN without skillCheck:view", async () => {
+        await expect(
+            makeCaller({ organization: ["view"], skillCheckSession: ["view"] }).listSessionChecks({
+                organizationId: T.org,
+                skillCheckSessionId: T.session,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("throws FORBIDDEN without skillCheckSession:view", async () => {
+        await expect(
+            makeCaller({ organization: ["view"], skillCheck: ["view"] }).listSessionChecks({
+                organizationId: T.org,
+                skillCheckSessionId: T.session,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });

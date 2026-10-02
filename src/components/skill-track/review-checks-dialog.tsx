@@ -230,7 +230,7 @@ function CheckRow({
                 </div>
                 <div className="text-muted-foreground">
                     {assessorDisplayName({ assessor, assessorLabel: check.assessorLabel })} ·{" "}
-                    {formatDateTime(check.createdAt)}
+                    {formatDateTime(check.recordedAt)}
                     {inConflict && " · picked in Conflicts"}
                 </div>
                 {check.notes && (
