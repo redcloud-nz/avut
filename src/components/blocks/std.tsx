@@ -61,7 +61,7 @@ function Breadcrumbs({ breadcrumbs = [] }: BreadcrumbsProps) {
     const primary = ancestors.findLast((breadcrumb) => breadcrumb.href);
 
     return (
-        <Breadcrumb className="px-2">
+        <Breadcrumb className="px-2 max-md:min-w-0">
             <BreadcrumbList className="flex-nowrap">
                 {primary?.href && (
                     <BreadcrumbItem className="min-w-0 md:hidden">
