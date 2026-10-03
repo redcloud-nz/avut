@@ -101,7 +101,9 @@ const nextConfig: NextConfig = {
                 destination: "/system/admin/:path*",
                 permanent: true,
             },
-            { source: "/user-settings", destination: "/user/profile", permanent: true },
+            { source: "/user-settings", destination: "/user/settings/account", permanent: true },
+            // The `/user/settings` index page was retired; its pages are linked from the user menu.
+            { source: "/user/settings", destination: "/user/settings/account", permanent: true },
             // Invitation emails already sent link to the old accept route.
             {
                 source: "/auth/accept-invitation/:invitation_id",

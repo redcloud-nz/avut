@@ -12,9 +12,7 @@ import { UserSettings_Account } from "@/components/user/user-settings/user-accou
 export default async function UserSettings_Account_Page() {
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "Account"]}
-            />
+            <Std.Navbar breadcrumbs={["User Settings", "Account"]} />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>

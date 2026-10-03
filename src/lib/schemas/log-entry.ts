@@ -222,7 +222,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     TeamMembership: "org-admin",
     User: null,
     UserNote: "user-notes",
-    UserSettings: "profile",
+    UserSettings: null,
 };
 
 /** The module an entry about this kind of object belongs to, or null for account entities. */

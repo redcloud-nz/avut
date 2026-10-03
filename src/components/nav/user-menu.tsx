@@ -12,7 +12,12 @@ import { toast } from "sonner";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useSignOut } from "@/client/use-sign-out";
-import { PersonalSettingsIcon } from "@/components/icons";
+import {
+    PersonalD4HAccessTokensIcon,
+    PersonalProfileIcon,
+    PersonalSettingsIcon,
+    SwitchOrganizationIcon,
+} from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     DropdownMenu,
@@ -106,17 +111,35 @@ export function UserMenu() {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuLabel>Personal</DropdownMenuLabel>
+                            <DropdownMenuLabel>User Settings</DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href="/user/settings">
-                                    <PersonalSettingsIcon />
-                                    <span>Settings</span>
+                                <Link href="/user/settings/account">
+                                    <PersonalProfileIcon />
+                                    <span>Account</span>
                                 </Link>
                             </DropdownMenuItem>
-                            <WhatsNewMenuItem />
+                            <DropdownMenuItem asChild>
+                                <Link href="/user/settings/organizations">
+                                    <SwitchOrganizationIcon />
+                                    <span>Organisations</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/user/settings/d4h">
+                                    <PersonalD4HAccessTokensIcon />
+                                    <span>D4H</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/user/settings/preferences">
+                                    <PersonalSettingsIcon />
+                                    <span>Preferences</span>
+                                </Link>
+                            </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
+                            <WhatsNewMenuItem />
                             <DropdownMenuItem onClick={handleSignOut}>
                                 <LogOutIcon />
                                 <span>Sign Out</span>

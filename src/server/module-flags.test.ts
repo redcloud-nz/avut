@@ -39,7 +39,7 @@ describe("resolveUserModuleFlags", () => {
 
         const resolved = await resolveUserModuleFlags();
 
-        expect(resolved).toEqual({ "user-dashboard": true, profile: true, "user-notes": false });
+        expect(resolved).toEqual({ "user-dashboard": true, "user-notes": false });
         // The org Notes module shares the flag.
         await expect(resolveModuleFlags()).resolves.toMatchObject({ notes: false });
     });

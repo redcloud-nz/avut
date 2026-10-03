@@ -11,7 +11,6 @@ import {
     PocketKnifeIcon,
     ShieldIcon,
     ShirtIcon,
-    UserIcon,
     WrenchIcon,
     type LucideIcon,
 } from "lucide-react";
@@ -37,7 +36,7 @@ export type OrganizationModuleId =
     | "skill-package-builder";
 
 /** Identifier for a user-scoped module (lives under `/user/…`), always available. */
-export type UserModuleId = "profile" | "user-dashboard" | "user-notes";
+export type UserModuleId = "user-dashboard" | "user-notes";
 
 /** Identifier for a site-wide module (lives under `/system/…`, gated on the Better Auth `admin` role). */
 export type SystemModuleId = "system-admin";
@@ -168,15 +167,6 @@ export const Modules = {
         alwaysOn: true,
         scope: "user",
         href: () => "/user/notes",
-    },
-    profile: {
-        id: "profile",
-        label: "User Settings",
-        icon: UserIcon,
-        segment: "settings",
-        alwaysOn: true,
-        scope: "user",
-        href: () => "/user/settings",
     },
     "system-admin": {
         id: "system-admin",
