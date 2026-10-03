@@ -65,7 +65,7 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "User Settings", href: "/user/settings" },
+                    "User Settings",
                     { label: "D4H", href: "/user/settings/d4h" },
                     "Access Tokens",
                     token.id,

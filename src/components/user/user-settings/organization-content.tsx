@@ -35,7 +35,7 @@ export function UserSettings_OrganizationContent({
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "User Settings", href: "/user/settings" },
+                    "User Settings",
                     { label: "Organisations", href: "/user/settings/organizations" },
                     organization.name,
                 ]}

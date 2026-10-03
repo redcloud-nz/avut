@@ -25,7 +25,7 @@ describe("writeUserSettings", () => {
             ...defaults,
             modules: {
                 ...defaults.modules,
-                profile: { ...defaults.modules.profile, enabled: false },
+                "user-dashboard": { ...defaults.modules["user-dashboard"], enabled: false },
             },
         };
 
@@ -39,7 +39,7 @@ describe("writeUserSettings", () => {
         expect(recorded).toEqual([
             {
                 type: "obj_mod",
-                path: ["modules", "profile", "enabled"],
+                path: ["modules", "user-dashboard", "enabled"],
                 prev: true,
                 curr: false,
             },
@@ -55,17 +55,20 @@ describe("writeUserSettings", () => {
         });
 
         const defaults = UserSettings.default();
-        const withProfile = (enabled: boolean): UserSettings => ({
+        const withDashboard = (enabled: boolean): UserSettings => ({
             ...defaults,
-            modules: { ...defaults.modules, profile: { ...defaults.modules.profile, enabled } },
+            modules: {
+                ...defaults.modules,
+                "user-dashboard": { ...defaults.modules["user-dashboard"], enabled },
+            },
         });
 
-        await writeUserSettings(db, userId, withProfile(false));
+        await writeUserSettings(db, userId, withDashboard(false));
         expect((await db.userConfig.findMany({ where: { userId } })).map((r) => r.key)).toEqual([
-            "modules.profile.enabled",
+            "modules.user-dashboard.enabled",
         ]);
 
-        const reverted = await writeUserSettings(db, userId, withProfile(true));
+        const reverted = await writeUserSettings(db, userId, withDashboard(true));
 
         expect(await db.userConfig.findMany({ where: { userId } })).toEqual([]);
         expect(reverted).toEqual(defaults);
@@ -80,19 +83,19 @@ describe("writeUserSettings", () => {
         });
 
         const defaults = UserSettings.default();
-        const settings = (profile: boolean, dashboard: boolean): UserSettings => ({
+        const settings = (twelveHour: boolean, dashboard: boolean): UserSettings => ({
             ...defaults,
             modules: {
                 "user-dashboard": { ...defaults.modules["user-dashboard"], enabled: dashboard },
-                profile: { ...defaults.modules.profile, enabled: profile },
             },
+            display: { ...defaults.display, timeFormat: twelveHour ? "12-hour" : "24-hour" },
         });
 
-        await writeUserSettings(db, userId, settings(false, false));
         await writeUserSettings(db, userId, settings(true, false));
+        await writeUserSettings(db, userId, settings(false, false));
 
         const records = await db.userConfig.findMany({ where: { userId } });
         expect(records.map((r) => r.key)).toEqual(["modules.user-dashboard.enabled"]);
-        expect(UserSettings.fromRecords(records)).toEqual(settings(true, false));
+        expect(UserSettings.fromRecords(records)).toEqual(settings(false, false));
     });
 });

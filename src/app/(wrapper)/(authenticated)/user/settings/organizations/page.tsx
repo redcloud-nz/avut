@@ -18,9 +18,7 @@ export default async function UserSettings_Organizations_Page() {
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "Organisations"]}
-            />
+            <Std.Navbar breadcrumbs={["User Settings", "Organisations"]} />
             <Std.ScrollContainer>
                 <UserSettings_Organizations_List />
             </Std.ScrollContainer>

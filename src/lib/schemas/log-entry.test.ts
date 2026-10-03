@@ -76,6 +76,7 @@ describe("moduleIdForObjectType", () => {
         expect(moduleIdForObjectType("User")).toBeNull();
         expect(moduleIdForObjectType("Account")).toBeNull();
         expect(moduleIdForObjectType("Session")).toBeNull();
+        expect(moduleIdForObjectType("UserSettings")).toBeNull();
     });
 });
 
