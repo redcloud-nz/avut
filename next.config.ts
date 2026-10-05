@@ -110,6 +110,12 @@ const nextConfig: NextConfig = {
                 destination: "/invitations/:invitation_id",
                 permanent: true,
             },
+            // Organisation settings moved out from under the Organisation page (#353).
+            {
+                source: "/orgs/:slug/admin/organization/settings",
+                destination: "/orgs/:slug/admin/organization-settings",
+                permanent: true,
+            },
         ];
     },
     cacheComponents: true,

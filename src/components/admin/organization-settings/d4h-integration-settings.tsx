@@ -5,124 +5,53 @@
 
 "use client";
 
-import { Controller, useForm, useWatch } from "react-hook-form";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-
-import { useOrganizationSettingsMutation } from "@/components/admin/organization-settings/use-organization-settings-mutation";
-import { Button, MutationButton } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { D4HServerList } from "@/lib/d4h-servers";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
+import { Feature_SettingsCard } from "./feature-settings-card";
+import { SettingRow } from "./setting-row";
+import { OrganizationSettings_UpdateD4HDefaultServer_Dialog } from "./update-d4h-default-server";
+
+const DEFAULT_SERVER_DESCRIPTION = "The D4H region to use by default when connecting to D4H.";
+
+/** The D4H integration: Enable/Disable, and while it's enabled, its default server. */
 export function D4HIntegration_SettingsCard({
     organizationId,
     settings,
+    canEdit,
 }: {
     organizationId: OrganizationId;
     settings: OrganizationSettings;
+    canEdit: boolean;
 }) {
-    const form = useForm({
-        resolver: zodResolver(OrganizationSettings.schema.shape.integrations.shape.d4h),
-        defaultValues: settings.integrations.d4h,
-    });
-
-    const integrationEnabled = useWatch({ control: form.control, name: "enabled" });
-
-    const mutation = useOrganizationSettingsMutation({
-        errorMessage: "Failed to update D4H integration settings",
-        onSaved: (updated) => form.reset(updated.integrations.d4h),
-    });
-
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({ organizationId, update: { slice: "integrations.d4h", patch: formData } });
-    });
+    const { enabled, defaultServer } = settings.integrations.d4h;
+    const serverName =
+        D4HServerList.find((server) => server.code === defaultServer)?.name ?? defaultServer;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>D4H Integration</CardTitle>
-                <CardAction>
-                    <Controller
-                        control={form.control}
-                        name="enabled"
-                        render={({ field }) => (
-                            <Switch
-                                id="d4h-integration-enabled"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <form id="d4h-integration-settings-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            control={form.control}
-                            name="defaultServer"
-                            render={({ field, fieldState }) => (
-                                <Field orientation="responsive" data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="d4h-default-server">
-                                        Default Server
-                                    </FieldLabel>
-                                    <Select
-                                        value={field.value}
-                                        onValueChange={field.onChange}
-                                        disabled={!integrationEnabled}
-                                    >
-                                        <SelectTrigger
-                                            id="d4h-default-server"
-                                            aria-invalid={fieldState.invalid}
-                                        >
-                                            <SelectValue placeholder="Select a server" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {D4HServerList.map((server) => (
-                                                <SelectItem key={server.code} value={server.code}>
-                                                    {server.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
+        <Feature_SettingsCard
+            organizationId={organizationId}
+            canEdit={canEdit}
+            slice="integrations.d4h"
+            enabled={enabled}
+            kind="integration"
+            title="D4H Integration"
+        >
+            <SettingRow
+                title="Default Server"
+                description={DEFAULT_SERVER_DESCRIPTION}
+                value={serverName}
+                action={
+                    canEdit && (
+                        <OrganizationSettings_UpdateD4HDefaultServer_Dialog
+                            organizationId={organizationId}
+                            settings={settings}
+                            description={DEFAULT_SERVER_DESCRIPTION}
                         />
-                    </FieldGroup>
-                </form>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                {form.formState.isDirty && (
-                    <Button variant="ghost" type="button" onClick={() => form.reset()}>
-                        Reset
-                    </Button>
-                )}
-                <MutationButton
-                    form="d4h-integration-settings-form"
-                    status={mutation.status}
-                    text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
-                    disabled={mutation.status !== "idle"}
-                />
-            </CardFooter>
-        </Card>
+                    )
+                }
+            />
+        </Feature_SettingsCard>
     );
 }

@@ -143,8 +143,12 @@ export interface SettingsSlices<TSettings, TIds extends string> {
     ids: readonly TIds[];
     /** The dot path, split — `"integrations.d4h"` → `["integrations", "d4h"]`. */
     pathOf(id: TIds): string[];
-    /** A discriminated union over the slices, for a procedure's `.input()`. */
-    input: z.ZodType<SettingsSlicePatch<TSettings, TIds>>;
+    /**
+     * A discriminated union over the slices, for a procedure's `.input()`. Typed on its input
+     * side too: `z.ZodType`'s input type defaults to `unknown`, which left `mutate` calls and
+     * `meta.effects` variables untyped.
+     */
+    input: z.ZodType<SettingsSlicePatch<TSettings, TIds>, SettingsSlicePatch<TSettings, TIds>>;
 }
 
 /** Walk to the object schema at a dot path, unwrapping any default/optional wrapper. */
@@ -240,6 +244,6 @@ export function defineSettingsSlices<
         input: z.discriminatedUnion(
             "slice",
             options as unknown as [z.ZodObject, z.ZodObject, ...z.ZodObject[]],
-        ) as unknown as z.ZodType<SettingsSlicePatch<z.infer<TSchema>, TIds[number]>>,
+        ) as unknown as SettingsSlices<z.infer<TSchema>, TIds[number]>["input"],
     };
 }

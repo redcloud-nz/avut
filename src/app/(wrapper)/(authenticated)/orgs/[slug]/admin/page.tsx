@@ -79,6 +79,25 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
+                        <Protect permissions={{ organization: ["view"] }}>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/admin/organization-settings", {
+                                        slug,
+                                    })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Organisation Settings</ItemTitle>
+                                        <ItemDescription>
+                                            Configure your organisation&apos;s settings and modules.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
 
                         <Protect permissions={{ person: ["view"] }}>
                             <Item asChild>
