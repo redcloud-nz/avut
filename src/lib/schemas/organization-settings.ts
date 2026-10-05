@@ -21,6 +21,15 @@ const SKILL_TRACK_DEFAULT_ENABLED_RESULTS: readonly SkillCheckResultValue[] = [
     "StrongPass",
 ];
 
+/**
+ * The results an organisation can switch on and relabel. Exempt, Expired, and Provisional exist in
+ * the fixed vocabulary but aren't offered to organizations yet — their semantics aren't settled.
+ * Remove from this list to enable them.
+ */
+export const SKILL_TRACK_CONFIGURABLE_RESULT_VALUES = SKILL_CHECK_RESULT_VALUES.filter(
+    (value) => value !== "Exempt" && value !== "Expired" && value !== "Provisional",
+);
+
 const skillCheckResultConfigSchema = z.object({
     enabled: z.boolean(),
     label: z.string().min(1),

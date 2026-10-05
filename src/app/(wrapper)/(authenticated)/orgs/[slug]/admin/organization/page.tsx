@@ -12,7 +12,7 @@ import { AdminModule_OrganizationMenu } from "@/components/admin/organization/or
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { ObjectIcons, SettingsIcon } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,17 +40,6 @@ export default async function AdminModule_Organization_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>Organisation</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect permissions={{ organization: ["update"] }}>
-                                <Button variant="outline" size="icon" asChild>
-                                    <Link
-                                        href={route("/orgs/[slug]/admin/organization/settings", {
-                                            slug,
-                                        })}
-                                    >
-                                        <SettingsIcon />
-                                    </Link>
-                                </Button>
-                            </Protect>
                             <AdminModule_OrganizationMenu slug={slug} />
                         </Saratoga.Actions>
                     </Saratoga.Header>

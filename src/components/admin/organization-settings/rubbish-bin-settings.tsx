@@ -5,32 +5,17 @@
 
 "use client";
 
-import { Controller, useForm } from "react-hook-form";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-
-import { useOrganizationSettingsMutation } from "@/components/admin/organization-settings/use-organization-settings-mutation";
-import { Button, MutationButton } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-    InputGroupText,
-} from "@/components/ui/input-group";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
     OrganizationSettings,
     RUBBISH_BIN_MAX_RETENTION_DAYS,
 } from "@/lib/schemas/organization-settings";
+
+import { SettingRow } from "./setting-row";
+import { OrganizationSettings_UpdateRubbishBin_Dialog } from "./update-rubbish-bin";
+
+const RETENTION_DESCRIPTION = `Deleted records can be recovered from the Rubbish bin until this many days have passed, then they are permanently deleted. 1 to ${RUBBISH_BIN_MAX_RETENTION_DAYS} days.`;
 
 /**
  * How long a deleted record waits in the Rubbish bin before the daily purge removes it (#298).
@@ -39,23 +24,13 @@ import {
 export function RubbishBin_SettingsCard({
     organizationId,
     settings,
+    canEdit,
 }: {
     organizationId: OrganizationId;
     settings: OrganizationSettings;
+    canEdit: boolean;
 }) {
-    const form = useForm({
-        resolver: zodResolver(OrganizationSettings.schema.shape.rubbishBin),
-        defaultValues: settings.rubbishBin,
-    });
-
-    const mutation = useOrganizationSettingsMutation({
-        errorMessage: "Failed to update Rubbish bin settings",
-        onSaved: (updated) => form.reset(updated.rubbishBin),
-    });
-
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({ organizationId, update: { slice: "rubbishBin", patch: formData } });
-    });
+    const { retentionDays } = settings.rubbishBin;
 
     return (
         <Card>
@@ -63,59 +38,21 @@ export function RubbishBin_SettingsCard({
                 <CardTitle>Rubbish Bin</CardTitle>
             </CardHeader>
             <CardContent>
-                <form id="rubbish-bin-settings-form" onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        <Controller
-                            control={form.control}
-                            name="retentionDays"
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldContent>
-                                        <FieldLabel htmlFor="rubbish-bin-retention-days">
-                                            Keep deleted records for
-                                        </FieldLabel>
-                                        <FieldDescription>
-                                            Deleted records can be recovered from the Rubbish bin
-                                            until this many days have passed, then they are
-                                            permanently deleted. 1 to{" "}
-                                            {RUBBISH_BIN_MAX_RETENTION_DAYS} days.
-                                        </FieldDescription>
-                                    </FieldContent>
-                                    <InputGroup aria-invalid={fieldState.invalid}>
-                                        <InputGroupInput
-                                            id="rubbish-bin-retention-days"
-                                            type="number"
-                                            min={1}
-                                            max={RUBBISH_BIN_MAX_RETENTION_DAYS}
-                                            value={field.value}
-                                            onChange={(ev) =>
-                                                field.onChange(parseInt(ev.currentTarget.value))
-                                            }
-                                        />
-                                        <InputGroupAddon align="inline-end">
-                                            <InputGroupText>days</InputGroupText>
-                                        </InputGroupAddon>
-                                    </InputGroup>
-                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                    </FieldGroup>
-                </form>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                {form.formState.isDirty && (
-                    <Button variant="ghost" type="button" onClick={() => form.reset()}>
-                        Reset
-                    </Button>
-                )}
-                <MutationButton
-                    form="rubbish-bin-settings-form"
-                    status={mutation.status}
-                    text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
-                    disabled={mutation.status !== "idle"}
+                <SettingRow
+                    title="Keep deleted records for"
+                    description={RETENTION_DESCRIPTION}
+                    value={`${retentionDays} ${retentionDays === 1 ? "day" : "days"}`}
+                    action={
+                        canEdit && (
+                            <OrganizationSettings_UpdateRubbishBin_Dialog
+                                organizationId={organizationId}
+                                settings={settings}
+                                description={RETENTION_DESCRIPTION}
+                            />
+                        )
+                    }
                 />
-            </CardFooter>
+            </CardContent>
         </Card>
     );
 }
