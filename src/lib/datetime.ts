@@ -52,7 +52,7 @@ export type DisplayPreferences = UserSettings["display"];
 /**
  * The schema's declared `display` defaults — what a user who never visited Preferences sees.
  * Not a fallback for the formatters, whose `prefs` is required so a call site can't silently
- * ignore the viewer's choice; it's here for the settings preview and tests.
+ * ignore the viewer's choice; tests use it as a baseline to override.
  *
  * Taken from the schema rather than restated, so a change to the declared default of
  * `display.dateFormat`/`display.timeFormat` moves this with it.
