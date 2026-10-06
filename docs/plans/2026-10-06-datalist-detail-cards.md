@@ -58,7 +58,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 1: `DataList`, the `inline` variant and `DataItemDateValue`
 
-- [ ] **Files:** `src/components/ui/data-item.tsx`; new `src/components/ui/data-item-date.tsx`; `src/components/ui/description-list-date.test.tsx` → `src/components/ui/data-item-date.test.tsx` (`git mv`, then edit); `src/components/user/user-settings/{datetime-settings,user-account-settings,user-modules,user-profile}.tsx`.
+- [x] `feat(ui): DataList grid, inline DataItem rows and DataItemDateValue`
+- **Files:** `src/components/ui/data-item.tsx`; new `src/components/ui/data-item-date.tsx`; `src/components/ui/description-list-date.test.tsx` → `src/components/ui/data-item-date.test.tsx` (`git mv`, then edit); `src/components/user/user-settings/{datetime-settings,user-account-settings,user-modules,user-profile}.tsx`.
 - **Do:**
   - Add `DataList` and the `inline` prop, and switch rows to the subgrid layout, as in Decisions.
   - Update the doc comments: drop the reference to `DLActions`/`description-list.tsx`, and describe `inline` and `DataList`.

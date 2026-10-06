@@ -6,7 +6,13 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataItem, DataItemAction, DataItemTitle, DataItemValue } from "@/components/ui/data-item";
+import {
+    DataItem,
+    DataItemAction,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { configurableUserModules } from "@/lib/modules";
 import { UserSettings } from "@/lib/schemas/user-settings";
 
@@ -29,19 +35,21 @@ export function UserSettings_UserModules_Card({ settings }: { settings: UserSett
                 <CardTitle>Modules</CardTitle>
             </CardHeader>
             <CardContent>
-                {configurableUserModules.map((module, index) => (
-                    <DataItem key={module.id}>
-                        <DataItemTitle>{module.label}</DataItemTitle>
-                        <DataItemValue>
-                            {settings.modules[module.id].enabled ? "Enabled" : "Disabled"}
-                        </DataItemValue>
-                        <DataItemAction>
-                            {index === 0 && (
-                                <UserSettings_UpdateUserModules_Dialog settings={settings} />
-                            )}
-                        </DataItemAction>
-                    </DataItem>
-                ))}
+                <DataList>
+                    {configurableUserModules.map((module, index) => (
+                        <DataItem key={module.id}>
+                            <DataItemTitle>{module.label}</DataItemTitle>
+                            <DataItemValue>
+                                {settings.modules[module.id].enabled ? "Enabled" : "Disabled"}
+                            </DataItemValue>
+                            <DataItemAction>
+                                {index === 0 && (
+                                    <UserSettings_UpdateUserModules_Dialog settings={settings} />
+                                )}
+                            </DataItemAction>
+                        </DataItem>
+                    ))}
+                </DataList>
             </CardContent>
         </Card>
     );
