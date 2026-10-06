@@ -95,7 +95,7 @@ The `?help=` sheet shows a short **help card** written for the screen you're on.
 
 ## Out of scope
 
-- **`/avut-docs`.** That skill exists only on `feat/workflow-tuning` (unmerged). Teaching it about help cards is a follow-up on that branch once this lands; note it in the PR body.
+- ~~**`/avut-docs`.**~~ Brought into scope at ship (2026-10-07): `feat/workflow-tuning` merged meanwhile, so `/avut-docs`, `/avut-ship`, `/avut-develop-feature` and `docs/releasing.md` were updated. The user decided help cards are kept current in the feature PR itself, while guides and screenshots stay per milestone.
 - **Rewriting the guides** and the v0.11 items in #366. Content gaps found while writing cards are reported, not fixed.
 - Help for screens that have no `HelpButton` today (user settings, system scope, session entry pages beyond those listed).
 - Showing cards anywhere on the public site.

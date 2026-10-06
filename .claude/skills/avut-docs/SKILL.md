@@ -1,13 +1,15 @@
 ---
 name: avut-docs
-description: Bring the end-user docs (content/docs/** and its screenshots) up to date for a milestone, working through that milestone's "Docs: v<version>" issue, which /avut-ship adds an item to for each user-facing PR. With `consolidate`, only fold the item comments into the issue's checklist. Trigger only when the user types /avut-docs.
+description: Bring the end-user guides (content/docs/** and its screenshots) up to date for a milestone, working through that milestone's "Docs: v<version>" issue, which /avut-ship adds an item to for each user-facing PR. With `consolidate`, only fold the item comments into the issue's checklist. Trigger only when the user types /avut-docs.
 effort: high
 manual: true
 ---
 
 # Docs
 
-End-user docs trail the code on purpose. A feature branch doesn't touch `content/docs/**` or its screenshots, because a screenshot taken mid-feature goes stale with the next UI tweak. Instead, `/avut-ship` posts one item per user-facing PR as a comment on the milestone's docs issue. This skill brings the docs up to date once per milestone, after the milestone's UI has settled and before `/avut-release`. The release's milestone check sees the docs issue still open until this has run.
+End-user guides trail the code on purpose. A feature branch doesn't touch `content/docs/**` or its screenshots, because a screenshot taken mid-feature goes stale with the next UI tweak. Instead, `/avut-ship` posts one item per user-facing PR as a comment on the milestone's docs issue. This skill brings the docs up to date once per milestone, after the milestone's UI has settled and before `/avut-release`. The release's milestone check sees the docs issue still open until this has run.
+
+The in-app help cards (`content/help/**`) are the exception: feature branches keep them current themselves (see `content/README.md`). This pass only checks that the cards for the screens it touches still agree with the guides it rewrites.
 
 `$ARGUMENTS`:
 
@@ -60,9 +62,10 @@ Use a worktree, so the main checkout stays free: `EnterWorktree` with `name: "do
 For each unticked item:
 
 1. **Read what changed:** `gh pr view <PR> --repo redcloud-nz/avut --json title,body,files`. Look at the affected pages on the dev server, in the `demo` org. The current UI is the truth, not the PR, because later PRs may have changed it again.
-2. **Update the MDX** under `content/docs/`, following the conventions of the pages around it (`section`, `order`, `keyTerms` frontmatter). A new page belongs to the section that matches its module id in `src/lib/modules.ts`.
+2. **Update the guide MDX** under `content/docs/`, following the conventions of the pages around it (`section`, `order`, `keyTerms` frontmatter). A new page belongs to the section that matches its module id in `src/lib/modules.ts`.
 3. **Re-shoot the screenshots** the item names, plus any others you see are out of date on the pages you touched. Follow `avut-doc-screenshots`: demo org only, the standard sizes, and the same `id` so existing references keep working.
-4. **Commit** with `docs(<area>): …`, one commit per item or per page group, whichever reads better.
+4. **Check the help cards** whose `guide` points at a page you changed (grep `content/help` for `guide: <slug>`): the anchor still exists, and the card doesn't contradict the guide. Run `npx content-collections build` after renaming any heading, since a card's anchor must still match.
+5. **Commit** with `docs(<area>): …`, one commit per item or per page group, whichever reads better.
 
 Several items often touch the same page. Do them together, so a page is rewritten and shot once.
 
@@ -70,7 +73,7 @@ Tick each item once its commit is in: `node .claude/skills/avut-docs/milestone.t
 
 ### Step 6 — Visual checkpoint
 
-Give the user the local `/docs/...` URLs of every page you changed, on the worktree's port, and the in-app `?help=<slug>` URL of one page, since that renders the same MDX differently. Iterate on feedback without committing each round (as in `/avut-develop-feature`'s visual checkpoints), then commit once.
+Give the user the local `/docs/...` URLs of every page you changed, on the worktree's port. Iterate on feedback without committing each round (as in `/avut-develop-feature`'s visual checkpoints), then commit once.
 
 ### Step 7 — Ship
 

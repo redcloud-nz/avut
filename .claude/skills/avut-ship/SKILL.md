@@ -96,7 +96,7 @@ _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed fro
 
 ## Step 5b — Docs impact
 
-End-user docs (`content/docs/**` and its screenshots) aren't written per feature. Each PR with a user-facing change adds one item to its milestone's docs issue, and `/avut-docs` works through that issue once per milestone.
+End-user guides (`content/docs/**` and its screenshots) aren't written per feature. Each PR with a user-facing change adds one item to its milestone's docs issue, and `/avut-docs` works through that issue once per milestone. Help cards (`content/help/**`) are different: they're updated in the feature branch itself. If the diff changes a screen that has a `<HelpButton>` and its card isn't in the diff, check whether the card still matches, and fix it before Step 6.
 
 1. **Decide the impact.** Use the plan's `Docs impact` line, or what `/avut-develop-feature` handed over. Failing both, judge from the diff whether user-visible behaviour, wording or layout changed. Internal refactors, tests and developer docs have no impact. If there's none, skip the rest of this step.
 2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. The user confirms it in Step 6, alongside everything else.

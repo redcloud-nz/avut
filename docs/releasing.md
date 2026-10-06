@@ -43,8 +43,9 @@ Each minor or major version has a GitHub milestone titled `v<version>`,
 optionally followed by ` - <codename>` (`v0.11`, `v1 - veronica`). Patch
 releases usually have none. Before cutting the release, the milestone's issues
 should all be closed, or moved to the next milestone. That includes its
-`Docs: v<version>` issue. Feature PRs don't write end-user docs (`content/docs/**`
-and its screenshots) themselves. Each user-facing PR adds an item to that issue
+`Docs: v<version>` issue. Feature PRs don't write end-user guides (`content/docs/**`
+and its screenshots) themselves; they do keep the in-app help cards
+(`content/help/**`) current. Each user-facing PR adds an item to that issue
 instead, and `/avut-docs <version>` works through them in one pass once the UI
 has settled, so each screenshot is taken once. `/avut-release` lists any open
 issues in the milestone and asks before going on, and closes the milestone once
