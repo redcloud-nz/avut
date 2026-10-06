@@ -20,7 +20,11 @@ root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 env_file="$root/.env.local"
 [[ -f "$env_file" ]] || { echo "error: $env_file not found" >&2; exit 1; }
 
-url="$(sed -nE 's/^POSTGRES_URL_NON_POOLING="?([^"]*)"?.*/\1/p' "$env_file" | head -n1)"
+line="$(grep -E '^(export[[:space:]]+)?POSTGRES_URL_NON_POOLING=' "$env_file" | head -n1 || true)"
+url="${line#*=}"
+# strip a single layer of surrounding single or double quotes, as print-test-account-password.sh does
+url="${url%\"}"; url="${url#\"}"
+url="${url%\'}"; url="${url#\'}"
 [[ -n "$url" ]] || { echo "error: POSTGRES_URL_NON_POOLING not set in .env.local" >&2; exit 1; }
 
 usage() {
@@ -34,10 +38,13 @@ shift
 org=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --org) org="${2:-}"; shift 2 ;;
+        --org) [[ $# -ge 2 && -n "$2" ]] || usage; org="$2"; shift 2 ;;
         *) usage ;;
     esac
 done
+case "$kind" in
+    orgs | admins) [[ -z "$org" ]] || { echo "error: $kind doesn't take --org" >&2; exit 1; } ;;
+esac
 
 case "$kind" in
     orgs) sql=$(cat <<'SQL'

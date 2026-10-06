@@ -72,7 +72,7 @@ Run `docs-consolidate` once more, in case a ship landed an item mid-pass. Work a
 - the PR closes the docs issue: `Closes #<n>` in the Summary
 - there's no docs impact to record, because this PR is the docs work
 
-If items are left unticked on purpose (the user deferred them), say so in the PR body, and leave out `Closes`. Move the issue and the leftover items to the next milestone instead.
+If items are left unticked on purpose (the user deferred them), say so in the PR body. Once the PR is open, carry them to the next milestone with `milestone.ts docs-carry <version> <next-version>`. That re-adds each unticked item to the next milestone's docs issue and closes this one. Don't move the issue itself: the script finds a docs issue by its milestone's title, so a moved `Docs: v0.11` would never be found under v0.12.
 
 ## Common mistakes
 

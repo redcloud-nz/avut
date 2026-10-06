@@ -61,6 +61,9 @@ node .claude/skills/avut-docs/milestone.ts show "$NEW"
 - **`"milestone": null`** (usual for a patch release): say so, and carry on.
 - **Open issues in it:** list them and ask, rather than stopping outright.
   For each one, the user can move it to the next milestone, or release anyway.
+  Released-anyway issues still have to leave the milestone, or it stays open
+  and becomes the default milestone that `/avut-ship` files new docs items
+  under. Step 3's `close --move-to` handles that.
   The milestone's `Docs: v<version>` issue counts like any other. If it's
   open, the docs pass hasn't run: suggest `/avut-docs <version>` first.
 
@@ -161,12 +164,22 @@ Report:
 If anything is off, the doc's Notes cover the common cases (tag already existed,
 re-cutting at the same version, workflow idempotency).
 
-Once everything checks out, close the release's milestone, if it has one. The
-script refuses while issues are still open in it; report those instead.
+Once everything checks out, close the release's milestone, if it has one:
 
 ```bash
 node .claude/skills/avut-docs/milestone.ts close "$NEW"
 ```
+
+It refuses while issues are still open in the milestone. If the user released
+with issues still open (Step 0), ask which milestone they go to, then:
+
+```bash
+node .claude/skills/avut-docs/milestone.ts close "$NEW" --move-to <next-version>
+```
+
+That moves each open issue to the next milestone, and carries an open docs
+issue's unticked items over to the next milestone's docs issue
+(`docs-carry`), before closing.
 
 ## Step 4 — Fold back anything that surprised you
 

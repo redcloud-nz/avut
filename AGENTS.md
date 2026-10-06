@@ -93,7 +93,12 @@ Every checkout gets its own port, and Next allows only one `next dev` per checko
 - Agents may start and stop servers on 3100 and up without asking. Never touch 3000 or 3001.
 - `npm run dev:port` prints the checkout's port: 3000 in the main checkout, the `.dev-port` in a worktree (allocating one on first use — the lowest free port from 3101).
 - `npm run dev` always passes the port explicitly, so a busy port fails instead of drifting onto 3001. Off 3000, the inspector moves too (port + 6229).
-- `npm run dev` first runs a read-only `prisma migrate status` and prints a warning if the database is missing migrations this branch has. Shared `avut` falls behind whenever someone merges a migration. Applying them is `npm run prisma migrate deploy`, which needs permission like any other shared-database write. `AVUT_SKIP_MIGRATION_CHECK=1` skips the check.
+- `npm run dev` first runs a read-only `prisma migrate status` and warns if the database is missing migrations this checkout has. It separates two cases:
+  - **Already on `integration`:** shared `avut` fell behind after someone merged a migration. `npm run prisma migrate deploy` catches it up, with permission like any other shared-database write.
+  - **Only on this branch:** never deploy these to `avut`. They go on a `db:branch` copy.
+
+  `AVUT_SKIP_MIGRATION_CHECK=1` skips the check.
+
 - better-auth's `baseURL` follows the server's own port (`src/lib/dev-server.ts`), and any localhost port is a trusted origin. Session cookies are shared across ports, so signing in once on 3000 (Google included) signs you in on every server on the same database — and signing in as someone else on any of them replaces that session everywhere. Google and GitHub sign-in only work on ports registered with the provider, so on other ports sign in on 3000 first, or use email and password.
 
 ---

@@ -15,17 +15,26 @@
  *       creating the issue first if it doesn't exist. Prints the issue number and comment URL.
  *
  *   node .claude/skills/avut-docs/milestone.ts docs-consolidate [version]
- *       Folds the marked item comments into the issue body's `## Items` list, confirms the body
- *       took, then deletes exactly those comments. Prints the checklist.
+ *       Folds the marked item comments into the issue body's `## Items` list. It deletes a
+ *       comment only once the re-read body is shown to hold everything the comment said; any
+ *       other comment is kept and listed under `skipped`. Prints the checklist.
  *
  *   node .claude/skills/avut-docs/milestone.ts docs-tick <version> <pr> [note]
- *       Ticks #<pr>'s item in the body, appending ` — <note>` if given. Prints the checklist.
+ *       Ticks #<pr>'s item, appending ` — <note>` if given. Ticking a ticked item does nothing.
  *
- *   node .claude/skills/avut-docs/milestone.ts close <version>
- *       Closes the milestone. Refuses while it has open issues.
+ *   node .claude/skills/avut-docs/milestone.ts docs-carry <from-version> <to-version>
+ *       Re-adds the old docs issue's unticked items to the new milestone's docs issue, then
+ *       closes the old one. For leftovers when a milestone ships without its docs pass.
  *
- * Runs under Node's built-in type stripping, so it takes no build step and no dependencies.
- * It talks to GitHub through `gh` and never touches the database.
+ *   node .claude/skills/avut-docs/milestone.ts close <version> [--move-to <next-version>]
+ *       Closes the milestone. Refuses while it has open issues, unless --move-to is given: then
+ *       it moves them to that milestone first (carrying the docs issue's items over with
+ *       docs-carry).
+ *
+ * Issues are listed through the REST API, not `gh issue list`: that goes through the search
+ * index, which lags a freshly created issue, so two ships close together could each create a
+ * docs issue. Runs under Node's built-in type stripping, so it takes no build step and no
+ * dependencies. It talks to GitHub through `gh` and never touches the database.
  */
 import { execFileSync } from "node:child_process";
 
@@ -88,15 +97,27 @@ export function docsIssueBody(milestone: Milestone): string {
         "",
         ITEMS_HEADING,
         "",
+        "<!-- Keep this section flat: items, with indented detail lines under them. A heading ends it. -->",
     ].join("\n");
 }
 
 const ITEM_LINE = /^- \[( |x)\] #(\d+)\b/i;
 
+/** A checklist item: its `- [ ] #N …` line, plus any indented lines written under it. */
 export interface Item {
     pr: number;
     done: boolean;
     line: string;
+    detail: string[];
+}
+
+function itemFrom(line: string): Item | null {
+    const match = ITEM_LINE.exec(line);
+    return match ? { pr: Number(match[2]), done: match[1].toLowerCase() === "x", line, detail: [] } : null;
+}
+
+function renderItem(item: Item): string[] {
+    return [item.line, ...item.detail];
 }
 
 export function formatItem(pr: number, text: string): string {
@@ -111,13 +132,43 @@ export function isItemComment(body: string): boolean {
     return body.trimStart().startsWith(ITEM_MARKER);
 }
 
-/** The checklist lines in a block of markdown. */
+/**
+ * Reads lines into items and everything else. An item is a top-level `- [ ] #N` line; the
+ * indented lines right after it are its detail. Blank lines end an item's detail.
+ */
+function readLines(lines: string[]): { items: Item[]; other: string[] } {
+    const items: Item[] = [];
+    const other: string[] = [];
+    let current: Item | null = null;
+    for (const raw of lines) {
+        const line = raw.replace(/\s+$/, "");
+        const item = itemFrom(line);
+        if (item) {
+            items.push(item);
+            current = item;
+        } else if (current && /^\s+\S/.test(line)) {
+            current.detail.push(line);
+        } else {
+            current = null;
+            if (line.trim() !== "") other.push(line);
+        }
+    }
+    return { items, other };
+}
+
+/** The checklist items in a block of markdown. */
 export function parseItems(markdown: string): Item[] {
-    return markdown.split("\n").flatMap((raw) => {
-        const line = raw.trim();
-        const match = ITEM_LINE.exec(line);
-        return match ? [{ pr: Number(match[2]), done: match[1].toLowerCase() === "x", line }] : [];
-    });
+    return readLines(markdown.split("\n")).items;
+}
+
+/**
+ * The items in a marked comment, and whether that's all the comment says. Only a clean
+ * comment may be deleted after a consolidate: anything else in it would be lost.
+ */
+export function parseItemComment(body: string): { items: Item[]; clean: boolean } {
+    const rest = body.trimStart().slice(ITEM_MARKER.length).split("\n");
+    const { items, other } = readLines(rest);
+    return { items, clean: items.length > 0 && other.length === 0 };
 }
 
 /** Splits a body around its `## Items` section, adding an empty one if it has none. */
@@ -128,7 +179,7 @@ function splitItemsSection(body: string): { before: string; section: string[]; a
         lines.push("", ITEMS_HEADING);
         start = lines.length - 1;
     }
-    let end = lines.findIndex((line, i) => i > start && /^#{1,2} /.test(line));
+    let end = lines.findIndex((line, i) => i > start && /^#{1,6} /.test(line));
     if (end === -1) end = lines.length;
     return {
         before: lines.slice(0, start + 1).join("\n"),
@@ -143,14 +194,19 @@ function joinSections(before: string, section: string[], after: string): string 
     return `${parts.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd()}\n`;
 }
 
+export function sectionItems(body: string): Item[] {
+    return parseItems(splitItemsSection(body).section.join("\n"));
+}
+
 /**
- * Merges `incoming` items into the body's `## Items` section, sorted by PR number. An item
- * whose PR is already listed is skipped, so re-running a consolidate never duplicates and
- * never resets a tick. Other lines in the section (notes) stay above the list.
+ * Merges `incoming` items into the body's `## Items` section, sorted by PR number, each with
+ * its detail lines. An item whose PR is already listed is skipped, so re-running a consolidate
+ * never duplicates and never resets a tick. Other lines in the section (notes) stay above the
+ * list.
  */
 export function mergeItems(body: string, incoming: Item[]): { body: string; added: Item[] } {
     const { before, section, after } = splitItemsSection(body);
-    const existing = parseItems(section.join("\n"));
+    const { items: existing, other: notes } = readLines(section);
     const known = new Set(existing.map((item) => item.pr));
     const added: Item[] = [];
     for (const item of incoming) {
@@ -158,28 +214,53 @@ export function mergeItems(body: string, incoming: Item[]): { body: string; adde
         known.add(item.pr);
         added.push(item);
     }
-    const notes = section.filter((line) => line.trim() !== "" && !ITEM_LINE.test(line.trim()));
-    const items = [...existing, ...added].sort((a, b) => a.pr - b.pr).map((item) => item.line);
-    const body2 = joinSections(before, notes.length ? [...notes, "", ...items] : items, after);
-    return { body: body2, added };
+    const items = [...existing, ...added].sort((a, b) => a.pr - b.pr).flatMap(renderItem);
+    const merged = joinSections(before, notes.length ? [...notes, "", ...items] : items, after);
+    return { body: merged, added };
 }
 
-/** Ticks #pr's item, appending ` — note` if given. Throws if the body has no item for it. */
+/**
+ * Whether `written` holds everything a comment's items said, exactly. A same-PR item with
+ * different text is skipped by mergeItems, so it fails this check and its comment survives.
+ */
+export function bodyHoldsItems(written: string, items: Item[]): boolean {
+    const present = sectionItems(written);
+    return items.every((item) => present.some((have) => holds(have, item)));
+}
+
+/** `have` says everything `item` does: same PR, same text (a tick and its note may follow), same detail. */
+function holds(have: Item, item: Item): boolean {
+    const text = (i: Item) => i.line.slice(i.line.indexOf("#"));
+    return (
+        have.pr === item.pr &&
+        (text(have) === text(item) || text(have).startsWith(`${text(item)} — `)) &&
+        have.detail.join("\n") === item.detail.join("\n")
+    );
+}
+
+/** Ticks #pr's item in `## Items`, appending ` — note` if given. Already ticked: unchanged. */
 export function tickItem(body: string, pr: number, note?: string): string {
-    const lines = body.split("\n");
-    const index = lines.findIndex((line) => {
-        const match = ITEM_LINE.exec(line.trim());
-        return match !== null && Number(match[2]) === pr;
+    const { before, section, after } = splitItemsSection(body);
+    const index = section.findIndex((line) => {
+        const item = itemFrom(line.replace(/\s+$/, ""));
+        return item !== null && item.pr === pr;
     });
     if (index === -1) throw new Error(`no item for #${pr}; run docs-consolidate first`);
-    let line = lines[index].replace(/^(\s*)- \[ \]/, "$1- [x]");
+    if (itemFrom(section[index].replace(/\s+$/, ""))?.done) return body;
+    let line = section[index].replace(/^- \[ \]/, "- [x]").replace(/\s+$/, "");
     if (note) line = `${line} — ${note.trim()}`;
-    lines[index] = line;
-    return lines.join("\n");
+    const updated = [...section];
+    updated[index] = line;
+    return joinSections(before, updated, after);
+}
+
+/** The text of an item after its `- [ ] #N `, with detail lines folded in, for re-adding. */
+export function itemText(item: Item): string {
+    return [item.line.replace(ITEM_LINE, "").trim(), ...item.detail.map((line) => line.trim())].join(" ");
 }
 
 export function summarise(body: string): { done: number; open: number; items: Item[] } {
-    const items = parseItems(splitItemsSection(body).section.join("\n"));
+    const items = sectionItems(body);
     const done = items.filter((item) => item.done).length;
     return { done, open: items.length - done, items };
 }
@@ -200,6 +281,14 @@ function ghJson<T>(args: string[]): T {
     return JSON.parse(gh(args)) as T;
 }
 
+/** Runs a paginated REST call whose `--jq` emits one compact JSON value per line. */
+function ghLines<T>(path: string, jq: string): T[] {
+    return gh(["api", "--paginate", path, "--jq", jq])
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => JSON.parse(line) as T);
+}
+
 function listMilestones(): Milestone[] {
     return ghJson<Milestone[]>(["api", `repos/${REPO}/milestones?state=all&per_page=100`]);
 }
@@ -215,24 +304,21 @@ function requireMilestone(version?: string): Milestone {
 interface IssueRef {
     number: number;
     title: string;
-    labels?: Array<{ name: string }>;
+    labels: string[];
 }
 
+/** Open issues (not PRs) in the milestone, through REST rather than the lagging search index. */
 function openIssues(milestone: Milestone): IssueRef[] {
-    return ghJson<IssueRef[]>([
-        "issue", "list", "--repo", REPO, "--milestone", milestone.title,
-        "--state", "open", "--limit", "200", "--json", "number,title,labels",
-    ]);
+    return ghLines<IssueRef>(
+        `repos/${REPO}/issues?milestone=${milestone.number}&state=open&per_page=100`,
+        ".[] | select(.pull_request == null) | {number, title, labels: [.labels[].name]}",
+    );
 }
 
-/** The open docs issue, matched by exact title. No `--search`: the search index lags a fresh issue. */
 function findDocsIssue(milestone: Milestone): number | null {
     const title = docsIssueTitle(milestone);
-    const issues = ghJson<IssueRef[]>([
-        "issue", "list", "--repo", REPO, "--milestone", milestone.title, "--label", DOCS_LABEL,
-        "--state", "open", "--limit", "200", "--json", "number,title",
-    ]);
-    return issues.find((issue) => issue.title === title)?.number ?? null;
+    const issue = openIssues(milestone).find((i) => i.title === title && i.labels.includes(DOCS_LABEL));
+    return issue?.number ?? null;
 }
 
 function createDocsIssue(milestone: Milestone): number {
@@ -260,8 +346,7 @@ interface Comment {
 }
 
 function listComments(issue: number): Comment[] {
-    const out = gh(["api", "--paginate", `repos/${REPO}/issues/${issue}/comments`, "--jq", ".[] | {id, body}"]);
-    return out.split("\n").filter(Boolean).map((line) => JSON.parse(line) as Comment);
+    return ghLines<Comment>(`repos/${REPO}/issues/${issue}/comments?per_page=100`, ".[] | {id, body}");
 }
 
 function requireDocsIssue(milestone: Milestone): number {
@@ -272,7 +357,7 @@ function requireDocsIssue(milestone: Milestone): number {
 
 function checklist(milestone: Milestone, issue: number, body: string, extra: object = {}) {
     const { done, open, items } = summarise(body);
-    return { milestone: milestone.title, issue, ...extra, done, open, items: items.map((item) => item.line) };
+    return { milestone: milestone.title, issue, ...extra, done, open, items: items.map((i) => renderItem(i).join("\n")) };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -285,17 +370,12 @@ function show(version?: string) {
     if (!milestone) return { milestone: null, openIssues: [], docsIssue: null };
     return {
         milestone: { number: milestone.number, title: milestone.title, state: milestone.state },
-        openIssues: openIssues(milestone).map((issue) => ({
-            number: issue.number,
-            title: issue.title,
-            labels: (issue.labels ?? []).map((label) => label.name),
-        })),
+        openIssues: openIssues(milestone),
         docsIssue: findDocsIssue(milestone),
     };
 }
 
-function docsAdd(version: string, pr: number, text: string) {
-    const milestone = requireMilestone(version);
+function addItem(milestone: Milestone, pr: number, text: string) {
     let issue = findDocsIssue(milestone);
     const created = issue === null;
     if (issue === null) issue = createDocsIssue(milestone);
@@ -306,45 +386,97 @@ function docsAdd(version: string, pr: number, text: string) {
     return { milestone: milestone.title, issue, created, comment: url };
 }
 
+function docsAdd(version: string, pr: number, text: string) {
+    return addItem(requireMilestone(version), pr, text);
+}
+
+function consolidate(milestone: Milestone, issue: number) {
+    const body = readBody(issue);
+    const comments = listComments(issue)
+        .filter((comment) => isItemComment(comment.body))
+        .map((comment) => ({ ...comment, ...parseItemComment(comment.body) }));
+    if (comments.length === 0) return checklist(milestone, issue, body, { folded: 0, skipped: [] });
+
+    const merged = mergeItems(body, comments.flatMap((comment) => comment.items));
+    if (merged.added.length) writeBody(issue, merged.body);
+
+    // Delete a comment only when the re-read body provably holds all of it. A lost item is
+    // worse than a leftover comment, so anything unproven stays and is reported.
+    const written = readBody(issue);
+    const folded: number[] = [];
+    const skipped: Array<{ id: number; reason: string }> = [];
+    for (const comment of comments) {
+        if (!comment.clean) {
+            skipped.push({ id: comment.id, reason: "comment has text that isn't an item; fold it in by hand" });
+        } else if (!bodyHoldsItems(written, comment.items)) {
+            skipped.push({ id: comment.id, reason: "its item isn't in the body as written (same PR, different text?)" });
+        } else {
+            gh(["api", "-X", "DELETE", `repos/${REPO}/issues/comments/${comment.id}`]);
+            folded.push(comment.id);
+        }
+    }
+    return checklist(milestone, issue, written, { folded: folded.length, added: merged.added.length, skipped });
+}
+
 function docsConsolidate(version?: string) {
     const milestone = requireMilestone(version);
-    const issue = requireDocsIssue(milestone);
-    const body = readBody(issue);
-    const comments = listComments(issue).filter((comment) => isItemComment(comment.body));
-    if (comments.length === 0) return checklist(milestone, issue, body, { folded: 0 });
-
-    const incoming = comments.flatMap((comment) => parseItems(comment.body));
-    const merged = mergeItems(body, incoming);
-    writeBody(issue, merged.body);
-
-    // Delete nothing unless the write took: a lost item is worse than a duplicate comment.
-    const written = readBody(issue);
-    const present = new Set(parseItems(written).map((item) => item.pr));
-    const missing = incoming.filter((item) => !present.has(item.pr)).map((item) => `#${item.pr}`);
-    if (missing.length) throw new Error(`body write didn't take (missing ${missing.join(", ")}); no comments deleted`);
-
-    for (const comment of comments) {
-        gh(["api", "-X", "DELETE", `repos/${REPO}/issues/comments/${comment.id}`]);
-    }
-    return checklist(milestone, issue, written, { folded: comments.length, added: merged.added.length });
+    return consolidate(milestone, requireDocsIssue(milestone));
 }
 
 function docsTick(version: string, pr: number, note?: string) {
     const milestone = requireMilestone(version);
     const issue = requireDocsIssue(milestone);
-    const body = tickItem(readBody(issue), pr, note);
-    writeBody(issue, body);
+    const before = readBody(issue);
+    const body = tickItem(before, pr, note);
+    if (body !== before) writeBody(issue, body);
     return checklist(milestone, issue, readBody(issue));
 }
 
-function close(version: string) {
+function carry(from: Milestone, to: Milestone) {
+    const oldIssue = requireDocsIssue(from);
+    const { skipped } = consolidate(from, oldIssue);
+    if (skipped.length) {
+        throw new Error(`#${oldIssue} has item comments consolidate couldn't fold (${skipped.map((s) => s.id).join(", ")}); resolve them first`);
+    }
+    const leftovers = summarise(readBody(oldIssue)).items.filter((item) => !item.done);
+    let newIssue: number | null = findDocsIssue(to);
+    for (const item of leftovers) newIssue = addItem(to, item.pr, itemText(item)).issue;
+    gh(
+        ["issue", "close", String(oldIssue), "--repo", REPO, "--comment", newIssue
+            ? `Carried ${leftovers.length} unticked item(s) over to #${newIssue} (${to.title}).`
+            : "Nothing left to carry over."],
+    );
+    return { from: from.title, to: to.title, closed: oldIssue, carried: leftovers.length, issue: newIssue };
+}
+
+function docsCarry(fromVersion: string, toVersion: string) {
+    return carry(requireMilestone(fromVersion), requireMilestone(toVersion));
+}
+
+function close(version: string, moveTo?: string) {
     const milestone = requireMilestone(version);
     const open = openIssues(milestone);
-    if (open.length) {
-        throw new Error(`${milestone.title} still has ${open.length} open issue(s): ${open.map((i) => `#${i.number}`).join(", ")}`);
+    const moved: number[] = [];
+    let carried: object | null = null;
+    if (open.length && !moveTo) {
+        throw new Error(
+            `${milestone.title} still has ${open.length} open issue(s): ${open.map((i) => `#${i.number}`).join(", ")}. Pass --move-to <next-version> to move them first.`,
+        );
+    }
+    if (open.length && moveTo) {
+        const target = requireMilestone(moveTo);
+        const docsTitle = docsIssueTitle(milestone);
+        for (const issue of open) {
+            if (issue.title === docsTitle && issue.labels.includes(DOCS_LABEL)) {
+                carried = carry(milestone, target);
+            } else {
+                gh(["issue", "edit", String(issue.number), "--repo", REPO, "--milestone", target.title]);
+                moved.push(issue.number);
+            }
+        }
     }
     gh(["api", "-X", "PATCH", `repos/${REPO}/milestones/${milestone.number}`, "-f", "state=closed"]);
-    return { milestone: milestone.title, state: "closed" };
+    return { milestone: milestone.title, state: "closed", moved, carried };
 }
 
 function prNumber(arg: string | undefined): number {
@@ -355,7 +487,7 @@ function prNumber(arg: string | undefined): number {
 
 function usage(): never {
     throw new Error(
-        "usage: milestone.ts show [version] | docs-add <version> <pr> <text> | docs-consolidate [version] | docs-tick <version> <pr> [note] | close <version>",
+        "usage: milestone.ts show [version] | docs-add <version> <pr> <text> | docs-consolidate [version] | docs-tick <version> <pr> [note] | docs-carry <from> <to> | close <version> [--move-to <next>]",
     );
 }
 
@@ -378,10 +510,16 @@ if (import.meta.main) {
                 if (args.length < 2) usage();
                 result = docsTick(args[0], prNumber(args[1]), args.slice(2).join(" ") || undefined);
                 break;
-            case "close":
-                if (args.length < 1) usage();
-                result = close(args[0]);
+            case "docs-carry":
+                if (args.length !== 2) usage();
+                result = docsCarry(args[0], args[1]);
                 break;
+            case "close": {
+                const flag = args.indexOf("--move-to");
+                if (args.length < 1 || flag === 0 || (flag > 0 && !args[flag + 1])) usage();
+                result = close(args[0], flag > 0 ? args[flag + 1] : undefined);
+                break;
+            }
             default:
                 usage();
         }

@@ -142,7 +142,7 @@ It finds the milestone's `Docs: <milestone>` issue, creating it if needed, and a
 
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
-**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. When you report the merge (or, with `--no-merge`, the open PR), end with the two follow-up commands for the user to run. Don't run them yourself, because `migrate deploy` mutates the shared database:
+**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. When you report the merge, end with the two follow-up commands for the user to run. With `--no-merge`, give them as "once it merges": deploying before then would land an unmerged migration on shared `avut`. Don't run them yourself, because `migrate deploy` mutates the shared database:
 
 ```bash
 npm run db:unbranch                  # in this checkout: back to avut, drop the copy

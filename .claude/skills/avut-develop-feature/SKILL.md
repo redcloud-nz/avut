@@ -27,7 +27,7 @@ The checkpoints are deliberate, and there are few of them. Clarify only when the
 - **A plan** (a `docs/plans/` path, `plan/<slug>`, or a slug that matches a `plan/*` branch): skip everything and go to [Pick up a plan](#pick-up-a-plan).
 - **Nothing given:** ask what to build and stop. Mention any waiting plans (`git branch --list 'plan/*'`).
 
-**Database preflight.** Run `npm run prisma migrate status` (read-only). The shared `avut` database falls behind `integration` whenever someone merges a migration, and the app then fails at the first visual check with a missing-column error. If migrations are pending, list them in your first message and ask the user to run `npm run prisma migrate deploy` from the main checkout. Don't run it yourself: it mutates the shared database, and the permission classifier blocks it anyway. Carry on with reading and planning while they do. (`npm run dev` prints the same warning when it starts, but an agent doesn't always start a server, so check here regardless.)
+**Database preflight.** Run `npm run prisma migrate status` (read-only). The shared `avut` database falls behind `integration` whenever someone merges a migration, and the app then fails at the first visual check with a missing-column error. If migrations are pending, check each against `git ls-tree --name-only origin/integration prisma/migrations/`. Those already on `integration` mean `avut` fell behind: list them in your first message and ask the user to run `npm run prisma migrate deploy` from the main checkout. A migration that exists only on this branch must never reach shared `avut`. It needs `db:branch` (L2), not a deploy. Don't run either yourself: it mutates the shared database, and the permission classifier blocks it anyway. Carry on with reading and planning while they do. (`npm run dev` prints the same warning when it starts, but an agent doesn't always start a server, so check here regardless.)
 
 ## Step 2 — Is it clear enough?
 
@@ -112,11 +112,11 @@ Work through the plan one review group at a time. For each task in the group, in
 At the end of the group:
 
 4. **Review the group.** Run the `avut-code-reviewer` subagent on the group's commits (`git diff <first-sha>~1..<last-sha>`), saying what each task in the group was meant to do.
-5. **Fix blocking findings now.** Re-run `avut-implementer` (`model: "sonnet"`) with the plan path, the task the finding belongs to, and the findings. It commits the fixes as a follow-up commit. One fix round is the norm. If a second review of the fix commit still shows blocking problems, bring it to the user.
+5. **Fix blocking findings now.** Re-run `avut-implementer` with the plan path, the task the finding belongs to, and the findings. Pass `model: "sonnet"` only if that task is `mechanical`. A blocker in a data-layer or permission task is exactly where the stronger model matters. It commits the fixes as a follow-up commit. One fix round is the norm. If a second review of the fix commit still shows blocking problems, bring it to the user.
 6. **Collect the rest.** Add non-blocking findings worth fixing to a `## Review notes` list at the end of the plan, and drop the nits. Don't send them back one group at a time.
 7. **Visual checkpoint** if the group was visual. See below.
 
-After the last group, if `## Review notes` has anything in it, run `avut-implementer` once (`model: "sonnet"`) to fix the whole list in one commit. Use `Task: review notes` in place of a task number.
+After the last group, if `## Review notes` has anything in it, run `avut-implementer` once to fix the whole list in one commit. Use `model: "sonnet"` only if every note belongs to a `mechanical` task. Use `Task: review notes` in place of a task number.
 
 Keep the main session as the orchestrator. Read the reports, not the full diffs; the reviewer reads the diffs. That keeps this context small over a long feature.
 
@@ -160,7 +160,7 @@ L5's approval happens at pickup.
 1. **Find it.** In order: a `plan/<slug>` branch (`git branch --list 'plan/*<slug>*'`), a worktree at `.claude/worktrees/<slug>`, then `git log --all --oneline -- 'docs/plans/*<slug>*'`. More than one match: ask which.
 2. **Enter the worktree.** If `.claude/worktrees/<slug>` exists, `EnterWorktree` with `path`. If not, `git worktree add .claude/worktrees/<slug> plan/<slug>` first. Then `npm run worktree:setup`.
 3. **Rename the branch:** `git branch -m plan/<slug> <type>/<slug>`, with `<type>` being `feat` or `fix` from what the plan builds (it works with the branch checked out). From here on it's an ordinary feature branch.
-4. **Check the plan is still fresh.** Run Step 1's database preflight. `git merge origin/integration`. Then compare against the plan's `Written against` commit: `git diff --stat <sha>..origin/integration -- <every file the plan names>`. If any of them changed, run `avut-plan-reviewer` again and fix the plan. If the fix is substantive, update the plan's `**Date:**` and filename prefix together, per `docs/plans/README.md`. A plan written before review groups, `mechanical` tags or a Docs impact line existed gets them added now; show them at L5.
+4. **Check the plan is still fresh.** `git merge origin/integration`, then run Step 1's database preflight. The order matters, because the preflight compares the database with this checkout's migrations. Then compare against the plan's `Written against` commit: `git diff --stat <sha>..origin/integration -- <every file the plan names>`. If any of them changed, run `avut-plan-reviewer` again and fix the plan. If the fix is substantive, update the plan's `**Date:**` and filename prefix together, per `docs/plans/README.md`. A plan written before review groups, `mechanical` tags or a Docs impact line existed gets them added now; show them at L5.
 5. **L5, then L6 and L7:** show the plan, including anything the freshness check changed, and wait for approval. Then execute and finish as on the long path. L2's migration and dev-server notes still apply.
 
 ## Visual checkpoints

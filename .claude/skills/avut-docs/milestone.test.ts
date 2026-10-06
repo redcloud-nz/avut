@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    bodyHoldsItems,
     docsIssueBody,
-    formatItem,
     isItemComment,
     itemComment,
+    itemText,
     type Milestone,
     mergeItems,
+    parseItemComment,
     parseItems,
     parseVersion,
     pickMilestone,
@@ -27,6 +29,8 @@ const MILESTONES = [
     milestone("v0.12", "open", 6),
     milestone("Someday", "open", 7),
 ];
+
+const lines = (body: string) => summarise(body).items.map((item) => [item.line, ...item.detail].join("\n"));
 
 describe("parseVersion", () => {
     it("reads a title, with or without a codename", () => {
@@ -73,13 +77,25 @@ describe("item comments", () => {
     it("round-trips through the marker", () => {
         const body = itemComment(312, "Notes can be pinned.\n Pages: notes/index.mdx");
         expect(isItemComment(body)).toBe(true);
-        expect(parseItems(body)).toEqual([
-            { pr: 312, done: false, line: "- [ ] #312 Notes can be pinned. Pages: notes/index.mdx" },
-        ]);
+        expect(parseItemComment(body)).toEqual({
+            clean: true,
+            items: [{ pr: 312, done: false, line: "- [ ] #312 Notes can be pinned. Pages: notes/index.mdx", detail: [] }],
+        });
     });
 
     it("doesn't mistake discussion for an item", () => {
         expect(isItemComment("Should #312 also cover the help sheet?")).toBe(false);
+    });
+
+    it("keeps indented lines as the item's detail", () => {
+        const { items, clean } = parseItemComment("<!-- avut-docs-item -->\n- [ ] #4 x\n  - also the help sheet");
+        expect(clean).toBe(true);
+        expect(items[0].detail).toEqual(["  - also the help sheet"]);
+    });
+
+    it("isn't clean when it says more than its items", () => {
+        expect(parseItemComment("<!-- avut-docs-item -->\n- [ ] #4 x\nAnd a thought.").clean).toBe(false);
+        expect(parseItemComment("<!-- avut-docs-item -->\nedited away").clean).toBe(false);
     });
 });
 
@@ -87,9 +103,10 @@ describe("mergeItems", () => {
     const body = docsIssueBody(milestone("v0.11"));
 
     it("adds items to an empty section, sorted by PR", () => {
-        const result = mergeItems(body, [parseItems(formatItem(320, "b"))[0], parseItems(formatItem(310, "a"))[0]]);
+        const result = mergeItems(body, parseItems("- [ ] #320 b\n- [ ] #310 a"));
         expect(result.added.map((item) => item.pr)).toEqual([320, 310]);
-        expect(result.body.endsWith("## Items\n\n- [ ] #310 a\n- [ ] #320 b\n")).toBe(true);
+        expect(result.body.endsWith("\n\n- [ ] #310 a\n- [ ] #320 b\n")).toBe(true);
+        expect(lines(result.body)).toEqual(["- [ ] #310 a", "- [ ] #320 b"]);
     });
 
     it("skips PRs already listed and keeps their ticks", () => {
@@ -97,11 +114,13 @@ describe("mergeItems", () => {
         const ticked = tickItem(first, 310, "done");
         const second = mergeItems(ticked, parseItems("- [ ] #310 a again\n- [ ] #315 c"));
         expect(second.added.map((item) => item.pr)).toEqual([315]);
-        expect(summarise(second.body).items.map((item) => item.line)).toEqual([
-            "- [x] #310 a — done",
-            "- [ ] #315 c",
-            "- [ ] #320 b",
-        ]);
+        expect(lines(second.body)).toEqual(["- [x] #310 a — done", "- [ ] #315 c", "- [ ] #320 b"]);
+    });
+
+    it("carries each item's detail lines with it when sorting", () => {
+        const first = mergeItems(body, parseItems("- [ ] #9 late\n  - detail of 9")).body;
+        const second = mergeItems(first, parseItems("- [ ] #2 early"));
+        expect(lines(second.body)).toEqual(["- [ ] #2 early", "- [ ] #9 late\n  - detail of 9"]);
     });
 
     it("adds an Items section to a body without one", () => {
@@ -109,17 +128,54 @@ describe("mergeItems", () => {
         expect(result.body).toBe("Some intro.\n\n## Items\n\n- [ ] #1 x\n");
     });
 
-    it("keeps notes in the section and sections after it", () => {
-        const custom = "Intro\n\n## Items\n\nScreenshots wait for the new theme.\n- [ ] #5 e\n\n## Deferred\n\n- #2 later\n";
+    it("keeps notes in the section, and stops at any heading", () => {
+        const custom = "Intro\n\n## Items\n\nScreenshots wait for the new theme.\n- [ ] #5 e\n\n### Deferred\n\n- [ ] #2 later\n";
         const result = mergeItems(custom, parseItems("- [ ] #3 c"));
         expect(result.body).toBe(
-            "Intro\n\n## Items\n\nScreenshots wait for the new theme.\n\n- [ ] #3 c\n- [ ] #5 e\n\n## Deferred\n\n- #2 later\n",
+            "Intro\n\n## Items\n\nScreenshots wait for the new theme.\n\n- [ ] #3 c\n- [ ] #5 e\n\n### Deferred\n\n- [ ] #2 later\n",
         );
+    });
+});
+
+describe("bodyHoldsItems", () => {
+    const base = mergeItems(docsIssueBody(milestone("v0.11")), parseItems("- [ ] #7 seven\n  - detail")).body;
+
+    it("holds an item it just merged, detail included", () => {
+        expect(bodyHoldsItems(base, parseItems("- [ ] #7 seven\n  - detail"))).toBe(true);
+    });
+
+    it("still holds it once ticked with a note", () => {
+        expect(bodyHoldsItems(tickItem(base, 7, "done"), parseItems("- [ ] #7 seven\n  - detail"))).toBe(true);
+    });
+
+    it("doesn't hold a same-PR item with different text or detail", () => {
+        expect(bodyHoldsItems(base, parseItems("- [ ] #7 seven, corrected\n  - detail"))).toBe(false);
+        expect(bodyHoldsItems(base, parseItems("- [ ] #7 seven\n  - other detail"))).toBe(false);
+        expect(bodyHoldsItems(base, parseItems("- [ ] #8 eight"))).toBe(false);
     });
 });
 
 describe("tickItem", () => {
     it("throws for a PR with no item", () => {
         expect(() => tickItem("## Items\n\n- [ ] #1 x\n", 2)).toThrow(/no item for #2/);
+    });
+
+    it("only ticks inside the Items section", () => {
+        const body = "Intro mentions\n- [ ] #1 elsewhere\n\n## Items\n\n- [ ] #1 x\n";
+        const ticked = tickItem(body, 1);
+        expect(ticked).toContain("- [ ] #1 elsewhere");
+        expect(lines(ticked)).toEqual(["- [x] #1 x"]);
+    });
+
+    it("leaves an already-ticked item alone", () => {
+        const once = tickItem("## Items\n\n- [ ] #1 x\n", 1, "done");
+        expect(tickItem(once, 1, "done")).toBe(once);
+    });
+});
+
+describe("itemText", () => {
+    it("folds detail into one line for re-adding", () => {
+        const [item] = parseItems("- [ ] #4 Pinned notes. Pages: notes/index.mdx\n  - and the help sheet");
+        expect(itemText(item)).toBe("Pinned notes. Pages: notes/index.mdx - and the help sheet");
     });
 });
