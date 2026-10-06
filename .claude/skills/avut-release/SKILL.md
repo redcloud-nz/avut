@@ -179,7 +179,9 @@ node .claude/skills/avut-docs/milestone.ts close "$NEW" --move-to <next-version>
 
 That moves each open issue to the next milestone, and carries an open docs
 issue's unticked items over to the next milestone's docs issue
-(`docs-carry`), before closing.
+(`docs-carry`), before closing. If it stops because the docs issue has
+skipped item comments, resolve them as `/avut-docs` Step 2 describes, then run
+it again. A partial run is safe to repeat.
 
 ## Step 4 — Fold back anything that surprised you
 

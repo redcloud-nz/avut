@@ -32,9 +32,16 @@ It prints the milestone, its open issues and its docs issue number. A `docsIssue
 node .claude/skills/avut-docs/milestone.ts docs-consolidate [version]
 ```
 
-It folds the item comments `/avut-ship` posted into the body's `## Items` list. It sorts them by PR, skips PRs already listed (so a re-run never duplicates or resets a tick), and keeps any notes you added to the section. It writes the body, re-reads it to confirm every item took, and only then deletes the comments it folded. Discussion comments, and items posted after it read, are left alone. If it reports that the write didn't take, it has deleted nothing. Show the user the error rather than retrying blindly.
+It folds the item comments `/avut-ship` posted into the body's `## Items` list, sorted by PR, each with its indented detail lines. A PR that's already listed isn't added twice, and its tick is kept. Notes in the section stay put. Keep the section flat: any heading ends it.
 
-Show the checklist it prints: ticked and unticked counts, and the unticked items. For `consolidate`, stop here.
+It deletes a comment only once the re-read body provably holds all of it: the same text and detail for every item in it. Every other marked comment stays, listed under `skipped` with a reason:
+
+- **It has text that isn't an item** (someone added a remark, or edited it).
+- **Its PR is already listed with different text** (a corrected or second item for the same PR).
+
+Resolving a skipped comment is the one time you edit the issue directly. Show the user the comment and the body's item for that PR, and ask which wins. Then either update the body's item to say what the comment says, with `gh issue edit` (re-run consolidate, and it now holds and is deleted). Or, if the comment is stale, delete it: `gh api -X DELETE repos/redcloud-nz/avut/issues/comments/<id>`. `docs-carry`, and so release's `close --move-to`, refuse while any comment is skipped.
+
+Show the checklist it prints: ticked and unticked counts, the unticked items, and any skipped comments. For `consolidate`, stop here.
 
 ## Docs pass
 
@@ -77,7 +84,7 @@ If items are left unticked on purpose (the user deferred them), say so in the PR
 ## Common mistakes
 
 - Running the docs pass while the milestone's features are still open, without asking.
-- Editing the docs issue's body or comments by hand instead of through `milestone.ts`.
+- Editing the docs issue's body or comments by hand instead of through `milestone.ts`, other than to resolve a skipped comment with the user (Step 2).
 - Taking screenshots outside the `demo` org, or under a new id when re-shooting an existing one.
 - Documenting the PR description instead of the UI as it is now.
 - Writing "What's new" entries here. `content/updates/` is part of `/avut-release`.

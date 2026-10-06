@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
     bodyHoldsItems,
+    carriedItemComment,
     docsIssueBody,
     isItemComment,
     itemComment,
-    itemText,
+    sectionNotes,
     type Milestone,
     mergeItems,
     parseItemComment,
@@ -170,12 +171,26 @@ describe("tickItem", () => {
     it("leaves an already-ticked item alone", () => {
         const once = tickItem("## Items\n\n- [ ] #1 x\n", 1, "done");
         expect(tickItem(once, 1, "done")).toBe(once);
+        expect(tickItem(once, 1)).toBe(once);
+    });
+
+    it("adds a new note to an already-ticked item", () => {
+        const once = tickItem("## Items\n\n- [ ] #1 x\n", 1);
+        expect(lines(tickItem(once, 1, "no change needed"))).toEqual(["- [x] #1 x — no change needed"]);
     });
 });
 
-describe("itemText", () => {
-    it("folds detail into one line for re-adding", () => {
-        const [item] = parseItems("- [ ] #4 Pinned notes. Pages: notes/index.mdx\n  - and the help sheet");
-        expect(itemText(item)).toBe("Pinned notes. Pages: notes/index.mdx - and the help sheet");
+describe("carriedItemComment", () => {
+    it("re-adds an item unticked, with its detail lines intact", () => {
+        const [item] = parseItems("- [x] #4 Pinned notes. Pages: notes/index.mdx\n  - and the help sheet");
+        const comment = carriedItemComment(item);
+        expect(comment).toBe("<!-- avut-docs-item -->\n- [ ] #4 Pinned notes. Pages: notes/index.mdx\n  - and the help sheet");
+        expect(parseItemComment(comment)).toEqual({ clean: true, items: [{ ...item, done: false, line: "- [ ] #4 Pinned notes. Pages: notes/index.mdx" }] });
+    });
+});
+
+describe("sectionNotes", () => {
+    it("returns the section's non-item lines", () => {
+        expect(sectionNotes("## Items\n\nWait for the theme.\n- [ ] #1 x\n  - detail\n")).toEqual(["Wait for the theme."]);
     });
 });

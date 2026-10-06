@@ -128,6 +128,11 @@ export function itemComment(pr: number, text: string): string {
     return `${ITEM_MARKER}\n${formatItem(pr, text)}`;
 }
 
+/** An item comment for an existing item, unticked again, with its detail lines intact. */
+export function carriedItemComment(item: Item): string {
+    return [ITEM_MARKER, item.line.replace(/^- \[[ x]\]/i, "- [ ]"), ...item.detail].join("\n");
+}
+
 export function isItemComment(body: string): boolean {
     return body.trimStart().startsWith(ITEM_MARKER);
 }
@@ -246,17 +251,18 @@ export function tickItem(body: string, pr: number, note?: string): string {
         return item !== null && item.pr === pr;
     });
     if (index === -1) throw new Error(`no item for #${pr}; run docs-consolidate first`);
-    if (itemFrom(section[index].replace(/\s+$/, ""))?.done) return body;
     let line = section[index].replace(/^- \[ \]/, "- [x]").replace(/\s+$/, "");
-    if (note) line = `${line} — ${note.trim()}`;
+    // Ticking again changes nothing, unless it brings a note the line doesn't have yet.
+    if (note && !line.endsWith(` — ${note.trim()}`)) line = `${line} — ${note.trim()}`;
+    if (line === section[index].replace(/\s+$/, "")) return body;
     const updated = [...section];
     updated[index] = line;
     return joinSections(before, updated, after);
 }
 
-/** The text of an item after its `- [ ] #N `, with detail lines folded in, for re-adding. */
-export function itemText(item: Item): string {
-    return [item.line.replace(ITEM_LINE, "").trim(), ...item.detail.map((line) => line.trim())].join(" ");
+/** The non-item lines (notes) in the `## Items` section. */
+export function sectionNotes(body: string): string[] {
+    return readLines(splitItemsSection(body).section).other;
 }
 
 export function summarise(body: string): { done: number; open: number; items: Item[] } {
@@ -375,19 +381,16 @@ function show(version?: string) {
     };
 }
 
-function addItem(milestone: Milestone, pr: number, text: string) {
+function addComment(milestone: Milestone, comment: string) {
     let issue = findDocsIssue(milestone);
     const created = issue === null;
     if (issue === null) issue = createDocsIssue(milestone);
-    const url = gh(
-        ["issue", "comment", String(issue), "--repo", REPO, "--body-file", "-"],
-        itemComment(pr, text),
-    ).trim();
+    const url = gh(["issue", "comment", String(issue), "--repo", REPO, "--body-file", "-"], comment).trim();
     return { milestone: milestone.title, issue, created, comment: url };
 }
 
 function docsAdd(version: string, pr: number, text: string) {
-    return addItem(requireMilestone(version), pr, text);
+    return addComment(requireMilestone(version), itemComment(pr, text));
 }
 
 function consolidate(milestone: Milestone, issue: number) {
@@ -433,19 +436,28 @@ function docsTick(version: string, pr: number, note?: string) {
 }
 
 function carry(from: Milestone, to: Milestone) {
+    if (from.number === to.number) throw new Error(`can't carry ${from.title} into itself`);
     const oldIssue = requireDocsIssue(from);
     const { skipped } = consolidate(from, oldIssue);
     if (skipped.length) {
         throw new Error(`#${oldIssue} has item comments consolidate couldn't fold (${skipped.map((s) => s.id).join(", ")}); resolve them first`);
     }
-    const leftovers = summarise(readBody(oldIssue)).items.filter((item) => !item.done);
-    let newIssue: number | null = findDocsIssue(to);
-    for (const item of leftovers) newIssue = addItem(to, item.pr, itemText(item)).issue;
-    gh(
-        ["issue", "close", String(oldIssue), "--repo", REPO, "--comment", newIssue
-            ? `Carried ${leftovers.length} unticked item(s) over to #${newIssue} (${to.title}).`
-            : "Nothing left to carry over."],
-    );
+    const body = readBody(oldIssue);
+    const leftovers = summarise(body).items.filter((item) => !item.done);
+    const notes = sectionNotes(body).filter((line) => !line.startsWith("<!--"));
+    let newIssue: number | null = null;
+    for (const item of leftovers) newIssue = addComment(to, carriedItemComment(item)).issue;
+
+    const message = leftovers.length
+        ? [`Carried ${leftovers.length} unticked item(s) over to #${newIssue} (${to.title}).`]
+        : ["Nothing left to carry over."];
+    // Notes aren't items, so they'd stay behind on a closed issue: repeat them where they'll be seen.
+    if (notes.length && newIssue !== null) {
+        gh(["issue", "comment", String(newIssue), "--repo", REPO, "--body-file", "-"],
+            [`Notes carried over from #${oldIssue} (${from.title}):`, "", ...notes].join("\n"));
+        message.push("Its notes were copied there too.");
+    }
+    gh(["issue", "close", String(oldIssue), "--repo", REPO, "--comment", message.join(" ")]);
     return { from: from.title, to: to.title, closed: oldIssue, carried: leftovers.length, issue: newIssue };
 }
 
