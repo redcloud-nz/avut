@@ -124,7 +124,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 8: Delete `DL` and update the catalogue
 
-- [ ] **Files:** delete `src/components/ui/description-list.tsx`, `src/components/ui/description-list-date.tsx`; edit `src/components/ui/README.md` and `docs/patterns/entity-link.md`.
+- [x] `refactor(ui): remove DL description list in favour of DataList`
+- **Files:** delete `src/components/ui/description-list.tsx`, `src/components/ui/description-list-date.tsx`; edit `src/components/ui/README.md` and `docs/patterns/entity-link.md`.
 - **Do:**
   - Delete both files.
   - Rewrite the `<DLDetails>` example in `docs/patterns/entity-link.md` as a `DataItemValue` inside `<DataItem inline>`.
