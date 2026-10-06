@@ -8,15 +8,23 @@
  * wrapper in `next.config.ts` runs this on `next dev` (watch) and `next build`.
  */
 
+import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import * as z from "zod";
 
 import { defineCollection, defineConfig } from "@content-collections/core";
 import { compileMDX } from "@content-collections/mdx";
 
+import { headingAnchors } from "./content-collections/heading-anchors";
+
 // GFM adds table syntax (among other things) — `docsMdxComponents` already
 // styles `table`/`th`/`td`, so wire the plugin in to match.
 const mdxOptions = { remarkPlugins: [remarkGfm] };
+
+// Guides also get GitHub-style heading ids, so a link can target a section
+// (`/docs/skill-track/sessions#4-record-results`). `updates` stays on
+// `mdxOptions`: several entries render on one page, so their ids could collide.
+const docsMdxOptions = { ...mdxOptions, rehypePlugins: [rehypeSlug] };
 
 /**
  * Turn a source file's path (relative to `content/docs`, without extension) into
@@ -58,10 +66,12 @@ const docs = defineCollection({
         keyTerms: z.array(z.string()).default([]),
     }),
     transform: async (doc, ctx) => {
-        const mdx = await compileMDX(ctx, doc, mdxOptions);
+        const mdx = await compileMDX(ctx, doc, docsMdxOptions);
         const { intro, rest } = splitIntro(doc.content);
-        const introMdx = await compileMDX(ctx, { ...doc, content: intro }, mdxOptions);
-        const restMdx = rest ? await compileMDX(ctx, { ...doc, content: rest }, mdxOptions) : null;
+        const introMdx = await compileMDX(ctx, { ...doc, content: intro }, docsMdxOptions);
+        const restMdx = rest
+            ? await compileMDX(ctx, { ...doc, content: rest }, docsMdxOptions)
+            : null;
         const slug = pathToSlug(doc._meta.path);
         return {
             ...doc,
@@ -69,6 +79,14 @@ const docs = defineCollection({
             introMdx,
             restMdx,
             slug,
+            /**
+             * The ids `rehype-slug` gives this doc's headings, in order — the valid
+             * `#anchor`s for a link into it. Computed over the whole document;
+             * intro and rest are compiled separately, so a heading repeated
+             * across the split would render the same id twice (the anchors test
+             * guards against duplicates).
+             */
+            anchors: headingAnchors(doc.content),
             /** `true` for a section landing page (`<section>/index.mdx`). */
             isSectionIndex: doc._meta.path.endsWith("index") && slug !== "",
         };
