@@ -72,7 +72,7 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
                             href: route("/orgs/[slug]/skill-track/reports/person", { slug }),
                         },
                     ]}
-                    actions={<HelpButton id="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/report-person" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_PersonCompetencyReport

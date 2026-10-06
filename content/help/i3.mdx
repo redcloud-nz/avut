@@ -1,13 +1,26 @@
 ---
-title: I3 — Issue, Inspect, Return
-description: Tracking equipment as it is issued, inspected and returned.
+title: I3
+description: Issuing equipment to members, recorded in D4H.
 guide: i3
 keyTerms: ["ppe-template", "d4h"]
 ---
 
-I3 tracks equipment through its life with your personnel: **issued** to
-someone, **inspected** on a schedule, and **returned** when no longer needed. It
-also holds the PPE templates that describe what a kit should contain.
+I3 tracks equipment issued to your members, using your D4H equipment records.
+It needs the D4H integration turned on for your organisation, and your own
+personal D4H access token, added in your account settings under **D4H**. You
+see the D4H teams that token can see.
 
-If your organisation connects D4H, templates can be linked to D4H equipment so
-issued items stay in step with the D4H inventory.
+- **By Equipment Type** and **By Member** show what's been issued to a team,
+  from D4H.
+- **Issue Items** keeps your draft forms until you submit one. Submitting
+  creates an equipment record in D4H for each item, if your D4H account can
+  create equipment for the recipient's team. Records already created aren't
+  undone if a later item fails.
+- **Templates** are the items you can issue, each linked to a D4H equipment
+  category and kind, with variants such as sizes. Deleting one moves it to the
+  Rubbish bin.
+
+**Return Items** and inspections aren't built yet.
+
+An **I3 Editor** can issue items. An **I3 Admin** can also create, change and
+delete templates.

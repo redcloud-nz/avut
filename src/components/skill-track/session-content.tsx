@@ -77,7 +77,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                     },
                     { label: session.name || session.id },
                 ]}
-                actions={<HelpButton id="skill-track/sessions" />}
+                actions={<HelpButton id="skill-track/session" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

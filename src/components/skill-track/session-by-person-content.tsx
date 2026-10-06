@@ -241,7 +241,7 @@ export function SkillTrack_SessionByPerson_Content({
                 ]}
             />
             <div className="flex items-center justify-end gap-1 grow">
-                <HelpButton id="skill-track/sessions" />
+                <HelpButton id="skill-track/session-recording" />
             </div>
         </Std.Navbar>
     );

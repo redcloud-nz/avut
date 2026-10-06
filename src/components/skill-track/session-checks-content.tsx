@@ -204,7 +204,7 @@ export function SkillTrack_SessionChecks_Content({
                     },
                     "Checks",
                 ]}
-                actions={<HelpButton id="skill-track/sessions" />}
+                actions={<HelpButton id="skill-track/session" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
