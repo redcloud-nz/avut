@@ -49,7 +49,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                     },
                     { label: team.name },
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/teams" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

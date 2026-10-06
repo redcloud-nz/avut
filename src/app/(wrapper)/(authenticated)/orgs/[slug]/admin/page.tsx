@@ -27,7 +27,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
 
     return (
         <>
-            <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton slug="admin" />} />
+            <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton id="admin/dashboard" />} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>

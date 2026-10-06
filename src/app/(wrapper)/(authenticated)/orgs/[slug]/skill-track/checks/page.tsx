@@ -36,7 +36,7 @@ export default async function SkillTrack_Checks_Page(
                             href: route("/orgs/[slug]/skill-track/checks", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/checks" />}
+                    actions={<HelpButton id="skill-track/checks" />}
                 />
                 <Std.ScrollContainer>
                     <SkillTrack_ChecksList />

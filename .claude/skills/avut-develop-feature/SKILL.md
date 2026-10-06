@@ -15,7 +15,7 @@ Takes a piece of work from "I want X" to a branch ready for `/avut-ship`. `$ARGU
 
 The checkpoints are deliberate, and there are few of them. Clarify only when the work is unclear. On the long path, get approval for the plan. Pause for visual checks on UI work. The final push confirmation belongs to `/avut-ship`. Between checkpoints, just work.
 
-**End-user docs aren't part of a feature.** Don't write or change `content/docs/**` or its screenshots here. Screenshots go stale with every UI tweak, so that work happens once per milestone in `/avut-docs`. Note the feature's docs impact instead (L3, or one line on the quick path), and `/avut-ship` adds it to the milestone's docs issue. Developer docs that describe the code (`AGENTS.md`, `docs/patterns/`, `src/components/ui/README.md`, CLAUDE.md files) still change in-branch.
+**End-user guides aren't part of a feature.** Don't write or change `content/docs/**` or its screenshots here. Screenshots go stale with every UI tweak, so that work happens once per milestone in `/avut-docs`. Note the feature's docs impact instead (L3, or one line on the quick path), and `/avut-ship` adds it to the milestone's docs issue. **Help cards are the exception:** a feature that changes a screen updates that screen's card in `content/help/**` in the same branch, and adds or removes cards along with the `<HelpButton>`s that use them (see `content/README.md`). Developer docs that describe the code (`AGENTS.md`, `docs/patterns/`, `src/components/ui/README.md`, CLAUDE.md files) also change in-branch.
 
 ## Step 1 — Resolve the source
 
@@ -89,7 +89,7 @@ Write `docs/plans/YYYY-MM-DD-<slug>.md`, following `docs/plans/README.md`: a `**
   - **`mechanical`:** marks a task that follows a named pattern doc or an existing example with little judgement left: UI wiring to an established dialog or page pattern, moves and renames, tests for a service that's already built, plumbing a field through schema → form. Never schema or migrations, services, routers, permissions, `ctx.logEvent`/`$transaction` pairing, D4H-token handling, or anything the plan review called tricky.
 
   Order the data layer first (schema → service → router → tests), then UI. Group visual tasks late, so there are one or two visual checkpoints and not one per task. Mark where each **review group** ends: the data layer is one group, and each run of visual tasks up to its checkpoint is another. Split a group of more than about four tasks.
-- **Docs impact:** one line. Which user-facing behaviour changed, which `content/docs/` pages it likely touches (or "new page"), and which screenshots would change. "None" when nothing user-facing changed. `/avut-ship` copies it to the milestone's docs issue.
+- **Docs impact:** one line. Which user-facing behaviour changed, which `content/docs/` guide pages it likely touches (or "new page"), and which screenshots would change. "None" when nothing user-facing changed. `/avut-ship` copies it to the milestone's docs issue.
 - **Out of scope:** what this deliberately doesn't do.
 - **Parked:** starts empty. See [Side findings](#side-findings-fix-now-or-park).
 

@@ -8,15 +8,23 @@
  * wrapper in `next.config.ts` runs this on `next dev` (watch) and `next build`.
  */
 
+import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import * as z from "zod";
 
 import { defineCollection, defineConfig } from "@content-collections/core";
 import { compileMDX } from "@content-collections/mdx";
 
+import { headingAnchors } from "./content-collections/heading-anchors";
+
 // GFM adds table syntax (among other things) — `docsMdxComponents` already
 // styles `table`/`th`/`td`, so wire the plugin in to match.
 const mdxOptions = { remarkPlugins: [remarkGfm] };
+
+// Guides also get GitHub-style heading ids, so a link can target a section
+// (`/docs/skill-track/sessions#4-record-results`). `updates` stays on
+// `mdxOptions`: several entries render on one page, so their ids could collide.
+const docsMdxOptions = { ...mdxOptions, rehypePlugins: [rehypeSlug] };
 
 /**
  * Turn a source file's path (relative to `content/docs`, without extension) into
@@ -58,19 +66,80 @@ const docs = defineCollection({
         keyTerms: z.array(z.string()).default([]),
     }),
     transform: async (doc, ctx) => {
-        const mdx = await compileMDX(ctx, doc, mdxOptions);
         const { intro, rest } = splitIntro(doc.content);
-        const introMdx = await compileMDX(ctx, { ...doc, content: intro }, mdxOptions);
-        const restMdx = rest ? await compileMDX(ctx, { ...doc, content: rest }, mdxOptions) : null;
+        const introMdx = await compileMDX(ctx, { ...doc, content: intro }, docsMdxOptions);
+        const restMdx = rest
+            ? await compileMDX(ctx, { ...doc, content: rest }, docsMdxOptions)
+            : null;
         const slug = pathToSlug(doc._meta.path);
         return {
             ...doc,
-            mdx,
             introMdx,
             restMdx,
             slug,
+            /**
+             * The ids `rehype-slug` gives this doc's headings, in order — the valid
+             * `#anchor`s for a link into it. Computed over the whole document;
+             * intro and rest are compiled separately, so a heading repeated
+             * across the split would render the same id twice (the anchors test
+             * guards against duplicates).
+             */
+            anchors: headingAnchors(doc.content),
             /** `true` for a section landing page (`<section>/index.mdx`). */
             isSectionIndex: doc._meta.path.endsWith("index") && slug !== "",
+        };
+    },
+});
+
+/**
+ * In-app help cards for the `?help=<id>` sheet: a short note written for one
+ * screen (or a few that share it), linking out to the full guide. In-app only —
+ * never on the public `/docs` site or in its search. A card's id is its path
+ * without extension (`admin/personnel`); there is no `index` collapsing.
+ */
+const helpCards = defineCollection({
+    name: "helpCards",
+    directory: "content/help",
+    include: "**/*.mdx",
+    schema: z.object({
+        content: z.string(),
+        /** The sheet title. Cards have no subtitle: it took space from the body and repeated its opening. */
+        title: z.string(),
+        /** The full guide: a doc slug with an optional `#anchor` (`skill-track/sessions#4-record-results`). */
+        guide: z.string().min(1),
+        /** Glossary slugs for the `<KeyTerms>` callout after the card body. */
+        keyTerms: z.array(z.string()).default([]),
+    }),
+    transform: async (card, ctx) => {
+        const file = `content/help/${card._meta.filePath}`;
+        const [guideSlug, anchor, ...extra] = card.guide.split("#");
+        if (extra.length > 0)
+            throw new Error(`${file}: guide "${card.guide}" has more than one "#"`);
+        // `ctx.documents` is typed as the raw docs schema (and may or may not be
+        // transformed, depending on collection order), so recompute slug and
+        // anchors from the raw doc rather than reading the docs transform's output.
+        const doc = ctx
+            .documents(docs)
+            .find((d) => guideSlug !== "" && pathToSlug(d._meta.path) === guideSlug);
+        if (!doc) throw new Error(`${file}: guide "${guideSlug}" is not a doc`);
+        if (anchor !== undefined) {
+            const anchors = headingAnchors(doc.content);
+            if (!anchors.includes(anchor)) {
+                throw new Error(
+                    `${file}: guide "${card.guide}" — "#${anchor}" is not a heading in "${guideSlug}". Available: ${anchors.join(", ")}`,
+                );
+            }
+        }
+        const code = await compileMDX(ctx, card, docsMdxOptions);
+        return {
+            ...card,
+            /** The card id, written by `<HelpButton id="…">` as `?help=<id>`. */
+            id: card._meta.path,
+            code,
+            guideSlug,
+            guideAnchor: anchor ?? null,
+            /** The guide doc's section — a card is flag-hidden along with it. */
+            section: doc.section,
         };
     },
 });
@@ -113,5 +182,5 @@ const updates = defineCollection({
 });
 
 export default defineConfig({
-    content: [docs, updates],
+    content: [docs, helpCards, updates],
 });

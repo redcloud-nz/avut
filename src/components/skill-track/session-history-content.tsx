@@ -53,7 +53,7 @@ export function SkillTrack_SessionHistory_Content({
                     },
                     "History",
                 ]}
-                actions={<HelpButton slug="skill-track/sessions" />}
+                actions={<HelpButton id="skill-track/session" />}
             />
             <Std.ScrollContainer>
                 <ObjectHistory

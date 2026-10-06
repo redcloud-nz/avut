@@ -71,7 +71,7 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
                             href: route("/orgs/[slug]/skill-track/reports/matrix", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/report-matrix" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillMatrixReport syntheticChecksEnabled={syntheticChecksEnabled} />

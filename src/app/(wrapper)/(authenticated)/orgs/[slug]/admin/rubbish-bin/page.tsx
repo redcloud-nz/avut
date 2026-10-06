@@ -35,7 +35,7 @@ export default async function AdminModule_Trash_Page(
                             href: route("/orgs/[slug]/admin/rubbish-bin", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="admin" />}
+                    actions={<HelpButton id="admin/rubbish-bin" />}
                 />
                 <Std.ScrollContainer>
                     <AdminModule_Trash_List />

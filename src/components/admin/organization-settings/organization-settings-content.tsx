@@ -39,7 +39,7 @@ export function AdminModule_Settings_Content() {
                     },
                     "Organisation Settings",
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/organization" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

@@ -42,7 +42,7 @@ export function AdminModule_PersonHistory_Content({ personId }: { personId: Pers
                     },
                     "History",
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/personnel" />}
             />
             <Std.ScrollContainer>
                 <ObjectHistory

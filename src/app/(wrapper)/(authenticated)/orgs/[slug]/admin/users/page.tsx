@@ -30,7 +30,7 @@ export default async function AdminModule_Users_Page(props: PageProps<"/orgs/[sl
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                     { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/users" />}
             />
             <Std.ScrollContainer>
                 <AdminModule_Users_List />
