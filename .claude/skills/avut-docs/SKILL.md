@@ -16,46 +16,31 @@ End-user docs trail the code on purpose. A feature branch doesn't touch `content
 
 `version` defaults to the lowest open version milestone.
 
+Everything that touches the docs issue goes through `milestone.ts` in this skill's folder. Its header documents each command, and `milestone.test.ts` pins the parsing and merging. Don't edit the issue by hand: the script's order of operations is what keeps items from being lost.
+
 ## Step 1 — Find the milestone and its docs issue
 
-Milestones are titled `v<version>`, optionally followed by ` - <codename>` (`v0.11`, `v1 - veronica`).
-
 ```bash
-gh api 'repos/redcloud-nz/avut/milestones?state=open&per_page=100' --jq '.[] | "\(.number)\t\(.title)\t\(.open_issues)"'
+node .claude/skills/avut-docs/milestone.ts show [version]
 ```
 
-With a version given, pick the milestone whose title starts with `v<version>` followed by a space or the end. Without one, pick the lowest version (compare the numbers, not the strings: `v0.9` < `v0.11` < `v1`). Then find the issue:
-
-```bash
-gh issue list --repo redcloud-nz/avut --state open --label documentation --milestone "<milestone>" \
-  --search 'in:title "Docs: <milestone>"' --json number,title
-```
-
-No issue means no PR in the milestone has declared a docs impact. Say so and stop.
+It prints the milestone, its open issues and its docs issue number. A `docsIssue` of `null` means no PR in the milestone has declared a docs impact. Say so and stop.
 
 ## Step 2 — Consolidate
 
-Fold the item comments `/avut-ship` posted into the issue body's `## Items` list. Only this skill edits the body. Ships only ever comment, so nothing else writes the body concurrently.
+```bash
+node .claude/skills/avut-docs/milestone.ts docs-consolidate [version]
+```
 
-1. **Read** the body and the item comments. Item comments start with the `<!-- avut-docs-item -->` marker. Any other comment is discussion: leave it alone.
+It folds the item comments `/avut-ship` posted into the body's `## Items` list. It sorts them by PR, skips PRs already listed (so a re-run never duplicates or resets a tick), and keeps any notes you added to the section. It writes the body, re-reads it to confirm every item took, and only then deletes the comments it folded. Discussion comments, and items posted after it read, are left alone. If it reports that the write didn't take, it has deleted nothing. Show the user the error rather than retrying blindly.
 
-   ```bash
-   gh issue view <n> --repo redcloud-nz/avut --json body --jq .body
-   gh api --paginate repos/redcloud-nz/avut/issues/<n>/comments \
-     --jq '.[] | select(.body | startswith("<!-- avut-docs-item -->")) | {id, body}'
-   ```
-
-2. **Merge** each comment's item line(s) into `## Items`, in PR-number order. Skip an item whose PR number is already in the list, so a re-run never duplicates. Keep existing ticks as they are.
-3. **Write the body first:** `gh issue edit <n> --repo redcloud-nz/avut --body-file <tmpfile>`. Re-read it and confirm every folded item is there.
-4. **Then delete the folded comments,** by the ids you read in 1, and only those: `gh api -X DELETE repos/redcloud-nz/avut/issues/comments/<id>`. A ship that commented after step 1 keeps its comment for the next consolidate. If the body edit failed, delete nothing.
-
-Show the checklist: ticked and unticked counts, and the unticked items. For `consolidate`, stop here.
+Show the checklist it prints: ticked and unticked counts, and the unticked items. For `consolidate`, stop here.
 
 ## Docs pass
 
 ### Step 3 — Is the milestone ready?
 
-List the milestone's other open issues (`gh issue list --repo redcloud-nz/avut --milestone "<milestone>" --state open`). Docs written while features are still being built go stale in the same way. If any are open, show them and ask whether to go ahead anyway.
+Look at the milestone's other open issues, from Step 1's `show` output (everything but the docs issue). Docs written while features are still being built go stale in the same way. If any are open, show them and ask whether to go ahead anyway.
 
 Then run `npm run prisma migrate status` (read-only). Pending migrations break the dev server, and screenshots come from it. Ask the user to run `npm run prisma migrate deploy` if any show up.
 
@@ -74,15 +59,15 @@ For each unticked item:
 
 Several items often touch the same page. Do them together, so a page is rewritten and shot once.
 
-Items that need no change once you look (a later PR already covered them, or the change turned out invisible) get ticked with a short note: `— no change needed: <why>`.
+Tick each item once its commit is in: `node .claude/skills/avut-docs/milestone.ts docs-tick <version> <PR>`. Items that need no change once you look (a later PR already covered them, or the change turned out invisible) get ticked with a note: `docs-tick <version> <PR> "no change needed: <why>"`.
 
 ### Step 6 — Visual checkpoint
 
 Give the user the local `/docs/...` URLs of every page you changed, on the worktree's port, and the in-app `?help=<slug>` URL of one page, since that renders the same MDX differently. Iterate on feedback without committing each round (as in `/avut-develop-feature`'s visual checkpoints), then commit once.
 
-### Step 7 — Tick and ship
+### Step 7 — Ship
 
-Tick every finished item in the issue body (`gh issue edit` with the full body: the same read-then-write as Step 2). Then continue into `/avut-ship`, telling it:
+Run `docs-consolidate` once more, in case a ship landed an item mid-pass. Work any new items, then continue into `/avut-ship`, telling it:
 
 - the PR closes the docs issue: `Closes #<n>` in the Summary
 - there's no docs impact to record, because this PR is the docs work
@@ -92,8 +77,7 @@ If items are left unticked on purpose (the user deferred them), say so in the PR
 ## Common mistakes
 
 - Running the docs pass while the milestone's features are still open, without asking.
-- Deleting item comments before the body edit is confirmed. That loses items.
-- Deleting comments that weren't folded: discussion, or items that arrived after the read.
+- Editing the docs issue's body or comments by hand instead of through `milestone.ts`.
 - Taking screenshots outside the `demo` org, or under a new id when re-shooting an existing one.
 - Documenting the PR description instead of the UI as it is now.
 - Writing "What's new" entries here. `content/updates/` is part of `/avut-release`.

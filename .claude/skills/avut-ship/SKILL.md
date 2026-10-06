@@ -99,11 +99,11 @@ _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed fro
 End-user docs (`content/docs/**` and its screenshots) aren't written per feature. Each PR with a user-facing change adds one item to its milestone's docs issue, and `/avut-docs` works through that issue once per milestone.
 
 1. **Decide the impact.** Use the plan's `Docs impact` line, or what `/avut-develop-feature` handed over. Failing both, judge from the diff whether user-visible behaviour, wording or layout changed. Internal refactors, tests and developer docs have no impact. If there's none, skip the rest of this step.
-2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest-numbered open `v0.x` milestone (`gh api 'repos/redcloud-nz/avut/milestones?state=open' --jq '.[].title'`). The user confirms it in Step 6, alongside everything else.
-3. **Draft the item,** one line:
+2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. The user confirms it in Step 6, alongside everything else.
+3. **Draft the item text,** one line. The script adds the checkbox and the PR number in front:
 
    ```
-   - [ ] #<PR> <what changed, from a user's view>. Pages: <content/docs paths, or "new page">. Screenshots: <ids that change, or "none">
+   <what changed, from a user's view>. Pages: <content/docs paths, or "new page">. Screenshots: <ids that change, or "none">
    ```
 
    Screenshot ids are in `src/lib/screenshots.generated.json`. `git grep -n '<Screenshot id=' content/docs` shows which pages use which.
@@ -132,26 +132,13 @@ gh pr merge <n> --repo redcloud-nz/avut --auto --merge   # skip with --no-merge
 
 Use `--body-file` (write the body to a file in the scratchpad), never inline `--body`. For a stacked PR, don't auto-merge; it merges after its parent.
 
-**Post the docs item** if Step 5b drafted one. Its home is the open issue titled `Docs: <milestone>` with the `documentation` label:
+**Post the docs item** if Step 5b drafted one:
 
 ```bash
-gh issue list --repo redcloud-nz/avut --state open --label documentation --milestone "<milestone>" \
-  --search 'in:title "Docs: <milestone>"' --json number --jq '.[0].number'
+node .claude/skills/avut-docs/milestone.ts docs-add <milestone version> <PR number> "<item text>"
 ```
 
-If there isn't one, create it: title `Docs: <milestone>`, label `documentation`, milestone `<milestone>`, and this body:
-
-```markdown
-End-user docs (`content/docs/**` and screenshots) for the changes in <milestone>. Each PR with a user-facing change adds an item as a comment. `/avut-docs consolidate` folds them into the list below, and `/avut-docs` works through it before the release.
-
-## Items
-```
-
-Then add the item **as a comment**, never by editing the body. Several sessions ship in parallel, and a body edit by one would overwrite another's. The first line of the comment is a marker, so `/avut-docs consolidate` can tell items from discussion:
-
-```bash
-gh issue comment <docs-issue> --repo redcloud-nz/avut --body-file <tmpfile>   # "<!-- avut-docs-item -->" then the item line
-```
+It finds the milestone's `Docs: <milestone>` issue, creating it if needed, and adds the item as a marked comment. It never edits the body: several sessions ship in parallel, and a body edit by one would overwrite another's. Report the issue number it prints, and whether it created the issue.
 
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
@@ -170,6 +157,6 @@ npm run prisma migrate deploy        # apply the merged migration to avut
 - Re-reviewing the whole branch after fixes, not just the fix delta.
 - Posting the review as a separate `claude-avut` GitHub review. It belongs in the PR body; `/avut-review-pr` is the tool for a formal review.
 - Ticking a browser-verification box that wasn't done.
-- Editing the docs issue's body to add an item. Items go in as marked comments; only `/avut-docs` edits the body.
+- Adding a docs item by hand, or by editing the docs issue's body. `milestone.ts docs-add` posts it as a marked comment; only `/avut-docs` edits the body.
 - Writing end-user docs into the feature PR instead of adding a docs item.
 - Reporting a migration-bearing merge without the `db:unbranch` / `migrate deploy` follow-up.

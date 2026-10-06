@@ -27,7 +27,7 @@ The checkpoints are deliberate, and there are few of them. Clarify only when the
 - **A plan** (a `docs/plans/` path, `plan/<slug>`, or a slug that matches a `plan/*` branch): skip everything and go to [Pick up a plan](#pick-up-a-plan).
 - **Nothing given:** ask what to build and stop. Mention any waiting plans (`git branch --list 'plan/*'`).
 
-**Database preflight.** Run `npm run prisma migrate status` (read-only). The shared `avut` database falls behind `integration` whenever someone merges a migration, and the app then fails at the first visual check with a missing-column error. If migrations are pending, list them in your first message and ask the user to run `npm run prisma migrate deploy` from the main checkout. Don't run it yourself: it mutates the shared database, and the permission classifier blocks it anyway. Carry on with reading and planning while they do.
+**Database preflight.** Run `npm run prisma migrate status` (read-only). The shared `avut` database falls behind `integration` whenever someone merges a migration, and the app then fails at the first visual check with a missing-column error. If migrations are pending, list them in your first message and ask the user to run `npm run prisma migrate deploy` from the main checkout. Don't run it yourself: it mutates the shared database, and the permission classifier blocks it anyway. Carry on with reading and planning while they do. (`npm run dev` prints the same warning when it starts, but an agent doesn't always start a server, so check here regardless.)
 
 ## Step 2 — Is it clear enough?
 
@@ -74,7 +74,7 @@ If the plan has visual tasks, start the worktree's dev server in the background 
 
 If a migration is involved, `npm run db:branch <slug>` comes before the first `migrate dev`, as in the Database section of `AGENTS.md`. It needs every connection to `avut` closed: stop your own server, and ask the user to stop theirs and Prisma Studio. The `migrate dev` itself still needs permission. Do this when the migration task comes up, not upfront.
 
-The worktree is isolated: the harness refuses shell commands it can't prove stay inside it (Python heredocs that write files, `psql` with a computed URL). Edit files, the plan included, with Edit/Write rather than scripts.
+The worktree is isolated: the harness refuses shell commands it can't prove stay inside it (Python heredocs that write files, `psql` with a computed URL). Edit files, the plan included, with Edit/Write rather than scripts. Look up test records with `avut-test-in-browser`'s `test-data.sh`, not `psql`.
 
 ### L3 — Write the plan
 

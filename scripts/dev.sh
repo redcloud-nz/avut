@@ -13,7 +13,21 @@
 #
 # Set the port with PORT=, not `npm run dev -- -p`: the inspector port is worked out from PORT.
 #
+# Before starting, it checks (read-only) whether the database .env.local points at is missing
+# migrations from this branch, which is what happens to shared `avut` after someone merges a
+# migration. It only warns: applying them is `npm run prisma migrate deploy`, and that's the
+# user's call. The check takes about two seconds; AVUT_SKIP_MIGRATION_CHECK=1 skips it.
+#
 set -euo pipefail
+
+if [ "${AVUT_SKIP_MIGRATION_CHECK:-}" != 1 ]; then
+    status="$(dotenv -e .env.local -- prisma migrate status 2>&1 || true)"
+    if grep -q "not yet been applied" <<<"$status"; then
+        pending="$(sed -n '/not yet been applied/,/^$/p' <<<"$status" | sed '1d;/^$/d')"
+        printf '\n\033[1;33m⚠ The database is missing migrations this branch has:\033[0m\n%s\n' "$pending"
+        printf '\033[1;33m  Pages that use them will fail. Apply with: npm run prisma migrate deploy\033[0m\n\n'
+    fi
+fi
 
 port="${PORT:-$(bash "$(dirname "${BASH_SOURCE[0]}")/dev-port.sh")}"
 inspect="--inspect"

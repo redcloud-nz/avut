@@ -52,15 +52,13 @@ Stop if:
 
 **Milestone check.** Milestones are titled `v<version>`, optionally followed by
 ` - <codename>` (`v0.11`, `v1 - veronica`). Find the one for `$NEW` by its
-leading version:
+leading version, with its open issues:
 
 ```bash
-gh api 'repos/redcloud-nz/avut/milestones?state=open&per_page=100' \
-  --jq ".[] | select(.title | test(\"^v${NEW//./\\\\.}( |\$)\")) | \"\(.number) \(.title) open=\(.open_issues)\""
-gh issue list --repo redcloud-nz/avut --milestone "<title>" --state open --json number,title,labels
+node .claude/skills/avut-docs/milestone.ts show "$NEW"
 ```
 
-- **No milestone** (usual for a patch release): say so, and carry on.
+- **`"milestone": null`** (usual for a patch release): say so, and carry on.
 - **Open issues in it:** list them and ask, rather than stopping outright.
   For each one, the user can move it to the next milestone, or release anyway.
   The milestone's `Docs: v<version>` issue counts like any other. If it's
@@ -163,11 +161,11 @@ Report:
 If anything is off, the doc's Notes cover the common cases (tag already existed,
 re-cutting at the same version, workflow idempotency).
 
-Once everything checks out, close the release's milestone, if it has one and
-it has no open issues left:
+Once everything checks out, close the release's milestone, if it has one. The
+script refuses while issues are still open in it; report those instead.
 
 ```bash
-gh api -X PATCH repos/redcloud-nz/avut/milestones/<number> -f state=closed
+node .claude/skills/avut-docs/milestone.ts close "$NEW"
 ```
 
 ## Step 4 — Fold back anything that surprised you

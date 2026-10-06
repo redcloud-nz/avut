@@ -17,7 +17,9 @@
       "Bash(curl -s http://localhost:*)",
       "Bash(node .claude/skills/avut-review-pr/review-pr.ts *)",
       "Bash(node .claude/skills/avut-status/status.ts)",
-      "Bash(node .claude/skills/avut-status/status.ts *)"
+      "Bash(node .claude/skills/avut-status/status.ts *)",
+      "Bash(node .claude/skills/avut-docs/milestone.ts *)",
+      "Bash(bash .claude/skills/avut-test-in-browser/test-data.sh *)"
     ]
   },
   "enabledPlugins": {
