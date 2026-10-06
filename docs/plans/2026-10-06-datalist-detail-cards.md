@@ -96,7 +96,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 4: Users, organisation and the org's D4H access tokens
 
-- [ ] **Files:** `src/components/admin/users/user-content.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/organization/page.tsx` (a Server Component), `src/components/admin/organization/d4h-org-card.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/d4h-access-tokens/[token_id]/access-token-content.tsx`.
+- [x] `feat(admin): user, organisation and D4H token detail cards on DataList`
+- **Files:** `src/components/admin/users/user-content.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/organization/page.tsx` (a Server Component), `src/components/admin/organization/d4h-org-card.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/d4h-access-tokens/[token_id]/access-token-content.tsx`.
 - **Do:** migrate every card. Stacked: `Email` (both, in `user-content.tsx`). `D4H Organisation` in `d4h-org-card.tsx` is inline, as in Task 3. Its `Last synced` keeps the `Never` fallback, carried over the same way as in Task 3. `access-token-content.tsx`'s hand-written Created row becomes `DataItemDateValue`. `organization/page.tsx` must stay a Server Component, so import from `data-item.tsx` only.
 - **Done when:** the migration criteria above hold. The organisation page still renders server-side (no `"use client"` added).
 

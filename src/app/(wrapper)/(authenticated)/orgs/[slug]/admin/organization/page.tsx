@@ -16,7 +16,13 @@ import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 
@@ -64,14 +70,20 @@ export default async function AdminModule_Organization_Page(
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Organisation ID</DLTerm>
-                                        <DLDetails>{organization.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{organization.name}</DLDetails>
-                                        <DLTerm>Slug</DLTerm>
-                                        <DLDetails>{organization.slug}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Organisation ID</DataItemTitle>
+                                            <DataItemValue>{organization.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{organization.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Slug</DataItemTitle>
+                                            <DataItemValue>{organization.slug}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             <AdminModule_Organization_D4HCard />
@@ -79,10 +91,12 @@ export default async function AdminModule_Organization_Page(
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={organization.createdAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={organization.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
