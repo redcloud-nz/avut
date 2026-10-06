@@ -34,7 +34,7 @@ export default async function AdminModule_Invitations_Page(
                         href: route("/orgs/[slug]/admin/invitations", { slug }),
                     },
                 ]}
-                actions={<HelpButton id="admin" />}
+                actions={<HelpButton id="admin/invitations" />}
             />
             <Std.ScrollContainer>
                 <AdminModule_Invitations_List />

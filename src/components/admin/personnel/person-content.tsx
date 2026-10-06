@@ -58,7 +58,7 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     },
                     person.name,
                 ]}
-                actions={<HelpButton id="admin" />}
+                actions={<HelpButton id="admin/personnel" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

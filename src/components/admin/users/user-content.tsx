@@ -57,7 +57,7 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                     { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                     { label: member.user.name },
                 ]}
-                actions={<HelpButton id="admin" />}
+                actions={<HelpButton id="admin/users" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
