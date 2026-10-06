@@ -92,6 +92,24 @@ Fresh-context review (correctness + AVUT conventions) before push.
 
 Leave out any section with nothing in it. _Decisions_ comes from a `Decisions` list in a commit body (`/avut-explore` writes one) or the plan doc's Decisions.
 
+_Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed from its parked list (`- #n <title>`).
+
+## Step 5b — Docs impact
+
+End-user docs (`content/docs/**` and its screenshots) aren't written per feature. Each PR with a user-facing change adds one item to its milestone's docs issue, and `/avut-docs` works through that issue once per milestone.
+
+1. **Decide the impact.** Use the plan's `Docs impact` line, or what `/avut-develop-feature` handed over. Failing both, judge from the diff whether user-visible behaviour, wording or layout changed. Internal refactors, tests and developer docs have no impact. If there's none, skip the rest of this step.
+2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest-numbered open `v0.x` milestone (`gh api 'repos/redcloud-nz/avut/milestones?state=open' --jq '.[].title'`). The user confirms it in Step 6, alongside everything else.
+3. **Draft the item,** one line:
+
+   ```
+   - [ ] #<PR> <what changed, from a user's view>. Pages: <content/docs paths, or "new page">. Screenshots: <ids that change, or "none">
+   ```
+
+   Screenshot ids are in `src/lib/screenshots.generated.json`. `git grep -n '<Screenshot id=' content/docs` shows which pages use which.
+
+The item is posted in Step 7, once the PR number exists.
+
 ## Step 6 — The one confirmation
 
 Show the user, compactly:
@@ -99,6 +117,7 @@ Show the user, compactly:
 - the branch, base and commit list (`git log --oneline origin/<base>..HEAD`)
 - what the review found and what you did about it — especially any blocking finding you left alone
 - the PR title and body
+- the docs item and the milestone it goes to, or "no docs impact"
 - what happens next: "Push, open PR, auto-merge (merge commit) when CI is green; if CI fails, fix it and push the fix" — or without auto-merge if `--no-merge` was given or the change needs a look in the preview first (UI change not yet checked in a browser, or a migration). Say the CI-fix part: the user's yes is what covers those later pushes.
 
 Then wait. This is the only prompt in the flow — pushing is publishing, so it needs an explicit yes. If the user wants changes, make them and show the diff again. Don't restart the review for small edits.
@@ -113,7 +132,35 @@ gh pr merge <n> --repo redcloud-nz/avut --auto --merge   # skip with --no-merge
 
 Use `--body-file` (write the body to a file in the scratchpad), never inline `--body`. For a stacked PR, don't auto-merge; it merges after its parent.
 
+**Post the docs item** if Step 5b drafted one. Its home is the open issue titled `Docs: <milestone>` with the `documentation` label:
+
+```bash
+gh issue list --repo redcloud-nz/avut --state open --label documentation --milestone "<milestone>" \
+  --search 'in:title "Docs: <milestone>"' --json number --jq '.[0].number'
+```
+
+If there isn't one, create it: title `Docs: <milestone>`, label `documentation`, milestone `<milestone>`, and this body:
+
+```markdown
+End-user docs (`content/docs/**` and screenshots) for the changes in <milestone>. Each PR with a user-facing change adds an item as a comment. `/avut-docs consolidate` folds them into the list below, and `/avut-docs` works through it before the release.
+
+## Items
+```
+
+Then add the item **as a comment**, never by editing the body. Several sessions ship in parallel, and a body edit by one would overwrite another's. The first line of the comment is a marker, so `/avut-docs consolidate` can tell items from discussion:
+
+```bash
+gh issue comment <docs-issue> --repo redcloud-nz/avut --body-file <tmpfile>   # "<!-- avut-docs-item -->" then the item line
+```
+
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
+
+**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. When you report the merge (or, with `--no-merge`, the open PR), end with the two follow-up commands for the user to run. Don't run them yourself, because `migrate deploy` mutates the shared database:
+
+```bash
+npm run db:unbranch                  # in this checkout: back to avut, drop the copy
+npm run prisma migrate deploy        # apply the merged migration to avut
+```
 
 ## Common mistakes
 
@@ -123,3 +170,6 @@ Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --wa
 - Re-reviewing the whole branch after fixes, not just the fix delta.
 - Posting the review as a separate `claude-avut` GitHub review. It belongs in the PR body; `/avut-review-pr` is the tool for a formal review.
 - Ticking a browser-verification box that wasn't done.
+- Editing the docs issue's body to add an item. Items go in as marked comments; only `/avut-docs` edits the body.
+- Writing end-user docs into the feature PR instead of adding a docs item.
+- Reporting a migration-bearing merge without the `db:unbranch` / `migrate deploy` follow-up.

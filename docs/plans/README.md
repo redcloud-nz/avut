@@ -25,3 +25,10 @@ already exists. A plan is the how, once the what is settled.
   `git branch --list 'plan/*'` shows what's waiting. Such a plan also records
   `**Written against:** integration @ <sha>`, so the pickup can tell what has
   changed since.
+- A `/avut-develop-feature` plan's body carries Decisions, Tasks (tagged
+  `visual` and `mechanical`, and split into review groups), a one-line Docs
+  impact, Out of scope, and Parked. The last of those collects side findings
+  during the build, and each becomes a `follow-up` issue or is dropped before
+  ship. The skill describes each section. End-user docs are never a task: the
+  Docs impact line feeds the milestone's docs issue, which `/avut-docs` works
+  through.
