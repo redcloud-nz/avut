@@ -81,7 +81,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 2: Session details card
 
-- [ ] **Files:** `src/components/skill-track/session-content.tsx`.
+- [x] `feat(skill-track): session detail cards on DataList with inline rows`
+- **Files:** `src/components/skill-track/session-content.tsx`.
 - **Do:** migrate both cards (Session Details, and Created/Updated). Stacked: `Notes`. Everything else is inline.
 - **Done when:** the migration criteria above hold. On a phone-width viewport the Session Details card's fields take one line each, Notes apart, and the Created/Updated card takes four lines.
 - **`visual`**: **checkpoint 1** after this task. Show the session page and `/user/settings` at 320px and at desktop width, and tune the track sizes before the sweep.

@@ -27,7 +27,13 @@ import {
     CardLoadingFallback,
     CardTitle,
 } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -148,25 +154,35 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Session ID</DLTerm>
-                                        <DLDetails className="font-mono">{session.id}</DLDetails>
-
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{session.name}</DLDetails>
-
-                                        <DLTerm>Date</DLTerm>
-                                        <DLDetails>{formatDate(session.date)}</DLDetails>
-
-                                        <DLTerm>Notes</DLTerm>
-                                        <DLDetails>{session.notes}</DLDetails>
-
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>
-                                            {SKILL_CHECK_STATUS_LABELS[session.status] ??
-                                                session.status}
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Session ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {session.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{session.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Date</DataItemTitle>
+                                            <DataItemValue>
+                                                {formatDate(session.date)}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Notes</DataItemTitle>
+                                            <DataItemValue>{session.notes}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>
+                                                {SKILL_CHECK_STATUS_LABELS[session.status] ??
+                                                    session.status}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
@@ -176,12 +192,16 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                             </Suspense>
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={session.createdAt} />
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDateDetails date={session.updatedAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={session.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={session.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
