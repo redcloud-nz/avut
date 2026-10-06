@@ -19,7 +19,6 @@ import { getVisibleHelpCard } from "@/server/docs";
 export interface HelpCardPayload {
     id: string;
     title: string;
-    description: string | null;
     /** Bundled MDX module code for the card body — render with `<MDXContent code={...} />`. */
     code: string;
     /** Glossary slugs to render in a `<KeyTerms>` callout after the body. */
@@ -41,7 +40,6 @@ export async function GET(_request: Request, ctx: { params: Promise<{ slug: stri
     const payload: HelpCardPayload = {
         id: card.id,
         title: card.title,
-        description: card.description ?? null,
         code: card.code,
         keyTerms: card.keyTerms,
         guideHref: (docsHref(card.guideSlug) +

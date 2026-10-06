@@ -11,8 +11,9 @@ import type { Route } from "next";
 import Link from "next/link";
 
 import { glossaryBySlug } from "@/lib/glossary";
+import { cn } from "@/lib/utils";
 
-export function KeyTerms({ slugs }: { slugs: string[] }) {
+export function KeyTerms({ slugs, className }: { slugs: string[]; className?: string }) {
     const entries = slugs
         .map((slug) => glossaryBySlug.get(slug))
         .filter((entry) => entry !== undefined)
@@ -20,7 +21,7 @@ export function KeyTerms({ slugs }: { slugs: string[] }) {
     if (entries.length === 0) return null;
 
     return (
-        <div className="bg-card my-6 rounded-lg border p-4 text-sm">
+        <div className={cn("bg-card my-6 rounded-lg border p-4 text-sm", className)}>
             <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
                 Key terms
             </p>

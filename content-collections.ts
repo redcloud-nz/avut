@@ -103,10 +103,8 @@ const helpCards = defineCollection({
     include: "**/*.mdx",
     schema: z.object({
         content: z.string(),
-        /** The sheet title. */
+        /** The sheet title. Cards have no subtitle: it took space from the body and repeated its opening. */
         title: z.string(),
-        /** The sheet subtitle; the sheet falls back to "Key info for this page". */
-        description: z.string().optional(),
         /** The full guide: a doc slug with an optional `#anchor` (`skill-track/sessions#4-record-results`). */
         guide: z.string().min(1),
         /** Glossary slugs for the `<KeyTerms>` callout after the card body. */

@@ -16,7 +16,7 @@ The `?help=` sheet shows a short **help card** written for the screen you're on.
 - **Collection name `helpCards`**, directory `content/help`, include `**/*.mdx`. The generated export is `allHelpCards`. A card's **id** is its path without extension (`admin/personnel`). Unlike docs, there is no `index` collapsing: name files for what they are (`admin/dashboard.mdx`), and the id is the plain path.
 - **Frontmatter:**
   - `title` (required): the sheet title.
-  - `description` (optional): the sheet subtitle. The sheet falls back to "Key info for this page".
+  - No `description`: changed at the visual checkpoint (2026-10-07). A per-card subtitle wrapped and repeated the body's opening, so the sheet shows a fixed "Quick Guide" subtitle instead. The sheet also uses tighter spacing than `/docs`.
   - `guide` (required): a doc slug with an optional `#anchor`, e.g. `skill-track/sessions#4-record-results`. `""` (the docs home) is not allowed.
   - `keyTerms` (default `[]`): glossary slugs for the `<KeyTerms>` callout, rendered after the card body.
 - **Body:** about 150 words, 250 at most. It says what the screen is for, the few things you do there, and any gotcha. No `# Title` heading, since the sheet header shows the title. Card bodies use the same `docsMdxComponents` (so `<Screenshot>` and the synthetic-checks callout work), but cards should rarely need a screenshot.
@@ -82,7 +82,7 @@ The `?help=` sheet shows a short **help card** written for the screen you're on.
   - **Done when:** `npm run check` passes (the coverage test proves every id resolves and no card is orphaned); each card is within the length limit (`wc -w`).
   - `visual`
 
-- [ ] **4. Skill Track and remaining cards**
+- [x] **4. Skill Track and remaining cards** — feat(docs): skill track and remaining help cards
   - **Files:** `content/help/skill-track/*.mdx` (replace `skill-track.mdx` with `skill-track/dashboard.mdx`), `content/help/{skill-package-builder,i3,d4h-views,notes}.mdx`, the Skill Track `HelpButton` call sites.
   - **Do:** as Task 3, for the Skill Track rows of the table, and rewrite the four remaining first-pass cards properly. Session pages: read the session header (Approve/Reopen, Recording Options sheet), the entry pages (the "Also checked by" marker, Recent checks dialog), and the review page (summary strip, coverage cards, exclude dialogs) so the cards describe what's there now.
   - **Done when:** as Task 3.
