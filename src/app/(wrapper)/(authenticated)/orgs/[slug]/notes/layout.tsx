@@ -35,7 +35,7 @@ export default async function Notes_Layout(props: LayoutProps<"/orgs/[slug]/note
         );
     }
 
-    const helpButton = <HelpButton slug="notes" />;
+    const helpButton = <HelpButton id="notes" />;
 
     return (
         <Notes_ModuleGate>

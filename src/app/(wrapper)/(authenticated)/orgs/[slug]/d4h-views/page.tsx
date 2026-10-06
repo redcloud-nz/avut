@@ -25,7 +25,7 @@ export default async function D4HViews_Index_Page(props: PageProps<`/orgs/[slug]
 
     return (
         <>
-            <Std.Navbar breadcrumbs={["D4H Views"]} actions={<HelpButton slug="d4h-views" />} />
+            <Std.Navbar breadcrumbs={["D4H Views"]} actions={<HelpButton id="d4h-views" />} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H Views Module">
                     <ItemGroup>

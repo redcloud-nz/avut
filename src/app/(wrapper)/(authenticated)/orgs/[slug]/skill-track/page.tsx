@@ -29,7 +29,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                 breadcrumbs={[
                     { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                 ]}
-                actions={<HelpButton slug="skill-track" />}
+                actions={<HelpButton id="skill-track" />}
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skill Track">

@@ -203,7 +203,7 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                     },
                     "Members",
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

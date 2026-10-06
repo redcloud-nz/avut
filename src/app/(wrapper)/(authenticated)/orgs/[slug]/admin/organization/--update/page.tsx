@@ -34,7 +34,7 @@ export default function AdminModule_OrganizationUpdate_Page(
                     },
                     "Update",
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin" />}
             />
             <Std.ScrollContainer>
                 <Card>

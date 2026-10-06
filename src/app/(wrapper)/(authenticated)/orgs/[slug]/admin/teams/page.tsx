@@ -32,7 +32,7 @@ export default async function AdminModule_TeamsList_Page(
                         { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                         { label: "Teams", href: route("/orgs/[slug]/admin/teams", { slug }) },
                     ]}
-                    actions={<HelpButton slug="admin" />}
+                    actions={<HelpButton id="admin" />}
                 />
                 <Std.ScrollContainer>
                     <AdminModule_Teams_List />

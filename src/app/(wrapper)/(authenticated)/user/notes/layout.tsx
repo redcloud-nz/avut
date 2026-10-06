@@ -28,7 +28,7 @@ export default async function UserNotes_Layout(props: LayoutProps<"/user/notes">
 
     prefetch(trpc.userNotes.listNotes.queryOptions());
 
-    const helpButton = <HelpButton slug="notes" />;
+    const helpButton = <HelpButton id="notes" />;
 
     return (
         <HydrateClient>

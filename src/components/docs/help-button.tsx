@@ -12,18 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 /**
- * Navbar control that opens the contextual help sheet for a specific doc page.
- * `slug` is the doc's slug under `content/docs` (e.g. `"i3"`,
- * `"getting-started/signing-in"`). The sheet itself (`<HelpSheet>`) is mounted
- * once globally; this only writes the `?help=<slug>` param.
+ * Navbar control that opens the contextual help sheet on a help card. `id` is
+ * the card's path under `content/help` without extension (e.g. `"i3"`,
+ * `"skill-track/sessions"`). Pass it as a string literal: the coverage test
+ * (`help-cards.test.ts`) greps call sites for `id="…"`. The sheet itself
+ * (`<HelpSheet>`) is mounted once globally; this only writes the `?help=<id>`
+ * param.
  */
-export function HelpButton({
-    slug,
-    label = "Help for this page",
-}: {
-    slug: string;
-    label?: string;
-}) {
+export function HelpButton({ id, label = "Help for this page" }: { id: string; label?: string }) {
     const [, setHelp] = useQueryState("help", parseAsString);
 
     return (
@@ -33,7 +29,7 @@ export function HelpButton({
                     variant="ghost"
                     size="icon"
                     aria-label={label}
-                    onClick={() => void setHelp(slug, { history: "push" })}
+                    onClick={() => void setHelp(id, { history: "push" })}
                 >
                     <CircleHelpIcon />
                 </Button>

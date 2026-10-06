@@ -76,7 +76,7 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
                             href: route("/orgs/[slug]/skill-track/reports/skill", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/reports" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillCoverageReport

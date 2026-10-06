@@ -412,7 +412,7 @@ export function SkillTrack_SessionReview_Content({
                     },
                     "Review",
                 ]}
-                actions={<HelpButton slug="skill-track/sessions" />}
+                actions={<HelpButton id="skill-track/sessions" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

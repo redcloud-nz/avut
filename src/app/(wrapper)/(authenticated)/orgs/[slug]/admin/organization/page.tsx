@@ -39,7 +39,7 @@ export default async function AdminModule_Organization_Page(
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                     "Organization",
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

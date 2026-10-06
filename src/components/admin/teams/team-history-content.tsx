@@ -42,7 +42,7 @@ export function AdminModule_TeamHistory_Content({ teamId }: { teamId: TeamId }) 
                     },
                     "History",
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin" />}
             />
             <Std.ScrollContainer>
                 <ObjectHistory

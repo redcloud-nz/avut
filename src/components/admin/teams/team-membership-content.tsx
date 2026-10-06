@@ -76,7 +76,7 @@ export function AdminModule_TeamMembership_Content({
                     },
                     membership.person.name,
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
