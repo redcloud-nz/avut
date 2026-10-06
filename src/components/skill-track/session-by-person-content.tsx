@@ -19,8 +19,8 @@ import { SkillTrack_CheckRow } from "@/components/skill-track/check-row";
 import { SkillTrack_RecordCheckDialog } from "@/components/skill-track/record-check-dialog";
 import {
     SessionSkillOrder,
-    SkillTrack_SessionActionsSheet,
-} from "@/components/skill-track/session-actions-sheet";
+    SkillTrack_RecordingOptionsSheet,
+} from "@/components/skill-track/recording-options-sheet";
 import { SkillTrack_SessionApprovedEmpty } from "@/components/skill-track/session-approved-empty";
 import {
     sessionCheckKey,
@@ -241,14 +241,6 @@ export function SkillTrack_SessionByPerson_Content({
                 ]}
             />
             <div className="flex items-center justify-end gap-1 grow">
-                <SkillTrack_SessionActionsSheet
-                    sessionId={sessionId}
-                    mode="by-person"
-                    view={{
-                        skillOrder,
-                        onSkillOrderChange: setSkillOrder,
-                    }}
-                />
                 <HelpButton slug="skill-track/sessions" />
             </div>
         </Std.Navbar>
@@ -272,6 +264,13 @@ export function SkillTrack_SessionByPerson_Content({
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Assess by Person</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <SkillTrack_RecordingOptionsSheet
+                                sessionId={sessionId}
+                                mode="by-person"
+                                view={{ skillOrder, onSkillOrderChange: setSkillOrder }}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <Show
                         when={!!personSelf}
