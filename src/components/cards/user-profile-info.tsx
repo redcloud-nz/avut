@@ -4,7 +4,7 @@
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { requireSession } from "@/server/session";
 
 export async function UserProfileInfo_Card() {
@@ -16,16 +16,20 @@ export async function UserProfileInfo_Card() {
                 <CardTitle>User Information</CardTitle>
             </CardHeader>
             <CardContent>
-                <DL>
-                    <DLTerm>User ID</DLTerm>
-                    <DLDetails className="font-mono">{session.user.id}</DLDetails>
-
-                    <DLTerm>Name</DLTerm>
-                    <DLDetails>{session.user.name}</DLDetails>
-
-                    <DLTerm>Email</DLTerm>
-                    <DLDetails>{session.user.email || "No email"}</DLDetails>
-                </DL>
+                <DataList>
+                    <DataItem inline>
+                        <DataItemTitle>User ID</DataItemTitle>
+                        <DataItemValue className="font-mono">{session.user.id}</DataItemValue>
+                    </DataItem>
+                    <DataItem inline>
+                        <DataItemTitle>Name</DataItemTitle>
+                        <DataItemValue>{session.user.name}</DataItemValue>
+                    </DataItem>
+                    <DataItem>
+                        <DataItemTitle>Email</DataItemTitle>
+                        <DataItemValue>{session.user.email || "No email"}</DataItemValue>
+                    </DataItem>
+                </DataList>
             </CardContent>
         </Card>
     );

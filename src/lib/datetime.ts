@@ -62,7 +62,7 @@ export const DEFAULT_DISPLAY_PREFERENCES: DisplayPreferences = UserSettings.defa
  *
  * `prefs` is optional, and omitting it renders `DEFAULT_DISPLAY_PREFERENCES` — i.e. the call
  * site ignores the viewer's preference. That's the state most call sites are still in: only the
- * entity created/updated cards (`DLDateDetails`) pass real preferences today. Reaching the rest
+ * entity created/updated cards (`DataItemDateValue`) pass real preferences today. Reaching the rest
  * means threading preferences into TanStack table column definitions and `FieldValue`, which is
  * deliberately a separate change.
  *

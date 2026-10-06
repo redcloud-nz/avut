@@ -14,9 +14,14 @@ import { getD4HEquipmentBrandsCollection } from "@/client/collections/equipment-
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 
 import { D4HViewsModule_EquipmentBrand_Models_List } from "./brand-models";
@@ -73,21 +78,29 @@ export default function D4HViewsModule_EquipmentBrand_Page(
                             <CardTitle>Brand Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <DL>
-                                <DLTerm>Brand ID</DLTerm>
-                                <DLDetails>{brand.id}</DLDetails>
-                                <DLTerm>Title</DLTerm>
-                                <DLDetails>{brand.title}</DLDetails>
-                                <DLTerm>Owner</DLTerm>
-                                <DLDetails>
-                                    <span>{brand.owner.title}</span>
-                                    <span className="text-muted-foreground pl-2">
-                                        ({brand.owner.resourceType})
-                                    </span>
-                                </DLDetails>
-                                <DLTerm>Updated</DLTerm>
-                                <DLDetails>{formatDateTime(brand.updatedAt)}</DLDetails>
-                            </DL>
+                            <DataList>
+                                <DataItem inline>
+                                    <DataItemTitle>Brand ID</DataItemTitle>
+                                    <DataItemValue>{brand.id}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Title</DataItemTitle>
+                                    <DataItemValue>{brand.title}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Owner</DataItemTitle>
+                                    <DataItemValue>
+                                        <span>{brand.owner.title}</span>
+                                        <span className="text-muted-foreground pl-2">
+                                            ({brand.owner.resourceType})
+                                        </span>
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Updated</DataItemTitle>
+                                    <DataItemDateValue date={brand.updatedAt} />
+                                </DataItem>
+                            </DataList>
                         </CardContent>
                     </Card>
                     <D4HViewsModule_EquipmentBrand_Models_List brandId={brand.id} />

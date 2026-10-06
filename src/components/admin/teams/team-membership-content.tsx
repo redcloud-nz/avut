@@ -12,7 +12,13 @@ import { HelpButton } from "@/components/docs/help-button";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
@@ -91,20 +97,28 @@ export function AdminModule_TeamMembership_Content({
                                     <CardTitle>Details</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Membership ID</DLTerm>
-                                        <DLDetails>{membership.id}</DLDetails>
-                                        <DLTerm>Person</DLTerm>
-                                        <DLDetails>
-                                            <PersonLink person={membership.person} />
-                                        </DLDetails>
-                                        <DLTerm>Team</DLTerm>
-                                        <DLDetails>
-                                            <TeamLink team={team} />
-                                        </DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{membership.status}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Membership ID</DataItemTitle>
+                                            <DataItemValue>{membership.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Person</DataItemTitle>
+                                            <DataItemValue>
+                                                <PersonLink person={membership.person} />
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Team</DataItemTitle>
+                                            <DataItemValue>
+                                                <TeamLink team={team} />
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{membership.status}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
 
@@ -114,30 +128,50 @@ export function AdminModule_TeamMembership_Content({
                                         <CardTitle>D4H</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <DL>
-                                            <DLTerm>Member ID</DLTerm>
-                                            <DLDetails>{membership.d4h.d4hMemberId}</DLDetails>
-                                            <DLTerm>D4H Status</DLTerm>
-                                            <DLDetails>
-                                                <D4HMemberStatusBadge
-                                                    status={membership.d4h.d4hStatus}
-                                                />
-                                            </DLDetails>
-                                            <DLTerm>D4H Position</DLTerm>
-                                            <DLDetails>
-                                                {membership.d4h.d4hPosition || "—"}
-                                            </DLDetails>
-                                            <DLTerm>Ref</DLTerm>
-                                            <DLDetails>{membership.d4h.d4hRef || "—"}</DLDetails>
-                                            <DLTerm>Role ID</DLTerm>
-                                            <DLDetails>{membership.d4h.d4hRoleId ?? "—"}</DLDetails>
-                                            <DLTerm>Team last synced</DLTerm>
-                                            {team.d4h?.lastSyncedAt ? (
-                                                <DLDateDetails date={team.d4h.lastSyncedAt} />
-                                            ) : (
-                                                <DLDetails>Never</DLDetails>
-                                            )}
-                                        </DL>
+                                        <DataList>
+                                            <DataItem inline>
+                                                <DataItemTitle>Member ID</DataItemTitle>
+                                                <DataItemValue>
+                                                    {membership.d4h.d4hMemberId}
+                                                </DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>D4H Status</DataItemTitle>
+                                                <DataItemValue>
+                                                    <D4HMemberStatusBadge
+                                                        status={membership.d4h.d4hStatus}
+                                                    />
+                                                </DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>D4H Position</DataItemTitle>
+                                                <DataItemValue>
+                                                    {membership.d4h.d4hPosition || "—"}
+                                                </DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>Ref</DataItemTitle>
+                                                <DataItemValue>
+                                                    {membership.d4h.d4hRef || "—"}
+                                                </DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>Role ID</DataItemTitle>
+                                                <DataItemValue>
+                                                    {membership.d4h.d4hRoleId ?? "—"}
+                                                </DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>Team last synced</DataItemTitle>
+                                                {team.d4h?.lastSyncedAt ? (
+                                                    <DataItemDateValue
+                                                        date={team.d4h.lastSyncedAt}
+                                                    />
+                                                ) : (
+                                                    <DataItemValue>Never</DataItemValue>
+                                                )}
+                                            </DataItem>
+                                        </DataList>
                                     </CardContent>
                                 </Card>
                             )}
@@ -146,12 +180,16 @@ export function AdminModule_TeamMembership_Content({
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={membership.createdAt} />
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDateDetails date={membership.updatedAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={membership.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={membership.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

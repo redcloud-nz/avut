@@ -15,7 +15,13 @@ import { D4HIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import {
     Dialog,
     DialogBody,
@@ -69,37 +75,47 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
                 </CardHeader>
                 <CardContent>
                     {team.d4h ? (
-                        <DL>
-                            <DLTerm>D4H Team</DLTerm>
-                            <DLDetails>
-                                {team.d4h.d4hTeamName}{" "}
-                                <span className="text-muted-foreground">
-                                    (ID: {team.d4h.d4hTeamId})
-                                </span>
-                            </DLDetails>
-                            <DLTerm>Server</DLTerm>
-                            <DLDetails>{getD4HServer(team.d4h.d4hServerCode).name}</DLDetails>
-                            <DLTerm>D4H Organisation</DLTerm>
-                            <DLDetails>
-                                {team.d4h.d4hOrganisationId ? (
-                                    <>
-                                        {team.d4h.d4hOrganisationName}
-                                        {team.d4h.d4hOrganisationName && " "}
-                                        <span className="text-muted-foreground">
-                                            (ID: {team.d4h.d4hOrganisationId})
-                                        </span>
-                                    </>
+                        <DataList>
+                            <DataItem inline>
+                                <DataItemTitle>D4H Team</DataItemTitle>
+                                <DataItemValue>
+                                    {team.d4h.d4hTeamName}{" "}
+                                    <span className="text-muted-foreground">
+                                        (ID: {team.d4h.d4hTeamId})
+                                    </span>
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem inline>
+                                <DataItemTitle>Server</DataItemTitle>
+                                <DataItemValue>
+                                    {getD4HServer(team.d4h.d4hServerCode).name}
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem inline>
+                                <DataItemTitle>D4H Organisation</DataItemTitle>
+                                <DataItemValue>
+                                    {team.d4h.d4hOrganisationId ? (
+                                        <>
+                                            {team.d4h.d4hOrganisationName}
+                                            {team.d4h.d4hOrganisationName && " "}
+                                            <span className="text-muted-foreground">
+                                                (ID: {team.d4h.d4hOrganisationId})
+                                            </span>
+                                        </>
+                                    ) : (
+                                        "None (org-less team)"
+                                    )}
+                                </DataItemValue>
+                            </DataItem>
+                            <DataItem inline>
+                                <DataItemTitle>Last synced</DataItemTitle>
+                                {team.d4h.lastSyncedAt ? (
+                                    <DataItemDateValue date={team.d4h.lastSyncedAt} />
                                 ) : (
-                                    "None (org-less team)"
+                                    <DataItemValue>Never</DataItemValue>
                                 )}
-                            </DLDetails>
-                            <DLTerm>Last synced</DLTerm>
-                            {team.d4h.lastSyncedAt ? (
-                                <DLDateDetails date={team.d4h.lastSyncedAt} />
-                            ) : (
-                                <DLDetails>Never</DLDetails>
-                            )}
-                        </DL>
+                            </DataItem>
+                        </DataList>
                     ) : (
                         <p className="text-muted-foreground text-sm">
                             This team is not linked to D4H.

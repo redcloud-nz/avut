@@ -17,7 +17,13 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
@@ -80,20 +86,28 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>User ID</DLTerm>
-                                        <DLDetails className="font-mono">
-                                            {member.user.id}
-                                        </DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{member.user.name}</DLDetails>
-                                        <DLTerm>Email</DLTerm>
-                                        <DLDetails>{member.user.email}</DLDetails>
-                                        <DLTerm>Roles</DLTerm>
-                                        <DLDetails>
-                                            {OrganizationRole.formatList(member.role)}
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>User ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {member.user.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{member.user.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Email</DataItemTitle>
+                                            <DataItemValue>{member.user.email}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Roles</DataItemTitle>
+                                            <DataItemValue>
+                                                {OrganizationRole.formatList(member.role)}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             {linkedPerson && (
@@ -102,28 +116,36 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                         <CardTitle>Linked Person</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <DL>
-                                            <DLTerm>Person ID</DLTerm>
-                                            <DLDetails className="font-mono">
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/admin/personnel/[person_id]",
-                                                        {
-                                                            slug,
-                                                            person_id: linkedPerson.id,
-                                                        },
-                                                    )}
-                                                >
-                                                    {linkedPerson.id}
-                                                </Link>
-                                            </DLDetails>
-                                            <DLTerm>Name</DLTerm>
-                                            <DLDetails>{linkedPerson.name}</DLDetails>
-                                            <DLTerm>Email</DLTerm>
-                                            <DLDetails>{linkedPerson.email}</DLDetails>
-                                            <DLTerm>Status</DLTerm>
-                                            <DLDetails>{linkedPerson.status}</DLDetails>
-                                        </DL>
+                                        <DataList>
+                                            <DataItem inline>
+                                                <DataItemTitle>Person ID</DataItemTitle>
+                                                <DataItemValue className="font-mono">
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/admin/personnel/[person_id]",
+                                                            {
+                                                                slug,
+                                                                person_id: linkedPerson.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        {linkedPerson.id}
+                                                    </Link>
+                                                </DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>Name</DataItemTitle>
+                                                <DataItemValue>{linkedPerson.name}</DataItemValue>
+                                            </DataItem>
+                                            <DataItem>
+                                                <DataItemTitle>Email</DataItemTitle>
+                                                <DataItemValue>{linkedPerson.email}</DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>Status</DataItemTitle>
+                                                <DataItemValue>{linkedPerson.status}</DataItemValue>
+                                            </DataItem>
+                                        </DataList>
                                     </CardContent>
                                 </Card>
                             )}
@@ -131,10 +153,12 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={member.createdAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={member.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

@@ -12,7 +12,13 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
@@ -55,32 +61,40 @@ export function UserSettings_OrganizationContent({
                                     <CardTitle>Organisation</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{organization.name}</DLDetails>
-                                        <DLTerm>Slug</DLTerm>
-                                        <DLDetails>{organization.slug}</DLDetails>
-                                        <DLTerm>Your Roles</DLTerm>
-                                        <DLDetails>
-                                            <div className="flex flex-wrap gap-1">
-                                                {membership.roles.map((role) => (
-                                                    <Badge key={role} variant="secondary">
-                                                        {OrganizationRole.displayNames[role]}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{organization.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Slug</DataItemTitle>
+                                            <DataItemValue>{organization.slug}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Your Roles</DataItemTitle>
+                                            <DataItemValue>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {membership.roles.map((role) => (
+                                                        <Badge key={role} variant="secondary">
+                                                            {OrganizationRole.displayNames[role]}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Joined</DLTerm>
-                                        <DLDateDetails date={membership.createdAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Joined</DataItemTitle>
+                                            <DataItemDateValue date={membership.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

@@ -10,7 +10,7 @@ import { render, screen } from "@testing-library/react";
 import { PreferencesClient, usePreferences } from "@/hooks/use-preferences";
 import { UserSettings } from "@/lib/schemas/user-settings";
 
-import { DLDateDetails } from "./description-list-date";
+import { DataItemDateValue } from "./data-item-date";
 
 /*
  * `usePreferences` is a `useSuspenseQuery` over a tRPC route, so it's stubbed rather than
@@ -37,29 +37,38 @@ function givenPreferences(display: Partial<UserSettings["display"]>) {
     );
 }
 
-describe("DLDateDetails", () => {
+describe("DataItemDateValue", () => {
     beforeEach(() => vi.mocked(usePreferences).mockReset());
 
     it("renders the timestamp using the viewer's presets", () => {
         givenPreferences({ dateFormat: "written", timeFormat: "12-hour", timeZone: NZ });
-        render(<DLDateDetails date={CREATED_AT} />);
+        render(<DataItemDateValue date={CREATED_AT} />);
 
         expect(screen.getByText("03 Feb 2026 11:36 AM")).toBeInTheDocument();
     });
 
+    it("marks the timestamp up as a <time> with the ISO instant", () => {
+        givenPreferences({ dateFormat: "written", timeFormat: "12-hour", timeZone: NZ });
+        render(<DataItemDateValue date={CREATED_AT.toISOString()} />);
+
+        const time = screen.getByText("03 Feb 2026 11:36 AM");
+        expect(time.tagName).toBe("TIME");
+        expect(time).toHaveAttribute("datetime", "2026-02-02T22:36:00.000Z");
+    });
+
     it("follows a change of preset rather than a hardcoded default", () => {
         givenPreferences({ dateFormat: "slash", timeFormat: "24-hour", timeZone: NZ });
-        const { rerender } = render(<DLDateDetails date={CREATED_AT} />);
+        const { rerender } = render(<DataItemDateValue date={CREATED_AT} />);
         expect(screen.getByText("03/02/2026 11:36")).toBeInTheDocument();
 
         givenPreferences({ dateFormat: "dot", timeFormat: "24-hour", timeZone: NZ });
-        rerender(<DLDateDetails date={CREATED_AT} />);
+        rerender(<DataItemDateValue date={CREATED_AT} />);
         expect(screen.getByText("03.02.2026 11:36")).toBeInTheDocument();
     });
 
     it("still renders the relative line, which takes no preference", () => {
         givenPreferences({ dateFormat: "iso-extended", timeZone: NZ });
-        render(<DLDateDetails date={new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)} />);
+        render(<DataItemDateValue date={new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)} />);
 
         expect(screen.getByText("3 days ago")).toBeInTheDocument();
     });

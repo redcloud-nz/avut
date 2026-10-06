@@ -57,7 +57,7 @@ export default async function AuthenticatedLayout(props: {
     // what produces a hydration mismatch. Awaiting costs nothing extra: `getSession` only
     // re-reads `ctx.auth`, which is `requireSession()`'s own `cache()`-wrapped lookup.
     //
-    // Every authenticated page can render a date, and `DLDateDetails` reads the viewer's format
+    // Every authenticated page can render a date, and `DataItemDateValue` reads the viewer's format
     // preference through `usePreferences()` — a `useSuspenseQuery` sitting deep inside a card
     // with no Suspense boundary of its own. Awaiting rather than `prefetch`ing is what keeps a
     // still-pending query from suspending whole card subtrees on first paint. Costs little:
