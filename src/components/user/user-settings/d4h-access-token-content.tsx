@@ -17,7 +17,13 @@ import { Std } from "@/components/blocks/std";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import {
     Table,
     TableBody,
@@ -96,29 +102,37 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                                     <CardTitle>Token Details</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Token ID</DLTerm>
-                                        <DLDetails>{token.id}</DLDetails>
-                                        <DLTerm>Organisation</DLTerm>
-                                        <DLDetails>
-                                            <Link
-                                                href={route(
-                                                    "/user/settings/organizations/[organization_id]",
-                                                    { organization_id: token.organization.id },
-                                                )}
-                                            >
-                                                {token.organization.name}
-                                            </Link>
-                                        </DLDetails>
-                                        <DLTerm>Server</DLTerm>
-                                        <DLDetails>
-                                            {getD4HServer(token.serverCode)?.name}
-                                        </DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>
-                                            <Badge variant="outline">{token.status}</Badge>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Token ID</DataItemTitle>
+                                            <DataItemValue>{token.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Organisation</DataItemTitle>
+                                            <DataItemValue>
+                                                <Link
+                                                    href={route(
+                                                        "/user/settings/organizations/[organization_id]",
+                                                        { organization_id: token.organization.id },
+                                                    )}
+                                                >
+                                                    {token.organization.name}
+                                                </Link>
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Server</DataItemTitle>
+                                            <DataItemValue>
+                                                {getD4HServer(token.serverCode)?.name}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>
+                                                <Badge variant="outline">{token.status}</Badge>
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             {token.metadata.d4HTeams.length > 0 && (
@@ -159,10 +173,12 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={token.createdAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={token.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

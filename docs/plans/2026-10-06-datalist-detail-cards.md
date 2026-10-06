@@ -117,7 +117,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 7: System admin, user settings and the profile card
 
-- [ ] **Files:** `src/components/system/admin/organizations/organization-content.tsx`, `src/components/system/admin/users/user-content.tsx`, `src/components/user/user-settings/d4h-access-token-content.tsx`, `src/components/user/user-settings/organization-content.tsx`, `src/components/cards/user-profile-info.tsx` (a Server Component).
+- [x] `feat(system-admin,user-settings): system admin, user settings and profile detail cards on DataList`
+- **Files:** `src/components/system/admin/organizations/organization-content.tsx`, `src/components/system/admin/users/user-content.tsx`, `src/components/user/user-settings/d4h-access-token-content.tsx`, `src/components/user/user-settings/organization-content.tsx`, `src/components/cards/user-profile-info.tsx` (a Server Component).
 - **Do:** migrate every card. Stacked: `Email` (system user, profile card). `Your Roles` (badges in a `flex-wrap`) is inline.
 - **Done when:** the migration criteria above hold, and `user-profile-info.tsx` still has no `"use client"`.
 
