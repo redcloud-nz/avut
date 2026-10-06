@@ -21,9 +21,14 @@ import {
     CardLoadingFallback,
     CardTitle,
 } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
@@ -76,16 +81,26 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Person ID</DLTerm>
-                                        <DLDetails className="font-mono">{person.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{person.name}</DLDetails>
-                                        <DLTerm>Email</DLTerm>
-                                        <DLDetails>{person.email}</DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{person.status}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Person ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {person.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{person.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Email</DataItemTitle>
+                                            <DataItemValue>{person.email}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{person.status}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             <Protect permissions={{ member: ["view"] }}>
@@ -100,24 +115,16 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                             </Suspense>
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(person.createdAt)}</div>
-
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(person.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(person.updatedAt)}</div>
-
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(person.updatedAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={person.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={person.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
