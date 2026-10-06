@@ -31,7 +31,7 @@ export function DataItemDateValue({
     return (
         <div
             data-component="DataItemDateValue"
-            className={cn("min-w-0 break-words text-foreground [grid-area:value]", className)}
+            className={cn("min-w-0 wrap-break-word text-foreground [grid-area:value]", className)}
             {...props}
         >
             <time dateTime={new Date(date).toISOString()} className="block">
