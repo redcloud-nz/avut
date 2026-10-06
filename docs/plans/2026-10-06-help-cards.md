@@ -88,7 +88,7 @@ The `?help=` sheet shows a short **help card** written for the screen you're on.
   - **Done when:** as Task 3.
   - `visual`
 
-- [ ] **5. Authoring guide**
+- [x] **5. Authoring guide** — docs: content authoring guide for help cards and guides
   - **Files:** new `content/README.md`, `.claude/skills/avut-doc-screenshots/SKILL.md` (its description mentions the `?help=` sheet showing the docs).
   - **Do:** `content/README.md` explains the three collections (`docs`, `help`, `updates`, linking to `content/updates/README.md` for the last), the card/guide split and when to write which, the card frontmatter and length limit, when a screen gets its own card versus sharing one, the build checks and the coverage test, and how a user-facing PR updates its card in the same PR while guide changes can go on the milestone docs issue. Keep it short. Fix the screenshots skill where it says the sheet shows the guide: its frontmatter description, and the "same MDX renders in two places" passage (about lines 190–191). A guide screenshot now appears only on `/docs` (768px), a card's only in the sheet (480px). Mention in the README that a bad card is fatal only in `npx content-collections build`.
   - **Done when:** the README exists and is accurate against Tasks 1 to 4; `npm run check` passes.

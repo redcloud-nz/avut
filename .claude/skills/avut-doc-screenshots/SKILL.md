@@ -1,6 +1,6 @@
 ---
 name: avut-doc-screenshots
-description: Use when capturing, re-capturing, or adding product screenshots to the end-user documentation (content/docs/**, the /docs site, the in-app ?help= sheet) or the marketing home page — covers which browser tool to use, how to get a clean frame, the standard sizes, uploading to Vercel Blob, and wiring the <Screenshot> into MDX
+description: Use when capturing, re-capturing, or adding product screenshots to the end-user documentation (guides in content/docs/** on the /docs site, help cards in content/help/** in the in-app ?help= sheet) or the marketing home page — covers which browser tool to use, how to get a clean frame, the standard sizes, uploading to Vercel Blob, and wiring the <Screenshot> into MDX
 ---
 
 # Capture documentation screenshots
@@ -187,8 +187,9 @@ the component uses. Never hand-edit the generated JSON.
 
 `caption` is optional. Raw Markdown `![]()` is unsupported and renders a visible red error instead.
 
-Remember the same MDX renders in **two** places — the `/docs` prose column (768px) and the in-app
-`?help=` sheet (480px). There is no way to show one shot on one surface and another elsewhere.
+Size the shot for where its MDX renders: a guide (`content/docs/**`) only in the `/docs` prose column
+(768px), a help card (`content/help/**`) only in the in-app `?help=` sheet (480px). Cards rarely
+need a screenshot (see [`content/README.md`](../../../content/README.md)).
 
 ## Step 8 — Verify
 
