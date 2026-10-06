@@ -18,9 +18,11 @@ decides when a pass expires in reports; 0 means it never expires.
 The package's menu (⋮) has:
 
 - **Publish**, which puts it in every organisation's catalogue, and
-  **Unpublish**, which takes it out. Organisations already subscribed keep it.
-- **Archive** and **Restore**. Archiving doesn't unpublish a package, so
-  unpublish it too if it shouldn't be offered.
+  **Unpublish**, which stops new subscriptions and removes its skills from
+  subscribers' reports. Their sessions can still use its skills.
+- **Archive** and **Restore**. While archived, its skills leave subscribers'
+  reports, but it stays in the catalogue, open to subscription, and in the
+  session skill picker.
 - **Delete**, which unpublishes the package and moves it to the Rubbish bin.
   Subscribers lose its skills straight away.
 - **Export .json**, to copy it to another organisation or AVUT instance.
