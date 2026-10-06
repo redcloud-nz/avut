@@ -11,7 +11,7 @@ import { ComponentProps } from "react";
 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { cn } from "@/lib/utils";
 
 export interface DatePickerProps {
@@ -41,6 +41,8 @@ export function DatePicker({
     slotProps = {},
     value,
 }: DatePickerProps) {
+    const { formatDate } = usePreferences();
+
     function handleSelect(selected: Date | undefined) {
         const str = selected ? formatISO(selected) : undefined;
 

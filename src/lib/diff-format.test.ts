@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_DISPLAY_PREFERENCES, formatDateTime, type DisplayPreferences } from "./datetime";
+import { DEFAULT_DISPLAY_PREFERENCES, type DisplayPreferences } from "./datetime";
 import {
     actionPastTenseLabel,
     describeChange,
@@ -20,6 +20,9 @@ import {
 
 /** 2026-02-02 22:36 UTC — next morning (11:36 NZDT) in Auckland. */
 const ISO = "2026-02-02T22:36:00.000Z";
+
+/** The prefs most tests pass when the format itself isn't under test. */
+const P = DEFAULT_DISPLAY_PREFERENCES;
 
 function prefs(over: Partial<DisplayPreferences> = {}): DisplayPreferences {
     return { ...DEFAULT_DISPLAY_PREFERENCES, ...over };
@@ -54,27 +57,23 @@ describe("formatFieldPath", () => {
 
 describe("formatDiffValue", () => {
     it("renders null and empty string as (empty)", () => {
-        expect(formatDiffValue(null)).toBe("(empty)");
-        expect(formatDiffValue("")).toBe("(empty)");
+        expect(formatDiffValue(null, P)).toBe("(empty)");
+        expect(formatDiffValue("", P)).toBe("(empty)");
     });
 
     it("renders booleans as Yes/No", () => {
-        expect(formatDiffValue(true)).toBe("Yes");
-        expect(formatDiffValue(false)).toBe("No");
+        expect(formatDiffValue(true, P)).toBe("Yes");
+        expect(formatDiffValue(false, P)).toBe("No");
     });
 
     it("renders numbers", () => {
-        expect(formatDiffValue(0)).toBe("0");
-        expect(formatDiffValue(12.5)).toBe("12.5");
+        expect(formatDiffValue(0, P)).toBe("0");
+        expect(formatDiffValue(12.5, P)).toBe("12.5");
     });
 
     it("renders arrays as a comma list, formatting each item", () => {
-        expect(formatDiffValue(["a", true, 3, null])).toBe("a, Yes, 3, (empty)");
-        expect(formatDiffValue([])).toBe("(empty)");
-    });
-
-    it("formats an ISO datetime string with the default preferences", () => {
-        expect(formatDiffValue(ISO)).toBe(formatDateTime(new Date(ISO)));
+        expect(formatDiffValue(["a", true, 3, null], P)).toBe("a, Yes, 3, (empty)");
+        expect(formatDiffValue([], P)).toBe("(empty)");
     });
 
     it("honours the viewer's preferences for an ISO datetime", () => {
@@ -105,20 +104,22 @@ describe("formatDiffValue", () => {
     });
 
     it("leaves non-datetime strings alone, including date-like ones", () => {
-        expect(formatDiffValue("Rescue 1")).toBe("Rescue 1");
-        expect(formatDiffValue("2026-02-02")).toBe("2026-02-02");
-        expect(formatDiffValue("2026-02-02T22:36:00.000Z and more")).toBe(
+        expect(formatDiffValue("Rescue 1", P)).toBe("Rescue 1");
+        expect(formatDiffValue("2026-02-02", P)).toBe("2026-02-02");
+        expect(formatDiffValue("2026-02-02T22:36:00.000Z and more", P)).toBe(
             "2026-02-02T22:36:00.000Z and more",
         );
-        expect(formatDiffValue("2026-02-02T22:36:00")).toBe("2026-02-02T22:36:00");
-        expect(formatDiffValue("2026-02-02T22:36:00+1300")).toBe("2026-02-02T22:36:00+1300");
-        expect(formatDiffValue("123 Main St")).toBe("123 Main St");
+        expect(formatDiffValue("2026-02-02T22:36:00", P)).toBe("2026-02-02T22:36:00");
+        expect(formatDiffValue("2026-02-02T22:36:00+1300", P)).toBe("2026-02-02T22:36:00+1300");
+        expect(formatDiffValue("123 Main St", P)).toBe("123 Main St");
     });
 });
 
 describe("describeChange", () => {
     it("obj_add → set", () => {
-        expect(describeChange({ type: "obj_add", path: ["name"], curr: "Alice" })).toEqual({
+        expect(
+            describeChange({ type: "obj_add", path: ["name"], curr: "Alice" }, { prefs: P }),
+        ).toEqual({
             field: "Name",
             kind: "set",
             curr: "Alice",
@@ -127,13 +128,21 @@ describe("describeChange", () => {
 
     it("obj_add with an empty value → set (empty), since creates log empty fields as obj_add", () => {
         const setEmpty = { field: "Notes", kind: "set", curr: "(empty)" };
-        expect(describeChange({ type: "obj_add", path: ["notes"], curr: null })).toEqual(setEmpty);
-        expect(describeChange({ type: "obj_add", path: ["notes"], curr: "" })).toEqual(setEmpty);
-        expect(describeChange({ type: "obj_add", path: ["notes"], curr: [] })).toEqual(setEmpty);
+        expect(
+            describeChange({ type: "obj_add", path: ["notes"], curr: null }, { prefs: P }),
+        ).toEqual(setEmpty);
+        expect(
+            describeChange({ type: "obj_add", path: ["notes"], curr: "" }, { prefs: P }),
+        ).toEqual(setEmpty);
+        expect(
+            describeChange({ type: "obj_add", path: ["notes"], curr: [] }, { prefs: P }),
+        ).toEqual(setEmpty);
     });
 
     it("obj_del → cleared", () => {
-        expect(describeChange({ type: "obj_del", path: ["email"], prev: "a@b.c" })).toEqual({
+        expect(
+            describeChange({ type: "obj_del", path: ["email"], prev: "a@b.c" }, { prefs: P }),
+        ).toEqual({
             field: "Email",
             kind: "cleared",
             prev: "a@b.c",
@@ -142,19 +151,24 @@ describe("describeChange", () => {
 
     it("obj_mod → changed", () => {
         expect(
-            describeChange({ type: "obj_mod", path: ["isActive"], prev: true, curr: false }),
+            describeChange(
+                { type: "obj_mod", path: ["isActive"], prev: true, curr: false },
+                { prefs: P },
+            ),
         ).toEqual({ field: "Is active", kind: "changed", prev: "Yes", curr: "No" });
     });
 
     it("obj_mask → masked", () => {
-        expect(describeChange({ type: "obj_mask", path: ["password"] })).toEqual({
+        expect(describeChange({ type: "obj_mask", path: ["password"] }, { prefs: P })).toEqual({
             field: "Password",
             kind: "masked",
         });
     });
 
     it("arr_add → added", () => {
-        expect(describeChange({ type: "arr_add", path: ["tags"], value: "blue" })).toEqual({
+        expect(
+            describeChange({ type: "arr_add", path: ["tags"], value: "blue" }, { prefs: P }),
+        ).toEqual({
             field: "Tags",
             kind: "added",
             curr: "blue",
@@ -162,7 +176,9 @@ describe("describeChange", () => {
     });
 
     it("arr_del → removed", () => {
-        expect(describeChange({ type: "arr_del", path: ["tags"], value: "red" })).toEqual({
+        expect(
+            describeChange({ type: "arr_del", path: ["tags"], value: "red" }, { prefs: P }),
+        ).toEqual({
             field: "Tags",
             kind: "removed",
             prev: "red",
@@ -171,12 +187,15 @@ describe("describeChange", () => {
 
     it("arr_ord → reordered", () => {
         expect(
-            describeChange({
-                type: "arr_ord",
-                path: ["order"],
-                prev: ["a", "b"],
-                curr: ["b", "a"],
-            }),
+            describeChange(
+                {
+                    type: "arr_ord",
+                    path: ["order"],
+                    prev: ["a", "b"],
+                    curr: ["b", "a"],
+                },
+                { prefs: P },
+            ),
         ).toEqual({ field: "Order", kind: "reordered", prev: "a, b", curr: "b, a" });
     });
 
@@ -207,19 +226,22 @@ describe("describeChange", () => {
 
         it("labels a scalar value in place of the default formatting", () => {
             expect(
-                describeChange({ type: "arr_add", path: ["skills"], value: "s1" }, { valueLabel }),
+                describeChange(
+                    { type: "arr_add", path: ["skills"], value: "s1" },
+                    { valueLabel, prefs: P },
+                ),
             ).toEqual({ field: "Skills", kind: "added", curr: "Knots" });
             expect(
                 describeChange(
                     { type: "arr_del", path: ["skills"], value: "gone" },
-                    { valueLabel },
+                    { valueLabel, prefs: P },
                 ),
             ).toEqual({ field: "Skills", kind: "removed", prev: "(unavailable)" });
             // The default would render `true` as "Yes"; valueLabel replaces it entirely.
             expect(
                 describeChange(
                     { type: "obj_mod", path: ["lead"], prev: "s2", curr: true },
-                    { valueLabel },
+                    { valueLabel, prefs: P },
                 ),
             ).toEqual({ field: "Lead", kind: "changed", prev: "Radio", curr: "true" });
         });
@@ -228,11 +250,14 @@ describe("describeChange", () => {
             expect(
                 describeChange(
                     { type: "obj_add", path: ["skills"], curr: ["s1", "s2", "gone"] },
-                    { valueLabel },
+                    { valueLabel, prefs: P },
                 ),
             ).toEqual({ field: "Skills", kind: "set", curr: "Knots, Radio, (unavailable)" });
             expect(
-                describeChange({ type: "obj_add", path: ["skills"], curr: [] }, { valueLabel }),
+                describeChange(
+                    { type: "obj_add", path: ["skills"], curr: [] },
+                    { valueLabel, prefs: P },
+                ),
             ).toEqual({ field: "Skills", kind: "set", curr: "(empty)" });
         });
     });
@@ -289,14 +314,17 @@ describe("relatedActionPhrase", () => {
 
 describe("describeChanges", () => {
     it("merges array adds and removes per field, where the field first appears", () => {
-        const lines = describeChanges([
-            { type: "obj_mod", path: ["name"], prev: "Old", curr: "New" },
-            { type: "arr_add", path: ["skills"], value: "a" },
-            { type: "arr_del", path: ["skills"], value: "x" },
-            { type: "arr_add", path: ["skills"], value: "b" },
-            { type: "arr_add", path: ["tags"], value: "red" },
-            { type: "arr_add", path: ["skills"], value: "c" },
-        ]);
+        const lines = describeChanges(
+            [
+                { type: "obj_mod", path: ["name"], prev: "Old", curr: "New" },
+                { type: "arr_add", path: ["skills"], value: "a" },
+                { type: "arr_del", path: ["skills"], value: "x" },
+                { type: "arr_add", path: ["skills"], value: "b" },
+                { type: "arr_add", path: ["tags"], value: "red" },
+                { type: "arr_add", path: ["skills"], value: "c" },
+            ],
+            () => ({ prefs: P }),
+        );
 
         expect(lines).toEqual([
             { field: "Name", kind: "changed", prev: "Old", curr: "New" },
@@ -315,8 +343,8 @@ describe("describeChanges", () => {
             ],
             (change) =>
                 change.path[0] === "skills"
-                    ? { valueLabel: (value) => `Skill ${String(value)}` }
-                    : {},
+                    ? { prefs: P, valueLabel: (value) => `Skill ${String(value)}` }
+                    : { prefs: P },
         );
 
         expect(lines).toEqual([

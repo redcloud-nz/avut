@@ -19,13 +19,14 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
 type UserRow = RouterOutput["users"]["listUsers"]["users"][number];
 
 export function SystemAdmin_Users_List() {
+    const { formatDate } = usePreferences();
     const {
         data: { users },
     } = useSuspenseQuery(trpc.users.listUsers.queryOptions());
@@ -106,7 +107,7 @@ export function SystemAdmin_Users_List() {
                     enableHiding: false,
                 }),
             ]),
-        [],
+        [formatDate],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

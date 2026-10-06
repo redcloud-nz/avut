@@ -20,7 +20,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { SystemAdmin_CreateOrganization_Dialog } from "@/components/system/admin/organizations/create-organization-dialog";
 import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { Modules, type ModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { trpc, type RouterOutput } from "@/trpc/client";
@@ -28,6 +28,7 @@ import { trpc, type RouterOutput } from "@/trpc/client";
 type OrganizationRow = RouterOutput["organizations"]["listOrganizations"]["organizations"][number];
 
 export function SystemAdmin_Organizations_List() {
+    const { formatDate } = usePreferences();
     const {
         data: { organizations },
     } = useSuspenseQuery(trpc.organizations.listOrganizations.queryOptions());
@@ -114,7 +115,7 @@ export function SystemAdmin_Organizations_List() {
                     enableHiding: false,
                 }),
             ]),
-        [],
+        [formatDate],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

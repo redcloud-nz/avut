@@ -31,7 +31,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
@@ -43,6 +43,7 @@ export default function I3Module_Team_MemberItems_Page(
     const teamId = parseInt(team_id);
 
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const [
         { data: teams },

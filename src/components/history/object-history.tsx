@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
+import type { DisplayPreferences } from "@/lib/datetime";
 import type { DiffValue } from "@/lib/diff";
 import {
     actionPastTenseLabel,
@@ -291,6 +292,7 @@ function ObjectHistoryEntryItem({
                                 valueLabel: idValueLabel(
                                     idFieldTarget(entry.objectType, change.path),
                                     names,
+                                    preferences.display,
                                 ),
                             })).map((line, index) => (
                                 <ChangeLine key={index} change={line} />
@@ -313,13 +315,14 @@ type IdFieldNames = ObjectHistoryPage["names"];
 function idValueLabel(
     target: IdFieldTarget | undefined,
     names: IdFieldNames,
+    prefs: DisplayPreferences,
 ): ((value: DiffValue) => string) | undefined {
     if (!target) return undefined;
     const byId = names[target];
     return (value) =>
         typeof value === "string" && value !== ""
             ? ((Object.hasOwn(byId, value) ? byId[value] : undefined) ?? "(unavailable)")
-            : formatDiffValue(value);
+            : formatDiffValue(value, prefs);
 }
 
 /**
