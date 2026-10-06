@@ -44,7 +44,7 @@ function stamp(check: { recordedAt: string }): number {
  * Whether a session check carries its assessee, skill and assessor names. A row a local write
  * added has them as `""` until the next poll's copy fills them in; consumers skip it until then.
  */
-export function hasNames(check: SessionCheck): boolean {
+function hasNames(check: SessionCheck): boolean {
     return check.assesseeName !== "" && check.skillName !== "" && check.assessorName !== "";
 }
 

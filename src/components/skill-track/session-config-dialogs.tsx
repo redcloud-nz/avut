@@ -53,9 +53,9 @@ function isSessionConfigAction(value: string | null): value is SessionConfigActi
  * by `?action=change-personnel` / `change-skills` / `change-assessors`. Mount it once per page
  * that can open them.
  *
- * Pass `returnFocusRef` when the trigger unmounts before its dialog opens (an item in a sheet or
- * menu): each dialog then returns focus to that element on close. Without it, the dialogs keep
- * Radix's default of returning focus to whatever was focused when they opened.
+ * Each dialog returns focus on close to whatever was focused when it opened. Pass `returnFocusRef`
+ * for triggers that unmount before their dialog closes (an item in a sheet or menu): when the
+ * opener is gone, focus goes to that element instead.
  */
 export function SkillTrack_SessionConfigDialogs({
     sessionId,

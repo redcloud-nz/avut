@@ -36,6 +36,7 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
@@ -52,19 +53,11 @@ export function SkillTrack_ChangeSessionSkills_Dialog({
     sessionId: SkillCheckSessionId;
     returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
+    const returnFocus = useReturnFocus(returnFocusRef);
+
     return (
         <Dialog {...props}>
-            <DialogContent
-                className="sm:max-w-md"
-                onCloseAutoFocus={
-                    returnFocusRef
-                        ? (event) => {
-                              event.preventDefault();
-                              returnFocusRef.current?.focus();
-                          }
-                        : undefined
-                }
-            >
+            <DialogContent className="sm:max-w-md" {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Change skills</DialogTitle>
                     <DialogDescription>

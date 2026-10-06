@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/field";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
@@ -54,18 +55,11 @@ export function SkillTrack_ChangeSessionAssessors_Dialog({
     sessionId: SkillCheckSessionId;
     returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
+    const returnFocus = useReturnFocus(returnFocusRef);
+
     return (
         <Dialog {...props}>
-            <DialogContent
-                onCloseAutoFocus={
-                    returnFocusRef
-                        ? (event) => {
-                              event.preventDefault();
-                              returnFocusRef.current?.focus();
-                          }
-                        : undefined
-                }
-            >
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Change assessors</DialogTitle>
                     <DialogDescription>
