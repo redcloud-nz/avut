@@ -87,7 +87,7 @@ export function DataItemTitle({ className, ...props }: React.ComponentPropsWithR
         <div
             data-component="DataItemTitle"
             className={cn(
-                "min-w-0 select-none wrap-break-word pr-4 font-medium text-foreground [grid-area:title] sm:pr-0",
+                "select-none pr-4 font-medium text-foreground [grid-area:title] sm:pr-0",
                 className,
             )}
             {...props}

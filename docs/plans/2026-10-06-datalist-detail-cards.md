@@ -89,7 +89,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 3: Personnel and teams
 
-- [ ] **Files:** `src/components/admin/personnel/person-content.tsx`, `src/components/admin/personnel/linked-user-card.tsx`, `src/components/admin/teams/team-content.tsx`, `src/components/admin/teams/team-membership-content.tsx`, `src/components/admin/teams/d4h-link-card.tsx`.
+- [x] `feat(admin): personnel and team detail cards on DataList with inline rows`
+- **Files:** `src/components/admin/personnel/person-content.tsx`, `src/components/admin/personnel/linked-user-card.tsx`, `src/components/admin/teams/team-content.tsx`, `src/components/admin/teams/team-membership-content.tsx`, `src/components/admin/teams/d4h-link-card.tsx`.
 - **Do:** migrate every card. Stacked: `Email` (person, linked user) and `Description` (team). `person-content.tsx`'s hand-written Created/Updated rows become `DataItemDateValue`. Keep the `Last synced` fallbacks in `d4h-link-card.tsx` and `team-membership-content.tsx`: the fallback goes into a `DataItemValue`, beside the `DataItemDateValue` branch. `D4H Team` and `D4H Organisation` (`name (ID: n)`) are inline, and wrap in their column.
 - **Done when:** the migration criteria above hold for a person, a team, a membership with a D4H link, and a team with a D4H link.
 
