@@ -103,7 +103,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 5: D4H views and i3 templates
 
-- [ ] **Files:** under `src/app/(wrapper)/(authenticated)/orgs/[slug]/`: `d4h-views/equipment/brands/[brand_id]/page.tsx`, `d4h-views/equipment/categories/[category_id]/page.tsx`, `d4h-views/equipment/categories/[category_id]/kinds/[kind_id]/page.tsx`, `d4h-views/equipment/items/[item_id]/page.tsx`, `d4h-views/members/[team_id]/[member_id]/page.tsx`, `i3/templates/[template_id]/template-content.tsx`.
+- [x] `feat(d4h-views,i3): D4H view and i3 template detail cards on DataList`
+- **Files:** under `src/app/(wrapper)/(authenticated)/orgs/[slug]/`: `d4h-views/equipment/brands/[brand_id]/page.tsx`, `d4h-views/equipment/categories/[category_id]/page.tsx`, `d4h-views/equipment/categories/[category_id]/kinds/[kind_id]/page.tsx`, `d4h-views/equipment/items/[item_id]/page.tsx`, `d4h-views/members/[team_id]/[member_id]/page.tsx`, `i3/templates/[template_id]/template-content.tsx`.
 - **Do:** migrate every card. Stacked: `Parents` (item), `Email` (member), `Description` (template). The brand's `Updated` and the template's hand-written Created/Updated become `DataItemDateValue`. The `Owner` rows (title plus muted id) are inline.
 - **Done when:** the migration criteria above hold. D4H views need an org with a D4H token, so where none is available, `npm run check` passing and a typecheck of the JSX are the bar, and the task report says which pages weren't opened.
 

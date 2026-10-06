@@ -26,7 +26,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -155,15 +155,19 @@ export default function D4HViewsModule_EquipmentItem_Page(
                             <CardTitle>Item Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <DL>
-                                <DLTerm>Item ID</DLTerm>
-                                <DLDetails>{item.id}</DLDetails>
-                                <DLTerm>Reference</DLTerm>
-                                <DLDetails>{item.ref}</DLDetails>
+                            <DataList>
+                                <DataItem inline>
+                                    <DataItemTitle>Item ID</DataItemTitle>
+                                    <DataItemValue>{item.id}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Reference</DataItemTitle>
+                                    <DataItemValue>{item.ref}</DataItemValue>
+                                </DataItem>
                                 {item.category && (
-                                    <>
-                                        <DLTerm>Category</DLTerm>
-                                        <DLDetails>
+                                    <DataItem inline>
+                                        <DataItemTitle>Category</DataItemTitle>
+                                        <DataItemValue>
                                             <Link
                                                 href={route(
                                                     "/orgs/[slug]/d4h-views/equipment/categories/[category_id]",
@@ -175,50 +179,60 @@ export default function D4HViewsModule_EquipmentItem_Page(
                                             >
                                                 {item.category.title}
                                             </Link>
-                                        </DLDetails>
-                                    </>
+                                        </DataItemValue>
+                                    </DataItem>
                                 )}
-                                <DLTerm>Kind</DLTerm>
-                                <DLDetails>{item.kind.title}</DLDetails>
-                                <DLTerm>Brand</DLTerm>
-                                <DLDetails>{item.brand?.title ?? ""}</DLDetails>
-                                <DLTerm>Model</DLTerm>
-                                <DLDetails>{item.model?.title ?? ""}</DLDetails>
-                                <DLTerm>Parents</DLTerm>
-                                <DLDetails>
-                                    <div className="flex flex-col">
-                                        {item.parents.map((parent, index) => (
-                                            <div
-                                                key={index}
-                                                style={{
-                                                    paddingLeft: `${index * 1.5}rem`,
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-1">
-                                                    {index > 0 && (
-                                                        <CornerDownRightIcon className="size-4 text-muted-foreground" />
-                                                    )}
-                                                    <div className="pt-1">
-                                                        <Link
-                                                            href={route(
-                                                                "/orgs/[slug]/d4h-views/equipment/items/[item_id]",
-                                                                {
-                                                                    slug: organization.slug,
-                                                                    item_id: String(parent.id),
-                                                                },
-                                                            )}
-                                                        >
-                                                            {parent.ref}
-                                                        </Link>
+                                <DataItem inline>
+                                    <DataItemTitle>Kind</DataItemTitle>
+                                    <DataItemValue>{item.kind.title}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Brand</DataItemTitle>
+                                    <DataItemValue>{item.brand?.title ?? ""}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Model</DataItemTitle>
+                                    <DataItemValue>{item.model?.title ?? ""}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Parents</DataItemTitle>
+                                    <DataItemValue>
+                                        <div className="flex flex-col">
+                                            {item.parents.map((parent, index) => (
+                                                <div
+                                                    key={index}
+                                                    style={{
+                                                        paddingLeft: `${index * 1.5}rem`,
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-1">
+                                                        {index > 0 && (
+                                                            <CornerDownRightIcon className="size-4 text-muted-foreground" />
+                                                        )}
+                                                        <div className="pt-1">
+                                                            <Link
+                                                                href={route(
+                                                                    "/orgs/[slug]/d4h-views/equipment/items/[item_id]",
+                                                                    {
+                                                                        slug: organization.slug,
+                                                                        item_id: String(parent.id),
+                                                                    },
+                                                                )}
+                                                            >
+                                                                {parent.ref}
+                                                            </Link>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </DLDetails>
-                                <DLTerm>Status</DLTerm>
-                                <DLDetails>{item.status}</DLDetails>
-                            </DL>
+                                            ))}
+                                        </div>
+                                    </DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Status</DataItemTitle>
+                                    <DataItemValue>{item.status}</DataItemValue>
+                                </DataItem>
+                            </DataList>
                         </CardContent>
                     </Card>
 
