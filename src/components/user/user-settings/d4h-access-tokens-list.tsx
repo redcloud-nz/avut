@@ -18,6 +18,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Badge } from "@/components/ui/badge";
+import { usePreferences } from "@/hooks/use-preferences";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
@@ -28,6 +29,8 @@ import { UserSettings_AddD4HAccessToken_Dialog } from "./add-d4h-access-token-di
 type PersonalAccessToken = RouterOutput["d4hAccessTokens"]["listPersonalAccessTokens"][number];
 
 export function UserSettings_D4HAccessTokens_List() {
+    const { formatDate } = usePreferences();
+
     const { data: tokens } = useSuspenseQuery(
         trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions(),
     );
@@ -75,13 +78,13 @@ export function UserSettings_D4HAccessTokens_List() {
                 }),
                 columnHelper.accessor("createdAt", {
                     header: "Created",
-                    cell: (ctx) => new Date(ctx.getValue()).toLocaleDateString(),
+                    cell: (ctx) => formatDate(ctx.getValue()),
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [formatDate],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

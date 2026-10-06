@@ -41,8 +41,7 @@ const userSettingsSchema = z.object({
      * Preferences that change what the user sees, rather than what's available to them (compare
      * `modules` above). `dateFormat`/`timeFormat` name a preset from `DATE_FORMAT_PATTERNS`/
      * `TIME_FORMAT_PATTERNS` (`src/lib/datetime.ts`) rather than storing a raw date-fns pattern,
-     * so the set of choices stays curated. Not wired into `formatDate`/`formatDateTime` yet — see
-     * those functions' docstrings.
+     * so the set of choices stays curated. `formatDate`/`formatDateTime` require them.
      */
     display: z.object({
         dateFormat: z

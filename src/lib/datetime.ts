@@ -50,7 +50,9 @@ export const TIME_FORMAT_PATTERNS: Record<UserSettings["display"]["timeFormat"],
 export type DisplayPreferences = UserSettings["display"];
 
 /**
- * What the formatters fall back to when no preference is supplied.
+ * The schema's declared `display` defaults — what a user who never visited Preferences sees.
+ * Not a fallback for the formatters, whose `prefs` is required so a call site can't silently
+ * ignore the viewer's choice; tests use it as a baseline to override.
  *
  * Taken from the schema rather than restated, so a change to the declared default of
  * `display.dateFormat`/`display.timeFormat` moves this with it.
@@ -58,21 +60,12 @@ export type DisplayPreferences = UserSettings["display"];
 export const DEFAULT_DISPLAY_PREFERENCES: DisplayPreferences = UserSettings.default().display;
 
 /**
- * Formats a date for display to the user.
+ * Formats a date for display to the user, in their `dateFormat` preset and `timeZone`.
  *
- * `prefs` is optional, and omitting it renders `DEFAULT_DISPLAY_PREFERENCES` — i.e. the call
- * site ignores the viewer's preference. That's the state most call sites are still in: only the
- * entity created/updated cards (`DataItemDateValue`) pass real preferences today. Reaching the rest
- * means threading preferences into TanStack table column definitions and `FieldValue`, which is
- * deliberately a separate change.
- *
- * Client components get preferences from `usePreferences()`; server components from
- * `getDisplayPreferences()` in `@/server/display-preferences`.
+ * Client components take the bound `formatDate` from `usePreferences()` rather than calling this
+ * directly; server components pass `getDisplayPreferences()` from `@/server/display-preferences`.
  */
-export function formatDate(
-    dateOrString: string | Date,
-    prefs: DisplayPreferences = DEFAULT_DISPLAY_PREFERENCES,
-): string {
+export function formatDate(dateOrString: string | Date, prefs: DisplayPreferences): string {
     return format(
         new TZDate(new Date(dateOrString), prefs.timeZone),
         DATE_FORMAT_PATTERNS[prefs.dateFormat],
@@ -80,10 +73,7 @@ export function formatDate(
 }
 
 /** Same `prefs` contract as `formatDate`, rendering the date and time together. */
-export function formatDateTime(
-    dateOrString: string | Date,
-    prefs: DisplayPreferences = DEFAULT_DISPLAY_PREFERENCES,
-): string {
+export function formatDateTime(dateOrString: string | Date, prefs: DisplayPreferences): string {
     return format(
         new TZDate(new Date(dateOrString), prefs.timeZone),
         `${DATE_FORMAT_PATTERNS[prefs.dateFormat]} ${TIME_FORMAT_PATTERNS[prefs.timeFormat]}`,

@@ -43,7 +43,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -51,6 +51,7 @@ import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillCheckSessionId }) {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const { data: session } = useSuspenseQuery(
         trpc.skillCheckSessions.getSession.queryOptions({

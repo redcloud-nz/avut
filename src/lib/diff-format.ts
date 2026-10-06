@@ -44,7 +44,7 @@ export interface DescribeChangeOptions {
     /** Field-label overrides, keyed by the joined path (`"properties.callSign"`). */
     labels?: Record<string, string>;
     /** The viewer's display preferences, used for datetime values. */
-    prefs?: DisplayPreferences;
+    prefs: DisplayPreferences;
     /**
      * Formats a scalar value in place of `formatDiffValue` — for each element of an array value
      * too. For fields whose values need a lookup, such as ids mapped to names.
@@ -130,7 +130,7 @@ const ISO_DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-
  * A stored diff value for display: `null`/`""` → "(empty)", booleans → "Yes"/"No", arrays → a
  * comma list, ISO datetime strings → `formatDateTime` with `prefs`, anything else as-is.
  */
-export function formatDiffValue(value: DiffValues, prefs?: DisplayPreferences): string {
+export function formatDiffValue(value: DiffValues, prefs: DisplayPreferences): string {
     if (Array.isArray(value)) {
         if (value.length === 0) return "(empty)";
         return value.map((item) => formatDiffValue(item, prefs)).join(", ");
@@ -148,7 +148,7 @@ export function formatDiffValue(value: DiffValues, prefs?: DisplayPreferences): 
 /** Maps one `DiffChange` to a display descriptor. */
 export function describeChange(
     change: DiffChange,
-    options: DescribeChangeOptions = {},
+    options: DescribeChangeOptions,
 ): ChangeDescriptor {
     const { labels, prefs, valueLabel } = options;
     const field = formatFieldPath(change.path, labels);
@@ -191,7 +191,7 @@ export function describeChange(
  */
 export function describeChanges(
     changes: DiffChange[],
-    options: (change: DiffChange) => DescribeChangeOptions = () => ({}),
+    options: (change: DiffChange) => DescribeChangeOptions,
 ): ChangeDescriptor[] {
     const lines: ChangeDescriptor[] = [];
     const merged = new Map<string, { line: ChangeDescriptor; values: string[] }>();

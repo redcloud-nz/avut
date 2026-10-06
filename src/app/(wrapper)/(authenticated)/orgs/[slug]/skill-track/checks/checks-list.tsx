@@ -25,7 +25,7 @@ import { Show } from "@/components/show";
 import { SkillTrack_CreateCheck_Dialog } from "@/components/skill-track/create-check";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import {
     assessorDisplayName,
@@ -36,6 +36,7 @@ import { trpc } from "@/trpc/client";
 
 export default function SkillTrack_ChecksList() {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const { data: checks } = useSuspenseQuery(
         trpc.skillChecks.listRecentChecks.queryOptions({
@@ -110,7 +111,7 @@ export default function SkillTrack_ChecksList() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [organization.slug, organization.settings],
+        [organization.slug, organization.settings, formatDate],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

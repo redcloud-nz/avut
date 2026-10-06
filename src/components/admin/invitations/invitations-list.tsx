@@ -34,7 +34,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { type OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
@@ -43,6 +43,7 @@ import { AdminModule_CreateInvitation_Dialog } from "./create-invitation";
 
 export function AdminModule_Invitations_List() {
     const organization = useOrganization();
+    const { formatDateTime } = usePreferences();
 
     const { data: invitations } = useSuspenseQuery(
         trpc.invitations.listInvitations.queryOptions({ organizationId: organization.id }),
@@ -144,7 +145,7 @@ export function AdminModule_Invitations_List() {
                 }),
             ]),
 
-        [],
+        [formatDateTime],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

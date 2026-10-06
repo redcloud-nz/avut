@@ -23,7 +23,7 @@ import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
@@ -34,6 +34,7 @@ import { SkillTrack_CreateSession_Dialog } from "./create-session";
 
 export default function SkillTrack_Sessions_List() {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const { data: sessions } = useSuspenseQuery(
         trpc.skillCheckSessions.listSessions.queryOptions({
@@ -93,7 +94,7 @@ export default function SkillTrack_Sessions_List() {
                     },
                 }),
             ]),
-        [organization.slug],
+        [organization.slug, formatDate],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

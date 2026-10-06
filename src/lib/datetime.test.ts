@@ -151,11 +151,6 @@ describe("DEFAULT_DISPLAY_PREFERENCES", () => {
     it("names an explicit zone rather than deferring to the process", () => {
         expect(DEFAULT_DISPLAY_PREFERENCES.timeZone).toBe("Pacific/Auckland");
     });
-
-    it("is what an omitted prefs argument renders", () => {
-        expect(formatDate(INSTANT)).toBe(formatDate(INSTANT, DEFAULT_DISPLAY_PREFERENCES));
-        expect(formatDateTime(INSTANT)).toBe(formatDateTime(INSTANT, DEFAULT_DISPLAY_PREFERENCES));
-    });
 });
 
 describe("UserSettings.display.timeZone", () => {
