@@ -80,7 +80,7 @@ export function sessionChecksQueryOptions({
     return {
         ...base,
         // Always stale, overriding the app-wide 10-minute default, so a window focus, a remount or
-        // a new observer (the Recent checks dialog) refetches. Each refetch is a small delta.
+        // a new observer refetches. Each refetch is a small delta.
         staleTime: 0,
         queryFn: async ({ client, signal }: QueryFunctionContext): Promise<SessionChecksData> => {
             const since = client.getQueryData(base.queryKey)?.cursor;

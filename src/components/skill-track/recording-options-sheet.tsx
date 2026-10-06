@@ -63,6 +63,10 @@ const SKILL_ORDER_ITEMS: { value: SessionSkillOrder; label: string; icon: Lucide
     { value: "by-package-group", label: "By Package/Group", icon: ListTreeIcon },
 ];
 
+/** An icon-over-label tile, matching the result picker in the record-check dialog. */
+const TILE_CLASS =
+    "h-auto min-w-0 flex-col justify-start gap-1.5 px-1 py-1.5 text-xs leading-tight font-normal whitespace-normal";
+
 const MODE_ITEMS: { mode: SessionEntryMode; label: string; icon: LucideIcon }[] = [
     { mode: "by-person", label: "By Person", icon: UserIcon },
     { mode: "by-skill", label: "By Skill", icon: ClipboardCheckIcon },
@@ -182,7 +186,7 @@ export function SkillTrack_RecordingOptionsSheet({
                                             aria-current={
                                                 isApproved && current ? "page" : undefined
                                             }
-                                            className="h-auto min-w-0 flex-col justify-start gap-1.5 px-1 py-1.5 text-xs leading-tight font-normal whitespace-normal"
+                                            className={TILE_CLASS}
                                         >
                                             {isApproved ? (
                                                 content
@@ -220,7 +224,7 @@ export function SkillTrack_RecordingOptionsSheet({
                                             key={value}
                                             variant={isSelected ? "outline" : "ghost"}
                                             aria-pressed={isSelected}
-                                            className="h-auto min-w-0 flex-col justify-start gap-1.5 px-1 py-1.5 text-xs leading-tight font-normal whitespace-normal"
+                                            className={TILE_CLASS}
                                             onClick={() => view.onSkillOrderChange(value)}
                                         >
                                             <Icon className="size-5" />
