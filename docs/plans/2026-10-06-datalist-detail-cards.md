@@ -110,7 +110,8 @@ For a migration task, "done" means: the files no longer import `@/components/ui/
 
 ### Task 6: Skill package builder and the skill-track catalogue
 
-- [ ] **Files:** `src/components/skill-package-builder/package-content.tsx`, `src/components/skill-package-builder/group-content.tsx`, `src/components/skill-package-builder/skill-content.tsx`, `src/components/skill-track/catalogue-package-content.tsx`.
+- [x] `feat(skill-package-builder,skill-track): package, group, skill and catalogue detail cards on DataList`
+- **Files:** `src/components/skill-package-builder/package-content.tsx`, `src/components/skill-package-builder/group-content.tsx`, `src/components/skill-package-builder/skill-content.tsx`, `src/components/skill-track/catalogue-package-content.tsx`.
 - **Do:** migrate every card. Stacked: `Description` (all four). The hand-written Created/Updated rows in all four become `DataItemDateValue`.
 - **Done when:** the migration criteria above hold for a package, a group, a skill and a catalogue package.
 
