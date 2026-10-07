@@ -24,14 +24,17 @@ across your people.
 
 ## What's here
 
-- **[Catalogue](/docs/skill-track/catalogue)** — the skill packages your
-  organisation has subscribed to, and what they contain.
+- **Assessors** — who holds the Skills Assessor role. See [Roles](#roles).
+- **[Catalogue](/docs/skill-track/catalogue)** — the skill packages on offer,
+  and the ones your organisation subscribes to.
+- **[Checks](/docs/skill-track/checks)** — every check from the last month,
+  and recording one outside a session.
 - **[Sessions](/docs/skill-track/sessions)** — the usual way to run
   assessments: pick who and what, record results, then review and approve.
-- **[Checks](/docs/skill-track/checks)** — recording a single check on the
-  spot, outside any session.
 - **[Reports](/docs/skill-track/reports)** — competency and currency, viewed
   by person, by team, by skill, or as one big matrix.
+
+You only see the links your roles allow.
 
 ## Skill checks
 
@@ -58,7 +61,23 @@ doesn't delete anything already recorded against it.
 
 ## Roles
 
-Assessing requires the `skills-assessor` role — it covers sessions, checks, and
-reports. Building or publishing skill packages is a separate `skill-package-author`
-role. Everyday members without either role only see the catalogue; ask an
-assessor or admin if you need to know your own results.
+Skill Track has its own roles, which an owner or admin grants under **Admin →
+Users** (see [Roles](/docs/admin#roles)):
+
+- A **Skills Assessor** runs sessions and records checks.
+- A **Skills Reporter** can view checks, sessions and reports, but not change
+  them.
+- A **Skills Admin** can do everything an assessor and a reporter can, and
+  also approve, reopen and delete sessions, and subscribe to skill packages.
+
+Writing skill packages is a separate role, **Skills Author**, in the
+[Skill Package Builder](/docs/skill-package-builder).
+
+The **Assessors** page lists your organisation's members with a **Skills
+Assessor** switch for each. Owners, admins and Skills Admins use it to hand out
+the role without editing anyone's other roles. A member whose only role is
+Skills Assessor shows **Their only role** instead of a switch, and a Skills Admin
+already has everything an assessor does.
+
+Members without any Skill Track role only see the catalogue. Only checks in an
+approved session count in reports.
