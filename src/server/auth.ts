@@ -110,14 +110,20 @@ export const auth = betterAuth({
                 /*
                  * Start a new account's "What's new" cursor at the newest entry, so it isn't shown
                  * the backlog. A read cursor, so not audit-logged (see `whats-new-router.ts`).
+                 * Best-effort: it runs after the account is committed, so a throw would fail the
+                 * sign-up of an account that already exists. A failure just leaves the cursor null.
                  */
                 async after(user) {
                     const newest = getNewestUpdateVersion();
                     if (!newest) return;
-                    await prisma.user.update({
-                        where: { id: user.id },
-                        data: { lastSeenUpdatesVersion: newest },
-                    });
+                    try {
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { lastSeenUpdatesVersion: newest },
+                        });
+                    } catch (error) {
+                        console.error("Couldn't start the What's new cursor:", error);
+                    }
                 },
             },
         },
