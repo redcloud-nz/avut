@@ -4,7 +4,7 @@
  *
  * content-collections config — compiles the team-authored end-user docs in
  * `content/docs/**` and the "what's new" product-update entries in
- * `content/updates/*.mdx` to typed, MDX-rendered records. The `withContentCollections`
+ * `content/updates/v*.mdx` to typed, MDX-rendered records. The `withContentCollections`
  * wrapper in `next.config.ts` runs this on `next dev` (watch) and `next build`.
  */
 
@@ -145,10 +145,10 @@ const helpCards = defineCollection({
 });
 
 /**
- * Product-update entries for the in-app "What's new" dialog and `/docs/updates`.
- * Files are `content/updates/YYYY-MM-DD-<slug>.mdx`; every file counts as
- * published (no scheduling). See `content/updates/README.md` for the authoring
- * rules and `src/lib/updates.ts` for the read model.
+ * "What's new" entries for the in-app dialog and `/docs/updates`, one per
+ * release: `content/updates/v<version>.mdx`. The version comes from the
+ * filename. See `content/updates/README.md` for the authoring rules and
+ * `src/lib/updates.ts` for the read model.
  */
 const updates = defineCollection({
     name: "updates",
@@ -156,26 +156,24 @@ const updates = defineCollection({
     include: "*.mdx",
     schema: z.object({
         content: z.string(),
-        title: z.string(),
-        /** ISO date (`YYYY-MM-DD`), read as 00:00 UTC. The display date and the seen-cursor comparison. */
-        publishedAt: z.iso.date(),
+        /** The entry's heading. Defaults to "Version <version>". */
+        title: z.string().optional(),
         description: z.string().optional(),
-        /** The release the entry shipped in — display only. */
-        version: z.string().optional(),
     }),
     transform: async (entry, ctx) => {
-        // Ties count as seen, so a filename date that disagrees with
-        // `publishedAt` can silently hide an entry — fail the build instead.
-        if (!entry._meta.path.startsWith(`${entry.publishedAt}-`)) {
+        const match = /^v(\d+\.\d+(?:\.\d+)?)$/.exec(entry._meta.path);
+        if (!match) {
             throw new Error(
-                `content/updates/${entry._meta.fileName}: filename must start with its publishedAt date ("${entry.publishedAt}-")`,
+                `content/updates/${entry._meta.fileName}: name it after its release, e.g. "v0.11.mdx"`,
             );
         }
         const mdx = await compileMDX(ctx, entry, mdxOptions);
         return {
             ...entry,
             mdx,
-            /** The filename without extension; the `#anchor` on `/docs/updates`. */
+            /** The release, without the `v` (`0.11`). */
+            version: match[1],
+            /** The filename without extension (`v0.11`); the `#anchor` on `/docs/updates`. */
             slug: entry._meta.path,
         };
     },

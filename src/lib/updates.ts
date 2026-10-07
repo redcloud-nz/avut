@@ -3,72 +3,71 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
  * Read model over the compiled `updates` content collection (the "What's new"
- * entries). Pure data — safe to import from server components and route
- * handlers (no `server-only` deps).
+ * entries, one per release). Pure data — safe to import from server components
+ * and route handlers (no `server-only` deps).
  *
- * An entry is unseen by a user when its `publishedAt` is after their
- * `User.lastSeenUpdatesAt` cursor (null falls back to `User.createdAt`); ties
- * count as seen. See docs/plans/2026-09-30-whats-new-popup.md.
+ * Production shows only entries for releases up to the one it's running
+ * (`APP_RELEASE_VERSION`), so a release's entry can be drafted on `integration`
+ * ahead of time; every other environment shows them all. An entry is unseen by
+ * a user when its version is newer than their `User.lastSeenUpdatesVersion`
+ * (null: they've seen none). See content/updates/README.md.
  */
 
 import { allUpdates, type Update } from "content-collections";
 
-import type { UpdateEntryData } from "@/lib/updates-shared";
+import { env } from "@/lib/env";
+import { compareVersions, type UpdateEntryData } from "@/lib/updates-shared";
 
 export type { UpdateEntryData };
-export { updatesHref } from "@/lib/updates-shared";
-
-/** An entry's `publishedAt` as an instant (00:00 UTC on that date). */
-function publishedAtDate(entry: Pick<Update, "publishedAt">): Date {
-    return new Date(`${entry.publishedAt}T00:00:00Z`);
-}
-
-function newestFirst(a: Update, b: Update): number {
-    // ISO dates sort lexically; slug ascending breaks same-day ties.
-    return b.publishedAt.localeCompare(a.publishedAt) || a.slug.localeCompare(b.slug);
-}
+export { compareVersions, updatesHref } from "@/lib/updates-shared";
 
 function toEntryData(entry: Update): UpdateEntryData {
     return {
         slug: entry.slug,
-        title: entry.title,
-        publishedAt: entry.publishedAt,
-        description: entry.description,
         version: entry.version,
+        title: entry.title ?? `Version ${entry.version}`,
+        description: entry.description,
         mdx: entry.mdx,
     };
 }
 
-function sortedUpdates(): Update[] {
-    return [...allUpdates].sort(newestFirst);
+/** The entries this deployment shows, newest version first. */
+function visibleUpdates(): Update[] {
+    const releasedThrough = env.APP_RELEASE_VERSION;
+    return allUpdates
+        .filter((entry) => !releasedThrough || compareVersions(entry.version, releasedThrough) <= 0)
+        .sort((a, b) => compareVersions(b.version, a.version));
 }
 
-/** Every entry, newest first. */
+/** Every visible entry, newest first. */
 export function getAllUpdates(): UpdateEntryData[] {
-    return sortedUpdates().map(toEntryData);
+    return visibleUpdates().map(toEntryData);
 }
 
-/** Entries published strictly after `cursor` (an entry dated at the cursor counts as seen), newest first. */
-export function getUpdatesAfter(cursor: Date): UpdateEntryData[] {
-    return sortedUpdates()
-        .filter((entry) => publishedAtDate(entry) > cursor)
+/** Visible entries for releases newer than `seen` (all of them when it's null), newest first. */
+export function getUpdatesAfter(seen: string | null): UpdateEntryData[] {
+    return visibleUpdates()
+        .filter((entry) => seen === null || compareVersions(entry.version, seen) > 0)
         .map(toEntryData);
 }
 
-/** The `limit` most recent entries, newest first. */
+/** The `limit` most recent visible entries, newest first. */
 export function getRecentUpdates(limit: number): UpdateEntryData[] {
-    return sortedUpdates().slice(0, limit).map(toEntryData);
+    return visibleUpdates().slice(0, limit).map(toEntryData);
+}
+
+/** The newest visible entry's version, or `null` when there are none. */
+export function getNewestUpdateVersion(): string | null {
+    return visibleUpdates()[0]?.version ?? null;
 }
 
 /**
- * Clamp a requested seen-cursor to the newest `publishedAt` in the collection,
- * so a client can't move a user's cursor past entries that haven't been
- * published yet. Returns `null` when the collection is empty (nothing can have
- * been shown, so there's nothing to mark seen).
+ * Clamp a requested seen-cursor to the newest visible version, so a client
+ * can't move a user's cursor past entries this deployment hasn't shown yet.
+ * Returns `null` when nothing is visible (so there's nothing to mark seen).
  */
-export function clampSeenCursor(requested: Date): Date | null {
-    const newest = sortedUpdates()[0];
+export function clampSeenVersion(requested: string): string | null {
+    const newest = getNewestUpdateVersion();
     if (!newest) return null;
-    const newestAt = publishedAtDate(newest);
-    return requested < newestAt ? requested : newestAt;
+    return compareVersions(requested, newest) < 0 ? requested : newest;
 }

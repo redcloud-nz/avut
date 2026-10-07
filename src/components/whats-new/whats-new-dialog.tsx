@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
  * The "What's new" dialog, its auto-open, and the context its triggers (the
- * sidebar footer's version button, the user menu item) open it through. See docs/plans/2026-09-30-whats-new-popup.md.
+ * sidebar footer's version button, the user menu item) open it through. One entry per release; see content/updates/README.md.
  */
 
 "use client";
@@ -141,9 +141,9 @@ export function WhatsNewDialog() {
 
     function handleOpenChange(next: boolean) {
         setOpen(next);
-        // Entries are newest first, so the first one shown is the newest `publishedAt`.
+        // Entries are newest first, so the first one shown is the newest version.
         if (!next && view.mode === "unseen" && view.entries.length > 0) {
-            markSeen.mutate({ through: view.entries[0].publishedAt });
+            markSeen.mutate({ through: view.entries[0].version });
         }
     }
 
@@ -155,7 +155,7 @@ export function WhatsNewDialog() {
                     <DialogDescription>
                         {view.mode === "unseen"
                             ? "Here's what has changed in AVUT since you last looked."
-                            : "Recent changes to AVUT."}
+                            : "Recent releases of AVUT."}
                     </DialogDescription>
                 </DialogHeader>
                 {view.mode === "unseen" ? (

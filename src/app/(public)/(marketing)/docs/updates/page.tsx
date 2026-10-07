@@ -4,8 +4,8 @@
  *
  * Path: /docs/updates
  *
- * Every "What's new" entry from the `updates` content collection, newest first,
- * each at its own `#<slug>` anchor. A literal route, so it takes precedence over
+ * Every "What's new" entry from the `updates` content collection, one per
+ * release, newest first, each at its own `#v<version>` anchor. A literal route, so it takes precedence over
  * the `[[...slug]]` catch-all (as `docs/glossary` does). The in-app What's new
  * dialog links here.
  */
@@ -17,7 +17,7 @@ import { getAllUpdates } from "@/lib/updates";
 
 export const metadata: Metadata = {
     title: "What's new — Docs",
-    description: "Product updates: new features and changes in AVUT, newest first.",
+    description: "What's new in each release of AVUT, newest first.",
 };
 
 export default function UpdatesPage() {
@@ -27,7 +27,7 @@ export default function UpdatesPage() {
         <div>
             <h1 className="mt-2 mb-4 text-3xl font-bold tracking-tight">What&apos;s new</h1>
             <p className="text-muted-foreground mb-8 leading-7">
-                New features and changes in AVUT, newest first.
+                What&apos;s new in each release of AVUT, newest first.
             </p>
             {entries.length === 0 ? (
                 <p className="text-muted-foreground">No updates yet.</p>

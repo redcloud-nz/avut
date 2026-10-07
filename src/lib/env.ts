@@ -65,6 +65,15 @@ export const env = {
         return text(process.env.GITHUB_SHA);
     },
 
+    /**
+     * The release production is running (`0.11`), from `package.json`. Unset everywhere else, which
+     * shows every "What's new" entry — see `src/lib/updates.ts`. Inlined at build time through
+     * `next.config.ts` `env` (so defined in the browser too), not read at runtime.
+     */
+    get APP_RELEASE_VERSION() {
+        return text(process.env.APP_RELEASE_VERSION);
+    },
+
     get NEXT_PUBLIC_APP_DISPLAY_NAME() {
         return text(process.env.NEXT_PUBLIC_APP_DISPLAY_NAME);
     },

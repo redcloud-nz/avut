@@ -6,6 +6,7 @@
 #   bash .claude/skills/avut-test-in-browser/test-data.sh orgs
 #   bash .claude/skills/avut-test-in-browser/test-data.sh users    [--org <slug>]
 #   bash .claude/skills/avut-test-in-browser/test-data.sh admins
+#   bash .claude/skills/avut-test-in-browser/test-data.sh new-users   # newest accounts, with "What's new" cursor
 #   bash .claude/skills/avut-test-in-browser/test-data.sh sessions [--org <slug>]
 #   bash .claude/skills/avut-test-in-browser/test-data.sh teams    [--org <slug>]
 #
@@ -28,7 +29,7 @@ url="${url%\'}"; url="${url#\'}"
 [[ -n "$url" ]] || { echo "error: POSTGRES_URL_NON_POOLING not set in .env.local" >&2; exit 1; }
 
 usage() {
-    echo "usage: test-data.sh orgs | admins | users|sessions|teams [--org <slug>]" >&2
+    echo "usage: test-data.sh orgs | admins | new-users | users|sessions|teams [--org <slug>]" >&2
     exit 1
 }
 
@@ -43,7 +44,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 case "$kind" in
-    orgs | admins) [[ -z "$org" ]] || { echo "error: $kind doesn't take --org" >&2; exit 1; } ;;
+    orgs | admins | new-users) [[ -z "$org" ]] || { echo "error: $kind doesn't take --org" >&2; exit 1; } ;;
 esac
 
 case "$kind" in
@@ -56,6 +57,12 @@ SQL
 ) ;;
     admins) sql=$(cat <<'SQL'
 SELECT u.id, u.email, u.name, u.role FROM users u WHERE u.role = 'admin' ORDER BY u.email;
+SQL
+) ;;
+    new-users) sql=$(cat <<'SQL'
+SELECT u.id, u.email, u."createdAt", u."emailVerified" AS verified,
+    coalesce(u."lastSeenUpdatesVersion", '') AS whats_new_seen
+FROM users u ORDER BY u."createdAt" DESC LIMIT 10;
 SQL
 ) ;;
     users) sql=$(cat <<'SQL'

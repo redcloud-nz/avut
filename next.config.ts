@@ -128,6 +128,8 @@ const nextConfig: NextConfig = {
         ],
     },
     env: {
+        // Gates "What's new" entries in production to released versions (`src/lib/updates.ts`).
+        APP_RELEASE_VERSION: isProduction ? appMetadata.version : "",
         NEXT_PUBLIC_APP_VERSION: appVersion,
         NEXT_PUBLIC_APP_VERSION_NAME: appVersionName,
         NEXT_PUBLIC_APP_BRANCH: isProduction ? "" : branchName,
