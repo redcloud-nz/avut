@@ -91,14 +91,32 @@
     "alt": "Skill Track: recording a Rope Rescue Technician assessment session, assessing by person",
     "capturedAt": "2026-09-10T07:28:21.231Z"
   },
+  "notes/note-editing": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/notes/note-editing.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "A note being edited: an editable title, Cancel and Save buttons at the top right, and a formatting toolbar along the bottom.",
+    "capturedAt": "2026-10-07T06:02:26.054Z"
+  },
+  "notes/notes-list": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/notes/notes-list.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The Notes page: a sortable list of notes with a New note button on the left, and the open note on the right with its pencil and menu buttons.",
+    "capturedAt": "2026-10-07T06:02:23.565Z"
+  },
   "skill-track/create-session": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/create-session.webp",
-      "width": 384,
-      "height": 426
+      "width": 448,
+      "height": 418
     },
-    "alt": "The New Session dialog: a name field whose placeholder offers the next session number, a date defaulting to today, and a notes field",
-    "capturedAt": "2026-09-13T08:24:52.879Z"
+    "alt": "The New Session dialog, with optional Name, Date and Notes fields; the name shows the next session number as a placeholder.",
+    "capturedAt": "2026-10-07T06:01:14.701Z"
   },
   "skill-track/report-matrix": {
     "light": {
@@ -154,14 +172,23 @@
     "alt": "The Team Competency report: one row per skill with a stacked coverage bar and the percentage of the team currently competent, grouped by package and skill group",
     "capturedAt": "2026-09-13T20:18:19.407Z"
   },
+  "skill-track/session-also-checked-by": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-also-checked-by.webp",
+      "width": 690,
+      "height": 280
+    },
+    "alt": "Recording rows where several say 'Also checked by Douglas Renshaw' with his result under the skill's name.",
+    "capturedAt": "2026-10-07T06:02:08.162Z"
+  },
   "skill-track/session-by-person": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-by-person.webp",
       "width": 1280,
       "height": 800
     },
-    "alt": "Assess by Person on a laptop: a list of the session's assessees on the left with Douglas Renshaw selected, and his assigned skills on the right, each row carrying a fail button, a pass button, a note button and a menu",
-    "capturedAt": "2026-09-13T08:39:29.730Z"
+    "alt": "Assess by Person: the session's personnel listed on the left with one selected, and their skills on the right, each with Fail, Pass and More buttons.",
+    "capturedAt": "2026-10-07T06:02:02.999Z"
   },
   "skill-track/session-by-person-phone": {
     "light": {
@@ -169,8 +196,8 @@
       "width": 390,
       "height": 844
     },
-    "alt": "Assess by Person on a phone: the assessee list has collapsed into a Person dropdown above the results, with Douglas Renshaw's skills listed below it",
-    "capturedAt": "2026-09-13T08:39:39.900Z"
+    "alt": "Assess by Person on a phone: a Person dropdown above the selected person's skills to record.",
+    "capturedAt": "2026-10-07T06:02:13.835Z"
   },
   "skill-track/session-by-skill": {
     "light": {
@@ -178,8 +205,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "Assess by Skill on a laptop: the session's skills on the left grouped by package and skill group with Effective sand bagging selected, and every person assigned to it on the right",
-    "capturedAt": "2026-09-13T08:39:31.736Z"
+    "alt": "Assess by Skill: the session's skills listed on the left with one selected, and every person in the session on the right, each with Fail, Pass and More buttons.",
+    "capturedAt": "2026-10-07T06:02:05.880Z"
   },
   "skill-track/session-by-skill-phone": {
     "light": {
@@ -187,8 +214,8 @@
       "width": 390,
       "height": 844
     },
-    "alt": "Assess by Skill on a phone: the skill list has collapsed into a Skill dropdown above the results, with everyone assigned to Effective sand bagging listed below it",
-    "capturedAt": "2026-09-13T08:39:41.902Z"
+    "alt": "Assess by Skill on a phone: a Skill dropdown above everyone in the session to record.",
+    "capturedAt": "2026-10-07T06:02:16.089Z"
   },
   "skill-track/session-page": {
     "light": {
@@ -196,34 +223,61 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "The session page for August 2026 Training Night: session details on the left, a Contents card linking to Personnel, Skills and Skill checks on the right, and Record and Review buttons in the header",
-    "capturedAt": "2026-09-13T08:31:14.220Z"
+    "alt": "A draft session's page: its details on the left, and a Contents card listing personnel, skills, assessors, skill checks and conflicts on the right.",
+    "capturedAt": "2026-10-07T06:01:51.823Z"
   },
   "skill-track/session-personnel": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-personnel.webp",
-      "width": 1280,
-      "height": 800
+      "width": 448,
+      "height": 768
     },
-    "alt": "The session Personnel page: the Erehwon Response Team roster, each person with a checkbox marking who is being assessed, showing 20 of 32 selected",
-    "capturedAt": "2026-09-13T08:21:32.455Z"
+    "alt": "The Change personnel dialog, listing the Erehwon Response Team with 18 of 32 personnel ticked, and Cancel and Save buttons.",
+    "capturedAt": "2026-10-07T06:02:00.284Z"
   },
   "skill-track/session-record-menu": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-record-menu.webp",
-      "width": 352,
-      "height": 320
+      "width": 368,
+      "height": 300
     },
-    "alt": "The session header's Record menu opened, offering By Person and By Skill, with the Contents card behind it linking to Personnel, Skills and Skill checks",
-    "capturedAt": "2026-09-13T08:31:16.987Z"
+    "alt": "The Record menu open in the session header, offering By Person and By Skill, with the Contents card behind it.",
+    "capturedAt": "2026-10-07T06:01:54.847Z"
+  },
+  "skill-track/session-recording-options": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-recording-options.webp",
+      "width": 384,
+      "height": 470
+    },
+    "alt": "The Recording Options sheet, with Recording Mode (By Person, By Skill), Skill Order (Alphabetical, By Package/Group) and Configure Session (Personnel, Skills, Assessors).",
+    "capturedAt": "2026-10-07T06:02:10.953Z"
+  },
+  "skill-track/session-resolve-conflict": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-resolve-conflict.webp",
+      "width": 672,
+      "height": 316
+    },
+    "alt": "The dialog for resolving a conflict: two assessors' checks of the same person and skill side by side, one picked, with an Exclude all option and Cancel and Save buttons.",
+    "capturedAt": "2026-10-07T06:02:21.224Z"
+  },
+  "skill-track/session-review": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-review.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "A session's review page: Unique checks, Personnel, Skills and Coverage tiles, and a Conflicts card with six conflicts resolved and three still to resolve.",
+    "capturedAt": "2026-10-07T06:02:18.895Z"
   },
   "skill-track/session-skills": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-skills.webp",
-      "width": 1280,
-      "height": 800
+      "width": 448,
+      "height": 768
     },
-    "alt": "The session Skills page: catalogue skills grouped by package and skill group, each with a checkbox, showing the Flood Response package fully selected at 15 of 15",
-    "capturedAt": "2026-09-13T08:21:24.155Z"
+    "alt": "The Change skills dialog, with skills ticked under the Search Techniques and Ladders skill groups, and Cancel and Save buttons.",
+    "capturedAt": "2026-10-07T06:01:57.557Z"
   }
 }
