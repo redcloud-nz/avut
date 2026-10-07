@@ -22,6 +22,7 @@ import { withDevServerPort } from "@/lib/dev-server";
 // eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
+import { getNewestUpdateVersion } from "@/lib/updates";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
 import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
@@ -103,6 +104,24 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
+    databaseHooks: {
+        user: {
+            create: {
+                /*
+                 * Start a new account's "What's new" cursor at the newest entry, so it isn't shown
+                 * the backlog. A read cursor, so not audit-logged (see `whats-new-router.ts`).
+                 */
+                async after(user) {
+                    const newest = getNewestUpdateVersion();
+                    if (!newest) return;
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: { lastSeenUpdatesVersion: newest },
+                    });
+                },
+            },
+        },
+    },
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,

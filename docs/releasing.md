@@ -69,11 +69,12 @@ sentences plus highlights — the actual PR list gets appended automatically
 (see [Release notes](#release-notes) below). The `/avut-release` skill drafts
 it from the commit range.
 
-Review what's shipping for user-facing changes, and add a
-[`content/updates/`](../content/updates/README.md) entry for each one that
-doesn't already have one — that's what users see in the in-app "What's new"
-dialog. It's reviewed, not enforced: not every release has user-facing
-changes, and entries can also land earlier with the feature's own PR.
+Review what's shipping for user-facing changes, and make sure the release's
+[`content/updates/v0.8.mdx`](../content/updates/README.md) covers each one —
+that's what users see in the in-app "What's new" dialog, and production shows it
+once this version deploys. It's reviewed, not enforced: not every release has
+user-facing changes, and the file can be started earlier with the features' own
+PRs.
 
 ```bash
 git add docs/releases/v0.8.md content/updates/   # new files — `commit -a` won't pick them up

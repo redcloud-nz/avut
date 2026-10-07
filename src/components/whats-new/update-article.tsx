@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Renders one "What's new" entry. Shared by the public `/docs/updates` page (a
+ * Renders one release's "What's new" entry. Shared by the public `/docs/updates` page (a
  * Server Component) and the in-app What's new dialog (a Client Component), so it
  * holds no hooks and no server-only imports.
  */
@@ -20,21 +20,6 @@ import { cn } from "@/lib/utils";
 // (as `help-sheet.tsx` does).
 const updateMdxComponents = { ...docsMdxComponents, h1: () => null };
 
-// `publishedAt` is a date-only ISO string read as 00:00 UTC; formatting it in UTC keeps it
-// on the same calendar day for readers west of UTC. A fixed locale keeps the server and
-// client renders identical.
-const publishedAtFormat = new Intl.DateTimeFormat("en-NZ", {
-    timeZone: "UTC",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-});
-
-/** An entry's `publishedAt` as a calendar date, e.g. "30 September 2026". */
-export function formatUpdateDate(publishedAt: string): string {
-    return publishedAtFormat.format(new Date(`${publishedAt}T00:00:00Z`));
-}
-
 interface UpdateArticleProps {
     entry: UpdateEntryData;
     /** The title's heading level: `h2` on `/docs/updates` (under its `h1`), `h3` where it nests deeper. */
@@ -47,7 +32,7 @@ interface UpdateArticleProps {
     className?: string;
 }
 
-/** One update entry: an anchored title, its date and version, and the MDX body. */
+/** One release's entry: an anchored title, its version, and the MDX body. */
 export function UpdateArticle({
     entry,
     headingLevel = "h2",
@@ -75,8 +60,8 @@ export function UpdateArticle({
                     </Link>
                 </Heading>
                 <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-                    <time dateTime={entry.publishedAt}>{formatUpdateDate(entry.publishedAt)}</time>
-                    {entry.version && <Badge variant="outline">v{entry.version}</Badge>}
+                    <Badge variant="outline">v{entry.version}</Badge>
+                    {entry.description && <span>{entry.description}</span>}
                 </div>
             </header>
             <MDXContent code={entry.mdx} components={updateMdxComponents} />

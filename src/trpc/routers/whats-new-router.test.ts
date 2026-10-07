@@ -13,54 +13,42 @@ import { whatsNewRouter } from "./whats-new-router";
 
 // Fixture entries, so the tests don't depend on the real (growing) corpus.
 vi.mock("content-collections", () => {
-    const entry = (slug: string, publishedAt: string) => ({
-        slug,
-        publishedAt,
-        title: `Title ${slug}`,
+    const entry = (version: string) => ({
+        slug: `v${version}`,
+        version,
+        title: undefined,
         description: undefined,
-        version: undefined,
-        mdx: `compiled ${slug}`,
-        content: `body ${slug}`,
-        _meta: { path: slug },
+        mdx: `compiled v${version}`,
+        content: `body v${version}`,
+        _meta: { path: `v${version}` },
     });
-    return {
-        allUpdates: [
-            entry("2026-09-01-older", "2026-09-01"),
-            entry("2026-09-20-middle", "2026-09-20"),
-            entry("2026-09-25-newest", "2026-09-25"),
-        ],
-    };
+    return { allUpdates: [entry("0.9"), entry("0.10"), entry("0.11")] };
 });
-
-const utc = (date: string) => new Date(`${date}T00:00:00Z`);
 
 describe("whatsNewRouter", () => {
     // Dataset — one user per scenario, so the markSeen writes don't interfere:
-    //   fresh      → joined 09-10, no cursor (falls back to createdAt)
-    //   caughtUp   → joined 01-01, cursor at 09-20
-    //   clamp      → joined 01-01, no cursor; markSeen past the newest entry
-    //   advance    → joined 01-01, cursor at 09-01; markSeen forward
-    //   backwards  → joined 01-01, cursor at 09-25; markSeen earlier
-    //   lateJoiner → joined 09-22, no cursor; markSeen earlier than createdAt
-    //   impersonated → joined 01-01, no cursor; everything while impersonated
+    //   fresh        → no cursor (seen nothing)
+    //   caughtUp     → cursor at 0.10
+    //   clamp        → no cursor; markSeen past the newest entry
+    //   advance      → cursor at 0.9; markSeen forward
+    //   backwards    → cursor at 0.11; markSeen earlier
+    //   impersonated → no cursor; everything while impersonated
     const T = {
         fresh: UserId.create(),
         caughtUp: UserId.create(),
         clamp: UserId.create(),
         advance: UserId.create(),
         backwards: UserId.create(),
-        lateJoiner: UserId.create(),
         impersonated: UserId.create(),
     };
 
-    const seed: Record<keyof typeof T, { createdAt: Date; lastSeenUpdatesAt: Date | null }> = {
-        fresh: { createdAt: utc("2026-09-10"), lastSeenUpdatesAt: null },
-        caughtUp: { createdAt: utc("2026-01-01"), lastSeenUpdatesAt: utc("2026-09-20") },
-        clamp: { createdAt: utc("2026-01-01"), lastSeenUpdatesAt: null },
-        advance: { createdAt: utc("2026-01-01"), lastSeenUpdatesAt: utc("2026-09-01") },
-        backwards: { createdAt: utc("2026-01-01"), lastSeenUpdatesAt: utc("2026-09-25") },
-        lateJoiner: { createdAt: utc("2026-09-22"), lastSeenUpdatesAt: null },
-        impersonated: { createdAt: utc("2026-01-01"), lastSeenUpdatesAt: null },
+    const seed: Record<keyof typeof T, string | null> = {
+        fresh: null,
+        caughtUp: "0.10",
+        clamp: null,
+        advance: "0.9",
+        backwards: "0.11",
+        impersonated: null,
     };
 
     const db = createMockPrisma();
@@ -73,7 +61,7 @@ describe("whatsNewRouter", () => {
                     name: key,
                     email: `${key}@example.com`,
                     emailVerified: true,
-                    ...seed[key],
+                    lastSeenUpdatesVersion: seed[key],
                 },
             });
         }
@@ -82,7 +70,7 @@ describe("whatsNewRouter", () => {
     function makeCaller(key: keyof typeof T, impersonatedBy: string | null = null) {
         return whatsNewRouter.createCaller(
             createAuthenticatedMockContext({
-                user: { id: T[key], createdAt: seed[key].createdAt },
+                user: { id: T[key] },
                 session: { impersonatedBy },
                 prisma: db,
             }),
@@ -91,18 +79,18 @@ describe("whatsNewRouter", () => {
 
     async function cursorOf(key: keyof typeof T) {
         const user = await db.user.findUniqueOrThrow({ where: { id: T[key] } });
-        return user.lastSeenUpdatesAt;
+        return user.lastSeenUpdatesVersion;
     }
 
     describe("getUnseen", () => {
-        it("falls back to createdAt when the cursor is null", async () => {
+        it("returns every entry when the cursor is null", async () => {
             const { entries } = await makeCaller("fresh").getUnseen();
-            expect(entries.map((e) => e.slug)).toEqual(["2026-09-25-newest", "2026-09-20-middle"]);
+            expect(entries.map((e) => e.version)).toEqual(["0.11", "0.10", "0.9"]);
         });
 
-        it("filters by the stored cursor, counting a same-day entry as seen", async () => {
+        it("returns the releases newer than the cursor", async () => {
             const { entries } = await makeCaller("caughtUp").getUnseen();
-            expect(entries.map((e) => e.slug)).toEqual(["2026-09-25-newest"]);
+            expect(entries.map((e) => e.version)).toEqual(["0.11"]);
         });
 
         it("returns nothing while impersonated", async () => {
@@ -114,44 +102,33 @@ describe("whatsNewRouter", () => {
     describe("listRecent", () => {
         it("returns the most recent entries, newest first", async () => {
             const { entries } = await makeCaller("caughtUp").listRecent();
-            expect(entries.map((e) => e.slug)).toEqual([
-                "2026-09-25-newest",
-                "2026-09-20-middle",
-                "2026-09-01-older",
-            ]);
+            expect(entries.map((e) => e.version)).toEqual(["0.11", "0.10", "0.9"]);
         });
     });
 
     describe("markSeen", () => {
         it("clamps the cursor to the newest entry", async () => {
-            await makeCaller("clamp").markSeen({ through: "2027-01-01" });
-            expect(await cursorOf("clamp")).toEqual(utc("2026-09-25"));
+            await makeCaller("clamp").markSeen({ through: "0.12" });
+            expect(await cursorOf("clamp")).toBe("0.11");
         });
 
-        it("advances the cursor to the date shown", async () => {
-            await makeCaller("advance").markSeen({ through: "2026-09-20" });
-            expect(await cursorOf("advance")).toEqual(utc("2026-09-20"));
+        it("advances the cursor to the version shown", async () => {
+            await makeCaller("advance").markSeen({ through: "0.10" });
+            expect(await cursorOf("advance")).toBe("0.10");
         });
 
-        it("never moves a stored cursor backwards", async () => {
-            await makeCaller("backwards").markSeen({ through: "2026-09-01" });
-            expect(await cursorOf("backwards")).toEqual(utc("2026-09-25"));
-        });
-
-        it("never moves a null cursor behind createdAt", async () => {
-            await makeCaller("lateJoiner").markSeen({ through: "2026-09-20" });
-            expect(await cursorOf("lateJoiner")).toBeNull();
+        it("never moves the cursor backwards", async () => {
+            await makeCaller("backwards").markSeen({ through: "0.9" });
+            expect(await cursorOf("backwards")).toBe("0.11");
         });
 
         it("doesn't write while impersonated", async () => {
-            await makeCaller("impersonated", UserId.create()).markSeen({ through: "2026-09-25" });
+            await makeCaller("impersonated", UserId.create()).markSeen({ through: "0.11" });
             expect(await cursorOf("impersonated")).toBeNull();
         });
 
-        it("rejects a non-date input", async () => {
-            await expect(
-                makeCaller("advance").markSeen({ through: "2026-09-20T00:00:00Z" }),
-            ).rejects.toThrow();
+        it("rejects a non-version input", async () => {
+            await expect(makeCaller("advance").markSeen({ through: "v0.10" })).rejects.toThrow();
         });
     });
 });

@@ -9,19 +9,36 @@
  */
 
 import type { Route } from "next";
+import * as z from "zod";
 
-/** One product-update entry as sent to the client (and rendered on `/docs/updates`). */
+/** A release version as written in `package.json` → `nz.avut.version`: `0.11`, `0.11.1`. */
+export const UpdateVersion = z.string().regex(/^\d+\.\d+(\.\d+)?$/);
+
+/** One release's "What's new" entry as sent to the client (and rendered on `/docs/updates`). */
 export interface UpdateEntryData {
-    /** The entry's filename without extension; its `#anchor` on `/docs/updates`. */
+    /** The entry's filename without extension (`v0.11`); its `#anchor` on `/docs/updates`. */
     slug: string;
+    /** The release the entry describes, without the `v` (`0.11`). Also the seen-cursor value. */
+    version: string;
+    /** The entry's heading; defaults to "Version <version>". */
     title: string;
-    /** ISO date (`YYYY-MM-DD`), read as 00:00 UTC. */
-    publishedAt: string;
     description: string | undefined;
-    /** The release the entry shipped in — display only. */
-    version: string | undefined;
     /** Compiled MDX body, for `<MDXContent code={mdx} />`. */
     mdx: string;
+}
+
+/**
+ * Compare two release versions segment by segment (`0.9` < `0.10` < `0.10.1`), treating a missing
+ * segment as 0. Negative when `a` is older, positive when newer, 0 when equal.
+ */
+export function compareVersions(a: string, b: string): number {
+    const as = a.split(".").map(Number);
+    const bs = b.split(".").map(Number);
+    for (let i = 0; i < Math.max(as.length, bs.length); i++) {
+        const diff = (as[i] ?? 0) - (bs[i] ?? 0);
+        if (diff !== 0) return diff;
+    }
+    return 0;
 }
 
 /**

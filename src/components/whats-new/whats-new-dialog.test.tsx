@@ -20,12 +20,12 @@ vi.mock("./update-article", () => ({
     UpdateArticle: ({ entry }: { entry: UpdateEntryData }) => <article>{entry.title}</article>,
 }));
 
-function entry(slug: string, title: string, publishedAt: string): UpdateEntryData {
-    return { slug, title, publishedAt, description: undefined, version: undefined, mdx: "" };
+function entry(version: string, title: string): UpdateEntryData {
+    return { slug: `v${version}`, version, title, description: undefined, mdx: "" };
 }
 
-const newer = entry("2026-09-30-newer", "Newer update", "2026-09-30");
-const older = entry("2026-09-20-older", "Older update", "2026-09-20");
+const newer = entry("0.11", "Newer update");
+const older = entry("0.10", "Older update");
 
 // The tRPC client batches over `fetch`; stub it to capture the `markSeen` request and answer it
 // with a successful (void) result.
@@ -109,7 +109,7 @@ describe("WhatsNewDialog", () => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    it("marks the newest shown entry seen when closed", async () => {
+    it("marks the newest shown version seen when closed", async () => {
         const user = userEvent.setup();
         renderWhatsNew({ unseen: [newer, older] });
 
@@ -118,7 +118,7 @@ describe("WhatsNewDialog", () => {
 
         await waitFor(() => expect(markSeenCalls()).toHaveLength(1));
         const [, init] = markSeenCalls()[0];
-        expect(JSON.parse(String(init?.body))).toEqual({ 0: { json: { through: "2026-09-30" } } });
+        expect(JSON.parse(String(init?.body))).toEqual({ 0: { json: { through: "0.11" } } });
     });
 
     it("clears the button's unseen dot once markSeen succeeds", async () => {
@@ -148,7 +148,7 @@ describe("WhatsNewDialog", () => {
         await user.click(screen.getByRole("button", { name: /what's new/i }));
 
         const dialog = await screen.findByRole("dialog");
-        expect(dialog).toHaveTextContent("Recent changes to AVUT.");
+        expect(dialog).toHaveTextContent("Recent releases of AVUT.");
         expect(dialog).toHaveTextContent("Newer update");
 
         await user.click(screen.getByRole("button", { name: "Got it" }));
