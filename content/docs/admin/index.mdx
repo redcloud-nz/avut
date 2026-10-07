@@ -1,6 +1,6 @@
 ---
 title: Admin
-description: Managing people, teams, invitations, and settings for your organisation.
+description: Personnel, teams, users, invitations, and how your organisation is set up.
 section: org-admin
 order: 0
 keyTerms: ["person", "user", "team", "role"]
@@ -8,26 +8,52 @@ keyTerms: ["person", "user", "team", "role"]
 
 # Admin
 
-The Admin module is where an organisation's **owners** and **admins** manage who
-has access and how the organisation is set up. It's always available — every
-organisation has it.
+The Admin module is where an organisation's **owners** and **admins** manage
+who's in it and how it's set up. It's always available — every organisation
+has it.
 
 ## What's here
 
-- **Personnel** — the people records for your organisation. A person record can
-  exist without a login attached — see
+Each link on the Admin page opens one area. You only see the links your roles
+allow.
+
+- **[Personnel](/docs/admin/personnel)** — a person record for everyone your
+  organisation tracks, with or without a login. See
   [Users vs Personnel](/docs/admin/user-vs-person) for how the two connect.
-- **Users** — accounts that can sign in, and the role each one holds.
-- **Teams** — groupings of people used across other modules.
-- **Invitations** — outstanding invites to join the organisation.
-- **Organisation Settings** — how the organisation is set up: which modules and
-  integrations are enabled, how long deleted records stay in the Rubbish bin,
-  and how person records link to user accounts. Everyone in the organisation can
-  see these settings; owners and admins can change them.
+- **[Teams](/docs/admin/teams)** — groupings of personnel, used across other
+  modules, and optionally kept in sync with D4H.
+- **[Users](/docs/admin/users)** — the accounts that can sign in to your
+  organisation, and the roles each one holds.
+- **[Invitations](/docs/admin/invitations)** — invite someone to sign in, and
+  track the invitations you've sent.
+- **[Organisation](/docs/admin/organization)** — the organisation's name and
+  slug, its D4H link, and **Organisation Settings**: which modules and
+  integrations are on, how long the Rubbish bin keeps things, and how person
+  records link to accounts.
+- **[Rubbish](/docs/admin/rubbish-bin)** — deleted personnel, teams,
+  memberships, I3 templates and skill packages, until they're purged.
 
 ## Roles
 
-Roles decide what someone can do. `owner` and `admin` can manage the
-organisation; `member` has everyday access; the remaining roles
-(`i3-editor`, `skills-assessor`, `skill-package-author`) grant extra rights in
-specific modules.
+A user's roles decide what they can do in the organisation. Roles combine
+freely: a member can hold any number of them, and holding a role that another
+already includes changes nothing.
+
+| Role                | What it allows                                                                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**           | Everything an admin can do, plus managing other owners.                                                                             |
+| **Admin**           | Manage personnel, teams, users, invitations and settings.                                                                           |
+| **Member**          | Everyday access: view the organisation, its personnel and teams, read notes and add their own.                                      |
+| **I3 Editor**       | Issue items in [I3](/docs/i3).                                                                                                      |
+| **I3 Admin**        | Everything an I3 Editor can do, plus create, change and delete I3 templates.                                                        |
+| **Skills Assessor** | Run [Skill Track](/docs/skill-track) sessions and record skill checks.                                                              |
+| **Skills Reporter** | View Skill Track checks, sessions and reports, without changing them.                                                               |
+| **Skills Admin**    | Everything a Skills Assessor and Skills Reporter can do, plus approve, reopen and delete sessions, and subscribe to skill packages. |
+| **Skills Author**   | Write skill packages in the [Skill Package Builder](/docs/skill-package-builder).                                                   |
+
+A module's roles are only offered while that module is turned on.
+
+**Owner** isn't picked with the other roles. An existing owner grants it with
+**Make owner** on a user's page, and takes it away with **Remove owner** — see
+[Users](/docs/admin/users#owners). Nobody can remove their own ownership, so an
+organisation always keeps at least one owner.
