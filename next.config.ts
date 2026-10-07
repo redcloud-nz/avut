@@ -122,7 +122,8 @@ const nextConfig: NextConfig = {
     ...(environment === "development" ? { allowedDevOrigins: localNetworkHostnames() } : {}),
     images: {
         // Product screenshots served from the Vercel Blob store (see
-        // docs/specs/2026-09-13-docs-screenshots.md). Public, immutable pathnames.
+        // docs/specs/2026-09-13-docs-screenshots.md). Public, stable pathnames, overwritten
+        // on re-capture; `getScreenshot` versions the URL.
         remotePatterns: [
             { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
         ],

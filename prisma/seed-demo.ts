@@ -20,6 +20,10 @@
  * org consumes a package. That makes the seed dependent on `nzrt-sg` and its packages
  * already existing in the target database — on a fresh database it fails with a clear
  * error rather than inventing a package. It never writes to `nzrt-sg`.
+ *
+ * It also reads the newest "What's new" version from `.content-collections/generated`,
+ * which `next dev`, `next build` and `next typegen` create — run one of those first in
+ * a fresh checkout.
  */
 
 import "dotenv/config";
