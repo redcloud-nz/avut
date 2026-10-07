@@ -4,7 +4,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +22,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
-import { getQueryClient } from "@/trpc/query-client";
 
 /**
  * `?action=impersonate` confirm dialog. Host-driven (`open` / `onOpenChange` come from
@@ -43,8 +41,6 @@ export function SystemAdmin_ImpersonateUser_Dialog({
 }: DialogProps & {
     user: { id: string; name: string };
 }) {
-    const router = useRouter();
-
     const mutation = useMutation({
         mutationFn: async () => {
             const { error } = await authClient.admin.impersonateUser({ userId: user.id });
@@ -56,13 +52,13 @@ export function SystemAdmin_ImpersonateUser_Dialog({
             toast.error(`Failed to impersonate user: ${message}`);
         },
         onSuccess() {
-            // Identity switch: the browser-singleton query client still holds the admin's
-            // `users.*`/`organizations.*` and org-scoped tRPC results. Drop the whole cache and hard-refresh
-            // the RSC tree, mirroring `useSignOut`. No param clear / mutation.reset() race (see
-            // docs/patterns/mutation-dialog.md).
-            getQueryClient().clear();
-            router.push("/user");
-            router.refresh();
+            // Identity switch: the browser-singleton query client and RSC cache still hold the
+            // admin's results. A full page load drops both. Clearing in place would let this
+            // page's mounted queries refetch as the impersonated user first (FORBIDDEN noise,
+            // briefly mixed identities). Same as `/auth/sign-out`. No param clear /
+            // mutation.reset() race (see docs/patterns/mutation-dialog.md).
+            // `replace`, not `assign`: Back shouldn't return to a page rendered as the other identity.
+            window.location.replace("/user");
         },
     });
 

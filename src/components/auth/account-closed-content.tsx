@@ -4,13 +4,13 @@
  */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
 
 import { refetchSessionPastCookieCache } from "@/client/auth-queries";
-import { useSignOut } from "@/client/use-sign-out";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Card,
@@ -20,6 +20,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { signOutUrl } from "@/lib/auth-redirect";
 import { formatRelativeDateTime } from "@/lib/datetime";
 import { trpc } from "@/trpc/client";
 import { getQueryClient } from "@/trpc/query-client";
@@ -38,7 +39,6 @@ export function AccountClosed_Content({
     purgeAt: string | null;
 }) {
     const router = useRouter();
-    const signOut = useSignOut();
 
     const mutation = useMutation(
         trpc.user.restoreMyAccount.mutationOptions({
@@ -82,8 +82,8 @@ export function AccountClosed_Content({
                 )}
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => void signOut()}>
-                    Sign out
+                <Button variant="ghost" asChild>
+                    <Link href={signOutUrl()}>Sign out</Link>
                 </Button>
                 {canRestore && (
                     <MutationButton
