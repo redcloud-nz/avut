@@ -7,11 +7,9 @@
 
 import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { useSignOut } from "@/client/use-sign-out";
 import {
     PersonalD4HAccessTokensIcon,
     PersonalProfileIcon,
@@ -31,6 +29,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WhatsNewMenuItem } from "@/components/whats-new/whats-new-button";
+import { signOutUrl } from "@/lib/auth-redirect";
 import { getUserInitials } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
@@ -47,19 +46,9 @@ export function UserMenu_Skeleton() {
 export function UserMenu() {
     const { data: session } = useSuspenseQuery(trpc.user.getSession.queryOptions());
 
-    const signOut = useSignOut();
-
     if (!session) return null;
 
     const initials = getUserInitials(session.user.name);
-
-    function handleSignOut() {
-        toast.promise(signOut(), {
-            loading: "Signing out...",
-            success: "Signed out successfully",
-            error: (error) => `Error signing out: ${error.message}`,
-        });
-    }
 
     return (
         <SidebarMenu>
@@ -140,9 +129,11 @@ export function UserMenu() {
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
                             <WhatsNewMenuItem />
-                            <DropdownMenuItem onClick={handleSignOut}>
-                                <LogOutIcon />
-                                <span>Sign Out</span>
+                            <DropdownMenuItem asChild>
+                                <Link href={signOutUrl()}>
+                                    <LogOutIcon />
+                                    <span>Sign Out</span>
+                                </Link>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                     </DropdownMenuContent>

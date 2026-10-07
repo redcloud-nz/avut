@@ -5,7 +5,6 @@
 "use client";
 
 import { TriangleAlertIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -14,7 +13,6 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { authClient } from "@/client/auth-client";
 import { MutationButton } from "@/components/ui/button";
 import { trpc } from "@/trpc/client";
-import { getQueryClient } from "@/trpc/query-client";
 
 /**
  * App-wide banner shown whenever the current session is an admin impersonating another
@@ -36,7 +34,6 @@ import { getQueryClient } from "@/trpc/query-client";
  * tracked as a follow-up. Impersonation is a transient, admin-only state, so this ships as-is.
  */
 export function ImpersonationBanner() {
-    const router = useRouter();
     const { data } = useSuspenseQuery(trpc.user.getSession.queryOptions());
 
     const impersonatedBy = data?.session?.impersonatedBy;
@@ -53,9 +50,11 @@ export function ImpersonationBanner() {
             toast.error(`Failed to stop impersonating: ${message}`);
         },
         onSuccess() {
-            getQueryClient().clear();
-            router.push("/system/admin/users");
-            router.refresh();
+            // Identity switch back to the admin: a full page load drops the impersonated
+            // user's cached results without letting mounted queries refetch first (see
+            // `impersonate-user-dialog.tsx`).
+            // `replace`, not `assign`: Back shouldn't return to a page rendered as the other identity.
+            window.location.replace("/system/admin/users");
         },
     });
 

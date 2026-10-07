@@ -129,7 +129,7 @@ See the pattern docs for the full shapes, code, and rationale — read the relev
 
 ## Permissions
 
-Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `i3-editor`, `skills-assessor`, `skill-package-author`.
+Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, plus per-module roles: `i3-editor`, `i3-admin` (I3); `skills-assessor`, `skills-reporter`, `skills-admin` (Skill Track); `skills-author` (Skill Package Builder). A member holds any combination; `owner` is granted separately (`makeOwner`/`removeOwner`).
 
 **Server-side** (tRPC): pass a permissions object to `organizationProcedure`:
 

@@ -4,13 +4,13 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { useSignOut } from "@/client/use-sign-out";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     AlertDialog,
@@ -25,6 +25,7 @@ import {
 import { Button, MutationButton } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { signOutUrl } from "@/lib/auth-redirect";
 import { USER_RETENTION_DAYS } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
@@ -37,7 +38,7 @@ import { trpc } from "@/trpc/client";
  * lists those organisations first.
  */
 export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
-    const signOut = useSignOut();
+    const router = useRouter();
     const [confirmText, setConfirmText] = useState("");
 
     const [action, setAction] = useQueryState(
@@ -62,9 +63,9 @@ export function UserSettings_CloseAccount_Dialog({ email }: { email: string }) {
             },
             async onSuccess() {
                 toast.success("Your account has been closed.");
-                // The session is already gone server-side; signing out clears the cookie and
-                // every cached query.
-                await signOut().catch(() => {});
+                // The session is already gone server-side; the sign-out page clears the cookie
+                // and every cached query.
+                router.replace(signOutUrl());
             },
         }),
     );
