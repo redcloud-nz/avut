@@ -7,7 +7,7 @@
 
 import { Metadata } from "next";
 
-import { SystemAdmin_OrganizationSettings_Content } from "@/components/system-admin/organizations/organization-settings-content";
+import { SystemAdmin_OrganizationSettings_Content } from "@/components/system/admin/organizations/organization-settings-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { resolveModuleFlags } from "@/server/module-flags";
@@ -23,7 +23,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const organizationId = OrganizationId.schema.parse(raw);
 
     const organization = await fetchQuery(
-        trpc.systemAdmin.getOrganization.queryOptions({ organizationId }),
+        trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
     );
 
     return {
@@ -37,8 +37,8 @@ export default async function SystemAdmin_OrganizationSettings_Page(props: Props
     const { organizationId: raw } = await props.params;
     const organizationId = OrganizationId.schema.parse(raw);
 
-    prefetch(trpc.systemAdmin.getOrganization.queryOptions({ organizationId }));
-    prefetch(trpc.systemAdmin.getOrganizationSettings.queryOptions({ organizationId }));
+    prefetch(trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }));
+    prefetch(trpc.settings.getOrganizationSettings.queryOptions({ organizationId }));
 
     const moduleFlags = await resolveModuleFlags();
 

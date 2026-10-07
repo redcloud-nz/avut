@@ -1,6 +1,6 @@
 ---
 name: avut-doc-screenshots
-description: Use when capturing, re-capturing, or adding product screenshots to the end-user documentation (content/docs/**, the /docs site, the in-app ?help= sheet) or the marketing home page — covers which browser tool to use, how to get a clean frame, the standard sizes, uploading to Vercel Blob, and wiring the <Screenshot> into MDX
+description: Use when capturing, re-capturing, or adding product screenshots to the end-user documentation (guides in content/docs/** on the /docs site, help cards in content/help/** in the in-app ?help= sheet) or the marketing home page — covers which browser tool to use, how to get a clean frame, the standard sizes, uploading to Vercel Blob, and wiring the <Screenshot> into MDX
 ---
 
 # Capture documentation screenshots
@@ -12,7 +12,7 @@ only `src/lib/screenshots.generated.json`, an index mapping a screenshot `id` to
 intrinsic size, and alt text. MDX references an id via `<Screenshot id="…" />`.
 
 The design and the reasoning behind every rule here is in
-[`docs/specs/docs-screenshots.md`](../../../docs/specs/docs-screenshots.md) — read it if something
+[`docs/specs/2026-09-13-docs-screenshots.md`](../../../docs/specs/2026-09-13-docs-screenshots.md) — read it if something
 below seems arbitrary. This skill is the operational loop: Phase 1 is manual capture, so a human or
 agent drives a browser and runs the upload helper. Phase 2 (a Playwright script + `manifest.ts`)
 isn't built yet; when it is, it should encode exactly what follows.
@@ -22,8 +22,7 @@ in MDX → verify → clean up.
 
 ## Prerequisites
 
-1. **A running local dev server.** Check with the user before starting one — they usually have one
-   up: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000`.
+1. **A running local dev server** on this checkout's port (AGENTS.md → Dev servers): in a worktree, `npm run dev:port`; in the main checkout, the user's 3000, or 3100 if an agent started one. Check with `curl -s -o /dev/null -w "%{http_code}" http://localhost:<port>`. If nothing answers, start one yourself in the background — `npm run dev` in a worktree, `PORT=3100 npm run dev` in the main checkout — and stop it when you're done. Never start 3000.
 2. **The `SCREENSHOTS_READ_WRITE_TOKEN`** in `.env.local` (the `npm run screenshot` script loads it).
    This is a *dedicated* Blob store — not `BLOB_READ_WRITE_TOKEN`, which belongs to another store.
 3. **A demo account** (below).
@@ -36,10 +35,11 @@ in MDX → verify → clean up.
 | --- | --- |
 | Organization | `Erehwon CDEM` — slug **`demo`**, so URLs are `/orgs/demo/…` (note the spelling: *Erehwon*) |
 | Team | `Erehwon Response Team` — the org's only team, holding all 32 personnel |
-| Accounts | `owner@demo.avut.nz` (owner), `assessor@demo.avut.nz` (skills-assessor), `responder@demo.avut.nz` (member, on the roster), `member@demo.avut.nz` (member, **no** person record) |
+| Accounts | `owner@demo.avut.nz` (owner → Harriet Blackwood), `assessor@demo.avut.nz` (skills-assessor → Aroha Te Whata), `skillsadmin@demo.avut.nz` (skills-admin → Lukas Brandt — the one who can approve, so the review page is interactive), `responder@demo.avut.nz` (member, on the roster), `member@demo.avut.nz` (member, **no** person record) |
 | Password | `erehwon-demo` (the `DEMO_SEED_PASSWORD` default in `prisma/seed-demo.ts`) |
 | Skill catalogue | The demo org authors no package of its own — it **subscribes** to the three published packages owned by `nzrt-sg`: `NZRT Foundation`, `Light Rescue`, `Flood Response` (13 groups, 84 skills) |
-| Sessions | 15 monthly "… Training Night" sessions, oldest ~14 months back. Each has **one** assessor and covers 3 rotating skill groups; the newest is partially filled and still in progress — that's the hero shot |
+| Sessions | 15 monthly "… Training Night" sessions, oldest ~14 months back, each covering 3 rotating skill groups. All but the newest are **Approved**, with one assessor each. The newest (this month's) is a partly filled **Draft** with a second assessor, Aroha Te Whata: signed in as `assessor@` its recording pages show **Also checked by**, and its review page has a few **Conflicts** — that's the hero shot |
+| Notes | The Notes module is on, with three org notes (by owner@ and assessor@) and one personal note on owner@'s account |
 
 Personnel are synthetic (`@demo.avut.nz`), so there is nothing to redact. **Never** shoot the other
 orgs — `Christchurch CDEM` and `NZRT Steering Group` hold real-looking data.
@@ -188,8 +188,9 @@ the component uses. Never hand-edit the generated JSON.
 
 `caption` is optional. Raw Markdown `![]()` is unsupported and renders a visible red error instead.
 
-Remember the same MDX renders in **two** places — the `/docs` prose column (768px) and the in-app
-`?help=` sheet (480px). There is no way to show one shot on one surface and another elsewhere.
+Size the shot for where its MDX renders: a guide (`content/docs/**`) only in the `/docs` prose column
+(768px), a help card (`content/help/**`) only in the in-app `?help=` sheet (480px). Cards rarely
+need a screenshot (see [`content/README.md`](../../../content/README.md)).
 
 ## Step 8 — Verify
 

@@ -7,11 +7,9 @@
 
 import { Building2Icon, ChevronsUpDown, ShieldIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { useUser } from "@/client/auth-queries";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,16 +21,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrentScope } from "@/hooks/use-current-scope";
 import { trpc } from "@/trpc/client";
 
-/** Which of the three scope roots the current pathname is inside, or `null` for a route above all of them. */
-function useCurrentScope(): "organization" | "user" | "system" | null {
-    const pathname = usePathname();
-    if (pathname.startsWith("/orgs/")) return "organization";
-    if (pathname === "/user" || pathname.startsWith("/user/")) return "user";
-    if (pathname === "/system" || pathname.startsWith("/system/")) return "system";
-    return null;
-}
+const ScopeIcons = {
+    user: UserIcon,
+    system: ShieldIcon,
+    organization: Building2Icon,
+} as const;
+
+const ScopeLabels = {
+    user: "Personal Account",
+    system: "System",
+    organization: "Select organisation",
+} as const;
 
 /**
  * Placeholder for `ScopeSwitcher` — the `<Suspense>` fallback in `(authenticated)/layout.tsx`.
@@ -57,24 +59,24 @@ export function ScopeSwitcher_Skeleton() {
  * this component's job.
  */
 export function ScopeSwitcher() {
-    const scope = useCurrentScope();
-    const pathname = usePathname();
-    const { data: user } = useUser();
-    const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
+    const currentScope = useCurrentScope();
 
-    if (!user) return <ScopeSwitcher_Skeleton />;
+    const [{ data: session }, { data: memberships }] = useSuspenseQueries({
+        queries: [trpc.user.getSession.queryOptions(), trpc.user.listMemberships.queryOptions()],
+    });
 
-    const currentOrgSlug = scope === "organization" ? pathname.split("/")[2] : undefined;
-    const currentMembership = memberships.find((m) => m.organization.slug === currentOrgSlug);
+    const currentMembership =
+        currentScope?.scope === "organization"
+            ? memberships.find((m) => m.organization.slug === currentScope?.slug)
+            : undefined;
 
-    const CurrentIcon =
-        scope === "user" ? UserIcon : scope === "system" ? ShieldIcon : Building2Icon;
+    const CurrentIcon = currentScope ? ScopeIcons[currentScope.scope] : Building2Icon;
     const currentLabel =
-        scope === "user"
-            ? "Personal Account"
-            : scope === "system"
-              ? "System"
-              : (currentMembership?.organization.name ?? "Select organisation");
+        currentScope?.scope === "user"
+            ? ScopeLabels.user
+            : currentScope?.scope === "system"
+              ? ScopeLabels.system
+              : (currentMembership?.organization.name ?? ScopeLabels.organization);
 
     return (
         <SidebarMenu>
@@ -112,7 +114,7 @@ export function ScopeSwitcher() {
                                     Personal Account
                                 </Link>
                             </DropdownMenuItem>
-                            {user.role === "admin" && (
+                            {session?.user.role === "admin" && (
                                 <DropdownMenuItem asChild>
                                     <Link href="/system/admin">
                                         <ShieldIcon />

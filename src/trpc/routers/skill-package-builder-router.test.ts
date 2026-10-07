@@ -15,6 +15,7 @@ import {
     SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
     type SkillPackageExport,
 } from "@/lib/schemas/skill-package-export";
+import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -94,7 +95,7 @@ describe("skillPackageBuilderRouter.getPackage / getGroup / getSkill", () => {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { skillPackageBuilder: ["view"], organization: ["view"] },
+                permissions: { skillPackage: ["view"], organization: ["view"] },
                 prisma: db,
             }),
         );
@@ -209,7 +210,7 @@ describe("skillPackageBuilderRouter.importPackage", () => {
     });
 
     function makeCaller(
-        permissions: Permissions = { skillPackageBuilder: ["create"], organization: ["view"] },
+        permissions: Permissions = { skillPackage: ["create"], organization: ["view"] },
     ) {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
@@ -346,7 +347,7 @@ describe("skillPackageBuilderRouter.reorderGroups", () => {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { skillPackageBuilder: ["update"], organization: ["view"] },
+                permissions: { skillPackage: ["update"], organization: ["view"] },
                 prisma: db,
             }),
         );
@@ -475,7 +476,7 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
         return skillPackageBuilderRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                permissions: { skillPackageBuilder: ["update"], organization: ["view"] },
+                permissions: { skillPackage: ["update"], organization: ["view"] },
                 prisma: db,
             }),
         );
@@ -513,5 +514,287 @@ describe("skillPackageBuilderRouter.reorderGroupSkills", () => {
                 curr: [T.skillB, T.skillA],
             },
         ]);
+    });
+});
+
+describe("skillPackageBuilderRouter.deleteSkill/Group/Package / recover*", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        pkg: SkillPackageId.create(),
+        group: SkillGroupId.create(),
+        skill: SkillId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.skillPackage.create({
+            data: {
+                id: T.pkg,
+                organizationId: T.org,
+                name: "Package",
+                description: "",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.group,
+                skillPackageId: T.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill,
+                skillPackageId: T.pkg,
+                skillGroupId: T.group,
+                name: "Skill",
+                description: "",
+                properties: {},
+                tags: [],
+                sequence: 1,
+            },
+        });
+    });
+
+    function makeCaller(perms: Permissions) {
+        return skillPackageBuilderRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("deleteSkill/deleteGroup/deletePackage require skillPackage:delete", async () => {
+        await expect(
+            makeCaller({ skillPackage: ["update"] }).deleteSkill({
+                organizationId: T.org,
+                skillId: T.skill,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackage: ["update"] }).deleteGroup({
+                organizationId: T.org,
+                skillGroupId: T.group,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackage: ["update"] }).deletePackage({
+                organizationId: T.org,
+                skillPackageId: T.pkg,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("soft-deletes skill, group, and package without cascading between levels", async () => {
+        await makeCaller({ skillPackage: ["delete"] }).deleteSkill({
+            organizationId: T.org,
+            skillId: T.skill,
+        });
+        await makeCaller({ skillPackage: ["delete"] }).deleteGroup({
+            organizationId: T.org,
+            skillGroupId: T.group,
+        });
+        await makeCaller({ skillPackage: ["delete"] }).deletePackage({
+            organizationId: T.org,
+            skillPackageId: T.pkg,
+        });
+
+        expect(await db.skill.findUnique({ where: { id: T.skill } })).toMatchObject({
+            status: "Deleted",
+        });
+        expect(await db.skillGroup.findUnique({ where: { id: T.group } })).toMatchObject({
+            status: "Deleted",
+        });
+        expect(await db.skillPackage.findUnique({ where: { id: T.pkg } })).toMatchObject({
+            status: "Deleted",
+        });
+    });
+
+    it("recoverSkill/recoverGroup/recoverPackage require skillPackage:delete, not update", async () => {
+        await expect(
+            makeCaller({ skillPackage: ["update"] }).recoverSkill({
+                organizationId: T.org,
+                skillId: T.skill,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackage: ["update"] }).recoverGroup({
+                organizationId: T.org,
+                skillGroupId: T.group,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            makeCaller({ skillPackage: ["update"] }).recoverPackage({
+                organizationId: T.org,
+                skillPackageId: T.pkg,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("recovers the deleted skill, group, and package back to Active", async () => {
+        const skill = await makeCaller({ skillPackage: ["delete"] }).recoverSkill({
+            organizationId: T.org,
+            skillId: T.skill,
+        });
+        expect(skill.updated.status).toBe("Active");
+
+        const group = await makeCaller({
+            skillPackage: ["delete"],
+        }).recoverGroup({ organizationId: T.org, skillGroupId: T.group });
+        expect(group.updated.status).toBe("Active");
+
+        const pkg = await makeCaller({
+            skillPackage: ["delete"],
+        }).recoverPackage({ organizationId: T.org, skillPackageId: T.pkg });
+        expect(pkg.updated.status).toBe("Active");
+    });
+});
+
+describe("skillPackageBuilder.importPackageAsAdmin", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        admin: UserId.create(),
+    };
+    const db = createMockPrisma();
+
+    function makeEnvelope(): SkillPackageExport {
+        return {
+            formatVersion: SKILL_PACKAGE_EXPORT_FORMAT_VERSION,
+            exportedAt: new Date().toISOString(),
+            package: {
+                id: SkillPackageId.create(),
+                name: "Starter Package",
+                description: "A starter package for tests.",
+                tags: [],
+                properties: {},
+                groups: [
+                    {
+                        id: SkillGroupId.create(),
+                        name: "Group 1",
+                        description: "",
+                        tags: [],
+                        properties: {},
+                        sequence: 0,
+                        defaultInclude: true,
+                        skills: [
+                            {
+                                id: SkillId.create(),
+                                name: "Skill 1",
+                                description: "",
+                                tags: [],
+                                properties: {},
+                                sequence: 0,
+                                frequency: 12,
+                                defaultInclude: true,
+                                defaultRequired: true,
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+    }
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: `acme-${nanoId16()}`, createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: {
+                id: T.otherOrg,
+                name: "Other",
+                slug: `other-${nanoId16()}`,
+                createdAt: new Date(),
+            },
+        });
+        await db.user.create({
+            data: { id: T.admin, name: "Dana Okafor", email: "dana@example.com", role: "admin" },
+        });
+    });
+
+    function makeCaller() {
+        return skillPackageBuilderRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: {
+                    id: T.admin,
+                    name: "Dana Okafor",
+                    email: "dana@example.com",
+                    role: "admin",
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("dryRun computes a plan without writing", async () => {
+        const result = await makeCaller().importPackageAsAdmin({
+            envelope: makeEnvelope(),
+            targetOrganizationId: T.org,
+            dryRun: true,
+        });
+        expect(result.applied).toBe(false);
+        expect(result.plan.packageAction).toBe("Create");
+        expect(await db.skillPackage.findMany({ where: { organizationId: T.org } })).toHaveLength(
+            0,
+        );
+    });
+
+    it("imports the tree unpublished and writes one SkillPackage log entry", async () => {
+        const result = await makeCaller().importPackageAsAdmin({
+            envelope: makeEnvelope(),
+            targetOrganizationId: T.org,
+            dryRun: false,
+        });
+        expect(result.applied).toBe(true);
+
+        const stored = await db.skillPackage.findUnique({
+            where: { id: result.plan.package.id },
+            include: { groups: true, skills: true },
+        });
+        expect(stored?.organizationId).toBe(T.org);
+        expect(stored?.published).toBe(false);
+        expect(stored?.groups.length).toBeGreaterThan(0);
+        expect(stored?.skills.length).toBeGreaterThan(0);
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillPackage", objectId: result.plan.package.id },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "organization",
+            organizationId: T.org,
+            action: "Create",
+        });
+    });
+
+    it("refuses a package ID already owned by another organization", async () => {
+        const envelope = makeEnvelope();
+        await makeCaller().importPackageAsAdmin({
+            envelope,
+            targetOrganizationId: T.org,
+            dryRun: false,
+        });
+
+        await expect(
+            makeCaller().importPackageAsAdmin({
+                envelope,
+                targetOrganizationId: T.otherOrg,
+                dryRun: true,
+            }),
+        ).rejects.toThrow(/different organisation/i);
     });
 });

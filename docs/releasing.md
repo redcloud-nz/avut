@@ -37,6 +37,22 @@ automatically (see below), so the two branches never diverge on
 
 ## Cutting a release
 
+### 0. Close out the milestone
+
+Each minor or major version has a GitHub milestone titled `v<version>`,
+optionally followed by ` - <codename>` (`v0.11`, `v1 - veronica`). Patch
+releases usually have none. Before cutting the release, the milestone's issues
+should all be closed, or moved to the next milestone. That includes its
+`Docs: v<version>` issue. Feature PRs don't write end-user guides (`content/docs/**`
+and its screenshots) themselves; they do keep the in-app help cards
+(`content/help/**`) current. Each user-facing PR adds an item to that issue
+instead, and `/avut-docs <version>` works through them in one pass once the UI
+has settled, so each screenshot is taken once. The same pass writes the
+release's in-app "What's new" entry, [`content/updates/v<version>.mdx`](../content/updates/README.md),
+from that checklist. `/avut-release` lists any open
+issues in the milestone and asks before going on, and closes the milestone once
+the release is verified.
+
 ### 1. Cut the release branch and open the one release PR
 
 ```bash
@@ -55,7 +71,15 @@ sentences plus highlights — the actual PR list gets appended automatically
 (see [Release notes](#release-notes) below). The `/avut-release` skill drafts
 it from the commit range.
 
+Check that the release's [`content/updates/v0.8.mdx`](../content/updates/README.md)
+is on `integration` — that's what users see in the in-app "What's new" dialog,
+and production shows it once this version deploys. The docs pass (step 0)
+writes it. If it's missing because the release has no docs issue (typical for a
+patch) but does change something users would notice, add it in this PR. It's
+reviewed, not enforced.
+
 ```bash
+git add docs/releases/v0.8.md content/updates/   # new files — `commit -a` won't pick them up
 git commit -am "chore(release): v0.8 (Laburnum)"
 git push -u origin release/v0.8
 gh pr create --repo redcloud-nz/avut --base production --head release/v0.8 \

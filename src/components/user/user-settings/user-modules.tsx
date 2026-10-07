@@ -1,0 +1,56 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+"use client";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    DataItem,
+    DataItemAction,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
+import { configurableUserModules } from "@/lib/modules";
+import { UserSettings } from "@/lib/schemas/user-settings";
+
+import { UserSettings_UpdateUserModules_Dialog } from "./update-modules-settings";
+
+/**
+ * Per-user module preferences — mirrors the organization settings "Modules" section, keyed by
+ * `UserModuleId` instead of `OrganizationModuleId`. Renders nothing while
+ * `configurableUserModules` is empty (every user module is currently `alwaysOn`, see
+ * `src/lib/modules.ts`) rather than showing switches that don't gate anything — this is the
+ * scaffolding for per-module preferences called for in issue #93, ready for the first module
+ * that actually needs one.
+ */
+export function UserSettings_UserModules_Card({ settings }: { settings: UserSettings }) {
+    if (configurableUserModules.length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Modules</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <DataList>
+                    {configurableUserModules.map((module, index) => (
+                        <DataItem key={module.id}>
+                            <DataItemTitle>{module.label}</DataItemTitle>
+                            <DataItemValue>
+                                {settings.modules[module.id].enabled ? "Enabled" : "Disabled"}
+                            </DataItemValue>
+                            <DataItemAction>
+                                {index === 0 && (
+                                    <UserSettings_UpdateUserModules_Dialog settings={settings} />
+                                )}
+                            </DataItemAction>
+                        </DataItem>
+                    ))}
+                </DataList>
+            </CardContent>
+        </Card>
+    );
+}

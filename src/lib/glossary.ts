@@ -46,7 +46,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Role",
         shortDefinition: "What a user is allowed to do within an organisation.",
         longDefinition:
-            "Decides what a signed-in user can do inside an organisation. `owner` and `admin` can manage the organisation itself; `member` has everyday access; `i3-editor`, `skills-assessor`, and `skill-package-author` grant extra rights scoped to one module each.",
+            "Decides what a signed-in user can do inside an organisation. `owner` (granted and revoked separately from the rest) and `admin` can manage the organisation itself; `member` has everyday access; `i3-editor`, `i3-admin`, `skills-assessor`, `skills-admin`, `skills-author`, and `skills-reporter` grant extra rights scoped to one module each. A member can freely combine any number of these roles.",
         modules: ["org-admin"],
         relatedTerms: ["organization", "user", "person"],
     },
@@ -119,7 +119,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "A record that a person was assessed on a skill, with an outcome and a date.",
         longDefinition:
-            "A single record that a person was assessed on a skill, with an outcome and a date. Checks done together are grouped into a skill check session. Assessing requires the `skills-assessor` role.",
+            "A single record that a person was assessed on a skill, with an outcome and a date. Checks done together are grouped into a skill check session. Members with the Skills Assessor or Skills Admin role can assess.",
         modules: ["skill-track"],
         relatedTerms: ["skill-package", "skill-check-session", "assessor", "assessee"],
     },
@@ -137,7 +137,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Assessor",
         shortDefinition: "The person carrying out a skill check on an assessee.",
         longDefinition:
-            "The person carrying out a skill check on an assessee. Assessing requires the `skills-assessor` role. One assessor typically records several checks in a single skill check session.",
+            "The person carrying out a skill check on an assessee. Assessors need the Skills Assessor or Skills Admin role, and a person record linked to their account. One assessor typically records several checks in a single skill check session.",
         modules: ["skill-track"],
         relatedTerms: ["assessee", "skill-check"],
     },
@@ -146,7 +146,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Assessee",
         shortDefinition: "The person being assessed in a skill check.",
         longDefinition:
-            "The person a skill check is recorded against — the one being assessed by an assessor. An assessee can view their own results and the reports their role allows.",
+            "The person a skill check is recorded against — the one being assessed by an assessor. An assessee doesn't need an account of their own: any person record in Personnel can be assessed.",
         modules: ["skill-track"],
         relatedTerms: ["assessor", "skill-check"],
     },
@@ -155,7 +155,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Skill package catalogue",
         shortDefinition: "The set of skill packages available to an organisation in Skill Track.",
         longDefinition:
-            "The set of skill packages available to an organisation's Skill Track module, drawn from packages published by skill package authors.",
+            "The set of skill packages available to an organisation's Skill Track module, drawn from the packages organisations have published from their Skill Package Builder. An organisation subscribes to the packages it wants to assess.",
         modules: ["skill-track"],
         relatedTerms: ["skill-package"],
     },
@@ -165,7 +165,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
-            "D4H is an external team- and equipment-management platform. Connecting an organisation's D4H access token unlocks read-only D4H Views and lets I3 PPE templates link to D4H equipment. D4H integration is optional — organisations without a token simply don't see D4H-backed data.",
+            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the read-only D4H Views, I3's equipment issuing, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
         relatedTerms: ["ppe-template"],
     },
 ] as const;

@@ -14,7 +14,7 @@ import { getD4HEquipmentCategoriesCollection } from "@/client/collections/d4h-eq
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
@@ -72,19 +72,25 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                             <CardTitle>Category Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <DL>
-                                <DLTerm>Category ID</DLTerm>
-                                <DLDetails>{category.id}</DLDetails>
-                                <DLTerm>Title</DLTerm>
-                                <DLDetails>{category.title}</DLDetails>
-                                <DLTerm>Owner</DLTerm>
-                                <DLDetails>
-                                    <span>{category.owner.title}</span>
-                                    <span className="text-muted-foreground pl-2">
-                                        ({category.owner.resourceType})
-                                    </span>
-                                </DLDetails>
-                            </DL>
+                            <DataList>
+                                <DataItem inline>
+                                    <DataItemTitle>Category ID</DataItemTitle>
+                                    <DataItemValue>{category.id}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Title</DataItemTitle>
+                                    <DataItemValue>{category.title}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Owner</DataItemTitle>
+                                    <DataItemValue>
+                                        <span>{category.owner.title}</span>
+                                        <span className="text-muted-foreground pl-2">
+                                            ({category.owner.resourceType})
+                                        </span>
+                                    </DataItemValue>
+                                </DataItem>
+                            </DataList>
                         </CardContent>
                     </Card>
                     <D4HViewsModule_EquipmentCategory_Kinds_List categoryId={category.id} />

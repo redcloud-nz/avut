@@ -9,7 +9,7 @@
  * Deliberately free of any `@/server/prisma`
  * import — the Prisma client is injected by the caller, so this can be exercised from the
  * jsdom test environment against `createMockPrisma()`. Same reasoning as
- * `organization-settings-store.ts`.
+ * `services/organization-settings.ts`.
  *
  * Every write-time invariant lives here rather than in database CHECK constraints, which
  * Prisma models poorly. They are write-time only and DO NOT hold on read: `userId` is

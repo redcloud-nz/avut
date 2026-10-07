@@ -7,7 +7,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { teamsEffects } from "@/client/teams-effects";
 import {
@@ -36,6 +36,13 @@ export function AdminModule_DeleteTeam_Dialog({
     const organization = useOrganization();
     const router = useRouter();
 
+    const impact = useQuery(
+        trpc.teams.getTeamDeleteImpact.queryOptions(
+            { organizationId: organization.id, teamId: team.id },
+            { enabled: props.open },
+        ),
+    );
+
     const mutation = useMutation(
         trpc.teams.deleteTeam.mutationOptions({
             meta: { effects: teamsEffects.deleteTeam, navigates: true },
@@ -61,8 +68,15 @@ export function AdminModule_DeleteTeam_Dialog({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Team</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Confirm deletion of team <ObjectName>{team.name}</ObjectName>. This action
-                        cannot be undone.
+                        Confirm deletion of team <ObjectName>{team.name}</ObjectName>.
+                        {impact.data && impact.data.memberCount > 0 && (
+                            <>
+                                {" "}
+                                This team has {impact.data.memberCount} active member
+                                {impact.data.memberCount === 1 ? "" : "s"} — deleting hides the team
+                                from active views but does not remove those memberships.
+                            </>
+                        )}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

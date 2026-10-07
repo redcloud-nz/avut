@@ -23,9 +23,10 @@ import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
+import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
@@ -33,9 +34,10 @@ import { SkillTrack_CreateSession_Dialog } from "./create-session";
 
 export default function SkillTrack_Sessions_List() {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const { data: sessions } = useSuspenseQuery(
-        trpc.skills.listSessions.queryOptions({
+        trpc.skillCheckSessions.listSessions.queryOptions({
             organizationId: organization.id,
         }),
     );
@@ -78,7 +80,7 @@ export default function SkillTrack_Sessions_List() {
                 }),
                 columnHelper.accessor("status", {
                     header: "Status",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => SKILL_CHECK_STATUS_LABELS[ctx.getValue()] ?? ctx.getValue(),
                     enableColumnFilter: true,
                     enableSorting: false,
                     enableGlobalFilter: false,
@@ -86,13 +88,13 @@ export default function SkillTrack_Sessions_List() {
                     meta: {
                         columnOptions: [
                             { label: "Draft", value: "Draft" },
-                            { label: "Include", value: "Include" },
-                            { label: "Exclude", value: "Exclude" },
+                            { label: "Approved", value: "Include" },
+                            { label: "Excluded", value: "Exclude" },
                         ],
                     },
                 }),
             ]),
-        [organization.slug],
+        [organization.slug, formatDate],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

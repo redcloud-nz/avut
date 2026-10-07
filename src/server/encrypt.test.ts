@@ -110,6 +110,35 @@ describe("encrypt", () => {
 
             expect(() => decryptValue(tamperedEncrypted, validSecret)).toThrow();
         });
+
+        it("should reject a payload too short to hold an IV and a full tag", () => {
+            // 12-byte IV + 16-byte tag is the minimum; one byte short of that.
+            const truncated = Buffer.from(encryptValue("", validSecret), "base64")
+                .subarray(0, 27)
+                .toString("base64");
+
+            expect(() => decryptValue(truncated, validSecret)).toThrow(
+                "Invalid ciphertext: too short.",
+            );
+        });
+
+        it("should reject a truncated payload that would otherwise leave a short tag", () => {
+            // 12-byte IV + a 4-byte "tag": what setAuthTag would accept without a pinned length.
+            const short = Buffer.from(encryptValue("", validSecret), "base64")
+                .subarray(0, 16)
+                .toString("base64");
+
+            expect(() => decryptValue(short, validSecret)).toThrow(
+                "Invalid ciphertext: too short.",
+            );
+        });
+
+        it("should reject a value with its last byte removed", () => {
+            const encrypted = Buffer.from(encryptValue("Original", validSecret), "base64");
+            const clipped = encrypted.subarray(0, encrypted.length - 1).toString("base64");
+
+            expect(() => decryptValue(clipped, validSecret)).toThrow();
+        });
     });
 
     describe("encryptDBValue & decryptDBValue validation", () => {

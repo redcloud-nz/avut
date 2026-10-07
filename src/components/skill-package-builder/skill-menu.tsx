@@ -28,6 +28,7 @@ import { SkillPackage } from "@/lib/schemas/skill-package";
 import { SkillPackageBuilder_ArchiveSkill_Dialog } from "./archive-skill";
 import { SkillPackageBuilder_DeleteSkill_Dialog } from "./delete-skill";
 import { SkillPackageBuilder_MoveSkill_Dialog } from "./move-skill";
+import { SkillPackageBuilder_RecoverSkill_Dialog } from "./recover-skill";
 import { SkillPackageBuilder_RestoreSkill_Dialog } from "./restore-skill";
 
 interface SkillPackageBuilder_Skill_MenuProps {
@@ -40,10 +41,11 @@ interface SkillPackageBuilder_Skill_MenuProps {
 export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Skill_MenuProps) {
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["delete", "archive", "restore", "move"] as const),
+        parseAsStringLiteral(["delete", "archive", "restore", "recover", "move"] as const),
     );
 
-    const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
+    const canUpdate = useHasPermission({ skillPackage: ["update"] });
+    const canDelete = useHasPermission({ skillPackage: ["delete"] });
 
     const actions: MenuActionProps[] = [];
     if (skill.status == "Active") {
@@ -55,13 +57,15 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
             disabled: !canUpdate,
         });
     }
-    actions.push({
-        verb: "move",
-        label: "Move",
-        icon: <ObjectIcons.Move />,
-        onSelect: () => setAction("move", { history: "push" }),
-        disabled: !canUpdate,
-    });
+    if (skill.status != "Deleted") {
+        actions.push({
+            verb: "move",
+            label: "Move",
+            icon: <ObjectIcons.Move />,
+            onSelect: () => setAction("move", { history: "push" }),
+            disabled: !canUpdate,
+        });
+    }
     if (skill.status == "Archived") {
         actions.push({
             verb: "restore",
@@ -71,14 +75,24 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
             disabled: !canUpdate,
         });
     }
-    actions.push({
-        verb: "delete",
-        label: "Delete",
-        icon: <ObjectIcons.Delete />,
-        onSelect: () => setAction("delete", { history: "push" }),
-        disabled: !canUpdate,
-        destructive: true,
-    });
+    if (skill.status == "Deleted") {
+        actions.push({
+            verb: "recover",
+            label: "Recover from rubbish",
+            icon: <ObjectIcons.Recover />,
+            onSelect: () => setAction("recover", { history: "push" }),
+            disabled: !canDelete,
+        });
+    } else {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        });
+    }
 
     useMenuActionHotkeys(actions, "Skills");
 
@@ -105,6 +119,15 @@ export function SkillPackageBuilder_Skill_Menu({ skill }: SkillPackageBuilder_Sk
                 open={action === "delete"}
                 onOpenChange={(open) =>
                     setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+            <SkillPackageBuilder_RecoverSkill_Dialog
+                skill={skill}
+                open={action === "recover"}
+                onOpenChange={(open) =>
+                    setAction(open ? "recover" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

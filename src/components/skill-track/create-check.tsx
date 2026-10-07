@@ -114,7 +114,9 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
         queries: [
             trpc.personnel.getPersonSelf.queryOptions({ organizationId: organization.id }),
             trpc.personnel.listPersonnel.queryOptions({ organizationId: organization.id }),
-            trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
+                organizationId: organization.id,
+            }),
         ],
     });
 

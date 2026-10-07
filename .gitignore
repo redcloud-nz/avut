@@ -56,6 +56,10 @@ src/app/scratch/
 # claude code — personal overrides (.claude/settings.json IS shared)
 .claude/settings.local.json
 .claude/worktrees/
+.claude/scratchpad/
 
 # scratch PNGs from the docs screenshot capture skill (uploaded to Blob, never committed)
 .screenshots/
+
+# per-worktree dev-server port (scripts/dev-port.sh)
+.dev-port

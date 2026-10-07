@@ -9,26 +9,28 @@ import * as z from "zod";
 import { initTRPC, TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
-import { DiffChange } from "@/lib/diff";
-import { env } from "@/lib/env";
+import {
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    PreconditionError,
+    StalePlanError,
+    ValidationError,
+} from "@/lib/errors";
 import { Permissions } from "@/lib/permissions";
-import type { LogAction, LogEntryRecord, LogObjectType } from "@/lib/schemas/log-entry";
+import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
-import { recordLogEntry, resolveActor, type LogEntryRef } from "@/server/log-entry";
+import { recordLogEntry, resolveActor } from "@/server/log-entry";
 import prisma from "@/server/prisma";
+import type { LogEventOptions } from "@/server/services/service-context";
 
 import { formatTrpcError } from "./error-formatter";
+import { FieldConflictError } from "./errors";
 
-// Artificial delay in development approximating the client-to-server network round trip for a
-// real user (as opposed to `localhost`, which has none). Deliberately small — this fires once
-// per tRPC call regardless of how many DB queries it makes; the per-query DB round trip is
-// simulated separately in `server/prisma.ts`, additively, so sequential vs. parallel query
-// patterns actually show up as different wall-clock time in dev instead of being masked by one
-// flat delay per procedure.
-const DEVELOPMENT_DELAY = { min: 20, max: 80 }; // ms
+export type { LogEventOptions } from "@/server/services/service-context";
 
 /**
  * Create the inner tRPC context.
@@ -68,24 +70,49 @@ export const createTrpcRouter = t.router;
 //
 export type PublicContext = Context;
 
-export const publicProcedure = t.procedure.use(async function artificialDelayInDevelopment(opts) {
-    if (env.NODE_ENV === "development") {
-        const start = performance.now();
-        const delay =
-            Math.floor(Math.random() * (DEVELOPMENT_DELAY.max - DEVELOPMENT_DELAY.min + 1)) +
-            DEVELOPMENT_DELAY.min;
-
-        const [res] = await Promise.all([
-            opts.next(opts),
-            new Promise((resolve) => setTimeout(resolve, delay)),
-        ]);
-        const durationMs = Math.round(performance.now() - start);
-        console.debug(`[trpc] ${opts.path} — ${durationMs}ms (+${delay}ms artificial)`);
-        return res;
-    }
-
-    return opts.next(opts);
-});
+export const publicProcedure = t.procedure
+    /**
+     * Domain services (`src/server/services/*.ts`) throw plain `Error` subclasses rather than
+     * `TRPCError`, so they stay usable from a Server Component or a test with no tRPC in scope.
+     * This is the one place that maps them onto the wire protocol, preserving the original as
+     * `cause` — the same `cause` shape `formatTrpcError` reads to enrich `FieldConflictError`
+     * with `fieldName`. A router may still throw `FieldConflictError` directly (not just from a
+     * service) and rely on this middleware for the `TRPCError` wrapping.
+     */
+    .use(async function mapDomainErrors(opts) {
+        /*
+         * `next()` does not reject on a downstream failure — it resolves to
+         * `{ ok: false, error }`, with `error` already `TRPCError`-wrapped by tRPC and the
+         * original thrown value on `error.cause`. So the domain error is inspected there, not
+         * caught with try/catch.
+         */
+        const result = await opts.next(opts);
+        if (!result.ok) {
+            const cause = result.error.cause;
+            if (cause instanceof NotFoundError) {
+                throw new TRPCError({ code: "NOT_FOUND", message: cause.message, cause });
+            }
+            if (cause instanceof ForbiddenError) {
+                throw new TRPCError({ code: "FORBIDDEN", message: cause.message, cause });
+            }
+            if (cause instanceof ConflictError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
+            }
+            if (cause instanceof ValidationError) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: cause.message, cause });
+            }
+            if (cause instanceof PreconditionError) {
+                throw new TRPCError({ code: "PRECONDITION_FAILED", message: cause.message, cause });
+            }
+            if (cause instanceof StalePlanError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
+            }
+            if (cause instanceof FieldConflictError) {
+                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
+            }
+        }
+        return result;
+    });
 
 export type AuthenticatedContext = Context & {
     auth: AuthSession;
@@ -102,39 +129,62 @@ export type AuthenticatedContext = Context & {
 };
 
 /**
- * Procedure that requires the user to be authenticated.
- * @throws TRPCError with code 'UNAUTHORIZED' if not authenticated.
+ * The authentication check behind `authenticatedProcedure` and `closedAccountProcedure`. They
+ * differ only in whether a closed (soft-deleted, #296) account gets through.
  */
-export const authenticatedProcedure = publicProcedure.use((opts) => {
-    const { ctx } = opts;
-    if (ctx.auth == null) {
-        throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User is not authenticated.",
+function requireAuth(allowClosed: boolean) {
+    return t.middleware((opts) => {
+        const { ctx } = opts;
+        if (ctx.auth == null) {
+            throw new TRPCError({
+                code: "UNAUTHORIZED",
+                message: "User is not authenticated.",
+            });
+        }
+
+        const auth = ctx.auth;
+
+        if (!allowClosed && auth.user.status === "Deleted") {
+            throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "This account is closed. Restore it to use AVUT again.",
+            });
+        }
+
+        const userId = UserId.schema.parse(auth.user.id);
+
+        const enhancedCtx: AuthenticatedContext = {
+            ...ctx,
+            auth,
+            userId,
+            logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
+                const { actor, actorLabel } = resolveActor(auth);
+
+                return recordLogEntry(
+                    { scope: "user", ownerId: userId, actor, actorLabel, ...options },
+                    tx,
+                );
+            },
+        };
+
+        return opts.next({
+            ctx: enhancedCtx,
         });
-    }
-
-    const auth = ctx.auth;
-    const userId = UserId.schema.parse(auth.user.id);
-
-    const enhancedCtx: AuthenticatedContext = {
-        ...ctx,
-        auth,
-        userId,
-        logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
-            const { actor, actorLabel } = resolveActor(auth);
-
-            return recordLogEntry(
-                { scope: "user", ownerId: userId, actor, actorLabel, ...options },
-                tx,
-            );
-        },
-    };
-
-    return opts.next({
-        ctx: enhancedCtx,
     });
-});
+}
+
+/**
+ * Procedure that requires the user to be authenticated, with an account that isn't closed.
+ * @throws TRPCError with code 'UNAUTHORIZED' if not authenticated.
+ * @throws TRPCError with code 'FORBIDDEN' if the account is closed (in the system Rubbish bin).
+ */
+export const authenticatedProcedure = publicProcedure.use(requireAuth(false));
+
+/**
+ * `authenticatedProcedure` that also admits a closed account — only for what
+ * `/auth/account-closed` offers it (restoring the account). Nothing else uses this.
+ */
+export const closedAccountProcedure = publicProcedure.use(requireAuth(true));
 
 /**
  * `Omit<…, "logEvent">` is load-bearing. A plain intersection would merge the inherited
@@ -189,8 +239,44 @@ export const systemAdminProcedure = authenticatedProcedure.use(async ({ ctx, nex
     return next({ ctx: enhancedCtx });
 });
 
+/**
+ * Throws `NOT_FOUND` if the organization does not exist.
+ *
+ * `hasPermission` normally does this implicitly — a nonexistent organization has no members,
+ * so the lookup it does finds none and refuses the caller before anything else runs. The
+ * `allowSystemAdmin` bypass in `organizationProcedure` skips that lookup entirely, so it calls
+ * this explicitly to keep the guarantee: every procedure built on `organizationProcedure` can
+ * assume `ctx.organizationId` names a real organization, regardless of which path let the
+ * caller through.
+ */
+export async function assertOrganizationExists(
+    prisma: Pick<Context["prisma"], "organization">,
+    organizationId: OrganizationId,
+) {
+    const org = await prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { id: true },
+    });
+    if (!org) {
+        throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Organization ${organizationId} not found.`,
+        });
+    }
+}
+
 export type AuthenticatedOrganizationContext = AuthenticatedContext & {
     organizationId: OrganizationId;
+    /**
+     * Whether the caller reached this procedure as a site-wide administrator (Better Auth
+     * `admin` plugin — `session.user.role === "admin"`) rather than through org membership.
+     * Only meaningful on a procedure built with `{ allowSystemAdmin: true }`; on any other
+     * `organizationProcedure` call the caller was necessarily a permitted member, so this is
+     * always `false` there. Handlers that behave differently for an admin acting outside their
+     * own membership (e.g. skipping a self-only guard) should branch on this rather than
+     * re-deriving it from `ctx.auth.user.role`.
+     */
+    isSystemAdmin: boolean;
     /**
      * Records an entry in the organization's change-log.
      *
@@ -209,9 +295,19 @@ export type AuthenticatedOrganizationContext = AuthenticatedContext & {
 /**
  * An organization scoped procedure that checks for required permissions.
  * @param requiredPermissions The permissions required to access this procedure.
+ * @param options.allowSystemAdmin When `true`, a site-wide administrator (`ctx.auth.user.role
+ *   === "admin"`) is let through without an org-membership or permission check — the same
+ *   access `systemAdminProcedure` grants, just from an org-scoped procedure. Membership is
+ *   checked as usual for every other caller. Default `false`: an admin with no membership of
+ *   their own is refused like anyone else, same as before this option existed.
  * @returns A tRPC procedure with organization context and permission checks.
  */
-export function organizationProcedure(requiredPermissions: Permissions = {}) {
+export function organizationProcedure(
+    requiredPermissions: Permissions = {},
+    options: { allowSystemAdmin?: boolean } = {},
+) {
+    const { allowSystemAdmin = false } = options;
+
     // Ensure that the required organization permissions include at least 'organization:view'
     requiredPermissions = {
         ...requiredPermissions,
@@ -221,12 +317,22 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
     };
 
     return authenticatedProcedure
-        .meta({ requiresOrganization: true, requiredPermissions })
+        .meta({ requiresOrganization: true, requiredPermissions, allowSystemAdmin })
         .input(z.object({ organizationId: OrganizationId.schema }))
 
         .use(async (opts) => {
-            // Check organization permissions
-            await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
+            const isSystemAdmin = opts.ctx.auth.user.role === "admin";
+
+            // A system admin bypasses the membership/permission check entirely — there is no
+            // membership to look up, so `hasPermission` (which 403s a non-member outright)
+            // would refuse them before ever weighing `requiredPermissions`. That check is also
+            // what would have caught a nonexistent organization (no members either), so the
+            // bypass path re-asserts that explicitly instead of silently losing the guarantee.
+            if (allowSystemAdmin && isSystemAdmin) {
+                await assertOrganizationExists(opts.ctx.prisma, opts.input.organizationId);
+            } else {
+                await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
+            }
 
             function logEvent(
                 options: LogEventOptions,
@@ -250,22 +356,11 @@ export function organizationProcedure(requiredPermissions: Permissions = {}) {
                 ctx: {
                     ...opts.ctx,
                     organizationId: opts.input.organizationId,
+                    isSystemAdmin,
                     logEvent,
                 } satisfies AuthenticatedOrganizationContext,
             });
         });
-}
-
-export interface LogEventOptions {
-    action: LogAction;
-    objectType: LogObjectType;
-    objectId: string;
-    changes?: DiffChange[];
-    description?: string;
-    /** Extra entities this entry is relevant to. The primary is implicit. */
-    refs?: LogEntryRef[];
-    /** An existing `LogBatch.id`, when this entry is part of a multi-entry operation. */
-    batchId?: string;
 }
 
 /**

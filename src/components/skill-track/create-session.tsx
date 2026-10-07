@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -58,7 +58,7 @@ export function SkillTrack_CreateSession_Dialog() {
     ]);
 
     const nextSessionNumberQuery = useQuery(
-        trpc.skills.nextSessionNumber.queryOptions(
+        trpc.skillCheckSessions.nextSessionNumber.queryOptions(
             { organizationId: organization.id },
             { enabled: dialogOpen },
         ),
@@ -73,13 +73,12 @@ export function SkillTrack_CreateSession_Dialog() {
             name: "",
             date: new Date().toISOString(),
             notes: "",
-            status: "Draft" as const,
         },
     });
 
     const mutation = useMutation(
-        trpc.skills.createSession.mutationOptions({
-            meta: { effects: skillsEffects.createSession, navigates: true },
+        trpc.skillCheckSessions.createSession.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.createSession, navigates: true },
             onError(error) {
                 console.error("Failed to create session", error);
                 toast.error(`Failed to create session ${error.message}`);

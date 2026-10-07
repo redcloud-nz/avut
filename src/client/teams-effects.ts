@@ -32,6 +32,37 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
 
 export const teamsEffects = createEffects<"teams">()({
     applyD4HTeamSync: (vars) => teamCaches(vars),
+    archiveTeam: (vars, { updated }) => [
+        write(
+            trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            updated,
+        ),
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    ],
+    restoreTeam: (vars, { updated }) => [
+        write(
+            trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            updated,
+        ),
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+    ],
+    recoverTeam: (vars, { updated }) => [
+        write(
+            trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            updated,
+        ),
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+    ],
     createTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
     ],
@@ -40,6 +71,7 @@ export const teamsEffects = createEffects<"teams">()({
     ],
     deleteTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     linkTeamToD4H: (vars) => teamCaches(vars),
     unlinkTeamFromD4H: (vars) => teamCaches(vars),
@@ -80,6 +112,22 @@ export const teamsEffects = createEffects<"teams">()({
                 personId: vars.personId,
             }),
         ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+    ],
+    recoverTeamMembership: (vars) => [
+        invalidate(
+            trpc.teams.listTeamMemberships.queryFilter({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+        ),
+        invalidate(
+            trpc.teams.listTeamMemberships.queryFilter({
+                organizationId: vars.organizationId,
+                personId: vars.personId,
+            }),
+        ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     updateTeam: (vars, { updated }) => [
         write(

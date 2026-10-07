@@ -130,7 +130,7 @@ export function SkillPackageBuilder_Packages_List({
             <Saratoga.Header>
                 <Saratoga.Title>Skill Packages</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect permissions={{ skillPackageBuilder: ["create"] }}>
+                    <Protect permissions={{ skillPackage: ["create"] }}>
                         <SkillPackageBuilder_ImportPackage_Dialog />
                         <SkillPackageBuilder_CreatePackage_Dialog />
                     </Protect>

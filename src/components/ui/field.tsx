@@ -43,7 +43,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
         <div
             data-slot="field-group"
             className={cn(
-                "group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
+                "group/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
                 className,
             )}
             {...props}
@@ -51,14 +51,31 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
     );
 }
 
+/**
+ * The two-column grid `responsive` and `inline` fields share from `sm` up, placed by slot rather
+ * than position: a `FieldLabel` goes in the ⅓ label column, nudged down to line up with an 8-high
+ * control; everything else — the control, then a `FieldDescription`, then a `FieldError` — stacks
+ * in the ⅔ column in source order. Rows are sized by the control column alone, since the label
+ * only ever occupies row 1.
+ */
+const alignedGrid =
+    "sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:items-start sm:gap-x-4 sm:gap-y-1.5 sm:*:col-start-2 sm:*:data-[slot=field-label]:col-start-1 sm:*:data-[slot=field-label]:row-start-1 sm:*:data-[slot=field-label]:pt-1.5 sm:*:data-[slot=field-description]:mt-0";
+
 const fieldVariants = cva("group/field flex w-full gap-2 data-[invalid=true]:text-destructive", {
     variants: {
         orientation: {
             vertical: "flex-col *:w-full [&>.sr-only]:w-auto",
             horizontal:
                 "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
-            responsive:
-                "flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+            // Stacked below `sm` (where a `DialogContent` goes full screen), then the aligned grid.
+            responsive: ["flex-col *:w-full [&>.sr-only]:w-auto", alignedGrid],
+            // A row at every width — label ⅓ and value ⅔ below `sm` — for a
+            // short read-only value (an ID) that doesn't need a line to itself on a phone; from
+            // `sm` up it joins the same aligned grid as `responsive`, so it lines up with them.
+            inline: [
+                "flex-row items-center *:min-w-0 *:flex-1 *:data-[slot=field-label]:flex-none *:data-[slot=field-label]:basis-1/3",
+                alignedGrid,
+            ],
         },
     },
     defaultVariants: {

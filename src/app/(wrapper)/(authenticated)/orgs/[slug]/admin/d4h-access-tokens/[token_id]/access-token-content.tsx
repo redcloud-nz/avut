@@ -5,6 +5,7 @@
 "use client";
 
 import { RefreshCwIcon } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -12,10 +13,17 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import {
     Table,
     TableBody,
@@ -26,12 +34,11 @@ import {
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAccessTokenId }) {
+export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: ProviderCredentialId }) {
     const organization = useOrganization();
 
     const { data: accessToken } = useSuspenseQuery(
@@ -85,7 +92,19 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAc
                             {accessToken.label || `Access Token: ${accessToken.id}`}
                         </Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect permissions={{ d4hAccessToken: ["update"] }}>
+                            <Protect permissions={{ organization: ["update"] }}>
+                                <Button variant="ghost" size="icon" asChild>
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history",
+                                            { slug: organization.slug, token_id: tokenId },
+                                        )}
+                                        aria-label="History"
+                                        title="History"
+                                    >
+                                        <ObjectIcons.History />
+                                    </Link>
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={handleRefresh}>
                                     <RefreshCwIcon />
                                 </Button>
@@ -99,18 +118,26 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAc
                                     <CardTitle>D4H Access Token</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Token ID</DLTerm>
-                                        <DLDetails>{accessToken.id}</DLDetails>
-                                        <DLTerm>Server</DLTerm>
-                                        <DLDetails>
-                                            {getD4HServer(accessToken.serverCode)?.name}
-                                        </DLDetails>
-                                        <DLTerm>Label</DLTerm>
-                                        <DLDetails>{accessToken.label}</DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{accessToken.status}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Token ID</DataItemTitle>
+                                            <DataItemValue>{accessToken.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Server</DataItemTitle>
+                                            <DataItemValue>
+                                                {getD4HServer(accessToken.serverCode)?.name}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Label</DataItemTitle>
+                                            <DataItemValue>{accessToken.label}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{accessToken.status}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             {/* <Card>
@@ -184,15 +211,12 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: D4HAc
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(accessToken.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(accessToken.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={accessToken.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

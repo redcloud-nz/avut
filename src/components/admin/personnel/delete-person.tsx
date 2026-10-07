@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { ComponentProps } from "react";
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { personnelEffects } from "@/client/personnel-effects";
 import {
@@ -33,6 +33,13 @@ export function AdminModule_DeletePerson_Dialog({
 }: ComponentProps<typeof AlertDialog> & { person: PersonData }) {
     const organization = useOrganization();
     const router = useRouter();
+
+    const impact = useQuery(
+        trpc.personnel.getPersonDeleteImpact.queryOptions(
+            { organizationId: organization.id, personId: person.id },
+            { enabled: props.open },
+        ),
+    );
 
     const mutation = useMutation(
         trpc.personnel.deletePerson.mutationOptions({
@@ -68,6 +75,17 @@ export function AdminModule_DeletePerson_Dialog({
                     <AlertDialogDescription>
                         Confirm deletion of personnel record for{" "}
                         <ObjectName>{person.name}</ObjectName>.
+                        {impact.data &&
+                            (impact.data.teamCount > 0 || impact.data.skillCheckCount > 0) && (
+                                <>
+                                    {" "}
+                                    This person is on {impact.data.teamCount} team
+                                    {impact.data.teamCount === 1 ? "" : "s"} and appears in{" "}
+                                    {impact.data.skillCheckCount} skill-check record
+                                    {impact.data.skillCheckCount === 1 ? "" : "s"} — deleting hides
+                                    them from active views but does not remove those records.
+                                </>
+                            )}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

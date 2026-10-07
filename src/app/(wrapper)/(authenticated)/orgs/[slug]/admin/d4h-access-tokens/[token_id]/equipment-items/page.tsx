@@ -9,17 +9,19 @@ import { omit } from "remeda";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
-import { getOrganizationBySlug } from "@/server/cache/organization";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import { getOrganizationD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { requireOrganizationWith } from "@/server/organization-access";
 
 async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
     const fetchClient = getD4HFetchClient(accessToken);
 
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const teams = await getD4HTeamsAccessibleWithToken(toD4HCredentialRef(accessToken));
 
     const items = (
         await Promise.all(
@@ -55,11 +57,13 @@ async function fetchEquipment(accessToken: D4HAccessToken_ServerOnly) {
 export default async function Admin_D4HAccessToken_EquipmentItems_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/equipment-items`>,
 ) {
+    if (!env.isDevelopment()) notFound();
+
     const { slug, token_id } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     const accessToken = await getOrganizationD4HAccessToken({
-        tokenId: token_id,
+        tokenId: ProviderCredentialId.schema.parse(token_id),
         organizationId: organization.id,
     });
 

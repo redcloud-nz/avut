@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { SkillId } from "@/lib/schemas/skill";
 import { TeamId } from "@/lib/schemas/team";
 import { cn } from "@/lib/utils";
@@ -92,6 +92,7 @@ function SkillCoverageReportView({
     syntheticChecksEnabled: boolean;
 }) {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const [teamParam] = useQueryState("team");
 

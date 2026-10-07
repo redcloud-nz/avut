@@ -23,9 +23,9 @@ import {
     PopoverTitle,
 } from "@/components/ui/popover";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate, formatRelativeDateTime } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import type { Skill } from "@/lib/schemas/skill";
-import { getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
+import { assessorDisplayName, getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
 import { RouterOutput, trpc } from "@/trpc/client";
 
 type Competency = RouterOutput["skillChecks"]["getCompetencyMatrix"]["competencies"][number];
@@ -199,6 +199,7 @@ function CheckDetailsContent({
     isSynthetic: boolean;
 }) {
     const organization = useOrganization();
+    const { formatDate, formatRelativeDateTime } = usePreferences();
 
     // A null `expiresAt` means the skill never needs reassessment. Otherwise `isCurrent` is the
     // server's `expiresAt > now` check, so its negation is "expiry is past".
@@ -248,7 +249,9 @@ function CheckDetailsContent({
                         ? "—"
                         : isPending
                           ? "Loading…"
-                          : (check?.assessor.name ?? "Unknown")}
+                          : check
+                            ? assessorDisplayName(check)
+                            : "Unknown"}
                 </dd>
             </dl>
             {isSynthetic ? (

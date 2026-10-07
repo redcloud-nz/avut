@@ -15,6 +15,17 @@ export default defineConfig({
         exclude: ["node_modules", ".next", "dist", ".claude/worktrees"],
         env: {
             NODE_ENV: "test",
+            /*
+             * Deliberately neither this machine's zone (Pacific/Auckland) nor the default
+             * `UserSettings.display.timeZone`. Anything that renders a timestamp is supposed to
+             * go through an explicit zone preference; pinning the *process* to a third zone is
+             * what makes a formatter that quietly falls back to the process zone fail here
+             * rather than pass locally and misrender in production.
+             *
+             * `npm run test:tz` re-runs the same suite under a different zone again — identical
+             * results across the two is the actual assertion. See `datetime.test.ts`.
+             */
+            TZ: "America/New_York",
         },
         coverage: {
             provider: "v8",

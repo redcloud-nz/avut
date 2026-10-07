@@ -8,6 +8,7 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
+import { RubbishNavGate } from "@/components/admin/trash/rubbish-nav-gate";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
@@ -26,11 +27,11 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
 
     return (
         <>
-            <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton slug="admin" />} />
+            <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton id="admin/dashboard" />} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
-                        {/* <Protect permissions={{ d4hAccessToken: ["view"] }}>
+                        {/* <Protect permissions={{ organization: ["update"] }}>
                         <Item asChild>
                             <Link
                                 href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
@@ -70,6 +71,25 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                         <ItemTitle>Organisation</ItemTitle>
                                         <ItemDescription>
                                             Manage your organisation&apos;s details.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect permissions={{ organization: ["view"] }}>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/admin/organization-settings", {
+                                        slug,
+                                    })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Organisation Settings</ItemTitle>
+                                        <ItemDescription>
+                                            Configure your organisation&apos;s settings and modules.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -124,6 +144,21 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
+                        <RubbishNavGate>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/admin/rubbish-bin", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Rubbish</ItemTitle>
+                                        <ItemDescription>
+                                            Restore deleted personnel and teams.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </RubbishNavGate>
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>

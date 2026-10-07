@@ -20,29 +20,41 @@ datasource db {
 // Authentication Models
 
 model User {
-  id                String                   @id
-  name              String
-  email             String
-  emailVerified     Boolean                  @default(false)
-  image             String?
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
-  role              String?
-  banned            Boolean?                 @default(false)
-  banReason         String?
-  banExpires        DateTime?
-  sessions          Session[]                @relation("session_to_user")
-  accounts          Account[]                @relation("account_to_user")
-  organizationUsers OrganizationUser[]       @relation("organization_user_to_user")
-  invitations       OrganizationInvitation[] @relation("organization_invitation_to_inviter")
-  d4hAccessTokens   D4HAccessToken[]         @relation("d4h_access_token_to_user")
+  id                     String                   @id
+  name                   String
+  email                  String
+  emailVerified          Boolean                  @default(false)
+  image                  String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  role                   String?
+  banned                 Boolean?                 @default(false)
+  banReason              String?
+  banExpires             DateTime?
+  /// `Deleted` = in the system Rubbish bin: can't sign in, purged after a fixed 14 days (#296).
+  /// Distinct from `banned`, which blocks access but keeps the account indefinitely.
+  status                 RecordStatus             @default(Active)
+  /// Who put a `Deleted` account in the bin: `Self` (closed it) may restore it on sign-in;
+  /// `Admin` has to ask an administrator. Null while the account isn't deleted.
+  deletedBy              AccountDeletedBy?
+  /// The "what's new" read cursor: the newest release whose entry the user has seen (`0.11`).
+  /// Null means none; new accounts start at the newest entry, so they don't get the backlog.
+  /// See `src/lib/updates.ts`.
+  lastSeenUpdatesVersion String?
+  sessions               Session[]                @relation("session_to_user")
+  accounts               Account[]                @relation("account_to_user")
+  organizationUsers      OrganizationUser[]       @relation("organization_user_to_user")
+  invitations            OrganizationInvitation[] @relation("organization_invitation_to_inviter")
+  providerCredentials    ProviderCredential[]     @relation("provider_credential_to_user")
+  configs                UserConfig[]             @relation("user_config_to_user")
 
-  authoredNotes          Note[]         @relation("note_to_author")
-  formInstances          FormInstance[] @relation("form_instance_to_user")
-  logEntries             LogEntry[]     @relation("log_entry_to_user")
-  ownedLogEntries        LogEntry[]     @relation("log_entry_to_owner")
-  impersonatedLogEntries LogEntry[]     @relation("log_entry_to_impersonator")
-  logBatches             LogBatch[]     @relation("log_batch_to_user")
+  authoredOrganizationNotes OrganizationNote[] @relation("organization_note_to_author")
+  notes                     UserNote[]         @relation("user_note_to_user")
+  formInstances             FormInstance[]     @relation("form_instance_to_user")
+  logEntries                LogEntry[]         @relation("log_entry_to_user")
+  ownedLogEntries           LogEntry[]         @relation("log_entry_to_owner")
+  impersonatedLogEntries    LogEntry[]         @relation("log_entry_to_impersonator")
+  logBatches                LogBatch[]         @relation("log_batch_to_user")
 
   @@unique([email])
   @@map("users")
@@ -115,13 +127,13 @@ model Organization {
 
   // Owned records
   logEntries                LogEntry[]                 @relation("log_entry_to_organization")
-  notes                     Note[]                     @relation("note_to_organization")
+  notes                     OrganizationNote[]         @relation("organization_note_to_organization")
   skillChecks               SkillCheck[]               @relation("skill_check_to_organization")
   skillCheckSessions        SkillCheckSession[]        @relation("skill_check_session_to_organization")
   skillPackages             SkillPackage[]             @relation("skill_package_to_organization")
   skillPackageSubscriptions SkillPackageSubscription[] @relation("skill_package_subscription_to_organization")
   personnel                 Person[]                   @relation("person_to_organization")
-  d4hAccessTokens           D4HAccessToken[]           @relation("d4h_access_token_to_organization")
+  providerCredentials       ProviderCredential[]       @relation("provider_credential_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
   i3IssuedItems I3IssuedItem[] @relation("i3_issued_item_to_organization")
@@ -142,12 +154,23 @@ model OrganizationConfig {
   @@map("organization_config")
 }
 
+model UserConfig {
+  userId String
+  user   User   @relation("user_config_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  key    String
+  value  Json
+
+  @@unique([userId, key])
+  @@map("user_config")
+}
+
 model Team {
-  id          String   @id
+  id          String       @id
   name        String
-  description String   @default("")
-  tags        String[] @default([])
-  properties  Json     @default("{}")
+  description String       @default("")
+  tags        String[]     @default([])
+  properties  Json         @default("{}")
+  status      RecordStatus @default(Active)
 
   organizationId  String
   organization    Organization     @relation("team_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
@@ -164,7 +187,7 @@ model Team {
 // The resolved D4H-organisation identity for an AVUT organisation, plus a cache of
 // that org's D4H attributes. Distinct from `integrations.d4h` settings (policy);
 // this is resolved foreign identity + fetched data. Created lazily on the first
-// `linkTeamToD4H`. See docs/specs/d4h-linking.md §3.1.
+// `linkTeamToD4H`. See docs/specs/2026-09-10-d4h-linking.md §3.1.
 model Organization_D4H {
   organizationId String
   organization   Organization @relation("organization_d4h_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
@@ -182,7 +205,7 @@ model Organization_D4H {
 
   // The organisation access token a scheduled sync should use (Phase 2).
   syncTokenId String?
-  syncToken   D4HAccessToken? @relation("organization_d4h_sync_token", fields: [syncTokenId], references: [id], onDelete: SetNull)
+  syncToken   ProviderCredential? @relation("organization_d4h_sync_token", fields: [syncTokenId], references: [id], onDelete: SetNull)
 
   // Pure sync bookkeeping — last refresh of the cached attributes above. Not a D4H value.
   lastSyncedAt DateTime?
@@ -203,7 +226,7 @@ model Team_D4H {
 
   // Informational — the token that created the link.
   linkTokenId String?
-  linkToken   D4HAccessToken? @relation("team_d4h_link_token", fields: [linkTokenId], references: [id], onDelete: SetNull)
+  linkToken   ProviderCredential? @relation("team_d4h_link_token", fields: [linkTokenId], references: [id], onDelete: SetNull)
 
   // Pure sync bookkeeping — set on every apply and on the first pull at link time.
   lastSyncedAt DateTime?
@@ -360,21 +383,35 @@ model LogBatch {
   @@map("log_batches")
 }
 
+enum AccountDeletedBy {
+  Self
+  Admin
+}
+
 enum RecordStatus {
   Active
   Archived
   Deleted
 }
 
-model D4HAccessToken {
+enum Provider {
+  D4H
+}
+
+/// Generalizes D4HAccessToken's former encrypted-credential storage across every
+/// external-service integration (see #286). D4H itself now runs on this table.
+model ProviderCredential {
   id             String        @id
+  provider       Provider
   organizationId String?
-  organization   Organization? @relation("d4h_access_token_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
-  user           User?         @relation("d4h_access_token_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  user           User?         @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  /// Nullable, unused until OrganizationGroup (#198) exists. No FK yet — added ahead of need
+  /// because #284 already commits to group-owned credentials being real.
+  groupId        String?
   label          String
   token          String
-  serverCode     String
   status         String
   expiresAt      DateTime
   metadata       Json          @default("{}")
@@ -385,7 +422,8 @@ model D4HAccessToken {
   syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")
 
   @@index([organizationId])
-  @@map("d4h_access_tokens")
+  @@index([groupId])
+  @@map("provider_credentials")
 }
 
 model Person {
@@ -439,7 +477,7 @@ model TeamMembership {
 }
 
 // Presence of this row marks a membership as D4H-managed. Memberships without it
-// were added manually and are never touched by sync. See docs/specs/d4h-linking.md §3.3.
+// were added manually and are never touched by sync. See docs/specs/2026-09-10-d4h-linking.md §3.3.
 model TeamMembership_D4H {
   teamMembershipId String
   teamMembership   TeamMembership @relation("team_membership_d4h_to_team_membership", fields: [teamMembershipId], references: [id], onDelete: Cascade)
@@ -458,21 +496,34 @@ model TeamMembership_D4H {
 
 // Notes models
 
-model Note {
-  id             String        @id
-  organizationId String?
-  organization   Organization? @relation("note_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  authorId       String
-  author         User          @relation("note_to_author", fields: [authorId], references: [id], onDelete: Cascade)
-  content        String
-  tags           String[]      @default([])
-  properties     Json          @default("{}")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+model OrganizationNote {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("organization_note_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Null once the author's account is purged: an org note belongs to the org, not its author.
+  authorId       String?
+  author         User?        @relation("organization_note_to_author", fields: [authorId], references: [id], onDelete: SetNull)
+  title          String
+  content        String       @default("")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([organizationId])
   @@index([authorId])
-  @@map("notes")
+  @@map("organization_notes")
+}
+
+model UserNote {
+  id        String   @id
+  userId    String
+  user      User     @relation("user_note_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_notes")
 }
 
 // Skill tracking models
@@ -549,6 +600,8 @@ enum SkillCheckStatus {
   Draft
   Include
   Exclude
+  Pending
+  Deleted
 }
 
 enum SkillCheckResult {
@@ -595,14 +648,27 @@ model SkillCheck {
   sessionId      String?
   session        SkillCheckSession? @relation("skill_check_session_checks", fields: [sessionId], references: [id], onDelete: SetNull)
   assessee       Person             @relation("skill_check_assessee", fields: [assesseeId], references: [id], onDelete: Cascade)
-  assessorId     String
-  assessor       Person             @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: Cascade)
+  /// Null once the assessor's Person is purged from the Rubbish bin — the check is the assessee's
+  /// record and survives, with `assessorLabel` keeping the assessor's name.
+  assessorId     String?
+  assessor       Person?            @relation("skill_check_assessor", fields: [assessorId], references: [id], onDelete: SetNull)
+  /// The assessor's name, written by the Person purge just before `assessorId` is nulled.
+  assessorLabel  String?
   skillId        String
   skill          Skill              @relation("skill_check_to_skill", fields: [skillId], references: [id], onDelete: Cascade)
   result         SkillCheckResult
   notes          String
   status         SkillCheckStatus   @default(Draft)
-  createdAt      DateTime           @default(now())
+  /// When the assessment happened. Competency expiry, the competency matrix and the reports use it.
+  /// A session check takes the session's date (set by `setSessionSkillCheck`, re-stamped when the
+  /// session's date changes); a standalone check takes the time it was created. No default, so
+  /// every writer has to set it.
+  checkedAt      DateTime
+  /// When an assessor last recorded or removed the check: the session checks sync cursor and the
+  /// Recent checks time. Set explicitly by every assessor write (create, update, record, and the
+  /// tombstone writes). Deliberately not `@updatedAt`: approve, reopen, exclusions and the Rubbish
+  /// bin purge leave it alone.
+  recordedAt     DateTime           @default(now())
 
   @@unique([assesseeId, assessorId, sessionId, skillId])
   @@index([organizationId])

@@ -10,8 +10,8 @@ Where things live. Each folder with conventions of its own has a README.
 ## Design record
 
 - [`specs/`](specs/README.md) — the agreed shape of a non-trivial change before it is built, and why it is that shape once built. Every spec carries a date and a status.
-- [`plans/`](plans/) — the sequence of steps for one piece of work.
-- [`research/`](research/) — investigations of something external, such as a library's behaviour.
+- [`plans/`](plans/README.md) — the sequence of steps for one piece of work. Dated.
+- [`research/`](research/README.md) — investigations of something external, such as a library's behaviour. Dated.
 - [`reviews/`](reviews/README.md) — cross-cutting reviews of code that already exists: what is wrong with it and what to do about it. Dated.
 
 ## Releasing

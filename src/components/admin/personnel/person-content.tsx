@@ -6,8 +6,9 @@
 
 import { Suspense } from "react";
 
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { AdminModule_Person_LinkedUser_Card } from "@/components/admin/personnel/linked-user-card";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -20,11 +21,15 @@ import {
     CardLoadingFallback,
     CardTitle,
 } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { PersonId } from "@/lib/schemas/person";
 import { trpc } from "@/trpc/client";
 
@@ -35,15 +40,9 @@ import { AdminModule_UpdatePerson_Dialog } from "./update-person";
 export function AdminModule_Person_Content({ personId }: { personId: PersonId }) {
     const organization = useOrganization();
 
-    const [{ data: person }, { data: linkedUser }] = useSuspenseQueries({
-        queries: [
-            trpc.personnel.getPerson.queryOptions({ organizationId: organization.id, personId }),
-            trpc.personnel.getLinkedUser.queryOptions({
-                organizationId: organization.id,
-                personId,
-            }),
-        ],
-    });
+    const { data: person } = useSuspenseQuery(
+        trpc.personnel.getPerson.queryOptions({ organizationId: organization.id, personId }),
+    );
 
     return (
         <>
@@ -59,14 +58,14 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     },
                     person.name,
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/personnel" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{person.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <AdminModule_PersonMenu person={person} linked={linkedUser !== null} />
+                            <AdminModule_PersonMenu person={person} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
 
@@ -82,46 +81,33 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Person ID</DLTerm>
-                                        <DLDetails className="font-mono">{person.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{person.name}</DLDetails>
-                                        <DLTerm>Email</DLTerm>
-                                        <DLDetails>{person.email}</DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{person.status}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Person ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {person.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{person.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Email</DataItemTitle>
+                                            <DataItemValue>{person.email}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{person.status}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
-                            {linkedUser && (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Linked User Account</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <DL>
-                                            <DLTerm>User ID</DLTerm>
-                                            <DLDetails className="font-mono">
-                                                {linkedUser.userId}
-                                            </DLDetails>
-                                            <DLTerm>Name</DLTerm>
-                                            <DLDetails>{linkedUser.user.name}</DLDetails>
-                                            <DLTerm>Email</DLTerm>
-                                            <DLDetails>{linkedUser.user.email}</DLDetails>
-                                            <DLTerm>Roles</DLTerm>
-                                            <DLDetails>
-                                                {linkedUser.roles
-                                                    .map(
-                                                        (role) =>
-                                                            OrganizationRole.displayNames[role],
-                                                    )
-                                                    .join(", ")}
-                                            </DLDetails>
-                                        </DL>
-                                    </CardContent>
-                                </Card>
-                            )}
+                            <Protect permissions={{ member: ["view"] }}>
+                                <Suspense fallback={<CardLoadingFallback />}>
+                                    <AdminModule_Person_LinkedUser_Card personId={person.id} />
+                                </Suspense>
+                            </Protect>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Suspense fallback={<CardLoadingFallback />}>
@@ -129,24 +115,16 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                             </Suspense>
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(person.createdAt)}</div>
-
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(person.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(person.updatedAt)}</div>
-
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(person.updatedAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={person.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={person.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

@@ -7,9 +7,9 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { organizationsEffects } from "@/client/organizations-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -25,6 +25,7 @@ import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { type AuthOrganizationMember } from "@/server/auth";
+import { trpc } from "@/trpc/client";
 
 export function AdminModule_DeleteUser_Dialog({
     organizationUser,
@@ -34,40 +35,30 @@ export function AdminModule_DeleteUser_Dialog({
     onSuccess?: () => void;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
     const router = useRouter();
 
-    const mutation = useMutation({
-        async mutationFn() {
-            await authClient.organization.removeMember(
-                { organizationId: organization.id, memberIdOrEmail: organizationUser.id },
-                { throw: true },
-            );
-        },
-        onError(error) {
-            console.error("Failed to remove user from organization:", error);
-            toast.error(`Failed to remove user from organization: ${error.message}`);
-        },
-        async onSuccess() {
-            toast.success(
-                <>
-                    User <ObjectName>{organizationUser.user.name}</ObjectName> removed from
-                    organisation.
-                </>,
-            );
-            // Navigate away first. The user detail page holds an active
-            // useSuspenseQuery on this key; awaiting an invalidate here would
-            // refetch it immediately and drop this now-removed member, throwing
-            // "user not found" before the navigation runs. refetchType "inactive"
-            // still marks it stale so the users list refetches once it mounts.
-            router.push(route("/orgs/[slug]/admin/users", { slug: organization.slug }));
-
-            void queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-users", organization.id],
-                refetchType: "inactive",
-            });
-        },
-    });
+    const mutation = useMutation(
+        trpc.organizations.removeOrganizationMember.mutationOptions({
+            meta: { effects: organizationsEffects.removeOrganizationMember, navigates: true },
+            onError(error) {
+                console.error("Failed to remove user from organization:", error);
+                toast.error(`Failed to remove user from organization: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        User <ObjectName>{organizationUser.user.name}</ObjectName> removed from
+                        organisation.
+                    </>,
+                );
+                // Navigate away. The user detail page holds an active useSuspenseQuery on the
+                // member list — see `navigates: true` above, which marks it stale without
+                // awaiting a refetch, so the redirect doesn't wait on refetching a now-removed
+                // member ("user not found" before the navigation runs).
+                router.push(route("/orgs/[slug]/admin/users", { slug: organization.slug }));
+            },
+        }),
+    );
 
     return (
         <AlertDialog {...props}>
@@ -84,7 +75,12 @@ export function AdminModule_DeleteUser_Dialog({
                     <MutationButton
                         type="button"
                         variant="destructive"
-                        onClick={() => mutation.mutate()}
+                        onClick={() =>
+                            mutation.mutate({
+                                organizationId: organization.id,
+                                userId: organizationUser.userId,
+                            })
+                        }
                         status={mutation.status}
                         text={{
                             idle: "Delete",

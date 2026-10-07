@@ -11,13 +11,13 @@ import {
     PocketKnifeIcon,
     ShieldIcon,
     ShirtIcon,
-    UserIcon,
     WrenchIcon,
     type LucideIcon,
 } from "lucide-react";
 import { Route } from "next";
 
 import { route } from "@/lib/routes";
+import type { UserSettings } from "@/lib/schemas/user-settings";
 
 /**
  * Identifier for an organization-scoped module (lives under `/orgs/[slug]/…`).
@@ -36,7 +36,7 @@ export type OrganizationModuleId =
     | "skill-package-builder";
 
 /** Identifier for a user-scoped module (lives under `/user/…`), always available. */
-export type UserModuleId = "profile" | "user-dashboard";
+export type UserModuleId = "user-dashboard" | "user-notes";
 
 /** Identifier for a site-wide module (lives under `/system/…`, gated on the Better Auth `admin` role). */
 export type SystemModuleId = "system-admin";
@@ -159,14 +159,14 @@ export const Modules = {
         scope: "user",
         href: () => "/user",
     },
-    profile: {
-        id: "profile",
-        label: "User Settings",
-        icon: UserIcon,
-        segment: "settings",
+    "user-notes": {
+        id: "user-notes",
+        label: "Notes",
+        icon: NotebookPenIcon,
+        segment: "notes",
         alwaysOn: true,
         scope: "user",
-        href: () => "/user/settings",
+        href: () => "/user/notes",
     },
     "system-admin": {
         id: "system-admin",
@@ -205,6 +205,40 @@ export const orgModules = moduleList.filter(
 
 /** User-scoped modules (always available), in display order. */
 export const userModules = moduleList.filter((m): m is UserModuleDef => m.scope === "user");
+
+/** The id of a user module that isn't `alwaysOn`, derived from the registry. */
+type NonAlwaysOnUserModuleId = {
+    [K in keyof typeof Modules]: (typeof Modules)[K] extends { scope: "user" }
+        ? (typeof Modules)[K] extends { alwaysOn: true }
+            ? never
+            : K
+        : never;
+}[keyof typeof Modules];
+
+/** A user module id with a `UserSettings.modules` entry, i.e. one that can be configured. */
+export type ConfigurableUserModuleId = keyof UserSettings["modules"];
+
+/**
+ * Compile-time check that every user module that isn't `alwaysOn` has a `UserSettings.modules`
+ * entry, which is what the type guard on {@link configurableUserModules} relies on. Registering
+ * such a module without adding its settings entry fails here.
+ */
+type AssertTrue<T extends true> = T;
+export type _EveryConfigurableUserModuleHasSettings = AssertTrue<
+    [NonAlwaysOnUserModuleId] extends [ConfigurableUserModuleId] ? true : false
+>;
+
+/**
+ * User-scoped modules with per-user configurable settings — i.e. not `alwaysOn`. Empty today
+ * (every user module is `alwaysOn`), so `UserSettings.modules` has nothing worth surfacing in
+ * the preferences UI yet; see `UserModules_SettingsCard`.
+ */
+export const configurableUserModules = userModules.filter(
+    (m): m is UserModuleDef & { id: ConfigurableUserModuleId } => !m.alwaysOn,
+);
+
+/** The ids of {@link configurableUserModules}. */
+export const configurableUserModuleIds = configurableUserModules.map((m) => m.id);
 
 /** Site-wide modules (gated on the Better Auth `admin` role), in display order. */
 export const systemModules = moduleList.filter((m): m is SystemModuleDef => m.scope === "system");

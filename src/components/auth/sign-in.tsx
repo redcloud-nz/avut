@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { signInMutationOptions } from "@/client/auth-queries";
 import { SocialProviderId, SocialProviders } from "@/components/auth/social-providers";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,13 +88,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
     });
 
     const mutation = useMutation({
-        async mutationFn(formData: { email: string; password: string; rememberMe: boolean }) {
-            const { data, error } = await authClient.signIn.email(formData);
-            if (error) {
-                throw new Error(error.message ?? "Invalid email or password.");
-            }
-            return data;
-        },
+        ...signInMutationOptions(),
         onSuccess(data, variables) {
             if (data.user.emailVerified) {
                 router.push(postSignInUrl(redirectTo));

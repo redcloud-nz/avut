@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -19,9 +18,9 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { TablePseudoQuery } from "@/components/blocks/table-pseudo-query";
+import { TeamLink } from "@/components/entity-links/team-link";
 import { Protect } from "@/components/protect";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
@@ -46,16 +45,7 @@ export function AdminModule_Teams_List() {
             Kaga.defineColumns<RowData>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: "Name",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/admin/teams/[team_id]", {
-                                slug: organization.slug,
-                                team_id: ctx.row.original.id,
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => <TeamLink team={ctx.row.original} />,
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
@@ -67,8 +57,22 @@ export function AdminModule_Teams_List() {
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
+                columnHelper.accessor("status", {
+                    header: "Status",
+                    cell: (ctx) => ctx.getValue(),
+                    enableColumnFilter: true,
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: [
+                            { label: "Active", value: "Active" },
+                            { label: "Archived", value: "Archived" },
+                        ],
+                    },
+                }),
             ]),
-        [organization.slug],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -81,6 +85,7 @@ export function AdminModule_Teams_List() {
         getPaginationRowModel: getPaginationRowModel(),
         globalFilterFn: "includesString",
         initialState: {
+            columnFilters: [{ id: "status", value: ["Active"] }],
             sorting: [{ id: "name", desc: false }],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
         },

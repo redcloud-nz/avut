@@ -8,9 +8,8 @@
 import { Building2Icon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { useUser } from "@/client/auth-queries";
 import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
@@ -22,16 +21,16 @@ import {
     ItemMedia,
     ItemTitle,
 } from "@/components/ui/item";
+import { Skeleton } from "@/components/ui/skeleton";
 import { systemModules } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
 
 export function OrgSelector_Card() {
-    const { data: user } = useUser();
-    const { data: memberships } = useSuspenseQuery(trpc.users.listMemberships.queryOptions());
-
-    if (!user) return null;
+    const [{ data: session }, { data: memberships }] = useSuspenseQueries({
+        queries: [trpc.user.getSession.queryOptions(), trpc.user.listMemberships.queryOptions()],
+    });
 
     return (
         <Card>
@@ -78,7 +77,7 @@ export function OrgSelector_Card() {
                     role check is enough; a per-module permission model comes with a
                     future per-user enable/configure split. Gives a system admin with
                     no/many org memberships a way out of this screen. */}
-                <Show when={user.role === "admin" && systemModules.length > 0}>
+                <Show when={session?.user?.role === "admin" && systemModules.length > 0}>
                     <div className="mt-4 mb-2 border-t pt-4 font-medium">System</div>
 
                     {systemModules.map((mod) => {
@@ -101,6 +100,31 @@ export function OrgSelector_Card() {
                         );
                     })}
                 </Show>
+            </CardContent>
+        </Card>
+    );
+}
+
+/**
+ * Placeholder for `OrgSelector_Card` while it streams in behind its own `<Suspense>`
+ * boundary — see `user/page.tsx`.
+ */
+export function OrgSelector_Skeleton() {
+    return (
+        <Card aria-busy="true" aria-label="Loading organisations">
+            <CardHeader>
+                <Skeleton className="h-6 w-2/3" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {Array.from({ length: 3 }, (_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                        <Skeleton className="size-5 rounded" />
+                        <div className="flex-1 space-y-1.5">
+                            <Skeleton className="h-4 w-1/3" />
+                            <Skeleton className="h-3 w-1/4" />
+                        </div>
+                    </div>
+                ))}
             </CardContent>
         </Card>
     );

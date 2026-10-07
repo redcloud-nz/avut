@@ -16,21 +16,15 @@ import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-members
 import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
+import * as D4HTeamSync from "@/server/services/d4h-team-sync";
+import * as Teams from "@/server/services/teams";
 
-import { AuthenticatedOrganizationContext, createTrpcRouter, organizationProcedure } from "../init";
+import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
-import {
-    planD4HSync,
-    resolveD4HTeamForLink,
-    runTeamSync,
-    syncOrganizationD4HCache,
-    upsertOrganizationD4H,
-} from "./teams-router.d4h";
-
 /**
- * A team-membership row as returned by `listTeamMemberships` and
- * `getTeamMembership` — the membership plus a thin `team` / `person` ref. The
+ * A team-membership row as returned by `listTeamMemberships`, `getTeamMembership` and
+ * `getTeamMembershipById` — the membership plus a thin `team` / `person` ref. The
  * `d4h` sub-object (with `d4hRef` / `d4hRoleId`) rides along from
  * `TeamMembershipData.schema`.
  */
@@ -49,7 +43,7 @@ export const teamsRouter = createTrpcRouter({
     /**
      * Apply a previewed D4H team sync. Re-fetches and re-plans server-side; if the
      * fresh plan no longer matches `planToken` it rejects with a `StalePlanError`
-     * cause and writes nothing. See docs/specs/d4h-linking.md §7.
+     * cause and writes nothing. See docs/specs/2026-09-10-d4h-linking.md §7.
      */
     applyD4HTeamSync: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema, planToken: z.string() }))
@@ -64,6 +58,12 @@ export const teamsRouter = createTrpcRouter({
             }
             if (!team.d4h) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: "Team is not linked to D4H" });
+            }
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is archived and cannot be synced with D4H",
+                });
             }
 
             const token = await getPersonalD4HAccessTokenForUser(organizationId, ctx.userId);
@@ -84,12 +84,24 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            return runTeamSync(ctx, {
+            return D4HTeamSync.runTeamSync(ctx, {
                 teamD4H: team.d4h,
                 token,
                 batchId: batch.id,
                 requireFreshMatch: planToken,
             });
+        }),
+
+    /**
+     * Archives a team in the organization. Idempotent — archiving an already-archived
+     * team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     */
+    archiveTeam: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            return { updated: await Teams.archive(ctx, teamId) };
         }),
 
     /**
@@ -144,15 +156,19 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ d4hTeamId: z.number(), name: z.string().optional() }))
         .output(z.object({ created: TeamData.schema }))
         .mutation(async ({ ctx, input: { organizationId, d4hTeamId, name: inputName } }) => {
-            const resolved = await resolveD4HTeamForLink(ctx, d4hTeamId);
+            const resolved = await D4HTeamSync.resolveD4HTeamForLink(ctx, d4hTeamId);
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
+                include: { team: { select: { name: true, status: true } } },
             });
             if (duplicate) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That D4H team is already linked to a team in this organisation.",
+                    message:
+                        duplicate.team.status === "Archived"
+                            ? `That D4H team is already linked to archived team "${duplicate.team.name}" — restore it instead.`
+                            : "That D4H team is already linked to a team in this organisation.",
                 });
             }
 
@@ -179,7 +195,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            await upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
+            await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const teamId = TeamId.create();
             const [team] = await ctx.prisma.$transaction([
@@ -215,14 +231,14 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            await runTeamSync(ctx, {
+            await D4HTeamSync.runTeamSync(ctx, {
                 teamD4H: team.d4h!,
                 token: resolved.token,
                 batchId: batch.id,
             });
 
-            const created = await getTeam(ctx, teamId);
-            return { created: created! };
+            const created = await Teams.requireById(ctx, teamId);
+            return { created };
         }),
 
     /**
@@ -249,7 +265,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { teamId, personId, create } }) => {
-            const [team, person, existing] = await Promise.all([
+            const [team, person] = await Promise.all([
                 ctx.prisma.team.findUnique({
                     where: {
                         id: teamId,
@@ -262,12 +278,6 @@ export const teamsRouter = createTrpcRouter({
                         organizationId: ctx.organizationId,
                     },
                 }),
-                ctx.prisma.teamMembership.findFirst({
-                    where: {
-                        teamId: teamId,
-                        personId: personId,
-                    },
-                }),
             ]);
 
             if (!team) {
@@ -277,70 +287,34 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            if (!person) {
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `Team(${teamId}) is archived and cannot accept new members.`,
+                });
+            }
+
+            if (!person || person.status === "Deleted") {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.personNotFound(personId),
                 });
             }
 
-            if (existing) {
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    message: `Person(${personId}) is already a member of Team(${teamId}).`,
-                });
-            }
-
-            const teamMembershipId = TeamMembershipId.create();
-
-            const [created] = await ctx.prisma.$transaction([
-                ctx.prisma.teamMembership.create({
-                    data: {
-                        id: teamMembershipId,
-                        organizationId: ctx.organizationId,
-                        teamId,
-                        personId,
-                        tags: create.tags,
-                        properties: create.properties,
-                    },
-                    include: {
-                        person: {
-                            select: {
-                                id: true,
-                                name: true,
-                            },
-                        },
-                        team: {
-                            select: {
-                                id: true,
-                                name: true,
-                            },
-                        },
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Create",
-                    objectType: "TeamMembership",
-                    objectId: teamMembershipId,
-                    changes: diffObject({ tags: [], properties: {} }, create),
-                    refs: [
-                        { objectType: "Person", objectId: personId, role: "context" },
-                        { objectType: "Team", objectId: teamId, role: "context" },
-                    ],
-                }),
-            ]);
+            const created = await Teams.createMembership(ctx, teamId, personId, create);
 
             return {
                 created: {
-                    ...TeamMembershipData.fromRecord(created),
-                    person: PersonRef.schema.parse(created.person),
-                    team: TeamRef.schema.parse(created.team),
+                    ...created,
+                    person: PersonRef.schema.parse(person),
+                    team: TeamRef.schema.parse(team),
                 },
             };
         }),
 
     /**
-     * Delete a team from the organization.
+     * Soft-deletes a team from the organization (reversible via `recoverTeam`).
+     * `TeamMembership` rows are deliberately left untouched — nothing cascades on a soft delete.
      */
     deleteTeam: organizationProcedure({ team: ["delete"] })
         .input(
@@ -349,39 +323,19 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input: { teamId }, ctx }) => {
-            const existing = await ctx.prisma.team.findUnique({
-                where: { id: teamId, organizationId: ctx.organizationId },
-                select: { id: true },
-            });
-
-            if (!existing) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
-            }
-
-            await ctx.prisma.$transaction([
-                // TeamConfig / Team_D4H / TeamMembership rows cascade away with the team.
-                ctx.prisma.team.delete({
-                    where: { id: teamId, organizationId: ctx.organizationId },
-                }),
-                ctx.logEvent({
-                    action: "Delete",
-                    objectType: "Team",
-                    objectId: teamId,
-                }),
-            ]);
+            await Teams.deleteRecord(ctx, teamId);
         }),
 
     /**
-     * Delete a team membership, removing a person from a team.
+     * Soft-deletes a team membership, removing a person from a team (reversible via
+     * `recoverTeamMembership`). Idempotent — deleting an already-deleted membership
+     * returns it unchanged.
      * @param ctx The authenticated context.
      * @param personId The ID of the person to remove from the team.
      * @param teamId The ID of the team to remove the person from.
-     * @throws TRPCError(Not_FOUND) If the specified team membership does not exist within the organization.
+     * @throws TRPCError(NOT_FOUND) If the specified team membership does not exist within the organization.
      */
-    deleteTeamMembership: organizationProcedure({ team: ["update"] })
+    deleteTeamMembership: organizationProcedure({ team: ["delete"] })
         .input(
             z.object({
                 personId: PersonId.schema,
@@ -389,69 +343,13 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { personId, teamId } }) => {
-            const [team, existing] = await Promise.all([
-                ctx.prisma.team.findUnique({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        id: teamId,
-                    },
-                    select: { id: true },
-                }),
-                ctx.prisma.teamMembership.findUnique({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        teamId_personId: {
-                            teamId,
-                            personId,
-                        },
-                    },
-                    select: { id: true },
-                }),
-            ]);
-
-            if (!team) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
-            }
-
-            if (!existing) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamMembershipNotFound({
-                        teamId,
-                        personId,
-                    }),
-                });
-            }
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.teamMembership.delete({
-                    where: {
-                        organizationId: ctx.organizationId,
-                        teamId_personId: {
-                            teamId,
-                            personId,
-                        },
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Delete",
-                    objectType: "TeamMembership",
-                    objectId: existing.id,
-                    refs: [
-                        { objectType: "Person", objectId: personId, role: "context" },
-                        { objectType: "Team", objectId: teamId, role: "context" },
-                    ],
-                }),
-            ]);
+            await Teams.deleteMembership(ctx, teamId, personId);
         }),
 
     /**
      * The org-level D4H link (`Organization_D4H`) for the current org, or `null`
      * if the org has never linked a team to D4H. Read model for the admin
-     * organisation page's D4H card. See docs/specs/d4h-linking.md §3.1.
+     * organisation page's D4H card. See docs/specs/2026-09-10-d4h-linking.md §3.1.
      */
     getOrganizationD4H: organizationProcedure({ organization: ["view"] })
         .output(OrganizationD4HData.schema.nullable())
@@ -474,23 +372,24 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(TeamData.schema)
         .query(async ({ ctx, input: { teamId } }) => {
-            // `getTeam` here is the module-scoped helper below, not this procedure —
-            // object keys are not in lexical scope.
-            const team = await getTeam(ctx, teamId);
+            return Teams.requireById(ctx, teamId);
+        }),
 
-            if (!team) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
-            }
-
-            return team;
+    /**
+     * Describes what deleting this team would hide from active views, for the delete
+     * confirmation dialog's impact preview.
+     * @throws TRPCError(NOT_FOUND) if the team is not found.
+     */
+    getTeamDeleteImpact: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ memberCount: z.number() }))
+        .query(async ({ ctx, input: { teamId } }) => {
+            return await Teams.getDeleteImpact(ctx, teamId);
         }),
 
     /**
      * Get a single team membership by (teamId, personId). See
-     * docs/specs/team-membership-display.md §8.4.
+     * docs/specs/2026-09-10-team-membership-display.md §8.4.
      * @throws TRPCError(NOT_FOUND) if the pair has no membership in the organization.
      */
     getTeamMembership: organizationProcedure({ team: ["view"] })
@@ -498,7 +397,11 @@ export const teamsRouter = createTrpcRouter({
         .output(teamMembershipRowSchema)
         .query(async ({ ctx, input: { organizationId, teamId, personId } }) => {
             const record = await ctx.prisma.teamMembership.findUnique({
-                where: { organizationId, teamId_personId: { teamId, personId } },
+                where: {
+                    organizationId,
+                    teamId_personId: { teamId, personId },
+                    status: { not: "Deleted" },
+                },
                 include: teamMembershipRowInclude,
             });
 
@@ -517,8 +420,38 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get a single team membership by its own id — the lookup behind the single-id
+     * detail route (`/orgs/[slug]/admin/team-memberships/[team_membership_id]`), which
+     * exists so the Rubbish bin can link to a deleted membership (#307). Prefer
+     * `getTeamMembership` when the (teamId, personId) pair is already known.
+     * @throws TRPCError(NOT_FOUND) if no membership with this id exists in the organization.
+     */
+    getTeamMembershipById: organizationProcedure({ team: ["view"] })
+        .input(z.object({ teamMembershipId: TeamMembershipId.schema }))
+        .output(teamMembershipRowSchema)
+        .query(async ({ ctx, input: { organizationId, teamMembershipId } }) => {
+            const record = await ctx.prisma.teamMembership.findUnique({
+                where: { id: teamMembershipId, organizationId },
+                include: teamMembershipRowInclude,
+            });
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.teamMembershipNotFoundById(teamMembershipId),
+                });
+            }
+
+            return {
+                ...TeamMembershipData.fromRecord(record),
+                team: record.team,
+                person: record.person,
+            };
+        }),
+
+    /**
      * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level
-     * D4H link and running the first membership sync. See docs/specs/d4h-linking.md §6.1.
+     * D4H link and running the first membership sync. See docs/specs/2026-09-10-d4h-linking.md §6.1.
      */
     linkTeamToD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema, d4hTeamId: z.number() }))
@@ -537,16 +470,27 @@ export const teamsRouter = createTrpcRouter({
                     message: "This team is already linked to D4H.",
                 });
             }
+            // Sync refuses an archived team, so linking one would leave it linked but unsyncable.
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is archived and cannot be linked to D4H",
+                });
+            }
 
-            const resolved = await resolveD4HTeamForLink(ctx, d4hTeamId);
+            const resolved = await D4HTeamSync.resolveD4HTeamForLink(ctx, d4hTeamId);
 
             const duplicate = await ctx.prisma.team_D4H.findFirst({
                 where: { d4hTeamId, team: { organizationId } },
+                include: { team: { select: { name: true, status: true } } },
             });
             if (duplicate) {
                 throw new TRPCError({
                     code: "CONFLICT",
-                    message: "That D4H team is already linked to a team in this organisation.",
+                    message:
+                        duplicate.team.status === "Archived"
+                            ? `That D4H team is already linked to archived team "${duplicate.team.name}" — restore it instead.`
+                            : "That D4H team is already linked to a team in this organisation.",
                 });
             }
 
@@ -571,7 +515,7 @@ export const teamsRouter = createTrpcRouter({
                 ctx.prisma,
             );
 
-            await upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
+            await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const [teamD4H] = await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.create({
@@ -593,7 +537,11 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return runTeamSync(ctx, { teamD4H, token: resolved.token, batchId: batch.id });
+            return D4HTeamSync.runTeamSync(ctx, {
+                teamD4H,
+                token: resolved.token,
+                batchId: batch.id,
+            });
         }),
 
     /**
@@ -605,6 +553,7 @@ export const teamsRouter = createTrpcRouter({
             const teamRecords = await ctx.prisma.team.findMany({
                 where: {
                     organizationId: ctx.organizationId,
+                    status: { not: "Deleted" },
                 },
                 include: {
                     d4h: true,
@@ -638,6 +587,7 @@ export const teamsRouter = createTrpcRouter({
                     organizationId,
                     personId,
                     teamId,
+                    status: { not: "Deleted" },
                 },
                 include: teamMembershipRowInclude,
                 orderBy: {
@@ -669,6 +619,12 @@ export const teamsRouter = createTrpcRouter({
             if (!team.d4h) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: "Team is not linked to D4H" });
             }
+            if (team.status !== "Active") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Team is archived and cannot be synced with D4H",
+                });
+            }
 
             const token = await getPersonalD4HAccessTokenForUser(organizationId, ctx.userId);
             if (!token) {
@@ -678,7 +634,46 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            return planD4HSync(ctx, { teamD4H: team.d4h, token });
+            return D4HTeamSync.planD4HSync(ctx, { teamD4H: team.d4h, token });
+        }),
+
+    /**
+     * Recovers a deleted team in the organization back to Active. Idempotent — recovering an
+     * already-active team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the team is not Deleted.
+     */
+    recoverTeam: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            return { updated: await Teams.recover(ctx, teamId) };
+        }),
+
+    /**
+     * Recovers a deleted team membership back to Active. Idempotent — recovering an
+     * already-active membership returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the membership does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the membership is not Deleted.
+     */
+    recoverTeamMembership: organizationProcedure({ team: ["delete"] })
+        .input(z.object({ personId: PersonId.schema, teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamMembershipData.schema }))
+        .mutation(async ({ ctx, input: { personId, teamId } }) => {
+            return { updated: await Teams.recoverMembership(ctx, teamId, personId) };
+        }),
+
+    /**
+     * Restores an archived team in the organization back to Active. Idempotent — restoring an
+     * already-active team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
+     * @throws TRPCError(BAD_REQUEST) if the team is not Archived.
+     */
+    restoreTeam: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            return { updated: await Teams.restore(ctx, teamId) };
         }),
 
     /**
@@ -687,13 +682,13 @@ export const teamsRouter = createTrpcRouter({
      */
     syncOrganizationD4H: organizationProcedure({ organization: ["update"] }).mutation(
         async ({ ctx }) => {
-            await syncOrganizationD4HCache(ctx);
+            await D4HTeamSync.syncOrganizationD4HCache(ctx);
         },
     ),
 
     /**
      * Remove the org-level D4H link. Refuses while any team in the org is still
-     * linked. See docs/specs/d4h-linking.md §6.4.
+     * linked. See docs/specs/2026-09-10-d4h-linking.md §6.4.
      */
     unlinkOrganizationFromD4H: organizationProcedure({ organization: ["update"] }).mutation(
         async ({ ctx, input: { organizationId } }) => {
@@ -732,7 +727,7 @@ export const teamsRouter = createTrpcRouter({
     /**
      * Unlink a team from D4H. `TeamMembership_D4H` rows cascade away; the
      * `TeamMembership` rows stay (they become manually-managed). In org-less mode
-     * this also removes the org-level link. See docs/specs/d4h-linking.md §6.3.
+     * this also removes the org-level link. See docs/specs/2026-09-10-d4h-linking.md §6.3.
      */
     unlinkTeamFromD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema }))
@@ -787,13 +782,7 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { teamId, update } }) => {
-            const existingTeam = await getTeam(ctx, teamId);
-
-            if (!existingTeam)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: Messages.teamNotFound(teamId),
-                });
+            const existingTeam = await Teams.requireById(ctx, teamId);
 
             const diff = diffObject(TeamData.modifiableSchema.parse(existingTeam), update);
 
@@ -844,13 +833,15 @@ export const teamsRouter = createTrpcRouter({
                 updated: TeamMembershipData.schema,
             }),
         )
-        .mutation(async ({ ctx, input: { teamId, personId, update } }) => {
+        .mutation(async ({ ctx, input: { organizationId, teamId, personId, update } }) => {
             const existing = await ctx.prisma.teamMembership.findUnique({
                 where: {
+                    organizationId,
                     teamId_personId: {
                         teamId,
                         personId,
                     },
+                    status: { not: "Deleted" },
                 },
             });
 
@@ -874,12 +865,7 @@ export const teamsRouter = createTrpcRouter({
             const [updated] = await ctx.prisma.$transaction([
                 // Apply the changes
                 ctx.prisma.teamMembership.update({
-                    where: {
-                        teamId_personId: {
-                            teamId,
-                            personId,
-                        },
-                    },
+                    where: { id: existing.id },
                     data: { ...update },
                 }),
                 // Record an event for the update
@@ -898,42 +884,3 @@ export const teamsRouter = createTrpcRouter({
             return { updated: TeamMembershipData.fromRecord(updated) };
         }),
 });
-
-/**
- * Utility function to fetch a Team by ID.
- * @param ctx
- * @param teamId
- * @returns
- */
-async function getTeam(
-    ctx: AuthenticatedOrganizationContext,
-    teamId: TeamId,
-): Promise<TeamData | null> {
-    const team = await ctx.prisma.team.findUnique({
-        where: {
-            id: teamId,
-            organizationId: ctx.organizationId,
-        },
-        include: {
-            d4h: true,
-        },
-    });
-
-    if (!team) return null;
-
-    // Resolve the D4H organisation name from the org-level cache (at most one
-    // `Organization_D4H` per org) so the detail view can show it alongside the id.
-    const orgD4H = team.d4h
-        ? await ctx.prisma.organization_D4H.findUnique({
-              where: { organizationId: ctx.organizationId },
-              select: { d4hOrganisationName: true },
-          })
-        : null;
-
-    return TeamData.fromRecord({
-        ...team,
-        d4h: team.d4h
-            ? { ...team.d4h, d4hOrganisationName: orgD4H?.d4hOrganisationName ?? null }
-            : null,
-    });
-}

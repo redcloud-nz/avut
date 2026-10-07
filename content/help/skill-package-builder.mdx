@@ -1,0 +1,30 @@
+---
+title: Skill Package Builder
+guide: skill-package-builder
+keyTerms: ["skill-package", "skill-group", "skill"]
+---
+
+The **Skill Package Builder** is where your organisation writes skill packages
+for any organisation to use from its Skill Track catalogue. You need the
+**Skills Author** role.
+
+**New** starts a package. **Import** loads a package exported as `.json`: a
+package already here is updated in place, anything the file leaves out is
+archived, and the result is always unpublished. Open a package to add its
+groups and skills. A skill's **Revalidation Frequency** is in months and
+decides when a pass expires in reports; 0 means it never expires.
+
+The package's menu (⋮) has:
+
+- **Publish**, which puts it in every organisation's catalogue, and
+  **Unpublish**, which stops new subscriptions and removes its skills from
+  subscribers' reports. Their sessions can still use its skills.
+- **Archive** and **Restore**. While archived, its skills leave subscribers'
+  reports, but it stays in the catalogue, open to subscription, and in the
+  session skill picker.
+- **Delete**, which unpublishes the package and moves it to the Rubbish bin.
+  Subscribers lose its skills straight away.
+- **Export .json**, to copy it to another organisation or AVUT instance.
+
+Packages aren't versioned: a change to a published package reaches every
+subscriber straight away.

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /*
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
@@ -6,9 +5,9 @@
 
 import * as z from "zod";
 
-import type { OrganizationConfig as OrganizationConfigRecord } from "@/generated/prisma/client";
 import { D4HServerCode } from "@/lib/d4h-servers";
 
+import { createSettingsSchema, defineSettingsSlices } from "./settings-schema";
 import {
     defaultSkillCheckResultLabel,
     SKILL_CHECK_RESULT_VALUES,
@@ -21,6 +20,15 @@ const SKILL_TRACK_DEFAULT_ENABLED_RESULTS: readonly SkillCheckResultValue[] = [
     "Pass",
     "StrongPass",
 ];
+
+/**
+ * The results an organisation can switch on and relabel. Exempt, Expired, and Provisional exist in
+ * the fixed vocabulary but aren't offered to organizations yet — their semantics aren't settled.
+ * Remove from this list to enable them.
+ */
+export const SKILL_TRACK_CONFIGURABLE_RESULT_VALUES = SKILL_CHECK_RESULT_VALUES.filter(
+    (value) => value !== "Exempt" && value !== "Expired" && value !== "Provisional",
+);
 
 const skillCheckResultConfigSchema = z.object({
     enabled: z.boolean(),
@@ -52,6 +60,9 @@ const skillCheckResultsConfigSchema = z
     })
     .default(DEFAULT_SKILL_TRACK_RESULTS_CONFIG);
 
+export const RUBBISH_BIN_DEFAULT_RETENTION_DAYS = 30;
+export const RUBBISH_BIN_MAX_RETENTION_DAYS = 90;
+
 const organizationSettingsSchema = z.object({
     general: z.object({
         publicDomain: z.string().regex(z.regexes.domain, "Invalid domain format").optional(),
@@ -74,13 +85,28 @@ const organizationSettingsSchema = z.object({
      * top-level rather than a `modules.*` key.
      *
      * Both default to `false`: an organization that upgrades into this feature keeps doing
-     * exactly what it did before until someone opts in. See `docs/specs/person-user-linking.md`.
+     * exactly what it did before until someone opts in. See `docs/specs/2026-09-14-person-user-linking.md`.
      */
     personnel: z.object({
         /** Link a person on invitation accept when the org already has one with that email. */
         autoLinkOnInviteAccept: z.boolean().default(false),
         /** Link a newly-created person to an existing *member* holding the same email. */
         autoLinkOnPersonCreate: z.boolean().default(false),
+    }),
+    /*
+     * How long a Deleted record stays in the org's Rubbish bin before the daily purge removes it
+     * for good (#298). One number for every entity type the org owns. This is routine deletion of
+     * the org's own records, so the window is the org's call — the privacy policy's deletion
+     * promises cover an organisation leaving AVUT and account closure, which use the fixed 14-day
+     * system window instead.
+     */
+    rubbishBin: z.object({
+        retentionDays: z
+            .number()
+            .int()
+            .min(1)
+            .max(RUBBISH_BIN_MAX_RETENTION_DAYS)
+            .default(RUBBISH_BIN_DEFAULT_RETENTION_DAYS),
     }),
     modules: z.object({
         "d4h-views": z.object({
@@ -106,71 +132,30 @@ const organizationSettingsSchema = z.object({
     }),
 });
 
-export const OrganizationSettings = {
-    schema: organizationSettingsSchema,
-
-    default(): OrganizationSettings {
-        return organizationSettingsSchema.parse({
-            general: {},
-            integrations: {
-                d4h: {},
-                email: {},
-            },
-            personnel: {},
-            modules: {
-                "d4h-views": {},
-                forms: {},
-                i3: {},
-                notes: {},
-                "skill-track": {},
-                "skill-package-builder": {},
-            },
-        });
-    },
-
-    flatten(settings: OrganizationSettings) {
-        const result: Record<string, any> = {};
-
-        function recurse(obj: Record<string, any>, prefix: string) {
-            for (const key in obj) {
-                const value = obj[key];
-                const newKey = prefix ? `${prefix}.${key}` : key;
-                if (value && typeof value === "object" && !Array.isArray(value)) {
-                    recurse(value as Record<string, any>, newKey);
-                } else {
-                    result[newKey] = value;
-                }
-            }
-        }
-
-        recurse(settings, "");
-        return result;
-    },
-
-    fromRecords(records: OrganizationConfigRecord[]): OrganizationSettings {
-        // Start from a fully-defaulted settings object rather than an empty skeleton — some
-        // fields (e.g. modules["skill-track"].results) only have a default at the object level,
-        // not per-leaf, so reconstructing from a handful of changed leaf keys on top of `{}` would
-        // leave the rest of that object undefined instead of falling back to its default.
-        const settings = structuredClone(OrganizationSettings.default()) as any;
-
-        for (const record of records) {
-            const parts = record.key.split(".");
-            let current = settings;
-
-            for (let i = 0; i < parts.length - 1; i++) {
-                if (current[parts[i]] == undefined) {
-                    current[parts[i]] = {};
-                }
-                current = current[parts[i]];
-            }
-
-            const lastKey = parts[parts.length - 1];
-            current[lastKey] = record.value;
-        }
-
-        return organizationSettingsSchema.parse(settings);
-    },
-} as const;
+/**
+ * The per-organization settings tree, plus the `default`/`flatten`/`fromRecords` helpers every
+ * settings scope shares — see `createSettingsSchema`.
+ */
+export const OrganizationSettings = createSettingsSchema(organizationSettingsSchema);
 
 export type OrganizationSettings = z.infer<typeof organizationSettingsSchema>;
+
+/**
+ * The editable groups of the organization settings tree — one per settings card. See
+ * `defineSettingsSlices` for why cards save a slice patch rather than the whole tree.
+ */
+export const OrganizationSettingsSlices = defineSettingsSlices(organizationSettingsSchema, [
+    "general",
+    "integrations.d4h",
+    "integrations.email",
+    "personnel",
+    "rubbishBin",
+    "modules.d4h-views",
+    "modules.forms",
+    "modules.i3",
+    "modules.notes",
+    "modules.skill-track",
+    "modules.skill-package-builder",
+] as const);
+
+export type OrganizationSettingsSliceId = (typeof OrganizationSettingsSlices.ids)[number];

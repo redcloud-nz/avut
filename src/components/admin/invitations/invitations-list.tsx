@@ -4,13 +4,12 @@
  */
 "use client";
 
-import { type InvitationStatus } from "better-auth/plugins";
 import { CircleXIcon, SendIcon } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { match } from "ts-pattern";
 
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -19,7 +18,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 
-import { authClient } from "@/client/auth-client";
+import { invitationsEffects } from "@/client/invitations-effects";
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
@@ -35,27 +34,24 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
+import { type OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
-import { type AuthInvitation } from "@/server/auth";
+import { trpc } from "@/trpc/client";
 
 import { AdminModule_CreateInvitation_Dialog } from "./create-invitation";
 
 export function AdminModule_Invitations_List() {
     const organization = useOrganization();
+    const { formatDateTime } = usePreferences();
 
-    const { data: invitations } = useSuspenseQuery({
-        queryKey: ["auth", "organization-invitations", organization.id],
-        queryFn: () =>
-            authClient.organization.listInvitations(
-                { query: { organizationId: organization.id } },
-                { throw: true },
-            ),
-    });
+    const { data: invitations } = useSuspenseQuery(
+        trpc.invitations.listInvitations.queryOptions({ organizationId: organization.id }),
+    );
 
     const columns = useMemo(
         () =>
-            Kaga.defineColumns<AuthInvitation>((columnHelper) => [
+            Kaga.defineColumns<OrganizationInvitationData>((columnHelper) => [
                 columnHelper.accessor("email", {
                     header: "Email",
                     cell: (ctx) => ctx.getValue(),
@@ -64,7 +60,8 @@ export function AdminModule_Invitations_List() {
                     enableColumnFilter: false,
                     enableHiding: false,
                 }),
-                columnHelper.accessor("role", {
+                columnHelper.accessor((row) => row.roles.join(","), {
+                    id: "roles",
                     header: "Roles",
                     cell: (ctx) => OrganizationRole.formatList(ctx.getValue()),
                     enableSorting: false,
@@ -115,7 +112,9 @@ export function AdminModule_Invitations_List() {
                     enableColumnFilter: true,
                     enableHiding: false,
                     filterFn: (row, columnId, filterValue: string[]) => {
-                        const status = row.getValue(columnId) as InvitationStatus;
+                        const status = row.getValue(
+                            columnId,
+                        ) as OrganizationInvitationData["status"];
 
                         return filterValue.includes(status);
                     },
@@ -146,7 +145,7 @@ export function AdminModule_Invitations_List() {
                 }),
             ]),
 
-        [],
+        [formatDateTime],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -159,7 +158,7 @@ export function AdminModule_Invitations_List() {
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
             columnFilters: [
-                { id: "role", value: OrganizationRole.values },
+                { id: "roles", value: OrganizationRole.values },
                 { id: "status", value: ["pending", "accepted", "rejected", "canceled"] },
             ],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
@@ -186,53 +185,32 @@ export function AdminModule_Invitations_List() {
     );
 }
 
-function InvitationActions({ invitation }: { invitation: AuthInvitation }) {
-    const queryClient = useQueryClient();
+function InvitationActions({ invitation }: { invitation: OrganizationInvitationData }) {
+    const resendMutation = useMutation(
+        trpc.invitations.createInvitation.mutationOptions({
+            meta: { effects: invitationsEffects.createInvitation },
+            onError: (error) => {
+                toast.error(`Failed to resend invitation: ${error.message}`);
+                console.error("Failed to resend invitation:", error);
+            },
+            onSuccess: ({ invitation: resentInvitation }) => {
+                toast.success(`Invitation resent to ${resentInvitation.email}`);
+            },
+        }),
+    );
 
-    const resendMutation = useMutation({
-        mutationFn: () =>
-            authClient.organization.inviteMember(
-                {
-                    email: invitation.email,
-                    role: invitation.role,
-                    organizationId: invitation.organizationId,
-                    resend: true,
-                },
-                { throw: true },
-            ),
-        onError: (error) => {
-            toast.error(`Failed to resend invitation: ${error.message}`);
-            console.error("Failed to resend invitation:", error);
-        },
-        onSuccess: (resentInvitation) => {
-            toast.success(`Invitation resent to ${resentInvitation.email}`);
-
-            queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-invitations", invitation.organizationId],
-            });
-        },
-    });
-
-    const revokeMutation = useMutation({
-        mutationFn: () =>
-            authClient.organization.cancelInvitation(
-                {
-                    invitationId: invitation.id,
-                },
-                { throw: true },
-            ),
-        onError: (error) => {
-            toast.error(`Failed to revoke invitation: ${error.message}`);
-            console.error("Failed to revoke invitation:", error);
-        },
-        onSuccess: () => {
-            toast.success(`Invitation revoked for ${invitation.email}`);
-
-            queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-invitations", invitation.organizationId],
-            });
-        },
-    });
+    const revokeMutation = useMutation(
+        trpc.invitations.cancelInvitation.mutationOptions({
+            meta: { effects: invitationsEffects.cancelInvitation },
+            onError: (error) => {
+                toast.error(`Failed to revoke invitation: ${error.message}`);
+                console.error("Failed to revoke invitation:", error);
+            },
+            onSuccess: () => {
+                toast.success(`Invitation revoked for ${invitation.email}`);
+            },
+        }),
+    );
 
     return (
         <DropdownMenu>
@@ -251,7 +229,12 @@ function InvitationActions({ invitation }: { invitation: AuthInvitation }) {
                                 disabled={!allowed}
                                 onClick={() => {
                                     if (allowed) {
-                                        resendMutation.mutate();
+                                        resendMutation.mutate({
+                                            organizationId: invitation.organizationId,
+                                            email: invitation.email,
+                                            roles: invitation.roles,
+                                            resend: true,
+                                        });
                                     }
                                 }}
                             >
@@ -266,7 +249,10 @@ function InvitationActions({ invitation }: { invitation: AuthInvitation }) {
                                 disabled={!allowed}
                                 onClick={() => {
                                     if (allowed) {
-                                        revokeMutation.mutate();
+                                        revokeMutation.mutate({
+                                            organizationId: invitation.organizationId,
+                                            invitationId: invitation.id,
+                                        });
                                     }
                                 }}
                                 className="text-destructive"

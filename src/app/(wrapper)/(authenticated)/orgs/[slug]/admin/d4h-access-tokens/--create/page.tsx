@@ -8,7 +8,7 @@
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/cache/organization";
+import { requireOrganizationWith } from "@/server/organization-access";
 
 import { AdminModule_CreateD4HAccessToken_Form } from "./create-d4h-access-token";
 
@@ -20,7 +20,7 @@ export default async function AdminModule_CreateD4HAccessToken_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/--create`>,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     return (
         <>

@@ -1,0 +1,551 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+import "server-only";
+
+import * as z from "zod";
+
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { diffObject } from "@/lib/diff";
+import { NotFoundError, ValidationError } from "@/lib/errors";
+import { PersonData, type PersonId } from "@/lib/schemas/person";
+import type { PersonRecord } from "@/lib/schemas/person";
+import type { UserRecord } from "@/lib/schemas/user";
+
+import * as OrgSettings from "./organization-settings";
+import type { OrgServiceContext } from "./service-context";
+
+/**
+ * Creates a new person in the organization.
+ *
+ * Delegates the auto-link check to `findLinkableMember` below, so this one path serves both the
+ * `createPerson` mutation and the D4H team import identically — in particular, both auto-link.
+ * The caller is responsible for any pre-write conflict check (e.g. duplicate email); this
+ * function does not check for one.
+ *
+ * Pass a `ctx` bound with `withBatch` (`service-context.ts`) when this create is part of a
+ * multi-entry operation, so its log entries join that operation's batch.
+ */
+export async function create(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+    data: z.infer<typeof PersonData.modifiableSchema>,
+): Promise<{ created: PersonData }> {
+    /*
+     * `personnel.email` is stored lowercased (docs/specs/2026-09-14-person-email-normalisation.md).
+     * `PersonData.modifiableSchema` normalises every parsed path, but the D4H import builds its
+     * person object in code and hands it straight to this function (`services/d4h-team-sync.ts`), so
+     * the one write site that the schema cannot reach normalises here. Done before `changes`, so
+     * the audit entry records the value actually stored.
+     */
+    data = { ...data, email: data.email.toLowerCase() };
+
+    // Calculate changes from empty record
+    const changes = diffObject({ tags: [], properties: {} }, data);
+
+    /*
+     * Auto-link (spec Part 3): if the organization opted in and an existing *member* holds this
+     * email, attach them as the person is created.
+     *
+     * Only a member. A user with an AVUT account who does not belong to this organization is left
+     * alone — linking them would mean granting membership on the strength of an email address.
+     * They get invited from the person's own page instead.
+     *
+     * Read uncached, and read outside the transaction: the write below re-checks `personId: null`
+     * anyway, so a link landing in between loses the race rather than corrupting anything.
+     */
+    const settings = await OrgSettings.read(ctx.prisma, ctx.organizationId);
+    const linkable = settings.personnel.autoLinkOnPersonCreate
+        ? await findLinkableMember(ctx, { email: data.email })
+        : null;
+
+    /*
+     * Interactive rather than `$transaction([...])` because the link is conditional on its own
+     * write succeeding — an array would commit the audit entry even when `updateMany` matched
+     * nothing. `ctx.logEvent` takes the transaction client, so both entries still go through the
+     * one sanctioned path.
+     */
+    const created = await ctx.prisma.$transaction(async (tx) => {
+        const person = await tx.person.create({
+            data: {
+                id: personId,
+                organizationId: ctx.organizationId,
+                name: data.name,
+                email: data.email,
+                tags: data.tags,
+                properties: data.properties,
+                status: "Active",
+            },
+        });
+
+        await ctx.logEvent(
+            {
+                action: "Create",
+                objectType: "Person",
+                objectId: personId,
+                changes,
+            },
+            tx,
+        );
+
+        if (linkable) {
+            const { count } = await tx.organizationUser.updateMany({
+                where: { id: linkable.organizationUserId, personId: null },
+                data: { personId },
+            });
+
+            if (count === 1) {
+                await ctx.logEvent(
+                    {
+                        action: "Update",
+                        objectType: "OrganizationMembership",
+                        objectId: linkable.organizationUserId,
+                        description: `Linked person (${personId}, ${data.name}) to user (${linkable.user.id}) on creation — matched on email address.`,
+                        refs: [{ objectType: "Person", objectId: personId, role: "context" }],
+                    },
+                    tx,
+                );
+            }
+        }
+
+        return person;
+    });
+
+    return {
+        created: PersonData.fromRecord(created),
+    };
+}
+
+/**
+ * Fetch a person by email.
+ *
+ * Lowercase the needle and match exactly. The stored column is normalised
+ * (docs/specs/2026-09-14-person-email-normalisation.md), so this is index-backed via
+ * `@@unique([organizationId, email])` — and, unlike the `mode: "insensitive"` form it replaces,
+ * it behaves identically in `prisma-mock`, which ignores the whole `{ equals: … }` filter object
+ * on a string field. That is what makes this function testable at all.
+ *
+ * Callers may still pass a mixed-case needle: the D4H sync plan carries the raw address it got
+ * from D4H.
+ */
+export async function getByEmail(
+    ctx: OrgServiceContext,
+    email: string,
+): Promise<PersonData | null> {
+    const person = await ctx.prisma.person.findFirst({
+        where: {
+            organizationId: ctx.organizationId,
+            email: email.toLowerCase(),
+        },
+    });
+
+    return person ? PersonData.fromRecord(person) : null;
+}
+
+/**
+ * Fetch a person by ID.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function requireById(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+    const person = await ctx.prisma.person.findUnique({
+        where: {
+            organizationId: ctx.organizationId,
+            id: personId,
+        },
+    });
+
+    if (!person) {
+        throw new NotFoundError(`Person(id=${personId}) not found.`);
+    }
+
+    return PersonData.fromRecord(person);
+}
+
+/**
+ * Fetch a person by ID with the given `include`, for a caller that needs relations `PersonData`
+ * does not carry (e.g. `deletePerson`'s skill-check references, `getLinkedUser`'s membership).
+ * Takes the same `{ include }` shape as `prisma.person.findUnique`, so it reads as a Prisma call
+ * at the call site rather than an opaque options object.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function requireRecordById<Include extends Prisma.PersonInclude>(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+    { include }: { include: Include },
+): Promise<Prisma.PersonGetPayload<{ include: Include }>> {
+    const person = await ctx.prisma.person.findUnique({
+        where: { organizationId: ctx.organizationId, id: personId },
+        include,
+    });
+
+    if (!person) {
+        throw new NotFoundError(`Person(id=${personId}) not found.`);
+    }
+
+    return person;
+}
+
+/**
+ * Archive a person (reversible via `restore`). No-op, returning the existing record
+ * unchanged, if the person is already `Archived`.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function archive(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Archived") {
+        return existing;
+    }
+
+    const [updated] = await ctx.prisma.$transaction([
+        ctx.prisma.person.update({
+            where: { organizationId: ctx.organizationId, id: personId },
+            data: { status: "Archived" },
+        }),
+        ctx.logEvent({
+            action: "Archive",
+            objectType: "Person",
+            objectId: personId,
+        }),
+    ]);
+
+    return PersonData.fromRecord(updated);
+}
+
+/**
+ * Restore an `Archived` person back to `Active`. No-op, returning the existing record unchanged,
+ * if the person is already `Active`.
+ * @throws NotFoundError if the person is not found in the organization.
+ * @throws ValidationError if the person is `Deleted` — use `recover` instead.
+ */
+export async function restore(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Archived") {
+        throw new ValidationError(
+            `Person(id=${personId}) has status ${existing.status}; only an Archived person can be restored from archive.`,
+        );
+    }
+
+    return await setActive(ctx, personId, "Restore");
+}
+
+/**
+ * Recover a `Deleted` person back to `Active`. No-op, returning the existing record unchanged, if
+ * the person is already `Active`.
+ * @throws NotFoundError if the person is not found in the organization.
+ * @throws ValidationError if the person is `Archived` — use `restore` instead.
+ */
+export async function recover(ctx: OrgServiceContext, personId: PersonId): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Active") {
+        return existing;
+    }
+
+    if (existing.status !== "Deleted") {
+        throw new ValidationError(
+            `Person(id=${personId}) has status ${existing.status}; only a Deleted person can be recovered from rubbish.`,
+        );
+    }
+
+    return await setActive(ctx, personId, "Recover");
+}
+
+async function setActive(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+    action: "Restore" | "Recover",
+): Promise<PersonData> {
+    const [updated] = await ctx.prisma.$transaction([
+        ctx.prisma.person.update({
+            where: { organizationId: ctx.organizationId, id: personId },
+            data: { status: "Active" },
+        }),
+        ctx.logEvent({
+            action,
+            objectType: "Person",
+            objectId: personId,
+        }),
+    ]);
+
+    return PersonData.fromRecord(updated);
+}
+
+/**
+ * Soft-delete a person (reversible via `recover`). No-op, returning the existing record
+ * unchanged, if the person is already `Deleted`.
+ *
+ * Always soft — nothing physically removes the row here. Related rows (team memberships, skill
+ * checks) are left untouched; they are filtered by status at query time instead.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function deleteRecord(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+): Promise<PersonData> {
+    const existing = await requireById(ctx, personId);
+
+    if (existing.status === "Deleted") {
+        return existing;
+    }
+
+    const [updated] = await ctx.prisma.$transaction([
+        ctx.prisma.person.update({
+            where: { organizationId: ctx.organizationId, id: personId },
+            data: { status: "Deleted" },
+        }),
+        ctx.logEvent({
+            action: "Delete",
+            objectType: "Person",
+            objectId: personId,
+        }),
+    ]);
+
+    return PersonData.fromRecord(updated);
+}
+
+/**
+ * Summarize what becomes hidden from active views if this person is deleted, for the delete
+ * confirmation dialog's impact preview. Not a cascade list — nothing here is destroyed at delete
+ * time.
+ * @throws NotFoundError if the person is not found in the organization.
+ */
+export async function getDeleteImpact(
+    ctx: OrgServiceContext,
+    personId: PersonId,
+): Promise<{ teamCount: number; skillCheckCount: number }> {
+    await requireById(ctx, personId);
+
+    const [teamCount, assesseeCount, assessorCount] = await Promise.all([
+        ctx.prisma.teamMembership.count({
+            where: { organizationId: ctx.organizationId, personId, status: "Active" },
+        }),
+        ctx.prisma.skillCheck.count({
+            where: { assesseeId: personId, status: { not: "Deleted" } },
+        }),
+        ctx.prisma.skillCheck.count({
+            where: { assessorId: personId, status: { not: "Deleted" } },
+        }),
+    ]);
+
+    return { teamCount, skillCheckCount: assesseeCount + assessorCount };
+}
+
+/*
+ * Matching and linking a `Person` to a `User` within one organization — the shared half of
+ * `docs/specs/2026-09-14-person-user-linking.md` Parts 2 and 3.
+ *
+ * `findLinkablePerson`/`findLinkableMember` take `OrgServiceContext` like any other service
+ * function — both are pure reads run only against `ctx.prisma`, never a transaction client.
+ * `tryLinkPersonToMember` can't follow suit: its one caller, `linkPersonOnInvitationAccept`,
+ * passes it the interactive-transaction client from inside `ctx.prisma.$transaction(async (tx) =>
+ * …)`, so the link and its audit entry can't diverge. `OrgServiceContext.prisma` is typed as the
+ * full `PrismaClient`, which `Prisma.TransactionClient` doesn't satisfy, so it keeps the narrow
+ * `PersonUserLinkPrisma` slice instead.
+ *
+ * Nothing here grants membership. Both lookups only ever fill in `OrganizationUser.personId` on a
+ * membership that already exists; an email match is never an authorisation decision.
+ */
+
+/** The slice of the Prisma client `tryLinkPersonToMember` needs to run inside a transaction. */
+export type PersonUserLinkPrisma = Pick<PrismaClient, "person" | "organizationUser">;
+
+/**
+ * A person is **linkable** to a user when all of:
+ *
+ * 1. they are in the same organization;
+ * 2. `Person.status` is `Active`;
+ * 3. their email addresses match, case-insensitively;
+ * 4. the person is not already linked to a user;
+ * 5. the user is not already linked to a different person in that organization.
+ *
+ * 4 and 5 are the two `@unique` constraints, so violating either is a P2002 rather than a silent
+ * overwrite. Every caller checks them and no-ops instead: an automatic link never steals an
+ * existing one, and never surfaces an error to someone who did not ask for a link.
+ */
+
+/**
+ * Find the person in `organizationId` who should be linked to a user with `email`.
+ *
+ * Both sides are now lowercase in the database — `User.email` because better-auth normalises it,
+ * `Person.email` because we do (docs/specs/2026-09-14-person-email-normalisation.md). So this is the same
+ * rule as `findLinkableMember` below: lowercase the needle, match the column exactly. The needle
+ * is still folded rather than trusted, since callers pass addresses that came from a form or from
+ * D4H.
+ *
+ * That exact match is index-backed via `@@unique([organizationId, email])`, and — unlike the
+ * `mode: "insensitive"` form — it behaves identically under `prisma-mock`, which ignores the
+ * whole `{ equals: … }` filter object on a string field. This used to load every Active unlinked
+ * person in the organization and fold case in JS to get around exactly that.
+ *
+ * `@@unique([organizationId, email])` means at most one row can match.
+ */
+export async function findLinkablePerson(
+    ctx: OrgServiceContext,
+    { email }: { email: string },
+): Promise<PersonRecord | null> {
+    return await ctx.prisma.person.findFirst({
+        where: {
+            organizationId: ctx.organizationId,
+            status: "Active",
+            organizationUser: { is: null },
+            email: email.toLowerCase(),
+        },
+    });
+}
+
+/**
+ * Find the user who should be linked to a person with `email` — the opposite direction, used when
+ * a person record is created.
+ *
+ * Only an existing **member** of `organizationId` is returned. A user who has an AVUT account but
+ * does not belong to this organization is deliberately not a match: linking them would mean
+ * granting membership on the strength of an email address.
+ *
+ * Here the needle is a `Person.email` and the column is `User.email`, which better-auth normalises
+ * to lowercase on sign-up (`api/routes/sign-up.mjs`) and in the OAuth link path
+ * (`oauth2/link-account.mjs`). So lowercasing the needle and matching exactly is both correct and
+ * index-backed, unlike the direction above.
+ */
+export async function findLinkableMember(
+    ctx: OrgServiceContext,
+    { email }: { email: string },
+): Promise<{ user: UserRecord; organizationUserId: string } | null> {
+    const user = await ctx.prisma.user.findFirst({
+        where: { email: email.toLowerCase(), status: { not: "Deleted" } },
+        include: {
+            organizationUsers: {
+                where: { organizationId: ctx.organizationId, personId: null },
+                select: { id: true },
+            },
+        },
+    });
+
+    const membership = user?.organizationUsers[0];
+    if (!user || !membership) return null;
+
+    const { organizationUsers: _memberships, ...rest } = user;
+    return { user: rest, organizationUserId: membership.id };
+}
+
+/**
+ * Attach `personId` to the membership, but only while both sides are still unlinked.
+ *
+ * The guard lives in the `where` clause rather than in a preceding read, so a manual link landing
+ * in between loses the race harmlessly instead of raising P2002 from inside an unattended hook.
+ *
+ * @returns the `OrganizationUser.id` that was linked, or `null` if nothing was written.
+ */
+export async function tryLinkPersonToMember(
+    prisma: PersonUserLinkPrisma,
+    {
+        organizationId,
+        userId,
+        personId,
+    }: { organizationId: string; userId: string; personId: string },
+): Promise<string | null> {
+    // Re-read rather than trust the caller: the person may have been linked since it looked.
+    const person = await prisma.person.findFirst({
+        where: { id: personId, organizationId },
+        include: { organizationUser: { select: { id: true } } },
+    });
+    if (!person || person.organizationUser) return null;
+
+    const membership = await prisma.organizationUser.findFirst({
+        where: { organizationId, userId, personId: null },
+        select: { id: true },
+    });
+    if (!membership) return null;
+
+    const { count } = await prisma.organizationUser.updateMany({
+        where: { id: membership.id, personId: null },
+        data: { personId },
+    });
+
+    return count === 1 ? membership.id : null;
+}
+
+/**
+ * Attach a person to the membership created by accepting an invitation, and record it.
+ *
+ * Two ways here, and only the second is a setting:
+ *
+ * 1. **The invitation names a person** (`invitationPersonId`) — sent from that person's own
+ *    record, so an admin already decided. Always applied, regardless of settings.
+ * 2. **Nothing named** — fall back to an email match, but only when the organization has
+ *    `personnel.autoLinkOnInviteAccept` on.
+ *
+ * The link and its audit entry share one transaction, so the entry can never claim a link that
+ * did not happen — which matters more here than in a tRPC procedure, because `tryLinkPersonToMember`
+ * is allowed to write nothing when it loses a race.
+ *
+ * Settings are read uncached: an admin who turns the switch on and immediately has someone accept
+ * should get the new behaviour, and this runs once per accepted invitation.
+ *
+ * `email` is a separate parameter rather than read off `ctx` because `OrgServiceContext` carries
+ * no user profile fields, only `userId` — and the email-match fallback needs the accepting user's
+ * address, not just their id.
+ *
+ * @returns what was linked, or null if nothing was.
+ */
+export async function linkPersonOnInvitationAccept(
+    ctx: OrgServiceContext,
+    {
+        invitationPersonId,
+        email,
+    }: {
+        /** `OrganizationInvitation.personId`, when the invitation named one. */
+        invitationPersonId: string | null;
+        /** The accepting user's email, for the auto-link-by-email fallback. */
+        email: string;
+    },
+): Promise<{ personId: string; organizationUserId: string } | null> {
+    let personId = invitationPersonId;
+    let reason = "the invitation named the person";
+
+    if (!personId) {
+        const settings = await OrgSettings.read(ctx.prisma, ctx.organizationId);
+        if (!settings.personnel.autoLinkOnInviteAccept) return null;
+
+        const person = await findLinkablePerson(ctx, { email });
+        if (!person) return null;
+
+        personId = person.id;
+        reason = "matched on email address";
+    }
+
+    const resolvedPersonId = personId;
+
+    return ctx.prisma.$transaction(async (tx) => {
+        const organizationUserId = await tryLinkPersonToMember(tx, {
+            organizationId: ctx.organizationId,
+            userId: ctx.userId,
+            personId: resolvedPersonId,
+        });
+
+        // Already linked, or the person was taken since we looked — leave it alone and say so.
+        if (!organizationUserId) return null;
+
+        const person = await tx.person.findFirst({ where: { id: resolvedPersonId } });
+
+        await ctx.logEvent(
+            {
+                action: "Update",
+                objectType: "OrganizationMembership",
+                objectId: organizationUserId,
+                description: `Linked person (${resolvedPersonId}${person ? `, ${person.name}` : ""}) to user (${ctx.userId}) on invitation accept — ${reason}.`,
+                refs: [{ objectType: "Person", objectId: resolvedPersonId, role: "context" }],
+            },
+            tx,
+        );
+
+        return { personId: resolvedPersonId, organizationUserId };
+    });
+}

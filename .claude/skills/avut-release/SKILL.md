@@ -50,8 +50,26 @@ Stop if:
   skip — the user must delete the tag + Release first, see the doc's Notes),
 - `origin/production..origin/integration` is empty (nothing to release).
 
+**Milestone check.** Milestones are titled `v<version>`, optionally followed by
+` - <codename>` (`v0.11`, `v1 - veronica`). Find the one for `$NEW` by its
+leading version, with its open issues:
+
+```bash
+node .claude/skills/avut-docs/milestone.ts show "$NEW"
+```
+
+- **`"milestone": null`** (usual for a patch release): say so, and carry on.
+- **Open issues in it:** list them and ask, rather than stopping outright.
+  For each one, the user can move it to the next milestone, or release anyway.
+  Released-anyway issues still have to leave the milestone, or it stays open
+  and becomes the default milestone that `/avut-ship` files new docs items
+  under. Step 3's `close --move-to` handles that.
+  The milestone's `Docs: v<version>` issue counts like any other. If it's
+  open, the docs pass hasn't run: suggest `/avut-docs <version>` first.
+
 Confirm the plan with the user before touching anything: old version → new
-version, codename change or not, and the commit count going live.
+version, codename change or not, the commit count going live, and the
+milestone's state.
 
 ## Step 1 — Cut the release branch and open the one release PR
 
@@ -78,7 +96,18 @@ list anyway). Add `### Upgrade notes` only if there's a migration / env var /
 config action. Two or three sentences of framing at the top. Show the draft to
 the user and let them edit before committing.
 
+Then check that the in-app "What's new" entry, `content/updates/v$NEW.mdx`, is
+on `integration`. `/avut-docs` writes it during the docs pass, so it's normally
+there already, and production shows it once this release deploys. If it's
+missing, either the release has nothing user-facing (no docs issue, typical for
+a patch) or the docs pass was skipped. In that case, list the user-facing
+changes in the range and offer to draft it here, following
+[`content/updates/README.md`](../../../content/updates/README.md), and `git add`
+it so it lands in the release commit. This is a soft step: if the user declines,
+or nothing is user-facing, carry on.
+
 ```bash
+git add "docs/releases/v$NEW.md"                       # new file — `commit -a` won't pick it up
 git commit -am "chore(release): v$NEW ($CODENAME)"     # include the Co-Authored-By trailer
 BOT_TOKEN=$(gh auth token --user claude-avut)
 GH_TOKEN="$BOT_TOKEN" git push -u origin "release/v$NEW"
@@ -137,6 +166,25 @@ Report:
 
 If anything is off, the doc's Notes cover the common cases (tag already existed,
 re-cutting at the same version, workflow idempotency).
+
+Once everything checks out, close the release's milestone, if it has one:
+
+```bash
+node .claude/skills/avut-docs/milestone.ts close "$NEW"
+```
+
+It refuses while issues are still open in the milestone. If the user released
+with issues still open (Step 0), ask which milestone they go to, then:
+
+```bash
+node .claude/skills/avut-docs/milestone.ts close "$NEW" --move-to <next-version>
+```
+
+That moves each open issue to the next milestone, and carries an open docs
+issue's unticked items over to the next milestone's docs issue
+(`docs-carry`), before closing. If it stops because the docs issue has
+skipped item comments, resolve them as `/avut-docs` Step 2 describes, then run
+it again. A partial run is safe to repeat.
 
 ## Step 4 — Fold back anything that surprised you
 

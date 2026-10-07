@@ -20,6 +20,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
+import { usePreferences } from "@/hooks/use-preferences";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
@@ -33,6 +34,8 @@ interface AdminModule_D4HAccessTokensListProps {
 export function AdminModule_D4HAccessTokensList({
     organization,
 }: AdminModule_D4HAccessTokensListProps) {
+    const { formatDateTime } = usePreferences();
+
     const { data: d4hAccessTokens } = useSuspenseQuery(
         trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({
             organizationId: organization.id,
@@ -74,13 +77,13 @@ export function AdminModule_D4HAccessTokensList({
                 }),
                 columnHelper.accessor("createdAt", {
                     header: "Created At",
-                    cell: (ctx) => new Date(ctx.getValue()).toLocaleString(),
+                    cell: (ctx) => formatDateTime(ctx.getValue()),
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
             ]),
-        [organization.slug],
+        [organization.slug, formatDateTime],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -97,7 +100,7 @@ export function AdminModule_D4HAccessTokensList({
             <Saratoga.Header>
                 <Saratoga.Title>D4H Access Tokens</Saratoga.Title>
                 <Saratoga.Actions>
-                    <Protect permissions={{ d4hAccessToken: ["create"] }}>
+                    <Protect permissions={{ organization: ["update"] }}>
                         <Button variant="outline" asChild>
                             <Link
                                 href={route("/orgs/[slug]/admin/d4h-access-tokens/--create", {

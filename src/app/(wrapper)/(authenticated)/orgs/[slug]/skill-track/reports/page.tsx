@@ -32,7 +32,7 @@ export default async function SkillsTrack_Reports_Page(
                     { label: "Skill Track", href: route("/orgs/[slug]/skill-track", { slug }) },
                     { label: "Reports", href: route("/orgs/[slug]/skill-track/reports", { slug }) },
                 ]}
-                actions={<HelpButton slug="skill-track/reports" />}
+                actions={<HelpButton id="skill-track/reports" />}
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skills Reports">

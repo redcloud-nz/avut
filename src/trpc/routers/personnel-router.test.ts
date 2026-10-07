@@ -11,11 +11,11 @@ import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
-import { createLogBatch } from "@/server/log-entry";
+import * as Personnel from "@/server/services/personnel";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext, createOrganizationMockContext } from "@/test/trpc-helpers";
 
-import { createPerson, getPersonByEmail, personnelRouter } from "./personnel-router";
+import { personnelRouter } from "./personnel-router";
 
 // The router reaches server-only modules at import time. The procedures exercised here use
 // ctx.prisma (the injected mock), so an empty stub is enough to let them import in jsdom.
@@ -451,200 +451,17 @@ describe("personnel.createPerson auto-link", () => {
     });
 });
 
-/*
- * The D4H team import reaches the auto-link through the shared `createPerson` helper, passing a
- * `batchId` that no tRPC procedure exposes — so this path is unreachable through `createCaller`
- * and was the one part of the branch with no automated coverage at all.
- *
- * What is specific to the import, and therefore what these cases exist to pin down:
- *  - the link fires for a person the import creates, not just one an admin types in;
- *  - **both** entries join the import's batch, so the membership link is traceable to the run
- *    that caused it rather than appearing as an orphan edit by whoever started the import;
- *  - the organization's opt-in still governs an unattended run.
- */
-describe("createPerson during a D4H team import", () => {
-    // One member per case, each with a distinct email. Deliberately no shared fixture and no
-    // case-variant reuse: two people whose emails differ only in case can coexist today only
-    // because of the defect `docs/specs/person-email-normalisation.md` exists to fix, and a test
-    // that leans on it would start failing for the right reason at the worst moment.
-    const T = {
-        org: OrganizationId.create(),
-        otherOrg: OrganizationId.create(),
-        importerUser: UserId.create(),
-        linkUser: UserId.create(),
-        batchUser: UserId.create(),
-        offUser: UserId.create(),
-        outsiderUser: UserId.create(),
-        linkMembership: nanoId16(),
-        batchMembership: nanoId16(),
-        offMembership: nanoId16(),
-    };
-
-    const db = createMockPrisma();
-
-    beforeAll(async () => {
-        for (const id of [T.org, T.otherOrg]) {
-            await db.organization.create({
-                data: { id, name: id, slug: id, createdAt: new Date() },
-            });
-        }
-
-        const users: [UserId, string, string][] = [
-            [T.importerUser, "Importer", "importer@example.com"],
-            [T.linkUser, "Rae Fenn", "rae.fenn@example.com"],
-            [T.batchUser, "Bea Quill", "bea.quill@example.com"],
-            [T.offUser, "Dana Vos", "dana.vos@example.com"],
-            // An account with the same email as an imported member, but in another organization.
-            [T.outsiderUser, "Outsider", "outsider@example.com"],
-        ];
-        for (const [id, name, email] of users) {
-            await db.user.create({ data: { id, name, email } });
-        }
-
-        await db.organizationUser.create({
-            data: { id: nanoId16(), organizationId: T.org, userId: T.importerUser, role: "admin" },
-        });
-
-        const memberships: [string, UserId][] = [
-            [T.linkMembership, T.linkUser],
-            [T.batchMembership, T.batchUser],
-            [T.offMembership, T.offUser],
-        ];
-        for (const [id, userId] of memberships) {
-            await db.organizationUser.create({
-                data: { id, organizationId: T.org, userId, role: "member" },
-            });
-        }
-
-        await db.organizationUser.create({
-            data: {
-                id: nanoId16(),
-                organizationId: T.otherOrg,
-                userId: T.outsiderUser,
-                role: "member",
-            },
-        });
-    });
-
-    async function setAutoLink(enabled: boolean) {
-        await db.organizationConfig.deleteMany({ where: { organizationId: T.org } });
-        await db.organizationConfig.create({
-            data: {
-                organizationId: T.org,
-                key: "personnel.autoLinkOnPersonCreate",
-                value: enabled,
-            },
-        });
-    }
-
-    function ctx() {
-        return createOrganizationMockContext({
-            organizationId: T.org,
-            user: { id: T.importerUser, name: "Importer", email: "importer@example.com" },
-            permissions: { organization: ["view"], person: ["create"] },
-            prisma: db,
-        });
-    }
-
-    /** Open a batch the way the team import does, then create one person through the helper. */
-    async function importPerson(name: string, email: string) {
-        const batch = await createLogBatch(
-            {
-                operationKey: "d4h-team-import",
-                userId: T.importerUser,
-                actorLabel: "Importer <importer@example.com>",
-                description: `Imported ${name} from D4H.`,
-            },
-            db,
-        );
-
-        const personId = PersonId.create();
-        await createPerson(ctx(), personId, { name, email, tags: [], properties: {} }, batch.id);
-
-        return { personId, batchId: batch.id };
-    }
-
-    it("links an imported person to the member who already holds that email", async () => {
-        await setAutoLink(true);
-
-        const { personId } = await importPerson("Rae Fenn", "rae.fenn@example.com");
-
-        const membership = await db.organizationUser.findFirst({
-            where: { id: T.linkMembership },
-        });
-        expect(membership?.personId).toBe(personId);
-    });
-
-    it("puts the person entry in the import's batch", async () => {
-        await setAutoLink(true);
-
-        const { personId, batchId } = await importPerson("Nobody Here", "nobody@example.com");
-
-        const entries = await db.logEntry.findMany({ where: { objectId: personId } });
-        expect(entries).toHaveLength(1);
-        expect(entries[0].batchId).toBe(batchId);
-    });
-
-    // The reason a batch exists: an unattended run must stay traceable to the operation that
-    // produced it. A membership entry outside the batch reads as an unexplained edit by whoever
-    // happened to start the import.
-    it("carries the same batch onto the membership link entry", async () => {
-        await setAutoLink(true);
-
-        const { batchId } = await importPerson("Bea Quill", "bea.quill@example.com");
-
-        const linkEntry = (
-            await db.logEntry.findMany({
-                where: { objectId: T.batchMembership, objectType: "OrganizationMembership" },
-            })
-        )[0];
-
-        expect(linkEntry.batchId).toBe(batchId);
-        expect(linkEntry.description).toContain("on creation — matched on email address.");
-    });
-
-    it("respects the organization's opt-in, even unattended", async () => {
-        await setAutoLink(false);
-
-        const { personId } = await importPerson("Dana Vos", "dana.vos@example.com");
-
-        expect(await db.organizationUser.findMany({ where: { personId } })).toHaveLength(0);
-
-        const membership = await db.organizationUser.findFirst({
-            where: { id: T.offMembership },
-        });
-        expect(membership?.personId ?? null).toBeNull();
-
-        expect(await db.logEntry.findMany({ where: { objectId: T.offMembership } })).toHaveLength(
-            0,
-        );
-    });
-
-    // The invariant that matters most on an unattended path: an email match is not authorisation.
-    it("never grants membership to an imported email belonging to an outsider", async () => {
-        await setAutoLink(true);
-
-        const { personId } = await importPerson("Outsider", "outsider@example.com");
-
-        expect(
-            await db.organizationUser.findMany({
-                where: { organizationId: T.org, userId: T.outsiderUser },
-            }),
-        ).toHaveLength(0);
-        expect(await db.organizationUser.findMany({ where: { personId } })).toHaveLength(0);
-    });
-});
-
 describe("personnel email normalisation", () => {
     // `personnel.email` is stored lowercase so that `@@unique([organizationId, email])` means what
     // it says — Postgres unique indexes are case-sensitive, so before this both conflict checks
     // below let a case-variant through and one human ended up split across two person records.
-    // See docs/specs/person-email-normalisation.md.
+    // See docs/specs/2026-09-14-person-email-normalisation.md.
     const T = {
         org: OrganizationId.create(),
         adminUser: UserId.create(),
         dana: PersonId.create(),
         evan: PersonId.create(),
+        gwen: PersonId.create(),
     };
 
     const db = createMockPrisma();
@@ -677,6 +494,18 @@ describe("personnel email normalisation", () => {
                 },
             });
         }
+        // In the Rubbish bin — still holds her email (#183: no partial unique index).
+        await db.person.create({
+            data: {
+                id: T.gwen,
+                organizationId: T.org,
+                name: "Gwen Hale",
+                email: "gwen.hale@example.com",
+                status: "Deleted",
+                tags: [],
+                properties: {},
+            },
+        });
     });
 
     function caller() {
@@ -739,6 +568,36 @@ describe("personnel email normalisation", () => {
         ).rejects.toMatchObject({ code: "CONFLICT" });
     });
 
+    it("tells the user to recover or purge when the email belongs to a person in the Rubbish bin", async () => {
+        const inBin = { code: "CONFLICT", message: expect.stringMatching(/Rubbish bin/) };
+
+        await expect(
+            caller().createPerson({
+                organizationId: T.org,
+                personId: PersonId.create(),
+                create: {
+                    name: "Gwen H",
+                    email: "Gwen.Hale@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject(inBin);
+
+        await expect(
+            caller().updatePerson({
+                organizationId: T.org,
+                personId: T.evan,
+                update: {
+                    name: "Evan Stone",
+                    email: "gwen.hale@example.com",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject(inBin);
+    });
+
     it("finds a person by a mixed-case needle", async () => {
         // Only possible now that the stored side cannot vary: the previous
         // `mode: "insensitive"` form returned null under prisma-mock, so this was untestable.
@@ -748,8 +607,8 @@ describe("personnel email normalisation", () => {
             prisma: db,
         });
 
-        expect((await getPersonByEmail(ctx, "Dana.Reed@EXAMPLE.com"))?.id).toBe(T.dana);
-        expect(await getPersonByEmail(ctx, "nobody@example.com")).toBeNull();
+        expect((await Personnel.getByEmail(ctx, "Dana.Reed@EXAMPLE.com"))?.id).toBe(T.dana);
+        expect(await Personnel.getByEmail(ctx, "nobody@example.com")).toBeNull();
     });
 });
 
@@ -834,5 +693,96 @@ describe("personnel.getLinkedUser", () => {
         await expect(
             caller().getLinkedUser({ organizationId: T.org, personId: PersonId.create() }),
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});
+
+describe("personnel.deletePerson / restorePerson / recoverPerson", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        person: PersonId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Grace Hopper",
+                email: "grace-router-lifecycle@example.com",
+                tags: [],
+                properties: {},
+            },
+        });
+    });
+
+    function makeCaller(perms: Record<string, string[]>) {
+        return personnelRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], ...perms },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("getPersonDeleteImpact reports zero impact before any team/skill-check activity", async () => {
+        const impact = await makeCaller({ person: ["view"] }).getPersonDeleteImpact({
+            organizationId: T.org,
+            personId: T.person,
+        });
+        expect(impact).toEqual({ teamCount: 0, skillCheckCount: 0 });
+    });
+
+    it("deletePerson soft-deletes and records a Delete log entry", async () => {
+        const { person } = await makeCaller({ person: ["delete"] }).deletePerson({
+            organizationId: T.org,
+            personId: T.person,
+        });
+        expect(person.status).toBe("Deleted");
+
+        const row = await db.person.findUnique({ where: { id: T.person } });
+        expect(row).toMatchObject({ status: "Deleted" });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Person", objectId: T.person, action: "Delete" },
+        });
+        expect(entries).toHaveLength(1);
+    });
+
+    it("restorePerson (archive-restore) refuses a Deleted person", async () => {
+        await expect(
+            makeCaller({ person: ["update"] }).restorePerson({
+                organizationId: T.org,
+                personId: T.person,
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    });
+
+    it("recoverPerson requires person:delete, not person:update", async () => {
+        await expect(
+            makeCaller({ person: ["update"] }).recoverPerson({
+                organizationId: T.org,
+                personId: T.person,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("recoverPerson recovers a Deleted person back to Active", async () => {
+        const { updated } = await makeCaller({ person: ["delete"] }).recoverPerson({
+            organizationId: T.org,
+            personId: T.person,
+        });
+        expect(updated.status).toBe("Active");
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Person", objectId: T.person, action: "Recover" },
+        });
+        expect(entries).toHaveLength(1);
     });
 });

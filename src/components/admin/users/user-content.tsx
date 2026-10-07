@@ -6,32 +6,24 @@
 "use client";
 
 import Link from "next/link";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
 import { useSession } from "@/client/auth-queries";
-import { AdminModule_DeleteUser_Dialog } from "@/components/admin/users/delete-user";
-import { AdminModule_LinkPerson_Dialog } from "@/components/admin/users/link-person";
-import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/users/unlink-person";
 import { AdminModule_UpdateUser_Dialog } from "@/components/admin/users/update-user";
+import { AdminModule_User_Menu } from "@/components/admin/users/user-menu";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
@@ -43,16 +35,9 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
     const slug = organization.slug;
     const { data: session } = useSession();
 
-    const {
-        data: { members },
-    } = useSuspenseQuery({
-        queryKey: ["auth", "organization-users", organization.id],
-        queryFn: () =>
-            authClient.organization.listMembers(
-                { query: { organizationId: organization.id } },
-                { throw: true },
-            ),
-    });
+    const { data: members } = useSuspenseQuery(
+        trpc.organizations.listMembers.queryOptions({ organizationId: organization.id }),
+    );
     const member = members.find((m) => m.user.id === userId);
     if (!member)
         throw new Error(`User with ID ${userId} not found in organization ${organization.id}`);
@@ -64,11 +49,6 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
         }),
     );
 
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["delete", "link-person", "unlink-person"] as const),
-    );
-
     return (
         <>
             <Std.Navbar
@@ -77,42 +57,19 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                     { label: "Users", href: route("/orgs/[slug]/admin/users", { slug }) },
                     { label: member.user.name },
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/users" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{member.user.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <Protect
-                                            permissions={{ member: ["delete"] }}
-                                            render={(allowed) => (
-                                                <DropdownMenuItem
-                                                    disabled={
-                                                        !allowed ||
-                                                        member.user.id === session?.user.id
-                                                    }
-                                                    onClick={() =>
-                                                        setAction("delete", { history: "push" })
-                                                    }
-                                                    className="text-destructive"
-                                                >
-                                                    <ObjectIcons.Delete /> Delete User
-                                                </DropdownMenuItem>
-                                            )}
-                                        />
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <AdminModule_User_Menu
+                                userId={userId}
+                                member={member}
+                                linkedPerson={linkedPerson}
+                                currentUserId={session?.user.id}
+                            />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
@@ -129,137 +86,85 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>User ID</DLTerm>
-                                        <DLDetails className="font-mono">
-                                            {member.user.id}
-                                        </DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{member.user.name}</DLDetails>
-                                        <DLTerm>Email</DLTerm>
-                                        <DLDetails>{member.user.email}</DLDetails>
-                                        <DLTerm>Roles</DLTerm>
-                                        <DLDetails>
-                                            {OrganizationRole.formatList(member.role)}
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>User ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {member.user.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{member.user.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Email</DataItemTitle>
+                                            <DataItemValue>{member.user.email}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Roles</DataItemTitle>
+                                            <DataItemValue>
+                                                {OrganizationRole.formatList(member.role)}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Linked Person</CardTitle>
-                                    <CardAction>
-                                        <Protect
-                                            permissions={{
-                                                member: ["update"],
-                                                person: ["update"],
-                                            }}
-                                        >
-                                            {linkedPerson ? (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        setAction("unlink-person", {
-                                                            history: "push",
-                                                        })
-                                                    }
-                                                >
-                                                    <ObjectIcons.Unlink />
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        setAction("link-person", {
-                                                            history: "push",
-                                                        })
-                                                    }
-                                                >
-                                                    <ObjectIcons.Link />
-                                                </Button>
-                                            )}
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
-                                <CardContent>
-                                    {linkedPerson ? (
-                                        <DL>
-                                            <DLTerm>Person ID</DLTerm>
-                                            <DLDetails className="font-mono">
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/admin/personnel/[person_id]",
-                                                        {
-                                                            slug,
-                                                            person_id: linkedPerson.id,
-                                                        },
-                                                    )}
-                                                >
-                                                    {linkedPerson.id}
-                                                </Link>
-                                            </DLDetails>
-                                            <DLTerm>Name</DLTerm>
-                                            <DLDetails>{linkedPerson.name}</DLDetails>
-                                            <DLTerm>Email</DLTerm>
-                                            <DLDetails>{linkedPerson.email}</DLDetails>
-                                            <DLTerm>Status</DLTerm>
-                                            <DLDetails>{linkedPerson.status}</DLDetails>
-                                        </DL>
-                                    ) : (
-                                        <p className="text-muted-foreground text-sm">
-                                            No linked person.
-                                        </p>
-                                    )}
-                                </CardContent>
-                            </Card>
+                            {linkedPerson && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Linked Person</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <DataList>
+                                            <DataItem inline>
+                                                <DataItemTitle>Person ID</DataItemTitle>
+                                                <DataItemValue className="font-mono">
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/admin/personnel/[person_id]",
+                                                            {
+                                                                slug,
+                                                                person_id: linkedPerson.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        {linkedPerson.id}
+                                                    </Link>
+                                                </DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>Name</DataItemTitle>
+                                                <DataItemValue>{linkedPerson.name}</DataItemValue>
+                                            </DataItem>
+                                            <DataItem>
+                                                <DataItemTitle>Email</DataItemTitle>
+                                                <DataItemValue>{linkedPerson.email}</DataItemValue>
+                                            </DataItem>
+                                            <DataItem inline>
+                                                <DataItemTitle>Status</DataItemTitle>
+                                                <DataItemValue>{linkedPerson.status}</DataItemValue>
+                                            </DataItem>
+                                        </DataList>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={member.createdAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={member.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-            <AdminModule_DeleteUser_Dialog
-                organizationUser={member}
-                open={action === "delete"}
-                onOpenChange={(open) =>
-                    setAction(open ? "delete" : null, {
-                        history: open ? "push" : "replace",
-                    })
-                }
-            />
-            <AdminModule_LinkPerson_Dialog
-                userId={userId}
-                userName={member.user.name}
-                open={action === "link-person"}
-                onOpenChange={(open) =>
-                    setAction(open ? "link-person" : null, {
-                        history: open ? "push" : "replace",
-                    })
-                }
-            />
-            {linkedPerson && (
-                <AdminModule_UnlinkPerson_Dialog
-                    userId={userId}
-                    userName={member.user.name}
-                    personName={linkedPerson.name}
-                    open={action === "unlink-person"}
-                    onOpenChange={(open) =>
-                        setAction(open ? "unlink-person" : null, {
-                            history: open ? "push" : "replace",
-                        })
-                    }
-                />
-            )}
         </>
     );
 }

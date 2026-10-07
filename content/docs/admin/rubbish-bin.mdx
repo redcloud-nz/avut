@@ -1,0 +1,48 @@
+---
+title: Rubbish Bin
+description: Recovering deleted records, deleting them forever, and when they're purged.
+section: org-admin
+order: 70
+---
+
+# Rubbish Bin
+
+Deleting a record in AVUT doesn't remove it straight away; it moves to the
+Rubbish bin. **Rubbish**, on the Admin page, lists what's there, most recently
+deleted first.
+
+## What it holds
+
+- Personnel
+- Teams, and team memberships (a person removed from a team)
+- I3 templates
+- Skill packages, skill groups and skills
+
+You only see the kinds of record you're allowed to delete, and the **Rubbish**
+link only shows if you can delete at least one of these kinds.
+
+Not everything goes to the bin. Deleting a user, a note or a skill check
+session is permanent straight away.
+
+## Recover or delete forever
+
+Each row has two buttons:
+
+- **Recover** puts the record back as it was.
+- **Delete forever** removes it, and everything that belongs to it, once you
+  confirm. This can't be undone. Deleting a person forever also deletes the
+  skill checks recorded about them.
+
+## When records are purged
+
+The **Purges** column shows when each record will be removed automatically.
+Records are kept for 30 days, unless your organisation has changed that under
+**Rubbish Bin** in [Organisation Settings](/docs/admin/organization#rubbish-bin)
+(1 to 90 days). **Not scheduled** means the deletion date isn't known, so the
+record is never purged automatically.
+
+<Callout>
+  A record can be held back from being deleted for good — for example, a skill that another
+  organisation has recorded checks against. It stays in the bin, and **Delete forever** refuses too,
+  until that changes.
+</Callout>

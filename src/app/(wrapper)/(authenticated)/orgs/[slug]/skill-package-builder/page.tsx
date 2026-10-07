@@ -10,14 +10,14 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillPackageBuilder_Packages_List } from "@/components/skill-package-builder/packages-list";
 import { route } from "@/lib/routes";
-import { getOrganizationBySlug } from "@/server/cache/organization";
+import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export default async function SkillPackageBuilder_Index_Page(
     props: PageProps<`/orgs/[slug]/skill-package-builder`>,
 ) {
     const { slug } = await props.params;
-    const organization = await getOrganizationBySlug(slug);
+    const { organization } = await requireOrganizationWith(slug, { skillPackage: ["view"] });
 
     prefetch(
         trpc.skillPackageBuilder.listPackages.queryOptions({ organizationId: organization.id }),
@@ -33,7 +33,7 @@ export default async function SkillPackageBuilder_Index_Page(
                             href: route("/orgs/[slug]/skill-package-builder", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-package-builder" />}
+                    actions={<HelpButton id="skill-package-builder" />}
                 />
                 <Std.ScrollContainer>
                     <div className="flex flex-col items-center my-4 gap-4">

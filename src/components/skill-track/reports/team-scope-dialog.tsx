@@ -105,7 +105,11 @@ function TeamScope_Picker({ onSelect }: { onSelect: (value: string) => void }) {
         trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
     );
 
-    const sortedTeams = R.sortBy(teams, (team) => team.name);
+    const sortedTeams = R.pipe(
+        teams,
+        R.filter((team) => team.status === "Active"),
+        R.sortBy((team) => team.name),
+    );
 
     return (
         <Command>

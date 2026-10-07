@@ -10,8 +10,8 @@
 #
 # <name> is a directory name under .claude/worktrees/ (a path also works).
 #
-# Does not start a dev server or run `npm run db:branch` — both are your call (see AGENTS.md):
-# ask before starting a dev server, and branch the database only when a migration is coming.
+# Allocates the worktree's dev-server port (.dev-port, via scripts/dev-port.sh). Does not start a
+# dev server or run `npm run db:branch` — branch the database only when a migration is coming.
 #
 set -euo pipefail
 
@@ -145,15 +145,15 @@ echo "  … next typegen"
 npx next typegen >/dev/null
 echo "  ✓ route types generated"
 
-# Suggest the first free port from 3100 so this doesn't collide with the main checkout's 3000.
-port=3100
-while lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; do port=$((port + 1)); done
+# This worktree's fixed dev-server port (allocated on the first run, kept after that).
+port="$(bash "$root/scripts/dev-port.sh")"
+echo "  ✓ dev-server port $port (.dev-port)"
 
 cat <<EOF
 
 ready. Next:
   cd $wt
   npm run check                 # typecheck, lint and related tests
-  npm run dev -- -p $port       # ask first — the user may already have a dev server up
+  npm run dev                   # serves on $port; agents may start it (AGENTS.md → Dev servers)
 If the branch will add a Prisma migration, run \`npm run db:branch <slug>\` before \`prisma migrate dev\`.
 EOF

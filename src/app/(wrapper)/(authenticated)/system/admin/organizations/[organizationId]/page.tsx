@@ -7,9 +7,10 @@
 
 import { Metadata } from "next";
 
-import { SystemAdmin_Organization_Content } from "@/components/system-admin/organizations/organization-content";
+import { SystemAdmin_Organization_Content } from "@/components/system/admin/organizations/organization-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { resolveModuleFlags } from "@/server/module-flags";
 import { requireSystemAdmin } from "@/server/system-admin-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -22,7 +23,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const organizationId = OrganizationId.schema.parse(raw);
 
     const organization = await fetchQuery(
-        trpc.systemAdmin.getOrganization.queryOptions({ organizationId }),
+        trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
     );
 
     return {
@@ -36,11 +37,16 @@ export default async function SystemAdmin_Organization_Page(props: Props) {
     const { organizationId: raw } = await props.params;
     const organizationId = OrganizationId.schema.parse(raw);
 
-    prefetch(trpc.systemAdmin.getOrganization.queryOptions({ organizationId }));
+    prefetch(trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }));
+
+    const moduleFlags = await resolveModuleFlags();
 
     return (
         <HydrateClient>
-            <SystemAdmin_Organization_Content organizationId={organizationId} />
+            <SystemAdmin_Organization_Content
+                organizationId={organizationId}
+                moduleFlags={moduleFlags}
+            />
         </HydrateClient>
     );
 }

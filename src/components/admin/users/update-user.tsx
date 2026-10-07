@@ -6,18 +6,19 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
-import { authClient } from "@/client/auth-client";
+import { organizationsEffects } from "@/client/organizations-effects";
+import {
+    memberRolesSchema,
+    RoleFields,
+} from "@/components/admin/invitations/invitation-role-fields";
 import { ObjectIcons } from "@/components/icons";
-import { Show } from "@/components/show";
 import { Button, MutationButton } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
     DialogBody,
@@ -29,20 +30,13 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-} from "@/components/ui/field";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { FieldGroup } from "@/components/ui/field";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { hasOwnerRole } from "@/lib/permissions";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { type AuthOrganizationMember } from "@/server/auth";
+import { trpc } from "@/trpc/client";
 
 export function AdminModule_UpdateUser_Dialog({
     organizationUser,
@@ -50,55 +44,38 @@ export function AdminModule_UpdateUser_Dialog({
     organizationUser: AuthOrganizationMember;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
-    const roleDefaults = {
-        primaryRole: OrganizationRole.getPrimaryRole(
-            organizationUser.role.split(",") as OrganizationRole[],
-        ),
-        secondaryRoles: OrganizationRole.getSecondaryRoles(
-            organizationUser.role.split(",") as OrganizationRole[],
-        ),
-    };
+    // `formDefaults` drops `owner` (granted and revoked separately) and any role another held
+    // role already covers, so this dialog only ever edits the non-owner roles.
+    const isOwner = hasOwnerRole(organizationUser.role);
+    const roleDefaults = { roles: OrganizationRole.formDefaults(organizationUser.role) };
 
     const form = useForm({
-        resolver: zodResolver(
-            z.object({
-                primaryRole: OrganizationRole.primaryRoleSchema,
-                secondaryRoles: z.array(OrganizationRole.secondaryRoleSchema),
-            }),
-        ),
+        resolver: zodResolver(memberRolesSchema(isOwner)),
         defaultValues: roleDefaults,
     });
 
-    const mutation = useMutation({
-        async mutationFn(roles: OrganizationRole[]) {
-            await authClient.organization.updateMemberRole({
-                role: roles,
-                memberId: organizationUser.id,
-                organizationId: organizationUser.organizationId,
-            });
-        },
-        onError(error) {
-            console.error("Failed to update user roles:", error);
-        },
-        onSuccess() {
-            toast.success(
-                <>
-                    User <ObjectName>{organizationUser.user.name}</ObjectName> roles updated.
-                </>,
-            );
+    const mutation = useMutation(
+        trpc.organizations.setOrganizationMemberRole.mutationOptions({
+            meta: { effects: organizationsEffects.setOrganizationMemberRole },
+            onError(error) {
+                console.error("Failed to update user roles:", error);
+                toast.error(`Failed to update user roles: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        User <ObjectName>{organizationUser.user.name}</ObjectName> roles updated.
+                    </>,
+                );
 
-            queryClient.invalidateQueries({
-                queryKey: ["auth", "organization-users", organizationUser.organizationId],
-            });
-
-            handleOpenChange(false);
-        },
-    });
+                handleOpenChange(false);
+            },
+        }),
+    );
 
     function handleOpenChange(open: boolean) {
         void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
@@ -112,6 +89,11 @@ export function AdminModule_UpdateUser_Dialog({
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
     }, [dialogOpen]);
 
+    // `isModuleEnabled` accounts for the module's Vercel flag as well as the org's own setting.
+    const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
+        organization.isModuleEnabled(id),
+    );
+
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -119,7 +101,7 @@ export function AdminModule_UpdateUser_Dialog({
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>Update User Roles</DialogTitle>
                     <DialogDescription>
@@ -128,221 +110,27 @@ export function AdminModule_UpdateUser_Dialog({
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form
-                        id="update-user-form"
-                        onSubmit={form.handleSubmit(
-                            (data) => {
-                                mutation.mutate([data.primaryRole, ...data.secondaryRoles]);
-                            },
-                            (errors) => {
-                                console.error("Form validation errors:", errors);
-                            },
-                        )}
-                    >
-                        <FieldGroup>
-                            <Controller
-                                name="primaryRole"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <>
-                                        <RadioGroup
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                            className="w-fit"
-                                        >
-                                            <FieldLegend variant="label">Primary Role</FieldLegend>
-                                            <Field orientation="horizontal">
-                                                <RadioGroupItem
-                                                    value="owner"
-                                                    id="primary-role-owner"
-                                                />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor="primary-role-owner">
-                                                        {OrganizationRole.roles.owner.displayName}
-                                                    </FieldLabel>
-                                                    <FieldDescription>
-                                                        {OrganizationRole.roles.owner.description}
-                                                    </FieldDescription>
-                                                </FieldContent>
-                                            </Field>
-                                            <Field orientation="horizontal">
-                                                <RadioGroupItem
-                                                    value="admin"
-                                                    id="primary-role-admin"
-                                                />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor="primary-role-admin">
-                                                        {OrganizationRole.roles.admin.displayName}
-                                                    </FieldLabel>
-                                                    <FieldDescription>
-                                                        {OrganizationRole.roles.admin.description}
-                                                    </FieldDescription>
-                                                </FieldContent>
-                                            </Field>
-                                            <Field orientation="horizontal">
-                                                <RadioGroupItem
-                                                    value="member"
-                                                    id="primary-role-member"
-                                                />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor="primary-role-member">
-                                                        {OrganizationRole.roles.member.displayName}
-                                                    </FieldLabel>
-                                                    <FieldDescription>
-                                                        {OrganizationRole.roles.member.description}
-                                                    </FieldDescription>
-                                                </FieldContent>
-                                            </Field>
-                                            {fieldState.error && (
-                                                <FieldError errors={[fieldState.error]} />
-                                            )}
-                                        </RadioGroup>
-                                    </>
-                                )}
-                            />
-                            <Controller
-                                name="secondaryRoles"
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <>
-                                        <FieldLegend variant="label">Secondary Roles</FieldLegend>
-                                        <Show when={organization.settings.modules.i3.enabled}>
-                                            <Field orientation="horizontal">
-                                                <Checkbox
-                                                    id="secondary-role-i3-editor"
-                                                    checked={field.value.includes("i3-editor")}
-                                                    onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            field.onChange([
-                                                                ...field.value,
-                                                                "i3-editor",
-                                                            ]);
-                                                        } else {
-                                                            field.onChange(
-                                                                field.value.filter(
-                                                                    (role) => role !== "i3-editor",
-                                                                ),
-                                                            );
-                                                        }
-                                                    }}
-                                                />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor="secondary-role-i3-editor">
-                                                        {
-                                                            OrganizationRole.roles["i3-editor"]
-                                                                .displayName
-                                                        }
-                                                    </FieldLabel>
-                                                    <FieldDescription>
-                                                        {
-                                                            OrganizationRole.roles["i3-editor"]
-                                                                .description
-                                                        }
-                                                    </FieldDescription>
-                                                </FieldContent>
-                                            </Field>
-                                        </Show>
-                                        <Show
-                                            when={
-                                                organization.settings.modules["skill-track"].enabled
-                                            }
-                                        >
-                                            <Field orientation="horizontal">
-                                                <Checkbox
-                                                    id="secondary-role-skills-assessor"
-                                                    checked={field.value.includes(
-                                                        "skills-assessor",
-                                                    )}
-                                                    onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            field.onChange([
-                                                                ...field.value,
-                                                                "skills-assessor",
-                                                            ]);
-                                                        } else {
-                                                            field.onChange(
-                                                                field.value.filter(
-                                                                    (role) =>
-                                                                        role !== "skills-assessor",
-                                                                ),
-                                                            );
-                                                        }
-                                                    }}
-                                                />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor="secondary-role-skills-assessor">
-                                                        {
-                                                            OrganizationRole.roles[
-                                                                "skills-assessor"
-                                                            ].displayName
-                                                        }
-                                                    </FieldLabel>
-                                                    <FieldDescription>
-                                                        {
-                                                            OrganizationRole.roles[
-                                                                "skills-assessor"
-                                                            ].description
-                                                        }
-                                                    </FieldDescription>
-                                                </FieldContent>
-                                            </Field>
-                                        </Show>
-                                        <Show
-                                            when={
-                                                organization.settings.modules[
-                                                    "skill-package-builder"
-                                                ].enabled
-                                            }
-                                        >
-                                            <Field orientation="horizontal">
-                                                <Checkbox
-                                                    id="secondary-role-skill-package-author"
-                                                    checked={field.value.includes(
-                                                        "skill-package-author",
-                                                    )}
-                                                    onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            field.onChange([
-                                                                ...field.value,
-                                                                "skill-package-author",
-                                                            ]);
-                                                        } else {
-                                                            field.onChange(
-                                                                field.value.filter(
-                                                                    (role) =>
-                                                                        role !==
-                                                                        "skill-package-author",
-                                                                ),
-                                                            );
-                                                        }
-                                                    }}
-                                                />
-                                                <FieldContent>
-                                                    <FieldLabel htmlFor="secondary-role-skill-package-author">
-                                                        {
-                                                            OrganizationRole.roles[
-                                                                "skill-package-author"
-                                                            ].displayName
-                                                        }
-                                                    </FieldLabel>
-                                                    <FieldDescription>
-                                                        {
-                                                            OrganizationRole.roles[
-                                                                "skill-package-author"
-                                                            ].description
-                                                        }
-                                                    </FieldDescription>
-                                                </FieldContent>
-                                            </Field>
-                                        </Show>
-                                        {fieldState.error && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </>
-                                )}
-                            />
-                        </FieldGroup>
-                    </form>
+                    <FormProvider {...form}>
+                        <form
+                            id="update-user-form"
+                            onSubmit={form.handleSubmit(
+                                (data) => {
+                                    mutation.mutate({
+                                        organizationId: organization.id,
+                                        userId: organizationUser.userId,
+                                        roles: data.roles,
+                                    });
+                                },
+                                (errors) => {
+                                    console.error("Form validation errors:", errors);
+                                },
+                            )}
+                        >
+                            <FieldGroup>
+                                <RoleFields moduleGatedRoles={moduleGatedRoles} isOwner={isOwner} />
+                            </FieldGroup>
+                        </form>
+                    </FormProvider>
                 </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>

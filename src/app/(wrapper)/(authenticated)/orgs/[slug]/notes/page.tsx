@@ -5,20 +5,12 @@
  * Path: /orgs/[slug]/notes
  */
 
-import { Std } from "@/components/blocks/std";
-import { HelpButton } from "@/components/docs/help-button";
+import { Hermes } from "@/components/blocks/hermes";
 
 export const metadata = {
     title: "Notes",
 };
 
-export default async function Notes_Index_Page() {
-    return (
-        <>
-            <Std.Navbar breadcrumbs={["Notes"]} actions={<HelpButton slug="notes" />} />
-            <Std.ScrollContainer>
-                <div>Notes Module Index Page</div>
-            </Std.ScrollContainer>
-        </>
-    );
+export default function Notes_Index_Page() {
+    return <Hermes.Placeholder>Select a note, or create a new one.</Hermes.Placeholder>;
 }

@@ -36,6 +36,7 @@ import { trpc } from "@/trpc/client";
 import { SkillPackageBuilder_ArchivePackage_Dialog } from "./archive-package";
 import { SkillPackageBuilder_DeletePackage_Dialog } from "./delete-package";
 import { SkillPackageBuilder_PublishPackage_Dialog } from "./publish-package";
+import { SkillPackageBuilder_RecoverPackage_Dialog } from "./recover-package";
 import { SkillPackageBuilder_RestorePackage_Dialog } from "./restore-package";
 import { SkillPackageBuilder_UnpublishPackage_Dialog } from "./unpublish-package";
 
@@ -54,13 +55,20 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
 
     const [action, setAction] = useQueryState(
         "action",
-        parseAsStringLiteral(["delete", "archive", "restore", "publish", "unpublish"] as const),
+        parseAsStringLiteral([
+            "delete",
+            "archive",
+            "restore",
+            "recover",
+            "publish",
+            "unpublish",
+        ] as const),
     );
 
-    const canView = useHasPermission({ skillPackageBuilder: ["view"] });
-    const canUpdate = useHasPermission({ skillPackageBuilder: ["update"] });
-    const canPublish = useHasPermission({ skillPackageBuilder: ["publish"] });
-    const canDelete = useHasPermission({ skillPackageBuilder: ["delete"] });
+    const canView = useHasPermission({ skillPackage: ["view"] });
+    const canUpdate = useHasPermission({ skillPackage: ["update"] });
+    const canPublish = useHasPermission({ skillPackage: ["publish"] });
+    const canDelete = useHasPermission({ skillPackage: ["delete"] });
 
     const [exporting, setExporting] = useState(false);
 
@@ -124,7 +132,16 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             disabled: !canUpdate,
         });
     }
-    if (!skillPackage.published) {
+    if (skillPackage.status == "Deleted") {
+        actions.push({
+            verb: "recover",
+            label: "Recover from rubbish",
+            icon: <ObjectIcons.Recover />,
+            onSelect: () => setAction("recover", { history: "push" }),
+            disabled: !canDelete,
+        });
+    }
+    if (skillPackage.status != "Deleted" && !skillPackage.published) {
         actions.push({
             verb: "publish",
             label: "Publish",
@@ -142,14 +159,16 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             disabled: !canPublish,
         });
     }
-    actions.push({
-        verb: "delete",
-        label: "Delete",
-        icon: <ObjectIcons.Delete />,
-        onSelect: () => setAction("delete", { history: "push" }),
-        disabled: !canDelete,
-        destructive: true,
-    });
+    if (skillPackage.status != "Deleted") {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        });
+    }
 
     useMenuActionHotkeys(actions, "Packages");
 
@@ -163,7 +182,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-40" align="end">
                     <DropdownMenuGroup>
-                        <DropdownMenuItem asChild disabled>
+                        <DropdownMenuItem asChild>
                             <Link
                                 href={route(
                                     "/orgs/[slug]/skill-package-builder/packages/[package_id]/history",
@@ -189,6 +208,15 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
                 open={action === "delete"}
                 onOpenChange={(open) =>
                     setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+            <SkillPackageBuilder_RecoverPackage_Dialog
+                skillPackage={skillPackage}
+                open={action === "recover"}
+                onOpenChange={(open) =>
+                    setAction(open ? "recover" : null, {
                         history: open ? "push" : "replace",
                     })
                 }

@@ -52,10 +52,24 @@ export function resolveAssetBaseUrl(env: Env): string {
 }
 
 /**
+ * The four fields these functions actually read, picked out of the full `env` singleton rather
+ * than passed wholesale — `env` has grown fields (the artificial-latency settings, the `is*()`
+ * helpers) that aren't `string | undefined`, so passing it directly no longer satisfies `Env`.
+ * Narrowing here keeps `Env` itself loose and test-friendly (see `base-url.test.ts`, which
+ * passes plain partial objects) instead of chasing every future addition to `env`.
+ */
+const relevantEnv: Env = {
+    VERCEL_ENV: appEnv.VERCEL_ENV,
+    VERCEL_URL: appEnv.VERCEL_URL,
+    VERCEL_PROJECT_PRODUCTION_URL: appEnv.VERCEL_PROJECT_PRODUCTION_URL,
+    PORT: appEnv.PORT,
+};
+
+/**
  * Base URL for the link in the invitation email, which the invitee has to be able to open.
  * See `resolveBaseUrl` for how it depends on the environment.
  */
-export const baseUrl = resolveBaseUrl(appEnv);
+export const baseUrl = resolveBaseUrl(relevantEnv);
 
 /** Base URL for static assets in an email. See `resolveAssetBaseUrl`. */
-export const assetBaseUrl = resolveAssetBaseUrl(appEnv);
+export const assetBaseUrl = resolveAssetBaseUrl(relevantEnv);

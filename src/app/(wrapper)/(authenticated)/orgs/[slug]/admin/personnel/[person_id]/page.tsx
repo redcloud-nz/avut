@@ -37,9 +37,6 @@ export default async function AdminModule_Person_Page(props: Props) {
 
     prefetch(trpc.personnel.getPerson.queryOptions({ organizationId: organization.id, personId }));
     prefetch(
-        trpc.personnel.getLinkedUser.queryOptions({ organizationId: organization.id, personId }),
-    );
-    prefetch(
         trpc.teams.listTeamMemberships.queryOptions({ organizationId: organization.id, personId }),
     );
 

@@ -7,210 +7,114 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
-import { type LogAction, type LogObjectType } from "@/lib/schemas/log-entry";
-import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
-import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
-import { OrganizationUser } from "@/lib/schemas/organization-user";
+import { diffObject } from "@/lib/diff";
+import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonData, PersonId } from "@/lib/schemas/person";
-import { UserData, UserId } from "@/lib/schemas/user";
-import { UserSessionData, UserSessionId } from "@/lib/schemas/user-session";
+import { UserId } from "@/lib/schemas/user";
+import { UserSessionId } from "@/lib/schemas/user-session";
 import { auth } from "@/server/auth";
-import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
+import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
+import * as UserAccounts from "@/server/services/user-accounts";
 
 import { FieldConflictError } from "../errors";
 import {
     authenticatedProcedure,
     createTrpcRouter,
     organizationProcedure,
-    type AuthenticatedContext,
+    systemAdminProcedure,
+    type SystemAdminContext,
 } from "../init";
 import { Messages } from "../messages";
 
-/**
- * Loads a pending, unexpired invitation addressed to the caller. Better Auth re-checks the
- * recipient itself, but doing it here gives a clean NOT_FOUND and the organization for the log.
- */
-async function findOwnPendingInvitation(
-    ctx: Pick<AuthenticatedContext, "prisma" | "auth">,
-    invitationId: InvitationId,
-) {
-    const invitation = await ctx.prisma.organizationInvitation.findFirst({
-        where: {
-            id: invitationId,
-            email: ctx.auth.user.email,
-            status: "pending",
-            expiresAt: { gt: new Date() },
-        },
-        include: { organization: { select: { name: true, slug: true } } },
-    });
-
-    if (!invitation)
-        throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Invitation not found, expired, or already answered.",
-        });
-
-    return invitation;
+/** A system admin's context, as the account service takes it: every entry system-scoped. */
+function systemServiceContext(ctx: SystemAdminContext): UserAccounts.SystemServiceContext {
+    return {
+        prisma: ctx.prisma,
+        logSystemEvent: (options, tx) => ctx.logEvent({ scope: "system", ...options }, tx),
+    };
 }
 
 /**
- * Records that the caller answered an invitation, on both timelines it belongs to: their own
- * (`ctx.logEvent` is user-scoped for an `authenticatedProcedure`) and the organization's, which
- * would otherwise never learn that a member joined or an invitation was turned down.
- *
- * Two independently meaningful events, so they share a `LogBatch`. Written in one interactive
- * transaction — the batch has to exist before the entries that reference it, and its id is only
- * known once it is created.
- */
-async function logInvitationAnswer(
-    ctx: AuthenticatedContext,
-    input: {
-        operationKey: "invitation-accept" | "invitation-reject";
-        organizationId: string;
-        action: LogAction;
-        objectType: LogObjectType;
-        objectId: string;
-        description: string;
-    },
-) {
-    const { operationKey, organizationId, ...entry } = input;
-
-    await ctx.prisma.$transaction(async (tx) => {
-        const batch = await createLogBatch(
-            {
-                operationKey,
-                userId: ctx.userId,
-                actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                description: entry.description,
-            },
-            tx,
-        );
-
-        await ctx.logEvent({ ...entry, batchId: batch.id }, tx);
-        await recordLogEntry(
-            {
-                scope: "organization",
-                organizationId: OrganizationId.schema.parse(organizationId),
-                ...resolveActor(ctx.auth),
-                ...entry,
-                batchId: batch.id,
-            },
-            tx,
-        );
-    });
-}
-
-/**
- * Router for organization user (member) management, including the link between
- * a user account and a personnel record.
+ * Router for organization user (member) management, including the link between a user account
+ * and a personnel record, plus site-wide user-account moderation (`systemAdminProcedure`-gated).
  */
 export const usersRouter = createTrpcRouter({
     /**
-     * Accepts one of the caller's pending organization invitations, making them a member.
+     * Ban a user account, revoking their active sessions and blocking sign-in until unbanned.
+     * `BAD_REQUEST` if the target is the caller — mirrors `deleteUser`'s/`setUserRole`'s
+     * self-target guard; the client-side menu already hides this action for the caller's own
+     * row, but a crafted call must be refused server-side too (#86).
      *
-     * @param ctx The authenticated context.
-     * @param input The invitation to accept.
-     * @returns The joined organization's slug, so the caller can navigate into it.
-     * @throws TRPCError(NOT_FOUND) if the invitation is not pending, has expired, or is addressed
-     *   to someone else.
+     * `auth.api.banUser` isn't a Prisma operation, so it can't join a `$transaction` with the
+     * log entry — ban first, then log. The entry is `ownerId`-scoped (the banned user's own
+     * timeline), not `scope: "system"`: unlike `deleteUser`, a ban doesn't remove the `User`
+     * row, so there's nothing for the entry to outlive.
      */
-    acceptInvitation: authenticatedProcedure
-        .input(z.object({ invitationId: InvitationId.schema }))
-        .output(z.object({ organizationSlug: z.string() }))
+    banUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema, banReason: z.string().min(1).optional() }))
         .mutation(async ({ ctx, input }) => {
-            const invitation = await findOwnPendingInvitation(ctx, input.invitationId);
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot ban your own account.",
+                });
+            }
 
-            // Better Auth creates the membership and runs `afterAcceptInvitation` (person link,
-            // role cache revalidation). It isn't a Prisma operation, so it can't join a
-            // $transaction with the log entries — log only once it has succeeded.
-            const { member } = await auth.api.acceptInvitation({
-                body: { invitationId: invitation.id },
+            const target = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { id: true },
+            });
+            if (!target) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            await auth.api.banUser({
                 headers: await ctx.getHeaders(),
+                body: {
+                    userId: input.userId,
+                    ...(input.banReason ? { banReason: input.banReason } : {}),
+                },
             });
 
-            await logInvitationAnswer(ctx, {
-                operationKey: "invitation-accept",
-                organizationId: invitation.organizationId,
-                action: "Create",
-                objectType: "OrganizationMembership",
-                objectId: member.id,
-                description: `Accepted invitation to join ${invitation.organization.name} (${invitation.organizationId}).`,
+            await ctx.logEvent({
+                ownerId: input.userId,
+                action: "Ban",
+                objectType: "User",
+                objectId: input.userId,
+                changes: input.banReason
+                    ? [{ type: "obj_add", path: ["banReason"], curr: input.banReason }]
+                    : [],
             });
 
-            return { organizationSlug: invitation.organization.slug };
+            return { id: input.userId };
         }),
 
     /**
-     * Counts log entries by organization, object type, and action over the last 24 hours,
-     * across every organization the caller belongs to. For a dashboard-level activity
-     * summary — not a substitute for an org's own (permission-checked) activity feed, since
-     * this only ever returns counts, never entry details.
+     * Soft-delete a user account into the system Rubbish bin (#296): it can't sign in, every
+     * session is revoked, and the daily auto-purge removes it for good after
+     * `USER_RETENTION_DAYS`. Recover with `recoverUser`; purge early with `purgeUser`.
      *
-     * @param ctx The authenticated context.
-     * @returns One row per (organization, object type, action) combination with a nonzero count.
+     * Guards: you cannot delete your own account (close it from your settings instead); the
+     * service refuses the last system administrator. Deleting an organization's sole owner is
+     * allowed; the dialog warns first (`listSoleOwnedOrganizations`).
      */
-    getActivityStats: authenticatedProcedure
-        .output(
-            z.array(
-                z.object({
-                    organizationId: OrganizationId.schema,
-                    objectType: z.string(),
-                    action: z.string(),
-                    count: z.number(),
-                }),
-            ),
-        )
-        .query(async ({ ctx }) => {
-            const memberships = await ctx.prisma.organizationUser.findMany({
-                where: { userId: ctx.userId },
-                select: { organizationId: true },
-            });
+    deleteUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot delete your own account.",
+                });
+            }
 
-            if (memberships.length === 0) return [];
+            await UserAccounts.softDelete(systemServiceContext(ctx), input.userId, "admin");
+            await revalidateOrganizationUser(input.userId);
 
-            const organizationIds = memberships.map((m) => m.organizationId);
-            const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-            // Skill checks aren't written through `ctx.logEvent` (no `LogEntry` row per
-            // check), so they're invisible to the log-entry-backed counts below — count
-            // them directly off `SkillCheck` instead.
-            const skillCheckCounts = await ctx.prisma.skillCheck.groupBy({
-                by: ["organizationId"],
-                where: {
-                    organizationId: { in: organizationIds },
-                    createdAt: { gte: since },
-                },
-                _count: true,
-            });
-
-            const skillCheckRows = skillCheckCounts
-                .filter((row) => row._count > 0)
-                .map((row) => ({
-                    organizationId: OrganizationId.schema.parse(row.organizationId),
-                    objectType: "SkillCheck",
-                    action: "Create",
-                    count: row._count,
-                }));
-
-            const logEntryCounts = await ctx.prisma.logEntry.groupBy({
-                by: ["organizationId", "objectType", "action"],
-                where: {
-                    organizationId: { in: organizationIds },
-                    timestamp: { gte: since },
-                },
-                _count: true,
-            });
-
-            const logEntryRows = logEntryCounts.map((row) => ({
-                // `organizationId` is guaranteed non-null: the `where` clause only matches
-                // rows already filtered to the caller's (non-null) organization memberships.
-                organizationId: OrganizationId.schema.parse(row.organizationId),
-                objectType: row.objectType,
-                action: row.action,
-                count: row._count,
-            }));
-
-            return [...skillCheckRows, ...logEntryRows];
+            return { id: input.userId };
         }),
 
     /**
@@ -241,16 +145,44 @@ export const usersRouter = createTrpcRouter({
             return user.person ? PersonData.fromRecord(user.person) : null;
         }),
 
-    getSelf: authenticatedProcedure.output(UserData.schema).query(async ({ ctx }) => {
-        const user = ctx.auth.user;
+    getUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .query(async ({ ctx, input }) => {
+            const user = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: true,
+                    banned: true,
+                    emailVerified: true,
+                    createdAt: true,
+                    organizationUsers: {
+                        select: {
+                            role: true,
+                            organization: { select: { id: true, name: true, slug: true } },
+                        },
+                    },
+                },
+            });
 
-        return {
-            id: UserId.schema.parse(user.id),
-            name: user.name,
-            email: user.email,
-            image: user.image || null,
-        };
-    }),
+            if (!user) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            const { organizationUsers, ...rest } = user;
+
+            return {
+                ...rest,
+                role: user.role ?? "user",
+                banned: user.banned ?? false,
+                organizations: organizationUsers.map((m) => ({ ...m.organization, role: m.role })),
+            };
+        }),
 
     /**
      * Links a personnel record to a user account within the organization.
@@ -272,9 +204,10 @@ export const usersRouter = createTrpcRouter({
                         userId: input.userId,
                     },
                 },
+                include: { user: { select: { status: true } } },
             });
 
-            if (!orgUser)
+            if (!orgUser || orgUser.user.status === "Deleted")
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.userNotFound(input.userId),
@@ -285,20 +218,17 @@ export const usersRouter = createTrpcRouter({
                 include: { organizationUser: true },
             });
 
-            if (!person)
+            if (!person || person.status === "Deleted")
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.personNotFound(input.personId),
                 });
 
             if (person.organizationUser && person.organizationUser.userId !== input.userId)
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    cause: new FieldConflictError(
-                        "person",
-                        "This person is already linked to another user.",
-                    ),
-                });
+                throw new FieldConflictError(
+                    "person",
+                    "This person is already linked to another user.",
+                );
 
             /*
              * The mirror guard. Without it the update below overwrites `personId`, silently
@@ -307,13 +237,10 @@ export const usersRouter = createTrpcRouter({
              * person is taken.
              */
             if (orgUser.personId && orgUser.personId !== input.personId)
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    cause: new FieldConflictError(
-                        "user",
-                        "This user is already linked to another person.",
-                    ),
-                });
+                throw new FieldConflictError(
+                    "user",
+                    "This user is already linked to another person.",
+                );
 
             await ctx.prisma.$transaction([
                 ctx.prisma.organizationUser.update({
@@ -334,69 +261,26 @@ export const usersRouter = createTrpcRouter({
             ]);
         }),
 
-    /**
-     * Lists the authenticated user's pending organization invitations, for the dashboard's
-     * invitations card.
-     *
-     * @param ctx The authenticated context.
-     * @returns Pending invitations addressed to the caller's (session) email.
-     */
-    listInvitations: authenticatedProcedure
+    /** Every account in the system Rubbish bin, with its deletion and purge dates. */
+    listDeletedUsers: systemAdminProcedure
         .output(
             z.array(
-                OrganizationInvitationData.schema.extend({
-                    organization: OrganizationData.schema.pick({
-                        id: true,
-                        name: true,
-                        slug: true,
-                        logo: true,
-                    }),
+                z.object({
+                    id: UserId.schema,
+                    name: z.string(),
+                    email: z.string(),
+                    deletedAt: z.iso.datetime().nullable(),
+                    purgeAt: z.iso.datetime().nullable(),
                 }),
             ),
         )
         .query(async ({ ctx }) => {
-            const invitations = await ctx.prisma.organizationInvitation.findMany({
-                where: {
-                    email: ctx.auth.user.email,
-                    status: "pending",
-                    expiresAt: { gt: new Date() },
-                },
-                include: { organization: true },
-            });
-
-            return invitations.map((invitation) => ({
-                ...OrganizationInvitationData.fromRecord(invitation),
-                organization: OrganizationData.fromRecord(invitation.organization),
-            }));
-        }),
-
-    /**
-     * Lists the organizations that the authenticated user is a member of, along with their roles in each organization.
-     */
-    listMemberships: authenticatedProcedure
-        .output(
-            z.array(
-                OrganizationUser.schema.extend({
-                    organization: OrganizationData.schema.pick({
-                        id: true,
-                        name: true,
-                        slug: true,
-                        logo: true,
-                    }),
-                }),
-            ),
-        )
-        .query(async ({ ctx }) => {
-            const memberships = await ctx.prisma.organizationUser.findMany({
-                where: {
-                    userId: ctx.auth.user.id,
-                },
-                include: { organization: true },
-            });
-
-            return memberships.map((membership) => ({
-                ...OrganizationUser.fromRecord(membership),
-                organization: OrganizationData.fromRecord(membership.organization),
+            const users = await UserAccounts.listDeleted(ctx.prisma);
+            return users.map((u) => ({
+                ...u,
+                id: UserId.schema.parse(u.id),
+                deletedAt: u.deletedAt?.toISOString() ?? null,
+                purgeAt: u.purgeAt?.toISOString() ?? null,
             }));
         }),
 
@@ -414,6 +298,7 @@ export const usersRouter = createTrpcRouter({
                 where: {
                     organizationId: ctx.organizationId,
                     personId: { not: null },
+                    user: { status: { not: "Deleted" } },
                 },
                 include: { person: true },
             });
@@ -427,59 +312,90 @@ export const usersRouter = createTrpcRouter({
         }),
 
     /**
-     * Lists the authenticated user's active sessions, for the security settings card.
-     *
-     * Read straight from the session table rather than through Better Auth's
-     * `/list-sessions`, which is guarded by a freshness check that blanks the card 24h
-     * after sign-in. Revocation still goes through Better Auth (see `revokeSession`), so
-     * the only thing bypassed here is a read gate on the user's own data.
-     *
-     * @param ctx The authenticated context.
-     * @returns The user's unexpired sessions, newest first, each flagged if it is the caller.
+     * The organizations `userId` is the only owner of — what deleting the account would leave
+     * with no owner. The system-admin delete dialog warns with it.
      */
-    listSessions: authenticatedProcedure
-        .output(z.array(UserSessionData.schema))
-        .query(async ({ ctx }) => {
-            const sessions = await ctx.prisma.session.findMany({
-                where: {
-                    userId: ctx.userId,
-                    expiresAt: { gt: new Date() },
-                },
-                orderBy: { createdAt: "desc" },
-            });
-
-            return sessions.map((session) =>
-                UserSessionData.fromRecord(session, session.id === ctx.auth.session.id),
-            );
+    listSoleOwnedOrganizations: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .output(z.array(z.object({ id: OrganizationId.schema, name: z.string() })))
+        .query(async ({ ctx, input }) => {
+            const orgs = await UserAccounts.getSoleOwnedOrganizations(ctx, input.userId);
+            return orgs.map((o) => ({ ...o, id: OrganizationId.schema.parse(o.id) }));
         }),
 
     /**
-     * Rejects one of the caller's pending organization invitations.
+     * Lists the organization's members that are not yet linked to a personnel record.
+     * Used to populate the "link user" picker on the person detail page — the mirror of
+     * `personnel.listUnlinkedPersonnel`.
      *
-     * @param ctx The authenticated context.
-     * @param input The invitation to reject.
-     * @throws TRPCError(NOT_FOUND) if the invitation is not pending, has expired, or is addressed
-     *   to someone else.
+     * @param ctx The authenticated organization context.
+     * @returns The org's unlinked members, sorted by name.
      */
-    rejectInvitation: authenticatedProcedure
-        .input(z.object({ invitationId: InvitationId.schema }))
+    listUnlinkedMembers: organizationProcedure({ member: ["view"], person: ["view"] })
+        .output(z.array(z.object({ userId: UserId.schema, name: z.string(), email: z.email() })))
+        .query(async ({ ctx }) => {
+            const members = await ctx.prisma.organizationUser.findMany({
+                where: {
+                    organizationId: ctx.organizationId,
+                    personId: null,
+                    user: { status: { not: "Deleted" } },
+                },
+                include: { user: true },
+            });
+
+            return members
+                .map((member) => ({
+                    userId: UserId.schema.parse(member.userId),
+                    name: member.user.name,
+                    email: member.user.email,
+                }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        }),
+
+    listUsers: systemAdminProcedure.query(async ({ ctx }) => {
+        // Deleted accounts live in the system Rubbish bin (`listDeletedUsers`) instead.
+        const rows = await ctx.prisma.user.findMany({
+            where: { status: { not: "Deleted" } },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                banned: true,
+                emailVerified: true,
+                createdAt: true,
+                _count: { select: { organizationUsers: true } },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+
+        return {
+            users: rows.map(({ _count, ...u }) => ({
+                ...u,
+                role: u.role ?? "user",
+                banned: u.banned ?? false,
+                organizationCount: _count.organizationUsers,
+            })),
+        };
+    }),
+
+    /**
+     * Permanently delete an account from the system Rubbish bin, ahead of the auto-purge.
+     * @throws TRPCError(BAD_REQUEST) if it isn't deleted, or it's the last system administrator.
+     */
+    purgeUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
         .mutation(async ({ ctx, input }) => {
-            const invitation = await findOwnPendingInvitation(ctx, input.invitationId);
+            await UserAccounts.purge(systemServiceContext(ctx), input.userId);
+            await revalidateOrganizationUser(input.userId);
+        }),
 
-            // Not a Prisma operation, so it can't join a $transaction with the log entries.
-            await auth.api.rejectInvitation({
-                body: { invitationId: invitation.id },
-                headers: await ctx.getHeaders(),
-            });
-
-            await logInvitationAnswer(ctx, {
-                operationKey: "invitation-reject",
-                organizationId: invitation.organizationId,
-                action: "Update",
-                objectType: "OrganizationInvitation",
-                objectId: invitation.id,
-                description: `Rejected invitation to join ${invitation.organization.name} (${invitation.organizationId}).`,
-            });
+    /** Recover an account from the system Rubbish bin; it signs in again from scratch. */
+    recoverUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            await UserAccounts.recover(systemServiceContext(ctx), input.userId);
+            await revalidateOrganizationUser(input.userId);
         }),
 
     /**
@@ -521,6 +437,139 @@ export const usersRouter = createTrpcRouter({
                 body: { token: session.token },
                 headers: await ctx.getHeaders(),
             });
+        }),
+
+    /**
+     * Promote a user to the global `admin` role, or demote them to `user`.
+     *
+     * Guards, in order: (a) you cannot change your own role; (b) demoting the last remaining
+     * system administrator is refused (mirrors `deleteUser`'s last-admin guard). Promotion needs
+     * no guard. A call that doesn't change the role returns early — no guard, no session churn.
+     *
+     * On a demotion (`role === "user"`) the target's `session` rows are deleted in the same
+     * `$transaction` as the `user.update` — `session.cookieCache` lasts 5 minutes, so without
+     * this a just-demoted admin keeps `systemAdmin` access until it expires (mirrors
+     * `deleteUser`). Promotion is a plain `user.update` — nothing to atomically pair.
+     *
+     * The audit entry is user-scoped and owned by the subject (`ownerId: input.userId`), so it
+     * cascades away if that user is later deleted.
+     */
+    setUserRole: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema, role: z.enum(["admin", "user"]) }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot change your own role.",
+                });
+            }
+
+            const target = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { id: true, role: true },
+            });
+            if (!target) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            // No admin-role transition: skip the last-admin guard and the session
+            // revocation — a no-op update must not log the target out.
+            const currentRole = target.role === "admin" ? "admin" : "user";
+            if (currentRole === input.role) {
+                return { id: target.id, role: input.role };
+            }
+
+            if (input.role === "user") {
+                const otherAdmins = await ctx.prisma.user.count({
+                    where: { role: "admin", id: { not: input.userId }, status: { not: "Deleted" } },
+                });
+                if (otherAdmins === 0) {
+                    throw new TRPCError({
+                        code: "BAD_REQUEST",
+                        message: "Cannot demote the last system administrator.",
+                    });
+                }
+
+                const [updated] = await ctx.prisma.$transaction([
+                    ctx.prisma.user.update({
+                        where: { id: input.userId },
+                        data: { role: input.role },
+                    }),
+                    ctx.prisma.session.deleteMany({ where: { userId: input.userId } }),
+                    ctx.logEvent({
+                        ownerId: input.userId,
+                        action: "Update",
+                        objectType: "User",
+                        objectId: input.userId,
+                        changes: diffObject({ role: currentRole }, { role: input.role }),
+                        description: `Changed global role from ${currentRole} to ${input.role}`,
+                    }),
+                ]);
+
+                return { id: updated.id, role: updated.role };
+            }
+
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.user.update({
+                    where: { id: input.userId },
+                    data: { role: input.role },
+                }),
+                ctx.logEvent({
+                    ownerId: input.userId,
+                    action: "Update",
+                    objectType: "User",
+                    objectId: input.userId,
+                    changes: diffObject({ role: currentRole }, { role: input.role }),
+                    description: `Changed global role from ${currentRole} to ${input.role}`,
+                }),
+            ]);
+
+            return { id: updated.id, role: updated.role };
+        }),
+
+    /**
+     * Lift a ban on a user account, allowing them to sign in again. `BAD_REQUEST` if the target
+     * is the caller — see `banUser`; unreachable in practice since a banned caller can't hold a
+     * session to invoke this, but kept for symmetry with `banUser`'s guard.
+     */
+    unbanUser: systemAdminProcedure
+        .input(z.object({ userId: UserId.schema }))
+        .mutation(async ({ ctx, input }) => {
+            if (input.userId === ctx.auth.user.id) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "You cannot unban your own account.",
+                });
+            }
+
+            const target = await ctx.prisma.user.findUnique({
+                where: { id: input.userId },
+                select: { id: true },
+            });
+            if (!target) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `User ${input.userId} not found.`,
+                });
+            }
+
+            await auth.api.unbanUser({
+                headers: await ctx.getHeaders(),
+                body: { userId: input.userId },
+            });
+
+            await ctx.logEvent({
+                ownerId: input.userId,
+                action: "Unban",
+                objectType: "User",
+                objectId: input.userId,
+                changes: [],
+            });
+
+            return { id: input.userId };
         }),
 
     /**

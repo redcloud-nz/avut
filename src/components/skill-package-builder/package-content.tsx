@@ -10,9 +10,14 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
@@ -62,7 +67,7 @@ export function SkillPackageBuilder_Package_Content({
                                 <CardHeader>
                                     <CardTitle>Package Details</CardTitle>
                                     <CardAction>
-                                        <Protect permissions={{ skillPackageBuilder: ["update"] }}>
+                                        <Protect permissions={{ skillPackage: ["update"] }}>
                                             <SkillPackageBuilder_UpdatePackage_Dialog
                                                 skillPackage={skillPackage}
                                             />
@@ -70,20 +75,32 @@ export function SkillPackageBuilder_Package_Content({
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Package ID</DLTerm>
-                                        <DLDetails>{skillPackage.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{skillPackage.name}</DLDetails>
-                                        <DLTerm>Description</DLTerm>
-                                        <DLDetails>{skillPackage.description}</DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{skillPackage.status}</DLDetails>
-                                        <DLTerm>Published</DLTerm>
-                                        <DLDetails>
-                                            {skillPackage.published ? "Yes" : "No"}
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Package ID</DataItemTitle>
+                                            <DataItemValue>{skillPackage.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{skillPackage.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Description</DataItemTitle>
+                                            <DataItemValue>
+                                                {skillPackage.description}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{skillPackage.status}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Published</DataItemTitle>
+                                            <DataItemValue>
+                                                {skillPackage.published ? "Yes" : "No"}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             <SkillPackageBuilder_Package_Contents_List
@@ -93,22 +110,16 @@ export function SkillPackageBuilder_Package_Content({
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(skillPackage.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(skillPackage.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(skillPackage.updatedAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(skillPackage.updatedAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={skillPackage.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={skillPackage.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

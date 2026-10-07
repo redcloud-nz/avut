@@ -4,52 +4,38 @@
  */
 "use client";
 
-import {
-    ArrowDownAZIcon,
-    ArrowLeftIcon,
-    ArrowUpIcon,
-    ChevronRightIcon,
-    ListTreeIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import * as R from "remeda";
-import { toast } from "sonner";
 import { match } from "ts-pattern";
 
-import { useDebouncer } from "@tanstack/react-pacer";
-import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Show } from "@/components/show";
-import { SkillTrack_AssessmentRow } from "@/components/skill-track/assessment-row";
+import { SkillTrack_CheckRow } from "@/components/skill-track/check-row";
+import { SkillTrack_RecordCheckDialog } from "@/components/skill-track/record-check-dialog";
+import {
+    SessionSkillOrder,
+    SkillTrack_RecordingOptionsSheet,
+} from "@/components/skill-track/recording-options-sheet";
+import { SkillTrack_SessionApprovedEmpty } from "@/components/skill-track/session-approved-empty";
+import {
+    sessionCheckKey,
+    usePendingChecks,
+    useSessionCheckRecorder,
+} from "@/components/skill-track/use-session-check-recorder";
+import {
+    useOtherAssessorChecks,
+    useSessionChecksSync,
+} from "@/components/skill-track/use-session-checks-sync";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemGroup,
-    ItemTitle,
-} from "@/components/ui/item";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Item, ItemActions, ItemContent, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { RainbowSpinner } from "@/components/ui/loading";
-import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import {
     Select,
     SelectContent,
@@ -60,16 +46,21 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import {
     getEnabledSkillCheckResultOptions,
+    getSkillCheckResultLabel,
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
+
+/** The (assessee, skill) check the record dialog is open on. */
+type CheckDialogTarget = { assesseeId: PersonId; skillId: SkillId };
 
 export function SkillTrack_SessionBySkill_Content({
     sessionId,
@@ -77,7 +68,6 @@ export function SkillTrack_SessionBySkill_Content({
     sessionId: SkillCheckSessionId;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const resultOptions = getEnabledSkillCheckResultOptions(organization.settings);
 
@@ -98,17 +88,17 @@ export function SkillTrack_SessionBySkill_Content({
         },
     ] = useSuspenseQueries({
         queries: [
-            trpc.skills.getSession.queryOptions({
+            trpc.skillCheckSessions.getSession.queryOptions({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
             }),
-            trpc.skills.listSessionAssessees.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
                 sessionId: sessionId,
                 organizationId: organization.id,
                 scope: "assigned",
             }),
             skillChecksQueryOptions,
-            trpc.skills.listSessionSkills.queryOptions({
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
                 sessionId: sessionId,
                 organizationId: organization.id,
                 scope: "assigned",
@@ -116,114 +106,88 @@ export function SkillTrack_SessionBySkill_Content({
             trpc.personnel.getPersonSelf.queryOptions({
                 organizationId: organization.id,
             }),
-            trpc.skills.listAssessableSkills.queryOptions({
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
                 organizationId: organization.id,
             }),
         ],
     });
 
-    const mutation = useMutation(
-        trpc.skillChecks.upsertSessionSkillChecks.mutationOptions({
-            onError(error) {
-                console.error("Failed to save skill check changes:", error);
-                toast.error(`Failed to save changes: ${error.message}`);
-            },
-            onSuccess({ created, updated, deleted }, variables) {
-                // Surgically remove only changes whose values still match what was sent.
-                // If the user edited a person again while the mutation was in flight, the
-                // current value will differ from what we sent — leave those entries alone.
-                setChanges((prev) => {
-                    const next = { ...prev };
-                    for (const u of variables.updates) {
-                        const key = `${u.assesseeId}::${u.skillId}` as `${PersonId}::${SkillId}`;
-                        const current = next[key];
-                        if (current?.result === u.result && current?.notes === u.notes) {
-                            delete next[key];
-                        }
-                    }
-                    return next;
-                });
-
-                // Surgically update the query cache from the returned records.
-                queryClient.setQueryData(skillChecksQueryOptions.queryKey, (old) => {
-                    if (!old) return old;
-
-                    const deletedKeys = new Set(
-                        deleted.map((d) => `${d.assesseeId}::${d.skillId}`),
-                    );
-                    const updatedMap = new Map(
-                        updated.map((c) => [`${c.assesseeId}::${c.skillId}`, c]),
-                    );
-
-                    const result = old
-                        .filter((c) => !deletedKeys.has(`${c.assesseeId}::${c.skillId}`))
-                        .map((c) => updatedMap.get(`${c.assesseeId}::${c.skillId}`) ?? c);
-
-                    return [...result, ...created];
-                });
-            },
-        }),
-    );
+    const { record, remove } = useSessionCheckRecorder({ sessionId });
+    const pendingChecks = usePendingChecks(sessionId);
 
     const isAssignedAssessor =
         !!personSelf && session.assessors.some((assessor) => assessor.id === personSelf.id);
-
-    const debouncer = useDebouncer(mutation.mutate, { wait: 2000 });
+    // Recording also needs `skillCheck: ["create"]` (see `setSessionSkillCheck` and
+    // `deleteSessionSkillCheck`), which a caller holding only session update lacks.
+    const canRecordChecks = useHasPermission({ skillCheck: ["create"] });
+    // Polls the other assessors' checks (and the caller's own from other devices) while the caller
+    // could record, approved or not. When the session is approved or reopened elsewhere, the page
+    // locks, or unlocks, on the next poll for a recording assessor; anyone else sees it on focus
+    // or reload.
+    const sessionChecks = useSessionChecksSync({
+        sessionId,
+        selfPersonId: personSelf?.id,
+        enabled: !!personSelf && isAssignedAssessor && canRecordChecks,
+    });
+    // The "Also checked by" markers, keyed by (assessee, skill).
+    const otherChecksByKey = useOtherAssessorChecks(sessionChecks, personSelf?.id);
+    // An approved session is locked until it's reopened (`assertSessionUnlocked`): the page shows
+    // only a message in place of its content, and the record dialog is closed.
+    const isApproved = session.status === "Include";
 
     type Selected = { skillId: SkillId; status: "Loading" | "Selected" } | null;
     const [selected, setSelected] = useState<Selected>(null);
+    // A config change can take the selected skill off the session. Clear the selection then
+    // (during render, so the stale skill is never shown), so re-adding it later doesn't
+    // silently re-select it.
+    if (selected && !sessionSkills.some((skill) => skill.id === selected.skillId)) {
+        setSelected(null);
+    }
 
     async function handleSwitchSkill(skillId: SkillId) {
-        mutation.reset();
         setSelected({ skillId, status: "Loading" });
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         setSelected({ skillId, status: "Selected" });
     }
 
-    // Keyed by `${personId}::${skillId}` — scoping by skill prevents cross-skill contamination
-    // when switching between skills while changes are pending.
-    const [changes, setChanges] = useState<
-        Record<`${PersonId}::${SkillId}`, { result: SkillCheckResultValue | null; notes: string }>
-    >({});
-
-    function handleChange(
-        personId: PersonId,
-        newValue: { result: SkillCheckResultValue | null; notes: string },
+    // The check the dialog targets. Closing only sets `dialogOpen` false and leaves `target` in
+    // place, so the title and grid don't blank out during the exit animation. The next open
+    // replaces it.
+    const [target, setTarget] = useState<CheckDialogTarget | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    // Like `selected`, clear a target whose person or skill has left the session.
+    if (
+        target &&
+        (!assignedPersonnel.some((person) => person.id === target.assesseeId) ||
+            !sessionSkills.some((skill) => skill.id === target.skillId))
     ) {
-        if (mutation.status === "success") mutation.reset();
-
-        const key = `${personId}::${selected!.skillId}`;
-        const updatedChanges: typeof changes = { ...changes, [key]: newValue };
-        setChanges(updatedChanges);
-
-        debouncer.maybeExecute({
-            organizationId: organization.id,
-            sessionId: sessionId,
-            updates: R.entries(updatedChanges).map(([k, { result, notes }]) => {
-                const [assesseeId, sid] = k.split("::") as [PersonId, SkillId];
-                return { assesseeId, skillId: sid, result, notes };
-            }),
-        });
+        setTarget(null);
+        setDialogOpen(false);
     }
 
-    function getCurrentValue(assesseeId: PersonId, skillId: SkillId) {
-        const change = changes[`${assesseeId}::${skillId}`];
-        if (change) return change;
+    // Close the dialog when the session is approved under it (during render, like the resets
+    // above), so a later reopen doesn't pop it back up.
+    if (isApproved && dialogOpen) {
+        setDialogOpen(false);
+    }
 
+    function openDialog(assesseeId: PersonId, skillId: SkillId) {
+        setTarget({ assesseeId, skillId });
+        setDialogOpen(true);
+    }
+
+    function getSavedCheck(assesseeId: PersonId, skillId: SkillId) {
         const savedCheck = skillChecks.find(
             (check) => check.skillId == skillId && check.assesseeId == assesseeId,
         );
-        return {
-            result: savedCheck?.result ?? null,
-            notes: savedCheck?.notes ?? "",
-        };
+        return savedCheck ? { result: savedCheck.result, notes: savedCheck.notes } : null;
     }
 
-    const [skillOrder, setSkillOrder] = useState<"alphabetical" | "by-package-group">(
-        "by-package-group",
-    );
-    const [showSkillDescription, setShowSkillDescription] = useState(false);
+    const resultLabel = (value: SkillCheckResultValue) =>
+        getSkillCheckResultLabel(organization.settings, value);
+
+    const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
 
     // Group the session skills (the left-hand picker) by skill package and group (for the
     // "by-package-group" order). Packages are sorted by name, groups by sequence; skills keep the
@@ -254,12 +218,6 @@ export function SkillTrack_SessionBySkill_Content({
     // Session skills that are no longer in the assessable set (e.g. subscription removed).
     const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
 
-    function skillDescription(skillId: SkillId) {
-        return showSkillDescription
-            ? assessableSkillById.get(skillId)?.description || undefined
-            : undefined;
-    }
-
     const renderSkillItem = (skill: (typeof sessionSkills)[number]) => (
         <Item
             key={skill.id}
@@ -273,9 +231,6 @@ export function SkillTrack_SessionBySkill_Content({
             >
                 <ItemContent>
                     <ItemTitle>{skill.name}</ItemTitle>
-                    {skillDescription(skill.id) && (
-                        <ItemDescription>{skillDescription(skill.id)}</ItemDescription>
-                    )}
                 </ItemContent>
 
                 <ItemActions>
@@ -285,78 +240,60 @@ export function SkillTrack_SessionBySkill_Content({
         </Item>
     );
 
+    const navbar = (
+        <Std.Navbar>
+            <Std.Breadcrumbs
+                breadcrumbs={[
+                    {
+                        label: "Skill Track",
+                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Sessions",
+                        href: route("/orgs/[slug]/skill-track/sessions", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
+                        label: session.name || session.id,
+                        href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
+                            slug: organization.slug,
+                            session_id: sessionId,
+                        }),
+                    },
+                    "By Skill",
+                ]}
+            />
+            <div className="flex items-center justify-end gap-1 grow">
+                <HelpButton id="skill-track/session-recording" />
+            </div>
+        </Std.Navbar>
+    );
+
+    if (isApproved) {
+        return (
+            <>
+                {navbar}
+                <Std.ScrollContainer className="flex">
+                    <SkillTrack_SessionApprovedEmpty sessionId={sessionId} />
+                </Std.ScrollContainer>
+            </>
+        );
+    }
+
     return (
         <>
-            <Std.Navbar>
-                <Std.Breadcrumbs
-                    breadcrumbs={[
-                        {
-                            label: "Skill Track",
-                            href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
-                        },
-                        {
-                            label: "Sessions",
-                            href: route("/orgs/[slug]/skill-track/sessions", {
-                                slug: organization.slug,
-                            }),
-                        },
-                        {
-                            label: session.name || session.id,
-                            href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
-                                slug: organization.slug,
-                                session_id: sessionId,
-                            }),
-                        },
-                        "By Skill",
-                    ]}
-                />
-                <div className="flex items-center justify-end gap-1 grow">
-                    <SaveStatusIndicator status={mutation.status} />
-                    <HelpButton slug="skill-track/sessions" />
-                </div>
-            </Std.Navbar>
+            {navbar}
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Assess by Skill</Saratoga.Title>
                         <Saratoga.Actions>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost">
-                                        <DropdownMenuTriggerIcon />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Skill Order</DropdownMenuLabel>
-                                        <DropdownMenuRadioGroup
-                                            value={skillOrder}
-                                            onValueChange={(value) =>
-                                                setSkillOrder(value as typeof skillOrder)
-                                            }
-                                        >
-                                            <DropdownMenuRadioItem value="alphabetical">
-                                                <ArrowDownAZIcon />
-                                                <span>Alphabetical</span>
-                                            </DropdownMenuRadioItem>
-                                            <DropdownMenuRadioItem value="by-package-group">
-                                                <ListTreeIcon />
-                                                <span>By Package/Group</span>
-                                            </DropdownMenuRadioItem>
-                                        </DropdownMenuRadioGroup>
-                                    </DropdownMenuGroup>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel>Show</DropdownMenuLabel>
-                                        <DropdownMenuCheckboxItem
-                                            checked={showSkillDescription}
-                                            onCheckedChange={setShowSkillDescription}
-                                        >
-                                            <span>Skill Description</span>
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <SkillTrack_RecordingOptionsSheet
+                                sessionId={sessionId}
+                                mode="by-skill"
+                                view={{ skillOrder, onSkillOrderChange: setSkillOrder }}
+                            />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Show
@@ -373,15 +310,25 @@ export function SkillTrack_SessionBySkill_Content({
                         }
                     >
                         <Show
-                            when={isAssignedAssessor}
+                            when={isAssignedAssessor && canRecordChecks}
                             fallback={
-                                <Alert variant="warning">
-                                    <AlertTitle>Not an assigned assessor</AlertTitle>
-                                    <AlertDescription>
-                                        You are not an assigned assessor for this session, so you
-                                        cannot record skill checks here.
-                                    </AlertDescription>
-                                </Alert>
+                                isAssignedAssessor ? (
+                                    <Alert variant="warning">
+                                        <AlertTitle>Cannot record skill checks</AlertTitle>
+                                        <AlertDescription>
+                                            You are an assessor on this session, but your role does
+                                            not allow recording skill checks.
+                                        </AlertDescription>
+                                    </Alert>
+                                ) : (
+                                    <Alert variant="warning">
+                                        <AlertTitle>Not an assigned assessor</AlertTitle>
+                                        <AlertDescription>
+                                            You are not an assigned assessor for this session, so
+                                            you cannot record skill checks here.
+                                        </AlertDescription>
+                                    </Alert>
+                                )
                             }
                         >
                             <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
@@ -475,11 +422,6 @@ export function SkillTrack_SessionBySkill_Content({
                                                         .exhaustive()}
                                                 </SelectContent>
                                             </Select>
-                                            {selected && skillDescription(selected.skillId) && (
-                                                <FieldDescription>
-                                                    {skillDescription(selected.skillId)}
-                                                </FieldDescription>
-                                            )}
                                         </Field>
                                     </FieldGroup>
                                     <ItemGroup className="hidden lg:block">
@@ -549,19 +491,82 @@ export function SkillTrack_SessionBySkill_Content({
                                         .with({ status: "Selected" }, ({ skillId }) => (
                                             <>
                                                 {assignedPersonnel.map((person) => (
-                                                    <SkillTrack_AssessmentRow
+                                                    <SkillTrack_CheckRow
                                                         key={person.id}
                                                         title={person.name}
-                                                        value={getCurrentValue(person.id, skillId)}
-                                                        onValueChange={(newValue) =>
-                                                            handleChange(person.id, newValue)
-                                                        }
+                                                        check={getSavedCheck(person.id, skillId)}
+                                                        pending={pendingChecks.get(
+                                                            sessionCheckKey(person.id, skillId),
+                                                        )}
                                                         resultOptions={resultOptions}
+                                                        resultLabel={resultLabel}
+                                                        otherChecks={otherChecksByKey.get(
+                                                            sessionCheckKey(person.id, skillId),
+                                                        )}
+                                                        onRecord={(value) =>
+                                                            record({
+                                                                assesseeId: person.id,
+                                                                skillId,
+                                                                ...value,
+                                                            })
+                                                        }
+                                                        onRemove={() =>
+                                                            remove({
+                                                                assesseeId: person.id,
+                                                                skillId,
+                                                            })
+                                                        }
+                                                        onOpenDialog={() =>
+                                                            openDialog(person.id, skillId)
+                                                        }
                                                     />
                                                 ))}
                                             </>
                                         ))
                                         .exhaustive()}
+                                    {target && (
+                                        <SkillTrack_RecordCheckDialog
+                                            open={dialogOpen}
+                                            onOpenChange={setDialogOpen}
+                                            targetKey={sessionCheckKey(
+                                                target.assesseeId,
+                                                target.skillId,
+                                            )}
+                                            skillName={
+                                                sessionSkills.find(
+                                                    (skill) => skill.id === target.skillId,
+                                                )?.name ?? ""
+                                            }
+                                            skillDescription={
+                                                assessableSkillById.get(target.skillId)
+                                                    ?.description || undefined
+                                            }
+                                            personName={
+                                                assignedPersonnel.find(
+                                                    (person) => person.id === target.assesseeId,
+                                                )?.name ?? ""
+                                            }
+                                            current={getSavedCheck(
+                                                target.assesseeId,
+                                                target.skillId,
+                                            )}
+                                            resultOptions={resultOptions}
+                                            resultLabel={resultLabel}
+                                            onRecord={(value) =>
+                                                record({
+                                                    assesseeId: target.assesseeId,
+                                                    skillId: target.skillId,
+                                                    ...value,
+                                                })
+                                            }
+                                            onDelete={() =>
+                                                remove({
+                                                    assesseeId: target.assesseeId,
+                                                    skillId: target.skillId,
+                                                })
+                                            }
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </Show>

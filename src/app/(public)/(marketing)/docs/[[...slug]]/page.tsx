@@ -5,7 +5,8 @@
  * Path: /docs/[[...slug]]
  *
  * Renders one documentation page from the compiled `docs` content collection.
- * The same MDX is reused by the in-app `?help=<slug>` dialog.
+ * The in-app `?help=<id>` sheet shows a separate help card (`content/help/**`),
+ * not this page.
  */
 
 import type { Metadata } from "next";
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: DocsPageProps): Promise<Metad
 // Not `async`, and the boundary lives here rather than in a `loading.tsx`: a `loading.tsx` nests
 // inside the layout, which puts it *above* this segment's validation boundary — enough for the
 // prerender check, but not for instant-navigation validation, which wants the Suspense below it.
-// See docs/reviews/suspense-boundaries.md §3.
+// See docs/reviews/2026-09-12-suspense-boundaries.md §3.
 export default function DocsPage({ params }: DocsPageProps) {
     return (
         <Suspense fallback={<DocsArticle_Skeleton />}>

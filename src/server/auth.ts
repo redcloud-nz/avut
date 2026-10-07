@@ -18,17 +18,16 @@ import { admin } from "better-auth/plugins/admin";
 import EmailAddressChangedTemplate from "@/emails/email-address-changed";
 import OneTimePasswordTemplate from "@/emails/one-time-password";
 import OrganizationInviteTemplate from "@/emails/organization-invite";
+import { withDevServerPort } from "@/lib/dev-server";
 // eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
-import { OrganizationId } from "@/lib/schemas/organization";
-import { UserId } from "@/lib/schemas/user";
+import { getNewestUpdateVersion } from "@/lib/updates";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 
-import { revalidateRolesAfterLeave } from "./auth-hooks/organization-user-hooks";
+import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
 import { revalidateOrganization } from "./cache/organization";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
-import { linkPersonOnInvitationAccept } from "./person-user-link";
 import prisma from "./prisma";
 import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
 
@@ -41,20 +40,17 @@ import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression
  */
 const previousEmailByRequest = new WeakMap<Request, string>();
 
-const DEV_PORTS = ["3000", "3001", "3002", "3100"];
-
 /**
  * This machine's LAN IPv4 addresses, so a phone on the same network can sign in
- * against a dev server started with e.g. `npm run dev` and reached over
- * `http://192.168.x.x:3000` — better-auth's origin check otherwise rejects it since
- * only `localhost` is trusted below.
+ * against a dev server reached over e.g. `http://192.168.x.x:3000` — better-auth's
+ * origin check otherwise rejects it since only `localhost` is trusted below.
  */
 function localNetworkOrigins(): string[] {
     const addresses = Object.values(networkInterfaces())
         .flat()
         .filter((info) => info != null && info.family === "IPv4" && !info.internal)
         .map((info) => info!.address);
-    return addresses.flatMap((address) => DEV_PORTS.map((port) => `http://${address}:${port}`));
+    return addresses.map((address) => `http://${address}:*`);
 }
 
 export const auth = betterAuth({
@@ -70,24 +66,31 @@ export const auth = betterAuth({
             joins: true,
         },
     },
-    baseURL: serverEnv.BETTER_AUTH_URL ?? "http://localhost:3000",
+    baseURL: withDevServerPort(serverEnv.BETTER_AUTH_URL ?? "http://localhost:3000"),
     /*
      * With `advanced.database.joins` on, better-auth's Prisma adapter guesses relation field
      * names from the joined model's name (`organizationusers`, `organizationinvitations`),
      * not our schema's `users` / `invitations`. This endpoint is the only better-auth path
      * that joins Organization to those, so it 500s with a PrismaClientValidationError. The
      * app never calls it; keep it off until upstream fixes the key naming (#97).
+     *
+     * `/organization/delete` would hard-delete the org and cascade everything under it,
+     * bypassing the audit log and the Rubbish bin's retention window (#297). Org deletion
+     * goes through our own procedure instead.
      */
-    disabledPaths: ["/organization/get-full-organization"],
-    hooks: {
-        // `/organization/leave` runs none of the `organizationHooks` below — see the hook.
-        after: revalidateRolesAfterLeave(revalidateOrganizationUser),
-    },
+    // `/organization/leave` refuses the last owner; `user.leaveOrganization` allows it (with a
+    // warning) and deletes the membership itself.
+    disabledPaths: [
+        "/organization/get-full-organization",
+        "/organization/delete",
+        "/organization/leave",
+    ],
     /*
      * better-auth only trusts `baseURL` by default, which rejects origin-checked
      * requests coming from Vercel preview deploys (unique per-branch hosts) and
-     * from local dev servers on a non-3000 port. `src/trpc/client.ts` and the
-     * email templates already special-case `VERCEL_URL`; mirror that here.
+     * from local dev servers on any port but the one in `baseURL` (see AGENTS.md → Dev
+     * servers; any port is trusted in development). `src/trpc/client.ts` and the email
+     * templates already special-case `VERCEL_URL`; mirror that here.
      */
     trustedOrigins: [
         ...(env.VERCEL_URL ? [`https://${env.VERCEL_URL}`] : []),
@@ -96,13 +99,35 @@ export const auth = betterAuth({
             ? [`https://${env.VERCEL_PROJECT_PRODUCTION_URL}`]
             : []),
         ...(env.VERCEL_ENV === "preview" ? ["https://*.vercel.app"] : []),
-        ...(env.NODE_ENV === "development"
-            ? [...DEV_PORTS.map((port) => `http://localhost:${port}`), ...localNetworkOrigins()]
-            : []),
+        ...(env.isDevelopment() ? ["http://localhost:*", ...localNetworkOrigins()] : []),
     ],
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
+    databaseHooks: {
+        user: {
+            create: {
+                /*
+                 * Start a new account's "What's new" cursor at the newest entry, so it isn't shown
+                 * the backlog. A read cursor, so not audit-logged (see `whats-new-router.ts`).
+                 * Best-effort: it runs after the account is committed, so a throw would fail the
+                 * sign-up of an account that already exists. A failure just leaves the cursor null.
+                 */
+                async after(user) {
+                    const newest = getNewestUpdateVersion();
+                    if (!newest) return;
+                    try {
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { lastSeenUpdatesVersion: newest },
+                        });
+                    } catch (error) {
+                        console.error("Couldn't start the What's new cursor:", error);
+                    }
+                },
+            },
+        },
+    },
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
@@ -135,6 +160,13 @@ export const auth = betterAuth({
     },
     plugins: [
         admin(),
+        deletedUserPlugin(async (userIds) => {
+            const rows = await prisma.user.findMany({
+                where: { id: { in: userIds }, status: "Deleted" },
+                select: { id: true },
+            });
+            return new Set(rows.map((r) => r.id));
+        }),
         emailOTP({
             changeEmail: {
                 enabled: true,
@@ -164,42 +196,10 @@ export const auth = betterAuth({
             ac,
             cancelPendingInvitationsOnReInvite: true,
             organizationHooks: {
-                async afterAcceptInvitation({ invitation, organization, user }) {
-                    /*
-                     * Attach a person record to the membership Better Auth has just created —
-                     * the one named by the invitation, or (when the organization opted in) one
-                     * matching the accepting user's email.
-                     *
-                     * All of the logic lives in `person-user-link.ts` rather than here: this
-                     * module imports `server-only` transitively, so anything written inline
-                     * would be unreachable from the test environment.
-                     *
-                     * Never allowed to fail the accept. The membership itself is already
-                     * committed by this point, so throwing would leave the user staring at an
-                     * error for an invitation that did in fact work.
-                     */
-                    try {
-                        const linked = await linkPersonOnInvitationAccept(prisma, {
-                            organizationId: OrganizationId.schema.parse(organization.id),
-                            actor: {
-                                id: UserId.schema.parse(user.id),
-                                name: user.name,
-                                email: user.email,
-                            },
-                            invitationPersonId: invitation.personId ?? null,
-                        });
-
-                        if (linked) {
-                            console.log(
-                                `Attached User(${user.id}) to Person(${linked.personId}) in Organization(${organization.id})`,
-                            );
-                        }
-                    } catch (error) {
-                        console.error(
-                            `Failed to link a person to User(${user.id}) in Organization(${organization.id}) on invitation accept:`,
-                            error,
-                        );
-                    }
+                async afterAcceptInvitation({ user }) {
+                    // Person-linking now runs in `userRouter.acceptInvitation`, alongside the
+                    // rest of the accept — that mutation is the only caller of
+                    // `auth.api.acceptInvitation`, so nothing bypasses it here.
 
                     // Better Auth creates the membership (and its initial role) internally as
                     // part of accepting the invitation, before this hook runs — this is the one
@@ -292,6 +292,16 @@ export const auth = betterAuth({
 
     user: {
         modelName: "user",
+        /*
+         * Read-only on the session so the closed-account gate (`requireSession`,
+         * `authenticatedProcedure`) costs no extra query. Fresh where it matters: deleting an
+         * account revokes every session, so the next one is minted with `Deleted`; restoring
+         * refetches the session past the cookie cache (see `account-closed-content.tsx`).
+         */
+        additionalFields: {
+            status: { type: "string", input: false, required: false },
+            deletedBy: { type: "string", input: false, required: false },
+        },
     },
     verification: {
         modelName: "verification",

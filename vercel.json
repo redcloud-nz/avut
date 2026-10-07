@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
-  "regions": ["syd1"]
+  "regions": ["syd1"],
+  "crons": [
+    {
+      "path": "/api/cron/purge-rubbish",
+      "schedule": "0 14 * * *"
+    }
+  ]
 }

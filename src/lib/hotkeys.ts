@@ -14,6 +14,11 @@ import type { RawHotkey } from "@tanstack/react-hotkeys";
  * already stops a bare `E` firing inside a text field, but it would still fire
  * when focus is on a button, link, table row, or the page body. `Alt+<key>`
  * requires intent.
+ *
+ * `link` and `unlink` deliberately share `Alt+L` — they're mutually exclusive on
+ * any one page (a linked entity shows Unlink, an unlinked one shows Link), like a
+ * toggle, so registering both at once never happens. `make-owner`/`remove-owner`
+ * share `Alt+W` for the same reason — a member's menu shows exactly one of them.
  */
 export const ActionHotkey = {
     create: "Alt+N",
@@ -21,6 +26,8 @@ export const ActionHotkey = {
     delete: "Alt+Backspace",
     archive: "Alt+A",
     restore: "Alt+R",
+    // O for recOver — Alt+R is already `restore`.
+    recover: "Alt+O",
     publish: "Alt+P",
     unpublish: "Alt+U",
     move: "Alt+M",
@@ -28,6 +35,13 @@ export const ActionHotkey = {
     import: "Alt+I",
     // V for inVite — Alt+I is already `import`.
     invite: "Alt+V",
+    link: "Alt+L",
+    unlink: "Alt+L",
+    // W for oWner — O is already `recover`.
+    "make-owner": "Alt+W",
+    "remove-owner": "Alt+W",
+    // K for unlocK — R is `restore` and O is `recover`. Reopens an approved session.
+    reopen: "Alt+K",
 } as const satisfies Record<string, string>;
 
 export type ActionVerb = keyof typeof ActionHotkey;

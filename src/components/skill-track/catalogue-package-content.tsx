@@ -16,14 +16,20 @@ import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/components/skill-tra
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
-type CataloguePackageGroup = RouterOutput["skills"]["getPackage"]["groups"][number];
+type CataloguePackageGroup =
+    RouterOutput["skillPackageSubscriptions"]["getPackage"]["groups"][number];
 
 export function SkillTrack_CataloguePackage_Content({
     skillPackageId,
@@ -33,7 +39,7 @@ export function SkillTrack_CataloguePackage_Content({
     const organization = useOrganization();
 
     const { data: skillPackage } = useSuspenseQuery(
-        trpc.skills.getPackage.queryOptions({
+        trpc.skillPackageSubscriptions.getPackage.queryOptions({
             organizationId: organization.id,
             skillPackageId,
         }),
@@ -99,20 +105,38 @@ export function SkillTrack_CataloguePackage_Content({
                                     <CardTitle>Package Information</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Package ID</DLTerm>
-                                        <DLDetails>{skillPackage.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{skillPackage.name}</DLDetails>
-                                        <DLTerm>Description</DLTerm>
-                                        <DLDetails>{skillPackage.description}</DLDetails>
-                                        <DLTerm>Publisher</DLTerm>
-                                        <DLDetails>{skillPackage.organization.name}</DLDetails>
-                                        <DLTerm>Skills</DLTerm>
-                                        <DLDetails>{skillPackage.skillCount}</DLDetails>
-                                        <DLTerm>Subscribers</DLTerm>
-                                        <DLDetails>{skillPackage.subscriptionCount}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Package ID</DataItemTitle>
+                                            <DataItemValue>{skillPackage.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{skillPackage.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Description</DataItemTitle>
+                                            <DataItemValue>
+                                                {skillPackage.description}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Publisher</DataItemTitle>
+                                            <DataItemValue>
+                                                {skillPackage.organization.name}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Skills</DataItemTitle>
+                                            <DataItemValue>{skillPackage.skillCount}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Subscribers</DataItemTitle>
+                                            <DataItemValue>
+                                                {skillPackage.subscriptionCount}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -135,30 +159,24 @@ export function SkillTrack_CataloguePackage_Content({
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
+                                    <DataList>
                                         {skillPackage.subscription && (
-                                            <>
-                                                <DLTerm>Subscription ID</DLTerm>
-                                                <DLDetails>
+                                            <DataItem inline>
+                                                <DataItemTitle>Subscription ID</DataItemTitle>
+                                                <DataItemValue>
                                                     {skillPackage.subscription.id}
-                                                </DLDetails>
-                                            </>
+                                                </DataItemValue>
+                                            </DataItem>
                                         )}
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(skillPackage.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(skillPackage.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(skillPackage.updatedAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(skillPackage.updatedAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={skillPackage.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={skillPackage.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

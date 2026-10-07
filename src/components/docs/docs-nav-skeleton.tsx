@@ -10,13 +10,17 @@ import { Skeleton } from "@/components/ui/skeleton";
  *
  * The real nav depends on module flags, which read headers — so it can't be part of the static
  * shell and sits behind a `<Suspense>` in the docs layout. Mirrors `DocsSidebar`'s structure
- * (an overview link, then sections of pages) at plausible section sizes so the swap doesn't
- * shift the page. See docs/reviews/suspense-boundaries.md §3.
+ * (an overview link, the Glossary / What's new pair, then sections of pages) at plausible section sizes so the swap doesn't
+ * shift the page. See docs/reviews/2026-09-12-suspense-boundaries.md §3.
  */
 export function DocsNav_Skeleton() {
     return (
         <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading navigation">
             <Skeleton className="h-5 w-20" />
+            <div className="flex flex-col gap-1">
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full" />
+            </div>
             {[4, 3, 3].map((pages, section) => (
                 <div key={section} className="flex flex-col gap-1">
                     <Skeleton className="mb-1 h-3 w-24" />

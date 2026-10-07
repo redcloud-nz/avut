@@ -14,12 +14,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { authClient } from "@/client/auth-client";
+import { sendEmailVerificationOtp } from "@/client/auth-queries";
 import { SocialSignInButtons_Field } from "@/components/auth/sign-in";
 import { MutationButton } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { authQueryKeys } from "@/lib/auth-query-keys";
 import { authUrl } from "@/lib/auth-redirect";
 import { route } from "@/lib/routes";
 import type { InvitationId } from "@/lib/schemas/organization-invitation";
@@ -58,10 +58,7 @@ export function InvitationSignIn_Form({
 
             if (error?.code === "EMAIL_NOT_VERIFIED") {
                 // Nothing sends this code on an unverified sign-in, so it has to be requested here.
-                await authClient.emailOtp.sendVerificationOtp({
-                    email,
-                    type: "email-verification",
-                });
+                await sendEmailVerificationOtp(email);
                 return { verified: false };
             }
             if (error) throw new Error(error.message ?? "Invalid email or password.");
@@ -72,7 +69,7 @@ export function InvitationSignIn_Form({
             if (verified) {
                 // The session cookie changed: drop the cached copies that were fetched signed
                 // out, and re-render the server tree that reads it.
-                void queryClient.invalidateQueries({ queryKey: authQueryKeys.session });
+                void queryClient.invalidateQueries(trpc.user.getSession.queryFilter());
                 void queryClient.invalidateQueries(
                     trpc.invitations.getLanding.queryFilter({ invitationId }),
                 );

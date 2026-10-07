@@ -91,7 +91,7 @@ export function SkillPackageBuilder_Package_Contents_List({
             <CardHeader>
                 <CardTitle>Package Contents</CardTitle>
                 <CardAction>
-                    <Protect permissions={{ skillPackageBuilder: ["update"] }}>
+                    <Protect permissions={{ skillPackage: ["update"] }}>
                         <ButtonGroup>
                             <SkillPackageBuilder_CreateGroup_Dialog skillPackage={skillPackage} />
                             <Button

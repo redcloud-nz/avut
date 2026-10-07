@@ -101,11 +101,19 @@ const nextConfig: NextConfig = {
                 destination: "/system/admin/:path*",
                 permanent: true,
             },
-            { source: "/user-settings", destination: "/user/profile", permanent: true },
+            { source: "/user-settings", destination: "/user/settings/account", permanent: true },
+            // The `/user/settings` index page was retired; its pages are linked from the user menu.
+            { source: "/user/settings", destination: "/user/settings/account", permanent: true },
             // Invitation emails already sent link to the old accept route.
             {
                 source: "/auth/accept-invitation/:invitation_id",
                 destination: "/invitations/:invitation_id",
+                permanent: true,
+            },
+            // Organisation settings moved out from under the Organisation page (#353).
+            {
+                source: "/orgs/:slug/admin/organization/settings",
+                destination: "/orgs/:slug/admin/organization-settings",
                 permanent: true,
             },
         ];
@@ -114,12 +122,15 @@ const nextConfig: NextConfig = {
     ...(environment === "development" ? { allowedDevOrigins: localNetworkHostnames() } : {}),
     images: {
         // Product screenshots served from the Vercel Blob store (see
-        // docs/specs/docs-screenshots.md). Public, immutable pathnames.
+        // docs/specs/2026-09-13-docs-screenshots.md). Public, stable pathnames, overwritten
+        // on re-capture; `getScreenshot` versions the URL.
         remotePatterns: [
             { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
         ],
     },
     env: {
+        // Gates "What's new" entries in production to released versions (`src/lib/updates.ts`).
+        APP_RELEASE_VERSION: isProduction ? appMetadata.version : "",
         NEXT_PUBLIC_APP_VERSION: appVersion,
         NEXT_PUBLIC_APP_VERSION_NAME: appVersionName,
         NEXT_PUBLIC_APP_BRANCH: isProduction ? "" : branchName,

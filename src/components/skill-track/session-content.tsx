@@ -14,6 +14,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
+import { SkillTrack_SessionConfigDialogs } from "@/components/skill-track/session-config-dialogs";
 import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
 import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "@/components/skill-track/update-session";
@@ -26,7 +27,13 @@ import {
     CardLoadingFallback,
     CardTitle,
 } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -36,20 +43,23 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
+import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillCheckSessionId }) {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const { data: session } = useSuspenseQuery(
-        trpc.skills.getSession.queryOptions({
+        trpc.skillCheckSessions.getSession.queryOptions({
             organizationId: organization.id,
             skillCheckSessionId: sessionId,
         }),
     );
+    const isApproved = session.status === "Include";
 
     return (
         <>
@@ -67,7 +77,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                     },
                     { label: session.name || session.id },
                 ]}
-                actions={<HelpButton slug="skill-track/sessions" />}
+                actions={<HelpButton id="skill-track/session" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -83,48 +93,53 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                 <DropdownMenuContent className="w-40" align="end">
                                     <DropdownMenuGroup>
                                         <DropdownMenuLabel>Record skill checks</DropdownMenuLabel>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
-                                                    {
-                                                        slug: organization.slug,
-                                                        session_id: session.id,
-                                                    },
-                                                )}
-                                            >
-                                                By Person
-                                            </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
-                                                    {
-                                                        slug: organization.slug,
-                                                        session_id: session.id,
-                                                    },
-                                                )}
-                                            >
-                                                By Skill
-                                            </Link>
-                                        </DropdownMenuItem>
+                                        {/* An approved session's checks are locked until it's
+                                            reopened, so the entry pages have nothing to record. */}
+                                        {isApproved ? (
+                                            <>
+                                                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+                                                    Locked while the session is approved
+                                                </DropdownMenuLabel>
+                                                <DropdownMenuItem disabled>
+                                                    By Person
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem disabled>
+                                                    By Skill
+                                                </DropdownMenuItem>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-person",
+                                                            {
+                                                                slug: organization.slug,
+                                                                session_id: session.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        By Person
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/skill-track/sessions/[session_id]/by-skill",
+                                                            {
+                                                                slug: organization.slug,
+                                                                session_id: session.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        By Skill
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
                                     </DropdownMenuGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button variant="outline" asChild>
-                                <Link
-                                    href={route(
-                                        "/orgs/[slug]/skill-track/sessions/[session_id]/review",
-                                        {
-                                            slug: organization.slug,
-                                            session_id: session.id,
-                                        },
-                                    )}
-                                >
-                                    Review
-                                </Link>
-                            </Button>
                             <SkillsModule_SessionMenu session={session} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
@@ -140,27 +155,35 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Session ID</DLTerm>
-                                        <DLDetails className="font-mono">{session.id}</DLDetails>
-
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{session.name}</DLDetails>
-
-                                        <DLTerm>Date</DLTerm>
-                                        <DLDetails>{formatDate(session.date)}</DLDetails>
-
-                                        <DLTerm>Notes</DLTerm>
-                                        <DLDetails>{session.notes}</DLDetails>
-
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{session.status}</DLDetails>
-
-                                        <DLTerm>Assessor</DLTerm>
-                                        <DLDetails>
-                                            {session.assessors.map((a) => a.name).join(", ") || "—"}
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Session ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {session.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{session.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Date</DataItemTitle>
+                                            <DataItemValue>
+                                                {formatDate(session.date)}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Notes</DataItemTitle>
+                                            <DataItemValue>{session.notes}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>
+                                                {SKILL_CHECK_STATUS_LABELS[session.status] ??
+                                                    session.status}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
@@ -170,18 +193,23 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                             </Suspense>
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={session.createdAt} />
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDateDetails date={session.updatedAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={session.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={session.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
+            <SkillTrack_SessionConfigDialogs sessionId={session.id} />
         </>
     );
 }

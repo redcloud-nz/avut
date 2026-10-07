@@ -9,11 +9,17 @@ import Link from "next/link";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
+import { Protect } from "@/components/protect";
+import {
+    useSessionConfigAction,
+    type SessionConfigAction,
+} from "@/components/skill-track/session-config-dialogs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { findConflicts, isConflictResolved } from "@/lib/skill-check-conflicts";
 import { trpc } from "@/trpc/client";
 
 export function SkillsModule_Session_Contents_Card({
@@ -23,24 +29,38 @@ export function SkillsModule_Session_Contents_Card({
 }) {
     const organization = useOrganization();
 
-    const [{ data: skillChecks }, { data: assessees }, { data: skills }] = useSuspenseQueries({
-        queries: [
-            trpc.skillChecks.listSkillChecks.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-            }),
-            trpc.skills.listSessionAssessees.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-                scope: "assigned",
-            }),
-            trpc.skills.listSessionSkills.queryOptions({
-                organizationId: organization.id,
-                sessionId: sessionId,
-                scope: "assigned",
-            }),
-        ],
-    });
+    const [{ data: session }, { data: skillChecks }, { data: assessees }, { data: skills }] =
+        useSuspenseQueries({
+            queries: [
+                trpc.skillCheckSessions.getSession.queryOptions({
+                    organizationId: organization.id,
+                    skillCheckSessionId: sessionId,
+                }),
+                trpc.skillChecks.listSkillChecks.queryOptions({
+                    organizationId: organization.id,
+                    sessionId: sessionId,
+                }),
+                trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+                    organizationId: organization.id,
+                    sessionId: sessionId,
+                    scope: "assigned",
+                }),
+                trpc.skillCheckSessions.listSessionSkills.queryOptions({
+                    organizationId: organization.id,
+                    sessionId: sessionId,
+                    scope: "assigned",
+                }),
+            ],
+        });
+
+    // An approved session's config is locked until it's reopened.
+    const isApproved = session.status === "Include";
+
+    // Only unresolved conflicts need attention, and only before approval; once approved, each one
+    // has been resolved.
+    const conflictCount = isApproved
+        ? 0
+        : findConflicts(skillChecks).filter((conflict) => !isConflictResolved(conflict)).length;
 
     return (
         <Card>
@@ -49,38 +69,21 @@ export function SkillsModule_Session_Contents_Card({
             </CardHeader>
 
             <CardContent className="px-2 -my-2">
-                <Item size="sm" asChild>
-                    <Link
-                        href={route("/orgs/[slug]/skill-track/sessions/[session_id]/personnel", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
-                    >
-                        <ItemContent>
-                            <ItemTitle>{assessees.length} Personnel</ItemTitle>
-                            <ItemDescription>assigned to the session</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                            <ChevronRightIcon className="size-4" />
-                        </ItemActions>
-                    </Link>
-                </Item>
-                <Item size="sm" asChild>
-                    <Link
-                        href={route("/orgs/[slug]/skill-track/sessions/[session_id]/skills", {
-                            slug: organization.slug,
-                            session_id: sessionId,
-                        })}
-                    >
-                        <ItemContent>
-                            <ItemTitle>{skills.length} Skills</ItemTitle>
-                            <ItemDescription>assigned to the session</ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                            <ChevronRightIcon className="size-4" />
-                        </ItemActions>
-                    </Link>
-                </Item>
+                <ConfigRow
+                    action="change-personnel"
+                    locked={isApproved}
+                    title={`${assessees.length} Personnel`}
+                />
+                <ConfigRow
+                    action="change-skills"
+                    locked={isApproved}
+                    title={`${skills.length} Skills`}
+                />
+                <ConfigRow
+                    action="change-assessors"
+                    locked={isApproved}
+                    title={`${session.assessors.length} Assessors`}
+                />
                 <Item size="sm" asChild>
                     <Link
                         href={route("/orgs/[slug]/skill-track/sessions/[session_id]/checks", {
@@ -97,7 +100,76 @@ export function SkillsModule_Session_Contents_Card({
                         </ItemActions>
                     </Link>
                 </Item>
+                {conflictCount > 0 && (
+                    <Item size="sm" asChild>
+                        <Link
+                            href={`${route(
+                                "/orgs/[slug]/skill-track/sessions/[session_id]/review",
+                                {
+                                    slug: organization.slug,
+                                    session_id: sessionId,
+                                },
+                            )}#conflicts`}
+                        >
+                            <ItemContent>
+                                <ItemTitle>
+                                    {conflictCount} {conflictCount === 1 ? "Conflict" : "Conflicts"}
+                                </ItemTitle>
+                                <ItemDescription>
+                                    {conflictCount === 1 ? "needs resolving" : "need resolving"}
+                                </ItemDescription>
+                            </ItemContent>
+                            <ItemActions>
+                                <ChevronRightIcon className="size-4" />
+                            </ItemActions>
+                        </Link>
+                    </Item>
+                )}
             </CardContent>
         </Card>
+    );
+}
+
+/**
+ * A Contents row for one of the session's config lists. Updaters get a button that opens the
+ * list's dialog (hosted by `SkillTrack_SessionConfigDialogs` on the page); everyone else, and
+ * everyone while the session is `locked` (approved), gets the same row as plain text.
+ */
+function ConfigRow({
+    action,
+    title,
+    locked,
+}: {
+    action: SessionConfigAction;
+    title: string;
+    locked: boolean;
+}) {
+    const { open } = useSessionConfigAction();
+
+    const content = (
+        <ItemContent>
+            <ItemTitle>{title}</ItemTitle>
+            <ItemDescription>assigned to the session</ItemDescription>
+        </ItemContent>
+    );
+
+    return (
+        <Protect
+            permissions={{ skillCheckSession: ["update"] }}
+            render={(hasPermission) =>
+                hasPermission && !locked ? (
+                    <Item size="sm" asChild className="cursor-pointer text-left hover:bg-muted">
+                        <button type="button" aria-haspopup="dialog" onClick={() => open(action)}>
+                            {content}
+                            <ItemActions>
+                                <ChevronRightIcon className="size-4" />
+                            </ItemActions>
+                        </button>
+                    </Item>
+                ) : (
+                    <Item size="sm">{content}</Item>
+                )
+            }
+        />
     );
 }

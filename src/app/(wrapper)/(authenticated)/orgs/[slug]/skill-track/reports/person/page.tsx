@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]/skill-track/reports/person
  */
 
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
@@ -27,6 +28,9 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const { person, action } = await props.searchParams;
+    // Flag evaluation reads the clock, which Cache Components rejects until the render is
+    // marked request-time.
+    await connection();
     const syntheticChecksEnabled = await syntheticChecksFlag();
 
     const parsedPersonId =
@@ -68,7 +72,7 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
                             href: route("/orgs/[slug]/skill-track/reports/person", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/report-person" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_PersonCompetencyReport

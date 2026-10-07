@@ -65,6 +65,15 @@ export const env = {
         return text(process.env.GITHUB_SHA);
     },
 
+    /**
+     * The release production is running (`0.11`), from `package.json`. Unset everywhere else, which
+     * shows every "What's new" entry — see `src/lib/updates.ts`. Inlined at build time through
+     * `next.config.ts` `env` (so defined in the browser too), not read at runtime.
+     */
+    get APP_RELEASE_VERSION() {
+        return text(process.env.APP_RELEASE_VERSION);
+    },
+
     get NEXT_PUBLIC_APP_DISPLAY_NAME() {
         return text(process.env.NEXT_PUBLIC_APP_DISPLAY_NAME);
     },
@@ -83,4 +92,46 @@ export const env = {
     get NEXT_PUBLIC_APP_COMMIT() {
         return text(process.env.NEXT_PUBLIC_APP_COMMIT);
     },
+
+    /**
+     * Kept as `string | undefined`, like every other field here, rather than coerced to
+     * `boolean` — `base-url.ts` passes the whole `env` object into a helper typed
+     * `Record<string, string | undefined>`, so a `boolean` field would break that call.
+     * Callers just check it for truthiness (`if (env.AVUT_DEBUG_DB_QUERIES)`), which works
+     * the same either way.
+     */
+    get AVUT_DEBUG_DB_QUERIES() {
+        return text(process.env.AVUT_DEBUG_DB_QUERIES);
+    },
+
+    /** See `withArtificialLatency` — a single `ms` value, or a `"min:max"` range. */
+    get AVUT_TRPC_ARTIFICIAL_LATENCY() {
+        return parseNumberOrRange(text(process.env.AVUT_TRPC_ARTIFICIAL_LATENCY));
+    },
+
+    /** See `withArtificialLatency` — a single `ms` value, or a `"min:max"` range. */
+    get AVUT_DB_ARTIFICIAL_LATENCY() {
+        return parseNumberOrRange(text(process.env.AVUT_DB_ARTIFICIAL_LATENCY));
+    },
+
+    isDevelopment() {
+        return this.NODE_ENV === "development";
+    },
+    isProduction() {
+        return this.NODE_ENV === "production";
+    },
+    isPreview() {
+        return this.VERCEL_ENV === "preview";
+    },
 } as const;
+
+function parseNumberOrRange(value: string | undefined): number | [number, number] | undefined {
+    if (value === undefined) return undefined;
+    const rangeMatch = value.match(/^(\d+):(\d+)$/);
+    if (rangeMatch) {
+        const [, start, end] = rangeMatch;
+        return [Number(start), Number(end)];
+    }
+    const num = Number(value);
+    return isNaN(num) ? undefined : num;
+}

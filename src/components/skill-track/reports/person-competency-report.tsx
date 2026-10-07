@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { PersonId } from "@/lib/schemas/person";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
@@ -97,6 +97,7 @@ function PersonCompetencyReportView({
     syntheticChecksEnabled: boolean;
 }) {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const {
         data: { personnel, skillPackages, skillGroups, skills, competencies: recordedCompetencies },

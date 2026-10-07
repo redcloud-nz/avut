@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
-import { skillsEffects } from "@/client/skills-effects";
+import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
@@ -43,19 +43,22 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
+    // An approved session's date is locked (`updateSession` refuses a change): moving it would
+    // move its approved checks' competency dates without going back through review.
+    const dateLocked = session.status === "Include";
+
     const form = useForm({
         resolver: zodResolver(SkillCheckSession.modifiableSchema),
         defaultValues: {
             name: session.name,
             date: session.date,
             notes: session.notes,
-            status: session.status,
         },
     });
 
     const mutation = useMutation(
-        trpc.skills.updateSession.mutationOptions({
-            meta: { effects: skillsEffects.updateSession },
+        trpc.skillCheckSessions.updateSession.mutationOptions({
+            meta: { effects: skillCheckSessionsEffects.updateSession },
             onError(error) {
                 console.error("Failed to update session", error);
                 toast.error(`Failed to update session ${error.message}`);
@@ -86,7 +89,6 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                 name: session.name,
                 date: session.date,
                 notes: session.notes,
-                status: session.status,
             });
             mutation.reset();
         }
@@ -138,12 +140,21 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                                 name="date"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
+                                    <Field
+                                        data-invalid={fieldState.invalid}
+                                        data-disabled={dateLocked}
+                                    >
                                         <FieldLabel>Date</FieldLabel>
                                         <DatePicker
                                             value={field.value}
                                             onValueChange={(newValue) => field.onChange(newValue)}
+                                            slotProps={{ popoverTrigger: { disabled: dateLocked } }}
                                         />
+                                        {dateLocked && (
+                                            <FieldDescription>
+                                                Reopen the session to change its date.
+                                            </FieldDescription>
+                                        )}
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}

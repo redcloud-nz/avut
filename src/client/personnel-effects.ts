@@ -38,12 +38,15 @@ export const personnelEffects = createEffects<"personnel">()({
             }),
         ),
         invalidate(trpc.users.listPersonLinks.queryFilter({ organizationId: vars.organizationId })),
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     deletePerson: (vars) => [
         invalidate(
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     restorePerson: (vars, { updated }) => [
         write(
@@ -56,6 +59,19 @@ export const personnelEffects = createEffects<"personnel">()({
         invalidate(
             trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
         ),
+    ],
+    recoverPerson: (vars, { updated }) => [
+        write(
+            trpc.personnel.getPerson.queryKey({
+                organizationId: vars.organizationId,
+                personId: vars.personId,
+            }),
+            updated,
+        ),
+        invalidate(
+            trpc.personnel.listPersonnel.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     updatePerson: (vars, { updated }) => [
         write(

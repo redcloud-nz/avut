@@ -50,21 +50,21 @@ export function SkillTrack_SessionChecks_Content({
         { data: skillChecks },
     ] = useSuspenseQueries({
         queries: [
-            trpc.skills.getSession.queryOptions({
+            trpc.skillCheckSessions.getSession.queryOptions({
                 organizationId: organization.id,
                 skillCheckSessionId: sessionId,
             }),
-            trpc.skills.listSessionAssessees.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
             }),
-            trpc.skills.listSessionAssessors.queryOptions({
+            trpc.skillCheckSessions.listSessionAssessors.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
             }),
-            trpc.skills.listSessionSkills.queryOptions({
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
                 organizationId: organization.id,
                 sessionId: sessionId,
                 scope: "all",
@@ -127,14 +127,21 @@ export function SkillTrack_SessionChecks_Content({
                         columnOptions: resultOptions,
                     },
                 }),
-                col.accessor((row) => assessorById.get(row.assessorId)?.name ?? row.assessorId, {
-                    id: "assessor",
-                    header: "Assessor",
-                    enableColumnFilter: false,
-                    enableGlobalFilter: true,
-                    enableHiding: true,
-                    enableSorting: true,
-                }),
+                col.accessor(
+                    (row) =>
+                        (row.assessorId ? assessorById.get(row.assessorId)?.name : undefined) ??
+                        row.assessorLabel ??
+                        row.assessorId ??
+                        "Deleted person",
+                    {
+                        id: "assessor",
+                        header: "Assessor",
+                        enableColumnFilter: false,
+                        enableGlobalFilter: true,
+                        enableHiding: true,
+                        enableSorting: true,
+                    },
+                ),
                 col.accessor("status", {
                     header: "Status",
                     cell: (ctx) => SKILL_CHECK_STATUS_LABELS[ctx.getValue()] ?? ctx.getValue(),
@@ -146,6 +153,7 @@ export function SkillTrack_SessionChecks_Content({
                     meta: {
                         columnOptions: [
                             { label: "Draft", value: "Draft" },
+                            { label: "Pending review", value: "Pending" },
                             { label: "Approved", value: "Include" },
                             { label: "Excluded", value: "Exclude" },
                         ],
@@ -196,7 +204,7 @@ export function SkillTrack_SessionChecks_Content({
                     },
                     "Checks",
                 ]}
-                actions={<HelpButton slug="skill-track/sessions" />}
+                actions={<HelpButton id="skill-track/session" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

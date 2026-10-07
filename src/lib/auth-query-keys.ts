@@ -8,18 +8,14 @@ import { isServer } from "@tanstack/react-query";
 import { UserId } from "@/lib/schemas/user";
 
 /**
- * Hierarchical key factory for auth-related queries.
- *
- * Everything nests under `["auth"]` and every per-user read under
+ * Hierarchical key factory for the auth-related queries that still go straight through
+ * Better Auth's client rather than tRPC (the session itself no longer does — see
+ * `trpc.user.getSession`). Everything nests under `["auth"]` and every per-user read under
  * `["auth", "user", userId]`, so evicting one account's entire cache subtree on sign-out is
  * a single `removeQueries({ queryKey: authQueryKeys.all })`.
- *
- * Deliberately lives in `@/lib` rather than `@/client` so the server-side query factory can
- * produce cache entries under the same keys — that alignment is what makes hydration work.
  */
 export const authQueryKeys = {
     all: ["auth"] as const,
-    session: ["auth", "session"] as const,
     linkedAccounts: ["auth", "linkedAccounts"] as const,
     users: () => [...authQueryKeys.all, "user"] as const,
     user: (userId: UserId) => [...authQueryKeys.users(), userId] as const,

@@ -56,6 +56,14 @@ export const serverEnv = {
         return text(process.env.EMAIL_DELIVERY);
     },
 
+    /**
+     * Shared secret Vercel Cron sends as `Authorization: Bearer …` to `/api/cron/*`. Unset means
+     * every cron request is refused.
+     */
+    get CRON_SECRET() {
+        return text(process.env.CRON_SECRET);
+    },
+
     /** Key material for `encryptDBValue` / `decryptDBValue`. Validated by `encrypt.ts`. */
     get DB_ENCRYPTION_SECRET() {
         return text(process.env.DB_ENCRYPTION_SECRET);

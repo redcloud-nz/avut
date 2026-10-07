@@ -6,6 +6,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
+import { type Permissions } from "@/lib/permissions";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { PersonId } from "@/lib/schemas/person";
@@ -18,15 +19,19 @@ import { invitationsRouter } from "./invitations-router";
 
 vi.mock("server-only", () => ({}));
 
-// `signUp` delegates account creation and sign-in to Better Auth. The tests assert on that
-// delegation — and on what surrounds it — rather than standing up a real auth instance.
+// `signUp`/`createInvitation`/`cancelInvitation` delegate to Better Auth. The tests assert on
+// that delegation — and on what surrounds it — rather than standing up a real auth instance.
 const signUpEmailMock = vi.fn();
 const signInEmailMock = vi.fn();
+const createInvitationMock = vi.fn();
+const cancelInvitationMock = vi.fn();
 vi.mock("@/server/auth", () => ({
     auth: {
         api: {
             signUpEmail: (...args: unknown[]) => signUpEmailMock(...args),
             signInEmail: (...args: unknown[]) => signInEmailMock(...args),
+            createInvitation: (...args: unknown[]) => createInvitationMock(...args),
+            cancelInvitation: (...args: unknown[]) => cancelInvitationMock(...args),
         },
     },
 }));
@@ -173,6 +178,270 @@ describe("invitations.getLanding", () => {
         const result = await anonymous().getLanding({ invitationId });
 
         expect(result).toMatchObject({ state });
+    });
+});
+
+describe("invitations.createInvitation", () => {
+    const T = {
+        org: OrganizationId.create(),
+        inviter: UserId.create(),
+        person: PersonId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: {
+                id: T.org,
+                name: "Mountain Rescue",
+                slug: "mountain-create-invite",
+                createdAt: new Date(),
+            },
+        });
+        await db.user.create({
+            data: {
+                id: T.inviter,
+                name: "Alex Admin",
+                email: "admin-create-invite@example.com",
+                emailVerified: true,
+            },
+        });
+        await db.person.create({
+            data: {
+                id: T.person,
+                organizationId: T.org,
+                name: "Nia Newcomer",
+                email: "newcomer-create-invite@example.com",
+                status: "Active",
+                tags: [],
+                properties: {},
+            },
+        });
+    });
+
+    beforeEach(() => {
+        createInvitationMock.mockReset();
+    });
+
+    function caller(permissions: Permissions = { invitation: ["create"], organization: ["view"] }) {
+        return invitationsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.inviter }, permissions, prisma: db }),
+        );
+    }
+
+    it("sends the roles and organization to Better Auth, and logs the invitation", async () => {
+        createInvitationMock.mockResolvedValue({
+            id: InvitationId.create(),
+            email: "invitee@example.com",
+        });
+
+        const { invitation } = await caller().createInvitation({
+            organizationId: T.org,
+            email: "Invitee@Example.com",
+            roles: ["member", "i3-editor"],
+        });
+
+        expect(createInvitationMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                body: expect.objectContaining({
+                    email: "invitee@example.com",
+                    role: ["member", "i3-editor"],
+                    organizationId: T.org,
+                    resend: false,
+                }),
+            }),
+        );
+        expect(invitation.email).toBe("invitee@example.com");
+
+        const entries = await db.logEntry.findMany({ where: { objectId: invitation.id } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            action: "Create",
+            objectType: "OrganizationInvitation",
+        });
+    });
+
+    it("passes personId through when inviting on behalf of a personnel record", async () => {
+        createInvitationMock.mockResolvedValue({
+            id: InvitationId.create(),
+            email: "newcomer-create-invite@example.com",
+        });
+
+        await caller().createInvitation({
+            organizationId: T.org,
+            email: "newcomer-create-invite@example.com",
+            roles: ["member"],
+            personId: T.person,
+        });
+
+        expect(createInvitationMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: expect.objectContaining({ personId: T.person }) }),
+        );
+    });
+
+    it("refuses a caller without invitation:create", async () => {
+        await expect(
+            caller({ organization: ["view"] }).createInvitation({
+                organizationId: T.org,
+                email: "x@example.com",
+                roles: ["member"],
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        expect(createInvitationMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("invitations.cancelInvitation", () => {
+    const T = {
+        org: OrganizationId.create(),
+        inviter: UserId.create(),
+        invitation: InvitationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Org", slug: "cancel-invite-org", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: {
+                id: T.inviter,
+                name: "Admin",
+                email: "admin-cancel-invite@example.com",
+                emailVerified: true,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                id: T.invitation,
+                organizationId: T.org,
+                inviterId: T.inviter,
+                email: "target@example.com",
+                role: "member",
+                status: "pending",
+                expiresAt: new Date("2099-01-01"),
+            },
+        });
+    });
+
+    beforeEach(() => {
+        cancelInvitationMock.mockReset();
+    });
+
+    it("cancels through Better Auth and logs a Revoke entry", async () => {
+        cancelInvitationMock.mockResolvedValue({});
+
+        const caller = invitationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.inviter },
+                permissions: { invitation: ["cancel"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+
+        await caller.cancelInvitation({ organizationId: T.org, invitationId: T.invitation });
+
+        expect(cancelInvitationMock).toHaveBeenCalledWith(
+            expect.objectContaining({ body: { invitationId: T.invitation } }),
+        );
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.invitation } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            action: "Revoke",
+            objectType: "OrganizationInvitation",
+        });
+    });
+});
+
+describe("invitations.listInvitations", () => {
+    const T = {
+        orgA: OrganizationId.create(),
+        orgB: OrganizationId.create(),
+        inviter: UserId.create(),
+        pending: InvitationId.create(),
+        canceled: InvitationId.create(),
+        otherOrg: InvitationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.orgA, name: "Org A", slug: "org-a-list-invites", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.orgB, name: "Org B", slug: "org-b-list-invites", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: {
+                id: T.inviter,
+                name: "Admin",
+                email: "admin-list-invites@example.com",
+                emailVerified: true,
+            },
+        });
+
+        const future = new Date("2099-01-01");
+        await db.organizationInvitation.create({
+            data: {
+                id: T.pending,
+                organizationId: T.orgA,
+                inviterId: T.inviter,
+                email: "pending@example.com",
+                role: "member,i3-editor",
+                status: "pending",
+                expiresAt: future,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                id: T.canceled,
+                organizationId: T.orgA,
+                inviterId: T.inviter,
+                email: "canceled@example.com",
+                role: "member",
+                status: "canceled",
+                expiresAt: future,
+            },
+        });
+        await db.organizationInvitation.create({
+            data: {
+                id: T.otherOrg,
+                organizationId: T.orgB,
+                inviterId: T.inviter,
+                email: "other-org@example.com",
+                role: "member",
+                status: "pending",
+                expiresAt: future,
+            },
+        });
+    });
+
+    function caller() {
+        return invitationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.inviter },
+                permissions: { invitation: ["view"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("lists every invitation for the organization, any status, roles as an array", async () => {
+        const result = await caller().listInvitations({ organizationId: T.orgA });
+
+        expect(result).toHaveLength(2);
+        const byId = Object.fromEntries(result.map((r) => [r.id, r]));
+        expect(byId[T.pending]).toMatchObject({
+            status: "pending",
+            roles: ["member", "i3-editor"],
+        });
+        expect(byId[T.canceled]).toMatchObject({ status: "canceled", roles: ["member"] });
+    });
+
+    it("never returns another organization's invitations", async () => {
+        const result = await caller().listInvitations({ organizationId: T.orgA });
+        expect(result.some((r) => r.id === T.otherOrg)).toBe(false);
     });
 });
 

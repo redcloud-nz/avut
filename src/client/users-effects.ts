@@ -6,6 +6,15 @@
 import { trpc } from "@/trpc/client";
 import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
+/** Moving an account into, out of, or past the system Rubbish bin changes every user/member view. */
+const userBinCaches = (vars: { userId: string }) => [
+    invalidate(trpc.users.listUsers.queryFilter()),
+    invalidate(trpc.users.listDeletedUsers.queryFilter()),
+    invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+    invalidate(trpc.organizations.listOrganizations.queryFilter()),
+    invalidate(trpc.organizations.getOrganizationAsAdmin.queryFilter()),
+];
+
 /**
  * Cache effects for `users` router mutations, keyed by procedure name.
  *
@@ -15,21 +24,15 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * remember all five affected queries.
  */
 export const usersEffects = createEffects<"users">()({
-    // Joining an organization adds a membership (and its activity feed) to the dashboard.
-    acceptInvitation: (vars) => [
-        invalidate(trpc.users.listInvitations.queryFilter()),
-        invalidate(trpc.users.listMemberships.queryFilter()),
-        invalidate(trpc.users.getActivityStats.queryFilter()),
-        invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
+    banUser: (vars) => [
+        invalidate(trpc.users.listUsers.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
     ],
-
-    rejectInvitation: (vars) => [
-        invalidate(trpc.users.listInvitations.queryFilter()),
-        invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
-    ],
-
+    deleteUser: (vars) => userBinCaches(vars),
     linkPerson: (vars) => [
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(
             trpc.users.getLinkedPerson.queryFilter({
                 organizationId: vars.organizationId,
@@ -54,11 +57,27 @@ export const usersEffects = createEffects<"users">()({
                 personId: vars.personId,
             }),
         ),
+        invalidate(
+            trpc.users.listUnlinkedMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+    ],
+    purgeUser: (vars) => userBinCaches(vars),
+    recoverUser: (vars) => userBinCaches(vars),
+    revokeSession: () => [invalidate(trpc.user.listSessions.queryFilter())],
+    setUserRole: (vars) => [
+        invalidate(trpc.users.listUsers.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
+    ],
+    unbanUser: (vars) => [
+        invalidate(trpc.users.listUsers.queryFilter()),
+        invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
     ],
     // `unlinkPerson`'s input only carries `userId` — the `personId` being unlinked comes back
     // in the response instead, since the server already knows it from the existing link.
     unlinkPerson: (vars, data) => [
-        invalidate({ queryKey: ["auth", "organization-users", vars.organizationId] }),
+        invalidate(
+            trpc.organizations.listMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(
             trpc.users.getLinkedPerson.queryFilter({
                 organizationId: vars.organizationId,
@@ -71,6 +90,9 @@ export const usersEffects = createEffects<"users">()({
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(
+            trpc.users.listUnlinkedMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
         ...(data.personId
             ? [
                   invalidate(
@@ -82,6 +104,4 @@ export const usersEffects = createEffects<"users">()({
               ]
             : []),
     ],
-
-    revokeSession: () => [invalidate(trpc.users.listSessions.queryFilter())],
 });

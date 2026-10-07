@@ -86,6 +86,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     deletePackage: (vars) => [
         invalidate(
@@ -93,6 +94,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     deleteSkill: (vars) => [
         invalidate(
@@ -100,6 +102,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     importPackage: (vars, { applied, plan }) =>
         applied
@@ -159,6 +162,21 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
     ],
+    recoverGroup: (vars, { updated }) => [
+        write(
+            trpc.skillPackageBuilder.getGroup.queryKey({
+                organizationId: vars.organizationId,
+                skillGroupId: vars.skillGroupId,
+            }),
+            (old) => (old ? { ...old, ...updated } : old),
+        ),
+        invalidate(
+            trpc.skillPackageBuilder.listGroups.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+    ],
     restorePackage: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getPackage.queryKey({
@@ -173,6 +191,21 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
     ],
+    recoverPackage: (vars, { updated }) => [
+        write(
+            trpc.skillPackageBuilder.getPackage.queryKey({
+                organizationId: vars.organizationId,
+                skillPackageId: vars.skillPackageId,
+            }),
+            updated,
+        ),
+        invalidate(
+            trpc.skillPackageBuilder.listPackages.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+    ],
     restoreSkill: (vars, { updated }) => [
         write(
             trpc.skillPackageBuilder.getSkill.queryKey({
@@ -186,6 +219,21 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+    ],
+    recoverSkill: (vars, { updated }) => [
+        write(
+            trpc.skillPackageBuilder.getSkill.queryKey({
+                organizationId: vars.organizationId,
+                skillId: vars.skillId,
+            }),
+            (old) => (old ? { ...old, ...updated } : old),
+        ),
+        invalidate(
+            trpc.skillPackageBuilder.listSkills.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     unpublishPackage: (vars, { unpublished }) => [
         write(

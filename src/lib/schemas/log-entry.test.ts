@@ -68,10 +68,15 @@ describe("moduleIdForObjectType", () => {
         expect(moduleIdForObjectType("I3TemplateVariant")).toBe("i3");
     });
 
+    it("attributes organization notes to notes", () => {
+        expect(moduleIdForObjectType("OrganizationNote")).toBe("notes");
+    });
+
     it("returns null for account entities, which belong to no module", () => {
         expect(moduleIdForObjectType("User")).toBeNull();
         expect(moduleIdForObjectType("Account")).toBeNull();
         expect(moduleIdForObjectType("Session")).toBeNull();
+        expect(moduleIdForObjectType("UserSettings")).toBeNull();
     });
 });
 
@@ -81,7 +86,7 @@ describe("objectTypesForModule", () => {
     });
 
     it("returns an empty list for a module with no logged entities", () => {
-        expect(objectTypesForModule("notes")).toEqual([]);
+        expect(objectTypesForModule("forms")).toEqual([]);
     });
 });
 
@@ -93,6 +98,8 @@ describe("Operations", () => {
             "d4h-team-sync",
             "invitation-accept",
             "invitation-reject",
+            "organization-leave",
+            "rubbish-purge",
             "skill-package-import",
         ]);
     });

@@ -6,7 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { UserSettings_D4HAccessTokensList } from "@/components/user-settings/d4h-access-tokens-list";
+import { UserSettings_D4HAccessTokens_List } from "@/components/user/user-settings/d4h-access-tokens-list";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -15,13 +15,13 @@ export const metadata = {
 
 export default async function UserSettings_D4H_Page() {
     prefetch(trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions());
-    prefetch(trpc.users.listMemberships.queryOptions());
+    prefetch(trpc.user.listMemberships.queryOptions());
 
     return (
         <HydrateClient>
-            <Std.Navbar breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "D4H"]} />
+            <Std.Navbar breadcrumbs={["User Settings", "D4H"]} />
             <Std.ScrollContainer>
-                <UserSettings_D4HAccessTokensList />
+                <UserSettings_D4HAccessTokens_List />
             </Std.ScrollContainer>
         </HydrateClient>
     );

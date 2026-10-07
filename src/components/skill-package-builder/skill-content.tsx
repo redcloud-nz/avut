@@ -12,9 +12,14 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
 import { trpc } from "@/trpc/client";
@@ -67,81 +72,93 @@ export function SkillPackageBuilder_Skill_Content({ skillId }: { skillId: SkillI
                                 <CardHeader>
                                     <CardTitle>Skill Details</CardTitle>
                                     <CardAction>
-                                        <Protect permissions={{ skillPackageBuilder: ["update"] }}>
+                                        <Protect permissions={{ skillPackage: ["update"] }}>
                                             <SkillPackageBuilder_UpdateSkill_Dialog skill={skill} />
                                         </Protect>
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Skill ID</DLTerm>
-                                        <DLDetails>{skill.id}</DLDetails>
-                                        <DLTerm>Package</DLTerm>
-                                        <DLDetails>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-package-builder/packages/[package_id]",
-                                                    {
-                                                        slug: organization.slug,
-                                                        package_id: skill.skillPackageId,
-                                                    },
-                                                )}
-                                            >
-                                                {skill.skillPackage.name}
-                                            </Link>
-                                        </DLDetails>
-                                        <DLTerm>Group</DLTerm>
-                                        <DLDetails>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
-                                                    {
-                                                        slug: organization.slug,
-                                                        package_id: skill.skillPackageId,
-                                                        group_id: skill.skillGroup.id,
-                                                    },
-                                                )}
-                                            >
-                                                {skill.skillGroup.name}
-                                            </Link>
-                                        </DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{skill.name}</DLDetails>
-                                        <DLTerm>Description</DLTerm>
-                                        <DLDetails>{skill.description}</DLDetails>
-                                        <DLTerm>Required</DLTerm>
-                                        <DLDetails>
-                                            {skill.defaultRequired ? "Yes" : "No"}
-                                        </DLDetails>
-                                        <DLTerm>Revalidation Frequency</DLTerm>
-                                        <DLDetails>
-                                            {skill.frequency ? `${skill.frequency} months` : "None"}
-                                        </DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{skill.status}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Skill ID</DataItemTitle>
+                                            <DataItemValue>{skill.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Package</DataItemTitle>
+                                            <DataItemValue>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/skill-package-builder/packages/[package_id]",
+                                                        {
+                                                            slug: organization.slug,
+                                                            package_id: skill.skillPackageId,
+                                                        },
+                                                    )}
+                                                >
+                                                    {skill.skillPackage.name}
+                                                </Link>
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Group</DataItemTitle>
+                                            <DataItemValue>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                                                        {
+                                                            slug: organization.slug,
+                                                            package_id: skill.skillPackageId,
+                                                            group_id: skill.skillGroup.id,
+                                                        },
+                                                    )}
+                                                >
+                                                    {skill.skillGroup.name}
+                                                </Link>
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{skill.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Description</DataItemTitle>
+                                            <DataItemValue>{skill.description}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Required</DataItemTitle>
+                                            <DataItemValue>
+                                                {skill.defaultRequired ? "Yes" : "No"}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Revalidation Frequency</DataItemTitle>
+                                            <DataItemValue>
+                                                {skill.frequency
+                                                    ? `${skill.frequency} months`
+                                                    : "None"}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{skill.status}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(skill.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(skill.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(skill.updatedAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(skill.updatedAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={skill.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={skill.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

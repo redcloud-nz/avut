@@ -6,7 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { UserSettings_OrganizationsList } from "@/components/user-settings/organizations-list";
+import { UserSettings_Organizations_List } from "@/components/user/user-settings/organizations-list";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -14,15 +14,13 @@ export const metadata = {
 };
 
 export default async function UserSettings_Organizations_Page() {
-    prefetch(trpc.users.listMemberships.queryOptions());
+    prefetch(trpc.user.listMemberships.queryOptions());
 
     return (
         <HydrateClient>
-            <Std.Navbar
-                breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "Organisations"]}
-            />
+            <Std.Navbar breadcrumbs={["User Settings", "Organisations"]} />
             <Std.ScrollContainer>
-                <UserSettings_OrganizationsList />
+                <UserSettings_Organizations_List />
             </Std.ScrollContainer>
         </HydrateClient>
     );

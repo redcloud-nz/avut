@@ -11,7 +11,13 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
@@ -43,7 +49,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                     },
                     { label: team.name },
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/teams" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -66,14 +72,26 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Team ID</DLTerm>
-                                        <DLDetails className="font-mono">{team.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{team.name}</DLDetails>
-                                        <DLTerm>Description</DLTerm>
-                                        <DLDetails>{team.description}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Team ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {team.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{team.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Description</DataItemTitle>
+                                            <DataItemValue>{team.description}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{team.status}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
 
@@ -84,16 +102,18 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                             <AdminModule_TeamLinks_Card team={team} />
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={team.createdAt} />
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={team.createdAt} />
+                                        </DataItem>
                                         {team.updatedAt && (
-                                            <>
-                                                <DLTerm>Updated</DLTerm>
-                                                <DLDateDetails date={team.updatedAt} />
-                                            </>
+                                            <DataItem inline>
+                                                <DataItemTitle>Updated</DataItemTitle>
+                                                <DataItemDateValue date={team.updatedAt} />
+                                            </DataItem>
                                         )}
-                                    </DL>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

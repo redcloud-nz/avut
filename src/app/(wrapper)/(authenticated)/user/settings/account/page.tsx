@@ -7,20 +7,23 @@
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { UserAccountSettings } from "@/components/user-settings/user-account-settings";
+import { UserSettings_Account } from "@/components/user/user-settings/user-account-settings";
 
 export default async function UserSettings_Account_Page() {
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "Account"]}
-            />
+            <Std.Navbar breadcrumbs={["User Settings", "Account"]} />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Account</Saratoga.Title>
                     </Saratoga.Header>
-                    <UserAccountSettings />
+                    <Saratoga.Columns>
+                        <Saratoga.Column slot="main">
+                            <UserSettings_Account />
+                        </Saratoga.Column>
+                        <Saratoga.Column slot="secondary" />
+                    </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>

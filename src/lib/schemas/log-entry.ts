@@ -72,19 +72,30 @@ export type LogScope = (typeof logScopeValues)[number];
  * still logs `Update`. They are kept because the vocabulary is the design, not
  * a census of the current call sites — but a reader should be able to tell
  * which half is live.
+ *
+ * `Restore` and `Recover` distinguish the two soft-delete return paths: `Restore`
+ * is Archived → Active, `Recover` is Deleted (trash) → Active. `Purge` is the permanent removal
+ * of a Deleted record from the Rubbish bin, by hand or by the daily auto-purge.
+ *
+ * `Reopen` undoes an `Approve`: an approved skill check session goes back to Draft so its checks
+ * can be changed and approved again.
  */
 const logActionValues = [
     "Approve",
     "Archive",
-    "Ban", // DORMANT — reverted databaseHooks wire
+    "Ban",
     "Create",
     "Delete",
     "Impersonate", // DORMANT — reverted databaseHooks wire
     "Move", // DORMANT — moveSkill logs "Update"
     "Publish",
+    "Purge",
+    "Recover",
+    "Reopen",
     "Restore",
+    "Revoke",
     "Subscribe",
-    "Unban", // DORMANT — reverted databaseHooks wire
+    "Unban",
     "Unpublish",
     "Unsubscribe",
     "Update",
@@ -112,6 +123,7 @@ const logObjectTypeValues = [
     "Organization",
     "OrganizationInvitation",
     "OrganizationMembership",
+    "OrganizationNote",
     "OrganizationSettings",
     "Person",
     "Session", // DORMANT — reverted databaseHooks wire
@@ -122,6 +134,8 @@ const logObjectTypeValues = [
     "Team",
     "TeamMembership",
     "User",
+    "UserNote",
+    "UserSettings",
 ] as const;
 
 export const LogObjectType = {
@@ -196,6 +210,7 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Organization: "org-admin",
     OrganizationInvitation: "org-admin",
     OrganizationMembership: "org-admin",
+    OrganizationNote: "notes",
     OrganizationSettings: "org-admin",
     Person: "org-admin",
     Session: null,
@@ -206,6 +221,8 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Team: "org-admin",
     TeamMembership: "org-admin",
     User: null,
+    UserNote: "user-notes",
+    UserSettings: null,
 };
 
 /** The module an entry about this kind of object belongs to, or null for account entities. */

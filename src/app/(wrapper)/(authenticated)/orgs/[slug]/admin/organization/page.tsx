@@ -12,12 +12,17 @@ import { AdminModule_OrganizationMenu } from "@/components/admin/organization/or
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { ObjectIcons, SettingsIcon } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { route } from "@/lib/routes";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 
@@ -34,24 +39,13 @@ export default async function AdminModule_Organization_Page(
                     { label: "Admin", href: route("/orgs/[slug]/admin", { slug }) },
                     "Organization",
                 ]}
-                actions={<HelpButton slug="admin" />}
+                actions={<HelpButton id="admin/organization" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>Organisation</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect permissions={{ organization: ["update"] }}>
-                                <Button variant="outline" size="icon" asChild>
-                                    <Link
-                                        href={route("/orgs/[slug]/admin/organization/settings", {
-                                            slug,
-                                        })}
-                                    >
-                                        <SettingsIcon />
-                                    </Link>
-                                </Button>
-                            </Protect>
                             <AdminModule_OrganizationMenu slug={slug} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
@@ -76,14 +70,20 @@ export default async function AdminModule_Organization_Page(
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Organisation ID</DLTerm>
-                                        <DLDetails>{organization.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{organization.name}</DLDetails>
-                                        <DLTerm>Slug</DLTerm>
-                                        <DLDetails>{organization.slug}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Organisation ID</DataItemTitle>
+                                            <DataItemValue>{organization.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{organization.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Slug</DataItemTitle>
+                                            <DataItemValue>{organization.slug}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             <AdminModule_Organization_D4HCard />
@@ -91,15 +91,12 @@ export default async function AdminModule_Organization_Page(
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(organization.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(organization.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={organization.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

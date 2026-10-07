@@ -6,7 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { SystemAdmin_Users_List } from "@/components/system-admin/users/users-list";
+import { SystemAdmin_Users_List } from "@/components/system/admin/users/users-list";
 import { requireSystemAdmin } from "@/server/system-admin-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -17,7 +17,7 @@ export const metadata = {
 export default async function SystemAdmin_Users_Page() {
     await requireSystemAdmin();
 
-    prefetch(trpc.systemAdmin.listUsers.queryOptions());
+    prefetch(trpc.users.listUsers.queryOptions());
 
     return (
         <HydrateClient>

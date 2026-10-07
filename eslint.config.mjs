@@ -277,9 +277,31 @@ const config = [
     // `auth.api` directly — that is how pages ended up unguarded, and how the two i3 pages
     // ended up with `session!` non-null assertions.
     //
-    // Restricting only the `auth` binding keeps `import type { AuthSession }` working.
-    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
-    ignores: ["src/app/trpc/**", "src/app/(public)/auth/**", "src/app/api/**"],
+    // `authClient` (Better Auth's own client SDK) gets the same treatment: restricted to the
+    // handful of files that own credential/session mechanics Better Auth's client owns
+    // outright (sign-in, the invitation landing page's sign-in-in-place, impersonation, and
+    // `dev-tools.ts`'s console helper) plus `auth-queries.ts`, the boundary everything else
+    // routes through instead — see the authClient -> tRPC migration notes in AGENTS.md.
+    // Widened to `src/client/**` too, since that migration's remaining direct callers live
+    // there as well as under `src/components`. Tests are exempt: they import the real module
+    // to assert on `vi.mocked(authClient.*)` calls.
+    //
+    // Restricting only the `auth`/`authClient` bindings keeps `import type { AuthSession }`
+    // and similar type-only imports working.
+    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "src/client/**/*.{ts,tsx}"],
+    ignores: [
+      "src/app/trpc/**",
+      "src/app/(public)/auth/**",
+      "src/app/api/**",
+      "**/*.test.{ts,tsx}",
+      "src/client/auth-client.ts",
+      "src/client/auth-queries.ts",
+      "src/client/dev-tools.ts",
+      "src/components/auth/sign-in.tsx",
+      "src/components/invitations/invitation-sign-in.tsx",
+      "src/components/system/admin/impersonation-banner.tsx",
+      "src/components/system/admin/users/impersonate-user-dialog.tsx",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -291,6 +313,12 @@ const config = [
               importNames: ["auth"],
               message:
                 "Use requireSession() from @/server/session or requireOrganization() from @/server/organization-access instead of calling auth.api directly.",
+            },
+            {
+              name: "@/client/auth-client",
+              importNames: ["authClient"],
+              message:
+                "Route this through a mutationOptions()/queryOptions() function in @/client/auth-queries instead of calling authClient directly.",
             },
           ],
         },

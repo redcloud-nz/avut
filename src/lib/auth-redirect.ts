@@ -8,6 +8,10 @@ import { Route } from "next";
 export const SIGN_IN_PATH = "/auth/sign-in";
 export const SIGN_UP_PATH = "/auth/sign-up";
 export const POST_SIGN_IN_PATH = "/auth/post-sign-in";
+export const SIGN_OUT_PATH = "/auth/sign-out";
+
+/** The base `safeRedirectPath` resolves against; `.invalid` can never be a real host. */
+const PLACEHOLDER_ORIGIN = "https://avut.invalid";
 
 /**
  * Validate a redirect target that came from user-controllable input (a query param).
@@ -21,6 +25,20 @@ export function safeRedirectPath(value?: string | null): string | null {
     if (!value.startsWith("/")) return null;
     // `//host` and `/\host` are both treated as protocol-relative by browsers.
     if (value.startsWith("//") || value.startsWith("/\\")) return null;
+    // URL parsing strips tab/CR/LF and reads `\` as `/`, so `/<tab>/evil.example` would pass
+    // the prefix checks above and still land on `//evil.example`. Reject those characters
+    // outright, then resolve against a placeholder origin as a backstop: anything that leaves
+    // it isn't a same-origin path, whatever the prefix said.
+    if (/[\t\n\r\\]/.test(value)) return null;
+    let url: URL;
+    try {
+        url = new URL(value, PLACEHOLDER_ORIGIN);
+    } catch {
+        return null;
+    }
+    if (url.origin !== PLACEHOLDER_ORIGIN) return null;
+    // Return the input, not `url.pathname`: parsing collapses `.`/`..` segments, which turns
+    // a harmless `/.//evil.example` into a protocol-relative `//evil.example`.
     return value;
 }
 
@@ -34,6 +52,17 @@ export function signInUrl(returnTo?: string | null): Route {
     const path = safeRedirectPath(returnTo);
     if (!path) return SIGN_IN_PATH as Route;
     return `${SIGN_IN_PATH}?redirectTo=${encodeURIComponent(path)}` as Route;
+}
+
+/**
+ * Build the sign-out URL, preserving a validated return path as `?redirectTo=`. Every sign-out
+ * goes through that page (see `src/components/auth/sign-out.tsx`); without a return path it
+ * lands on sign-in.
+ */
+export function signOutUrl(returnTo?: string | null): Route {
+    const path = safeRedirectPath(returnTo);
+    if (!path) return SIGN_OUT_PATH as Route;
+    return `${SIGN_OUT_PATH}?redirectTo=${encodeURIComponent(path)}` as Route;
 }
 
 /** Build the post-sign-in URL, preserving a validated return path as `?redirectTo=`. */

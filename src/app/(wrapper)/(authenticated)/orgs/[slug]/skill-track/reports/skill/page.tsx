@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]/skill-track/reports/skill
  */
 
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
@@ -28,6 +29,9 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const { skill, team, action } = await props.searchParams;
+    // Flag evaluation reads the clock, which Cache Components rejects until the render is
+    // marked request-time.
+    await connection();
     const syntheticChecksEnabled = await syntheticChecksFlag();
 
     // The loaded report reads the team list itself; the scope dialog reads it too.
@@ -40,7 +44,9 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
     // otherwise the list isn't needed until the user opens it, so don't pay for it here.
     if (!parsedSkillId?.success || action === "select-scope") {
         prefetch(
-            trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+            trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
+                organizationId: organization.id,
+            }),
         );
     }
 
@@ -70,7 +76,7 @@ export default async function SkillTrack_ReportsSkillCoverage_Page(
                             href: route("/orgs/[slug]/skill-track/reports/skill", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/report-skill" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillCoverageReport

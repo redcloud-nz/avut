@@ -5,22 +5,14 @@
  *  Path: /(wrapper)
  */
 
-import { cookies } from "next/headers";
 import { type ReactNode } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
-import { ImpersonationBanner } from "@/components/system-admin/impersonation-banner";
-import { SIDEBAR_COOKIE_NAME } from "@/lib/constants";
 
-export default async function AppLayout(props: { children: ReactNode }) {
-    // `SidebarProvider` persists the collapsed/expanded choice to this cookie but never reads it
-    // back, so the server has to seed it. Absent cookie = expanded, matching a first-time visitor.
-    const sidebarOpen = (await cookies()).get(SIDEBAR_COOKIE_NAME)?.value !== "false";
-
-    return (
-        <AppProviders defaultSidebarOpen={sidebarOpen}>
-            <ImpersonationBanner />
-            {props.children}
-        </AppProviders>
-    );
+// `ImpersonationBanner` is disabled (#347). Rendered here, above the authenticated layout,
+// its `useSuspenseQuery(getSession)` ran during server rendering before the authenticated
+// layout's session was hydrated, cached `null`, and made every session read below it render as
+// signed out on the server: a hydration mismatch on every authenticated page.
+export default function AppLayout(props: { children: ReactNode }) {
+    return <AppProviders>{props.children}</AppProviders>;
 }

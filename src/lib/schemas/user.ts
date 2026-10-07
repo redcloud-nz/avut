@@ -12,6 +12,12 @@ import { zodNanoId16 } from "../validation";
 
 export type { UserRecord };
 
+/**
+ * A deleted account sits in the system Rubbish bin this long, then is purged (#296). Fixed —
+ * the privacy policy's account-closure promise depends on it, so it isn't a setting.
+ */
+export const USER_RETENTION_DAYS = 14;
+
 export const UserId = {
     schema: zodNanoId16("UserId expected").brand<"UserId">(),
 
@@ -34,7 +40,17 @@ export const UserData = {
     fromRecord: (record: Pick<UserRecord, "id" | "name" | "email" | "image">): UserData =>
         userSchema.parse({
             ...record,
+            image: record.image || null,
         }),
 } as const;
 
 export type UserData = z.infer<typeof userSchema>;
+
+export const UserRef = {
+    schema: z.object({
+        id: UserId.schema,
+        name: z.string(),
+    }),
+} as const;
+
+export type UserRef = z.infer<typeof UserRef.schema>;

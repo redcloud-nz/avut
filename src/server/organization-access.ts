@@ -7,9 +7,8 @@ import "server-only";
 import { forbidden } from "next/navigation";
 import { cache } from "react";
 
-import { hasAnyRoleWithPermissions, Permissions } from "@/lib/permissions";
+import { hasAnyRoleWithPermissions, Permissions, Role } from "@/lib/permissions";
 import { OrganizationData } from "@/lib/schemas/organization";
-import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import type { AuthSession } from "./auth";
@@ -22,7 +21,7 @@ export interface OrganizationAccess {
     session: AuthSession;
     organization: OrganizationData;
     settings: OrganizationSettings;
-    roles: OrganizationRole[];
+    roles: Role[];
 }
 
 /**

@@ -21,7 +21,10 @@ judges it.
   only true for the version it was read against.
 - Cite evidence — a file and line, or the dependency source that proves the
   claim — rather than asserting behaviour from memory.
-- One file per review, kebab-case, named for the subject
-  (`suspense-boundaries.md`).
+- One file per review, kebab-case, named for the subject, prefixed with the
+  same date as the header's `**Date:**` line
+  (`2026-09-12-suspense-boundaries.md`). If the review is later revised,
+  update both the header date and the filename prefix together — they must
+  never disagree.
 - Close with the recommendations, ordered and costed, so a later reader can act
   without re-reading the analysis.

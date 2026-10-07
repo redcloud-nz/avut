@@ -29,6 +29,8 @@ export function Organization_Dashboard_SkillTrackStats() {
                 >
                     <Organization_Dashboard_SkillPackageAndSkillStats />
                 </Suspense>
+            </Protect>
+            <Protect permissions={{ skillCheckSession: ["view"] }}>
                 <Suspense fallback={<StatCardSkeleton />}>
                     <Organization_Dashboard_SkillCheckSessionsStat />
                 </Suspense>
@@ -47,7 +49,9 @@ function Organization_Dashboard_SkillPackageAndSkillStats() {
     const { slug } = organization;
 
     const { data: assessable } = useSuspenseQuery(
-        trpc.skills.listAssessableSkills.queryOptions({ organizationId: organization.id }),
+        trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
+            organizationId: organization.id,
+        }),
     );
 
     const catalogueHref = route("/orgs/[slug]/skill-track/catalogue", { slug });
@@ -75,7 +79,7 @@ function Organization_Dashboard_SkillCheckSessionsStat() {
     const { slug } = organization;
 
     const { data: sessions } = useSuspenseQuery(
-        trpc.skills.listSessions.queryOptions({ organizationId: organization.id }),
+        trpc.skillCheckSessions.listSessions.queryOptions({ organizationId: organization.id }),
     );
 
     return (

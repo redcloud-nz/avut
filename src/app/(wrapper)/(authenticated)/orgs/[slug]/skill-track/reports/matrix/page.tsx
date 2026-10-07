@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]/skill-track/reports/matrix
  */
 
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
@@ -27,6 +28,9 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const { team } = await props.searchParams;
+    // Flag evaluation reads the clock, which Cache Components rejects until the render is
+    // marked request-time.
+    await connection();
     const syntheticChecksEnabled = await syntheticChecksFlag();
 
     prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
@@ -67,7 +71,7 @@ export default async function SkillTrack_ReportsSkillMatrix_Page(
                             href: route("/orgs/[slug]/skill-track/reports/matrix", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/report-matrix" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_SkillMatrixReport syntheticChecksEnabled={syntheticChecksEnabled} />

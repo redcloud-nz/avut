@@ -35,7 +35,7 @@ export function AdminModule_TeamMembership_Menu({
     const router = useRouter();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["remove"] as const));
-    const canUpdate = useHasPermission({ team: ["update"] });
+    const canDelete = useHasPermission({ team: ["delete"] });
 
     return (
         <>
@@ -48,7 +48,7 @@ export function AdminModule_TeamMembership_Menu({
                 <DropdownMenuContent className="w-44" align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem
-                        disabled={!canUpdate}
+                        disabled={!canDelete}
                         className="text-destructive focus:text-destructive"
                         onClick={() => void setAction("remove", { history: "push" })}
                     >
@@ -69,7 +69,7 @@ export function AdminModule_TeamMembership_Menu({
                 }
                 onRemoved={() =>
                     router.push(
-                        route("/orgs/[slug]/admin/teams/[team_id]/personnel", {
+                        route("/orgs/[slug]/admin/teams/[team_id]/members", {
                             slug: organization.slug,
                             team_id: team.id,
                         }),

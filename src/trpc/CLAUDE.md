@@ -1,6 +1,6 @@
 # tRPC routers and audit logging
 
-Loaded when working under `src/trpc/`. The repo-wide rules (always call `ctx.logEvent`, use `$transaction`, never write `logEntry.create` by hand) stay in the root `AGENTS.md`.
+Loaded when working under `src/trpc/`. The repo-wide rules (always call `ctx.logEvent`, use `$transaction`, never write `logEntry.create` by hand) stay in the root `AGENTS.md`. Domain-service conventions (the `src/server/services/<domain>.ts` layer routers call into) are in [`src/server/services/CLAUDE.md`](../server/services/CLAUDE.md), loaded when working there instead.
 
 ## Router conventions
 
@@ -10,6 +10,7 @@ Loaded when working under `src/trpc/`. The repo-wide rules (always call `ctx.log
 - Use `organizationProcedure()` for org-scoped mutations/queries — it injects `organizationId` into input and checks permissions automatically
 - Use `authenticatedProcedure` for user-scoped procedures
 - Use `publicProcedure` only for truly unauthenticated endpoints
+- A `systemAdminProcedure` that sits beside an org-scoped procedure doing the same job gets an `AsAdmin` suffix (`getOrganization` / `getOrganizationAsAdmin`, `importPackage` / `importPackageAsAdmin`). One with no org-scoped counterpart (`users.listUsers`, `organizations.createOrganization`) keeps its plain name
 
 ## Audit logging — which `logEvent` am I holding?
 

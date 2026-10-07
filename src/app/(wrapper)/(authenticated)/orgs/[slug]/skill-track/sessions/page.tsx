@@ -23,7 +23,9 @@ export default async function SkillTrack_Sessions_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    prefetch(trpc.skills.listSessions.queryOptions({ organizationId: organization.id }));
+    prefetch(
+        trpc.skillCheckSessions.listSessions.queryOptions({ organizationId: organization.id }),
+    );
 
     return (
         <HydrateClient>
@@ -39,7 +41,7 @@ export default async function SkillTrack_Sessions_Page(
                             href: route("/orgs/[slug]/skill-track/sessions", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/sessions" />}
+                    actions={<HelpButton id="skill-track/sessions" />}
                 />
                 <Std.ScrollContainer>
                     <SkillTrack_Sessions_List />

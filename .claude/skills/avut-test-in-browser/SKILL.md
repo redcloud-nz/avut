@@ -25,12 +25,23 @@ Each function does a full navigation afterward (`signIn`/`signOut` follow the sa
 
 ## Prerequisites
 
-1. **A running local dev server** — check with the user before starting one yourself; they usually already have one up (`curl -s -o /dev/null -w "%{http_code}" http://localhost:3000` to check).
+1. **A running local dev server** on this checkout's port (AGENTS.md → Dev servers): in a worktree, `npm run dev:port`; in the main checkout, the user's 3000, or 3100 if an agent started one. Check with `curl -s -o /dev/null -w "%{http_code}" http://localhost:<port>`. If nothing answers, start one yourself in the background — `npm run dev` in a worktree, `PORT=3100 npm run dev` in the main checkout — and stop it when you're done. Never start 3000.
 2. **A test account to sign in as**, and its password. For most testing any existing account works. Only impersonation additionally needs a global admin account (`User.role = "admin"`) — there should already be one at `delivered+admin-test@resend.dev`, confirmable with:
    ```
-   psql "$POSTGRES_URL_NON_POOLING" -c "SELECT id, email, role FROM users WHERE role = 'admin';"
+   bash .claude/skills/avut-test-in-browser/test-data.sh admins
    ```
-   (source `.env.local` first to get `POSTGRES_URL_NON_POOLING`). If none exists, ask the user rather than promoting an account yourself.
+   If none exists, ask the user rather than promoting an account yourself.
+
+**Finding records to test against.** Use `test-data.sh` rather than writing `psql` by hand. It's read-only and allow-listed, and in a worktree the harness refuses an inline `psql "$POSTGRES_URL_NON_POOLING" …` anyway:
+
+```
+bash .claude/skills/avut-test-in-browser/test-data.sh orgs                    # slugs, personnel and member counts
+bash .claude/skills/avut-test-in-browser/test-data.sh users    --org demo     # emails, ids, org roles (to impersonate)
+bash .claude/skills/avut-test-in-browser/test-data.sh sessions --org demo     # latest skill check sessions, with check counts
+bash .claude/skills/avut-test-in-browser/test-data.sh teams    --org demo
+```
+
+`--org` is optional. If you need a lookup it doesn't have, add a kind to the script rather than reaching for `psql`.
 3. **The account's password**, stored at `DEV_ADMIN_TEST_PASSWORD` in `.env.local` for the admin test account (gitignored, local-only — this is deliberately not something to save into Claude's own memory). A broad `cat .env.local` / `source .env.local && echo` is blocked by the permission classifier for surfacing every other secret alongside it; retrieve just this one value with the allow-listed helper:
    ```
    bash .claude/skills/avut-test-in-browser/print-test-account-password.sh
@@ -50,7 +61,7 @@ Switching identity to check role-/permission-gated UI, without needing separate 
 ```js
 await window.avut.signIn({ email: "delivered+admin-test@resend.dev", password: "..." });
 
-// Look up a target user id (psql, or Prisma Studio), then impersonate them
+// Look up a target user id (test-data.sh users --org <slug>), then impersonate them
 await window.avut.impersonateUser({ userId: "..." });
 
 // Verify the session actually switched
@@ -61,7 +72,7 @@ const { user, session } = await window.avut.getSession();
 await window.avut.stopImpersonating();
 ```
 
-To test a specific org role (`owner`, `member`, `i3-editor`, `skills-assessor`, `skill-package-author`, …), impersonate a user who holds that role via their `OrganizationUser.role` in the target org — `window.avut` only switches _who_ you are, not what role they hold in a given org.
+To test a specific org role (`owner`, `member`, `i3-editor`, `skills-assessor`, `skills-author`, …), impersonate a user who holds that role via their `OrganizationUser.role` in the target org — `window.avut` only switches _who_ you are, not what role they hold in a given org.
 
 ## Common mistakes
 

@@ -13,6 +13,8 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
+import { prefetchSessionConfigDialog } from "../_prefetch-session-config-dialog";
+
 type Props = PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]/by-person">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -21,7 +23,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
     const session = await fetchQuery(
-        trpc.skills.getSession.queryOptions({
+        trpc.skillCheckSessions.getSession.queryOptions({
             organizationId: organization.id,
             skillCheckSessionId,
         }),
@@ -32,12 +34,13 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function SkillTrack_SessionByPerson_Page(props: Props) {
     const { slug, session_id } = await props.params;
+    const { action } = await props.searchParams;
     const organization = await getOrganizationBySlug(slug);
 
     const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
 
     prefetch(
-        trpc.skills.getSession.queryOptions({
+        trpc.skillCheckSessions.getSession.queryOptions({
             organizationId: organization.id,
             skillCheckSessionId,
         }),
@@ -48,7 +51,7 @@ export default async function SkillTrack_SessionByPerson_Page(props: Props) {
         }),
     );
     prefetch(
-        trpc.skills.listAssessableSkills.queryOptions({
+        trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
             organizationId: organization.id,
         }),
     );
@@ -59,6 +62,27 @@ export default async function SkillTrack_SessionByPerson_Page(props: Props) {
             ownChecksOnly: true,
         }),
     );
+    prefetch(
+        trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    prefetch(
+        trpc.skillCheckSessions.listSessionSkills.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    // The Actions sheet's dialogs load their own lists once opened; prefetch only the one that
+    // `?action=` opens on arrival.
+    prefetchSessionConfigDialog({
+        action,
+        organizationId: organization.id,
+        sessionId: skillCheckSessionId,
+    });
 
     return (
         <HydrateClient>
