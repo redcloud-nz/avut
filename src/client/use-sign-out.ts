@@ -6,20 +6,20 @@
 "use client";
 
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
 import { signOut } from "@/client/auth-queries";
 import { SIGN_IN_PATH } from "@/lib/auth-redirect";
-import { getQueryClient } from "@/trpc/query-client";
 
 /**
  * Sign out and tear down every cache holding the previous account's data.
  *
- * `getQueryClient()` returns a browser singleton that survives navigation, so without an
- * explicit teardown every org-scoped tRPC result from the previous account is still in
- * memory when the next user signs in on the same tab. `router.refresh()` does the same for
- * the client-side RSC cache.
+ * `getQueryClient()` returns a browser singleton that survives client-side navigation, as does
+ * the RSC router cache, so the previous account's data has to go. A full page load does that
+ * in one step. Clearing the query cache in place doesn't work: the current page's queries are
+ * still mounted and refetch straight away, now without a session, and each one logs
+ * `UNAUTHORIZED` on the server (the same reason `window.avut.signOut` in
+ * `src/client/dev-tools.ts` reloads).
  *
  * Awaiting `signOut` matters too — navigating first races the cookie clear.
  *
@@ -27,14 +27,9 @@ import { getQueryClient } from "@/trpc/query-client";
  *   to stay put (e.g. the invitation landing page, which renders differently once signed out).
  */
 export function useSignOut(destination: Route = SIGN_IN_PATH) {
-    const router = useRouter();
-
     return useCallback(async () => {
         await signOut();
 
-        getQueryClient().clear();
-
-        router.replace(destination);
-        router.refresh();
-    }, [router, destination]);
+        window.location.replace(destination);
+    }, [destination]);
 }

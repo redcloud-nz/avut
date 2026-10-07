@@ -8,6 +8,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { withArtificialLatency } from "@/lib/artificial-latency";
 import { env } from "@/lib/env";
 import { createTrpcContext } from "@/server/trpc-context";
+import { logTrpcError } from "@/trpc/log-error";
 import { appRouter } from "@/trpc/routers/_app";
 
 const actualHandler = (req: Request) =>
@@ -16,9 +17,7 @@ const actualHandler = (req: Request) =>
         req,
         router: appRouter,
         createContext: createTrpcContext,
-        onError({ error, type, path }) {
-            console.error(`[trpc] Error on ${type} procedure at ${path}:`, error);
-        },
+        onError: logTrpcError,
     });
 
 const handler = env.isDevelopment()

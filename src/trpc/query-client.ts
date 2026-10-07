@@ -13,11 +13,38 @@ import {
 
 import { authQueryKeys, authQueryRetryOptions } from "@/lib/auth-query-keys";
 
+const MAX_QUERY_RETRIES = 3;
+
+/** The HTTP status a failed tRPC call carries (`TRPCClientError.data.httpStatus`), if any. */
+function trpcHttpStatusOf(error: unknown): number | undefined {
+    if (typeof error !== "object" || error === null || !("data" in error)) return undefined;
+    const data = (error as { data?: unknown }).data;
+    if (typeof data !== "object" || data === null || !("httpStatus" in data)) return undefined;
+    const status = (data as { httpStatus?: unknown }).httpStatus;
+    return typeof status === "number" ? status : undefined;
+}
+
+/**
+ * Retry a failed query unless it's a 4xx a retry can't change — `UNAUTHORIZED`, `FORBIDDEN`,
+ * `NOT_FOUND`, `BAD_REQUEST`. React Query's default retries everything three times, so one
+ * unauthenticated call became four requests and four server-side error logs. Network
+ * failures (no status), 5xx, 408 and 429 still retry. Never on the server, matching React
+ * Query's own server default, so SSR doesn't sit in a backoff loop.
+ */
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+    if (environmentManager.isServer()) return false;
+    if (failureCount >= MAX_QUERY_RETRIES) return false;
+
+    const status = trpcHttpStatusOf(error);
+    return status === undefined || status >= 500 || status === 408 || status === 429;
+}
+
 export function makeQueryClient() {
     const queryClient = new QueryClient({
         defaultOptions: {
             queries: {
                 staleTime: 60 * 1000 * 10,
+                retry: shouldRetryQuery,
             },
             dehydrate: {
                 serializeData: superjson.serialize,
