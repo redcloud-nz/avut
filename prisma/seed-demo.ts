@@ -30,6 +30,7 @@ import { Prisma } from "@/generated/prisma/client";
 // eslint-disable-next-line avut/ids-via-schemas -- the credential Account row has no schema of its own; it mirrors the ID better-auth generates
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
@@ -39,6 +40,7 @@ import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscrip
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { UserId } from "@/lib/schemas/user";
+import { UserNoteId } from "@/lib/schemas/user-note";
 import prisma from "@/server/prisma";
 
 const DEMO_SLUG = "demo";
@@ -162,6 +164,19 @@ const PERSONNEL_NAMES = [
 /** Indices into `PERSONNEL_NAMES` who assess. One of them runs each session. */
 const ASSESSOR_INDICES = [0, 1, 2, 3];
 
+/**
+ * The current session's second assessor — the person `assessor@` is linked to, so signing
+ * in as that login shows the recording pages' "Also checked by" marker. Two assessors
+ * checking the same person and skill is also what puts conflicts on the review page.
+ */
+const CO_ASSESSOR_NAME = "Aroha Te Whata";
+
+/** The co-assessor takes this many of the current session's attendees through this many of
+ *  its skills, at `CO_ASSESSOR_FILL` — a handful of overlaps, not a second full grid. */
+const CO_ASSESSOR_ASSESSEES = 3;
+const CO_ASSESSOR_SKILLS = 4;
+const CO_ASSESSOR_FILL = 0.75;
+
 interface PersonSpec {
     id: string;
     name: string;
@@ -233,6 +248,7 @@ async function createOrg(): Promise<string> {
     const organizationId = OrganizationId.create();
     const settings = OrganizationSettings.default();
     settings.modules["skill-track"].enabled = true;
+    settings.modules.notes.enabled = true;
 
     const configRows = Object.entries(OrganizationSettings.flatten(settings)).map(
         ([key, value]) => ({
@@ -302,6 +318,13 @@ async function createUsers(
             name: "Demo Assessor",
             role: "skills-assessor",
             personName: "Aroha Te Whata",
+        },
+        {
+            // Approves sessions: the review page's only fully interactive view.
+            email: `skillsadmin@${EMAIL_DOMAIN}`,
+            name: "Demo Skills Admin",
+            role: "skills-admin",
+            personName: "Lukas Brandt",
         },
         {
             // A member who IS on the roster — the "my own skills" case.
@@ -484,8 +507,13 @@ async function createSessions(
         const when = sessionDate(monthsAgo);
         const isCurrent = monthsAgo === 0;
 
-        // One assessor per session, rotating through the pool.
+        // One assessor per session, rotating through the pool. The current session, still a
+        // draft, has a second one (see `CO_ASSESSOR_NAME`).
         const assessor = assessorPool[i % assessorPool.length];
+        const coAssessor = isCurrent
+            ? (assessorPool.find((p) => p.name === CO_ASSESSOR_NAME && p.id !== assessor.id) ??
+              assessorPool[(i + 1) % assessorPool.length])
+            : null;
 
         // Rotate a fixed-size window of groups. GROUPS_PER_SESSION is coprime with 13
         // groups today, so the window walks the whole catalogue evenly.
@@ -502,10 +530,13 @@ async function createSessions(
         if (assessedSkillIds.length === 0) assessedSkillIds.push(plannedSkillIds[0]);
         const missedCount = plannedSkillIds.length - assessedSkillIds.length;
 
-        // Not everyone makes every training night, and the assessor doesn't assess themselves.
+        // Not everyone makes every training night, and the assessors don't assess themselves.
         // The drifted cohort stops appearing once the session is inside their drift window.
         const eligible = personnel.filter(
-            (p) => p.id !== assessor.id && !(p.hasDrifted && monthsAgo < DRIFT_MONTHS),
+            (p) =>
+                p.id !== assessor.id &&
+                p.id !== coAssessor?.id &&
+                !(p.hasDrifted && monthsAgo < DRIFT_MONTHS),
         );
         const attendanceRate = 0.6 + rng() * 0.25;
         const assessees = eligible.filter(() => rng() < attendanceRate);
@@ -519,13 +550,18 @@ async function createSessions(
                 organizationId,
                 name,
                 sessionNumber: i + 1,
-                status: "Include",
+                // Past nights are approved; the current one is still being recorded.
+                status: isCurrent ? "Draft" : "Include",
                 startsAt: when,
                 endsAt: isCurrent ? null : new Date(when.getTime() + 3 * 60 * 60 * 1000),
                 // Nullable in the DB, but the app's Zod schema requires a string.
                 notes: isCurrent ? "" : `Covered ${sessionGroups.map((g) => g.name).join(", ")}.`,
                 assessees: { connect: assessees.map((p) => ({ id: p.id })) },
-                assessors: { connect: [{ id: assessor.id }] },
+                assessors: {
+                    connect: [assessor, ...(coAssessor ? [coAssessor] : [])].map((p) => ({
+                        id: p.id,
+                    })),
+                },
                 skills: { connect: plannedSkillIds.map((id) => ({ id })) },
             },
         });
@@ -548,10 +584,34 @@ async function createSessions(
                     skillId,
                     result,
                     notes: result === "Pass" || result === "StrongPass" ? "" : pick(FAIL_NOTES),
-                    status: "Include",
+                    status: isCurrent ? "Draft" : "Include",
                     checkedAt: when,
                     recordedAt: when,
                 });
+            }
+        }
+
+        // The co-assessor's checks. Where the main assessor also checked the pair, the review
+        // page shows a conflict to resolve before the session can be approved.
+        if (coAssessor) {
+            for (const assessee of assessees.slice(0, CO_ASSESSOR_ASSESSEES)) {
+                for (const skillId of assessedSkillIds.slice(0, CO_ASSESSOR_SKILLS)) {
+                    if (rng() > CO_ASSESSOR_FILL) continue;
+                    const result = pickWeighted(RESULT_WEIGHTS);
+                    checks.push({
+                        id: SkillCheckId.create(),
+                        organizationId,
+                        sessionId,
+                        assesseeId: assessee.id,
+                        assessorId: coAssessor.id,
+                        skillId,
+                        result,
+                        notes: result === "Pass" || result === "StrongPass" ? "" : pick(FAIL_NOTES),
+                        status: "Draft",
+                        checkedAt: when,
+                        recordedAt: when,
+                    });
+                }
             }
         }
         await prisma.skillCheck.createMany({ data: checks });
@@ -560,11 +620,89 @@ async function createSessions(
         console.log(
             `  session ${i + 1}: "${name}" — ${assessees.length} assessees, ` +
                 `${plannedSkillIds.length} skills (${missedCount} not covered), ` +
-                `${checks.length} checks${isCurrent ? " (in progress)" : ""}`,
+                `${checks.length} checks${isCurrent ? ` (draft, second assessor ${coAssessor?.name})` : ""}`,
         );
     }
 
     console.log(`  ${SESSION_COUNT} sessions, ${totalChecks} checks total`);
+}
+
+/** A few notes, so the Notes list isn't empty. Org notes from two authors, so the owner's
+ *  edit-anyone's rights show; a personal note on the owner's own account. */
+const ORG_NOTES: { author: string; title: string; content: string; daysAgo: number }[] = [
+    {
+        author: "owner",
+        title: "Training night checklist",
+        content: [
+            "## Before the night",
+            "",
+            "- Book the hall and confirm the key holder",
+            "- Check the session's skills and personnel in Skill Track",
+            "- Charge the radios",
+            "",
+            "## On the night",
+            "",
+            "- Sign-in sheet at the door",
+            "- Brief assessors on the skill groups being covered",
+            "- Record results as you go, by person or by skill",
+        ].join("\n"),
+        daysAgo: 3,
+    },
+    {
+        author: "assessor",
+        title: "Light rescue scenario ideas",
+        content: [
+            "Scenarios for the next light rescue night:",
+            "",
+            "1. **Collapsed carport** — cribbing and a two-person lift",
+            "2. **Stairwell carry** — stretcher work on the back stairs",
+            "3. **Night search** — torch-only grid search of the yard",
+        ].join("\n"),
+        daysAgo: 12,
+    },
+    {
+        author: "owner",
+        title: "Equipment shed",
+        content:
+            "The shed code changes on the first of each month. Ask Harriet for the current code.",
+        daysAgo: 40,
+    },
+];
+
+const USER_NOTES: { title: string; content: string; daysAgo: number }[] = [
+    {
+        title: "Things to raise at the next meeting",
+        content: "- Radio replacements\n- First aid refresher dates\n- Welcome the new intake",
+        daysAgo: 2,
+    },
+];
+
+async function createNotes(organizationId: string, userIdByEmail: Map<string, string>) {
+    const userId = (login: string) => userIdByEmail.get(`${login}@${EMAIL_DOMAIN}`)!;
+    const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+
+    await prisma.organizationNote.createMany({
+        data: ORG_NOTES.map((note) => ({
+            id: OrganizationNoteId.create(),
+            organizationId,
+            authorId: userId(note.author),
+            title: note.title,
+            content: note.content,
+            createdAt: daysAgo(note.daysAgo),
+            updatedAt: daysAgo(note.daysAgo),
+        })),
+    });
+    await prisma.userNote.createMany({
+        data: USER_NOTES.map((note) => ({
+            id: UserNoteId.create(),
+            userId: userId("owner"),
+            title: note.title,
+            content: note.content,
+            createdAt: daysAgo(note.daysAgo),
+            updatedAt: daysAgo(note.daysAgo),
+        })),
+    });
+    console.log(`  ${ORG_NOTES.length} org notes, ${USER_NOTES.length} personal note for owner@`);
 }
 
 async function main() {
@@ -577,10 +715,11 @@ async function main() {
 
     const personnel = buildPersonnel();
     await createPeopleAndTeam(organizationId, personnel);
-    await createUsers(organizationId, personnel);
+    const userIdByEmail = await createUsers(organizationId, personnel);
 
     const groups = await subscribeToPackages(organizationId);
     await createSessions(organizationId, personnel, groups);
+    await createNotes(organizationId, userIdByEmail);
 
     console.log("\nDone. Sign in at /auth/sign-in as one of the demo logins above.");
 }

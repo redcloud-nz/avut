@@ -35,10 +35,11 @@ in MDX → verify → clean up.
 | --- | --- |
 | Organization | `Erehwon CDEM` — slug **`demo`**, so URLs are `/orgs/demo/…` (note the spelling: *Erehwon*) |
 | Team | `Erehwon Response Team` — the org's only team, holding all 32 personnel |
-| Accounts | `owner@demo.avut.nz` (owner), `assessor@demo.avut.nz` (skills-assessor), `responder@demo.avut.nz` (member, on the roster), `member@demo.avut.nz` (member, **no** person record) |
+| Accounts | `owner@demo.avut.nz` (owner → Harriet Blackwood), `assessor@demo.avut.nz` (skills-assessor → Aroha Te Whata), `skillsadmin@demo.avut.nz` (skills-admin → Lukas Brandt — the one who can approve, so the review page is interactive), `responder@demo.avut.nz` (member, on the roster), `member@demo.avut.nz` (member, **no** person record) |
 | Password | `erehwon-demo` (the `DEMO_SEED_PASSWORD` default in `prisma/seed-demo.ts`) |
 | Skill catalogue | The demo org authors no package of its own — it **subscribes** to the three published packages owned by `nzrt-sg`: `NZRT Foundation`, `Light Rescue`, `Flood Response` (13 groups, 84 skills) |
-| Sessions | 15 monthly "… Training Night" sessions, oldest ~14 months back. Each has **one** assessor and covers 3 rotating skill groups; the newest is partially filled and still in progress — that's the hero shot |
+| Sessions | 15 monthly "… Training Night" sessions, oldest ~14 months back, each covering 3 rotating skill groups. All but the newest are **Approved**, with one assessor each. The newest (this month's) is a partly filled **Draft** with a second assessor, Aroha Te Whata: signed in as `assessor@` its recording pages show **Also checked by**, and its review page has a few **Conflicts** — that's the hero shot |
+| Notes | The Notes module is on, with three org notes (by owner@ and assessor@) and one personal note on owner@'s account |
 
 Personnel are synthetic (`@demo.avut.nz`), so there is nothing to redact. **Never** shoot the other
 orgs — `Christchurch CDEM` and `NZRT Steering Group` hold real-looking data.
