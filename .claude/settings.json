@@ -19,7 +19,8 @@
       "Bash(node .claude/skills/avut-status/status.ts)",
       "Bash(node .claude/skills/avut-status/status.ts *)",
       "Bash(node .claude/skills/avut-docs/milestone.ts *)",
-      "Bash(bash .claude/skills/avut-test-in-browser/test-data.sh *)"
+      "Bash(bash .claude/skills/avut-test-in-browser/test-data.sh *)",
+      "Bash(bash .claude/skills/avut-test-in-browser/print-test-account-password.sh)"
     ]
   },
   "enabledPlugins": {
