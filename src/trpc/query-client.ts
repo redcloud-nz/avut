@@ -8,6 +8,8 @@ import superjson from "superjson";
 import {
     defaultShouldDehydrateQuery,
     environmentManager,
+    MutationCache,
+    QueryCache,
     QueryClient,
 } from "@tanstack/react-query";
 
@@ -15,13 +17,43 @@ import { authQueryKeys, authQueryRetryOptions } from "@/lib/auth-query-keys";
 
 const MAX_QUERY_RETRIES = 3;
 
-/** The HTTP status a failed tRPC call carries (`TRPCClientError.data.httpStatus`), if any. */
-function trpcHttpStatusOf(error: unknown): number | undefined {
+/** A field of a failed tRPC call's error data (`TRPCClientError.data`), if present. */
+function trpcErrorDataField(error: unknown, field: "httpStatus" | "code"): unknown {
     if (typeof error !== "object" || error === null || !("data" in error)) return undefined;
     const data = (error as { data?: unknown }).data;
-    if (typeof data !== "object" || data === null || !("httpStatus" in data)) return undefined;
-    const status = (data as { httpStatus?: unknown }).httpStatus;
+    if (typeof data !== "object" || data === null) return undefined;
+    return (data as Record<string, unknown>)[field];
+}
+
+/** The HTTP status a failed tRPC call carries (`TRPCClientError.data.httpStatus`), if any. */
+function trpcHttpStatusOf(error: unknown): number | undefined {
+    const status = trpcErrorDataField(error, "httpStatus");
     return typeof status === "number" ? status : undefined;
+}
+
+/**
+ * The key prefix of `trpc.user.getSession` (the session query behind `useSession()`). Spelled
+ * out as tRPC's `[path, { type }]` key shape, because this module also runs on the server and
+ * can't import the client `trpc` proxy. `query-client.test.ts` checks it against the proxy.
+ */
+export const SESSION_QUERY_KEY_PREFIX = [["user", "getSession"]] as const;
+
+/**
+ * Any tRPC call that comes back `UNAUTHORIZED` means the session has gone: expired, revoked
+ * from another device, or signed out in another tab. Refetch the session straight away, so
+ * `SessionWatcher` sees `null` and sends the user to sign-in, rather than the page carrying
+ * on and failing call by call until the session query's own 5-minute staleness runs out.
+ * `getSession` is a public procedure, so this can't loop. `cancelRefetch: false` lets a
+ * burst of failures share one in-flight refetch.
+ */
+function recheckSessionOnUnauthorized(queryClient: QueryClient, error: unknown) {
+    if (environmentManager.isServer()) return;
+    if (trpcErrorDataField(error, "code") !== "UNAUTHORIZED") return;
+
+    void queryClient.invalidateQueries(
+        { queryKey: SESSION_QUERY_KEY_PREFIX },
+        { cancelRefetch: false },
+    );
 }
 
 /**
@@ -40,7 +72,13 @@ export function shouldRetryQuery(failureCount: number, error: unknown): boolean 
 }
 
 export function makeQueryClient() {
-    const queryClient = new QueryClient({
+    const queryClient: QueryClient = new QueryClient({
+        queryCache: new QueryCache({
+            onError: (error) => recheckSessionOnUnauthorized(queryClient, error),
+        }),
+        mutationCache: new MutationCache({
+            onError: (error) => recheckSessionOnUnauthorized(queryClient, error),
+        }),
         defaultOptions: {
             queries: {
                 staleTime: 60 * 1000 * 10,
