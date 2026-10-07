@@ -248,10 +248,10 @@
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/session-recording-options.webp",
       "width": 384,
-      "height": 470
+      "height": 800
     },
-    "alt": "The Recording Options sheet, with Recording Mode (By Person, By Skill), Skill Order (Alphabetical, By Package/Group) and Configure Session (Personnel, Skills, Assessors).",
-    "capturedAt": "2026-10-07T06:02:10.953Z"
+    "alt": "The Recording Options sheet: Recording Mode (By Person or By Skill), Skill Order (Alphabetical or By Package/Group), and Configure Session links for Personnel, Skills and Assessors.",
+    "capturedAt": "2026-10-07T19:49:30.437Z"
   },
   "skill-track/session-resolve-conflict": {
     "light": {
