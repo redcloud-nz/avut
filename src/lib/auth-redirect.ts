@@ -8,6 +8,7 @@ import { Route } from "next";
 export const SIGN_IN_PATH = "/auth/sign-in";
 export const SIGN_UP_PATH = "/auth/sign-up";
 export const POST_SIGN_IN_PATH = "/auth/post-sign-in";
+export const SIGN_OUT_PATH = "/auth/sign-out";
 
 /**
  * Validate a redirect target that came from user-controllable input (a query param).
@@ -34,6 +35,17 @@ export function signInUrl(returnTo?: string | null): Route {
     const path = safeRedirectPath(returnTo);
     if (!path) return SIGN_IN_PATH as Route;
     return `${SIGN_IN_PATH}?redirectTo=${encodeURIComponent(path)}` as Route;
+}
+
+/**
+ * Build the sign-out URL, preserving a validated return path as `?redirectTo=`. Every sign-out
+ * goes through that page (see `src/components/auth/sign-out.tsx`); without a return path it
+ * lands on sign-in.
+ */
+export function signOutUrl(returnTo?: string | null): Route {
+    const path = safeRedirectPath(returnTo);
+    if (!path) return SIGN_OUT_PATH as Route;
+    return `${SIGN_OUT_PATH}?redirectTo=${encodeURIComponent(path)}` as Route;
 }
 
 /** Build the post-sign-in URL, preserving a validated return path as `?redirectTo=`. */

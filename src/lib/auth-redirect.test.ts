@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { authUrl, postSignInUrl, safeRedirectPath, signInUrl } from "./auth-redirect";
+import { authUrl, postSignInUrl, safeRedirectPath, signInUrl, signOutUrl } from "./auth-redirect";
 
 describe("safeRedirectPath", () => {
     it("accepts same-origin relative paths", () => {
@@ -55,6 +55,22 @@ describe("postSignInUrl", () => {
 
     it("falls back to the bare post-sign-in path for unsafe input", () => {
         expect(postSignInUrl("https://evil.example")).toBe("/auth/post-sign-in");
+    });
+});
+
+describe("signOutUrl", () => {
+    it("is the bare sign-out path without a return path", () => {
+        expect(signOutUrl()).toBe("/auth/sign-out");
+    });
+
+    it("encodes a valid return path", () => {
+        expect(signOutUrl("/invitations/abc")).toBe(
+            "/auth/sign-out?redirectTo=%2Finvitations%2Fabc",
+        );
+    });
+
+    it("drops an unsafe return path", () => {
+        expect(signOutUrl("//evil.example")).toBe("/auth/sign-out");
     });
 });
 

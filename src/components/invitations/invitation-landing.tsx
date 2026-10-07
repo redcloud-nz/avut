@@ -14,7 +14,6 @@ import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
-import { useSignOut } from "@/client/use-sign-out";
 import { userEffects } from "@/client/user-effects";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/card";
 import { ObjectName } from "@/components/ui/typography";
 import { useLogger } from "@/hooks/use-logger";
+import { signOutUrl } from "@/lib/auth-redirect";
 import { route } from "@/lib/routes";
 import type { InvitationId } from "@/lib/schemas/organization-invitation";
 import { trpc } from "@/trpc/client";
@@ -283,11 +283,9 @@ function Respond_Actions({
 }
 
 function SwitchAccount_Button({ returnTo }: { returnTo: Route }) {
-    const signOut = useSignOut(returnTo);
-
     return (
-        <Button type="button" variant="outline" onClick={() => void signOut()}>
-            Sign out and continue
+        <Button variant="outline" asChild>
+            <Link href={signOutUrl(returnTo)}>Sign out and continue</Link>
         </Button>
     );
 }
