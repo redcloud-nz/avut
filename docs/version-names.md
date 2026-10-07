@@ -3,6 +3,8 @@
 Proposed codenames for AVUT releases. Pick the next unused name from the top of
 the list.
 
+Used so far: `philomel` (v0.8–v0.10), `laburnum` (v0.11).
+
 ## Theme 1 — Ships of the New Zealand Division of the Royal Navy
 
 The [New Zealand Division of the Royal Navy](https://en.wikipedia.org/wiki/New_Zealand_Division_of_the_Royal_Navy)
@@ -16,7 +18,7 @@ Zealand service.
 | `chatham`    | Town-class cruiser                | 1920–1924  | Early flagship of the division, on loan from the Royal Navy.                                                                   |
 | `torch`      | Convoy sloop                      | 1921–1924  | Short-serving early sloop of the division.                                                                                     |
 | `philomel`   | Pearl-class cruiser               | 1921–1941  | The division's depot/training ship for its entire existence; the name lives on as the Devonport naval base, HMNZS Philomel.    |
-| `laburnum`   | Acacia-class sloop                | 1922–1935  | Auckland-based drill ship for the Royal Naval Volunteer Reserve.                                                               |
+| `laburnum`   | Acacia-class sloop                | 1922–1935  | Toured NZ ports and the Pacific Islands; left in 1935 to be a drill ship at Singapore, and was scuttled there in 1942.         |
 | `dunedin`    | Danae-class cruiser               | 1924–1937  | One of the two cruisers that replaced Chatham; sunk by U-124 in 1941 while in RN service.                                      |
 | `nucula`     | Fleet oiler (RFA)                 | 1924–1937  | The division's dedicated oil tanker.                                                                                           |
 | `diomede`    | Danae-class cruiser               | 1926–1935  | Sister ship to Dunedin; the pair formed the division's cruiser strength through the late 1920s.                                |

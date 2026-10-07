@@ -5,8 +5,8 @@
   "nz.avut": {
     "displayName": "AVUT",
     "repositoryUrl": "https://github.com/redcloud-nz/avut",
-    "version": "0.10",
-    "versionName": "Philomel"
+    "version": "0.11",
+    "versionName": "Laburnum"
   },
   "scripts": {
     "dev": "bash scripts/dev.sh",
