@@ -72,7 +72,7 @@ const { user, session } = await window.avut.getSession();
 await window.avut.stopImpersonating();
 ```
 
-To test a specific org role (`owner`, `member`, `i3-editor`, `skills-assessor`, `skill-package-author`, …), impersonate a user who holds that role via their `OrganizationUser.role` in the target org — `window.avut` only switches _who_ you are, not what role they hold in a given org.
+To test a specific org role (`owner`, `member`, `i3-editor`, `skills-assessor`, `skills-author`, …), impersonate a user who holds that role via their `OrganizationUser.role` in the target org — `window.avut` only switches _who_ you are, not what role they hold in a given org.
 
 ## Common mistakes
 
