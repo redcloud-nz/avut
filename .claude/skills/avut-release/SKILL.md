@@ -96,13 +96,15 @@ list anyway). Add `### Upgrade notes` only if there's a migration / env var /
 config action. Two or three sentences of framing at the top. Show the draft to
 the user and let them edit before committing.
 
-Then check the in-app "What's new" entry, `content/updates/v$NEW.mdx`. List the
-user-facing changes in the range, compare them with that file's sections (it may
-already exist, started by the features' own PRs), and offer to draft or fill it
-in, following [`content/updates/README.md`](../../../content/updates/README.md).
-Production shows it once this release deploys. This is a soft step: if the user
-declines, or nothing is user-facing, carry on. `git add` the file if it's new so
-it lands in the release commit.
+Then check that the in-app "What's new" entry, `content/updates/v$NEW.mdx`, is
+on `integration`. `/avut-docs` writes it during the docs pass, so it's normally
+there already, and production shows it once this release deploys. If it's
+missing, either the release has nothing user-facing (no docs issue, typical for
+a patch) or the docs pass was skipped. In that case, list the user-facing
+changes in the range and offer to draft it here, following
+[`content/updates/README.md`](../../../content/updates/README.md), and `git add`
+it so it lands in the release commit. This is a soft step: if the user declines,
+or nothing is user-facing, carry on.
 
 ```bash
 git add "docs/releases/v$NEW.md"                       # new file — `commit -a` won't pick it up

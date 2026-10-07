@@ -1,13 +1,13 @@
 ---
 name: avut-docs
-description: Bring the end-user guides (content/docs/** and its screenshots) up to date for a milestone, working through that milestone's "Docs: v<version>" issue, which /avut-ship adds an item to for each user-facing PR. With `consolidate`, only fold the item comments into the issue's checklist. Trigger only when the user types /avut-docs.
+description: Bring the end-user guides (content/docs/** and its screenshots) up to date for a milestone, and write its in-app "What's new" entry (content/updates/v<version>.mdx), working through that milestone's "Docs: v<version>" issue, which /avut-ship adds an item to for each user-facing PR. With `consolidate`, only fold the item comments into the issue's checklist. Trigger only when the user types /avut-docs.
 effort: high
 manual: true
 ---
 
 # Docs
 
-End-user guides trail the code on purpose. A feature branch doesn't touch `content/docs/**` or its screenshots, because a screenshot taken mid-feature goes stale with the next UI tweak. Instead, `/avut-ship` posts one item per user-facing PR as a comment on the milestone's docs issue. This skill brings the docs up to date once per milestone, after the milestone's UI has settled and before `/avut-release`. The release's milestone check sees the docs issue still open until this has run.
+End-user guides trail the code on purpose. A feature branch doesn't touch `content/docs/**` or its screenshots, because a screenshot taken mid-feature goes stale with the next UI tweak. Instead, `/avut-ship` posts one item per user-facing PR as a comment on the milestone's docs issue. This skill brings the docs up to date once per milestone, after the milestone's UI has settled and before `/avut-release`, and writes the release's "What's new" entry from the same checklist. The release's milestone check sees the docs issue still open until this has run.
 
 The in-app help cards (`content/help/**`) are the exception: feature branches keep them current themselves (see `content/README.md`). This pass only checks that the cards for the screens it touches still agree with the guides it rewrites.
 
@@ -71,13 +71,19 @@ Several items often touch the same page. Do them together, so a page is rewritte
 
 Tick each item once its commit is in: `node .claude/skills/avut-docs/milestone.ts docs-tick <version> <PR>`. Items that need no change once you look (a later PR already covered them, or the change turned out invisible) get ticked with a note: `docs-tick <version> <PR> "no change needed: <why>"`.
 
-### Step 6 — Visual checkpoint
+### Step 6 — The "What's new" entry
 
-Give the user the local `/docs/...` URLs of every page you changed, on the worktree's port. Iterate on feedback without committing each round (as in `/avut-develop-feature`'s visual checkpoints), then commit once.
+Write the release's in-app "What's new" entry, `content/updates/v<version>.mdx`, following [`content/updates/README.md`](../../../content/updates/README.md). The checklist is its outline: every item is a user-facing PR in this release, so each gets a `###` section unless it's too small for users to notice. Several items about one feature become one section. Describe what users can now do, in the guides' voice, and link to the guide pages you just updated rather than repeating them.
 
-### Step 7 — Ship
+The file may already exist, started by the features' own PRs. Fill in what's missing; don't rewrite what's there. Then commit it with `docs(updates): v<version> what's new`. Production shows it only once the release deploys, so it's safe to merge now.
 
-Run `docs-consolidate` once more, in case a ship landed an item mid-pass. Work any new items, then continue into `/avut-ship`, telling it:
+### Step 7 — Visual checkpoint
+
+Give the user the local `/docs/...` URLs of every page you changed, on the worktree's port, plus `/docs/updates#v<version>` for the entry. Iterate on feedback without committing each round (as in `/avut-develop-feature`'s visual checkpoints), then commit once.
+
+### Step 8 — Ship
+
+Run `docs-consolidate` once more, in case a ship landed an item mid-pass. Work any new items, adding them to the "What's new" entry too, then continue into `/avut-ship`, telling it:
 
 - the PR closes the docs issue: `Closes #<n>` in the Summary
 - there's no docs impact to record, because this PR is the docs work
@@ -90,4 +96,4 @@ If items are left unticked on purpose (the user deferred them), say so in the PR
 - Editing the docs issue's body or comments by hand instead of through `milestone.ts`, other than to resolve a skipped comment with the user (Step 2).
 - Taking screenshots outside the `demo` org, or under a new id when re-shooting an existing one.
 - Documenting the PR description instead of the UI as it is now.
-- Writing "What's new" entries here. `content/updates/` is part of `/avut-release`.
+- Leaving out the "What's new" entry (Step 6). `/avut-release` only checks for it; this pass is where it gets written.

@@ -47,7 +47,9 @@ should all be closed, or moved to the next milestone. That includes its
 and its screenshots) themselves; they do keep the in-app help cards
 (`content/help/**`) current. Each user-facing PR adds an item to that issue
 instead, and `/avut-docs <version>` works through them in one pass once the UI
-has settled, so each screenshot is taken once. `/avut-release` lists any open
+has settled, so each screenshot is taken once. The same pass writes the
+release's in-app "What's new" entry, [`content/updates/v<version>.mdx`](../content/updates/README.md),
+from that checklist. `/avut-release` lists any open
 issues in the milestone and asks before going on, and closes the milestone once
 the release is verified.
 
@@ -69,12 +71,12 @@ sentences plus highlights — the actual PR list gets appended automatically
 (see [Release notes](#release-notes) below). The `/avut-release` skill drafts
 it from the commit range.
 
-Review what's shipping for user-facing changes, and make sure the release's
-[`content/updates/v0.8.mdx`](../content/updates/README.md) covers each one —
-that's what users see in the in-app "What's new" dialog, and production shows it
-once this version deploys. It's reviewed, not enforced: not every release has
-user-facing changes, and the file can be started earlier with the features' own
-PRs.
+Check that the release's [`content/updates/v0.8.mdx`](../content/updates/README.md)
+is on `integration` — that's what users see in the in-app "What's new" dialog,
+and production shows it once this version deploys. The docs pass (step 0)
+writes it. If it's missing because the release has no docs issue (typical for a
+patch) but does change something users would notice, add it in this PR. It's
+reviewed, not enforced.
 
 ```bash
 git add docs/releases/v0.8.md content/updates/   # new files — `commit -a` won't pick them up

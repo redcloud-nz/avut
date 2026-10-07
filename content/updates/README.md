@@ -42,8 +42,10 @@ would notice. A release with nothing user-facing gets no entry.
 
 Production shows an entry only once it's running that release or a later one:
 it compares the filename with its own `nz.avut.version`. So the next release's
-entry can land on `integration` early, with the features' own PRs, and grow
-until the release is cut. Development and preview deployments show every entry,
+entry can land on `integration` before the release. `/avut-docs` writes it in
+the milestone's docs pass, using the docs issue's checklist (one item per
+user-facing PR) as its outline. A feature's own PR may start it early, and
+`/avut-release` checks it's there. Development and preview deployments show every entry,
 drafts included.
 
 A user has seen every release up to the newest entry they've dismissed. New
