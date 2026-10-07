@@ -34,10 +34,25 @@ person to at most one user — but neither side requires the other:
   account) but won't appear in personnel-based screens like sessions or
   reports.
 
-Linking isn't part of the invite flow — it's a manual step. From a user's
-detail page (**Admin → Users**), use **Link Person** to search and attach an
-unlinked personnel record; **Unlink Person** removes the connection without
-deleting either record.
+There are four ways to link them:
+
+- **Invite from the person record.** **Invite to AVUT**, on a person's page in
+  **Personnel**, emails them an invitation. When they accept it, their account
+  is linked to that record. If the email already belongs to a member of your
+  organisation, the dialog offers **Link Account** instead, which links them
+  straight away.
+- **Link from the person side.** **Link to user**, in a person's menu, attaches
+  an existing member's account. **Unlink from user** removes the connection.
+- **Link from the user side.** **Link person**, on a user's page in **Users**,
+  attaches a person record that isn't linked yet. **Unlink** removes it.
+- **Link automatically by email.** **Organisation Settings → Personnel** has two
+  switches. **Link on invitation accept** links someone who accepts any
+  invitation to the person record with the same email, if there is one. **Link
+  when a person is added** links a new person record to the existing member with
+  the same email. Neither switch ever adds someone to the organisation: only an
+  invitation does that.
+
+Unlinking never deletes either record.
 
 <Callout>
   Several places in the app — recording a skill check yourself, for example — require you to have a

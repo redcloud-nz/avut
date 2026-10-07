@@ -1,0 +1,42 @@
+---
+title: Invitations
+description: Inviting someone to sign in to your organisation, and tracking the invitations you've sent.
+section: org-admin
+order: 50
+keyTerms: ["user", "role"]
+---
+
+# Invitations
+
+An invitation is how someone becomes a [user](/docs/admin/users) of your
+organisation. It's emailed to them with a link to sign in, or to sign up if
+they're new to AVUT, and join.
+
+## Sending one
+
+Owners and admins send an invitation with **New Invitation**: enter the email
+address and tick the roles they'll get. A module's roles only appear while that
+module is turned on.
+
+If the person is already in [Personnel](/docs/admin/personnel), invite them
+with **Invite to AVUT** on their person record instead: accepting that
+invitation links their account to the record. An invitation sent from this
+page links them only if **Link on invitation accept** is on in **Organisation
+Settings** and a person record has the same email.
+
+## The list
+
+**Invitations** lists every invitation sent from your organisation, newest
+first, with the roles it grants and its status:
+
+| Status        | Meaning                                          |
+| ------------- | ------------------------------------------------ |
+| **Pending**   | Sent, and waiting for an answer.                 |
+| **Accepted**  | They joined. They're now listed under **Users**. |
+| **Rejected**  | They turned it down.                             |
+| **Cancelled** | Revoked before they answered.                    |
+
+Use the **Roles** and **Status** filters to narrow the list.
+
+A pending invitation's menu has **Resend**, which emails it again, and
+**Revoke**, which cancels it so its link no longer works.

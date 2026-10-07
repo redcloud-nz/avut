@@ -1,6 +1,6 @@
 ---
 title: D4H Views
-description: Read-only views of your connected D4H data.
+description: Read-only views of your D4H equipment and members.
 section: d4h-views
 order: 0
 keyTerms: ["d4h"]
@@ -8,17 +8,21 @@ keyTerms: ["d4h"]
 
 # D4H Views
 
-D4H Views shows data from your organisation's **D4H** account inside AVUT,
-read-only. It's there so you can reference D4H members, equipment, and activity
-without switching tools.
+D4H Views shows data from **D4H** inside AVUT, read-only, so you can look up
+equipment and members without switching tools. Nothing here changes D4H; make
+changes in D4H itself.
 
 ## Requirements
 
-This module only works when your organisation has configured a D4H access token.
-If you don't see any data, ask an admin to check the D4H connection in settings.
+D4H Views uses **your own personal D4H access token**, not one shared by the
+organisation, so you see what your D4H account can see. Add a token under
+**User Settings → D4H**.
+
+The organisation also needs the D4H Views module and the **D4H Integration**
+turned on in [Organisation Settings](/docs/admin/organization#integrations).
 
 ## What you can see
 
-The available views mirror the D4H resources your token has access to — members,
-teams, and equipment among them. Nothing here changes D4H; edits still happen in
-D4H itself.
+- **Equipment** — browse by **Equipment Brands** and their models, or by
+  **Equipment Categories** and their kinds, down to individual items.
+- **Members** — the D4H members of your teams.

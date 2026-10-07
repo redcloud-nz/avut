@@ -8,27 +8,59 @@ keyTerms: ["skill-check", "skill-check-session", "team"]
 
 # Reports
 
-All four reports summarise the same underlying competency data, just sliced
-differently. Each one opens a dialogue to pick its scope (a person, a team, or a
-skill) before showing results.
+All four reports summarise the same competency data, just sliced differently.
+Each one opens a dialog to pick its scope (a person, a team, or a skill) before
+showing results; **Change scope** picks again. Skills Reporters, Skills
+Assessors and Skills Admins can open them.
 
-Every report uses the same four-state status for a person/skill pairing:
+## How a status is worked out
+
+Every report gives each person one status per skill:
 
 | Status        | Meaning                                                  |
 | ------------- | -------------------------------------------------------- |
-| Current       | Competent, and still within the skill's currency window. |
-| Expired       | Was competent, but the currency window has lapsed.       |
-| Not Competent | The most recent recorded result wasn't a pass.           |
-| Not Assessed  | No check on record for this person/skill pairing.        |
+| Current       | A pass, still within the skill's reassessment interval.  |
+| Expired       | A pass, but the reassessment interval has run out.       |
+| Not Competent | Any other result, including Fail, Not Taught and Exempt. |
+| Not Assessed  | No approved check for this person and skill.             |
+
+The status comes from the person's **most recent** check of the skill, so a
+newer fail replaces an older pass. Only some checks count:
+
+- Only checks in an **approved** session count. Checks in a draft or reopened
+  session, excluded checks, and checks added on the
+  [Checks](/docs/skill-track/checks) page don't.
+- Only **active** personnel appear.
+- Only **active** skills appear, from packages your organisation subscribes to
+  that are still published and not archived.
+
+A skill's reassessment interval is set by the package's author, in months. A
+skill whose interval is 0 never expires.
 
 <SyntheticChecksCallout />
 
+## Report options
+
+Each report's menu (⋮) changes what it shows. Not every report has every
+option:
+
+- **Only Gaps** — hide everything that's fine, leaving only what needs
+  attention.
+- **Skill Description** — show each skill's description under its name.
+- **Status Counts** — show how many of each status there are, under the title.
+
+Wherever a skill's name appears, click it for its description and
+reassessment interval. Wherever a status appears for one person, click it for
+the check behind it: the result, when it was assessed and when it expires, who
+assessed it, and any notes.
+
 ## Personnel Competency
 
-Shows one person's status across every skill your organisation has
-subscribed to. Pick the person from the scope dialogue; use it to see one
-person's full competency picture at a glance, or to prep for a
-re-assessment by spotting what's expired or missing.
+Shows one person's status on every skill your organisation subscribes to,
+grouped by package and skill group, with the date each was last checked. Use
+it to see one person's full competency picture at a glance, or to prepare for
+a re-assessment by spotting what's expired or missing. **Only Gaps** leaves just
+the skills that aren't Current.
 
 <Screenshot
   id="skill-track/report-person"
@@ -37,11 +69,14 @@ re-assessment by spotting what's expired or missing.
 
 ## Team Competency
 
-Summarises competency **per skill** across a group of people — pick a
-specific team or the whole organisation from the scope dialogue. Rather than
-listing every person, each skill shows how many people in scope are Current,
-Expired, Not Competent, or Not Assessed, so it's the quickest way to spot a
-skill your team is falling behind on.
+Summarises competency **per skill** across a group of people — pick a team or
+**Whole Organisation**. Rather than listing every person, each skill's bar
+splits the team's active members by status, and the figure beside it is how
+many are Current. It's the quickest way to spot a skill your team is falling
+behind on. **Only Gaps** leaves just the skills where not everyone is Current.
+
+To see who, open the [Personnel × Skill Matrix](#personnel--skill-matrix) or
+[Skill Coverage](#skill-coverage) for the same team.
 
 <Screenshot
   id="skill-track/report-team"
@@ -50,19 +85,19 @@ skill your team is falling behind on.
 
 ## Personnel × Skill Matrix
 
-A grid with every person in scope down one side and every skill across the
-top, each cell coloured by status. Pick a team or the whole organisation from
-the scope dialogue — this is the report to reach for when you want the full
-picture at once, rather than one person or one skill at a time.
+A grid with every skill down the side, grouped by package and skill group, and
+every active person in scope across the top, each cell showing that person's
+status. Pick a team or **Whole Organisation** — this is the report to reach for
+when you want the full picture at once, rather than one person or one skill at
+a time.
 
 <Screenshot
   id="skill-track/report-matrix"
   caption="Skills down the side, people across the top, one status icon per pairing."
 />
 
-Two things in the grid are clickable. A **skill name** down the left opens
-its description and how often it needs reassessing — useful when a row's
-colour makes you ask what the skill actually demands.
+A **skill name** down the side opens its description and how often it needs
+reassessing — useful when a row makes you ask what the skill actually demands.
 
 <Screenshot
   id="skill-track/report-matrix-skill"
@@ -70,9 +105,9 @@ colour makes you ask what the skill actually demands.
 />
 
 A **cell** opens the check behind it: the result, when it was assessed and
-when it expires (with both as plain dates and as "10 months ago"), who
-assessed it, and any note they left. The popover shows the check, not the
-pairing, so it doesn't repeat the person and skill you clicked.
+when it expires (both as plain dates and as "10 months ago"), who assessed it,
+and any note they left. The popover shows the check, not the pairing, so it
+doesn't repeat the person and skill you clicked.
 
 <Screenshot
   id="skill-track/report-matrix-cell"
@@ -81,10 +116,13 @@ pairing, so it doesn't repeat the person and skill you clicked.
 
 ## Skill Coverage
 
-Flips the matrix around: pick one skill from the scope dialogue (optionally
-narrowed to a team) and see everyone's status for it. Use this when the
-question is "who can do X" rather than "how is this person or team doing
-overall."
+Flips the matrix around: pick one skill, optionally narrowed to a team, and
+see every active person's status for it, with the date each was last checked.
+Use this when the question is "who can do this?" rather than "how is this
+person or team doing overall?".
+
+The people who need attention sort first: **Not Competent**, then
+**Expired**, then **Not Assessed**, then **Current**.
 
 <Screenshot
   id="skill-track/report-skill"

@@ -1,6 +1,6 @@
 ---
 title: Sessions
-description: Running a skill check session — from setup, through recording, to approval.
+description: Running a skill check session — from setup, through recording, to review and approval.
 section: skill-track
 order: 20
 keyTerms: ["skill-check-session", "skill-check", "assessor", "assessee"]
@@ -9,20 +9,33 @@ keyTerms: ["skill-check-session", "skill-check", "assessor", "assessee"]
 # Sessions
 
 A **skill check session** is the usual way to run assessments — for example,
-everything assessed on one training day. From there, a session moves through
-five steps.
+everything assessed on one training night. You choose who and what is being
+assessed, one or more assessors record the results, and a Skills Admin reviews
+and approves the session. Only checks in an approved session count in
+[reports](/docs/skill-track/reports).
+
+Skills Assessors and Skills Admins run sessions. Skills Reporters can open them
+and see everything, but not change anything. Approving, reopening and deleting a
+session is for Skills Admins.
 
 ## 1. Create the session
 
-Start from the Sessions list with **New Session**, giving it a name, a date,
-and optional notes. Name and date are both optional — leave the name blank and
-it takes the next sequential number shown in the placeholder; leave the
-date and it defaults to today.
+Start from the Sessions list with **New Session**, giving it a name, a date and
+optional notes. All three are optional: leave the name blank and it takes the
+next session number shown in the placeholder, and leave the date and it
+defaults to today.
 
 <Screenshot
   id="skill-track/create-session"
   caption="Leave the name blank to take the suggested session number, and the date to take today."
 />
+
+Every check recorded in the session is dated with the session's date, not the
+day it was entered. Set it to the day the assessing happened. If you change the
+date later, the session's checks move with it.
+
+Creating a session makes you its first and only assessor, so you need a
+[person record linked](/docs/admin/user-vs-person) to your account.
 
 ## Getting around a session
 
@@ -35,14 +48,20 @@ Skill Track nav and pick it out of the list.
   caption="The session page. Everything else in this guide is one click from here."
 />
 
-There are two places to go from:
+The **Contents** card lists what's in the session, with counts. Click a row to
+change it:
 
-- The **Contents** card lists **Personnel**, **Skills** and **Skill checks**
-  with their current counts. Clicking a row opens that page — the first two are
-  steps 2 and 3 below, and Skill checks is the read-only log described at the
-  end of step 4.
-- The page header carries **Record**, a menu holding the two recording views,
-  and **Review**, which is step 5.
+- **Personnel**, **Skills** and **Assessors** open a dialog to choose them —
+  steps 2 and 3 below.
+- **Skill checks** opens a read-only log of every check recorded in the
+  session, by every assessor, filterable by result and status.
+- **Conflicts** only shows while two assessors' checks of the same person and
+  skill are still unresolved. It opens the review page at its Conflicts card
+  (step 5).
+
+The page header carries **Record**, a menu holding the two recording views
+(step 4), and the menu (⋮), which holds **History**, **Review**, **Edit** and
+**Delete**, plus **Reopen** once the session is approved.
 
 <Screenshot
   id="skill-track/session-record-menu"
@@ -51,45 +70,52 @@ There are two places to go from:
 
 ## 2. Choose skills
 
-Open **Skills** from the Contents card, then tick which catalogue skills apply
-to this session, grouped by package and skill group. Choices save automatically
-as you tick.
+Click **Skills** in the Contents card, then tick the skills this session covers.
+They come from the packages your organisation subscribes to, grouped by package
+and skill group. **Show skill descriptions** adds each skill's description, to
+help you choose. Nothing is saved until you click **Save**.
 
 <Screenshot
   id="skill-track/session-skills"
-  caption="Skills to be assessed in this session, grouped by package and skill group."
+  caption="Ticking the skills this session covers, under each package's skill groups."
 />
 
-## 3. Choose personnel
+## 3. Choose personnel and assessors
 
-Open **Personnel** from the Contents card, then tick who is being assessed in
-this session, grouped by team. This also saves automatically.
+Click **Personnel**, then tick who is being assessed, grouped by team, and
+**Save**. Only active teams are listed, so someone who isn't on an active team
+can't be added.
 
 <Screenshot
   id="skill-track/session-personnel"
   caption="Who is being assessed, one section per team — the count in the team header tracks your ticks."
 />
 
+**Assessors** works the same way, for who can record checks in the session.
+Several assessors can record at once, each working through their own share. An
+assessor needs the Skills Assessor or Skills Admin role, and a linked person
+record.
+
 ## 4. Record results
 
 This is the actual assessing, done from either **By Person** or **By Skill** —
 the two entries in the header's **Record** menu. They are two views over the
 same recording control, both laid out as a picker on the left and a scrollable
-list of assessment rows on the right:
+list of rows on the right:
 
-- **By Person** — pick an assessee on the left; every skill assigned to them
+- **By Person** — pick an assessee on the left; every skill in the session
   lists on the right.
-- **By Skill** — pick a skill on the left; every person assigned to it lists
-  on the right.
+- **By Skill** — pick a skill on the left; everyone in the session lists on the
+  right.
 
 <Screenshot
   id="skill-track/session-by-person"
-  caption="By Person — an assessee picked on the left, their assigned skills to record on the right."
+  caption="By Person — an assessee picked on the left, the session's skills to record on the right."
 />
 
 <Screenshot
   id="skill-track/session-by-skill"
-  caption="By Skill — the same screen with the axes swapped: a skill on the left, everyone assigned to it on the right."
+  caption="By Skill — the same screen with the axes swapped: a skill on the left, everyone in the session on the right."
 />
 
 Each row has a **Fail** button, a **Pass** button and a **More** button (**⋯**).
@@ -105,32 +131,55 @@ Every tap saves straight away — there's no separate save step:
   shows as its name in place of the Fail and Pass buttons.
 - A small note icon appears before the buttons when the check has a note.
 
-**More** opens a dialog for that person and skill with every result your
-organisation has enabled (see [Skill Track](/docs/skill-track) for what each
-one means) and a free-text **Notes** field. Pick a result, add a note if you
-like, then **Save**. **Delete** removes the check (again with **Undo**), and
-**Cancel** closes the dialog without changing anything.
+**More** opens a dialog for that person and skill, with the skill's description,
+every result your organisation has enabled (see
+[Skill Track](/docs/skill-track#skill-checks) for what each one means) and a
+free-text **Notes** field. Pick a result, add a note if you like, then **Save**.
+**Delete** removes the check (again with **Undo**), and **Cancel** closes the
+dialog without changing anything.
 
 While a tap is saving, its row dims briefly and its buttons wait until it's
 done. Try it below — this is the same row and dialog you'll see in the app:
 
 <DocsCheckRowDemo />
 
-The **Actions** button in the page header (the sliders icon) opens a side panel:
+### Working with other assessors
 
-- **Configure** — change the session's **Personnel**, **Skills** or
-  **Assessors** without leaving the page.
-- **Record** — switch between **By Person** and **By Skill**.
+You only see, and change, your own checks. When another assessor has checked
+the same person and skill, the row says **Also checked by**, with their name
+and result. It keeps up as they record, within about ten seconds, so you can see
+who has already been covered.
+
+<Screenshot
+  id="skill-track/session-also-checked-by"
+  caption="Another assessor's check on the same person and skill, shown under the skill's name."
+/>
+
+Two checks of the same person and skill are a **conflict**. Nothing stops you
+recording one — the review settles which check counts (step 5).
+
+### Recording options
+
+**Options**, in the page header, opens **Recording Options**:
+
+- **Recording Mode** — switch between **By Person** and **By Skill**.
 - **Skill Order** — **By Package/Group** (the default) nests skills under
   their package and skill group, in catalogue order, with anything no longer
   part of an assessable group collected under "Other." **Alphabetical** lists
   skills by name instead.
-- **Show Skill Description** — when on, each skill's description appears
-  inline alongside its name while you're recording; off shows just the name.
+- **Configure Session** — change the session's **Personnel**, **Skills** or
+  **Assessors** without leaving the page.
+
+<Screenshot
+  id="skill-track/session-recording-options"
+  caption="Recording Options: the recording view, the skill order, and the session's personnel, skills and assessors."
+/>
+
+### On a phone
 
 Both views work on a phone. The layout changes but nothing is dropped: the
-left-hand picker collapses into a dropdown above the results, and the rows
-below it behave exactly as they do on a laptop.
+left-hand picker collapses into a dropdown above the rows, and the rows below
+it behave exactly as they do on a laptop.
 
 <Screenshot
   id="skill-track/session-by-person-phone"
@@ -144,31 +193,80 @@ below it behave exactly as they do on a laptop.
 
 <Callout type="warning">
   Recording requires a [linked personal record](/docs/admin/user-vs-person), and you must be one of
-  the session's assigned assessors. Without both, you'll see a warning banner instead of the
-  recording controls.
+  the session's assessors. Without both, you'll see a warning banner instead of the recording
+  controls. Once the session is approved, the recording pages are locked until it's reopened.
 </Callout>
-
-**Skill checks** in the Contents card opens a read-only log of everything
-recorded so far in the session, filterable by result and status — useful for
-a quick sanity check before moving to review.
 
 ## 5. Review and approve
 
-**Review**, in the session header, lists every recorded check grouped by
-assessee, with a checkbox on each one. Unchecking a check excludes it from the session's
-official results. Clicking **Approve** sets the session's status and stamps
-each check as included or excluded to match your selection.
+**Review**, in the session's menu (⋮), is where a Skills Admin approves the
+session. Anyone else who can see the session gets the same page, read-only.
 
-<Callout>
-  Approving locks the session. To change it, reopen it from the session menu: its included checks go
-  back to **Pending review**, and you can record, review and approve again.
-</Callout>
+<Screenshot
+  id="skill-track/session-review"
+  caption="The review page: the summary tiles, then the Conflicts card — six resolved, three still to go."
+/>
+
+The tiles at the top sum the session up:
+
+- **Unique checks** — how many person and skill pairs have a check. Two
+  assessors checking the same pair count once.
+- **Personnel** and **Skills** — how many have at least one check.
+- **Coverage** — the share of the session's person and skill pairs that have a
+  check.
+
+The menu (⋮) beside **Approve** has **Unassessed personnel** and **Unassessed
+skills**. Untick one to leave the personnel or skills with no checks out of the
+figures — useful when someone didn't turn up.
+
+Below the tiles are three cards:
+
+- **Conflicts** lists each person and skill with more than one check, and
+  whether the results differ. **Resolve** shows the checks side by side: pick
+  the one to include in the approval, or **Exclude all**, then **Save**. A
+  resolved conflict shows what was picked, and **Change** picks again.
+- **Personnel** and **Skills** list each one's checks and coverage. Click one to
+  see its checks, untick any you want to leave out of the approval, then
+  **Save**. Checks in a conflict can't be changed there; settle them with
+  **Resolve**.
+
+<Screenshot
+  id="skill-track/session-resolve-conflict"
+  caption="Resolving a conflict: pick which assessor's check counts, or exclude them all."
+/>
+
+Every check is included unless you exclude it. Each **Save** is kept straight
+away, so you can leave a review half done and come back to it.
+
+**Approve** stays disabled while the session has no checks, or until every
+conflict is resolved. Clicking it asks you to confirm how many checks will be
+approved and how many excluded. Approving keeps the included checks, which then
+count in reports, and locks the session.
+
+## Approved sessions
+
+An approved session's personnel, skills, assessors, checks and date are locked.
+Its name and notes stay editable. The recording pages say the session has been
+approved, and the **Record** menu's views are disabled.
+
+To change anything else, a Skills Admin **Reopens** it from the session's menu
+(⋮). The session goes back to **Draft**, its included checks go back to
+**Pending review**, and you can record, review and approve again. Until it's
+approved again, its results leave the reports.
+
+## Deleting a session
+
+**Delete**, in the session's menu, is for Skills Admins. It's permanent — a
+session doesn't go to the Rubbish bin.
+
+The checks recorded in the session are kept. Approved ones still count in
+reports, now as checks outside any session. The rest never will.
 
 ## Session status
 
 A session is **Draft** while it's being worked on and **Approved** once it's
-approved. Each of its checks has a status too, shown on the session's Checks
-page:
+approved. Each of its checks has a status too, shown in the session's **Skill
+checks** log:
 
 | Status         | Meaning                                                           |
 | -------------- | ----------------------------------------------------------------- |
