@@ -41,6 +41,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { UserId } from "@/lib/schemas/user";
 import { UserNoteId } from "@/lib/schemas/user-note";
+import { getNewestUpdateVersion } from "@/lib/updates";
 import prisma from "@/server/prisma";
 
 const DEMO_SLUG = "demo";
@@ -289,6 +290,8 @@ async function createUsers(
                 name,
                 email,
                 emailVerified: true,
+                // As a real sign-up does (`auth.ts`): no "What's new" dialog over every shot.
+                lastSeenUpdatesVersion: getNewestUpdateVersion(),
                 createdAt: now,
                 updatedAt: now,
                 accounts: {
@@ -634,13 +637,13 @@ const ORG_NOTES: { author: string; title: string; content: string; daysAgo: numb
         author: "owner",
         title: "Training night checklist",
         content: [
-            "## Before the night",
+            "**Before the night**",
             "",
             "- Book the hall and confirm the key holder",
             "- Check the session's skills and personnel in Skill Track",
             "- Charge the radios",
             "",
-            "## On the night",
+            "**On the night**",
             "",
             "- Sign-in sheet at the door",
             "- Brief assessors on the skill groups being covered",
