@@ -1,6 +1,6 @@
 ---
 name: avut-ship
-description: Finish a feature branch — sync with integration, run the full check, get a fresh-context review from a subagent, fix what it finds, then (after one confirmation) push, open the PR with the review in its body, and set it to auto-merge on green CI. Trigger when the user types /avut-ship.
+description: Finish a feature branch — sync with integration, run the full check, get a fresh-context review from a subagent, fix what it finds, then (after one confirmation) push, open the PR with the review in its body, and set it to auto-merge on green CI. After the merge, offer to clean up: leave and remove the worktree, fast-forward local integration, delete the branch, and deploy any migration to the shared dev DB. Trigger when the user types /avut-ship.
 effort: high
 manual: true
 ---
@@ -110,7 +110,7 @@ End-user guides (`content/docs/**` and its screenshots) aren't written per featu
 
 The item is posted in Step 7, once the PR number exists.
 
-## Step 6 — The one confirmation
+## Step 6 — The push confirmation
 
 Show the user, compactly:
 
@@ -120,7 +120,7 @@ Show the user, compactly:
 - the docs item and the milestone it goes to, or "no docs impact"
 - what happens next: "Push, open PR, auto-merge (merge commit) when CI is green; if CI fails, fix it and push the fix" — or without auto-merge if `--no-merge` was given or the change needs a look in the preview first (UI change not yet checked in a browser, or a migration). Say the CI-fix part: the user's yes is what covers those later pushes.
 
-Then wait. This is the only prompt in the flow — pushing is publishing, so it needs an explicit yes. If the user wants changes, make them and show the diff again. Don't restart the review for small edits.
+Then wait. This is the only prompt before the push — pushing is publishing, so it needs an explicit yes. (Step 8's cleanup prompt comes after the merge.) If the user wants changes, make them and show the diff again. Don't restart the review for small edits.
 
 ## Step 7 — Push, open, merge
 
@@ -142,21 +142,38 @@ It finds the milestone's `Docs: <milestone>` issue, creating it if needed, and a
 
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
-**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. When you report the merge, end with the two follow-up commands for the user to run. With `--no-merge`, give them as "once it merges": deploying before then would land an unmerged migration on shared `avut`. Don't run them yourself, because `migrate deploy` mutates the shared database:
+**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. Step 8 deploys it, with the user's yes. With `--no-merge`, give the user the commands as "once it merges", since deploying before then would land an unmerged migration on shared `avut`:
 
 ```bash
 npm run db:unbranch                  # in this checkout: back to avut, drop the copy
 npm run prisma migrate deploy        # apply the merged migration to avut
 ```
 
+## Step 8 — Clean up after the merge
+
+Once CI is green, wait for the merge itself. Auto-merge can lag CI by a minute or two. Poll in the background (`until [ "$(gh pr view <n> --repo redcloud-nz/avut --json state -q .state)" = MERGED ]; do sleep 30; done`) and don't assume it from CI alone. Skip this step with `--no-merge`, for a stacked PR, or if the PR closes without merging.
+
+Then **ask once**, listing exactly what will run. A yes is the explicit permission `migrate deploy` needs (AGENTS.md → Database). The user can drop any item.
+
+1. **Leave the worktree, if the work was in one.** `ExitWorktree` with `action: "keep"` releases the session's lock on it. Without that, `git worktree remove` refuses ("cannot remove a locked working tree"). Then, from the main checkout, run `npm run worktree:remove <name>`, which also drops a `db:branch` copy. On the quick path, the main checkout itself is on the feature branch: `git switch integration` instead. If its `.env.local` points at a branch DB, run `npm run db:unbranch -- --yes`.
+2. **Bring local `integration` up to date,** fast-forward only. `git fetch origin`, then:
+   - if `integration` is checked out in the main checkout and the tree is clean: `git merge --ff-only origin/integration`.
+   - if it isn't checked out anywhere: `git fetch origin integration:integration`.
+   - otherwise (a dirty tree, or a fast-forward that fails because local `integration` has its own commits): skip it and say why. Never stash, reset or merge to force it.
+3. **Delete the local feature branch** with `git branch -d <branch>`. If step 2 was skipped, `-d` can refuse because the merge isn't in local `integration` yet. Then check that the PR is merged (it is, by now) and use `-D`, saying so. Leave the remote branch alone: GitHub deletes it on merge, and `git fetch --prune` tidies the stale ref.
+4. **Deploy the migration to shared `avut`,** only if the branch added one under `prisma/migrations/` (`git diff --name-only <merge-base>..<pr head> -- prisma/migrations`). From the main checkout, now pointed at `avut`, run `npm run prisma migrate deploy`. It needs the merged migration files, so if step 2 was skipped, run it after updating `integration` some other way, or hand the command to the user. Then run `npx prisma generate`, so the main checkout's client matches.
+
+Report what ran and what was skipped. The user's dev server on 3000 picks up the pulled code by itself. Mention a restart only if a migration ran, or if `package.json` changed.
+
 ## Common mistakes
 
 - Reviewing in the authoring session instead of a subagent. That review shares the blind spots of the author.
 - Not merging `origin/<base>` first. That lets two separately-green PRs break `integration` when both merge.
-- Asking for confirmation at several points. There is one, at Step 6.
+- Asking for confirmation at several points. There is one before the push, at Step 6, and one for the cleanup, at Step 8.
 - Re-reviewing the whole branch after fixes, not just the fix delta.
 - Posting the review as a separate `claude-avut` GitHub review. It belongs in the PR body; `/avut-review-pr` is the tool for a formal review.
 - Ticking a browser-verification box that wasn't done.
 - Adding a docs item by hand, or by editing the docs issue's body. `milestone.ts docs-add` posts it as a marked comment; only `/avut-docs` edits the body.
-- Writing end-user docs into the feature PR instead of adding a docs item.
+- Writing end-user guides into the feature PR instead of adding a docs item (help cards, by contrast, do belong in the PR).
 - Reporting a migration-bearing merge without the `db:unbranch` / `migrate deploy` follow-up.
+- Running `git worktree remove` while the session is still inside the worktree (`ExitWorktree` first), or forcing an `integration` update that isn't a clean fast-forward.
