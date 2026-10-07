@@ -1,6 +1,6 @@
 ---
 name: avut-ship
-description: Finish a feature branch — sync with integration, run the full check, get a fresh-context review from a subagent, fix what it finds, then (after one confirmation) push, open the PR with the review in its body, and set it to auto-merge on green CI. Trigger when the user types /avut-ship.
+description: Finish a feature branch — sync with integration, run the full check, get a fresh-context review from a subagent, fix what it finds, then (after one confirmation) push, open the PR with the review in its body, and set it to auto-merge on green CI. After the merge, offer to clean up: leave and remove the worktree, fast-forward local integration, delete the branch, and deploy any migration to the shared dev DB. Trigger when the user types /avut-ship.
 effort: high
 manual: true
 ---
@@ -110,7 +110,7 @@ End-user guides (`content/docs/**` and its screenshots) aren't written per featu
 
 The item is posted in Step 7, once the PR number exists.
 
-## Step 6 — The one confirmation
+## Step 6 — The push confirmation
 
 Show the user, compactly:
 
@@ -120,7 +120,7 @@ Show the user, compactly:
 - the docs item and the milestone it goes to, or "no docs impact"
 - what happens next: "Push, open PR, auto-merge (merge commit) when CI is green; if CI fails, fix it and push the fix" — or without auto-merge if `--no-merge` was given or the change needs a look in the preview first (UI change not yet checked in a browser, or a migration). Say the CI-fix part: the user's yes is what covers those later pushes.
 
-Then wait. This is the only prompt in the flow — pushing is publishing, so it needs an explicit yes. If the user wants changes, make them and show the diff again. Don't restart the review for small edits.
+Then wait. This is the only prompt before the push — pushing is publishing, so it needs an explicit yes. (Step 8's cleanup prompt comes after the merge.) If the user wants changes, make them and show the diff again. Don't restart the review for small edits.
 
 ## Step 7 — Push, open, merge
 
@@ -142,21 +142,72 @@ It finds the milestone's `Docs: <milestone>` issue, creating it if needed, and a
 
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
-**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. When you report the merge, end with the two follow-up commands for the user to run. With `--no-merge`, give them as "once it merges": deploying before then would land an unmerged migration on shared `avut`. Don't run them yourself, because `migrate deploy` mutates the shared database:
+**If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. With auto-merge, Step 8 deploys it, with the user's yes. Without auto-merge, give the user the commands as "once it merges", since deploying before then would land an unmerged migration on shared `avut`:
 
 ```bash
 npm run db:unbranch                  # in this checkout: back to avut, drop the copy
 npm run prisma migrate deploy        # apply the merged migration to avut
 ```
 
+## Step 8 — Clean up after the merge
+
+Step 8 runs only when auto-merge was set in Step 7. Without auto-merge (`--no-merge`, a stacked PR, or a migration or UI change held back for a preview look), stop after reporting the PR. If it carries a migration, give the `db:unbranch` / `migrate deploy` commands from Step 7 as "once it merges".
+
+**Before the merge lands, while the branch still exists,** note two things for the prompt:
+
+- whether the branch adds migrations: `git diff --name-only origin/<base>...HEAD -- prisma/migrations`
+- any dev server you started for this branch (a worktree's `.dev-port`, or 3100)
+
+**Wait for the merge itself.** Auto-merge can lag CI by a minute or two, or stall: a `BEHIND` state under the strict up-to-date rule, after `integration` moved. Poll in the background while the PR is open:
+
+```bash
+while [ "$(gh pr view <n> --repo redcloud-nz/avut --json state -q .state)" = OPEN ]; do sleep 30; done
+gh pr view <n> --repo redcloud-nz/avut --json state,mergeStateStatus
+```
+
+`CLOSED` means it closed without merging: report that and stop. If it's still open well after CI went green, check `mergeStateStatus`. `BEHIND` means sync with the base and push again. The Step 6 yes covers that only when the merge of `origin/<base>` is conflict-free and `npm run check -- --all` passes. Otherwise take it to the user, as in Step 1. Report anything else to the user. Don't start the cleanup on green CI alone.
+
+Then **ask once**, listing exactly what will run. A yes is the explicit permission `migrate deploy` needs (AGENTS.md → Database). The user can drop any item.
+
+1. **Leave the worktree, if the work was in one.**
+   - Stop any dev server you started in it.
+   - `ExitWorktree` with `action: "keep"` releases the session's lock on the worktree. Without that, `git worktree remove` refuses ("cannot remove a locked working tree").
+   - From the main checkout, run `npm run worktree:remove <name>`, which also drops a `db:branch` copy. If it refuses because of untracked or modified files, report them. Don't add `--force`.
+
+   On the quick path, the main checkout itself is on the feature branch: `git switch integration` instead. If its `.env.local` points at a branch DB, run `npm run db:unbranch -- --yes`. That drops the database the user's 3000 server is connected to, so that server needs a restart.
+2. **Bring local `integration` up to date,** fast-forward only. Note its sha first (`git rev-parse integration`) for step 3. Run `git fetch origin`, then:
+   - If `integration` is checked out in the main checkout and the tree is clean: `git merge --ff-only origin/integration`.
+   - If `integration` isn't checked out anywhere: `git fetch origin integration:integration`. That moves the ref but not any working tree.
+   - Otherwise, skip it and say why. That covers a dirty tree, and a fast-forward that fails because local `integration` has its own commits. Never stash, reset or merge to force it.
+3. **Bring the main checkout's generated files up to date,** if step 2 changed its working tree. Compare the sha you noted with the new one (`git diff --name-only <old>..integration`). On the quick path, compare from the feature branch's tip instead, since that's what `node_modules` was built against:
+   - `package-lock.json` changed: `npm install`. Its `postinstall` runs `prisma generate`. If the install rewrites `package-lock.json`, report it; don't commit or revert it.
+   - otherwise, `prisma/schema.prisma` changed: `npx prisma generate`.
+   - `npx next typegen` in every case. It regenerates route types and the content collections (docs, help cards, updates), which `tsc` and the tests read.
+4. **Delete the local feature branch** with `git branch -d <branch>`. `-d` can refuse when the merge isn't in local `integration`, because step 2 was skipped. Then compare `git rev-parse <branch>` with the merged PR's head, read now: `gh pr view <n> --repo redcloud-nz/avut --json headRefOid`.
+   - If they match, use `-D` and say so.
+   - If they differ, there are commits that were never pushed. Keep the branch and report it.
+
+   Leave the remote branch alone: GitHub deletes it on merge, and `git fetch --prune` tidies the stale ref.
+5. **Deploy the migration to shared `avut`,** only if the branch added one. The deploy reads `prisma/migrations` from the working tree and the database from `.env.local`. So run it only when the main checkout passes both checks:
+   - it has `integration` checked out, at `origin/integration`
+   - its `.env.local` has `POSTGRES_DATABASE="avut"`
+
+   Then, in the main checkout: `npm run prisma migrate deploy`, followed by `npx prisma generate`. Otherwise, don't run it. Hand the user the command and the reason, because a deploy from any other tree or database would report success while `avut` stays without the migration.
+
+**Report** what ran and what was skipped. The user's dev server on 3000 picks up pulled code by itself. Say it needs a restart when any of these happened:
+- `npm install` ran, or the Prisma client was regenerated
+- a migration ran
+- `.env.local` was repointed
+
 ## Common mistakes
 
 - Reviewing in the authoring session instead of a subagent. That review shares the blind spots of the author.
 - Not merging `origin/<base>` first. That lets two separately-green PRs break `integration` when both merge.
-- Asking for confirmation at several points. There is one, at Step 6.
+- Asking for confirmation at several points. There is one before the push, at Step 6, and one for the cleanup, at Step 8.
 - Re-reviewing the whole branch after fixes, not just the fix delta.
 - Posting the review as a separate `claude-avut` GitHub review. It belongs in the PR body; `/avut-review-pr` is the tool for a formal review.
 - Ticking a browser-verification box that wasn't done.
 - Adding a docs item by hand, or by editing the docs issue's body. `milestone.ts docs-add` posts it as a marked comment; only `/avut-docs` edits the body.
-- Writing end-user docs into the feature PR instead of adding a docs item.
-- Reporting a migration-bearing merge without the `db:unbranch` / `migrate deploy` follow-up.
+- Writing end-user guides into the feature PR instead of adding a docs item (help cards, by contrast, do belong in the PR).
+- Reporting a migration-bearing PR without auto-merge, and without the `db:unbranch` / `migrate deploy` commands for once it merges.
+- Starting the cleanup on green CI rather than on the merge. Running `git worktree remove` while the session is still inside the worktree (`ExitWorktree` first). Forcing an `integration` update that isn't a clean fast-forward. Running `migrate deploy` from a tree that isn't `integration` on `avut`.
