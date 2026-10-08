@@ -102,7 +102,8 @@ list anyway). Add `### Upgrade notes` only if there's a migration / env var /
 config action. Two or three sentences of framing at the top.
 
 The file may already exist, holding only a `### The name` section, when the
-codename was reserved early. Keep that section and write the rest around it.
+codename was reserved early. Keep that section, write the rest around it, and delete the placeholder
+comment above it.
 
 **The name.** If the codename advances and `### The name` isn't written yet,
 research it and write it, following
@@ -189,6 +190,7 @@ ruleset); this skill does, pushing as the user's own account, which is a
 bypass actor. Not as `claude-avut`.
 
 ```bash
+git fetch origin -q
 git merge-base --is-ancestor origin/integration origin/production && echo fast-forward
 ```
 

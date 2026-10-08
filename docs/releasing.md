@@ -117,7 +117,8 @@ plus the version bump. Sanity check it — this is the whole payload going live.
   `docs/releases/v{version}.md` with a categorized PR list appended below it —
   see [Release notes](#release-notes). The run fails if that notes file is
   missing.
-  Confirm:
+
+Confirm:
 
 ```bash
 gh release list --repo redcloud-nz/avut          # {version} - {versionName}, Latest
