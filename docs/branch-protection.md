@@ -48,7 +48,7 @@ check (CI does run on PRs into `production`), and a push restriction to admins.
   from `production` itself. The required approval keeps releases deliberate.
   Merging to `production` triggers
   [`manage-release-version.yml`](../.github/workflows/manage-release-version.yml),
-  which tags and publishes a GitHub Release from `nz.avut.version`, then tries
-  to sync the merge back onto `integration`. That sync push is currently
-  rejected by the `integration` ruleset (GitHub Actions isn't a bypass actor),
-  so do the sync by hand for now.
+  which tags and publishes a GitHub Release from `nz.avut.version`. Syncing the
+  merge back onto `integration` is a manual push by the admin (see
+  [`releasing.md`](releasing.md#4-sync-production-back-into-integration)):
+  GitHub Actions can't be a bypass actor on the `integration` ruleset.
