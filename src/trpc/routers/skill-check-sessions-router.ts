@@ -992,11 +992,16 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Update the personnel assigned to a skill check session as assessees. This will replace the current list of assessees with the provided list.
+     * Add and remove the personnel assigned to a skill check session as assessees.
+     * Every added person must be in the organization and not `Deleted` (see
+     * `SkillChecks.assertAssessablePersonnel`); removal is never validated.
      * @param skillCheckSessionId The ID of the skill check session to update assessees for.
-     * @param personIds An array of person IDs to assign as assessees to the skill check session.
+     * @param addedPersonIds The people to add as assessees.
+     * @param removedPersonIds The people to remove as assessees.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
-     * @throws TRPCError(CONFLICT) if the session is approved.
+     * @throws TRPCError(BAD_REQUEST) if any added person is not in the organization.
+     * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
+     * runs.
      */
     updateSessionAssessees: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -1016,6 +1021,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
                 const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
                 SkillChecks.assertSessionUnlocked(session);
+                // Checked before the transaction, so a record deleted in between can still be
+                // connected. Records are soft-deleted, so the window only lets a just-Deleted one in.
+                await SkillChecks.assertAssessablePersonnel(ctx, addedPersonIds);
 
                 const changes = [
                     ...addedPersonIds.map((id) => ({
@@ -1030,34 +1038,38 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [updated] = await ctx.prisma.$transaction([
-                    ctx.prisma.skillCheckSession.update({
-                        where: {
-                            id: skillCheckSessionId,
-                            organizationId: ctx.organizationId,
-                        },
-                        include: {
-                            assessees: {
-                                select: {
-                                    id: true,
-                                    name: true,
+                const [, updated] = await ctx.prisma
+                    .$transaction([
+                        // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                        SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                        ctx.prisma.skillCheckSession.update({
+                            where: {
+                                id: skillCheckSessionId,
+                                organizationId: ctx.organizationId,
+                            },
+                            include: {
+                                assessees: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                    },
                                 },
                             },
-                        },
-                        data: {
-                            assessees: {
-                                connect: addedPersonIds.map((id) => ({ id })),
-                                disconnect: removedPersonIds.map((id) => ({ id })),
+                            data: {
+                                assessees: {
+                                    connect: addedPersonIds.map((id) => ({ id })),
+                                    disconnect: removedPersonIds.map((id) => ({ id })),
+                                },
                             },
-                        },
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "SkillCheckSession",
-                        objectId: skillCheckSessionId,
-                        changes,
-                    }),
-                ]);
+                        }),
+                        ctx.logEvent({
+                            action: "Update",
+                            objectType: "SkillCheckSession",
+                            objectId: skillCheckSessionId,
+                            changes,
+                        }),
+                    ])
+                    .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
                 return {
                     updatedAssessees: updated.assessees,
                     updatedSession: SkillCheckSession.fromRecord(updated),
@@ -1075,7 +1087,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @param removedPersonIds The people to remove as assessors.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
      * @throws TRPCError(BAD_REQUEST) if any added person is not an eligible assessor.
-     * @throws TRPCError(CONFLICT) if the session is approved.
+     * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
+     * runs.
      */
     updateSessionAssessors: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -1119,34 +1132,38 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [updated] = await ctx.prisma.$transaction([
-                    ctx.prisma.skillCheckSession.update({
-                        where: {
-                            id: skillCheckSessionId,
-                            organizationId: ctx.organizationId,
-                        },
-                        include: {
-                            assessors: {
-                                select: {
-                                    id: true,
-                                    name: true,
+                const [, updated] = await ctx.prisma
+                    .$transaction([
+                        // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                        SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                        ctx.prisma.skillCheckSession.update({
+                            where: {
+                                id: skillCheckSessionId,
+                                organizationId: ctx.organizationId,
+                            },
+                            include: {
+                                assessors: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                    },
                                 },
                             },
-                        },
-                        data: {
-                            assessors: {
-                                connect: addedPersonIds.map((id) => ({ id })),
-                                disconnect: removedPersonIds.map((id) => ({ id })),
+                            data: {
+                                assessors: {
+                                    connect: addedPersonIds.map((id) => ({ id })),
+                                    disconnect: removedPersonIds.map((id) => ({ id })),
+                                },
                             },
-                        },
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "SkillCheckSession",
-                        objectId: skillCheckSessionId,
-                        changes,
-                    }),
-                ]);
+                        }),
+                        ctx.logEvent({
+                            action: "Update",
+                            objectType: "SkillCheckSession",
+                            objectId: skillCheckSessionId,
+                            changes,
+                        }),
+                    ])
+                    .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
                 return {
                     updatedAssessors: updated.assessors
                         .sort((a, b) => a.name.localeCompare(b.name))
@@ -1157,11 +1174,17 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         ),
 
     /**
-     * Update the skills assigned to a skill check session. This will replace the current list of skills with the provided list.
+     * Add and remove the skills assigned to a skill check session.
+     * Every added skill must be assessable in the organization (see
+     * `SkillChecks.assertAssessableSkills`); removal is never validated, so a skill since
+     * unsubscribed or deleted can still be taken off.
      * @param skillCheckSessionId The ID of the skill check session to update skills for.
-     * @param skillIds An array of skill IDs to assign to the skill check session.
+     * @param addedSkillIds The skills to add.
+     * @param removedSkillIds The skills to remove.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
-     * @throws TRPCError(CONFLICT) if the session is approved.
+     * @throws TRPCError(BAD_REQUEST) if any added skill is not assessable in the organization.
+     * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
+     * runs.
      */
     updateSessionSkills: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -1181,6 +1204,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
                 const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
                 SkillChecks.assertSessionUnlocked(session);
+                // Checked before the transaction, so a record deleted in between can still be
+                // connected. Records are soft-deleted, so the window only lets a just-Deleted one in.
+                await SkillChecks.assertAssessableSkills(ctx, addedSkillIds);
 
                 const changes = [
                     ...addedSkillIds.map((id) => ({
@@ -1195,34 +1221,38 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [updated] = await ctx.prisma.$transaction([
-                    ctx.prisma.skillCheckSession.update({
-                        where: {
-                            id: skillCheckSessionId,
-                            organizationId: ctx.organizationId,
-                        },
-                        include: {
-                            skills: {
-                                select: {
-                                    id: true,
-                                    name: true,
+                const [, updated] = await ctx.prisma
+                    .$transaction([
+                        // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
+                        SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                        ctx.prisma.skillCheckSession.update({
+                            where: {
+                                id: skillCheckSessionId,
+                                organizationId: ctx.organizationId,
+                            },
+                            include: {
+                                skills: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                    },
                                 },
                             },
-                        },
-                        data: {
-                            skills: {
-                                connect: addedSkillIds.map((id) => ({ id })),
-                                disconnect: removedSkillIds.map((id) => ({ id })),
+                            data: {
+                                skills: {
+                                    connect: addedSkillIds.map((id) => ({ id })),
+                                    disconnect: removedSkillIds.map((id) => ({ id })),
+                                },
                             },
-                        },
-                    }),
-                    ctx.logEvent({
-                        action: "Update",
-                        objectType: "SkillCheckSession",
-                        objectId: skillCheckSessionId,
-                        changes,
-                    }),
-                ]);
+                        }),
+                        ctx.logEvent({
+                            action: "Update",
+                            objectType: "SkillCheckSession",
+                            objectId: skillCheckSessionId,
+                            changes,
+                        }),
+                    ])
+                    .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
                 return {
                     updatedSkills: updated.skills,
                     updatedSession: SkillCheckSession.fromRecord(updated),

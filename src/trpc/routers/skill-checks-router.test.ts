@@ -935,6 +935,8 @@ describe("skillChecks — the session approval lock", () => {
     //   standaloneCheck → no session, by assessorPerson
     //   standaloneEditCheck → no session, by assessorPerson (for the edit test)
     //   orphanedCheck   → no session, its assessor purged (assessorId null)
+    //   skill           → in pkg, which the org subscribes to; skill2..4 have no rows
+    //   otherOrg        → holds foreignPerson and foreignSkill (in foreignPkg, not subscribed)
     // Every check is seeded with checkedAt and recordedAt at SEEDED.
     // Each test writes to a check no other test reads, so they don't depend on order.
     const T = {
@@ -962,6 +964,11 @@ describe("skillChecks — the session approval lock", () => {
         standaloneCheck: SkillCheckId.create(),
         orphanedCheck: SkillCheckId.create(),
         standaloneEditCheck: SkillCheckId.create(),
+        pkg: SkillPackageId.create(),
+        otherOrg: OrganizationId.create(),
+        foreignPerson: PersonId.create(),
+        foreignPkg: SkillPackageId.create(),
+        foreignSkill: SkillId.create(),
     };
     const SEEDED = new Date("2026-01-01T00:00:00.000Z");
 
@@ -980,6 +987,56 @@ describe("skillChecks — the session approval lock", () => {
                 data: { id, organizationId: T.org, name, email: `${id}@example.com` },
             });
         }
+        await db.organization.create({
+            data: { id: T.otherOrg, name: "Other Org", slug: T.otherOrg, createdAt: new Date() },
+        });
+        await db.person.create({
+            data: {
+                id: T.foreignPerson,
+                organizationId: T.otherOrg,
+                name: "Foreign Person",
+                email: `${T.foreignPerson}@example.com`,
+            },
+        });
+        for (const [pkgId, organizationId, skillId] of [
+            [T.pkg, T.org, T.skill],
+            [T.foreignPkg, T.otherOrg, T.foreignSkill],
+        ] as const) {
+            const skillGroupId = SkillGroupId.create();
+            await db.skillPackage.create({
+                data: {
+                    id: pkgId,
+                    organizationId,
+                    name: pkgId,
+                    description: "",
+                    properties: {},
+                    published: true,
+                },
+            });
+            await db.skillGroup.create({
+                data: {
+                    id: skillGroupId,
+                    skillPackageId: pkgId,
+                    name: pkgId,
+                    description: "",
+                    properties: {},
+                },
+            });
+            await db.skill.create({
+                data: {
+                    id: skillId,
+                    skillPackageId: pkgId,
+                    skillGroupId,
+                    name: skillId,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+        await db.skillPackageSubscription.create({
+            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg },
+        });
+
         for (const [userId, personId] of [
             [T.assessorUser, T.assessorPerson],
             [T.removedUser, T.removedPerson],
@@ -1102,6 +1159,17 @@ describe("skillChecks — the session approval lock", () => {
             expect(created).toMatchObject({ id: skillCheckId, sessionId: null });
         });
 
+        it("creates a standalone check as Include, so it counts in reports", async () => {
+            const created = await makeCaller().createSkillCheck({
+                organizationId: T.org,
+                skillCheckId: SkillCheckId.create(),
+                sessionId: null,
+                create,
+            });
+
+            expect(created).toMatchObject({ status: "Include" });
+        });
+
         it("stamps a standalone check's checkedAt and recordedAt with now", async () => {
             const now = new Date("2026-10-01T09:00:00.000Z");
             vi.useFakeTimers({ now, toFake: ["Date"] });
@@ -1135,6 +1203,42 @@ describe("skillChecks — the session approval lock", () => {
 
             expect(await db.skillCheck.findUnique({ where: { id: skillCheckId } })).toBeNull();
         });
+
+        for (const [label, userId, override, code] of [
+            [
+                "another person as the assessor",
+                T.assessorUser,
+                { assessorId: T.assessee },
+                "FORBIDDEN",
+            ],
+            ["a caller with no linked person", T.unlinkedUser, {}, "BAD_REQUEST"],
+            [
+                "an assessee from another organization",
+                T.assessorUser,
+                { assesseeId: T.foreignPerson },
+                "BAD_REQUEST",
+            ],
+            [
+                "a skill from a package the organization doesn't subscribe to",
+                T.assessorUser,
+                { skillId: T.foreignSkill },
+                "BAD_REQUEST",
+            ],
+        ] as const) {
+            it(`rejects ${label} with ${code}`, async () => {
+                const skillCheckId = SkillCheckId.create();
+                await expect(
+                    makeCaller(userId).createSkillCheck({
+                        organizationId: T.org,
+                        skillCheckId,
+                        sessionId: null,
+                        create: { ...create, ...override },
+                    }),
+                ).rejects.toMatchObject({ code });
+
+                expect(await db.skillCheck.findUnique({ where: { id: skillCheckId } })).toBeNull();
+            });
+        }
     });
 
     describe("updateSkillCheck", () => {

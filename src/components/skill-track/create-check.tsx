@@ -93,8 +93,9 @@ export function SkillTrack_CreateCheck_Dialog() {
                 <DialogHeader>
                     <DialogTitle>Add Skill Check</DialogTitle>
                     <DialogDescription>
-                        Record a single skill check outside of a session — for an informal
-                        observation or a historical result. You are recorded as the assessor.
+                        Record a single skill check outside of a session, such as an informal
+                        observation. It counts in reports straight away. You are recorded as the
+                        assessor.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBoundary>
