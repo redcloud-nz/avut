@@ -1021,6 +1021,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
                 const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
                 SkillChecks.assertSessionUnlocked(session);
+                // Checked before the transaction, so a record deleted in between can still be
+                // connected. Records are soft-deleted, so the window only lets a just-Deleted one in.
                 await SkillChecks.assertAssessablePersonnel(ctx, addedPersonIds);
 
                 const changes = [
@@ -1202,6 +1204,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
                 const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
                 SkillChecks.assertSessionUnlocked(session);
+                // Checked before the transaction, so a record deleted in between can still be
+                // connected. Records are soft-deleted, so the window only lets a just-Deleted one in.
                 await SkillChecks.assertAssessableSkills(ctx, addedSkillIds);
 
                 const changes = [

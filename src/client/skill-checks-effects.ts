@@ -21,5 +21,11 @@ export const skillChecksEffects = createEffects<"skillChecks">()({
         invalidate(
             trpc.skillChecks.listSkillChecks.queryFilter({ organizationId: vars.organizationId }),
         ),
+        // It's created as `Include`, so it counts in the reports straight away.
+        invalidate(
+            trpc.skillChecks.getCompetencyMatrix.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
     ],
 });

@@ -415,7 +415,7 @@ export async function listEligibleAssessors(ctx: OrgServiceContext): Promise<Per
 }
 
 /**
- * Check that every id is a person who may be added to a session as an assessee: a `Person` in the
+ * Check that every id is a person who may be assessed, in a session or a standalone check: a `Person` in the
  * organization that isn't `Deleted`.
  * @throws ValidationError naming any id that isn't.
  */
@@ -437,7 +437,7 @@ export async function assertAssessablePersonnel(
     const invalidIds = personIds.filter((id) => !foundIds.has(id));
     if (invalidIds.length > 0) {
         throw new ValidationError(
-            `Cannot add ${invalidIds.map((id) => `Person(id=${id})`).join(", ")} as an assessee: an assessee must be a person in this organisation.`,
+            `${invalidIds.map((id) => `Person(id=${id})`).join(", ")} can't be assessed: an assessee must be a person in this organisation.`,
         );
     }
 }
@@ -468,7 +468,7 @@ export async function assertAssessableSkills(
     const invalidIds = skillIds.filter((id) => !foundIds.has(id));
     if (invalidIds.length > 0) {
         throw new ValidationError(
-            `Cannot add ${invalidIds.map((id) => `Skill(id=${id})`).join(", ")} to the session: a skill must come from a package this organisation subscribes to.`,
+            `${invalidIds.map((id) => `Skill(id=${id})`).join(", ")} can't be assessed: a skill must come from a package this organisation subscribes to.`,
         );
     }
 }
