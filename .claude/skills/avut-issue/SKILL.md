@@ -21,7 +21,7 @@ Produces a GitHub issue whose body matches the repo's issue form field for field
 
 Take the kind from `$ARGUMENTS` or the description. When the line between bug and enhancement is unclear ("the dialog doesn't let me…"), read the code first: if it does what it was built to do, it's an enhancement. Say which kind you chose in the draft so the user can correct it.
 
-A feature that's still a big open question (several plausible shapes, no clear scope) isn't ready for an issue. Suggest `/avut-brainstorm` (ends in a `brainstorm` issue) or `/avut-explore` (tries it live) instead, and file it here only if the user still wants a plain issue.
+A feature that's still a big open question (several plausible shapes, no clear scope) isn't ready for an issue. Suggest `/avut-brainstorm` (ends in a `brainstorm` issue in redcloud-nz/avut-ideas) or `/avut-explore` (tries it live) instead, and file it here only if the user still wants a plain issue.
 
 ## Step 2 — Read the template
 
