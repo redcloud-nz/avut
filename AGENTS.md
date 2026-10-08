@@ -69,6 +69,7 @@ The dev database holds records for **real people with their real email addresses
 
 - When you judge it's a good point to commit, stage the relevant changes and commit them without asking, then show the commit message you used.
 - Never `git push`, open a PR, or otherwise publish commits without explicit approval — committing locally is fine, sharing is not.
+- Issues in redcloud-nz/avut are the build backlog. Ideas and brainstorms not ready to build live in redcloud-nz/avut-ideas (`/avut-brainstorm` files there; `/avut-develop-feature` promotes one into an avut issue).
 - Feature PRs merge to `integration` (the default branch). `production` is the release target — see [`docs/releasing.md`](docs/releasing.md) for how a version gets there, and [`docs/branch-protection.md`](docs/branch-protection.md) for the branch rules.
 
 ## Worktrees

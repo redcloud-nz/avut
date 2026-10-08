@@ -90,7 +90,7 @@ If this session started a server on 3100, stop it once the work leaves the main 
 ### Park
 
 1. Commit the work as it stands on `explore/<slug>` as `wip(explore): <idea>`, with the Decisions list in the body. Don't push.
-2. Offer to file it with `/avut-issue` as a feature, with the Decisions list and the branch name under _Additional context_, so the issue follows the feature-request template. That skill confirms the draft before creating anything.
+2. Offer to file it as a `brainstorm` issue in redcloud-nz/avut-ideas, in `/avut-brainstorm`'s body format: the Decisions list goes under `## Options considered`, what's still undecided under `## Open questions`, and the branch name under `## Notes`. Show the draft and confirm before creating it. A parked idea isn't ready to build, so it doesn't go on avut's backlog.
 3. Switch back to the branch from Step 1, and restore the stash (by its SHA) if you made one: the user's uncommitted changes return exactly as they were, whatever the WIP commit holds. Stop your 3100 server if you started one.
 
 ### Drop
