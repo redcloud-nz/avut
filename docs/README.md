@@ -18,5 +18,5 @@ Where things live. Each folder with conventions of its own has a README.
 
 - [`releasing.md`](releasing.md) — how a version gets from `integration` to `production`.
 - [`releases/`](releases/README.md) — one hand-written note per release, `v{version}.md`. It must exist before `production` is pushed.
-- [`version-names.md`](version-names.md) — proposed codenames for releases; pick the next unused one.
+- [`version-names.md`](version-names.md) — proposed codenames for releases, in the order they're used.
 - [`branch-protection.md`](branch-protection.md) — the branch rules for `integration` and `production`.

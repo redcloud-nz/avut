@@ -7,7 +7,9 @@ How a version of AVUT gets from `integration` to a tagged, deployed release.
 > (a version-bump PR into `integration`, then a separate
 > `integration→production` PR) — see git history on this file if you need the
 > old procedure. The [`release` skill](../.claude/skills/avut-release/SKILL.md)
-> automates the mechanical steps below; this doc is the rationale.
+> automates the mechanical steps below; this doc is the rationale. Since
+> 2026-10-08 the sync back into `integration` is a manual step (step 4), not
+> part of the workflow.
 
 ## The model
 
@@ -23,17 +25,17 @@ Two long-lived branches:
   renders a real version: `v{version} ({versionName})`. A push here runs
   [`manage-release-version.yml`](../.github/workflows/manage-release-version.yml),
   which tags `v{version}` and publishes a GitHub Release **if that tag doesn't
-  already exist**, then merges `production` back into `integration` so the
-  version bump isn't lost there.
+  already exist**. `production` is then synced back into `integration` by hand
+  (step 4), so the version bump isn't lost there.
 
 The single source of truth for the version is the `nz.avut` block in
 [`package.json`](../package.json): `version` (e.g. `0.7`) and `versionName`, the
 codename (e.g. `Philomel`).
 
 **The rule:** `package.json`'s version only ever changes on a release branch
-cut from `integration`, PR'd into `production`. `integration` gets it back
-automatically (see below), so the two branches never diverge on
-`package.json` for long.
+cut from `integration`, PR'd into `production`. `integration` gets it back in
+the sync-back (step 4), so the two branches never diverge on `package.json`
+for long.
 
 ## Cutting a release
 
@@ -61,15 +63,18 @@ git switch -c release/v0.8
 ```
 
 Edit [`package.json`](../package.json) → `nz.avut.version` (and `versionName` if
-the codename advances — pick the next unused name from the top of
-[`version-names.md`](version-names.md), and mark it used there in the same PR).
+the codename advances — the name after the last used one in
+[`version-names.md`](version-names.md), unless one was already reserved there
+for this version; mark it used in the same PR).
 
 Write the release notes: [`docs/releases/v0.8.md`](releases/README.md), the
 hand-written top of the GitHub Release. The workflow **fails the release if this
 file is missing**, so it has to land in this PR. Keep it to a couple of
 sentences plus highlights — the actual PR list gets appended automatically
-(see [Release notes](#release-notes) below). The `/avut-release` skill drafts
-it from the commit range.
+(see [Release notes](#release-notes) below). When the codename advances, it ends
+with a short history of the name: every HMS or HMNZS ship with a New Zealand
+connection that carried it, not just the one in `version-names.md`. The `/avut-release` skill drafts
+the notes from the commit range and researches the name.
 
 Check that the release's [`content/updates/v0.8.mdx`](../content/updates/README.md)
 is on `integration` — that's what users see in the in-app "What's new" dialog,
@@ -112,15 +117,7 @@ plus the version bump. Sanity check it — this is the whole payload going live.
   `docs/releases/v{version}.md` with a categorized PR list appended below it —
   see [Release notes](#release-notes). The run fails if that notes file is
   missing.
-- The same workflow then merges `production` back into `integration` and
-  pushes directly (bypassing the PR requirement the same way
-  `github-actions[bot]` always has — see
-  [`branch-protection.md`](branch-protection.md)). If that merge conflicts —
-  rare, since `production` only ever moves via an admin-merged PR — the
-  workflow fails loudly and it needs resolving by hand:
-  `git switch integration && git merge origin/production`, fix, push.
-
-Confirm:
+  Confirm:
 
 ```bash
 gh release list --repo redcloud-nz/avut          # {version} - {versionName}, Latest
@@ -131,6 +128,28 @@ curl -s "https://www.avut.nz/api/version?format=shields"   # "color":"brightgree
 
 and the production site's footer version string (`AVUT v0.8 (Philomel)` —
 production is the only place it appears).
+
+### 4. Sync `production` back into `integration`
+
+By hand, as the repo admin (a ruleset bypass actor). The workflow used to do
+this, but GitHub Actions can't be added as a bypass actor on the `integration`
+ruleset, so its push was rejected every release (`GH013`) and the job was
+removed.
+
+```bash
+git fetch origin
+git merge-base --is-ancestor origin/integration origin/production && echo fast-forward
+```
+
+- **Fast-forward** (nothing merged into `integration` while the release PR was
+  open — the usual case):
+  `git push origin origin/production:refs/heads/integration`.
+- **Otherwise** a merge commit:
+  `git switch integration && git pull --ff-only && git merge origin/production -m "chore(release): sync v0.8 back from production"`,
+  resolve any conflict, then `git push origin integration`.
+
+`git log origin/integration..origin/production --oneline` is empty once it's
+done. `/avut-release` does this step, after asking before it pushes.
 
 ## Hotfixes
 
@@ -154,9 +173,9 @@ git push
 ```
 
 `manage-release-version.yml` runs on that push the same as any release — it
-tags, publishes, and merges `production` back into `integration`
-automatically, so there's no separate manual "back into integration" step
-anymore.
+tags and publishes. Then sync `production` back into `integration` as in
+[step 4](#4-sync-production-back-into-integration). A hotfix is the case where
+that's usually a merge commit rather than a fast-forward.
 
 Bump `nz.avut.version` (e.g. `0.9.2` → `0.9.3`) on `hotfix/0.9` before merging
 into `production`, and add its `docs/releases/v0.9.3.md` — same requirement as
