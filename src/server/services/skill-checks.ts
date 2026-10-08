@@ -49,9 +49,9 @@ export async function requireSessionById(
  * Check-then-write, so on its own it can't stop a write racing an approval: a write whose check
  * passed just before an approval committed would still land, and could overwrite the approval's
  * `Include`/`Exclude` stamp or leave an unreviewed check in an approved session. So every write to
- * a session's checks also opens its `$transaction` with `lockUnapprovedSession`, which serializes
- * it with `approveSession` and refuses it once the session is approved. The configuration writes
- * (`updateSession{Assessees,Assessors,Skills}`) rely on this check alone.
+ * a session's checks or its configuration (`updateSession{Assessees,Assessors,Skills}`) also opens
+ * its `$transaction` with `lockUnapprovedSession`, which serializes it with `approveSession` and
+ * refuses it once the session is approved.
  * @throws ConflictError if the session is approved.
  */
 export function assertSessionUnlocked(session: Pick<SkillCheckSession, "id" | "status">): void {
@@ -412,6 +412,65 @@ export async function listEligibleAssessors(ctx: OrgServiceContext): Promise<Per
         )
         .map(({ id, name }) => PersonRef.schema.parse({ id, name }))
         .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Check that every id is a person who may be added to a session as an assessee: a `Person` in the
+ * organization that isn't `Deleted`.
+ * @throws ValidationError naming any id that isn't.
+ */
+export async function assertAssessablePersonnel(
+    ctx: OrgServiceContext,
+    personIds: PersonId[],
+): Promise<void> {
+    if (personIds.length === 0) return;
+
+    const found = await ctx.prisma.person.findMany({
+        where: {
+            id: { in: personIds },
+            organizationId: ctx.organizationId,
+            status: { not: "Deleted" },
+        },
+        select: { id: true },
+    });
+    const foundIds = new Set(found.map(({ id }) => id));
+    const invalidIds = personIds.filter((id) => !foundIds.has(id));
+    if (invalidIds.length > 0) {
+        throw new ValidationError(
+            `Cannot add ${invalidIds.map((id) => `Person(id=${id})`).join(", ")} as an assessee: an assessee must be a person in this organisation.`,
+        );
+    }
+}
+
+/**
+ * Check that every id is a skill the organization can assess, as `listAssessableSkills` lists
+ * them: not `Deleted`, from a package the organization subscribes to that isn't `Deleted` either.
+ * @throws ValidationError naming any id that isn't.
+ */
+export async function assertAssessableSkills(
+    ctx: OrgServiceContext,
+    skillIds: SkillId[],
+): Promise<void> {
+    if (skillIds.length === 0) return;
+
+    const found = await ctx.prisma.skill.findMany({
+        where: {
+            id: { in: skillIds },
+            status: { not: "Deleted" },
+            skillPackage: {
+                status: { not: "Deleted" },
+                subscriptions: { some: { organizationId: ctx.organizationId } },
+            },
+        },
+        select: { id: true },
+    });
+    const foundIds = new Set(found.map(({ id }) => id));
+    const invalidIds = skillIds.filter((id) => !foundIds.has(id));
+    if (invalidIds.length > 0) {
+        throw new ValidationError(
+            `Cannot add ${invalidIds.map((id) => `Skill(id=${id})`).join(", ")} to the session: a skill must come from a package this organisation subscribes to.`,
+        );
+    }
 }
 
 /**
