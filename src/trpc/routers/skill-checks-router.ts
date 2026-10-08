@@ -61,9 +61,10 @@ function rethrowSessionCheckRace(
 
 export const skillChecksRouter = createTrpcRouter({
     /**
-     * Creates a standalone skill check, outside any session. Checks within a session are recorded
-     * through `skillCheckSessions.setSessionSkillCheck`, which enforces assessor membership and
-     * the approval lock.
+     * Creates a standalone skill check, outside any session. It's created as `Include`, counting in
+     * reports straight away, since no review or approval will ever move it there. Checks within a
+     * session are recorded through `skillCheckSessions.setSessionSkillCheck`, which enforces
+     * assessor membership and the approval lock.
      * @throws TRPCError(BAD_REQUEST) if `sessionId` is not null.
      */
     // `sessionId` stays in the input (nullable) so existing callers keep their shape; only `null`
@@ -101,6 +102,7 @@ export const skillChecksRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                     sessionId: null,
                     ...create,
+                    status: "Include",
                     checkedAt: now,
                     recordedAt: now,
                 },

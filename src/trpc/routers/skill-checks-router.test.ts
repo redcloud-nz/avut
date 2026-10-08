@@ -1102,6 +1102,17 @@ describe("skillChecks — the session approval lock", () => {
             expect(created).toMatchObject({ id: skillCheckId, sessionId: null });
         });
 
+        it("creates a standalone check as Include, so it counts in reports", async () => {
+            const created = await makeCaller().createSkillCheck({
+                organizationId: T.org,
+                skillCheckId: SkillCheckId.create(),
+                sessionId: null,
+                create,
+            });
+
+            expect(created).toMatchObject({ status: "Include" });
+        });
+
         it("stamps a standalone check's checkedAt and recordedAt with now", async () => {
             const now = new Date("2026-10-01T09:00:00.000Z");
             vi.useFakeTimers({ now, toFake: ["Date"] });
