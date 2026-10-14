@@ -18,19 +18,6 @@ import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import type { OrgServiceContext } from "./service-context";
 
 /**
- * An `OrgServiceContext` whose `prisma` may be an interactive transaction's client, for the locks
- * and validation reads that must run inside the write they guard (pass `{ ...ctx, prisma: tx }`).
- * A plain `OrgServiceContext` satisfies it, so a caller outside a transaction passes `ctx` as is.
- *
- * Validating inside the transaction, after `lockUnapprovedSession`, is what keeps a check and its
- * write together: a config change to the session waits on that lock, and a record soft-deleted
- * after the read is equivalent to one deleted after the write commits.
- */
-export type OrgTxContext = Pick<OrgServiceContext, "organizationId" | "userId"> & {
-    prisma: Prisma.TransactionClient;
-};
-
-/**
  * Fetch a skill check session by ID and ensure it belongs to the organization.
  * @throws NotFoundError if the session does not exist or does not belong to the organization.
  */
@@ -100,7 +87,7 @@ export function sessionLockedError(sessionId: SkillCheckSessionId): ConflictErro
  * map it with `rethrowSessionChanged`, not `rethrowSessionLocked`.
  */
 export function lockUnapprovedSession(
-    ctx: OrgTxContext,
+    ctx: OrgServiceContext,
     sessionId: SkillCheckSessionId,
     { expectedDate }: { expectedDate?: Date } = {},
 ) {
@@ -169,7 +156,7 @@ export type SessionWithMembers = SkillCheckSession & {
  * hand.
  */
 export async function requireSessionAssessor(
-    ctx: OrgTxContext,
+    ctx: OrgServiceContext,
     sessionId: SkillCheckSessionId,
 ): Promise<{ session: SessionWithMembers; assessorId: PersonId }> {
     const session = await ctx.prisma.skillCheckSession.findUnique({
@@ -401,7 +388,7 @@ export async function updateCheckExclusions(
  * hard-coded role name.
  * @returns The eligible people, sorted by name.
  */
-export async function listEligibleAssessors(ctx: OrgTxContext): Promise<PersonRef[]> {
+export async function listEligibleAssessors(ctx: OrgServiceContext): Promise<PersonRef[]> {
     const personnel = await ctx.prisma.person.findMany({
         where: {
             organizationId: ctx.organizationId,
@@ -433,7 +420,7 @@ export async function listEligibleAssessors(ctx: OrgTxContext): Promise<PersonRe
  * @throws ValidationError naming any id that isn't.
  */
 export async function assertAssessablePersonnel(
-    ctx: OrgTxContext,
+    ctx: OrgServiceContext,
     personIds: PersonId[],
 ): Promise<void> {
     if (personIds.length === 0) return;
@@ -461,7 +448,7 @@ export async function assertAssessablePersonnel(
  * @throws ValidationError naming any id that isn't.
  */
 export async function assertAssessableSkills(
-    ctx: OrgTxContext,
+    ctx: OrgServiceContext,
     skillIds: SkillId[],
 ): Promise<void> {
     if (skillIds.length === 0) return;

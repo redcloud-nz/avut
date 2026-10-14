@@ -22,17 +22,6 @@ import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 
-/**
- * Assert a rejected config change wrote nothing to the session but the lock. Validation runs inside
- * the transaction, after `lockUnapprovedSession`'s `updatedAt` bump (rolled back with it), so the
- * spy sees that call; no call may carry anything else.
- */
-function expectOnlyTheLock(update: { mock: { calls: unknown[][] } }) {
-    for (const [args] of update.mock.calls) {
-        expect(Object.keys((args as { data: object }).data)).toEqual(["updatedAt"]);
-    }
-}
-
 describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", () => {
     // Dataset:
     //   assessorUser      → linked to assessorPerson, assigned as an assessor of session
@@ -319,36 +308,6 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
                     notes: "",
                 }),
             ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-        });
-
-        it("rechecks the target under the session lock, refusing an assessee taken off since", async () => {
-            // Fake the up-front read seeing outsider as an assessee, as it would if a removal
-            // committed just after; the check under the lock reads the session as it is.
-            const findUnique = db.skillCheckSession.findUnique.bind(db.skillCheckSession);
-            const findSpy = vi
-                .spyOn(db.skillCheckSession, "findUnique")
-                .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => {
-                    const session = (await findUnique(args)) as unknown as {
-                        assessees: { id: string }[];
-                    };
-                    return { ...session, assessees: [...session.assessees, { id: T.outsider }] };
-                }) as unknown as typeof findUnique);
-
-            await expect(
-                makeCaller(T.assessorUser).setSessionSkillCheck({
-                    ...target,
-                    assesseeId: T.outsider,
-                    skillId: T.skill1,
-                    result: "Pass",
-                    notes: "",
-                }),
-            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-            findSpy.mockRestore();
-
-            const checks = await db.skillCheck.findMany({
-                where: { sessionId: T.session, assesseeId: T.outsider },
-            });
-            expect(checks).toHaveLength(0);
         });
 
         it("refuses a check in an approved session with CONFLICT and leaves it unchanged", async () => {
@@ -1139,7 +1098,7 @@ describe("skillCheckSessions.updateSessionAssessors + listEligibleAssessors", ()
             }),
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 
-        expectOnlyTheLock(update);
+        expect(update).not.toHaveBeenCalled();
         expect(await assignedAssessorIds(T.rejectSession)).toEqual([T.assessor]);
         const entries = await db.logEntry.findMany({
             where: { objectType: "SkillCheckSession", objectId: T.rejectSession },
@@ -1644,7 +1603,7 @@ describe("skillCheckSessions.updateSessionAssessees + updateSessionSkills valida
             await expect(addAssessees([T.person, id])).rejects.toMatchObject({
                 code: "BAD_REQUEST",
             });
-            expectOnlyTheLock(update);
+            expect(update).not.toHaveBeenCalled();
         });
     }
 
@@ -1667,7 +1626,7 @@ describe("skillCheckSessions.updateSessionAssessees + updateSessionSkills valida
             await expect(addSkills([T.skill, id])).rejects.toMatchObject({
                 code: "BAD_REQUEST",
             });
-            expectOnlyTheLock(update);
+            expect(update).not.toHaveBeenCalled();
         });
     }
 });

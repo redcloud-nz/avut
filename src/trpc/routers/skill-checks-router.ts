@@ -116,27 +116,21 @@ export const skillChecksRouter = createTrpcRouter({
                     message: Messages.assessorNotSelf(),
                 });
             }
+            await SkillChecks.assertAssessablePersonnel(ctx, [create.assesseeId]);
+            await SkillChecks.assertAssessableSkills(ctx, [create.skillId]);
+
             // A standalone check has no session date, so it was checked when it's recorded.
             const now = new Date();
-            const record = await ctx.prisma.$transaction(async (tx) => {
-                // Validated in the create's own transaction, so an assessee or skill deleted
-                // since the form loaded can't be recorded against; see `SkillChecks.OrgTxContext`.
-                await SkillChecks.assertAssessablePersonnel({ ...ctx, prisma: tx }, [
-                    create.assesseeId,
-                ]);
-                await SkillChecks.assertAssessableSkills({ ...ctx, prisma: tx }, [create.skillId]);
-
-                return tx.skillCheck.create({
-                    data: {
-                        id: skillCheckId,
-                        organizationId: ctx.organizationId,
-                        sessionId: null,
-                        ...create,
-                        status: "Include",
-                        checkedAt: now,
-                        recordedAt: now,
-                    },
-                });
+            const record = await ctx.prisma.skillCheck.create({
+                data: {
+                    id: skillCheckId,
+                    organizationId: ctx.organizationId,
+                    sessionId: null,
+                    ...create,
+                    status: "Include",
+                    checkedAt: now,
+                    recordedAt: now,
+                },
             });
 
             return SkillCheck.fromRecord(record);
