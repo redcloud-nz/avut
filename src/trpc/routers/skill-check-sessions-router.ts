@@ -837,45 +837,49 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         .output(SkillCheck.schema)
         .mutation(async ({ ctx, input }) => {
             const { skillCheckSessionId, assesseeId, skillId, result, notes } = input;
-            const { session, assessorId } = await SkillChecks.requireSessionAssessor(
-                ctx,
-                skillCheckSessionId,
-            );
+            const { session } = await SkillChecks.requireSessionAssessor(ctx, skillCheckSessionId);
             SkillChecks.assertSessionUnlocked(session);
             SkillChecks.assertSessionCheckTarget(session, { assesseeId, skillId });
 
-            const key = {
-                assesseeId,
-                assessorId,
-                sessionId: skillCheckSessionId,
-                skillId,
-            };
             const stamps = { checkedAt: new Date(session.date), recordedAt: new Date() };
-            const [, check] = await ctx.prisma
-                .$transaction([
+            const check = await ctx.prisma
+                .$transaction(async (tx) => {
+                    const txCtx = { ...ctx, prisma: tx };
                     // Serializes with `approveSession` and `updateSession`'s date change, and
                     // refuses once the date `checkedAt` copies has moved; see
                     // `SkillChecks.lockUnapprovedSession`.
-                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId, {
+                    await SkillChecks.lockUnapprovedSession(txCtx, skillCheckSessionId, {
                         expectedDate: stamps.checkedAt,
-                    }),
+                    });
+                    // Checked again under the lock, which the `updateSession{Assessors,Assessees,
+                    // Skills}` writes also take, so an assessor, assessee or skill taken off the
+                    // session since the check above can't still get a check recorded.
+                    const current = await SkillChecks.requireSessionAssessor(
+                        txCtx,
+                        skillCheckSessionId,
+                    );
+                    SkillChecks.assertSessionCheckTarget(current.session, { assesseeId, skillId });
+
+                    const key = {
+                        assesseeId,
+                        assessorId: current.assessorId,
+                        sessionId: skillCheckSessionId,
+                        skillId,
+                    };
                     // Upsert on the unique key, so a double tap can't race two creates.
-                    ctx.prisma.skillCheck.upsert({
+                    return tx.skillCheck.upsert({
                         where: { assesseeId_assessorId_sessionId_skillId: key },
                         update: { result, notes, status: "Draft", ...stamps },
                         create: {
                             ...stamps,
+                            ...key,
                             id: SkillCheckId.create(),
                             organizationId: ctx.organizationId,
-                            sessionId: skillCheckSessionId,
-                            assesseeId,
-                            assessorId,
-                            skillId,
                             result,
                             notes,
                         },
-                    }),
-                ])
+                    });
+                })
                 .catch(SkillChecks.rethrowSessionChanged(skillCheckSessionId));
 
             return SkillCheck.fromRecord(check);
@@ -1021,9 +1025,6 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             async ({ ctx, input: { skillCheckSessionId, addedPersonIds, removedPersonIds } }) => {
                 const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
                 SkillChecks.assertSessionUnlocked(session);
-                // Checked before the transaction, so a record deleted in between can still be
-                // connected. Records are soft-deleted, so the window only lets a just-Deleted one in.
-                await SkillChecks.assertAssessablePersonnel(ctx, addedPersonIds);
 
                 const changes = [
                     ...addedPersonIds.map((id) => ({
@@ -1038,11 +1039,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [, updated] = await ctx.prisma
-                    .$transaction([
+                const updated = await ctx.prisma
+                    .$transaction(async (tx) => {
                         // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
-                        SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
-                        ctx.prisma.skillCheckSession.update({
+                        await SkillChecks.lockUnapprovedSession(
+                            { ...ctx, prisma: tx },
+                            skillCheckSessionId,
+                        );
+                        // Validated inside the transaction, so a person deleted since the dialog
+                        // loaded can't be connected; see `SkillChecks.OrgTxContext`.
+                        await SkillChecks.assertAssessablePersonnel(
+                            { ...ctx, prisma: tx },
+                            addedPersonIds,
+                        );
+                        const updated = await tx.skillCheckSession.update({
                             where: {
                                 id: skillCheckSessionId,
                                 organizationId: ctx.organizationId,
@@ -1061,14 +1071,18 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                                     disconnect: removedPersonIds.map((id) => ({ id })),
                                 },
                             },
-                        }),
-                        ctx.logEvent({
-                            action: "Update",
-                            objectType: "SkillCheckSession",
-                            objectId: skillCheckSessionId,
-                            changes,
-                        }),
-                    ])
+                        });
+                        await ctx.logEvent(
+                            {
+                                action: "Update",
+                                objectType: "SkillCheckSession",
+                                objectId: skillCheckSessionId,
+                                changes,
+                            },
+                            tx,
+                        );
+                        return updated;
+                    })
                     .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
                 return {
                     updatedAssessees: updated.assessees,
@@ -1109,16 +1123,6 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
                 SkillChecks.assertSessionUnlocked(session);
 
-                if (addedPersonIds.length > 0) {
-                    const eligibleIds = new Set(
-                        (await SkillChecks.listEligibleAssessors(ctx)).map((person) => person.id),
-                    );
-                    const ineligibleIds = addedPersonIds.filter((id) => !eligibleIds.has(id));
-                    if (ineligibleIds.length > 0) {
-                        throw new ValidationError(Messages.ineligibleAssessors(ineligibleIds));
-                    }
-                }
-
                 const changes = [
                     ...addedPersonIds.map((id) => ({
                         path: ["assessors"],
@@ -1132,11 +1136,31 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [, updated] = await ctx.prisma
-                    .$transaction([
+                const updated = await ctx.prisma
+                    .$transaction(async (tx) => {
                         // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
-                        SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
-                        ctx.prisma.skillCheckSession.update({
+                        await SkillChecks.lockUnapprovedSession(
+                            { ...ctx, prisma: tx },
+                            skillCheckSessionId,
+                        );
+                        // Validated inside the transaction, so a person who lost eligibility since the
+                        // dialog loaded can't be connected; see `SkillChecks.OrgTxContext`.
+                        if (addedPersonIds.length > 0) {
+                            const eligibleIds = new Set(
+                                (
+                                    await SkillChecks.listEligibleAssessors({ ...ctx, prisma: tx })
+                                ).map((person) => person.id),
+                            );
+                            const ineligibleIds = addedPersonIds.filter(
+                                (id) => !eligibleIds.has(id),
+                            );
+                            if (ineligibleIds.length > 0) {
+                                throw new ValidationError(
+                                    Messages.ineligibleAssessors(ineligibleIds),
+                                );
+                            }
+                        }
+                        const updated = await tx.skillCheckSession.update({
                             where: {
                                 id: skillCheckSessionId,
                                 organizationId: ctx.organizationId,
@@ -1155,14 +1179,18 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                                     disconnect: removedPersonIds.map((id) => ({ id })),
                                 },
                             },
-                        }),
-                        ctx.logEvent({
-                            action: "Update",
-                            objectType: "SkillCheckSession",
-                            objectId: skillCheckSessionId,
-                            changes,
-                        }),
-                    ])
+                        });
+                        await ctx.logEvent(
+                            {
+                                action: "Update",
+                                objectType: "SkillCheckSession",
+                                objectId: skillCheckSessionId,
+                                changes,
+                            },
+                            tx,
+                        );
+                        return updated;
+                    })
                     .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
                 return {
                     updatedAssessors: updated.assessors
@@ -1204,9 +1232,6 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             async ({ ctx, input: { skillCheckSessionId, addedSkillIds, removedSkillIds } }) => {
                 const session = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
                 SkillChecks.assertSessionUnlocked(session);
-                // Checked before the transaction, so a record deleted in between can still be
-                // connected. Records are soft-deleted, so the window only lets a just-Deleted one in.
-                await SkillChecks.assertAssessableSkills(ctx, addedSkillIds);
 
                 const changes = [
                     ...addedSkillIds.map((id) => ({
@@ -1221,11 +1246,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                     })),
                 ];
 
-                const [, updated] = await ctx.prisma
-                    .$transaction([
+                const updated = await ctx.prisma
+                    .$transaction(async (tx) => {
                         // Serializes with `approveSession`; see `SkillChecks.lockUnapprovedSession`.
-                        SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
-                        ctx.prisma.skillCheckSession.update({
+                        await SkillChecks.lockUnapprovedSession(
+                            { ...ctx, prisma: tx },
+                            skillCheckSessionId,
+                        );
+                        // Validated inside the transaction, so a skill deleted or unsubscribed since
+                        // the dialog loaded can't be connected; see `SkillChecks.OrgTxContext`.
+                        await SkillChecks.assertAssessableSkills(
+                            { ...ctx, prisma: tx },
+                            addedSkillIds,
+                        );
+                        const updated = await tx.skillCheckSession.update({
                             where: {
                                 id: skillCheckSessionId,
                                 organizationId: ctx.organizationId,
@@ -1244,14 +1278,18 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                                     disconnect: removedSkillIds.map((id) => ({ id })),
                                 },
                             },
-                        }),
-                        ctx.logEvent({
-                            action: "Update",
-                            objectType: "SkillCheckSession",
-                            objectId: skillCheckSessionId,
-                            changes,
-                        }),
-                    ])
+                        });
+                        await ctx.logEvent(
+                            {
+                                action: "Update",
+                                objectType: "SkillCheckSession",
+                                objectId: skillCheckSessionId,
+                                changes,
+                            },
+                            tx,
+                        );
+                        return updated;
+                    })
                     .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
                 return {
                     updatedSkills: updated.skills,
