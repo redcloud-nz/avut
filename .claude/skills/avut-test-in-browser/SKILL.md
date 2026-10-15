@@ -32,6 +32,17 @@ Each function does a full navigation afterward (`signIn`/`signOut` follow the sa
    ```
    If none exists, ask the user rather than promoting an account yourself.
 
+   **Which account reaches which module** (set up 2026-10-16):
+
+   | Module | Sign in as | Org |
+   | --- | --- | --- |
+   | org-admin, skill-track, skill-package-builder, i3, system-admin | `delivered+admin-test@resend.dev` (global admin; Admin, Skills Admin, I3 Admin, Skills Author) | `christchurch-cdem` |
+   | notes (org) | `owner@demo.avut.nz` (see `avut-doc-screenshots` for the password) | `demo`. Notes is off in `christchurch-cdem` |
+   | user-dashboard, user-notes, user settings | any account | — |
+   | d4h-views, and I3 parts that read D4H | needs a personal D4H token; the admin test account has none, so only the no-token state is testable | — |
+
+   Don't add the admin test account to `demo` or switch more modules on there: it's the seeded org the docs screenshots are taken from.
+
 **Finding records to test against.** Use `test-data.sh` rather than writing `psql` by hand. It's read-only and allow-listed, and in a worktree the harness refuses an inline `psql "$POSTGRES_URL_NON_POOLING" …` anyway:
 
 ```
