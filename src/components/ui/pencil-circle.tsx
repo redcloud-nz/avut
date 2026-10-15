@@ -19,7 +19,7 @@ export function PencilCircle({ className }: { className?: string }) {
             preserveAspectRatio="none"
             // An explicit size, or Button's `[&_svg]` rule shrinks it to an icon.
             className={cn(
-                "pointer-events-none absolute -top-0.5 -left-0.5 size-[calc(100%+0.25rem)] overflow-visible text-foreground/30",
+                "pointer-events-none absolute -top-0.5 -left-0.5 size-[calc(100%+0.25rem)] overflow-visible text-foreground/55",
                 className,
             )}
         >
