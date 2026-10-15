@@ -1,6 +1,6 @@
 # Implementation plan: `src/modules/<id>/` for module-specific UI code
 
-**Date:** 2026-09-29
+**Date:** 2026-10-15 (first written 2026-09-29)
 
 **Tracks:** #385
 
@@ -64,7 +64,7 @@ UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, 
   - `src/components/nav/org-sidebar-modules.tsx` and `scope-sidebar-modules.tsx` may import
     modules (they are the sidebar-menu registry).
   - `src/components/docs/demo-*.tsx` may import modules (docs demos render the real component,
-    e.g. `demo-assessment-row` → skill-track's `assessment-row`).
+    e.g. `demo-check-row` → skill-track's `check-row` and `record-check-dialog`).
   - Everything else in `src/components/`, and all of `lib`, `server`, `trpc`, `forms`,
     `emails`, `client`, `hooks`, may not import `src/modules/`.
 - **`src/modules/` is a UI layer, like `components`,** in every existing lint block. The
@@ -95,8 +95,9 @@ UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, 
 | 4   | `refactor/modules-folder-4` | 5 (skill-track)                                                 |
 | 5   | `refactor/modules-folder-5` | 8 (system-admin), 9 (user-dashboard, user-settings, user-notes) |
 
-Every PR in the stack touches `nav/org-sidebar-modules.tsx` or `scope-sidebar-modules.tsx` (one
-import line each), so they can't be cut in parallel from `integration` without conflicts.
+Every PR above the first depends on Task 1's lint config (the `module` element and its
+exceptions), so they're stacked rather than cut in parallel from `integration`. Several also
+touch `nav/org-sidebar-modules.tsx` or `scope-sidebar-modules.tsx`.
 
 ## Revision 2026-10-15
 
@@ -161,7 +162,7 @@ item: module-only UI goes in `src/modules/<id>/`, shared UI in `src/components/`
   the auth `no-restricted-imports` block, the `authClient.useSession` block, and the
   `avut/nz-spelling` block.
 - `AGENTS.md`: under **Project Structure**, add a short "Modules" paragraph: what goes in
-  `src/modules/<id>/{components,lib}`, that folders use `modules.ts` ids, that shared UI stays
+  `src/modules/<id>/{components,lib}`, that folders use `modules.ts` ids (with `user-settings` as the one non-registry folder), that shared UI stays
   in `src/components/`, that schemas stay in `src/lib/schemas/`, the import rule (lint) and its
   two exceptions, and "no barrels". In **Scope roots and modules**, add one line pointing at it.
 
@@ -172,7 +173,7 @@ whether or not the rule works. Then: `x.tsx` importing `@/modules/b/components/y
 `src/components/ui/probe.tsx` importing `@/modules/a/components/x` fails, and the same import
 from `src/components/nav/org-sidebar-modules.tsx` passes. Report the three outputs.
 
-### - [ ] Task 2 — Extract shared org UI out of `components/admin`
+### - [ ] Task 2 — `mechanical` — Extract shared org UI out of `components/admin`
 
 **Files:** `src/components/admin/organization-settings/*` (all but
 `organization-settings-content.tsx`) → `src/components/organization-settings/`;
@@ -182,7 +183,7 @@ settings content, invitations, users, personnel; system-admin organizations).
 
 **Do:** Moves per "How to do a move", but **rewrite per file, not per folder**. A folder-wide
 `@/components/admin/organization-settings/` sed would also rewrite
-`orgs/[slug]/admin/organization/settings/page.tsx`'s import of
+`orgs/[slug]/admin/organization-settings/page.tsx`'s import of
 `organization-settings-content`, which stays behind. `organization-settings-content.tsx` stays in
 `components/admin/organization-settings/` for now (it moves with org-admin in Task 4). Relative
 imports to fix: `organization-settings-content.tsx` (`./organization-settings-form` →
@@ -193,7 +194,7 @@ imports to fix: `organization-settings-content.tsx` (`./organization-settings-fo
 **Done when:** `npm run check` passes; `grep -rn '@/components/admin/' src/components/system`
 is empty.
 
-### - [ ] Task 3 — Move skill-package-builder
+### - [ ] Task 3 — `mechanical` — Move skill-package-builder
 
 **Files:** `src/components/skill-package-builder/**` →
 `src/modules/skill-package-builder/components/`; 6 pages under
@@ -203,14 +204,15 @@ is empty.
 
 **Done when:** `npm run check` passes; `src/components/skill-package-builder` no longer exists.
 
-### - [ ] Task 4 — Move org-admin
+### - [ ] Task 4 — `mechanical` — Move org-admin
 
 **Files:** rest of `src/components/admin/**` → `src/modules/org-admin/components/**`;
 `orgs/[slug]/admin/organization/--update/update-organization.tsx` →
 `modules/org-admin/components/organization/`;
 `orgs/[slug]/admin/d4h-access-tokens/{d4h-access-tokens-list.tsx,--create/create-d4h-access-token.tsx,[token_id]/access-token-content.tsx}`
 → `modules/org-admin/components/d4h-access-tokens/`; `src/hooks/use-person.ts` (no importers left as of 0eb325d6: delete it);
-`src/components/nav/org-sidebar-modules.tsx`; the 14 admin pages;
+`src/components/nav/org-sidebar-modules.tsx`; every file under `orgs/[slug]/admin` that imports
+`@/components/admin/` (17 as of 0eb325d6), plus the 4 pages importing the moved `./` files;
 `docs/patterns/detail-page-data-fetching.md` (lines ~30–34 name `src/components/admin/…`).
 
 **Do:** Move per "How to do a move". `git rm src/hooks/use-person.ts` after confirming it still
@@ -220,23 +222,29 @@ has no importers. Update the pattern doc's example paths and its "lives in
 **Done when:** `npm run check` passes; `src/components/admin` and `src/hooks/use-person.ts` no
 longer exist.
 
-### - [ ] Task 5 — Move skill-track
+### - [ ] Task 5 — `mechanical` — Move skill-track
 
 **Files:** `src/components/skill-track/**` → `src/modules/skill-track/components/**` (includes
 `reports/` and its tests); `orgs/[slug]/skill-track/checks/checks-list.tsx` and
 `catalogue/catalogue-packages-list.tsx` → `modules/skill-track/components/`;
-`sessions/[session_id]/_prefetch-session-config-dialog.ts` → `modules/skill-track/lib/`;
-`nav/org-sidebar-modules.tsx`; `docs/demo-assessment-row.tsx`; the skill-track pages.
+`sessions/[session_id]/_prefetch-session-config-dialog.ts` → `modules/skill-track/lib/` (three
+importers: `sessions/[session_id]/page.tsx` via `./`, and `by-person/page.tsx` and
+`by-skill/page.tsx` via `../`); `nav/org-sidebar-modules.tsx`; `docs/demo-check-row.tsx`; the
+skill-track pages; `docs/patterns/mutation-dialog.md` (~line 510 names
+`src/components/skill-track/session-config-dialogs.tsx`).
 
-**Do:** Move per "How to do a move". `demo-assessment-row` keeps importing `assessment-row`
-under the `docs-demo` exception.
+**Do:** Move per "How to do a move". `demo-check-row` keeps importing `check-row` and
+`record-check-dialog` under the `docs-demo` exception.
 
-**Done when:** `npm run check` passes (including `assessment-row.test.tsx`,
-`competency-status.test.ts`, `synthetic-competency-data.test.ts` from their new paths).
+**Done when:** `npm run check` passes, including `check-row.test.tsx`,
+`record-check-dialog.test.tsx`, `use-session-checks-sync.test.ts`,
+`reports/competency-status.test.ts` and `reports/synthetic-competency-data.test.ts` from their
+new paths.
 
-### - [ ] Task 6 — Move i3
+### - [ ] Task 6 — `mechanical` — Move i3
 
-**Files:** `src/components/i3/sidebar-menu.tsx` → `src/modules/i3/components/`; the 11 non-route
+**Files:** `src/components/i3/{sidebar-menu,issue-items-form-list}.tsx` →
+`src/modules/i3/components/` (the second's only importer is `i3/forms/issue-items/page.tsx`); the 11 non-route
 files under `orgs/[slug]/i3/templates/` (`create-template.tsx`, `templates-list.tsx`, and
 `[template_id]/{template-content,update-template,recover-template,template-variants,add-variant,update-variant,delete-template,delete-variant,template-menu}.tsx`)
 → `src/modules/i3/components/templates/`; `nav/org-sidebar-modules.tsx`; i3 pages.
@@ -246,10 +254,10 @@ segment name has no meaning outside `app/`). The `./` imports among the moved fi
 after flattening. Only `templates/page.tsx` and `templates/[template_id]/page.tsx` change, from
 `./…` to `@/modules/i3/components/templates/…`.
 
-**Done when:** `npm run check` passes; `find "src/app/(wrapper)/(authenticated)/orgs/[slug]/i3" -type f`
-lists only route files.
+**Done when:** `npm run check` passes; `src/components/i3` no longer exists;
+`find "src/app/(wrapper)/(authenticated)/orgs/[slug]/i3" -type f` lists only route files.
 
-### - [ ] Task 7 — Move d4h-views
+### - [ ] Task 7 — `mechanical` — Move d4h-views
 
 **Files:** `src/components/d4h-views/sidebar-menu.tsx`; `orgs/[slug]/d4h-views/{teams/d4h-teams-list,personnel/personnel-list,equipment/brands/[brand_id]/brand-models,equipment/categories/[category_id]/category-kinds,equipment/categories/[category_id]/kinds/[kind_id]/kind-items}.tsx`
 → `src/modules/d4h-views/components/{teams,personnel,equipment}/`; `nav/org-sidebar-modules.tsx`;
@@ -259,7 +267,7 @@ d4h-views pages.
 
 **Done when:** `npm run check` passes; the d4h-views route tree holds only route files.
 
-### - [ ] Task 8 — Move system-admin
+### - [ ] Task 8 — `mechanical` — Move system-admin
 
 **Files:** `src/components/system/admin/**` → `src/modules/system-admin/components/**`;
 `src/app/(wrapper)/(authenticated)/layout.tsx` (the impersonation banner);
@@ -275,7 +283,7 @@ exemption silently disappears.
 **Done when:** `npm run check` passes; `src/components/system` no longer exists;
 `impersonation-banner.test.tsx` and `user-actions-menu.test.tsx` pass from their new paths.
 
-### - [ ] Task 9 — Split user into user-dashboard and user-settings
+### - [ ] Task 9 — `mechanical` — Split user into user-dashboard and user-settings
 
 **Files:** `src/components/user/{activity-stats,invitations,org-selector,signed-in-as}.tsx` →
 `src/modules/user-dashboard/components/`; `src/components/user/user-settings/**` →
@@ -284,12 +292,15 @@ exemption silently disappears.
 `user/settings/**` pages; `nav/scope-sidebar-modules.tsx` and the user menu if they import any
 of it.
 
-**Do:** Move per "How to do a move". As of 0eb325d6 the dashboard cards and the settings files
+**Do:** Move per "How to do a move", in this order. First rewrite `@/components/user/user-settings/`
+→ `@/modules/user-settings/components/`. Then do the four dashboard files one by one (only
+`user/page.tsx` imports them). A folder-wide `@/components/user/` sed run first would send the
+seven settings importers to `user-dashboard`. As of 0eb325d6 the dashboard cards and the settings files
 don't import each other. Check again, because a cross-import has to go to the shared layer.
 
 **Done when:** `npm run check` passes; `src/components/user` no longer exists.
 
-### - [ ] Task 10 — Move notes and user-notes
+### - [ ] Task 10 — `mechanical` — Move notes and user-notes
 
 **Files:** from `src/components/notes/`: `org-note-content`, `org-note-history-content`,
 `org-notes-list`, `notes-module-gate`, `delete-org-note-dialog` → `src/modules/notes/components/`;
@@ -315,6 +326,10 @@ sessions, skill-package-builder, i3 templates, d4h-views teams, notes, system-ad
 
 ---
 
+## Docs impact
+
+None. Developer docs only: AGENTS.md, `docs/patterns/`, the conventions checklist.
+
 ## Out of scope
 
 - Moving schemas (`src/lib/schemas/`) or grouping server code (`services`, `routers`) by domain.
@@ -324,3 +339,7 @@ sessions, skill-package-builder, i3 templates, d4h-views teams, notes, system-ad
 - Renaming files or components (e.g. `AdminModule_*` component names), or restructuring
   inside a moved folder beyond flattening `app/` dynamic-segment folders.
 - Updating historical `docs/plans|reviews|specs|ideas|research` that mention old paths.
+
+## Parked
+
+- (none yet)
