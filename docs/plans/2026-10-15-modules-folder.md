@@ -57,7 +57,7 @@ UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, 
   0eb325d6). Pages then import them via `@/modules/…` instead of `./…`.
 - **The boundary is enforced by `eslint-plugin-boundaries`**, which the repo already uses
   (v7.2, `eslint.config.mjs` "Layering" block). It supports captures, so a module can be
-  forbidden from importing *another* module while importing itself freely. Allowed:
+  forbidden from importing _another_ module while importing itself freely. Allowed:
   - `src/app/**` may import any module (routes are the composition root; also covers
     `(authenticated)/layout.tsx` → system-admin's impersonation banner and user-settings'
     timezone auto-detect).
@@ -134,12 +134,13 @@ Re-checked against integration @ 0eb325d6, at pickup for #385:
 
 ## Tasks
 
-### - [ ] Task 1 — Lint boundary and conventions for `src/modules/`
+### - [x] Task 1 — Lint boundary and conventions for `src/modules/`
 
 **Files:** `eslint.config.mjs`, `AGENTS.md`, `docs/conventions-checklist.md` (add a placement
 item: module-only UI goes in `src/modules/<id>/`, shared UI in `src/components/`).
 
 **Do:**
+
 - In the "Layering" block: add element
   `{ type: "module", pattern: "src/modules/*/**", partialMatch: false, capture: ["moduleId"] }`
   (matches the file's style; `mode` is deprecated in `@boundaries/elements`). Add file

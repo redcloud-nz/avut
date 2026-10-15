@@ -14,7 +14,7 @@ This file tracks the checks. The reasoning lives in `AGENTS.md` and the `docs/pa
 CI fails on `npm run lint` errors, so skip these; the rule message explains any fix (rules are in `eslint.config.mjs`):
 
 - ID creation via `<Model>Id.create()`; Zod import form and v3 string formats; `@/trpc/client` in a Next entry file without `"use client"`
-- `import "server-only"` in every `src/server` module, and the layering (`src/lib` is the leaf, server never imports UI, `client`/`hooks` import server code as types only, Prisma singleton only in `src/server` and `src/trpc/init.ts`)
+- `import "server-only"` in every `src/server` module, and the layering (`src/lib` is the leaf, server never imports UI, `client`/`hooks` import server code as types only, Prisma singleton only in `src/server` and `src/trpc/init.ts`, no module importing another module)
 - Hand-written `logEntry` writes
 - Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling
 
@@ -48,6 +48,10 @@ Lint catches ID imports but not an ID built without one:
 
 - Lint covers only Zod's import form and v3 string formats. Watch for other v3-era patterns copied from an older file or from training data (e.g. `.errors` where Zod 4 has `.issues`, `message:` where it has `error:`).
 - Placement: a schema used by both client and server belongs in `src/lib/schemas/`; a schema that only makes sense server-side (e.g. touching a `D4HAccessToken_ServerOnly`-shaped value) belongs under `src/server/`. A shared-looking schema added under `src/server/` (or vice versa) is worth double-checking against where it's actually imported from.
+
+## File placement
+
+- **Module-only UI goes in `src/modules/<module-id>/`, shared UI in `src/components/`.** A new component, hook or helper used by one module belongs in that module's folder (AGENTS.md → Modules), not in `src/components/<area>/` or as a non-route file beside a page under `src/app/`. One used by two or more modules belongs in `src/components/`. Lint stops one module importing another, but not a module-only file landing in the shared layer.
 
 ## Routes and internal links
 

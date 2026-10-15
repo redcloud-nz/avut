@@ -76,6 +76,11 @@ const config = [
     // `components` is deliberately not restricted from `@/server`: it mixes client components
     // with server components (`cards/`, `nav/public-header`) that legitimately call the session
     // helpers.
+    //
+    // `src/modules/<module-id>/` holds UI code private to one module (AGENTS.md → Modules). A
+    // module never imports another module; code two modules share belongs in `src/components/`.
+    // Outside `src/app` (routes are the composition root), only the sidebar-menu registry and the
+    // docs demos, which render a module's real component, may import a module.
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["src/generated/**"],
     plugins: { boundaries },
@@ -90,6 +95,12 @@ const config = [
         { type: "client", pattern: "src/client/**", partialMatch: false },
         { type: "hooks", pattern: "src/hooks/**", partialMatch: false },
         { type: "components", pattern: "src/components/**", partialMatch: false },
+        {
+          type: "module",
+          pattern: "src/modules/*/**",
+          partialMatch: false,
+          capture: ["moduleId"],
+        },
         { type: "app", pattern: "src/app/**", partialMatch: false },
       ],
       // Element patterns match folders; single files are classified here instead.
@@ -97,6 +108,12 @@ const config = [
         { category: "test", pattern: "**/*.test.{ts,tsx}", partialMatch: false },
         { category: "prisma-client", pattern: "src/server/prisma.ts", partialMatch: false },
         { category: "trpc-context", pattern: "src/trpc/init.ts", partialMatch: false },
+        {
+          category: "module-registry",
+          pattern: "src/components/nav/{org,scope}-sidebar-modules.tsx",
+          partialMatch: false,
+        },
+        { category: "docs-demo", pattern: "src/components/docs/demo-*.tsx", partialMatch: false },
       ],
     },
     rules: {
@@ -118,6 +135,7 @@ const config = [
                       "client",
                       "hooks",
                       "components",
+                      "module",
                       "app",
                     ],
                   },
@@ -131,7 +149,9 @@ const config = [
                   types: ["server", "trpc", "forms", "emails"],
                 },
               },
-              disallow: { to: { element: { types: ["client", "hooks", "components", "app"] } } },
+              disallow: {
+                to: { element: { types: ["client", "hooks", "components", "module", "app"] } },
+              },
               message: "Server-side code must not import UI code ({{ to.element.type }}).",
             },
             {
@@ -152,7 +172,17 @@ const config = [
             {
               from: {
                 element: {
-                  types: ["lib", "trpc", "forms", "emails", "client", "hooks", "components", "app"],
+                  types: [
+                    "lib",
+                    "trpc",
+                    "forms",
+                    "emails",
+                    "client",
+                    "hooks",
+                    "components",
+                    "module",
+                    "app",
+                  ],
                 },
               },
               disallow: { to: { file: { categories: "prisma-client" } } },
@@ -161,7 +191,9 @@ const config = [
             },
             {
               from: {
-                element: { types: ["client", "hooks", "components", "app", "emails", "forms"] },
+                element: {
+                  types: ["client", "hooks", "components", "module", "app", "emails", "forms"],
+                },
               },
               disallow: { to: { element: { type: "generated" } } },
               message:
@@ -170,6 +202,42 @@ const config = [
             {
               from: { file: { categories: "trpc-context" } },
               allow: { to: { file: { categories: "prisma-client" } } },
+            },
+            {
+              from: { element: { type: "module" } },
+              disallow: {
+                to: {
+                  element: {
+                    type: "module",
+                    captured: { moduleId: "!{{ from.element.captured.moduleId }}" },
+                  },
+                },
+              },
+              message:
+                "A module must not import another module ({{ to.element.captured.moduleId }}). Move shared code to src/components/.",
+            },
+            {
+              from: {
+                element: {
+                  types: [
+                    "lib",
+                    "server",
+                    "trpc",
+                    "forms",
+                    "emails",
+                    "client",
+                    "hooks",
+                    "components",
+                  ],
+                },
+              },
+              disallow: { to: { element: { type: "module" } } },
+              message:
+                "Only src/app, the sidebar-menu registry and docs demos may import from src/modules ({{ to.element.captured.moduleId }}).",
+            },
+            {
+              from: { file: { categories: ["module-registry", "docs-demo"] } },
+              allow: { to: { element: { type: "module" } } },
             },
           ],
         },
@@ -288,7 +356,12 @@ const config = [
     //
     // Restricting only the `auth`/`authClient` bindings keeps `import type { AuthSession }`
     // and similar type-only imports working.
-    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "src/client/**/*.{ts,tsx}"],
+    files: [
+      "src/app/**/*.{ts,tsx}",
+      "src/components/**/*.{ts,tsx}",
+      "src/modules/**/*.{ts,tsx}",
+      "src/client/**/*.{ts,tsx}",
+    ],
     ignores: [
       "src/app/trpc/**",
       "src/app/(public)/auth/**",
@@ -329,7 +402,7 @@ const config = [
     // Better Auth's own `useSession` keeps a nanostore cache with no relationship to React
     // Query: a second copy of the session that goes stale independently, cannot be hydrated
     // from the server, and survives sign-out.
-    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+    files: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}", "src/modules/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": [
         "error",
@@ -346,7 +419,12 @@ const config = [
     // clean as of the commit that flipped this to `error` — a regression should fail CI, not
     // just warn. Scoped to rendered JSX text and a handful of text-bearing attributes — never
     // code identifiers or class names — so it can safely cover all app/component/email source.
-    files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/emails/**/*.tsx"],
+    files: [
+      "src/app/**/*.tsx",
+      "src/components/**/*.tsx",
+      "src/modules/**/*.tsx",
+      "src/emails/**/*.tsx",
+    ],
     plugins: { avut },
     rules: {
       "avut/nz-spelling": "error",
