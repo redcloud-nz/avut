@@ -3,10 +3,8 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { formatDistanceToNow } from "date-fns";
 import { ComponentProps, ReactNode } from "react";
 
-import { formatDate, formatDateTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 
 type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
@@ -29,10 +27,6 @@ type FieldValueProps = Omit<ComponentProps<"div">, "children"> &
         ifEmpty?: ReactNode;
         format?:
             | "default"
-            | "date"
-            | "datetime"
-            | "dateWithDistance"
-            | "dateTimeWithDistance"
             | "id"
             | "uppercase"
             | "lowercase"
@@ -87,36 +81,6 @@ function formatValue(value: string, format: FieldValueProps["format"]): ReactNod
     }
 
     switch (format) {
-        case "date": {
-            const date = new Date(value);
-            return formatDate(date);
-        }
-        case "datetime": {
-            const date = new Date(value);
-            return formatDateTime(date);
-        }
-        case "dateWithDistance": {
-            const date = new Date(value);
-            return (
-                <>
-                    <span>{formatDate(date)}</span>
-                    <span className="pl-2 text-muted-foreground">
-                        ({formatDistanceToNow(date, { addSuffix: true })})
-                    </span>
-                </>
-            );
-        }
-        case "dateTimeWithDistance": {
-            const date = new Date(value);
-            return (
-                <>
-                    <span>{formatDateTime(date)}</span>
-                    <span className="pl-2 text-muted-foreground">
-                        ({formatDistanceToNow(date, { addSuffix: true })})
-                    </span>
-                </>
-            );
-        }
         case "id":
             return <code className="font-mono">{value}</code>;
         case "uppercase":

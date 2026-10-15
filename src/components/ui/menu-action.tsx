@@ -4,7 +4,9 @@
  */
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+
+import { useHotkey } from "@tanstack/react-hotkeys";
 
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -19,10 +21,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HotkeyKbd } from "@/components/ui/hotkey-kbd";
 import { useActionHotkeys, type ActionHotkeyEntry } from "@/hooks/use-action-hotkeys";
-import { ActionHotkey, ActionVerb } from "@/lib/hotkeys";
+import { ActionHotkey, ACTIONS_MENU_HOTKEY, ActionVerb } from "@/lib/hotkeys";
 
 export interface MenuActionProps {
-    /** Action verb — determines the shortcut key and badge via the {@link ActionHotkey} registry. */
+    /** Action verb — determines the shortcut key and badge via the {@link ActionHotkey} registry
+     *  (none for the verbs it has no key for). */
     verb: ActionVerb;
     label: string;
     icon: ReactNode;
@@ -61,6 +64,8 @@ export function MenuAction({
     disabled,
     destructive,
 }: MenuActionProps) {
+    const hotkey = ActionHotkey[verb];
+
     return (
         <DropdownMenuItem
             onClick={onSelect}
@@ -69,9 +74,11 @@ export function MenuAction({
         >
             {icon}
             {label}
-            <DropdownMenuShortcut className="max-md:hidden">
-                <HotkeyKbd hotkey={ActionHotkey[verb]} />
-            </DropdownMenuShortcut>
+            {hotkey && (
+                <DropdownMenuShortcut className="max-md:hidden">
+                    <HotkeyKbd hotkey={hotkey} />
+                </DropdownMenuShortcut>
+            )}
         </DropdownMenuItem>
     );
 }
@@ -94,6 +101,10 @@ export interface EntityActionMenuProps {
  * dropdown content, the "Actions" group, and hotkey registration. Entity-specific
  * concerns — which actions exist, their permissions, the `?action=` param, and
  * the dialogs — stay with the caller.
+ *
+ * Also opens on {@link ACTIONS_MENU_HOTKEY} with its first enabled item focused, so every
+ * action is reachable from the keyboard. Use it only for the page-level menu (the one in
+ * `Saratoga.Actions`), never for per-row menus, so one page registers the key once.
  */
 export function EntityActionMenu({
     actions,
@@ -104,14 +115,38 @@ export function EntityActionMenu({
 }: EntityActionMenuProps) {
     useMenuActionHotkeys(actions, category);
 
+    const [open, setOpen] = useState(false);
+    const contentRef = useRef<HTMLDivElement>(null);
+    // Set when the hotkey opens the menu. Radix focuses the first item only when its own trigger
+    // opens the menu from the keyboard; otherwise it focuses the content. Its focus scope mounts
+    // (and focuses) before this component's effect runs, so the effect moves focus on from there.
+    const openedByHotkey = useRef(false);
+
+    useEffect(() => {
+        if (!open || !openedByHotkey.current) return;
+        openedByHotkey.current = false;
+        contentRef.current
+            ?.querySelector<HTMLElement>('[role="menuitem"]:not([data-disabled])')
+            ?.focus();
+    }, [open]);
+
+    useHotkey(
+        ACTIONS_MENU_HOTKEY,
+        () => {
+            openedByHotkey.current = true;
+            setOpen(true);
+        },
+        { preventDefault: true, meta: { name: "Open actions menu", category: "General" } },
+    );
+
     return (
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
                     <DropdownMenuTriggerIcon />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className={width} align="end">
+            <DropdownMenuContent ref={contentRef} className={width} align="end">
                 {before}
                 <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>

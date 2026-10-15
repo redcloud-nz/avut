@@ -15,7 +15,13 @@ import { D4HIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import {
     Dialog,
     DialogBody,
@@ -119,50 +125,58 @@ export function AdminModule_Organization_D4HCard() {
                     </CardAction>
                 </CardHeader>
                 <CardContent>
-                    <DL>
-                        <DLTerm>D4H Organisation</DLTerm>
-                        <DLDetails>
-                            {orgD4H.d4hOrganisationId ? (
-                                <>
-                                    {orgD4H.d4hOrganisationName}
-                                    {orgD4H.d4hOrganisationName && " "}
-                                    <span className="text-muted-foreground">
-                                        (ID: {orgD4H.d4hOrganisationId})
-                                    </span>
-                                </>
-                            ) : (
-                                "Org-less (no D4H organisation)"
-                            )}
-                        </DLDetails>
-                        <DLTerm>Server</DLTerm>
-                        <DLDetails>{getD4HServer(orgD4H.serverCode).name}</DLDetails>
+                    <DataList>
+                        <DataItem inline>
+                            <DataItemTitle>D4H Organisation</DataItemTitle>
+                            <DataItemValue>
+                                {orgD4H.d4hOrganisationId ? (
+                                    <>
+                                        {orgD4H.d4hOrganisationName}
+                                        {orgD4H.d4hOrganisationName && " "}
+                                        <span className="text-muted-foreground">
+                                            (ID: {orgD4H.d4hOrganisationId})
+                                        </span>
+                                    </>
+                                ) : (
+                                    "Org-less (no D4H organisation)"
+                                )}
+                            </DataItemValue>
+                        </DataItem>
+                        <DataItem inline>
+                            <DataItemTitle>Server</DataItemTitle>
+                            <DataItemValue>{getD4HServer(orgD4H.serverCode).name}</DataItemValue>
+                        </DataItem>
                         {orgD4H.d4hTimezone && (
-                            <>
-                                <DLTerm>Timezone</DLTerm>
-                                <DLDetails>{orgD4H.d4hTimezone}</DLDetails>
-                            </>
+                            <DataItem inline>
+                                <DataItemTitle>Timezone</DataItemTitle>
+                                <DataItemValue>{orgD4H.d4hTimezone}</DataItemValue>
+                            </DataItem>
                         )}
                         {orgD4H.d4hCurrency && (
-                            <>
-                                <DLTerm>Currency</DLTerm>
-                                <DLDetails>{orgD4H.d4hCurrency}</DLDetails>
-                            </>
+                            <DataItem inline>
+                                <DataItemTitle>Currency</DataItemTitle>
+                                <DataItemValue>{orgD4H.d4hCurrency}</DataItemValue>
+                            </DataItem>
                         )}
                         {reportingStart && (
-                            <>
-                                <DLTerm>Reporting year starts</DLTerm>
-                                <DLDetails>{reportingStart}</DLDetails>
-                            </>
+                            <DataItem inline>
+                                <DataItemTitle>Reporting year starts</DataItemTitle>
+                                <DataItemValue>{reportingStart}</DataItemValue>
+                            </DataItem>
                         )}
-                        <DLTerm>Linked teams</DLTerm>
-                        <DLDetails>{orgD4H.linkedTeamCount}</DLDetails>
-                        <DLTerm>Last synced</DLTerm>
-                        {orgD4H.lastSyncedAt ? (
-                            <DLDateDetails date={orgD4H.lastSyncedAt} />
-                        ) : (
-                            <DLDetails>Never</DLDetails>
-                        )}
-                    </DL>
+                        <DataItem inline>
+                            <DataItemTitle>Linked teams</DataItemTitle>
+                            <DataItemValue>{orgD4H.linkedTeamCount}</DataItemValue>
+                        </DataItem>
+                        <DataItem inline>
+                            <DataItemTitle>Last synced</DataItemTitle>
+                            {orgD4H.lastSyncedAt ? (
+                                <DataItemDateValue date={orgD4H.lastSyncedAt} />
+                            ) : (
+                                <DataItemValue>Never</DataItemValue>
+                            )}
+                        </DataItem>
+                    </DataList>
                 </CardContent>
             </Card>
 

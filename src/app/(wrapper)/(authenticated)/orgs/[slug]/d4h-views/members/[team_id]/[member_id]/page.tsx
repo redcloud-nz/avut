@@ -23,7 +23,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Show } from "@/components/show";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -150,30 +150,40 @@ export default function D4HViewsModule_Member_Page(
                             <CardTitle>Member Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <DL>
-                                <DLTerm>ID</DLTerm>
-                                <DLDetails>{member.id}</DLDetails>
-                                <DLTerm>Name</DLTerm>
-                                <DLDetails>{member.name}</DLDetails>
-                                <DLTerm>Email</DLTerm>
-                                <DLDetails>{member.email.value}</DLDetails>
+                            <DataList>
+                                <DataItem inline>
+                                    <DataItemTitle>ID</DataItemTitle>
+                                    <DataItemValue>{member.id}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Name</DataItemTitle>
+                                    <DataItemValue>{member.name}</DataItemValue>
+                                </DataItem>
+                                <DataItem>
+                                    <DataItemTitle>Email</DataItemTitle>
+                                    <DataItemValue>{member.email.value}</DataItemValue>
+                                </DataItem>
                                 {member.ref && (
-                                    <>
-                                        <DLTerm>Ref</DLTerm>
-                                        <DLDetails>{member.ref}</DLDetails>
-                                    </>
+                                    <DataItem inline>
+                                        <DataItemTitle>Ref</DataItemTitle>
+                                        <DataItemValue>{member.ref}</DataItemValue>
+                                    </DataItem>
                                 )}
                                 {member.position && (
-                                    <>
-                                        <DLTerm>Position</DLTerm>
-                                        <DLDetails>{member.position}</DLDetails>
-                                    </>
+                                    <DataItem inline>
+                                        <DataItemTitle>Position</DataItemTitle>
+                                        <DataItemValue>{member.position}</DataItemValue>
+                                    </DataItem>
                                 )}
-                                <DLTerm>Team</DLTerm>
-                                <DLDetails>{member.team.title}</DLDetails>
-                                <DLTerm>Status</DLTerm>
-                                <DLDetails>{member.status}</DLDetails>
-                            </DL>
+                                <DataItem inline>
+                                    <DataItemTitle>Team</DataItemTitle>
+                                    <DataItemValue>{member.team.title}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Status</DataItemTitle>
+                                    <DataItemValue>{member.status}</DataItemValue>
+                                </DataItem>
+                            </DataList>
                         </CardContent>
                     </Card>
 

@@ -65,6 +65,7 @@ export function SystemAdmin_OrganizationSettings_Content({
                                 organizationId={organizationId}
                                 moduleFlags={moduleFlags}
                                 settings={settings}
+                                canEdit
                             />
                             <Saratoga.ContentsSpacer />
                         </Saratoga.Column>

@@ -6,6 +6,7 @@
 "use client";
 
 import { NavSubItem } from "@/components/nav/nav-section";
+import { Protect } from "@/components/protect";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
@@ -15,6 +16,12 @@ export function SkillTrack_Sidebar_Menu() {
 
     return (
         <>
+            <Protect permissions={{ roleGrant: ["skills-assessor"] }}>
+                <NavSubItem
+                    label="Assessors"
+                    href={route("/orgs/[slug]/skill-track/assessors", { slug: organization.slug })}
+                />
+            </Protect>
             <NavSubItem
                 label="Catalogue"
                 href={route("/orgs/[slug]/skill-track/catalogue", { slug: organization.slug })}

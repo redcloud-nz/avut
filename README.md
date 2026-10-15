@@ -98,7 +98,7 @@ npm install
 # better-auth secrets (see src/server/auth.ts for what's read from the environment).
 
 npm run prisma migrate dev   # apply database migrations
-npm run dev                   # start the dev server
+npm run dev                   # start the dev server (port 3000; worktrees use their own, see AGENTS.md → Dev servers)
 ```
 
 Other useful commands:

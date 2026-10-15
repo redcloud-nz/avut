@@ -17,6 +17,7 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { trpc } from "@/trpc/client";
@@ -26,6 +27,7 @@ type Membership = RouterOutput["user"]["listMemberships"][number];
 
 export function UserSettings_Organizations_List() {
     const { data: memberships } = useSuspenseQuery(trpc.user.listMemberships.queryOptions());
+    const { formatDate } = usePreferences();
 
     const columns = useMemo(
         () =>
@@ -67,13 +69,13 @@ export function UserSettings_Organizations_List() {
                 }),
                 columnHelper.accessor("createdAt", {
                     header: "Joined",
-                    cell: (ctx) => new Date(ctx.getValue()).toLocaleDateString(),
+                    cell: (ctx) => formatDate(ctx.getValue()),
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [formatDate],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

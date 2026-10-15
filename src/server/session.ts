@@ -6,6 +6,7 @@ import "server-only";
 
 import { headers as nextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import { signInUrl } from "@/lib/auth-redirect";
@@ -18,8 +19,13 @@ import { auth, AuthSession } from "./auth";
  *
  * Wrapped in React `cache` so the whole render tree — the authenticated layout, the
  * organization layout, a module layout and the page itself — costs a single lookup.
+ *
+ * better-auth reads `Date.now()` to check expiry. `headers()` alone still leaves the render in
+ * Cache Components' runtime prerender, which rejects current-time reads, so `connection()` marks
+ * the lookup as request-time first.
  */
 export const getSession = cache(async (): Promise<AuthSession | null> => {
+    await connection();
     return await auth.api.getSession({ headers: await nextHeaders() });
 });
 

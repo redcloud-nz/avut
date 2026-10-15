@@ -5,171 +5,110 @@
 
 "use client";
 
-import { Control, Controller, useForm, useWatch } from "react-hook-form";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-
-import { useOrganizationSettingsMutation } from "@/components/admin/organization-settings/use-organization-settings-mutation";
-import { Button, MutationButton } from "@/components/ui/button";
 import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+    Table,
+    TableBody,
+    TableCell,
+    TableHeadCell,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
-import { SKILL_CHECK_RESULT_VALUES, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import { defaultSkillCheckResultLabel } from "@/lib/schemas/skill-check-result";
 
-// Exempt, Expired, and Provisional exist in the fixed vocabulary but aren't offered to
-// organizations yet — their semantics aren't settled. Remove from this list to enable them.
-const SKILL_TRACK_CONFIGURABLE_RESULT_VALUES = SKILL_CHECK_RESULT_VALUES.filter(
-    (value) => value !== "Exempt" && value !== "Expired" && value !== "Provisional",
-);
+import { Feature_SettingsCard } from "./feature-settings-card";
+import { SKILL_TRACK_RESULT_GROUPS } from "./skill-track-result-groups";
+import { OrganizationSettings_UpdateSkillTrackResults_Dialog } from "./update-skill-track-results";
 
+const RESULTS_DESCRIPTION =
+    "Which skill check results your organisation can record, and what each one is called.";
+
+/**
+ * The Skill Track module: Enable/Disable, and while it's enabled, a table of the result options
+ * currently offered, grouped by tier. Disabled options are left out; the edit dialog lists them all.
+ */
 export function SkillTrackModule_SettingsCard({
     organizationId,
     settings,
+    canEdit,
 }: {
     organizationId: OrganizationId;
     settings: OrganizationSettings;
+    canEdit: boolean;
 }) {
-    const form = useForm({
-        resolver: zodResolver(OrganizationSettings.schema.shape.modules.shape["skill-track"]),
-        defaultValues: settings.modules["skill-track"],
-    });
-
-    const mutation = useOrganizationSettingsMutation({
-        errorMessage: "Failed to update Skill Track module settings",
-        onSaved: (updated) => form.reset(updated.modules["skill-track"]),
-    });
-
-    const handleSubmit = form.handleSubmit((formData) => {
-        mutation.mutate({
-            organizationId,
-            update: { slice: "modules.skill-track", patch: formData },
-        });
-    });
+    const { enabled, results } = settings.modules["skill-track"];
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Skill Track Module</CardTitle>
-                <CardDescription>
-                    The Skill Track module provides functionality for managing skills and
-                    competencies within your organisation.
-                </CardDescription>
-                <CardAction>
-                    <Controller
-                        control={form.control}
-                        name="enabled"
-                        render={({ field }) => (
-                            <Switch
-                                id="skill-track-module-enabled"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        )}
-                    />
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <form id="skill-track-module-settings-form" onSubmit={handleSubmit}>
-                    <FieldSet className="w-xl">
-                        <FieldLegend>Skill Check Result Options</FieldLegend>
-                        <FieldDescription>
-                            Configure which skill check result options are available for use in your
-                            organisation. You can enable or disable each option and customise its
-                            label.
-                        </FieldDescription>
-                        <FieldGroup>
-                            {SKILL_TRACK_CONFIGURABLE_RESULT_VALUES.map((value) => (
-                                <SkillCheckResult_SettingsRow
-                                    key={value}
-                                    value={value}
-                                    control={form.control}
-                                />
-                            ))}
-                        </FieldGroup>
-                    </FieldSet>
-                </form>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-                {form.formState.isDirty && (
-                    <Button variant="ghost" type="button" onClick={() => form.reset()}>
-                        Reset
-                    </Button>
-                )}
-                <MutationButton
-                    form="skill-track-module-settings-form"
-                    status={mutation.status}
-                    text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
-                    disabled={mutation.status !== "idle"}
-                />
-            </CardFooter>
-        </Card>
-    );
-}
-
-function SkillCheckResult_SettingsRow({
-    value,
-    control,
-}: {
-    value: SkillCheckResultValue;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamically focused per result value
-    control: Control<any>;
-}) {
-    const enabled = useWatch({ control, name: `results.${value}.enabled` });
-
-    return (
-        <div className="flex gap-4">
-            <Controller
-                control={control}
-                name={`results.${value}.enabled`}
-                render={({ field }) => (
-                    <Switch
-                        id={`skill-check-result-${value}-enabled`}
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
+        <Feature_SettingsCard
+            organizationId={organizationId}
+            canEdit={canEdit}
+            slice="modules.skill-track"
+            enabled={enabled}
+            kind="module"
+            title="Skill Track Module"
+            description="The Skill Track module provides functionality for managing skills and competencies within your organisation."
+        >
+            <div className="mb-3 flex items-start gap-4">
+                <div className="min-w-0 flex-1">
+                    <h4 className="text-sm/6 font-semibold text-foreground">
+                        Skill Check Result Options
+                    </h4>
+                    <p className="text-sm text-muted-foreground">{RESULTS_DESCRIPTION}</p>
+                </div>
+                {canEdit && (
+                    <OrganizationSettings_UpdateSkillTrackResults_Dialog
+                        organizationId={organizationId}
+                        settings={settings}
+                        description={RESULTS_DESCRIPTION}
                     />
                 )}
-            />
-            <Field>
-                <FieldLabel htmlFor={`skill-check-result-${value}-label`}>{value}</FieldLabel>
+            </div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHeadCell>Tier</TableHeadCell>
+                        <TableHeadCell>Result</TableHeadCell>
+                        <TableHeadCell>Shown as</TableHeadCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {SKILL_TRACK_RESULT_GROUPS.flatMap((group) => {
+                        const enabledValues = group.values.filter(
+                            (value) => results[value].enabled,
+                        );
+                        // The tier cell spans the group's rows, so it's rendered on the first only.
+                        const tierCell = (
+                            <TableHeadCell
+                                rowSpan={Math.max(enabledValues.length, 1)}
+                                scope="rowgroup"
+                                className="h-auto p-2 align-top"
+                            >
+                                {group.label}
+                            </TableHeadCell>
+                        );
 
-                <Controller
-                    control={control}
-                    name={`results.${value}.label`}
-                    render={({ field, fieldState }) => (
-                        <FieldContent>
-                            <Input
-                                id={`skill-check-result-${value}-label`}
-                                className="min-w-1/2"
-                                aria-invalid={fieldState.invalid}
-                                disabled={!enabled}
-                                value={field.value}
-                                onChange={field.onChange}
-                            />
-                            {fieldState.error && <FieldError errors={[fieldState.error]} />}
-                        </FieldContent>
-                    )}
-                />
-            </Field>
-        </div>
+                        if (enabledValues.length === 0) {
+                            return [
+                                <TableRow key={group.label}>
+                                    {tierCell}
+                                    <TableCell colSpan={2} className="text-muted-foreground">
+                                        None enabled
+                                    </TableCell>
+                                </TableRow>,
+                            ];
+                        }
+
+                        return enabledValues.map((value, index) => (
+                            <TableRow key={value}>
+                                {index === 0 && tierCell}
+                                <TableCell>{defaultSkillCheckResultLabel(value)}</TableCell>
+                                <TableCell>{results[value].label}</TableCell>
+                            </TableRow>
+                        ));
+                    })}
+                </TableBody>
+            </Table>
+        </Feature_SettingsCard>
     );
 }

@@ -8,9 +8,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { usersEffects } from "@/client/users-effects";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -32,7 +33,8 @@ import { trpc } from "@/trpc/client";
  * `?action=delete` type-to-confirm dialog for deleting a user account into the system Rubbish bin
  * (#296). Host-driven
  * (`open` / `onOpenChange` come from `SystemAdmin_UserActions_Menu`). The destructive button
- * stays disabled until the operator types the user's exact email address.
+ * stays disabled until the operator types the user's exact email address. Deleting an
+ * organisation's only owner is allowed; the dialog lists those organisations first.
  *
  * `onSuccess` navigates to the users list — per `docs/patterns/mutation-dialog.md`, a delete's
  * success handler does only the navigation (no param clear / `mutation.reset()` race).
@@ -45,6 +47,13 @@ export function SystemAdmin_DeleteUser_Dialog({
 }) {
     const router = useRouter();
     const [confirmText, setConfirmText] = useState("");
+
+    const soleOwned = useQuery({
+        ...trpc.users.listSoleOwnedOrganizations.queryOptions({
+            userId: UserId.schema.parse(user.id),
+        }),
+        enabled: props.open === true,
+    });
 
     const mutation = useMutation(
         trpc.users.deleteUser.mutationOptions({
@@ -85,6 +94,16 @@ export function SystemAdmin_DeleteUser_Dialog({
                         notes.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
+                {soleOwned.data && soleOwned.data.length > 0 && (
+                    <Alert variant="warning">
+                        <AlertTitle>These organisations will have no owner</AlertTitle>
+                        <AlertDescription>
+                            <ObjectName>{user.name}</ObjectName> is the only owner of{" "}
+                            {soleOwned.data.map((o) => o.name).join(", ")}. Appoint a new owner from
+                            each organisation&rsquo;s members list afterwards.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 <Field>
                     <FieldLabel htmlFor="delete-user-confirm">
                         Type <span className="font-mono">{user.email}</span> to confirm
@@ -101,7 +120,7 @@ export function SystemAdmin_DeleteUser_Dialog({
                         type="button"
                         variant="destructive"
                         status={mutation.status}
-                        disabled={confirmText !== user.email}
+                        disabled={soleOwned.isPending || confirmText !== user.email}
                         text={{ idle: "Delete user", pending: "Deleting", success: "Deleted" }}
                         onClick={() => mutation.mutate({ userId: UserId.schema.parse(user.id) })}
                     />

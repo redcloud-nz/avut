@@ -96,7 +96,7 @@ function GloriousScrollFrame({ children, className, ...props }: ComponentProps<"
         <div
             data-component="GloriousScrollFrame"
             className={cn(
-                "min-h-0 min-w-0 flex-1 overflow-auto rounded-md border [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)]",
+                "min-h-0 min-w-0 flex-1 overflow-auto rounded-md border bg-card [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)]",
                 className,
             )}
             {...props}
@@ -156,7 +156,7 @@ function GloriousGroupSection({
                 <th
                     colSpan={colSpan}
                     style={{ top: headerOffset }}
-                    className="sticky z-20 bg-muted p-0 text-left"
+                    className="sticky z-20 bg-table-group p-0 text-left"
                 >
                     {/* Full-width wrapper carries the divider — a border on the sticky <th>
                         itself paints unreliably once it's stuck. The button stays narrow so

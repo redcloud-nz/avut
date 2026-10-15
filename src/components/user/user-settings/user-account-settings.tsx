@@ -8,7 +8,13 @@
 import { useSession } from "@/client/auth-queries";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataItem, DataItemAction, DataItemTitle, DataItemValue } from "@/components/ui/data-item";
+import {
+    DataItem,
+    DataItemAction,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { RainbowSpinner } from "@/components/ui/loading";
 
 import { UserSettings_ActiveSessions_Card } from "./active-sessions";
@@ -37,13 +43,15 @@ export function UserSettings_Account() {
                     <CardDescription>Manage your security settings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <DataItem>
-                        <DataItemTitle>Password</DataItemTitle>
-                        <DataItemValue>********</DataItemValue>
-                        <DataItemAction>
-                            <UserProfile_ChangePassword_Dialog />
-                        </DataItemAction>
-                    </DataItem>
+                    <DataList>
+                        <DataItem>
+                            <DataItemTitle>Password</DataItemTitle>
+                            <DataItemValue>********</DataItemValue>
+                            <DataItemAction>
+                                <UserProfile_ChangePassword_Dialog />
+                            </DataItemAction>
+                        </DataItem>
+                    </DataList>
                 </CardContent>
             </Card>
             <UserSettings_LinkedAccounts_Card />
@@ -56,15 +64,17 @@ export function UserSettings_Account() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <DataItem>
-                        <DataItemTitle>Account</DataItemTitle>
-                        <DataItemValue>{sessionQuery.data.user.email}</DataItemValue>
-                        <DataItemAction>
-                            <UserSettings_CloseAccount_Dialog
-                                email={sessionQuery.data.user.email}
-                            />
-                        </DataItemAction>
-                    </DataItem>
+                    <DataList>
+                        <DataItem>
+                            <DataItemTitle>Account</DataItemTitle>
+                            <DataItemValue>{sessionQuery.data.user.email}</DataItemValue>
+                            <DataItemAction>
+                                <UserSettings_CloseAccount_Dialog
+                                    email={sessionQuery.data.user.email}
+                                />
+                            </DataItemAction>
+                        </DataItem>
+                    </DataList>
                 </CardContent>
             </Card>
         </div>

@@ -60,7 +60,7 @@ await ctx.prisma.$transaction([
 ]);
 ```
 
-(`skills-router.ts`'s `deleteSession`.) Destructure the array's result positionally when a later
+(`skill-check-sessions-router.ts`'s `deleteSession`.) Destructure the array's result positionally when a later
 step needs a created/updated record's value — `const [created] = await ctx.prisma.$transaction([
 ... ])`.
 
@@ -152,9 +152,10 @@ That last distinction is load-bearing, and it is the reason the third arm exists
 `ownerId` entry recording the **deletion** of the user it names is inserted and then cascaded
 away inside the very `$transaction` that wrote it — a write with a zero-length lifetime that no
 reader can ever see, and no test that only checks _other_ entries will catch it.
-`system-admin-router.ts`'s `deleteUser` is that case, and uses `scope: "system"`, carrying the
-subject in `objectId` and their denormalized name/email in `description` — because once the
-`User` row is gone, that description is all that identifies them.
+`UserAccounts.purge` (`src/server/services/user-accounts.ts`) is that case, and uses
+`scope: "system"`, carrying the subject in `objectId` and their denormalized name/email in
+`description` — because once the `User` row is gone, that description is all that identifies
+them.
 
 ## Correlating several events: `LogBatch`
 

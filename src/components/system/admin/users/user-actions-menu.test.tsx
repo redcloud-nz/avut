@@ -126,12 +126,12 @@ describe("SystemAdmin_UserActions_Menu", () => {
     });
 
     const cases: Array<[string, Record<string, unknown>, string]> = [
-        ["impersonate", { banned: false }, "Impersonate user"],
         ["ban", { banned: false }, "Ban user"],
         ["unban", { banned: true }, "Unban user"],
         ["promote", { role: "user" }, "Promote to admin"],
         ["demote", { role: "user" }, "Demote to user"],
         ["delete", {}, "Delete user"],
+        ["impersonate", {}, "Impersonate user"],
     ];
 
     it.each(cases)("?action=%s mounts exactly one dialog", (action, overrides, heading) => {
@@ -143,5 +143,17 @@ describe("SystemAdmin_UserActions_Menu", () => {
         ];
         expect(dialogs).toHaveLength(1);
         expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    });
+
+    it("opens on Mod+. and opens Delete on Alt+Backspace", async () => {
+        const user = userEvent.setup();
+        renderMenu(makeUser());
+
+        await user.keyboard("{Control>}.{/Control}");
+        expect(await screen.findByRole("menu")).toBeInTheDocument();
+        await user.keyboard("{Escape}");
+
+        await user.keyboard("{Alt>}{Backspace}{/Alt}");
+        expect(await screen.findByRole("heading", { name: "Delete user" })).toBeInTheDocument();
     });
 });

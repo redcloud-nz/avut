@@ -6,12 +6,12 @@
 "use client";
 
 import { MonitorIcon, SmartphoneIcon } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { useSignOut } from "@/client/use-sign-out";
 import { usersEffects } from "@/client/users-effects";
 import { Alert } from "@/components/ui/alert";
 import {
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/item";
 import { RainbowSpinner } from "@/components/ui/loading";
 import { useLogger } from "@/hooks/use-logger";
+import { signOutUrl } from "@/lib/auth-redirect";
 import { formatRelativeDateTime } from "@/lib/datetime";
 import { UserSessionData, UserSessionId } from "@/lib/schemas/user-session";
 import { trpc } from "@/trpc/client";
@@ -141,9 +142,6 @@ function ActiveSession_Item({
     session: UserSessionData;
     onRevoke: () => void;
 }) {
-    const signOut = useSignOut();
-    const signOutMutation = useMutation({ mutationFn: () => signOut() });
-
     const { isMobile } = parseUserAgent(session.userAgent);
     const DeviceIcon = isMobile ? SmartphoneIcon : MonitorIcon;
 
@@ -164,16 +162,9 @@ function ActiveSession_Item({
             </ItemContent>
             <ItemActions>
                 {session.isCurrent ? (
-                    <MutationButton
-                        variant="outline"
-                        status={signOutMutation.status}
-                        text={{
-                            idle: "Sign out",
-                            pending: "Signing out",
-                            success: "Signing out",
-                        }}
-                        onClick={() => signOutMutation.mutate()}
-                    />
+                    <Button variant="outline" asChild>
+                        <Link href={signOutUrl()}>Sign out</Link>
+                    </Button>
                 ) : (
                     <Button variant="destructive" onClick={onRevoke}>
                         Revoke

@@ -30,8 +30,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { D4HServerList } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
-import { D4HAccessToken, D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
 interface CreateD4HAccessTokenFormProps {
@@ -86,7 +87,7 @@ export function AdminModule_CreateD4HAccessToken_Form({
     const handleCreate = form.handleSubmit((formData) => {
         createTokenMutation.mutate({
             organizationId: organization.id,
-            tokenId: D4HAccessTokenId.create(),
+            tokenId: ProviderCredentialId.create(),
             create: formData,
         });
     });
@@ -103,7 +104,6 @@ export function AdminModule_CreateD4HAccessToken_Form({
                             <Select {...field}>
                                 <SelectTrigger
                                     id="access-token-server-code"
-                                    className="min-w-1/2"
                                     aria-invalid={fieldState.invalid}
                                 >
                                     <SelectValue placeholder="Select D4H server" />
@@ -150,7 +150,6 @@ export function AdminModule_CreateD4HAccessToken_Form({
                                 id="access-token-label"
                                 placeholder="e.g. My Access Tokens"
                                 aria-invalid={fieldState.invalid}
-                                className="min-w-1/2"
                                 {...field}
                             />
                             {fieldState.error && <FieldError errors={[fieldState.error]} />}

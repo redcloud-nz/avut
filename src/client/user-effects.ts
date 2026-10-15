@@ -20,7 +20,10 @@ export const userEffects = createEffects<"user">()({
         invalidate(trpc.invitations.getLanding.queryFilter({ invitationId: vars.invitationId })),
     ],
 
-    leaveOrganization: () => [invalidate(trpc.user.listMemberships.queryFilter())],
+    leaveOrganization: () => [
+        invalidate(trpc.user.listMemberships.queryFilter()),
+        invalidate(trpc.user.listSoleOwnedOrganizations.queryFilter()),
+    ],
 
     rejectInvitation: (vars) => [
         invalidate(trpc.user.listInvitations.queryFilter()),

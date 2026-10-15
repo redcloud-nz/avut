@@ -34,6 +34,8 @@ export {
     DEFAULT_SKILL_CHECK_RESULT_LABELS,
     defaultSkillCheckResultLabel,
     isCompetentResult,
+    SKILL_CHECK_FAIL_TIERS,
+    SKILL_CHECK_PASS_TIERS,
     SKILL_CHECK_RESULT_VALUES,
     SkillCheckResultValue,
 } from "./skill-check-result";
@@ -51,18 +53,44 @@ export const SkillCheck = {
         skillId: SkillId.schema,
         result: SkillCheckResultValue.schema,
         notes: z.string(),
-        status: z.enum(["Draft", "Include", "Exclude"]),
-        createdAt: z.iso.datetime(),
+        status: z.enum(["Draft", "Pending", "Include", "Exclude", "Deleted"]),
+        /** When the assessment happened: the session's date, or a standalone check's creation. */
+        checkedAt: z.iso.datetime(),
+        /** When an assessor last recorded or removed the check; approval doesn't move it. */
+        recordedAt: z.iso.datetime(),
     }),
 
     fromRecord: (record: SkillCheckRecord) =>
         SkillCheck.schema.parse({
             ...record,
-            createdAt: record.createdAt.toISOString(),
+            checkedAt: record.checkedAt.toISOString(),
+            recordedAt: record.recordedAt.toISOString(),
         }),
 } as const;
 
 export type SkillCheck = z.infer<typeof SkillCheck.schema>;
+
+/**
+ * A session's check as `skillCheckSessions.listSessionChecks` returns it: the check with the
+ * names of its assessee, skill and assessor, so it describes itself even once they are no longer
+ * assigned to the session. `assessorName` falls back as `assessorDisplayName` does.
+ */
+export const SessionCheck = {
+    schema: SkillCheck.schema.extend({
+        assesseeName: z.string(),
+        skillName: z.string(),
+        assessorName: z.string(),
+    }),
+} as const;
+
+export type SessionCheck = z.infer<typeof SessionCheck.schema>;
+
+/**
+ * How far `listSessionChecks`' cursor lags the server's clock, in milliseconds. A check recorded
+ * this long before a read began is assumed to have committed by then (commit delay plus clock
+ * skew between server instances stay under it).
+ */
+export const SESSION_CHECKS_LOOKBACK_MS = 10_000;
 
 /**
  * Display name for a check's assessor: the live person, else the name kept when they were
@@ -77,16 +105,21 @@ export function assessorDisplayName(check: {
 
 export const SKILL_CHECK_STATUS_LABELS: Record<string, string> = {
     Draft: "Draft",
+    Pending: "Pending review",
     Include: "Approved",
     Exclude: "Excluded",
+    Deleted: "Deleted",
 };
+
+/** One selectable result value with the org's label for it. */
+export type SkillCheckResultOption = { value: SkillCheckResultValue; label: string };
 
 /**
  * The org's enabled result values, in fixed app-wide order, with their configured labels.
  */
 export function getEnabledSkillCheckResultOptions(
     settings: OrganizationSettings,
-): { value: SkillCheckResultValue; label: string }[] {
+): SkillCheckResultOption[] {
     const results = settings.modules["skill-track"].results;
     return SKILL_CHECK_RESULT_VALUES.filter((value) => results[value].enabled).map((value) => ({
         value,

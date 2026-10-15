@@ -104,7 +104,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                     <ObjectIcons.Create /> <span className="hidden md:inline">New Invitation</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent size="lg">
                 <DialogHeader>
                     <DialogTitle>Invite</DialogTitle>
                     <DialogDescription>
@@ -141,7 +141,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                                             <Input
                                                 id="invitation-email"
                                                 autoFocus
-                                                autoComplete="off"
+                                                ignorePasswordManagers
                                                 aria-invalid={fieldState.invalid}
                                                 {...field}
                                             />

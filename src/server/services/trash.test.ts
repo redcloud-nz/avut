@@ -142,6 +142,7 @@ describe("Trash service", () => {
                 skillId: T.sharedSkill,
                 result: "Pass",
                 notes: "",
+                checkedAt: new Date(),
             },
         });
         // Recorded by another org that subscribed to the package.
@@ -154,6 +155,21 @@ describe("Trash service", () => {
                 skillId: T.sharedSkill,
                 result: "Pass",
                 notes: "",
+                checkedAt: new Date(),
+            },
+        });
+        // A tombstone from that org too, which the blocker's count leaves out.
+        await db.skillCheck.create({
+            data: {
+                id: SkillCheckId.create(),
+                organizationId: T.otherOrg,
+                assesseeId: T.otherOrgPerson,
+                assessorId: null,
+                skillId: T.sharedSkill,
+                result: "Pass",
+                notes: "",
+                status: "Deleted",
+                checkedAt: new Date(),
             },
         });
 
@@ -169,7 +185,7 @@ describe("Trash service", () => {
         expect(await db.team.findUnique({ where: { id: T.activeTeam } })).not.toBeNull();
     });
 
-    it("refuses to purge a skill package another organisation has recorded checks against", async () => {
+    it("refuses to purge a skill package another organisation has recorded checks against, counting only live checks", async () => {
         await expect(Trash.purge(ctx(), "skillPackage", T.sharedPkg)).rejects.toThrow(
             /Other organisations have recorded 1 skill check/,
         );

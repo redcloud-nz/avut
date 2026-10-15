@@ -60,3 +60,6 @@ src/app/scratch/
 
 # scratch PNGs from the docs screenshot capture skill (uploaded to Blob, never committed)
 .screenshots/
+
+# per-worktree dev-server port (scripts/dev-port.sh)
+.dev-port

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
@@ -38,29 +38,37 @@ export function AdminModule_Person_LinkedUser_Card({ personId }: { personId: Per
                 <CardTitle>Linked User Account</CardTitle>
             </CardHeader>
             <CardContent>
-                <DL>
-                    <DLTerm>User ID</DLTerm>
-                    <DLDetails className="font-mono">
-                        <Link
-                            href={route("/orgs/[slug]/admin/users/[user_id]", {
-                                slug: organization.slug,
-                                user_id: linkedUser.userId,
-                            })}
-                        >
-                            {linkedUser.userId}
-                        </Link>
-                    </DLDetails>
-                    <DLTerm>Name</DLTerm>
-                    <DLDetails>{linkedUser.user.name}</DLDetails>
-                    <DLTerm>Email</DLTerm>
-                    <DLDetails>{linkedUser.user.email}</DLDetails>
-                    <DLTerm>Roles</DLTerm>
-                    <DLDetails>
-                        {linkedUser.roles
-                            .map((role) => OrganizationRole.displayNames[role])
-                            .join(", ")}
-                    </DLDetails>
-                </DL>
+                <DataList>
+                    <DataItem inline>
+                        <DataItemTitle>User ID</DataItemTitle>
+                        <DataItemValue className="font-mono">
+                            <Link
+                                href={route("/orgs/[slug]/admin/users/[user_id]", {
+                                    slug: organization.slug,
+                                    user_id: linkedUser.userId,
+                                })}
+                            >
+                                {linkedUser.userId}
+                            </Link>
+                        </DataItemValue>
+                    </DataItem>
+                    <DataItem inline>
+                        <DataItemTitle>Name</DataItemTitle>
+                        <DataItemValue>{linkedUser.user.name}</DataItemValue>
+                    </DataItem>
+                    <DataItem>
+                        <DataItemTitle>Email</DataItemTitle>
+                        <DataItemValue>{linkedUser.user.email}</DataItemValue>
+                    </DataItem>
+                    <DataItem inline>
+                        <DataItemTitle>Roles</DataItemTitle>
+                        <DataItemValue>
+                            {linkedUser.roles
+                                .map((role) => OrganizationRole.displayNames[role])
+                                .join(", ")}
+                        </DataItemValue>
+                    </DataItem>
+                </DataList>
             </CardContent>
         </Card>
     );

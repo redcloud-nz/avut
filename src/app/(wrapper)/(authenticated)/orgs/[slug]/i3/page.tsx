@@ -28,7 +28,7 @@ export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/i3`>)
         <>
             <Std.Navbar
                 breadcrumbs={[{ href: route("/orgs/[slug]/i3", { slug }), label: "I3" }]}
-                actions={<HelpButton slug="i3" />}
+                actions={<HelpButton id="i3" />}
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="I3 Module">

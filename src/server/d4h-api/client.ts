@@ -11,12 +11,19 @@ import { cache } from "react";
 import * as z from "zod";
 
 import { getD4HServer } from "@/lib/d4h-servers";
-import { D4HAccessToken_ServerOnly, D4HAccessTokenMetadata } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HActivityAttendance } from "@/lib/schemas/d4h/activity-attendance";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
 import { D4HTeamDetail, D4HTeamRef } from "@/lib/schemas/d4h/team";
 import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
+import {
+    d4hApiCacheTag,
+    getD4HAccessToken,
+    resolveD4HCredential,
+    type D4HCredentialRef,
+} from "@/server/d4h-access-token";
 
 import type { paths } from "./schema";
 
@@ -29,6 +36,7 @@ export type D4HListResponse = {
 
 /**
  * Get a D4H Fetch client for the given access token. The client will automatically include the access token in the Authorization header of each request.
+ * The bearer value comes from `getD4HAccessToken`, the one place the secret is read.
  */
 export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     const server = getD4HServer(token.serverCode)!;
@@ -37,8 +45,8 @@ export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
         baseUrl: server.apiUrl,
     });
     fetchClient.use({
-        onRequest({ request }) {
-            request.headers.set("Authorization", `Bearer ${token.token}`);
+        async onRequest({ request }) {
+            request.headers.set("Authorization", `Bearer ${await getD4HAccessToken(token)}`);
             return request;
         },
     });
@@ -46,35 +54,36 @@ export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     return fetchClient;
 });
 
-export async function fetchD4HWhoamiCached(token: D4HAccessToken_ServerOnly): Promise<D4HWhoami> {
-    "use cache";
-    cacheLife("hours");
-    cacheTag(`d4h-api-${token.id}-whoami`);
-
-    const fetchClient = getD4HFetchClient(token);
-    const { data, response } = await fetchClient.GET("/v3/whoami");
+/**
+ * Fetch the whoami for the given token, bypassing the cache. Use it where a fresh answer matters
+ * (e.g. an authorization decision); otherwise prefer `fetchD4HWhoamiCached`.
+ */
+export async function fetchD4HWhoami(token: D4HAccessToken_ServerOnly): Promise<D4HWhoami> {
+    const { data, response } = await getD4HFetchClient(token).GET("/v3/whoami");
     if (!response.ok) {
         throw new Error(`Failed to fetch D4H whoami: ${response.status} ${response.statusText}`);
     }
     return D4HWhoami.schema.parse(data);
 }
 
-/**
- * Get the teams and owning organizations that are accessible with the given D4H access token.
- * This is used to determine the scope of a D4H access token.
- */
-export async function getD4HTokenMetadata(
-    token: D4HAccessToken_ServerOnly,
-    options: {
-        whoami?: D4HWhoami;
-    } = {},
-): Promise<D4HAccessTokenMetadata> {
+export async function fetchD4HWhoamiCached(ref: D4HCredentialRef): Promise<D4HWhoami> {
     "use cache";
     cacheLife("hours");
-    cacheTag(`d4h-api-${token.id}-metadata`);
+    cacheTag(`d4h-api-${ref.credentialId}-whoami`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
+    return fetchD4HWhoami(await resolveD4HCredential(ref));
+}
+
+/**
+ * Compute the teams and owning organizations that are accessible with the given D4H access
+ * token, from its whoami. Not cached; `getD4HTokenMetadata` is the cached version.
+ */
+export async function computeD4HTokenMetadata(
+    token: D4HAccessToken_ServerOnly,
+    whoami: D4HWhoami,
+): Promise<D4HAccessTokenMetadata> {
     const fetchClient = getD4HFetchClient(token);
-    const whoami = options.whoami ?? (await fetchD4HWhoamiCached(token));
 
     const d4HOrganisations: D4HOrganisation[] = [];
     const d4HTeams: (D4HTeamRef & {
@@ -125,25 +134,63 @@ export async function getD4HTokenMetadata(
     return D4HAccessTokenMetadata.schema.parse({ d4HTeams, d4HOrganisations });
 }
 
-export async function getD4HTeamsAccessibleWithToken(
-    token: D4HAccessToken_ServerOnly,
-): Promise<D4HTeamRef[]> {
-    const whoami = await fetchD4HWhoamiCached(token);
+/**
+ * Get the teams and owning organizations that are accessible with the referenced D4H access token.
+ * This is used to determine the scope of a D4H access token.
+ */
+export async function getD4HTokenMetadata(ref: D4HCredentialRef): Promise<D4HAccessTokenMetadata> {
+    "use cache";
+    cacheLife("hours");
+    cacheTag(`d4h-api-${ref.credentialId}-metadata`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
+
+    const token = await resolveD4HCredential(ref);
+    return computeD4HTokenMetadata(token, await fetchD4HWhoamiCached(ref));
+}
+
+export type D4HCredentialValidation = {
+    ok: boolean;
+    status: number;
+    statusText: string;
+    whoami?: D4HWhoami;
+    metadata?: D4HAccessTokenMetadata;
+};
+
+/**
+ * Check a credential against D4H, whether or not it has been saved yet. Not cached: validating a
+ * credential must hit D4H. Doesn't throw when D4H rejects it (`ok` is `false` instead). On success
+ * it also returns the whoami and the metadata computed from it.
+ */
+export async function validateD4HCredential(
+    credential: D4HAccessToken_ServerOnly,
+): Promise<D4HCredentialValidation> {
+    const { data, response } = await getD4HFetchClient(credential).GET("/v3/whoami");
+    const result = { ok: response.ok, status: response.status, statusText: response.statusText };
+
+    if (!response.ok || !data) return result;
+
+    const whoami = D4HWhoami.schema.parse(data);
+    return { ...result, whoami, metadata: await computeD4HTokenMetadata(credential, whoami) };
+}
+
+export async function getD4HTeamsAccessibleWithToken(ref: D4HCredentialRef): Promise<D4HTeamRef[]> {
+    const whoami = await fetchD4HWhoamiCached(ref);
 
     return whoami.members.map((member) => member.owner);
 }
 
 export async function getD4HTeamMembers(
-    token: D4HAccessToken_ServerOnly,
+    ref: D4HCredentialRef,
     d4hTeamId: number,
 ): Promise<D4HMember[]> {
     "use cache";
     cacheLife("hours");
-    cacheTag(`d4h-api-${token.id}-teams-${d4hTeamId}-members`);
+    cacheTag(`d4h-api-${ref.credentialId}-teams-${d4hTeamId}-members`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
-    const fetchClient = getD4HFetchClient(token);
+    const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
-    const { data } = await fetchClient.GET("/v3/{context}/{contextId}/members", {
+    const { data, response } = await fetchClient.GET("/v3/{context}/{contextId}/members", {
         params: {
             path: {
                 context: "team",
@@ -154,17 +201,22 @@ export async function getD4HTeamMembers(
             },
         },
     });
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch members of D4H team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+        );
+    }
     return z.object({ results: D4HMember.schema.array() }).parse(data).results;
 }
 
 export async function getD4HTeamsWithMembers(
-    token: D4HAccessToken_ServerOnly,
+    ref: D4HCredentialRef,
 ): Promise<(D4HTeamRef & { members: D4HMember[] })[]> {
-    const teams = await getD4HTeamsAccessibleWithToken(token);
+    const teams = await getD4HTeamsAccessibleWithToken(ref);
 
     const teamsWithMembers = await Promise.all(
         teams.map(async (team) => {
-            const members = await getD4HTeamMembers(token, team.id);
+            const members = await getD4HTeamMembers(ref, team.id);
 
             return {
                 ...team,
@@ -198,14 +250,15 @@ function d4hGetWithUntypedPath(
  * Cached for hours — a team's timezone effectively never changes.
  */
 export async function fetchD4HTeamDetailCached(
-    token: D4HAccessToken_ServerOnly,
+    ref: D4HCredentialRef,
     d4hTeamId: number,
 ): Promise<D4HTeamDetail> {
     "use cache";
     cacheLife("hours");
-    cacheTag(`d4h-api-${token.id}-teams-${d4hTeamId}-detail`);
+    cacheTag(`d4h-api-${ref.credentialId}-teams-${d4hTeamId}-detail`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
-    const fetchClient = getD4HFetchClient(token);
+    const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
     const { data, response } = await d4hGetWithUntypedPath(
         fetchClient,
@@ -225,15 +278,16 @@ export async function fetchD4HTeamDetailCached(
  * calendar), addressed through one of its teams. Cached for hours.
  */
 export async function fetchD4HOrganisationCached(
-    token: D4HAccessToken_ServerOnly,
+    ref: D4HCredentialRef,
     d4hTeamId: number,
     d4hOrganisationId: number,
 ): Promise<D4HOrganisation> {
     "use cache";
     cacheLife("hours");
-    cacheTag(`d4h-api-${token.id}-organisations-${d4hOrganisationId}`);
+    cacheTag(`d4h-api-${ref.credentialId}-organisations-${d4hOrganisationId}`);
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
-    const fetchClient = getD4HFetchClient(token);
+    const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
     const { data, response } = await fetchClient.GET(
         "/v3/{context}/{contextId}/organisations/{organisationId}",

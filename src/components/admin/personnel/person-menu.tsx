@@ -161,7 +161,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
                 before={
                     <>
                         <DropdownMenuGroup>
-                            <DropdownMenuItem disabled asChild>
+                            <DropdownMenuItem asChild>
                                 <Link
                                     href={route(
                                         "/orgs/[slug]/admin/personnel/[person_id]/history",

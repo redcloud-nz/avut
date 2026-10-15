@@ -5,7 +5,8 @@
  * Path: /docs/[[...slug]]
  *
  * Renders one documentation page from the compiled `docs` content collection.
- * The same MDX is reused by the in-app `?help=<slug>` dialog.
+ * The in-app `?help=<id>` sheet shows a separate help card (`content/help/**`),
+ * not this page.
  */
 
 import type { Metadata } from "next";

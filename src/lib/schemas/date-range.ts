@@ -5,7 +5,7 @@
 
 import * as z from "zod";
 
-import { formatDate } from "../datetime";
+import { formatDate, type DisplayPreferences } from "../datetime";
 
 export type DateRange = z.infer<typeof DateRange.schema>;
 
@@ -16,17 +16,20 @@ export const DateRange = {
     }),
 } as const;
 
-export function formatDateRange(range: { from?: string | Date; to?: string | Date }) {
+export function formatDateRange(
+    range: { from?: string | Date; to?: string | Date },
+    prefs: DisplayPreferences,
+) {
     if (range.from) {
-        const fromStr = formatDate(range.from);
+        const fromStr = formatDate(range.from, prefs);
         if (range.to) {
-            const toStr = formatDate(range.to);
+            const toStr = formatDate(range.to, prefs);
             return `${fromStr} to ${toStr}`;
         } else {
             return `until ${fromStr}`;
         }
     } else if (range.to) {
-        const toStr = formatDate(range.to);
+        const toStr = formatDate(range.to, prefs);
         return `from ${toStr}`;
     } else {
         return "any date";

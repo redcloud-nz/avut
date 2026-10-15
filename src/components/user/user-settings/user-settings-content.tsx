@@ -17,9 +17,7 @@ export function UserSettings_PreferencesContent() {
 
     return (
         <>
-            <Std.Navbar
-                breadcrumbs={[{ label: "User Settings", href: "/user/settings" }, "Preferences"]}
-            />
+            <Std.Navbar breadcrumbs={["User Settings", "Preferences"]} />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>

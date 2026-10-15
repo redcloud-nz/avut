@@ -5,17 +5,44 @@
  * Path: /orgs/[slug]/notes
  */
 
-"use client";
+import { Suspense } from "react";
 
-import { useOrganization } from "@/hooks/use-organization";
-import { NotEnabledError } from "@/lib/errors";
+import { Hermes } from "@/components/blocks/hermes";
+import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
+import { Notes_ModuleGate } from "@/components/notes/notes-module-gate";
+import { OrgNotes_Breadcrumbs, OrgNotes_List } from "@/components/notes/org-notes-list";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
+import { requireOrganization } from "@/server/organization-access";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export default function Notes_Layout(props: LayoutProps<"/orgs/[slug]/notes">) {
-    const organization = useOrganization();
+export default async function Notes_Layout(props: LayoutProps<"/orgs/[slug]/notes">) {
+    const { slug } = await props.params;
+    const { organization } = await requireOrganization(slug);
 
-    if (!organization.isModuleEnabled("notes")) {
-        throw new NotEnabledError("The Notes module is not enabled for this organization.");
+    // Checked here as well as in `Notes_ModuleGate`, so nothing is prefetched (and dehydrated into
+    // the page) for an org that can't use the module.
+    if (await isOrganizationModuleUsable(slug, "notes")) {
+        prefetch(
+            trpc.organizationNotes.listNotes.queryOptions({ organizationId: organization.id }),
+        );
     }
 
-    return props.children;
+    const helpButton = <HelpButton id="notes" />;
+
+    return (
+        <Notes_ModuleGate>
+            <HydrateClient>
+                <Suspense fallback={<Std.Navbar breadcrumbs={["Notes"]} actions={helpButton} />}>
+                    <OrgNotes_Breadcrumbs actions={helpButton} />
+                </Suspense>
+                <Hermes.Root>
+                    <Hermes.List>
+                        <OrgNotes_List />
+                    </Hermes.List>
+                    <Hermes.Detail>{props.children}</Hermes.Detail>
+                </Hermes.Root>
+            </HydrateClient>
+        </Notes_ModuleGate>
+    );
 }

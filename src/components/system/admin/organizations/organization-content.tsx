@@ -12,12 +12,20 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { UserLink } from "@/components/entity-links/user-link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
 import { Modules, type ModuleId } from "@/lib/modules";
+import { hasOwnerRole } from "@/lib/permissions";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
@@ -53,6 +61,7 @@ export function SystemAdmin_Organization_Content({
     const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
         isModuleUsable(moduleFlags, id, organization.enabledModules.includes(id)),
     );
+    const ownerCount = organization.members.filter((m) => hasOwnerRole(m.role)).length;
 
     return (
         <>
@@ -96,20 +105,28 @@ export function SystemAdmin_Organization_Content({
                                     <CardTitle>Identity</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Organisation ID</DLTerm>
-                                        <DLDetails className="font-mono">
-                                            {organization.id}
-                                        </DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{organization.name}</DLDetails>
-                                        <DLTerm>Slug</DLTerm>
-                                        <DLDetails className="font-mono">
-                                            {organization.slug}
-                                        </DLDetails>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={organization.createdAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Organisation ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {organization.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{organization.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Slug</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {organization.slug}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={organization.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
 
@@ -126,7 +143,17 @@ export function SystemAdmin_Organization_Content({
                                         />
                                     </div>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="space-y-4">
+                                    {ownerCount === 0 && (
+                                        <Alert variant="warning">
+                                            <AlertTitle>No owner</AlertTitle>
+                                            <AlertDescription>
+                                                Nobody in this organisation can manage its owners.
+                                                Use &ldquo;Make owner&rdquo; on a member to appoint
+                                                one.
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
                                     {organization.members.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">No members.</p>
                                     ) : (
@@ -176,6 +203,10 @@ export function SystemAdmin_Organization_Content({
                                                             <SystemAdmin_MemberActionsMenu
                                                                 organizationId={organizationId}
                                                                 member={member}
+                                                                isLastOwner={
+                                                                    ownerCount === 1 &&
+                                                                    hasOwnerRole(member.role)
+                                                                }
                                                                 moduleGatedRoles={moduleGatedRoles}
                                                             />
                                                         </td>
@@ -246,10 +277,14 @@ export function SystemAdmin_Organization_Content({
 
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>D4H access tokens</DLTerm>
-                                        <DLDetails>{organization.d4hTokenCount}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>D4H access tokens</DataItemTitle>
+                                            <DataItemValue>
+                                                {organization.d4hTokenCount}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
 

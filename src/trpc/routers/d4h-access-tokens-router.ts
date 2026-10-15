@@ -11,25 +11,99 @@ import { TRPCError } from "@trpc/server";
 
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { DiffChange, diffObject } from "@/lib/diff";
-import {
-    D4HAccessToken,
-    D4HAccessToken_ServerOnly,
-    D4HAccessTokenId,
-    D4HAccessTokenMetadata,
-} from "@/lib/schemas/d4h-access-token";
-import { D4HWhoami } from "@/lib/schemas/d4h/whoami";
+import { D4HAccessToken, D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
+import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { OrganizationData } from "@/lib/schemas/organization";
+import {
+    ProviderCredentialId,
+    type ProviderCredentialRecord,
+} from "@/lib/schemas/provider-credential";
 import { revalidateOrganizationSettings } from "@/server/cache/organization-settings";
 import {
     revalidateD4HAccessToken,
+    revalidateD4HApiCache,
     revalidatePersonalD4HAccessTokenForUser,
     toServerOnlyD4HAccessToken,
 } from "@/server/d4h-access-token";
-import { getD4HFetchClient, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { validateD4HCredential, type D4HCredentialValidation } from "@/server/d4h-api/client";
 import { decryptDBValue, encryptDBValue } from "@/server/encrypt";
 
-import { authenticatedProcedure, createTrpcRouter, organizationProcedure } from "../init";
+import {
+    authenticatedProcedure,
+    createTrpcRouter,
+    organizationProcedure,
+    type AuthenticatedOrganizationContext,
+} from "../init";
 import { Messages } from "../messages";
+
+/**
+ * The status text to store for a validation result. `statusText` is often empty (HTTP/2 has no
+ * reason phrase), so fall back to the status code.
+ */
+function credentialStatus(validation: D4HCredentialValidation): string {
+    return validation.statusText || `HTTP ${validation.status}`;
+}
+
+/**
+ * The error for a create whose validation failed. Only 401/403 mean the token itself is bad; any
+ * other status is D4H (or the network) failing, which says nothing about the token.
+ */
+function credentialRejectedError(validation: D4HCredentialValidation): TRPCError {
+    if (validation.status === 401 || validation.status === 403) {
+        return new TRPCError({
+            code: "BAD_REQUEST",
+            message: Messages.d4HAccessTokenRejected(validation.status),
+        });
+    }
+    return new TRPCError({
+        code: "BAD_GATEWAY",
+        message: Messages.d4HUnavailable(validation.status),
+    });
+}
+
+/**
+ * Re-validate a stored D4H credential against D4H, then save its new status (and, if D4H accepted
+ * it, its new metadata) and log the change. Shared by `refreshToken` (org tokens) and
+ * `refreshPersonalAccessToken`. Cache revalidation is left to the caller, since which caches apply
+ * depends on the kind of token.
+ *
+ * A failure other than 401/403 says nothing about the token (D4H or the network is failing), so it
+ * throws without writing anything rather than marking a good token as broken.
+ */
+async function refreshD4HCredential(
+    ctx: AuthenticatedOrganizationContext,
+    record: ProviderCredentialRecord,
+) {
+    const token = toServerOnlyD4HAccessToken(record);
+
+    const validation = await validateD4HCredential(token);
+    if (!validation.ok && validation.status !== 401 && validation.status !== 403) {
+        throw credentialRejectedError(validation);
+    }
+    const status = credentialStatus(validation);
+
+    // On a failed whoami, record the new status but keep the last known metadata, rather than
+    // overwriting it with empty lists.
+    const metadata = validation.metadata
+        ? { provider: "D4H", serverCode: token.serverCode, ...validation.metadata }
+        : undefined;
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.providerCredential.update({
+            where: { id: record.id },
+            data: { metadata, status },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "D4HAccessToken",
+            objectId: record.id,
+            changes: diffObject({ status: record.status }, { status }),
+            description: validation.ok
+                ? "Refreshed D4H access token metadata."
+                : "D4H rejected the access token; kept its last known metadata.",
+        }),
+    ]);
+}
 
 /**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
@@ -44,7 +118,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
                 create: z.object({
                     serverCode: D4HServerCode.schema,
                     label: z.string(),
@@ -62,15 +136,14 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
-            // Check the token and fetch metadata
-            const fetchClient = getD4HFetchClient(token);
-            const { data, response } = await fetchClient.GET("/v3/whoami");
+            // Check the token and fetch metadata. A token D4H rejects is never saved.
+            const validation = await validateD4HCredential(token);
+            if (!validation.ok) throw credentialRejectedError(validation);
 
-            const metadata: D4HAccessTokenMetadata = data
-                ? await getD4HTokenMetadata(token, {
-                      whoami: D4HWhoami.schema.parse(data),
-                  })
-                : { d4HTeams: [], d4HOrganisations: [] };
+            const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
+                d4HTeams: [],
+                d4HOrganisations: [],
+            };
 
             const changes: DiffChange[] = [
                 ...diffObject({}, R.omit(create, ["token"])),
@@ -86,7 +159,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         userId: null,
                         label: create.label,
                         token: encryptDBValue(create.token),
-                        status: response.statusText,
+                        status: credentialStatus(validation),
                         expiresAt: addYears(new Date(), 10),
                         metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
@@ -108,7 +181,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     createPersonalAccessToken: organizationProcedure({ organization: ["view"] })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
                 create: z.object({
                     serverCode: D4HServerCode.schema,
                     token: z.string(),
@@ -117,6 +190,18 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         )
         .output(z.object({ created: D4HAccessToken.schema }))
         .mutation(async ({ ctx, input: { tokenId, create } }) => {
+            // One personal token per user per org, so lookups by (org, user) are unambiguous.
+            // No unique index backs this: a race or a direct DB write can still add a duplicate.
+            const existing = await ctx.prisma.providerCredential.findFirst({
+                where: { provider: "D4H", organizationId: ctx.organizationId, userId: ctx.userId },
+            });
+            if (existing) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: Messages.personalD4HAccessTokenExists(),
+                });
+            }
+
             const label = `Personal token for ${ctx.auth.user.name}`;
 
             const token = {
@@ -128,15 +213,14 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
-            // Check the token and fetch metadata
-            const fetchClient = getD4HFetchClient(token);
-            const { data, response } = await fetchClient.GET("/v3/whoami");
+            // Check the token and fetch metadata. A token D4H rejects is never saved.
+            const validation = await validateD4HCredential(token);
+            if (!validation.ok) throw credentialRejectedError(validation);
 
-            const metadata: D4HAccessTokenMetadata = data
-                ? await getD4HTokenMetadata(token, {
-                      whoami: D4HWhoami.schema.parse(data),
-                  })
-                : { d4HTeams: [], d4HOrganisations: [] };
+            const metadata: D4HAccessTokenMetadata = validation.metadata ?? {
+                d4HTeams: [],
+                d4HOrganisations: [],
+            };
 
             const changes: DiffChange[] = [
                 ...diffObject({}, R.omit(create, ["token"])),
@@ -152,7 +236,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         userId: ctx.userId,
                         label,
                         token: encryptDBValue(create.token),
-                        status: response.statusText,
+                        status: credentialStatus(validation),
                         expiresAt: addYears(new Date(), 10),
                         metadata: { provider: "D4H", serverCode: create.serverCode, ...metadata },
                     },
@@ -178,7 +262,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
             }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -223,6 +307,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             // Neither is a Prisma operation, so they can't join the $transaction above.
             // Drop the cached credential so the deleted token stops working immediately.
             revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
             // Revalidate organization settings in case this token was being used.
             await revalidateOrganizationSettings(ctx.organizationId);
         }),
@@ -241,7 +326,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         if (!existing) {
             throw new TRPCError({
                 code: "NOT_FOUND",
-                message: `Personal access token for user ${ctx.auth.user.id} not found.`,
+                message: Messages.personalD4HAccessTokenNotFound(),
             });
         }
 
@@ -258,6 +343,10 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         ]);
 
         revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+        // Personal refs resolve through the ID-tagged credential cache too, so clear that as well.
+        const tokenId = ProviderCredentialId.schema.parse(existing.id);
+        revalidateD4HAccessToken(tokenId);
+        revalidateD4HApiCache(tokenId);
     }),
 
     /**
@@ -268,7 +357,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
             }),
         )
         .output(D4HAccessToken.schema)
@@ -363,12 +452,48 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             }));
         }),
 
+    /**
+     * Re-check the current user's personal D4H access token against D4H and update its status and metadata.
+     */
+    refreshPersonalAccessToken: organizationProcedure({
+        organization: ["view"],
+    })
+        .input(
+            z.object({
+                tokenId: ProviderCredentialId.schema,
+            }),
+        )
+        .mutation(async ({ input, ctx }) => {
+            // Scoped to the caller and org: another user's token, or one in another org, is NOT_FOUND.
+            const record = await ctx.prisma.providerCredential.findFirst({
+                where: {
+                    id: input.tokenId,
+                    provider: "D4H",
+                    organizationId: ctx.organizationId,
+                    userId: ctx.userId,
+                },
+            });
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personalD4HAccessTokenNotFound(),
+                });
+            }
+
+            await refreshD4HCredential(ctx, record);
+
+            revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+            revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
+        }),
+
     refreshToken: organizationProcedure({
         organization: ["update"],
     })
         .input(
             z.object({
-                tokenId: D4HAccessTokenId.schema,
+                tokenId: ProviderCredentialId.schema,
             }),
         )
         .mutation(async ({ input, ctx }) => {
@@ -387,34 +512,9 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                     message: Messages.d4HAccessTokenNotFound(input.tokenId),
                 });
 
-            const token = toServerOnlyD4HAccessToken(record);
-
-            const fetchClient = getD4HFetchClient(token);
-            const { data, response } = await fetchClient.GET("/v3/whoami");
-
-            const metadata: D4HAccessTokenMetadata = data
-                ? await getD4HTokenMetadata(token, {
-                      whoami: D4HWhoami.schema.parse(data),
-                  })
-                : { d4HTeams: [], d4HOrganisations: [] };
-
-            await ctx.prisma.$transaction([
-                ctx.prisma.providerCredential.update({
-                    where: { id: input.tokenId },
-                    data: {
-                        metadata: { provider: "D4H", serverCode: token.serverCode, ...metadata },
-                        status: response.statusText,
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "D4HAccessToken",
-                    objectId: input.tokenId,
-                    changes: diffObject({ status: record.status }, { status: response.statusText }),
-                    description: "Refreshed D4H access token metadata.",
-                }),
-            ]);
+            await refreshD4HCredential(ctx, record);
 
             revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
         }),
 });

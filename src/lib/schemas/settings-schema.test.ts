@@ -53,7 +53,6 @@ describe("UserSettings", () => {
         expect(UserSettings.default()).toEqual({
             modules: {
                 "user-dashboard": { enabled: true },
-                profile: { enabled: true },
             },
             display: {
                 dateFormat: "iso-extended",
@@ -82,7 +81,7 @@ describe("UserSettings", () => {
 
         expect(restored.display.dateFormat).toBe("slash");
         expect(restored.display.timeFormat).toBe("24-hour");
-        expect(restored.modules.profile.enabled).toBe(true);
+        expect(restored.modules["user-dashboard"].enabled).toBe(true);
     });
 });
 

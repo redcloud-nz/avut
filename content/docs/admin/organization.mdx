@@ -1,0 +1,69 @@
+---
+title: Organisation
+description: Your organisation's name and slug, its D4H link, and Organisation Settings.
+section: org-admin
+order: 60
+keyTerms: ["organization", "module", "d4h"]
+---
+
+# Organisation
+
+## Name and slug
+
+**Organisation** shows your organisation's name, slug and ID. Owners and admins
+change the name and slug with **Edit**.
+
+The slug is the part of the address after `/orgs/`. Changing it changes every
+link to your organisation, so bookmarks and links people have saved stop
+working.
+
+## D4H Integration
+
+Once a team has been [linked to D4H](/docs/admin/teams#linking-a-team-to-d4h),
+owners and admins also see a **D4H Integration** card here, with the D4H
+organisation, its server and when it was last synced.
+
+- **Sync with D4H** refreshes those details. It's available while at least one
+  team is linked.
+- **Unlink from D4H** only works once no team is linked: unlink each team
+  first.
+
+## Organisation Settings
+
+Everyone in the organisation can view **Organisation Settings**; only owners
+and admins can change them. The page has four sections.
+
+### Personnel
+
+Two switches decide when AVUT links a person record to a member's account by
+matching email — see [Users vs Personnel](/docs/admin/user-vs-person#how-they-connect):
+
+- **Link on invitation accept** — when someone accepts an invitation, link them
+  to the person record with the same email, if there is one.
+- **Link when a person is added** — when a person is added, link them to the
+  existing member with the same email. Someone who isn't already a member is
+  never added to the organisation; invite them from their person record
+  instead.
+
+### Rubbish Bin
+
+**Keep deleted records for** sets how many days deleted records stay in the
+[Rubbish bin](/docs/admin/rubbish-bin) before they're purged: 1 to 90 days, 30
+by default.
+
+### Integrations
+
+**D4H Integration** turns on D4H for the organisation, with its default
+server. Each member who uses D4H still adds their own personal access token,
+under **User Settings → D4H**. [D4H Views](/docs/d4h-views), [I3](/docs/i3)
+and [team linking](/docs/admin/teams#linking-a-team-to-d4h) all need it.
+
+### Modules
+
+Turn each module on or off with **Enable** and **Disable**. Turning a module off
+hides it for everyone, and stops its roles being offered, but deletes nothing:
+turn it back on and everything is where you left it. Admin is always on.
+
+The **Skill Track** card also has **Skill Check Result Options**: which results
+your organisation can record, and what each one is called — see
+[Skill Track](/docs/skill-track#skill-checks).

@@ -41,8 +41,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLogger } from "@/hooks/use-logger";
 import { D4HServerCode, D4HServerList } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
-import { D4HAccessTokenId } from "@/lib/schemas/d4h-access-token";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -124,7 +124,7 @@ function AddD4HAccessToken_Body() {
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
-            const tokenId = D4HAccessTokenId.create();
+            const tokenId = ProviderCredentialId.create();
 
             logger.log("Creating personal D4H access token", {
                 tokenId,

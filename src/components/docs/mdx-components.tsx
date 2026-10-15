@@ -11,7 +11,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-import { DocsAssessmentRowDemo } from "@/components/docs/demo-assessment-row";
+import { DocsCheckRowDemo } from "@/components/docs/demo-check-row";
 import { DocsIcon } from "@/components/docs/icon-swatch";
 import { Screenshot, UnsupportedImg } from "@/components/docs/screenshot";
 import { SyntheticChecksCallout } from "@/components/docs/synthetic-checks-callout";
@@ -117,7 +117,7 @@ export const docsMdxComponents = {
     Callout,
     Keys,
     Screenshot,
-    DocsAssessmentRowDemo,
+    DocsCheckRowDemo,
     DocsIcon,
     SyntheticChecksCallout,
 };

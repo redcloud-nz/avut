@@ -104,6 +104,10 @@ of which owns its own padding:
   button, since there's no overlay left to tap; the footer buttons share the
   row). From `sm` up it's the usual centred modal. `AlertDialog` is different: it
   stays a compact bottom sheet below `sm`, as tall as its content.
+  `<DialogContent mobile="sheet">` gives a `Dialog` that bottom sheet too (the body
+  still scrolls past 92dvh). Use it for a short, one-tap dialog that isn't a
+  destructive confirm, such as picking a result, where taking over the screen
+  would be heavier than the task. A form keeps the full-screen default.
 - **A header directly above a footer, with nothing between them** (a plain
   confirm) needs no `DialogBody` — the header supplies the space below it.
 - **Dialogs that lay themselves out** (a `Command` picker with its own scrolling
@@ -480,19 +484,34 @@ button and a menu item can both open the same update dialog.
 
 - **Prefer a real `<button>` that stays mounted** (`<DialogTrigger>` inside the
   dialog component, or a sibling `<Button onClick={() => setAction("update", {
-history: "push" })}>`). On close, Radix restores focus to it automatically.
+history: "push" })}>`). Radix restores focus on close only to a
+  `<DialogTrigger>`: a dialog opened any other way sends focus to `<body>`
+  unless its `DialogContent` spreads `useReturnFocus()` (below).
 - **A `<Link href="?action=…">` also works** and is fine for a header "New X"
   action, but the link is a navigation trigger, not a focus anchor.
 - Wrap every permission-gated trigger in `<Protect>` (or its `render` prop for
   the disabled-item case). This only hides/disables the entry point — the tRPC
   procedure is the real guard.
 
-### Menu-triggered dialogs and focus
+### Returning focus without a `DialogTrigger`
 
-When the trigger is a `DropdownMenuItem`, the menu item unmounts before the
-dialog opens, so Radix has no element to restore focus to on close and it would
-jump to `<body>` mid-interaction. Call `preventDefault()` on the dialog's
-`onCloseAutoFocus` to stop that jump:
+`useReturnFocus` (`src/hooks/use-return-focus.ts`) remembers what was focused
+when the dialog opened and returns focus there on close. Spread it onto the
+content of any `?action=` dialog that has no `DialogTrigger`:
+
+```tsx
+const returnFocus = useReturnFocus(returnFocusRef);
+<DialogContent {...returnFocus}>
+```
+
+When the trigger can unmount before the dialog closes (an item in a sheet or a
+`DropdownMenuItem`), pass a `fallbackRef` to a control that stays mounted, such
+as the sheet's or menu's own button. Focus goes there when the opener is gone.
+The session config dialogs (`src/components/skill-track/session-config-dialogs.tsx`)
+are the worked example.
+
+Older menu-triggered dialogs instead call `preventDefault()` on
+`onCloseAutoFocus`, which stops Radix's jump but leaves focus wherever it was:
 
 ```tsx
 <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>

@@ -1,0 +1,69 @@
+---
+title: Teams
+description: Grouping personnel into teams, and keeping a team in sync with D4H.
+section: org-admin
+order: 30
+keyTerms: ["team", "person", "d4h"]
+---
+
+# Teams
+
+A **team** groups your personnel. Other modules use teams too: Skill Track
+sessions pick their personnel by team, and its reports can be scoped to one.
+
+Everyone in the organisation can view teams. Owners and admins make the changes
+described below.
+
+## Teams and members
+
+The Teams list shows **Active** teams. **New Team** adds one.
+
+A team's page shows its details, and its **Related** card counts the personnel
+on it. Open that for the member list, where **New Member** adds someone. **Add
+person**, in the team's menu, does the same.
+
+Open a member to see the membership itself. **Remove from team** takes them off
+the team and moves the membership to the [Rubbish bin](/docs/admin/rubbish-bin),
+so it can be recovered. The person record isn't touched.
+
+## Archiving and deleting
+
+The team's menu (⋮) has **Edit**, **Add person**, **Archive** and **Delete**.
+
+- **Archive** keeps the team's members and history, but the team takes no new
+  members and stops syncing with D4H. Personnel on no other active team can't be
+  added to a Skill Track session. **Restore** undoes it.
+- **Delete** moves the team to the Rubbish bin, where it can be recovered until
+  it's purged.
+
+**History** lists every change made to the team, and who made it.
+
+## Linking a team to D4H
+
+With the [D4H integration](/docs/admin/organization#integrations) on, owners and
+admins can keep a team's members in step with a team in D4H. Linking uses your
+own personal D4H access token (**User Settings → D4H**), so you can only link to
+a D4H team that token can see.
+
+- **Link to D4H**, on an active team, picks the D4H team. **Link & sync** links
+  it and imports its members straight away. Each D4H member is matched to a
+  person record by email; anyone without one gets a new record.
+- **Sync with D4H**, on the team's **D4H Integration** card, fetches the D4H
+  team and previews what would change before anything does: members to
+  **Add**, **Update**, **Reactivate** or **Archive**, and changes to the team's
+  own details. **Apply** makes the changes; **Cancel** leaves everything as it
+  is. If nothing has changed, it says **Already in sync**.
+- **Unlink from D4H** stops the syncing. The personnel and memberships it
+  imported stay.
+
+Members imported from D4H carry a **D4H** badge in the member list. On a linked
+team, people you add by hand carry **Manual**, and syncing leaves them alone.
+
+<Callout>
+  A D4H member with no email address in D4H can't be matched, so the sync skips them and lists them.
+  So does a member whose email belongs to a person in the Rubbish bin: recover that person, or
+  delete them forever, then sync again.
+</Callout>
+
+Once any team has been linked, the organisation's **D4H Integration** card
+appears on the [Organisation](/docs/admin/organization#d4h-integration) page.

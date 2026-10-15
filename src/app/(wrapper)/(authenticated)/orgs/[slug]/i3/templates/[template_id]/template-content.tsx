@@ -10,9 +10,14 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDateTime, formatRelativeDateTime } from "@/lib/datetime";
 import { route } from "@/lib/routes";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { trpc } from "@/trpc/client";
@@ -59,26 +64,40 @@ export function I3Module_Template_Content({ templateId }: { templateId: I3Templa
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{template.name}</DLDetails>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{template.name}</DataItemValue>
+                                        </DataItem>
                                         {template.description && (
-                                            <>
-                                                <DLTerm>Description</DLTerm>
-                                                <DLDetails>{template.description}</DLDetails>
-                                            </>
+                                            <DataItem>
+                                                <DataItemTitle>Description</DataItemTitle>
+                                                <DataItemValue>
+                                                    {template.description}
+                                                </DataItemValue>
+                                            </DataItem>
                                         )}
-                                        <DLTerm>D4H Category</DLTerm>
-                                        <DLDetails>{template.d4h?.categoryTitle}</DLDetails>
-                                        <DLTerm>D4H Kind</DLTerm>
-                                        <DLDetails>{template.d4h?.kindTitle}</DLDetails>
-                                        <DLTerm>Require Serial Number</DLTerm>
-                                        <DLDetails>
-                                            {template.d4h?.requireSN ? "Yes" : "No"}
-                                        </DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{template.status}</DLDetails>
-                                    </DL>
+                                        <DataItem inline>
+                                            <DataItemTitle>D4H Category</DataItemTitle>
+                                            <DataItemValue>
+                                                {template.d4h?.categoryTitle}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>D4H Kind</DataItemTitle>
+                                            <DataItemValue>{template.d4h?.kindTitle}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Require Serial Number</DataItemTitle>
+                                            <DataItemValue>
+                                                {template.d4h?.requireSN ? "Yes" : "No"}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>{template.status}</DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                             <I3Module_Template_Variants_List template={template} />
@@ -86,22 +105,16 @@ export function I3Module_Template_Content({ templateId }: { templateId: I3Templa
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(template.createdAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(template.createdAt)}
-                                            </div>
-                                        </DLDetails>
-                                        <DLTerm>Updated</DLTerm>
-                                        <DLDetails>
-                                            <div>{formatDateTime(template.updatedAt)}</div>
-                                            <div className="text-muted-foreground">
-                                                {formatRelativeDateTime(template.updatedAt)}
-                                            </div>
-                                        </DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={template.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={template.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

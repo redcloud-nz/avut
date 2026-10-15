@@ -105,7 +105,12 @@ async function otherOrgCheckBlocker(
     label: string,
 ): Promise<string | null> {
     const count = await ctx.prisma.skillCheck.count({
-        where: { organizationId: { not: ctx.organizationId }, skill: skillWhere },
+        // A `Deleted` tombstone isn't a record anyone would lose.
+        where: {
+            organizationId: { not: ctx.organizationId },
+            skill: skillWhere,
+            status: { not: "Deleted" },
+        },
     });
     return count > 0
         ? `Other organisations have recorded ${count} skill check${count == 1 ? "" : "s"} against this ${label}, so it can't be permanently deleted.`

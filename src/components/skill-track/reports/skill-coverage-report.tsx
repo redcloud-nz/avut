@@ -38,15 +38,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { SkillId } from "@/lib/schemas/skill";
 import { TeamId } from "@/lib/schemas/team";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
-const stickyFirstCol = "sticky left-0 z-10 bg-background";
+// Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card
+// colour as a gradient, since a translucent background would let them show through.
+const stickyFirstCol =
+    "sticky left-0 z-10 bg-card group-hover/row:bg-linear-to-r group-hover/row:from-accent/50 group-hover/row:to-accent/50";
 const headCell =
-    "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
+    "h-9 border-b bg-card px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
 
 export function SkillTrack_SkillCoverageReport({
     syntheticChecksEnabled,
@@ -92,6 +95,7 @@ function SkillCoverageReportView({
     syntheticChecksEnabled: boolean;
 }) {
     const organization = useOrganization();
+    const { formatDate } = usePreferences();
 
     const [teamParam] = useQueryState("team");
 
@@ -249,7 +253,7 @@ function SkillCoverageReportView({
                             </Glorious.TableHeader>
                             <tbody>
                                 {rows.map((row) => (
-                                    <tr key={row.id} className="hover:bg-muted/40">
+                                    <tr key={row.id} className="group/row hover:bg-accent/50">
                                         <th
                                             scope="row"
                                             className={cn(

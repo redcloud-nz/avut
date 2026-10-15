@@ -5,12 +5,12 @@
 "use client";
 
 import { authClient, type AuthClientSession } from "@/client/auth-client";
-import { postSignInUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
+import { postSignInUrl, signOutUrl } from "@/lib/auth-redirect";
 
 export interface AvutDevTools {
     /** Sign in by email/password, then navigate through `/auth/post-sign-in` like the real form does. */
     signIn: (params: { email: string; password: string }) => Promise<void>;
-    /** Sign out, then navigate to the sign-in page. */
+    /** Navigate to `/auth/sign-out`, which signs out and lands on the sign-in page. */
     signOut: () => Promise<void>;
     /** Impersonate a user by id, then reload so every RSC and query cache reflects them. */
     impersonateUser: (params: { userId: string }) => Promise<void>;
@@ -44,8 +44,8 @@ export function installDevTools() {
             window.location.href = postSignInUrl();
         },
         async signOut() {
-            await authClient.signOut();
-            window.location.href = SIGN_IN_PATH;
+            // The same page every in-app "Sign out" control uses.
+            window.location.href = signOutUrl();
         },
         async impersonateUser({ userId }) {
             await authClient.admin.impersonateUser({ userId }, { throw: true });

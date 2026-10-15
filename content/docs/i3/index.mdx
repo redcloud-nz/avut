@@ -1,6 +1,6 @@
 ---
 title: I3 — Issue, Inspect, Return
-description: Tracking equipment as it is issued to people, inspected, and returned.
+description: Issuing equipment to your members, recorded in D4H.
 section: i3
 order: 0
 keyTerms: ["ppe-template", "d4h"]
@@ -8,11 +8,52 @@ keyTerms: ["ppe-template", "d4h"]
 
 # I3 — Issue, Inspect, Return
 
-The I3 module tracks equipment through its lifecycle with your people: **issued**
-to someone, **inspected** on a schedule, and **returned** when no longer needed.
-It also holds the PPE templates that describe what a kit should contain.
+The I3 module tracks individually issued items — personal protective
+equipment and the like — issued to your members. It works on your D4H
+equipment records: issuing an item creates it in D4H.
 
-## D4H
+## Before you start
 
-If your organisation connects D4H, templates can be linked to D4H equipment so
-issued items stay in step with the D4H inventory.
+I3 needs:
+
+- the module and the **D4H Integration** turned on in
+  [Organisation Settings](/docs/admin/organization#integrations), and
+- your own personal D4H access token, added under **User Settings → D4H**.
+
+You see the D4H teams your token can see, and what you can do follows your D4H
+account's permissions.
+
+## What's here
+
+- **By Equipment Type** and **By Member** show what's been issued to a team,
+  read from D4H.
+- **Issue Items** is where you issue equipment, using a form that keeps your
+  drafts until you submit one.
+- **Templates** are the items you can issue.
+
+**Return Items** and inspections aren't built yet.
+
+## Issuing items
+
+Start an issue form and pick the member. Add each item from a template, with
+its variant and serial number if it has them, add any comments, and submit the
+form. Submitting
+creates an equipment record in D4H for each item — as long as your D4H account
+can create equipment for the member's team.
+
+<Callout type="warning">
+  If one item fails partway through, the records already created in D4H stay there; they aren't
+  rolled back. Check D4H before submitting the form again.
+</Callout>
+
+## Templates
+
+A **template** describes an item you can issue. Each one is linked to a D4H
+equipment **category** and **kind**, so the records it creates land in the right
+place, and can have variants such as sizes. Deleting a template moves it to the
+[Rubbish bin](/docs/admin/rubbish-bin).
+
+## Roles
+
+- An **I3 Editor** can issue items.
+- An **I3 Admin** can also create, change and delete templates.

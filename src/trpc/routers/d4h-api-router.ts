@@ -6,15 +6,13 @@
 import * as R from "remeda";
 import * as z from "zod";
 
-import { TRPCError } from "@trpc/server";
-
 import {
     buildD4HToday,
     D4HTodayActivityInput,
     d4hTodayTeamGroupSchema,
     zonedTodayRange,
 } from "@/lib/d4h-today";
-import { D4HTeamPermissions } from "@/lib/schemas/d4h-access-token";
+import { D4HTeamPermissions } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
@@ -23,10 +21,7 @@ import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
-import {
-    getConfiguredD4HAccessToken,
-    getPersonalD4HAccessTokenForUser,
-} from "@/server/d4h-access-token";
+import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
     D4HListResponse,
     fetchD4HMemberAttendance,
@@ -53,7 +48,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
             return d4HTeams;
         }),
 
@@ -73,17 +68,9 @@ export const d4hApiRouter = createTrpcRouter({
             ),
         )
         .query(async ({ ctx }) => {
-            const accessToken = await getPersonalD4HAccessTokenForUser(
-                ctx.organizationId,
-                ctx.userId,
-            );
-            if (!accessToken)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "No personal D4H Access Token found for user",
-                });
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
             return d4HTeams;
         }),
 
@@ -98,7 +85,7 @@ export const d4hApiRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
 
             const brands = (
                 await Promise.all(
@@ -147,7 +134,7 @@ export const d4hApiRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
 
             const categories = (
                 await Promise.all(
@@ -198,12 +185,12 @@ export const d4hApiRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
 
             const items = (
                 await Promise.all(
                     d4HTeams.map(async (team) => {
-                        const { data } = await fetchClient.GET(
+                        const { data, error, response } = await fetchClient.GET(
                             "/v3/{context}/{contextId}/equipment",
                             {
                                 params: {
@@ -218,6 +205,12 @@ export const d4hApiRouter = createTrpcRouter({
                                 },
                             },
                         );
+
+                        // `error` is undefined for a non-ok response with an empty body.
+                        if (!response.ok)
+                            throw new Error(`Failed to fetch equipment items for team ${team.id}`, {
+                                cause: error,
+                            });
 
                         return (data as D4HListResponse).results.map((raw) => {
                             const item = D4HEquipmentItem.schema.parse(raw);
@@ -242,7 +235,7 @@ export const d4hApiRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = accessToken.metadata;
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
 
             const kinds = (
                 await Promise.all(
@@ -290,7 +283,7 @@ export const d4hApiRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
 
             const models = (
                 await Promise.all(
@@ -336,7 +329,7 @@ export const d4hApiRouter = createTrpcRouter({
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
 
             const members = (
                 await Promise.all(
@@ -420,7 +413,7 @@ export const d4hApiRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
-            const { d4HTeams } = await getD4HTokenMetadata(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
             return d4HTeams;
         }),
 
@@ -436,8 +429,9 @@ export const d4hApiRouter = createTrpcRouter({
         .output(z.array(d4hTodayTeamGroupSchema))
         .query(async ({ ctx }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const credentialRef = toD4HCredentialRef(accessToken);
             const fetchClient = getD4HFetchClient(accessToken);
-            const whoami = await fetchD4HWhoamiCached(accessToken);
+            const whoami = await fetchD4HWhoamiCached(credentialRef);
             const now = new Date();
 
             const parseList = (data: unknown) =>
@@ -461,7 +455,7 @@ export const d4hApiRouter = createTrpcRouter({
                     .filter((member) => member.hasAccess)
                     .map(async (member) => {
                         const teamId = member.owner.id;
-                        const { timezone } = await fetchD4HTeamDetailCached(accessToken, teamId);
+                        const { timezone } = await fetchD4HTeamDetailCached(credentialRef, teamId);
                         const { start, end } = zonedTodayRange(now, timezone);
                         const path = { context: "team", contextId: teamId } as const;
                         // Overlaps today: starts before end-of-day and ends after start-of-day.

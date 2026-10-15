@@ -17,16 +17,18 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { D4HTeam } from "@/lib/schemas/d4h/team";
+import { D4HTeamRef } from "@/lib/schemas/d4h/team";
+
+export type D4HViewsModule_Teams_Row = Pick<D4HTeamRef, "id" | "title">;
 
 interface D4HViewsModule_Teams_ListProps {
-    teams: D4HTeam[];
+    teams: D4HViewsModule_Teams_Row[];
 }
 
 export function D4HViewsModule_Teams_List({ teams }: D4HViewsModule_Teams_ListProps) {
     const columns = useMemo(
         () =>
-            Kaga.defineColumns<D4HTeam>((columnHelper) => [
+            Kaga.defineColumns<D4HViewsModule_Teams_Row>((columnHelper) => [
                 columnHelper.accessor("title", {
                     header: "Name",
                     cell: (ctx) => ctx.getValue(),

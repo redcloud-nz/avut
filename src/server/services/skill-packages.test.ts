@@ -512,6 +512,7 @@ describe("SkillPackages archive / restore / recover / delete", () => {
                 skillId: L.skill,
                 result: "Pass",
                 notes: "",
+                checkedAt: new Date(),
             },
         });
     });

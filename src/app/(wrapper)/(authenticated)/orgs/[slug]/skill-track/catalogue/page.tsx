@@ -44,7 +44,7 @@ export default async function SkillTrack_Catalogue_Page(
                             href: route("/orgs/[slug]/skill-track/catalogue", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/catalogue" />}
+                    actions={<HelpButton id="skill-track/catalogue" />}
                 />
                 <Std.ScrollContainer>
                     <SkillTrack_CataloguePackages_List />

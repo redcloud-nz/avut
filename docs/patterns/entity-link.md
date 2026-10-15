@@ -31,13 +31,17 @@ enrichment field it has as the `HoverCardContent` body:
 
 ```tsx
 // Table cell — no route()/organization.slug needed at the call site
-cell: ((ctx) => <PersonLink person={ctx.row.original} />,
-  (
-    // Inline in a detail page
-    <DLDetails>
-      <TeamLink team={team} />
-    </DLDetails>
-  ));
+cell: (ctx) => <PersonLink person={ctx.row.original} />;
+```
+
+```tsx
+// Inline in a detail page
+<DataItem inline>
+  <DataItemTitle>Team</DataItemTitle>
+  <DataItemValue>
+    <TeamLink team={team} />
+  </DataItemValue>
+</DataItem>
 ```
 
 Only reach for `EntityLink` directly when adding a new entity type (see below) — never as a

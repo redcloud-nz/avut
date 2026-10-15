@@ -14,7 +14,7 @@ import { getD4HEquipmentKindsCollection } from "@/client/collections/d4h-equipme
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDetails, DLTerm } from "@/components/ui/description-list";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
@@ -81,21 +81,29 @@ export default function D4HViewsModule_EquipmentCategory_Kind_Page(
                             <CardTitle>Kind Details</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <DL>
-                                <DLTerm>Kind ID</DLTerm>
-                                <DLDetails>{kind.id}</DLDetails>
-                                <DLTerm>Title</DLTerm>
-                                <DLDetails>{kind.title}</DLDetails>
-                                <DLTerm>Category</DLTerm>
-                                <DLDetails>{kind.category.title}</DLDetails>
-                                <DLTerm>Owner</DLTerm>
-                                <DLDetails>
-                                    <span>{kind.owner.title}</span>
-                                    <span className="text-muted-foreground pl-2">
-                                        ({kind.owner.resourceType})
-                                    </span>
-                                </DLDetails>
-                            </DL>
+                            <DataList>
+                                <DataItem inline>
+                                    <DataItemTitle>Kind ID</DataItemTitle>
+                                    <DataItemValue>{kind.id}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Title</DataItemTitle>
+                                    <DataItemValue>{kind.title}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Category</DataItemTitle>
+                                    <DataItemValue>{kind.category.title}</DataItemValue>
+                                </DataItem>
+                                <DataItem inline>
+                                    <DataItemTitle>Owner</DataItemTitle>
+                                    <DataItemValue>
+                                        <span>{kind.owner.title}</span>
+                                        <span className="text-muted-foreground pl-2">
+                                            ({kind.owner.resourceType})
+                                        </span>
+                                    </DataItemValue>
+                                </DataItem>
+                            </DataList>
                         </CardContent>
                     </Card>
                     <D4HViewsModule_EquipmentKind_Items_List kindId={kind.id} />

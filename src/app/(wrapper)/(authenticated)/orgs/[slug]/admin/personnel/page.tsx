@@ -35,7 +35,7 @@ export default async function AdminModule_PersonnelList_Page(
                             href: route("/orgs/[slug]/admin/personnel", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="admin" />}
+                    actions={<HelpButton id="admin/personnel" />}
                 />
                 <Std.ScrollContainer>
                     <AdminModule_Personnel_List organization={organization} />

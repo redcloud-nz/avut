@@ -7,7 +7,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Std } from "@/components/blocks/std";
-import { NotImplemented } from "@/components/nav/errors";
+import { ObjectHistory } from "@/components/history/object-history";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
@@ -48,7 +48,11 @@ export function SkillPackageBuilder_PackageHistory_Content({
                 ]}
             />
             <Std.ScrollContainer>
-                <NotImplemented />
+                <ObjectHistory
+                    objectType="SkillPackage"
+                    objectId={skillPackageId}
+                    title={`${skillPackage.name} — History`}
+                />
             </Std.ScrollContainer>
         </>
     );

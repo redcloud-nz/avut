@@ -153,6 +153,7 @@ export function SkillTrack_SessionChecks_Content({
                     meta: {
                         columnOptions: [
                             { label: "Draft", value: "Draft" },
+                            { label: "Pending review", value: "Pending" },
                             { label: "Approved", value: "Include" },
                             { label: "Excluded", value: "Exclude" },
                         ],
@@ -203,7 +204,7 @@ export function SkillTrack_SessionChecks_Content({
                     },
                     "Checks",
                 ]}
-                actions={<HelpButton slug="skill-track/sessions" />}
+                actions={<HelpButton id="skill-track/session" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

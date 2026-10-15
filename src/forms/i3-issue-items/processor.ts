@@ -8,8 +8,8 @@ import "server-only";
 import { createElement } from "react";
 
 import I3IssueItemsNotificationEmail from "@/emails/i3-issue-items-notification";
-import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
-import { fetchD4HWhoamiCached, getD4HFetchClient } from "@/server/d4h-api/client";
+import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
+import { fetchD4HWhoami, getD4HFetchClient } from "@/server/d4h-api/client";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
 import { AuthenticatedOrganizationContext } from "@/trpc/init";
@@ -26,14 +26,8 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
     .stage({
         stageName: "CheckD4HAccessToken",
         stageFn: async (ctx) => {
-            const accessToken = await getPersonalD4HAccessTokenForUser(
-                ctx.organizationId,
-                ctx.userId,
-            );
-
-            if (!accessToken) {
-                throw new Error("User does not have a personal D4H Access Token configured");
-            }
+            // Throws when the D4H integration is disabled or the user has no personal token.
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             return { accessToken };
         },
@@ -88,7 +82,8 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
         stageName: "CheckPermissions",
         stageFn: async (ctx, { accessToken }) => {
             // Check if the user has permission to create equipment in D4H for the recipient team, which is required to save issued items to D4H.
-            const whoami = await fetchD4HWhoamiCached(accessToken);
+            // Uncached: an authorization decision must not rest on a whoami that may be hours old.
+            const whoami = await fetchD4HWhoami(accessToken);
 
             const userMembershipInRecipientTeam = whoami.members.find(
                 (m) => m.owner.id === ctx.formData.recipient.teamId,
@@ -108,32 +103,58 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
 
             const fetchClient = getD4HFetchClient(accessToken);
 
-            // For each item being issued, create a corresponding equipment record in D4H if the user has permission to do so.
-            //const createdEquipmentIds: number[] = [];
+            // For each item being issued, create a corresponding equipment record in D4H. Keep going
+            // past a failed item: the ones already created can't be rolled back, so record as many
+            // as D4H accepts and report the rest.
+            const failures: string[] = [];
             for (const item of items) {
-                await fetchClient.POST("/v3/{context}/{contextId}/equipment", {
-                    params: {
-                        path: {
-                            context: "team",
-                            contextId: ctx.formData.recipient.teamId,
+                try {
+                    const { error, response } = await fetchClient.POST(
+                        "/v3/{context}/{contextId}/equipment",
+                        {
+                            params: {
+                                path: {
+                                    context: "team",
+                                    contextId: ctx.formData.recipient.teamId,
+                                },
+                            },
+                            body: {
+                                ref: undefined,
+                                categoryId: item.template.d4h.categoryId,
+                                kindId: item.template.d4h?.kindId,
+                                location: {
+                                    id: ctx.formData.recipient.id,
+                                    resourceType: "Member",
+                                },
+                                serial: item.serialNumber ? item.serialNumber : undefined,
+                                brandId: item.variant?.d4h?.brandId ?? undefined,
+                                modelId: item.variant?.d4h?.modelId ?? undefined,
+                            },
                         },
-                    },
-                    body: {
-                        ref: undefined,
-                        categoryId: item.template.d4h.categoryId,
-                        kindId: item.template.d4h?.kindId,
-                        location: {
-                            id: ctx.formData.recipient.id,
-                            resourceType: "Member",
-                        },
-                        serial: item.serialNumber ? item.serialNumber : undefined,
-                        brandId: item.variant?.d4h?.brandId ?? undefined,
-                        modelId: item.variant?.d4h?.modelId ?? undefined,
-                    },
-                });
+                    );
+                    if (!response.ok) {
+                        ctx.logger.error(
+                            `Failed to create equipment in D4H (status ${response.status})`,
+                            error,
+                        );
+                        failures.push(String(response.status));
+                    }
+                } catch (err) {
+                    ctx.logger.error("Failed to create equipment in D4H", err);
+                    failures.push(err instanceof Error ? err.message : String(err));
+                }
             }
 
-            return { savedToD4H: true } as const;
+            if (failures.length === 0) return { savedToD4H: true as const };
+
+            // Worded to cover a thrown network error as well as a D4H rejection, and without its
+            // own "in D4H": the email's sentences ("…recorded in D4H, due to ___.") already say it.
+            return {
+                savedToD4H: {
+                    reason: `failing to record ${failures.length} of ${items.length} items (first error: ${failures[0]})`,
+                    partial: failures.length < items.length,
+                },
+            };
         },
     })
     .stage({
@@ -149,7 +170,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
                     },
                     emailTarget: { email: "delivered+i3-notify@resend.dev" },
                     formData: ctx.formData,
-                    savedToD4H: savedToD4H ?? { reason: "Insufficient permissions" },
+                    savedToD4H: savedToD4H ?? { reason: "insufficient permissions" },
                 }),
             });
         },

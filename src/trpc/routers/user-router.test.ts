@@ -32,13 +32,11 @@ vi.mock("@/server/cache/organization-user-revalidate", () => ({
 // standing up a real auth instance.
 const acceptInvitationMock = vi.fn();
 const rejectInvitationMock = vi.fn();
-const leaveOrganizationMock = vi.fn();
 vi.mock("@/server/auth", () => ({
     auth: {
         api: {
             acceptInvitation: (...args: unknown[]) => acceptInvitationMock(...args),
             rejectInvitation: (...args: unknown[]) => rejectInvitationMock(...args),
-            leaveOrganization: (...args: unknown[]) => leaveOrganizationMock(...args),
         },
     },
 }));
@@ -540,9 +538,11 @@ describe("userRouter invitations", () => {
 describe("userRouter.leaveOrganization", () => {
     const T = {
         org: OrganizationId.create(),
+        ownedOrg: OrganizationId.create(),
         caller: UserId.create(),
         outsider: UserId.create(),
         membership: OrganizationUserId.create(),
+        ownership: OrganizationUserId.create(),
     };
     const db = createMockPrisma();
 
@@ -559,6 +559,12 @@ describe("userRouter.leaveOrganization", () => {
         await db.organizationUser.create({
             data: { id: T.membership, organizationId: T.org, userId: T.caller, role: "member" },
         });
+        await db.organization.create({
+            data: { id: T.ownedOrg, name: "Owned", slug: "owned-org", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: { id: T.ownership, organizationId: T.ownedOrg, userId: T.caller, role: "owner" },
+        });
     });
 
     function user(id = T.caller) {
@@ -567,15 +573,11 @@ describe("userRouter.leaveOrganization", () => {
         );
     }
 
-    it("leaves through Better Auth and logs it on both the caller's and the organization's timeline", async () => {
-        leaveOrganizationMock.mockResolvedValueOnce({});
-
+    it("deletes the membership and logs it on both the caller's and the organization's timeline", async () => {
         const result = await user().leaveOrganization({ organizationId: T.org });
 
         expect(result).toEqual({ ok: true });
-        expect(leaveOrganizationMock).toHaveBeenCalledWith(
-            expect.objectContaining({ body: { organizationId: T.org } }),
-        );
+        expect(await db.organizationUser.findUnique({ where: { id: T.membership } })).toBeNull();
 
         const entries = await db.logEntry.findMany({ where: { objectId: T.membership } });
         expect(entries).toHaveLength(2);
@@ -599,15 +601,17 @@ describe("userRouter.leaveOrganization", () => {
         expect(batch).toMatchObject({ operationKey: "organization-leave", userId: T.caller });
     });
 
-    it("refuses to leave an organization you're not a member of", async () => {
-        leaveOrganizationMock.mockClear();
+    it("lets the only owner leave, leaving the organization with no owner", async () => {
+        await user().leaveOrganization({ organizationId: T.ownedOrg });
+        expect(await db.organizationUser.count({ where: { organizationId: T.ownedOrg } })).toBe(0);
+    });
 
+    it("refuses to leave an organization you're not a member of", async () => {
         await expect(
             user(T.outsider).leaveOrganization({ organizationId: T.org }),
         ).rejects.toMatchObject({
             code: "NOT_FOUND",
         });
-        expect(leaveOrganizationMock).not.toHaveBeenCalled();
     });
 });
 
@@ -652,15 +656,14 @@ describe("userRouter.closeMyAccount", () => {
         expect((await db.user.findUnique({ where: { id: T.closer } }))?.status).toBe("Active");
     });
 
-    it("refuses the sole owner of an organisation, naming it", async () => {
-        await expect(
-            caller(T.soleOwner, "owner@example.com").closeMyAccount({
-                confirmEmail: "owner@example.com",
-            }),
-        ).rejects.toMatchObject({
-            code: "BAD_REQUEST",
-            message: expect.stringMatching(/only owner of Only Mine SAR/),
-        });
+    it("lists the organisations closing would leave ownerless, then allows it", async () => {
+        const owner = caller(T.soleOwner, "owner@example.com");
+        expect(await owner.listSoleOwnedOrganizations()).toEqual([
+            { id: expect.any(String), name: "Only Mine SAR" },
+        ]);
+
+        await owner.closeMyAccount({ confirmEmail: "owner@example.com" });
+        expect((await db.user.findUnique({ where: { id: T.soleOwner } }))?.status).toBe("Deleted");
     });
 
     it("moves the account to the Rubbish bin with a system-scoped entry", async () => {

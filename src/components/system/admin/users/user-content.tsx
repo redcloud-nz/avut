@@ -13,7 +13,13 @@ import { Std } from "@/components/blocks/std";
 import { SystemAdmin_UserActions_Menu } from "@/components/system/admin/users/user-actions-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DL, DLDateDetails, DLDetails, DLTerm } from "@/components/ui/description-list";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
@@ -46,20 +52,38 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                                     <CardTitle>Identity</CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>User ID</DLTerm>
-                                        <DLDetails className="font-mono">{user.id}</DLDetails>
-                                        <DLTerm>Name</DLTerm>
-                                        <DLDetails>{user.name}</DLDetails>
-                                        <DLTerm>Email</DLTerm>
-                                        <DLDetails>{user.email}</DLDetails>
-                                        <DLTerm>Email verified</DLTerm>
-                                        <DLDetails>{user.emailVerified ? "Yes" : "No"}</DLDetails>
-                                        <DLTerm>System role</DLTerm>
-                                        <DLDetails>{user.role}</DLDetails>
-                                        <DLTerm>Status</DLTerm>
-                                        <DLDetails>{user.banned ? "Banned" : "Active"}</DLDetails>
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>User ID</DataItemTitle>
+                                            <DataItemValue className="font-mono">
+                                                {user.id}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Name</DataItemTitle>
+                                            <DataItemValue>{user.name}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem>
+                                            <DataItemTitle>Email</DataItemTitle>
+                                            <DataItemValue>{user.email}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Email verified</DataItemTitle>
+                                            <DataItemValue>
+                                                {user.emailVerified ? "Yes" : "No"}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>System role</DataItemTitle>
+                                            <DataItemValue>{user.role}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Status</DataItemTitle>
+                                            <DataItemValue>
+                                                {user.banned ? "Banned" : "Active"}
+                                            </DataItemValue>
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
 
@@ -117,10 +141,12 @@ export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {
                         <Saratoga.Column slot="secondary">
                             <Card>
                                 <CardContent>
-                                    <DL>
-                                        <DLTerm>Created</DLTerm>
-                                        <DLDateDetails date={user.createdAt} />
-                                    </DL>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={user.createdAt} />
+                                        </DataItem>
+                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
