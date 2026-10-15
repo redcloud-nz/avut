@@ -195,7 +195,7 @@ imports to fix: `organization-settings-content.tsx` (`./organization-settings-fo
 **Done when:** `npm run check` passes; `grep -rn '@/components/admin/' src/components/system`
 is empty.
 
-### - [ ] Task 3 — `mechanical` — Move skill-package-builder
+### - [x] Task 3 — `mechanical` — Move skill-package-builder
 
 **Files:** `src/components/skill-package-builder/**` →
 `src/modules/skill-package-builder/components/`; 6 pages under
