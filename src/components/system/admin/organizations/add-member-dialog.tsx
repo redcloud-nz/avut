@@ -36,6 +36,7 @@ import {
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { OrganizationId } from "@/lib/schemas/organization";
 import type { ModuleGatedRoleOptions } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
@@ -70,6 +71,15 @@ export function SystemAdmin_AddMember_Dialog({
         parseAsStringLiteral(["add-member"] as const),
     );
     const dialogOpen = action === "add-member";
+
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("add-member", { history: "push" }),
+            name: "Add member",
+            category: "Organisation",
+        },
+    ]);
 
     function handleOpenChange(open: boolean) {
         void setAction(open ? "add-member" : null, { history: open ? "push" : "replace" });

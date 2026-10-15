@@ -131,6 +131,7 @@ describe("SystemAdmin_UserActions_Menu", () => {
         ["promote", { role: "user" }, "Promote to admin"],
         ["demote", { role: "user" }, "Demote to user"],
         ["delete", {}, "Delete user"],
+        ["impersonate", {}, "Impersonate user"],
     ];
 
     it.each(cases)("?action=%s mounts exactly one dialog", (action, overrides, heading) => {
@@ -144,18 +145,15 @@ describe("SystemAdmin_UserActions_Menu", () => {
         expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     });
 
-    // Impersonation is switched off until #347 is fixed.
-    it("shows Impersonate disabled, and ?action=impersonate opens no dialog", async () => {
+    it("opens on Mod+. and opens Delete on Alt+Backspace", async () => {
         const user = userEvent.setup();
-        renderMenu(makeUser({ banned: false }), "?action=impersonate");
+        renderMenu(makeUser());
 
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+        await user.keyboard("{Control>}.{/Control}");
+        expect(await screen.findByRole("menu")).toBeInTheDocument();
+        await user.keyboard("{Escape}");
 
-        await user.click(screen.getByRole("button"));
-        expect(screen.getByRole("menuitem", { name: /Impersonate/ })).toHaveAttribute(
-            "aria-disabled",
-            "true",
-        );
+        await user.keyboard("{Alt>}{Backspace}{/Alt}");
+        expect(await screen.findByRole("heading", { name: "Delete user" })).toBeInTheDocument();
     });
 });

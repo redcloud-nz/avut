@@ -23,7 +23,12 @@ export type ActionVerb =
     | "unlink"
     | "make-owner"
     | "remove-owner"
-    | "reopen";
+    | "reopen"
+    | "impersonate"
+    | "promote"
+    | "demote"
+    | "ban"
+    | "unban";
 
 /**
  * Keyboard shortcut for the few common action verbs, app-wide (#380). Every other verb is reached
