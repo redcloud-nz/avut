@@ -52,6 +52,7 @@ Lint catches ID imports but not an ID built without one:
 ## File placement
 
 - **Module-only UI goes in `src/modules/<module-id>/`, shared UI in `src/components/`.** A new component, hook or helper used by one module belongs in that module's folder (AGENTS.md → Modules), not in `src/components/<area>/` or as a non-route file beside a page under `src/app/`. One used by two or more modules belongs in `src/components/`. Lint stops one module importing another, but not a module-only file landing in the shared layer.
+- **No barrel `index.ts` files.** Import each file directly. A barrel loads everything to import one thing, and mixes server and client code across the `"use client"` boundary.
 
 ## Routes and internal links
 
