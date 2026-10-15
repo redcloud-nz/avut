@@ -258,7 +258,7 @@ after flattening. Only `templates/page.tsx` and `templates/[template_id]/page.ts
 **Done when:** `npm run check` passes; `src/components/i3` no longer exists;
 `find "src/app/(wrapper)/(authenticated)/orgs/[slug]/i3" -type f` lists only route files.
 
-### - [ ] Task 7 — `mechanical` — Move d4h-views
+### - [x] Task 7 — `mechanical` — Move d4h-views
 
 **Files:** `src/components/d4h-views/sidebar-menu.tsx`; `orgs/[slug]/d4h-views/{teams/d4h-teams-list,personnel/personnel-list,equipment/brands/[brand_id]/brand-models,equipment/categories/[category_id]/category-kinds,equipment/categories/[category_id]/kinds/[kind_id]/kind-items}.tsx`
 → `src/modules/d4h-views/components/{teams,personnel,equipment}/`; `nav/org-sidebar-modules.tsx`;

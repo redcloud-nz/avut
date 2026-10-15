@@ -17,8 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-
-import { D4HViewsModule_EquipmentKind_Items_List } from "./kind-items";
+import { D4HViewsModule_EquipmentKind_Items_List } from "@/modules/d4h-views/components/equipment/kind-items";
 
 export default function D4HViewsModule_EquipmentCategory_Kind_Page(
     props: PageProps<"/orgs/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]">,
