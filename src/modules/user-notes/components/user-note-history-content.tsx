@@ -9,10 +9,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { sessionQueryOptions } from "@/client/auth-queries";
 import { ObjectHistory } from "@/components/history/object-history";
+import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
 import { UserNoteId } from "@/lib/schemas/user-note";
 import { trpc } from "@/trpc/client";
-
-import { isNoteNotFound, NoteGoneBoundary } from "./note-gone-boundary";
 
 /**
  * A personal note's History, in the notes detail pane, read from the caller's own log. The notes

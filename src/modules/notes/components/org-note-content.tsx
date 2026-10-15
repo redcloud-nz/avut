@@ -14,6 +14,9 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 import { sessionQueryOptions } from "@/client/auth-queries";
 import { organizationNotesEffects } from "@/client/organization-notes-effects";
 import { ObjectIcons } from "@/components/icons";
+import { NoteDetail } from "@/components/notes/note-detail";
+import { NoteEditor } from "@/components/notes/note-editor";
+import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenuGroup,
@@ -28,9 +31,6 @@ import { OrganizationNoteData, OrganizationNoteId } from "@/lib/schemas/organiza
 import { trpc } from "@/trpc/client";
 
 import { OrgNotes_DeleteNote_Dialog } from "./delete-org-note-dialog";
-import { NoteDetail } from "./note-detail";
-import { NoteEditor } from "./note-editor";
-import { isNoteNotFound, NoteGoneBoundary } from "./note-gone-boundary";
 
 /**
  * The detail pane for one org note: view mode by default, edit mode while `?edit=true`. Switching

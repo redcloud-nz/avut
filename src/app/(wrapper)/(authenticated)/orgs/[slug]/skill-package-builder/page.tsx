@@ -8,8 +8,8 @@
 import { AVUTLogo } from "@/components/art/avut-logo";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { SkillPackageBuilder_Packages_List } from "@/components/skill-package-builder/packages-list";
 import { route } from "@/lib/routes";
+import { SkillPackageBuilder_Packages_List } from "@/modules/skill-package-builder/components/packages-list";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";

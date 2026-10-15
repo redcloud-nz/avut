@@ -23,8 +23,7 @@ import {
 } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-
-import { D4HViewsModule_EquipmentBrand_Models_List } from "./brand-models";
+import { D4HViewsModule_EquipmentBrand_Models_List } from "@/modules/d4h-views/components/equipment/brand-models";
 
 export default function D4HViewsModule_EquipmentBrand_Page(
     props: PageProps<"/orgs/[slug]/d4h-views/equipment/brands/[brand_id]">,

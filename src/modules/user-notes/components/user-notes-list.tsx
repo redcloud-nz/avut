@@ -11,11 +11,10 @@ import { ReactNode } from "react";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { userNotesEffects } from "@/client/user-notes-effects";
+import { NotesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
+import { NotesList } from "@/components/notes/notes-list";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-
-import { NotesBreadcrumbs } from "./notes-breadcrumbs";
-import { NotesList } from "./notes-list";
 
 function useUserNotes() {
     const { data: notes } = useSuspenseQuery(trpc.userNotes.listNotes.queryOptions());

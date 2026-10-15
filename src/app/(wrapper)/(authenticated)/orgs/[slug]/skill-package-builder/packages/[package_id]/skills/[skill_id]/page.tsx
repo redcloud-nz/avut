@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { SkillPackageBuilder_Skill_Content } from "@/components/skill-package-builder/skill-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillId } from "@/lib/schemas/skill";
+import { SkillPackageBuilder_Skill_Content } from "@/modules/skill-package-builder/components/skill-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganizationWith } from "@/server/organization-access";

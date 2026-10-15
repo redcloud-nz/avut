@@ -9,11 +9,10 @@ import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3Module_Template_Content } from "@/modules/i3/components/templates/template-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { I3Module_Template_Content } from "./template-content";
 
 type Props = PageProps<"/orgs/[slug]/i3/templates/[template_id]">;
 

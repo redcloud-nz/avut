@@ -28,14 +28,14 @@ import { LayoutDashboardIcon } from "lucide-react";
 import { ReactNode } from "react";
 
 import { Admin_Sidebar_Menu } from "@/components/admin/sidebar-menu";
-import { D4HViews_Sidebar_Menu } from "@/components/d4h-views/sidebar-menu";
-import { I3_Sidebar_Menu } from "@/components/i3/sidebar-menu";
 import { NavCollapsible, NavItem, NavSection } from "@/components/nav/nav-section";
 import { SkillTrack_Sidebar_Menu } from "@/components/skill-track/sidebar-menu";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { orgModules, type OrganizationModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
+import { D4HViews_Sidebar_Menu } from "@/modules/d4h-views/components/sidebar-menu";
+import { I3_Sidebar_Menu } from "@/modules/i3/components/sidebar-menu";
 
 /**
  * Sub-pages for a module's `NavCollapsible`, keyed by module id. A module absent here — a

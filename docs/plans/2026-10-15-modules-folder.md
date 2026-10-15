@@ -195,7 +195,7 @@ imports to fix: `organization-settings-content.tsx` (`./organization-settings-fo
 **Done when:** `npm run check` passes; `grep -rn '@/components/admin/' src/components/system`
 is empty.
 
-### - [ ] Task 3 — `mechanical` — Move skill-package-builder
+### - [x] Task 3 — `mechanical` — Move skill-package-builder
 
 **Files:** `src/components/skill-package-builder/**` →
 `src/modules/skill-package-builder/components/`; 6 pages under
@@ -242,7 +242,7 @@ skill-track pages; `docs/patterns/mutation-dialog.md` (~line 510 names
 `reports/competency-status.test.ts` and `reports/synthetic-competency-data.test.ts` from their
 new paths.
 
-### - [ ] Task 6 — `mechanical` — Move i3
+### - [x] Task 6 — `mechanical` — Move i3
 
 **Files:** `src/components/i3/{sidebar-menu,issue-items-form-list}.tsx` →
 `src/modules/i3/components/` (the second's only importer is `i3/forms/issue-items/page.tsx`); the 11 non-route
@@ -258,7 +258,7 @@ after flattening. Only `templates/page.tsx` and `templates/[template_id]/page.ts
 **Done when:** `npm run check` passes; `src/components/i3` no longer exists;
 `find "src/app/(wrapper)/(authenticated)/orgs/[slug]/i3" -type f` lists only route files.
 
-### - [ ] Task 7 — `mechanical` — Move d4h-views
+### - [x] Task 7 — `mechanical` — Move d4h-views
 
 **Files:** `src/components/d4h-views/sidebar-menu.tsx`; `orgs/[slug]/d4h-views/{teams/d4h-teams-list,personnel/personnel-list,equipment/brands/[brand_id]/brand-models,equipment/categories/[category_id]/category-kinds,equipment/categories/[category_id]/kinds/[kind_id]/kind-items}.tsx`
 → `src/modules/d4h-views/components/{teams,personnel,equipment}/`; `nav/org-sidebar-modules.tsx`;
@@ -301,7 +301,7 @@ don't import each other. Check again, because a cross-import has to go to the sh
 
 **Done when:** `npm run check` passes; `src/components/user` no longer exists.
 
-### - [ ] Task 10 — `mechanical` — Move notes and user-notes
+### - [x] Task 10 — `mechanical` — Move notes and user-notes
 
 **Files:** from `src/components/notes/`: `org-note-content`, `org-note-history-content`,
 `org-notes-list`, `notes-module-gate`, `delete-org-note-dialog` → `src/modules/notes/components/`;

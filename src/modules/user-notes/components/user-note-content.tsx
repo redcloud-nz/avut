@@ -14,6 +14,9 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { sessionQueryOptions } from "@/client/auth-queries";
 import { userNotesEffects } from "@/client/user-notes-effects";
 import { ObjectIcons } from "@/components/icons";
+import { NoteDetail } from "@/components/notes/note-detail";
+import { NoteEditor } from "@/components/notes/note-editor";
+import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenuGroup,
@@ -26,9 +29,6 @@ import { UserNoteData, UserNoteId } from "@/lib/schemas/user-note";
 import { trpc } from "@/trpc/client";
 
 import { UserNotes_DeleteNote_Dialog } from "./delete-user-note-dialog";
-import { NoteDetail } from "./note-detail";
-import { NoteEditor } from "./note-editor";
-import { isNoteNotFound, NoteGoneBoundary } from "./note-gone-boundary";
 
 /**
  * The detail pane for one personal note: view mode by default, edit mode while `?edit=true`.

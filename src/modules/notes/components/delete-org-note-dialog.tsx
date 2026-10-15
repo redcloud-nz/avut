@@ -11,7 +11,8 @@ import { toast } from "sonner";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { userNotesEffects } from "@/client/user-notes-effects";
+import { organizationNotesEffects } from "@/client/organization-notes-effects";
+import { rememberDeletedNote } from "@/components/notes/deleted-notes";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -23,25 +24,26 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
-import { UserNoteData } from "@/lib/schemas/user-note";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { OrganizationNoteData } from "@/lib/schemas/organization-note";
 import { trpc } from "@/trpc/client";
 
-import { rememberDeletedNote } from "./deleted-notes";
-
 /**
- * Confirms and permanently deletes a personal note, then returns to the notes list. Host-driven:
- * the note's detail pane owns the `?action=delete` param and passes `open`/`onOpenChange`.
+ * Confirms and permanently deletes an org note, then returns to the notes list. Host-driven: the
+ * note's detail pane owns the `?action=delete` param and passes `open`/`onOpenChange`.
  */
-export function UserNotes_DeleteNote_Dialog({
+export function OrgNotes_DeleteNote_Dialog({
     note,
     ...props
-}: ComponentProps<typeof AlertDialog> & { note: UserNoteData }) {
+}: ComponentProps<typeof AlertDialog> & { note: OrganizationNoteData }) {
+    const organization = useOrganization();
     const router = useRouter();
     const queryClient = useQueryClient();
 
     const mutation = useMutation(
-        trpc.userNotes.deleteNote.mutationOptions({
-            meta: { effects: userNotesEffects.deleteNote, navigates: true },
+        trpc.organizationNotes.deleteNote.mutationOptions({
+            meta: { effects: organizationNotesEffects.deleteNote, navigates: true },
             onError(error) {
                 console.error("Failed to delete note:", error);
                 toast.error(`Failed to delete note: ${error.message}`);
@@ -55,7 +57,7 @@ export function UserNotes_DeleteNote_Dialog({
 
                 // The navigation is the whole close: don't also clear `?action=` or reset the
                 // mutation, since a competing URL write races the replace.
-                router.replace("/user/notes");
+                router.replace(route("/orgs/[slug]/notes", { slug: organization.slug }));
             },
         }),
     );
@@ -68,12 +70,15 @@ export function UserNotes_DeleteNote_Dialog({
         if (!mutation.isSuccess) return;
 
         return () => {
-            rememberDeletedNote(queryClient, note.userId, note.id);
+            rememberDeletedNote(queryClient, organization.id, note.id);
             queryClient.removeQueries({
-                queryKey: trpc.userNotes.getNote.queryKey({ noteId: note.id }),
+                queryKey: trpc.organizationNotes.getNote.queryKey({
+                    organizationId: organization.id,
+                    noteId: note.id,
+                }),
             });
         };
-    }, [mutation.isSuccess, queryClient, note.userId, note.id]);
+    }, [mutation.isSuccess, queryClient, organization.id, note.id]);
 
     return (
         <AlertDialog {...props}>
@@ -91,7 +96,9 @@ export function UserNotes_DeleteNote_Dialog({
                         variant="destructive"
                         status={mutation.status}
                         text={{ idle: "Delete", pending: "Deleting", success: "Deleted" }}
-                        onClick={() => mutation.mutate({ noteId: note.id })}
+                        onClick={() =>
+                            mutation.mutate({ organizationId: organization.id, noteId: note.id })
+                        }
                     />
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                 </AlertDialogFooter>
