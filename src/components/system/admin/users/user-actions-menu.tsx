@@ -14,30 +14,17 @@ import {
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useUser } from "@/client/auth-queries";
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { SystemAdmin_BanUser_Dialog } from "@/components/system/admin/users/ban-user-dialog";
 import { SystemAdmin_DeleteUser_Dialog } from "@/components/system/admin/users/delete-user-dialog";
 import { SystemAdmin_ImpersonateUser_Dialog } from "@/components/system/admin/users/impersonate-user-dialog";
 import { SystemAdmin_SetUserRole_Dialog } from "@/components/system/admin/users/set-user-role-dialog";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { UserId } from "@/lib/schemas/user";
 import { type RouterOutput } from "@/trpc/client";
 
 type SystemAdminUser = RouterOutput["users"]["getUser"];
-
-/**
- * Impersonation is switched off until #347 is fixed: with `ImpersonationBanner` disabled, an
- * impersonating admin would get no on-screen sign of it and no way to stop. The item stays in
- * the menu, disabled, and `?action=impersonate` no longer opens the dialog.
- */
-const IMPERSONATION_ENABLED = false;
 
 /**
  * Actions dropdown for a system-admin user detail page — mirrors how org member actions
@@ -50,6 +37,8 @@ const IMPERSONATION_ENABLED = false;
  * `user.banned`), and "Delete user" (`?action=delete`, hard delete, type-to-confirm). All are
  * hidden when the row user is the signed-in operator — the tRPC procedures refuse a self-target
  * anyway, this just keeps them off the menu.
+ *
+ * `Alt+Backspace` opens Delete, and `Mod+.` opens the menu (`EntityActionMenu`).
  */
 export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }) {
     const { data: currentUser } = useUser();
@@ -79,61 +68,66 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
         void setAction(null, { history: "replace" });
     }
 
+    const actions: MenuActionProps[] = isSelf
+        ? []
+        : [
+              {
+                  verb: "impersonate",
+                  label: "Impersonate",
+                  icon: <VenetianMaskIcon />,
+                  onSelect: () => open("impersonate"),
+              },
+              isAdmin
+                  ? {
+                        verb: "demote",
+                        label: "Demote to user",
+                        icon: <ShieldOffIcon />,
+                        onSelect: () => open("demote"),
+                    }
+                  : {
+                        verb: "promote",
+                        label: "Promote to admin",
+                        icon: <ShieldIcon />,
+                        onSelect: () => open("promote"),
+                    },
+              user.banned
+                  ? {
+                        verb: "unban",
+                        label: "Unban user",
+                        icon: <CircleCheckIcon />,
+                        onSelect: () => open("unban"),
+                    }
+                  : {
+                        verb: "ban",
+                        label: "Ban user",
+                        icon: <BanIcon />,
+                        onSelect: () => open("ban"),
+                    },
+              {
+                  verb: "delete",
+                  label: "Delete user",
+                  icon: <ObjectIcons.Delete />,
+                  onSelect: () => open("delete"),
+                  destructive: true,
+              },
+          ];
+
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48" align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    {isSelf ? (
-                        <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
-                    ) : (
-                        <>
-                            <DropdownMenuItem
-                                disabled={!IMPERSONATION_ENABLED}
-                                onSelect={() => open("impersonate")}
-                            >
-                                <VenetianMaskIcon /> Impersonate
-                            </DropdownMenuItem>
-                            {isAdmin ? (
-                                <DropdownMenuItem onSelect={() => open("demote")}>
-                                    <ShieldOffIcon /> Demote to user
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem onSelect={() => open("promote")}>
-                                    <ShieldIcon /> Promote to admin
-                                </DropdownMenuItem>
-                            )}
-                            {user.banned ? (
-                                <DropdownMenuItem onSelect={() => open("unban")}>
-                                    <CircleCheckIcon /> Unban user
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem onSelect={() => open("ban")}>
-                                    <BanIcon /> Ban user
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem variant="destructive" onSelect={() => open("delete")}>
-                                <ObjectIcons.Delete /> Delete user
-                            </DropdownMenuItem>
-                        </>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu
+                actions={actions}
+                category="User"
+                width="w-48"
+                after={isSelf && <DropdownMenuItem disabled>No actions available</DropdownMenuItem>}
+            />
 
             {!isSelf && (
                 <>
-                    {IMPERSONATION_ENABLED && (
-                        <SystemAdmin_ImpersonateUser_Dialog
-                            user={user}
-                            open={action === "impersonate"}
-                            onOpenChange={(next) => (next ? undefined : close())}
-                        />
-                    )}
+                    <SystemAdmin_ImpersonateUser_Dialog
+                        user={user}
+                        open={action === "impersonate"}
+                        onOpenChange={(next) => (next ? undefined : close())}
+                    />
                     <SystemAdmin_BanUser_Dialog
                         user={target}
                         action={action === "unban" ? "unban" : "ban"}

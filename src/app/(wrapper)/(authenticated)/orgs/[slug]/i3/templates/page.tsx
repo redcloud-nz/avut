@@ -9,6 +9,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { route } from "@/lib/routes";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -23,6 +24,7 @@ export default async function I3Module_TemplateList_Page(
     props: PageProps<"/orgs/[slug]/i3/templates">,
 ) {
     const { slug } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
     const { organization } = await requireOrganizationWith(slug, { i3Template: ["view"] });
 
     prefetch(trpc.i3.listTemplates.queryOptions({ organizationId: organization.id }));

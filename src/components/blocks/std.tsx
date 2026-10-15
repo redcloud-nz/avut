@@ -30,7 +30,7 @@ function SidebarInset({ children }: { children: ReactNode }) {
     return (
         <div
             data-component="StdSidebarInset"
-            className="relative flex w-full min-w-0 h-svh flex-1 flex-col bg-page"
+            className="relative flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
         >
             <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
         </div>

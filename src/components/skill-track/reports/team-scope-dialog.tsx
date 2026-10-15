@@ -112,9 +112,9 @@ function TeamScope_Picker({ onSelect }: { onSelect: (value: string) => void }) {
     );
 
     return (
-        <Command>
+        <Command className="max-sm:min-h-0 max-sm:flex-1">
             <CommandInput placeholder="Search teams…" />
-            <CommandList className="h-72">
+            <CommandList className="max-sm:max-h-none max-sm:flex-1 sm:h-72">
                 <CommandEmpty>No teams match your search.</CommandEmpty>
                 <CommandItem value="Whole Organization" onSelect={() => onSelect("all")}>
                     <Building2Icon />

@@ -120,9 +120,9 @@ function PersonScope_Picker({ onSelect }: { onSelect: (personId: string) => void
     );
 
     return (
-        <Command>
+        <Command className="max-sm:min-h-0 max-sm:flex-1">
             <CommandInput placeholder="Search people…" />
-            <CommandList className="h-72">
+            <CommandList className="max-sm:max-h-none max-sm:flex-1 sm:h-72">
                 <CommandEmpty>No active personnel match your search.</CommandEmpty>
                 {activePersonnel.map((person) => (
                     <CommandItem

@@ -138,7 +138,7 @@ export function AdminModule_CreatePerson_Dialog() {
                                         <Input
                                             id="person-name"
                                             autoFocus
-                                            autoComplete="off"
+                                            ignorePasswordManagers
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
@@ -157,7 +157,7 @@ export function AdminModule_CreatePerson_Dialog() {
                                         <Input
                                             id="person-email"
                                             type="email"
-                                            autoComplete="off"
+                                            ignorePasswordManagers
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />

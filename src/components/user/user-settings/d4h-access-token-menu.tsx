@@ -6,19 +6,8 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-    MenuAction,
-    useMenuActionHotkeys,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { ObjectIcons } from "@/components/icons";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
 import { UserSettings_RemoveD4HAccessToken_Dialog } from "./remove-d4h-access-token";
@@ -38,24 +27,9 @@ export function UserSettings_D4HAccessToken_Menu({ token }: { token: PersonalAcc
         },
     ];
 
-    useMenuActionHotkeys(actions, "D4H Access Token");
-
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="end">
-                    <DropdownMenuGroup>
-                        {actions.map((a) => (
-                            <MenuAction key={a.verb} {...a} />
-                        ))}
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu actions={actions} category="D4H Access Token" />
 
             <UserSettings_RemoveD4HAccessToken_Dialog
                 token={token}

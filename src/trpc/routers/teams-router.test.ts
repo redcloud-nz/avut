@@ -5,11 +5,13 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { NotConfiguredError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
+import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -20,7 +22,7 @@ import { teamsRouter } from "./teams-router";
 // under jsdom.
 vi.mock("server-only", () => ({}));
 
-// The D4H linking procedures touch only getPersonalD4HAccessTokenForUser and the
+// The D4H linking procedures touch only getConfiguredD4HAccessToken and the
 // cached fetch helpers in @/server/d4h-api/client — stubbed here (same pattern as
 // d4h-access-tokens-router.test.ts) rather than a live D4H client.
 const grace = {
@@ -53,7 +55,7 @@ vi.mock("@/server/d4h-api/client", () => ({
 }));
 
 vi.mock("@/server/d4h-access-token", () => ({
-    getPersonalD4HAccessTokenForUser: vi.fn(async () => ({
+    getConfiguredD4HAccessToken: vi.fn(async () => ({
         id: "d4h-token-fixture-id",
         organizationId: null,
         userId: null,
@@ -322,6 +324,25 @@ describe("teamsRouter.applyD4HTeamSync", () => {
         });
         expect(departed?.status).toBe("Active");
         expect(await db.person.findFirst({ where: { email: "grace@example.com" } })).toBeNull();
+    });
+
+    // `getConfiguredD4HAccessToken` throws `NotConfiguredError` when the org has D4H turned off or
+    // the caller has no personal token (#175, #174); the client needs its message, not a 500.
+    it("rejects plan and apply with PRECONDITION_FAILED when D4H isn't configured", async () => {
+        const { T, caller } = await seed();
+        const notConfigured = new NotConfiguredError(
+            "D4H integration is not enabled for this organisation.",
+        );
+        vi.mocked(getConfiguredD4HAccessToken)
+            .mockRejectedValueOnce(notConfigured)
+            .mockRejectedValueOnce(notConfigured);
+
+        await expect(
+            caller.planD4HTeamSync({ organizationId: T.org, teamId: T.team }),
+        ).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: notConfigured.message });
+        await expect(
+            caller.applyD4HTeamSync({ organizationId: T.org, teamId: T.team, planToken: "any" }),
+        ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     });
 });
 

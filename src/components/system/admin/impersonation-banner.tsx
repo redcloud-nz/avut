@@ -26,12 +26,13 @@ import { trpc } from "@/trpc/client";
  * returns the operator to the system-admin user list. `router.refresh()` is required
  * because the RSC payload on screen was rendered as the impersonated user.
  *
- * Layout — KNOWN LIMITATION: the bar is `fixed` at the top of the viewport (`h-9`, `z-50`)
- * and overlaps the top ~36px of the app-shell navbar and the `fixed` sidebar header. The
- * global `<SidebarProvider>` wrapper is a `min-h-svh` flex ROW and the sidebar is
- * `fixed inset-y-0`, so no in-flow spacer here can push either down. A proper fix needs an
- * `--impersonation-h` offset threaded through `Std.SidebarInset` / `src/components/ui/sidebar.tsx`;
- * tracked as a follow-up. Impersonation is a transient, admin-only state, so this ships as-is.
+ * Rendered inside the authenticated layout's `HydrateClient`, below its awaited `getSession`
+ * fetch, so this reads the hydrated session. Rendered any higher, its query ran over HTTP during
+ * server rendering without the request's cookie, cached `null`, and made every session read below
+ * it render as signed out on the server (#347).
+ *
+ * The bar is `fixed` to the top of the viewport. While it's in the DOM, `globals.css` sets
+ * `--impersonation-h` to its height, which pushes the sidebar and `Std.SidebarInset` down (#87).
  */
 export function ImpersonationBanner() {
     const { data } = useSuspenseQuery(trpc.user.getSession.queryOptions());
@@ -73,6 +74,7 @@ export function ImpersonationBanner() {
     return (
         <div
             role="alert"
+            data-slot="impersonation-banner"
             className="fixed inset-x-0 top-0 z-50 flex h-9 items-center gap-2 border-b border-amber-300 bg-amber-50 px-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
         >
             <TriangleAlertIcon className="size-4 shrink-0" />

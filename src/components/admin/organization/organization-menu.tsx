@@ -4,24 +4,21 @@
  */
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { teamsEffects } from "@/client/teams-effects";
-import { D4HIcons, DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+import { D4HIcons, ObjectIcons } from "@/components/icons";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -29,6 +26,7 @@ import { trpc } from "@/trpc/client";
 
 export function AdminModule_OrganizationMenu({ slug }: { slug: string }) {
     const organization = useOrganization();
+    const router = useRouter();
     const d4hEnabled = organization.settings.integrations.d4h.enabled;
     const canUpdate = useHasPermission({ organization: ["update"] });
 
@@ -55,25 +53,34 @@ export function AdminModule_OrganizationMenu({ slug }: { slug: string }) {
     const linked = orgD4H != null;
     const canSyncOrg = linked && orgD4H.d4hOrganisationId != null && orgD4H.linkedTeamCount > 0;
 
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <DropdownMenuTriggerIcon />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48" align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem disabled={!canUpdate} asChild>
-                    <Link href={route("/orgs/[slug]/admin/organization/--update", { slug })}>
-                        <ObjectIcons.Edit /> Edit
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled className="text-destructive focus:text-destructive">
-                    <ObjectIcons.Delete /> Delete
-                </DropdownMenuItem>
+    const actions: MenuActionProps[] = [
+        {
+            verb: "update",
+            label: "Edit",
+            icon: <ObjectIcons.Edit />,
+            onSelect: () =>
+                router.push(route("/orgs/[slug]/admin/organization/--update", { slug })),
+            disabled: !canUpdate,
+        },
+        {
+            // Not built yet: shown disabled so the menu reads the same as other entities'.
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => {},
+            disabled: true,
+            destructive: true,
+        },
+    ];
 
-                {d4hEnabled && (linked || canSyncOrg) && (
+    return (
+        <EntityActionMenu
+            actions={actions}
+            category="Organisation"
+            width="w-48"
+            after={
+                d4hEnabled &&
+                (linked || canSyncOrg) && (
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>D4H</DropdownMenuLabel>
@@ -101,8 +108,8 @@ export function AdminModule_OrganizationMenu({ slug }: { slug: string }) {
                             )}
                         </DropdownMenuGroup>
                     </>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+                )
+            }
+        />
     );
 }

@@ -10,6 +10,7 @@ import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganization } from "@/server/organization-access";
 
 import { D4HViewsModule_Teams_List, type D4HViewsModule_Teams_Row } from "./d4h-teams-list";
@@ -18,10 +19,8 @@ export default async function D4HViewsModule_Teams_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/teams`>,
 ) {
     const { slug } = await props.params;
-    const { organization, session, settings } = await requireOrganization(slug);
-
-    if (settings.modules["d4h-views"].enabled === false)
-        throw new Error("D4H Views module is not enabled for this organization.");
+    if (!(await isOrganizationModuleUsable(slug, "d4h-views"))) return null;
+    const { organization, session } = await requireOrganization(slug);
 
     const accessToken = await getConfiguredD4HAccessToken(
         organization.id,

@@ -24,7 +24,7 @@ import { D4HMember } from "@/lib/schemas/d4h/member";
 import { PersonId } from "@/lib/schemas/person";
 import type { TeamD4HRecord } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
-import { getPersonalD4HAccessTokenForUser, toD4HCredentialRef } from "@/server/d4h-access-token";
+import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
     fetchD4HOrganisationCached,
     fetchD4HTeamDetailCached,
@@ -287,10 +287,7 @@ export async function resolveD4HTeamForLink(
     ctx: OrgServiceContext,
     d4hTeamId: number,
 ): Promise<ResolvedD4HTeam> {
-    const token = await getPersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
-    if (!token) {
-        throw new ValidationError("No personal D4H Access Token found for user");
-    }
+    const token = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
     const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(token));
     const ref = d4HTeams.find((t) => t.id === d4hTeamId);
@@ -881,10 +878,7 @@ export async function syncOrganizationD4HCache(ctx: OrgServiceContext): Promise<
         );
     }
 
-    const token = await getPersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
-    if (!token) {
-        throw new ValidationError("No personal D4H Access Token found for user");
-    }
+    const token = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
     const d4hOrg = await fetchD4HOrganisationCached(
         toD4HCredentialRef(token),
