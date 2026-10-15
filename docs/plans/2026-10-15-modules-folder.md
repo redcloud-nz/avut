@@ -242,7 +242,7 @@ skill-track pages; `docs/patterns/mutation-dialog.md` (~line 510 names
 `reports/competency-status.test.ts` and `reports/synthetic-competency-data.test.ts` from their
 new paths.
 
-### - [ ] Task 6 — `mechanical` — Move i3
+### - [x] Task 6 — `mechanical` — Move i3
 
 **Files:** `src/components/i3/{sidebar-menu,issue-items-form-list}.tsx` →
 `src/modules/i3/components/` (the second's only importer is `i3/forms/issue-items/page.tsx`); the 11 non-route

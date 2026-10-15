@@ -9,12 +9,11 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { route } from "@/lib/routes";
+import { I3Module_CreateTemplate_Dialog } from "@/modules/i3/components/templates/create-template";
+import { I3Module_TemplateList } from "@/modules/i3/components/templates/templates-list";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { I3Module_CreateTemplate_Dialog } from "./create-template";
-import { I3Module_TemplateList } from "./templates-list";
 
 export const metadata = {
     title: "I3 Templates",
