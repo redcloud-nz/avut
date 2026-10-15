@@ -2,12 +2,16 @@
 
 **Date:** 2026-09-29
 
-**Branch / DB:** `plan/modules-folder` → rename to `refactor/modules-folder` at pickup. No Prisma
-change, no `db:branch`. Pure file moves, import rewrites and one lint rule.
+**Tracks:** #385
 
-**Written against:** integration @ cef534bd
+**Branch / DB:** a stack of five branches, `refactor/modules-folder-1` … `-5` (see
+[PR stack](#pr-stack)). No Prisma change, no `db:branch`. Pure file moves, import rewrites and one
+lint rule.
 
-**Source:** discussion in session (no issue). The motivation: `src/components/` mixes the shared
+**Written against:** integration @ cef534bd; **revised** 2026-10-15 against integration @ 0eb325d6
+(see [Revision 2026-10-15](#revision-2026-10-15)).
+
+**Source:** discussion in session, then #385. The motivation: `src/components/` mixes the shared
 UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, `skill-track`,
 `system`, `user`, …), and some module-only components sit under `src/app/` beside their routes.
 
@@ -20,8 +24,12 @@ UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, 
   goes in it; no empty `lib/`.
 - **Folder names are `modules.ts` ids, not route segments.** `org-admin` and `system-admin`
   both have segment `admin`. The ids that get folders: `org-admin`, `skill-track`,
-  `skill-package-builder`, `i3`, `d4h-views`, `system-admin`, `profile`, `user-dashboard`.
-  `forms` and `notes` have no UI code, so no folder.
+  `skill-package-builder`, `i3`, `d4h-views`, `notes`, `system-admin`, `user-dashboard`,
+  `user-notes`. `forms` has no UI code, so no folder.
+- **One folder that isn't a registry id: `user-settings`.** The `profile` module was retired in
+  #356 and user settings moved into the user menu, but the `/user/settings/*` pages still have 25
+  files of their own UI. Decided 2026-10-15: they get `src/modules/user-settings/` and the same
+  boundary rule as any module, rather than staying in `src/components/`.
 - **Schemas don't move.** They're per-domain, not per-module (`organization`, `person`, `team`
   are each used by several modules). They stay in `src/lib/schemas/` until the later
   server-by-domain grouping decides where domains live.
@@ -39,15 +47,20 @@ UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, 
     invitations/users/personnel and system-admin members).
   - `components/skill-packages/` (import tooling used by skill-package-builder and
     system-admin) stays where it is.
+  - Notes (decided 2026-10-15): the seven files shared by org notes and personal notes
+    (`note-card`, `note-detail`, `note-editor`, `notes-list`, `notes-breadcrumbs`,
+    `note-gone-boundary`, `deleted-notes`) stay in `src/components/notes/`. The org-only files
+    go to `modules/notes`, the personal-only ones to `modules/user-notes`.
 - **Module-private files under `src/app/` move into the module.** These are the non-route
   `.tsx` files beside pages: 11 in `i3/templates`, 5 in `d4h-views`, 4 in `admin`, 2 in
-  `skill-track`. Pages then import them via `@/modules/…` instead of `./…`.
+  `skill-track`, plus `skill-track/sessions/[session_id]/_prefetch-session-config-dialog.ts` (as of
+  0eb325d6). Pages then import them via `@/modules/…` instead of `./…`.
 - **The boundary is enforced by `eslint-plugin-boundaries`**, which the repo already uses
   (v7.2, `eslint.config.mjs` "Layering" block). It supports captures, so a module can be
   forbidden from importing *another* module while importing itself freely. Allowed:
   - `src/app/**` may import any module (routes are the composition root; also covers
-    `(wrapper)/layout.tsx` → system-admin's impersonation banner and `(authenticated)/layout.tsx`
-    → profile's timezone auto-detect).
+    `(authenticated)/layout.tsx` → system-admin's impersonation banner and user-settings'
+    timezone auto-detect).
   - `src/components/nav/org-sidebar-modules.tsx` and `scope-sidebar-modules.tsx` may import
     modules (they are the sidebar-menu registry).
   - `src/components/docs/demo-*.tsx` may import modules (docs demos render the real component,
@@ -63,13 +76,41 @@ UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, 
   client code across the `"use client"` boundary.
 - **Moves keep each folder's internal structure** (`admin/teams/team-content.tsx` →
   `modules/org-admin/components/teams/team-content.tsx`), so relative imports inside a moved
-  folder stay valid. Files aren't renamed, except `user/profile-sidebar-menu.tsx` →
-  `profile/components/sidebar-menu.tsx` to match every other module. Use `git mv` so history
-  follows.
-- **One branch, one commit per module, one PR.** No open PR touches these folders (checked
-  2026-09-29), and the moves are mechanical, so a stack of PRs would add rebasing cost without
-  better review. Each commit is still reviewable on its own. *(Revisit at pickup if you'd rather
-  split.)*
+  folder stay valid. Files aren't renamed. Use `git mv` so history follows.
+- **A stack of five PRs** (decided 2026-10-15, replacing "one branch, one PR"). Each branch is
+  cut from the previous one and its PR targets it. Only the bottom PR targets `integration`. Each
+  merges after the one below it, with no auto-merge on a PR whose parent is still open. One
+  commit per task inside each PR. See [PR stack](#pr-stack).
+- **#138 comes after this** (decided 2026-10-15). This plan moves UI files only. Route files and
+  layouts stay where Next needs them, so the route-access conversation can build on the new
+  layout.
+
+## PR stack
+
+| PR  | Branch                      | Tasks                                                           |
+| --- | --------------------------- | --------------------------------------------------------------- |
+| 1   | `refactor/modules-folder-1` | 1 (lint boundary, conventions), 2 (shared org UI)               |
+| 2   | `refactor/modules-folder-2` | 3 (skill-package-builder), 6 (i3), 7 (d4h-views), 10 (notes)    |
+| 3   | `refactor/modules-folder-3` | 4 (org-admin)                                                   |
+| 4   | `refactor/modules-folder-4` | 5 (skill-track)                                                 |
+| 5   | `refactor/modules-folder-5` | 8 (system-admin), 9 (user-dashboard, user-settings, user-notes) |
+
+Every PR in the stack touches `nav/org-sidebar-modules.tsx` or `scope-sidebar-modules.tsx` (one
+import line each), so they can't be cut in parallel from `integration` without conflicts.
+
+## Revision 2026-10-15
+
+Re-checked against integration @ 0eb325d6, at pickup for #385:
+
+- `profile` was retired (#356). Task 9 now splits `components/user/` into `user-dashboard` and
+  `user-settings`.
+- Notes gained UI (PR #348), shared by two modules. New Task 10, plus the shared-layer rule above.
+- `src/hooks/use-person.ts` has no importers left. Task 4 deletes it instead of moving it.
+- `skill-track` grew from 34 files to 54, and `admin` from 61 to 70. The tasks move whole folders, so
+  only the `src/app` file lists needed checking. Re-run the listings at the start of each task
+  anyway.
+- `docs/conventions-checklist.md` is on integration now, so Task 1 updates it.
+- The impersonation banner now renders from `(authenticated)/layout.tsx` (PR #393).
 
 ## How to do a move (applies to Tasks 3–9)
 
@@ -94,9 +135,8 @@ UI layer (`ui`, `blocks`, `nav`, …) with per-module feature folders (`admin`, 
 
 ### - [ ] Task 1 — Lint boundary and conventions for `src/modules/`
 
-**Files:** `eslint.config.mjs`, `AGENTS.md`, and `docs/conventions-checklist.md` if it is present
-after syncing with integration and has a file-placement item. It's on the unmerged
-`chore/ship-workflow` branch as of cef534bd.
+**Files:** `eslint.config.mjs`, `AGENTS.md`, `docs/conventions-checklist.md` (add a placement
+item: module-only UI goes in `src/modules/<id>/`, shared UI in `src/components/`).
 
 **Do:**
 - In the "Layering" block: add element
@@ -169,13 +209,12 @@ is empty.
 `orgs/[slug]/admin/organization/--update/update-organization.tsx` →
 `modules/org-admin/components/organization/`;
 `orgs/[slug]/admin/d4h-access-tokens/{d4h-access-tokens-list.tsx,--create/create-d4h-access-token.tsx,[token_id]/access-token-content.tsx}`
-→ `modules/org-admin/components/d4h-access-tokens/`; `src/hooks/use-person.ts` →
-`src/modules/org-admin/lib/use-person.ts` (sole importer: `admin/personnel/[person_id]/history/page.tsx`);
+→ `modules/org-admin/components/d4h-access-tokens/`; `src/hooks/use-person.ts` (no importers left as of 0eb325d6: delete it);
 `src/components/nav/org-sidebar-modules.tsx`; the 14 admin pages;
 `docs/patterns/detail-page-data-fetching.md` (lines ~30–34 name `src/components/admin/…`).
 
-**Do:** Move per "How to do a move". In `use-person.ts`, change `./use-organization` to
-`@/hooks/use-organization`. Update the pattern doc's example paths and its "lives in
+**Do:** Move per "How to do a move". `git rm src/hooks/use-person.ts` after confirming it still
+has no importers. Update the pattern doc's example paths and its "lives in
 `src/components/admin/<domain>/`" guidance to `src/modules/<id>/components/<domain>/`.
 
 **Done when:** `npm run check` passes; `src/components/admin` and `src/hooks/use-person.ts` no
@@ -186,6 +225,7 @@ longer exist.
 **Files:** `src/components/skill-track/**` → `src/modules/skill-track/components/**` (includes
 `reports/` and its tests); `orgs/[slug]/skill-track/checks/checks-list.tsx` and
 `catalogue/catalogue-packages-list.tsx` → `modules/skill-track/components/`;
+`sessions/[session_id]/_prefetch-session-config-dialog.ts` → `modules/skill-track/lib/`;
 `nav/org-sidebar-modules.tsx`; `docs/demo-assessment-row.tsx`; the skill-track pages.
 
 **Do:** Move per "How to do a move". `demo-assessment-row` keeps importing `assessment-row`
@@ -222,7 +262,8 @@ d4h-views pages.
 ### - [ ] Task 8 — Move system-admin
 
 **Files:** `src/components/system/admin/**` → `src/modules/system-admin/components/**`;
-`src/app/(wrapper)/layout.tsx`; `nav/scope-sidebar-modules.tsx`; the system-admin pages;
+`src/app/(wrapper)/(authenticated)/layout.tsx` (the impersonation banner);
+`nav/scope-sidebar-modules.tsx`; the system-admin pages;
 `eslint.config.mjs` (the auth block's `ignores` names
 `src/components/system/admin/impersonation-banner.tsx` and
 `…/users/impersonate-user-dialog.tsx`).
@@ -234,25 +275,43 @@ exemption silently disappears.
 **Done when:** `npm run check` passes; `src/components/system` no longer exists;
 `impersonation-banner.test.tsx` and `user-actions-menu.test.tsx` pass from their new paths.
 
-### - [ ] Task 9 — Split user into profile and user-dashboard
+### - [ ] Task 9 — Split user into user-dashboard and user-settings
 
-**Files:** `src/components/user/user-settings/**` → `src/modules/profile/components/**`
-(drop the `user-settings/` level); `src/components/user/profile-sidebar-menu.tsx` →
-`src/modules/profile/components/sidebar-menu.tsx`;
-`src/components/user/{activity-stats,invitations,org-selector,signed-in-as}.tsx` →
-`src/modules/user-dashboard/components/`; `src/app/(wrapper)/(authenticated)/layout.tsx`,
-`user/page.tsx`, `user/settings/**` pages; `nav/scope-sidebar-modules.tsx`.
+**Files:** `src/components/user/{activity-stats,invitations,org-selector,signed-in-as}.tsx` →
+`src/modules/user-dashboard/components/`; `src/components/user/user-settings/**` →
+`src/modules/user-settings/components/**` (drop the `user-settings/` level);
+`src/app/(wrapper)/(authenticated)/layout.tsx` (timezone auto-detect), `user/page.tsx`,
+`user/settings/**` pages; `nav/scope-sidebar-modules.tsx` and the user menu if they import any
+of it.
 
-**Do:** Move per "How to do a move". Check first that the four dashboard cards don't import
-anything under `user-settings/`, and vice versa. A cross-import between them has to go to the
-shared layer, per the Decisions.
+**Do:** Move per "How to do a move". As of 0eb325d6 the dashboard cards and the settings files
+don't import each other. Check again, because a cross-import has to go to the shared layer.
 
-**Done when:** `npm run check -- --all` passes; `src/components/user` no longer exists;
-`ls src/components` shows no module folders (only the shared layer and the non-module areas
-listed in Decisions). Smoke-load one page per module on the worktree dev server (org-admin
-personnel, skill-track sessions, skill-package-builder, i3 templates, d4h-views teams,
-system-admin users, `/user`, `/user/settings/account`) and confirm each renders without a
-console error. A moved `"use client"` file can surface only at runtime.
+**Done when:** `npm run check` passes; `src/components/user` no longer exists.
+
+### - [ ] Task 10 — Move notes and user-notes
+
+**Files:** from `src/components/notes/`: `org-note-content`, `org-note-history-content`,
+`org-notes-list`, `notes-module-gate`, `delete-org-note-dialog` → `src/modules/notes/components/`;
+`user-note-content`, `user-note-history-content`, `user-notes-list`, `delete-user-note-dialog` →
+`src/modules/user-notes/components/`; the notes layouts and pages under `orgs/[slug]/notes` and
+`user/notes`.
+
+**Do:** Move per "How to do a move", **per file**. The shared seven stay in
+`src/components/notes/`, so a folder-wide sed would rewrite their importers wrongly. The moved
+files' `./note-detail`-style imports of the shared files become `@/components/notes/…`. A shared
+file that imports a moved one (none as of 0eb325d6) would break the boundary. Stop and report it.
+
+**Done when:** `npm run check -- --all` passes (this is PR 2's last task).
+
+### After PR 5
+
+`npm run check -- --all` passes and `ls src/components` shows no module folders, only the shared
+layer and the non-module areas listed in Decisions. Smoke-load one page per module on the
+worktree dev server and confirm each renders without a console error, since a moved
+`"use client"` file can surface only at runtime. The pages: org-admin personnel, skill-track
+sessions, skill-package-builder, i3 templates, d4h-views teams, notes, system-admin users,
+`/user`, `/user/notes` and `/user/settings/account`.
 
 ---
 
@@ -261,7 +320,7 @@ console error. A moved `"use client"` file can surface only at runtime.
 - Moving schemas (`src/lib/schemas/`) or grouping server code (`services`, `routers`) by domain.
   That comes after the service-layer rollout.
 - `d4h-today`, `components/organization` (org dashboard), `auth`, `invitations`, `docs`,
-  `marketing`, `playground`, `system/scratch`.
+  `marketing`, `history`, `whats-new`, `playground`, `system/scratch`.
 - Renaming files or components (e.g. `AdminModule_*` component names), or restructuring
   inside a moved folder beyond flattening `app/` dynamic-segment folders.
 - Updating historical `docs/plans|reviews|specs|ideas|research` that mention old paths.
