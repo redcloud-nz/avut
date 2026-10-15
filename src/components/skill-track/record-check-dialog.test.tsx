@@ -96,6 +96,16 @@ describe("SkillTrack_RecordCheckDialog", () => {
         );
     });
 
+    it("circles only the selected result", () => {
+        renderDialog({ current: { result: "Fail", notes: "" } });
+
+        const circles = document.querySelectorAll('[data-slot="pencil-circle"]');
+        expect(circles).toHaveLength(1);
+        expect(screen.getByRole("button", { name: "Not Yet" })).toContainElement(
+            circles[0] as HTMLElement,
+        );
+    });
+
     it("stages a result and notes, and saves them once", async () => {
         const user = userEvent.setup();
         const { onRecord, onOpenChange } = renderDialog();

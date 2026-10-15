@@ -158,7 +158,7 @@ function ConfigRow({
             permissions={{ skillCheckSession: ["update"] }}
             render={(hasPermission) =>
                 hasPermission && !locked ? (
-                    <Item size="sm" asChild className="cursor-pointer text-left hover:bg-muted">
+                    <Item size="sm" asChild className="cursor-pointer text-left">
                         <button type="button" aria-haspopup="dialog" onClick={() => open(action)}>
                             {content}
                             <ItemActions>

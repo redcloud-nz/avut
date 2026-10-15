@@ -307,7 +307,7 @@ export function SkillTrack_SessionByPerson_Content({
                                 )
                             }
                         >
-                            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_2fr] rounded-xl bg-card p-4 ring-1 ring-foreground/10">
                                 <div>
                                     <FieldGroup className="block lg:hidden">
                                         <Field>
@@ -339,10 +339,8 @@ export function SkillTrack_SessionByPerson_Content({
                                             <Item
                                                 key={person.id}
                                                 asChild
-                                                variant={
-                                                    person.id === selected?.personId
-                                                        ? "outline"
-                                                        : "default"
+                                                data-active={
+                                                    person.id === selected?.personId || undefined
                                                 }
                                             >
                                                 <a
@@ -364,7 +362,7 @@ export function SkillTrack_SessionByPerson_Content({
                                 </div>
                                 <Separator orientation="vertical" className="hidden lg:block" />
                                 <Separator orientation="horizontal" className="block lg:hidden" />
-                                <div className="w-full flex flex-col gap-5">
+                                <div className="flex w-full flex-col gap-5">
                                     {match(selected)
                                         .with(null, () => (
                                             <Empty>

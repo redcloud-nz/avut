@@ -6,7 +6,7 @@
 "use client";
 
 import { useQueryState } from "nuqs";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -46,13 +46,39 @@ import { TeamId } from "@/lib/schemas/team";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
-const stickyFirstCol = "sticky left-0 z-10 bg-background";
+// Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card
+// colour as a gradient, since a translucent background would let them show through.
+const stickyFirstCol =
+    "sticky left-0 z-10 bg-card group-hover/row:bg-linear-to-r group-hover/row:from-accent/50 group-hover/row:to-accent/50";
 
 // `PERSON_HEADER_HEIGHT` must match the height `DiagonalColumnHeader` actually renders
 // for `headerHeight` — it's the offset the sticky group headings pin beneath.
 const PERSON_HEADER_HEIGHT = 130;
 const SKILL_COL_WIDTH = 220;
+// The row-heading cell's chrome — the trigger's `px-3` (24px) plus the cell's `border-r` (1px).
+// The label box is narrowed by this so the column stays SKILL_COL_WIDTH, the width
+// `DiagonalLeadColumnHeader` draws its slanted edge at; any wider and a gap opens between it
+// and the first diagonal column.
+const SKILL_CELL_CHROME = 25;
 const PERSON_COL_WIDTH = 50;
+
+/**
+ * Column hover for the matrix: when any person cell in column `i` is hovered, tint every cell
+ * in that column and its diagonal header, and colour the person's name. One `:has()` rule per
+ * column, scoped to the table carrying `data-column-hover`, so hovering re-renders nothing.
+ * Pairs with the row hover for a crosshair. The header tint is a gradient over its opaque
+ * background, which has to keep covering the cells scrolled beneath the sticky header.
+ */
+function columnHoverCss(columnCount: number): string {
+    return Array.from({ length: columnCount }, (_, i) => {
+        const hovered = `[data-column-hover]:has(td[data-col="${i}"]:hover)`;
+        return [
+            `${hovered} td[data-col="${i}"] { background-color: var(--column-hover); }`,
+            `${hovered} th[data-col="${i}"] [data-slot="diagonal-column-header-bg"] { background-image: linear-gradient(var(--column-hover), var(--column-hover)); }`,
+            `${hovered} th[data-col="${i}"] [data-slot="diagonal-column-header-label"] { color: var(--accent-foreground); }`,
+        ].join("\n");
+    }).join("\n");
+}
 
 export function SkillTrack_SkillMatrixReport({
     syntheticChecksEnabled,
@@ -239,7 +265,16 @@ function SkillMatrixReportView({
                     </Empty>
                 ) : (
                     <Glorious.ScrollFrame>
-                        <Glorious.Table>
+                        <style>{columnHoverCss(people.length)}</style>
+                        <Glorious.Table
+                            data-column-hover
+                            style={
+                                {
+                                    "--column-hover":
+                                        "color-mix(in oklab, var(--accent) 50%, transparent)",
+                                } as CSSProperties
+                            }
+                        >
                             <colgroup>
                                 <col style={{ width: SKILL_COL_WIDTH }} />
                                 {people.map((person) => (
@@ -254,9 +289,10 @@ function SkillMatrixReportView({
                                         columnWidth={SKILL_COL_WIDTH}
                                     />
                                 </th>
-                                {people.map((person) => (
+                                {people.map((person, i) => (
                                     <th
                                         key={person.id}
+                                        data-col={i}
                                         className="sticky top-0 z-20 p-0 font-medium border-b"
                                     >
                                         <DiagonalColumnHeader
@@ -275,7 +311,7 @@ function SkillMatrixReportView({
                                     colSpan={people.length + 1}
                                 >
                                     {section.skills.map((skill) => (
-                                        <tr key={skill.id} className="hover:bg-muted/40">
+                                        <tr key={skill.id} className="group/row hover:bg-accent/50">
                                             <th
                                                 scope="row"
                                                 className={cn(
@@ -289,7 +325,10 @@ function SkillMatrixReportView({
                                                     className="block px-3 py-1.5 text-left hover:underline"
                                                 >
                                                     <div
-                                                        style={{ width: SKILL_COL_WIDTH }}
+                                                        style={{
+                                                            width:
+                                                                SKILL_COL_WIDTH - SKILL_CELL_CHROME,
+                                                        }}
                                                         className="max-w-full"
                                                     >
                                                         <div className="truncate">{skill.name}</div>
@@ -310,6 +349,7 @@ function SkillMatrixReportView({
                                                 return (
                                                     <td
                                                         key={person.id}
+                                                        data-col={i}
                                                         className={cn(
                                                             "border-b px-2 py-1.5 text-center",
                                                             i > 0 && "border-l",

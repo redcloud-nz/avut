@@ -181,7 +181,8 @@ export function SkillTrack_RecordingOptionsSheet({
                                         <Button
                                             key={itemMode}
                                             asChild={!isApproved}
-                                            variant={current ? "outline" : "ghost"}
+                                            variant="ghost"
+                                            data-active={current || undefined}
                                             disabled={isApproved}
                                             aria-current={
                                                 isApproved && current ? "page" : undefined
@@ -222,7 +223,7 @@ export function SkillTrack_RecordingOptionsSheet({
                                     return (
                                         <Button
                                             key={value}
-                                            variant={isSelected ? "outline" : "ghost"}
+                                            variant="ghost"
                                             aria-pressed={isSelected}
                                             className={TILE_CLASS}
                                             onClick={() => view.onSkillOrderChange(value)}
@@ -254,7 +255,7 @@ export function SkillTrack_RecordingOptionsSheet({
                                             <Item
                                                 asChild
                                                 size="sm"
-                                                className="text-left enabled:hover:bg-muted disabled:opacity-50"
+                                                className="text-left disabled:opacity-50"
                                             >
                                                 <button
                                                     type="button"

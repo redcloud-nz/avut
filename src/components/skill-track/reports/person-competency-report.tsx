@@ -85,9 +85,12 @@ export function SkillTrack_PersonCompetencyReport({
 // sticky group headings pin beneath.
 const HEADER_HEIGHT = 36;
 
-const stickyFirstCol = "sticky left-0 z-10 bg-background";
+// Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card
+// colour as a gradient, since a translucent background would let them show through.
+const stickyFirstCol =
+    "sticky left-0 z-10 bg-card group-hover/row:bg-linear-to-r group-hover/row:from-accent/50 group-hover/row:to-accent/50";
 const headCell =
-    "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
+    "h-9 border-b bg-card px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
 
 function PersonCompetencyReportView({
     personId,
@@ -297,7 +300,7 @@ function PersonCompetencyReportView({
                                     colSpan={3}
                                 >
                                     {section.rows.map(({ skill, competency, status }) => (
-                                        <tr key={skill.id} className="hover:bg-muted/40">
+                                        <tr key={skill.id} className="group/row hover:bg-accent/50">
                                             <th
                                                 scope="row"
                                                 className={cn(
