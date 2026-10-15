@@ -15,6 +15,11 @@ import { useMutation } from "@tanstack/react-query";
 
 import { invitationsEffects } from "@/client/invitations-effects";
 import { ObjectIcons } from "@/components/icons";
+import {
+    InvitationRoleFields,
+    invitationRoles,
+    invitationRolesSchema,
+} from "@/components/organization-roles/invitation-role-fields";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
@@ -34,12 +39,6 @@ import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { trpc } from "@/trpc/client";
-
-import {
-    InvitationRoleFields,
-    invitationRoles,
-    invitationRolesSchema,
-} from "./invitation-role-fields";
 
 export function AdminModule_CreateInvitation_Dialog() {
     const organization = useOrganization();

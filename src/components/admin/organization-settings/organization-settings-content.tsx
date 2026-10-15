@@ -9,15 +9,14 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import {
+    getOrganizationSettingsFormSections,
+    OrganizationSettingsForm,
+} from "@/components/organization-settings/organization-settings-form";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-
-import {
-    getOrganizationSettingsFormSections,
-    OrganizationSettingsForm,
-} from "./organization-settings-form";
 
 export function AdminModule_Settings_Content() {
     const organization = useOrganization();

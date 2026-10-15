@@ -13,11 +13,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { organizationsEffects } from "@/client/organizations-effects";
+import { ObjectIcons } from "@/components/icons";
 import {
     memberRolesSchema,
     RoleFields,
-} from "@/components/admin/invitations/invitation-role-fields";
-import { ObjectIcons } from "@/components/icons";
+} from "@/components/organization-roles/invitation-role-fields";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,

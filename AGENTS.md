@@ -6,6 +6,15 @@ A Next.js web application providing organizational management tools with optiona
 
 All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 
+### Modules
+
+UI code private to one module lives in `src/modules/<module-id>/`: components in `components/`, other module-private code (hooks, helpers) in `lib/`. Create a subfolder only when something goes in it. Folders use `modules.ts` ids, not route segments (`org-admin` and `system-admin` both have segment `admin`). The one folder that isn't a registry id is `user-settings`, for the `/user/settings/*` pages.
+
+- UI that more than one module uses lives in `src/components/` (the shared layer), never in either module. So do areas that aren't modules (`auth`, `invitations`, `docs`, `marketing`, the org dashboard).
+- Schemas stay in `src/lib/schemas/`: they're per domain, not per module.
+- A module never imports another module (lint). Outside `src/app`, which may import any module, only the sidebar-menu registry (`nav/{org,scope}-sidebar-modules.tsx`) and the docs demos (`docs/demo-*.tsx`) may import from `src/modules/`.
+- No barrel `index.ts` files: import each file directly.
+
 `src/generated/` (the Prisma client and `dmmf.ts`) is generated and gitignored — never edit it manually. `npm install` regenerates it; after switching to a branch that changes `prisma/schema.prisma`, run `npx prisma generate` yourself or the client and mock metadata will be stale.
 
 ---
@@ -256,7 +265,7 @@ Render an entity's name as a link to its detail page with the wrappers in `src/c
 
 The app has three real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
 
-`src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere.
+`src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere. A module's UI code lives in `src/modules/<module-id>/` (see [Modules](#modules)).
 
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
 - Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules

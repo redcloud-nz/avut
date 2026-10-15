@@ -16,7 +16,7 @@ import {
     InvitationRoleFields,
     invitationRoles,
     invitationRolesSchema,
-} from "@/components/admin/invitations/invitation-role-fields";
+} from "@/components/organization-roles/invitation-role-fields";
 import { MutationButton } from "@/components/ui/button";
 import {
     Dialog,
