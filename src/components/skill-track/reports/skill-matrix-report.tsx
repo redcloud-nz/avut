@@ -60,6 +60,7 @@ const SKILL_COL_WIDTH = 220;
 // `DiagonalLeadColumnHeader` draws its slanted edge at; any wider and a gap opens between it
 // and the first diagonal column.
 const SKILL_CELL_CHROME = 25;
+const PERSON_COL_WIDTH = 50;
 
 /**
  * Column hover for the matrix: when any person cell in column `i` is hovered, tint every cell
@@ -78,7 +79,6 @@ function columnHoverCss(columnCount: number): string {
         ].join("\n");
     }).join("\n");
 }
-const PERSON_COL_WIDTH = 50;
 
 export function SkillTrack_SkillMatrixReport({
     syntheticChecksEnabled,
