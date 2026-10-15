@@ -8,11 +8,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { ObjectHistory } from "@/components/history/object-history";
+import { isNoteNotFound, NoteGoneBoundary } from "@/components/notes/note-gone-boundary";
 import { useOrganization } from "@/hooks/use-organization";
 import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { trpc } from "@/trpc/client";
-
-import { isNoteNotFound, NoteGoneBoundary } from "./note-gone-boundary";
 
 /**
  * An org note's History, in the notes detail pane. The notes layout supplies the navbar (whose

@@ -301,7 +301,7 @@ don't import each other. Check again, because a cross-import has to go to the sh
 
 **Done when:** `npm run check` passes; `src/components/user` no longer exists.
 
-### - [ ] Task 10 — `mechanical` — Move notes and user-notes
+### - [x] Task 10 — `mechanical` — Move notes and user-notes
 
 **Files:** from `src/components/notes/`: `org-note-content`, `org-note-history-content`,
 `org-notes-list`, `notes-module-gate`, `delete-org-note-dialog` → `src/modules/notes/components/`;

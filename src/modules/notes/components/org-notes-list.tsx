@@ -11,13 +11,12 @@ import { ReactNode } from "react";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { organizationNotesEffects } from "@/client/organization-notes-effects";
+import { NotesBreadcrumbs } from "@/components/notes/notes-breadcrumbs";
+import { NotesList } from "@/components/notes/notes-list";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-
-import { NotesBreadcrumbs } from "./notes-breadcrumbs";
-import { NotesList } from "./notes-list";
 
 function useOrgNotes() {
     const organization = useOrganization();

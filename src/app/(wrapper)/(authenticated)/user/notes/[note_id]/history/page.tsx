@@ -8,9 +8,9 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { UserNoteHistory_Content } from "@/components/notes/user-note-history-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { UserNoteId } from "@/lib/schemas/user-note";
+import { UserNoteHistory_Content } from "@/modules/user-notes/components/user-note-history-content";
 import { resolveUserModuleFlags } from "@/server/module-flags";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
