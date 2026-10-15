@@ -6,12 +6,12 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
 import {
     getOrganizationSettingsFormSections,
     OrganizationSettingsForm,
-} from "@/components/admin/organization-settings/organization-settings-form";
-import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
+} from "@/components/organization-settings/organization-settings-form";
 import type { ModuleFlagState } from "@/lib/module-flags";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";

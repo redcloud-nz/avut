@@ -174,7 +174,7 @@ whether or not the rule works. Then: `x.tsx` importing `@/modules/b/components/y
 `src/components/ui/probe.tsx` importing `@/modules/a/components/x` fails, and the same import
 from `src/components/nav/org-sidebar-modules.tsx` passes. Report the three outputs.
 
-### - [ ] Task 2 — `mechanical` — Extract shared org UI out of `components/admin`
+### - [x] Task 2 — `mechanical` — Extract shared org UI out of `components/admin`
 
 **Files:** `src/components/admin/organization-settings/*` (all but
 `organization-settings-content.tsx`) → `src/components/organization-settings/`;

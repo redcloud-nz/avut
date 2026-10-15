@@ -14,13 +14,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { organizationsEffects } from "@/client/organizations-effects";
+import { CreateNewIcon } from "@/components/icons";
 import {
     invitationRoles,
     invitationRolesSchema,
     RoleFields,
     type InvitationRolesFormValues,
-} from "@/components/admin/invitations/invitation-role-fields";
-import { CreateNewIcon } from "@/components/icons";
+} from "@/components/organization-roles/invitation-role-fields";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
     Dialog,
