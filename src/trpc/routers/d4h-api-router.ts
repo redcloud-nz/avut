@@ -6,8 +6,6 @@
 import * as R from "remeda";
 import * as z from "zod";
 
-import { TRPCError } from "@trpc/server";
-
 import {
     buildD4HToday,
     D4HTodayActivityInput,
@@ -23,11 +21,7 @@ import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HTeam, D4HTeamRef } from "@/lib/schemas/d4h/team";
-import {
-    getConfiguredD4HAccessToken,
-    getPersonalD4HAccessTokenForUser,
-    toD4HCredentialRef,
-} from "@/server/d4h-access-token";
+import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
     D4HListResponse,
     fetchD4HMemberAttendance,
@@ -74,15 +68,7 @@ export const d4hApiRouter = createTrpcRouter({
             ),
         )
         .query(async ({ ctx }) => {
-            const accessToken = await getPersonalD4HAccessTokenForUser(
-                ctx.organizationId,
-                ctx.userId,
-            );
-            if (!accessToken)
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "No personal D4H Access Token found for user",
-                });
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
             return d4HTeams;

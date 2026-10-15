@@ -13,7 +13,7 @@ import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
-import { getPersonalD4HAccessTokenForUser } from "@/server/d4h-access-token";
+import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
 import * as D4HTeamSync from "@/server/services/d4h-team-sync";
@@ -66,13 +66,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            const token = await getPersonalD4HAccessTokenForUser(organizationId, ctx.userId);
-            if (!token) {
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "No personal D4H Access Token found for user",
-                });
-            }
+            const token = await getConfiguredD4HAccessToken(organizationId, ctx.userId);
 
             const batch = await createLogBatch(
                 {
@@ -626,13 +620,7 @@ export const teamsRouter = createTrpcRouter({
                 });
             }
 
-            const token = await getPersonalD4HAccessTokenForUser(organizationId, ctx.userId);
-            if (!token) {
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "No personal D4H Access Token found for user",
-                });
-            }
+            const token = await getConfiguredD4HAccessToken(organizationId, ctx.userId);
 
             return D4HTeamSync.planD4HSync(ctx, { teamD4H: team.d4h, token });
         }),

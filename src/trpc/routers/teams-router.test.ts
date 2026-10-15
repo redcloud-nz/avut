@@ -20,7 +20,7 @@ import { teamsRouter } from "./teams-router";
 // under jsdom.
 vi.mock("server-only", () => ({}));
 
-// The D4H linking procedures touch only getPersonalD4HAccessTokenForUser and the
+// The D4H linking procedures touch only getConfiguredD4HAccessToken and the
 // cached fetch helpers in @/server/d4h-api/client — stubbed here (same pattern as
 // d4h-access-tokens-router.test.ts) rather than a live D4H client.
 const grace = {
@@ -53,7 +53,7 @@ vi.mock("@/server/d4h-api/client", () => ({
 }));
 
 vi.mock("@/server/d4h-access-token", () => ({
-    getPersonalD4HAccessTokenForUser: vi.fn(async () => ({
+    getConfiguredD4HAccessToken: vi.fn(async () => ({
         id: "d4h-token-fixture-id",
         organizationId: null,
         userId: null,

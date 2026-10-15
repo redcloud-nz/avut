@@ -12,6 +12,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import {
     ConflictError,
     ForbiddenError,
+    NotConfiguredError,
     NotFoundError,
     PreconditionError,
     StalePlanError,
@@ -101,7 +102,7 @@ export const publicProcedure = t.procedure
             if (cause instanceof ValidationError) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: cause.message, cause });
             }
-            if (cause instanceof PreconditionError) {
+            if (cause instanceof PreconditionError || cause instanceof NotConfiguredError) {
                 throw new TRPCError({ code: "PRECONDITION_FAILED", message: cause.message, cause });
             }
             if (cause instanceof StalePlanError) {

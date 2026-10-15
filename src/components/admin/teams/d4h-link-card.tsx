@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
+import { Alert } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -208,12 +209,13 @@ function LinkDialog({
     const organization = useOrganization();
     const [d4hTeamId, setD4hTeamId] = useState<number | null>(null);
 
-    const { data: availableTeams = [] } = useQuery(
+    const teamsQuery = useQuery(
         trpc.d4hApi.listTeamsAccessibleToUser.queryOptions(
             { organizationId: organization.id },
             { enabled: open },
         ),
     );
+    const availableTeams = teamsQuery.data ?? [];
 
     const mutation = useMutation(
         trpc.teams.linkTeamToD4H.mutationOptions({
@@ -253,10 +255,14 @@ function LinkDialog({
                     <DialogTitle>Link {team.name} to D4H</DialogTitle>
                     <DialogDescription>
                         Choose a D4H team visible to your personal access token. Its members will be
-                        imported and kept in sync on demand.
+                        imported and kept in sync on demand. Syncing always uses the token of
+                        whoever runs it.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
+                    {teamsQuery.isError && (
+                        <Alert variant="error">{teamsQuery.error.message}</Alert>
+                    )}
                     <Select
                         value={d4hTeamId ? String(d4hTeamId) : ""}
                         onValueChange={(v) => setD4hTeamId(Number(v))}
