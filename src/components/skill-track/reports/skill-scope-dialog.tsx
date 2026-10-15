@@ -198,9 +198,9 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
                     </SelectContent>
                 </Select>
             </div>
-            <Command>
+            <Command className="max-sm:min-h-0 max-sm:flex-1">
                 <CommandInput placeholder="Search skills…" />
-                <CommandList className="h-72">
+                <CommandList className="max-sm:max-h-none max-sm:flex-1 sm:h-72">
                     <CommandEmpty>No skills match your search.</CommandEmpty>
                     {groupSections.map((section) => (
                         <CommandGroup key={section.id} heading={section.label}>
