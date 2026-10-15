@@ -14,6 +14,10 @@
 
 :root {
   --radius: 0.45rem;
+  /* Height of the impersonation banner while it's shown, 0 otherwise. The shell offsets its
+     fixed sidebar and full-height inset by it (#87). Set by CSS rather than the banner's own
+     JS, so the server-rendered shell already has it. */
+  --impersonation-h: 0px;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -72,6 +76,10 @@
   /* Shell surfaces: the navbar frames the page alongside the sidebar; the page recedes behind both. */
   --navbar: oklch(1 0 0);
   --page: oklch(0.975 0.0042 236.4993);
+}
+
+:root:has([data-slot="impersonation-banner"]) {
+  --impersonation-h: 2.25rem;
 }
 
 .dark {

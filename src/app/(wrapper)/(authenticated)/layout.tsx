@@ -16,6 +16,7 @@ import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
 import { ScopeSwitcher, ScopeSwitcher_Skeleton } from "@/components/nav/scope-switcher";
 import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
 import { UserMenu, UserMenu_Skeleton } from "@/components/nav/user-menu";
+import { ImpersonationBanner } from "@/components/system/admin/impersonation-banner";
 import {
     Sidebar,
     SidebarContent,
@@ -93,6 +94,8 @@ export default async function AuthenticatedLayout(props: {
             {/* Adopts the browser's zone as `display.timeZone` on a user's first visit with no
                 saved preference — see the component's own docstring. Renders nothing. */}
             <TimeZoneAutoDetect />
+            {/* Below the awaited `getSession` above, so it reads the hydrated session (#347). */}
+            <ImpersonationBanner />
             <SidebarPortalProvider>
                 <WhatsNewProvider>
                     <Sidebar>
