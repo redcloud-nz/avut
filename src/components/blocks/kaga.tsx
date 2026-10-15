@@ -66,41 +66,46 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
     const isEmpty = table.getRowCount() == 0;
 
     return (
-        <Table>
-            <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id} className="">
-                        {headerGroup.headers.map((header) => (
-                            <KagaTableHeadCell key={header.id} header={header} />
-                        ))}
-                    </TableRow>
-                ))}
-            </TableHeader>
-            <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => {
-                            const { columnDef } = cell.column;
-                            return (
-                                <TableCell key={cell.id} {...(columnDef.meta?.cellProps ?? {})}>
-                                    {flexRender(columnDef.cell, cell.getContext())}
-                                </TableCell>
-                            );
-                        })}
-                    </TableRow>
-                ))}
-                {isEmpty && (
-                    <TableRow>
-                        <TableCell
-                            colSpan={table.getVisibleFlatColumns().length}
-                            className="text-center"
-                        >
-                            No results found
-                        </TableCell>
-                    </TableRow>
-                )}
-            </TableBody>
-        </Table>
+        <div
+            data-slot="kaga-table-surface"
+            className="mt-2 overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10"
+        >
+            <Table>
+                <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                            {headerGroup.headers.map((header) => (
+                                <KagaTableHeadCell key={header.id} header={header} />
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableHeader>
+                <TableBody>
+                    {table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                            {row.getVisibleCells().map((cell) => {
+                                const { columnDef } = cell.column;
+                                return (
+                                    <TableCell key={cell.id} {...(columnDef.meta?.cellProps ?? {})}>
+                                        {flexRender(columnDef.cell, cell.getContext())}
+                                    </TableCell>
+                                );
+                            })}
+                        </TableRow>
+                    ))}
+                    {isEmpty && (
+                        <TableRow>
+                            <TableCell
+                                colSpan={table.getVisibleFlatColumns().length}
+                                className="text-center"
+                            >
+                                No results found
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </div>
     );
 }
 
@@ -138,7 +143,7 @@ function KagaTableHeadCell<TData extends RowData>({
                     <button
                         type="button"
                         data-slot="table-head-cell-content"
-                        className="flex h-10 w-full items-center gap-1.5 px-2 text-left font-medium outline-none select-none hover:bg-muted/50 focus-visible:bg-muted/50"
+                        className="flex h-10 w-full items-center gap-1.5 px-2 text-left font-medium outline-none select-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
                     >
                         <span className="truncate">{label}</span>
                         {isSorted == "asc" && (
@@ -337,10 +342,7 @@ function KagaTablePagination<TData extends RowData>({
     const endRowIndex = Math.min(startRowIndex + pagination.pageSize, rowCount);
 
     return (
-        <div
-            className={cn("grid grid-cols-2 items-center text-sm p-2 border-t", className)}
-            {...props}
-        >
+        <div className={cn("grid grid-cols-2 items-center text-sm p-2", className)} {...props}>
             <div
                 className={cn(
                     "flex gap-1 lg:gap-1.5 text-muted-foreground",

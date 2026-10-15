@@ -116,6 +116,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                                         <FieldLabel htmlFor="person-name">Name</FieldLabel>
                                         <Input
                                             id="person-name"
+                                            ignorePasswordManagers
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
@@ -134,6 +135,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                                         <Input
                                             id="person-email"
                                             type="email"
+                                            ignorePasswordManagers
                                             aria-invalid={fieldState.invalid}
                                             className="min-w-1/2"
                                             {...field}

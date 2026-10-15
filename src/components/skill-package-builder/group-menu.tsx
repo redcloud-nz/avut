@@ -6,20 +6,8 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-    MenuAction,
-    useMenuActionHotkeys,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { ObjectIcons } from "@/components/icons";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -83,25 +71,9 @@ export function SkillPackageBuilder_Group_Menu({
         });
     }
 
-    useMenuActionHotkeys(actions, "Groups");
-
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40" align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuGroup>
-                        {actions.map((a) => (
-                            <MenuAction key={a.verb} {...a} />
-                        ))}
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu actions={actions} category="Groups" width="w-40" />
 
             <SkillPackageBuilder_DeleteSkillGroup_Dialog
                 skillGroup={skillGroup}

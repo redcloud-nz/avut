@@ -8,12 +8,14 @@
 import { I3Module_IssueItems_FormInstanceList } from "@/components/i3/issue-items-form-list";
 import { I3IssueItemsForm } from "@/lib/forms";
 import { getOrganizationBySlug } from "@/server/cache/organization";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export default async function I3Module_Issue_FormInstanceList_Page(
     props: PageProps<"/orgs/[slug]/i3/forms/issue-items">,
 ) {
     const { slug } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
     prefetch(

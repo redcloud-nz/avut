@@ -57,7 +57,7 @@ export function SkillTrack_ChangeSessionSkills_Dialog({
 
     return (
         <Dialog {...props}>
-            <DialogContent className="sm:max-w-md" {...returnFocus}>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Change skills</DialogTitle>
                     <DialogDescription>

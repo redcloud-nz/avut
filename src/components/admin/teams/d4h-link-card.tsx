@@ -8,7 +8,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons } from "@/components/icons";
@@ -32,6 +32,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import {
     Select,
     SelectContent,
@@ -205,14 +206,33 @@ function LinkDialog({
     open: boolean;
     onClose: () => void;
 }) {
+    return (
+        <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Link {team.name} to D4H</DialogTitle>
+                    <DialogDescription>
+                        Choose a D4H team visible to your personal access token. Its members will be
+                        imported and kept in sync on demand. Syncing always uses the token of
+                        whoever runs it.
+                    </DialogDescription>
+                </DialogHeader>
+                {/* Mounted only while open, so the D4H team list loads (and its errors, such as no
+                    personal token, show) only once the dialog opens. */}
+                <DialogBoundary>
+                    <LinkDialog_Body team={team} onClose={onClose} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function LinkDialog_Body({ team, onClose }: { team: TeamData; onClose: () => void }) {
     const organization = useOrganization();
     const [d4hTeamId, setD4hTeamId] = useState<number | null>(null);
 
-    const { data: availableTeams = [] } = useQuery(
-        trpc.d4hApi.listTeamsAccessibleToUser.queryOptions(
-            { organizationId: organization.id },
-            { enabled: open },
-        ),
+    const { data: availableTeams } = useSuspenseQuery(
+        trpc.d4hApi.listTeamsAccessibleToUser.queryOptions({ organizationId: organization.id }),
     );
 
     const mutation = useMutation(
@@ -238,60 +258,43 @@ function LinkDialog({
         }),
     );
 
-    useEffect(() => {
-        if (open) {
-            setD4hTeamId(null);
-            mutation.reset();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
-
     return (
-        <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Link {team.name} to D4H</DialogTitle>
-                    <DialogDescription>
-                        Choose a D4H team visible to your personal access token. Its members will be
-                        imported and kept in sync on demand.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogBody>
-                    <Select
-                        value={d4hTeamId ? String(d4hTeamId) : ""}
-                        onValueChange={(v) => setD4hTeamId(Number(v))}
-                    >
-                        <SelectTrigger disabled={availableTeams.length === 0}>
-                            <SelectValue placeholder="Select a D4H team" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableTeams.map((t) => (
-                                <SelectItem key={t.id} value={String(t.id)}>
-                                    {t.title}
-                                    {t.owner ? ` — ${t.owner.title}` : " — (org-less)"}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </DialogBody>
-                <DialogFooter>
-                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <MutationButton
-                        status={mutation.status}
-                        disabled={d4hTeamId == null}
-                        text={{ idle: "Link & sync", pending: "Linking…", success: "Linked" }}
-                        onClick={() =>
-                            d4hTeamId != null &&
-                            mutation.mutate({
-                                organizationId: organization.id,
-                                teamId: team.id,
-                                d4hTeamId,
-                            })
-                        }
-                    />
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <>
+            <DialogBody>
+                <Select
+                    value={d4hTeamId ? String(d4hTeamId) : ""}
+                    onValueChange={(v) => setD4hTeamId(Number(v))}
+                >
+                    <SelectTrigger disabled={availableTeams.length === 0}>
+                        <SelectValue placeholder="Select a D4H team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {availableTeams.map((t) => (
+                            <SelectItem key={t.id} value={String(t.id)}>
+                                {t.title}
+                                {t.owner ? ` — ${t.owner.title}` : " — (org-less)"}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </DialogBody>
+            <DialogFooter>
+                <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                <MutationButton
+                    status={mutation.status}
+                    disabled={d4hTeamId == null}
+                    text={{ idle: "Link & sync", pending: "Linking…", success: "Linked" }}
+                    onClick={() =>
+                        d4hTeamId != null &&
+                        mutation.mutate({
+                            organizationId: organization.id,
+                            teamId: team.id,
+                            d4hTeamId,
+                        })
+                    }
+                />
+            </DialogFooter>
+        </>
     );
 }
 

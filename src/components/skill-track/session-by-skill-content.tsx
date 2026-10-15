@@ -219,11 +219,7 @@ export function SkillTrack_SessionBySkill_Content({
     const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
 
     const renderSkillItem = (skill: (typeof sessionSkills)[number]) => (
-        <Item
-            key={skill.id}
-            asChild
-            variant={skill.id === selected?.skillId ? "outline" : "default"}
-        >
+        <Item key={skill.id} asChild data-active={skill.id === selected?.skillId || undefined}>
             <a
                 onClick={() => {
                     handleSwitchSkill(skill.id);
@@ -331,7 +327,7 @@ export function SkillTrack_SessionBySkill_Content({
                                 )
                             }
                         >
-                            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_2fr] gap-4">
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_2fr] rounded-xl bg-card p-4 ring-1 ring-foreground/10">
                                 <div>
                                     <FieldGroup className="block lg:hidden">
                                         <Field>
@@ -470,7 +466,7 @@ export function SkillTrack_SessionBySkill_Content({
                                 </div>
                                 <Separator orientation="vertical" className="hidden lg:block" />
                                 <Separator orientation="horizontal" className="block lg:hidden" />
-                                <div className="flex flex-col gap-5">
+                                <div className="flex w-full flex-col gap-5">
                                     {match(selected)
                                         .with(null, () => (
                                             <Empty>

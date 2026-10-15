@@ -179,7 +179,7 @@ export async function getConfiguredD4HAccessToken(
 
     if (!personalToken) {
         throw new NotConfiguredError(
-            "No personal D4H Access Token configured. Please create one in your account settings.",
+            "You don't have a personal D4H access token in this organisation. Add one in User Settings › D4H.",
         );
     }
 

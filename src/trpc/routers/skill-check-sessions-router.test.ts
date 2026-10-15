@@ -1151,8 +1151,9 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
     //   draftSession    → Draft, the lock doesn't apply
     //   approvedSession → Include, every guarded procedure refuses with CONFLICT
     //   toApprove       → Draft, with one check, approved by the "approves a Draft session" test
-    //   racedSession    → Draft, no checks (for the lost-race test)
+    //   racedSession    → Draft, no checks (for the lost-race tests)
     //   person          → an eligible assessor (skills-assessor), also used as an assessee
+    //   skill           → in pkg, which the org subscribes to
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -1218,6 +1219,9 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                 description: "",
                 properties: {},
             },
+        });
+        await db.skillPackageSubscription.create({
+            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg },
         });
 
         const sessions = [
@@ -1301,6 +1305,26 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
             it("works on a Draft session", async () => {
                 const result = await call(T.draftSession);
                 expect(result.updatedSession.id).toBe(T.draftSession);
+            });
+
+            it("reports a session approved after the pre-check (P2025) as CONFLICT", async () => {
+                // prisma-mock can't interleave a concurrent approval, so fake the lost race's
+                // error on the transaction's first statement, the session-row lock.
+                const spy = vi
+                    .spyOn(db.skillCheckSession, "update")
+                    .mockRejectedValueOnce(
+                        Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+                    );
+                try {
+                    await expect(call(T.racedSession)).rejects.toMatchObject({
+                        code: "CONFLICT",
+                    });
+                    expect(spy.mock.calls[0][0]).toMatchObject({
+                        where: { id: T.racedSession, status: { not: "Include" } },
+                    });
+                } finally {
+                    spy.mockRestore();
+                }
             });
         });
     }
@@ -1413,6 +1437,198 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
             }
         });
     });
+});
+
+describe("skillCheckSessions.updateSessionAssessees + updateSessionSkills validation", () => {
+    // Dataset:
+    //   person        → in org
+    //   deletedPerson → in org, Deleted
+    //   foreignPerson → in otherOrg
+    //   skill         → in pkg (owned by org, subscribed)
+    //   sharedSkill   → in sharedPkg (owned by otherOrg, subscribed by org)
+    //   deletedSkill  → in pkg, Deleted
+    //   foreignSkill  → in foreignPkg (owned by otherOrg, not subscribed by org)
+    //   unsubscribedSkill → in unsubscribedPkg (owned by org, not subscribed)
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        person: PersonId.create(),
+        deletedPerson: PersonId.create(),
+        foreignPerson: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        sharedPkg: SkillPackageId.create(),
+        foreignPkg: SkillPackageId.create(),
+        unsubscribedPkg: SkillPackageId.create(),
+        skill: SkillId.create(),
+        sharedSkill: SkillId.create(),
+        deletedSkill: SkillId.create(),
+        foreignSkill: SkillId.create(),
+        unsubscribedSkill: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+
+        const people = [
+            { id: T.person, organizationId: T.org, status: "Active" },
+            { id: T.deletedPerson, organizationId: T.org, status: "Deleted" },
+            { id: T.foreignPerson, organizationId: T.otherOrg, status: "Active" },
+        ] as const;
+        for (const { id, organizationId, status } of people) {
+            await db.person.create({
+                data: { id, organizationId, name: id, email: `${id}@example.com`, status },
+            });
+        }
+
+        const packages = [
+            { id: T.pkg, organizationId: T.org, subscribed: true },
+            { id: T.sharedPkg, organizationId: T.otherOrg, subscribed: true },
+            { id: T.foreignPkg, organizationId: T.otherOrg, subscribed: false },
+            { id: T.unsubscribedPkg, organizationId: T.org, subscribed: false },
+        ];
+        for (const { id, organizationId, subscribed } of packages) {
+            await db.skillPackage.create({
+                data: {
+                    id,
+                    organizationId,
+                    name: id,
+                    description: "",
+                    properties: {},
+                    published: true,
+                },
+            });
+            if (subscribed) {
+                await db.skillPackageSubscription.create({
+                    data: { id: nanoId16(), organizationId: T.org, skillPackageId: id },
+                });
+            }
+        }
+
+        const skills = [
+            { id: T.skill, skillPackageId: T.pkg, status: "Active" },
+            { id: T.sharedSkill, skillPackageId: T.sharedPkg, status: "Active" },
+            { id: T.deletedSkill, skillPackageId: T.pkg, status: "Deleted" },
+            { id: T.foreignSkill, skillPackageId: T.foreignPkg, status: "Active" },
+            { id: T.unsubscribedSkill, skillPackageId: T.unsubscribedPkg, status: "Active" },
+        ] as const;
+        for (const { id, skillPackageId, status } of skills) {
+            const skillGroupId = SkillGroupId.create();
+            await db.skillGroup.create({
+                data: {
+                    id: skillGroupId,
+                    skillPackageId,
+                    name: id,
+                    description: "",
+                    properties: {},
+                },
+            });
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId,
+                    skillGroupId,
+                    name: id,
+                    description: "",
+                    properties: {},
+                    status,
+                },
+            });
+        }
+
+        await db.skillCheckSession.create({
+            data: {
+                id: T.session,
+                organizationId: T.org,
+                name: "Session",
+                sessionNumber: 1,
+                startsAt: new Date(),
+                notes: "",
+            },
+        });
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], skillCheckSession: ["update"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    function addAssessees(addedPersonIds: PersonId[]) {
+        return makeCaller().updateSessionAssessees({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            addedPersonIds,
+            removedPersonIds: [],
+        });
+    }
+
+    function addSkills(addedSkillIds: SkillId[]) {
+        return makeCaller().updateSessionSkills({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            addedSkillIds,
+            removedSkillIds: [],
+        });
+    }
+
+    it("adds a person in the organization as an assessee", async () => {
+        const result = await addAssessees([T.person]);
+        expect(result.updatedAssessees.map((p) => p.id)).toContain(T.person);
+    });
+
+    for (const [label, id] of [
+        ["from another organization", T.foreignPerson],
+        ["who is Deleted", T.deletedPerson],
+        ["that doesn't exist", PersonId.create()],
+    ] as const) {
+        it(`rejects an assessee ${label} with BAD_REQUEST and changes nothing`, async () => {
+            const update = vi.spyOn(db.skillCheckSession, "update");
+
+            await expect(addAssessees([T.person, id])).rejects.toMatchObject({
+                code: "BAD_REQUEST",
+            });
+            expect(update).not.toHaveBeenCalled();
+        });
+    }
+
+    it("adds a skill from a subscribed package, owned here or shared by another organization", async () => {
+        const result = await addSkills([T.skill, T.sharedSkill]);
+        expect(result.updatedSkills.map((s) => s.id)).toEqual(
+            expect.arrayContaining([T.skill, T.sharedSkill]),
+        );
+    });
+
+    for (const [label, id] of [
+        ["from another organization's unsubscribed package", T.foreignSkill],
+        ["from an unsubscribed package of its own", T.unsubscribedSkill],
+        ["that is Deleted", T.deletedSkill],
+        ["that doesn't exist", SkillId.create()],
+    ] as const) {
+        it(`rejects a skill ${label} with BAD_REQUEST and changes nothing`, async () => {
+            const update = vi.spyOn(db.skillCheckSession, "update");
+
+            await expect(addSkills([T.skill, id])).rejects.toMatchObject({
+                code: "BAD_REQUEST",
+            });
+            expect(update).not.toHaveBeenCalled();
+        });
+    }
 });
 
 describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {

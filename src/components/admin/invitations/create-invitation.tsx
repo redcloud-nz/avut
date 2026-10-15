@@ -141,7 +141,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                                             <Input
                                                 id="invitation-email"
                                                 autoFocus
-                                                autoComplete="off"
+                                                ignorePasswordManagers
                                                 aria-invalid={fieldState.invalid}
                                                 {...field}
                                             />

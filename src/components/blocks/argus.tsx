@@ -27,7 +27,7 @@ function ArgusRoot({
     return (
         <div
             className={cn(
-                "bg-muted flex flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10",
+                "bg-page flex flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10",
                 fullHeight && "min-h-svh",
                 className,
             )}

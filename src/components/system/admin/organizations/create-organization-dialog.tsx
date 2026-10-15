@@ -39,6 +39,7 @@ import {
     FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
@@ -64,6 +65,15 @@ export function SystemAdmin_CreateOrganization_Dialog() {
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
     const dialogOpen = action === "create";
+
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            name: "Create organisation",
+            category: "Organisations",
+        },
+    ]);
 
     const form = useForm({
         resolver: zodResolver(createOrganizationFormSchema),

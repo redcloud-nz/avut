@@ -31,12 +31,13 @@ function ItemSeparator({ className, ...props }: React.ComponentProps<typeof Sepa
 }
 
 const itemVariants = cva(
-    "group/item flex w-full flex-wrap items-center rounded-lg border text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-muted",
+    "group/item flex w-full flex-wrap items-center rounded-lg border text-sm transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors [a]:hover:bg-accent [button]:transition-colors [button]:enabled:hover:bg-accent data-active:border-transparent data-active:bg-selected data-active:text-selected-foreground data-active:shadow-none data-active:hover:bg-selected!",
     {
         variants: {
             variant: {
                 default: "border-transparent",
-                outline: "border-border",
+                // Linked (a control): raised at rest. Unlinked: a flat card.
+                outline: "border-border bg-card [a]:shadow-xs",
                 muted: "border-transparent bg-muted/50",
             },
             size: {

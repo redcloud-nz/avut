@@ -61,10 +61,17 @@ function rethrowSessionCheckRace(
 
 export const skillChecksRouter = createTrpcRouter({
     /**
-     * Creates a standalone skill check, outside any session. Checks within a session are recorded
-     * through `skillCheckSessions.setSessionSkillCheck`, which enforces assessor membership and
-     * the approval lock.
-     * @throws TRPCError(BAD_REQUEST) if `sessionId` is not null.
+     * Creates a standalone skill check, outside any session. It's created as `Include`, counting in
+     * reports straight away, since no review or approval will ever move it there. Checks within a
+     * session are recorded through `skillCheckSessions.setSessionSkillCheck`, which enforces
+     * assessor membership and the approval lock.
+     *
+     * With no review to catch a mistake, every id is checked here: the assessor must be the
+     * caller's own linked person, the assessee a person in the organization, and the skill one it
+     * can assess (`SkillChecks.assertAssessablePersonnel` / `assertAssessableSkills`).
+     * @throws TRPCError(BAD_REQUEST) if `sessionId` is not null, the caller has no linked person
+     * record, or the assessee or skill isn't valid in the organization.
+     * @throws TRPCError(FORBIDDEN) if `assessorId` isn't the caller's linked person.
      */
     // `sessionId` stays in the input (nullable) so existing callers keep their shape; only `null`
     // is accepted.
@@ -93,6 +100,25 @@ export const skillChecksRouter = createTrpcRouter({
                 });
             }
 
+            const orgUser = await ctx.prisma.organizationUser.findFirst({
+                where: { organizationId: ctx.organizationId, userId: ctx.userId },
+                select: { personId: true },
+            });
+            if (!orgUser?.personId) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: Messages.noLinkedPersonRecord(),
+                });
+            }
+            if (orgUser.personId !== create.assessorId) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: Messages.assessorNotSelf(),
+                });
+            }
+            await SkillChecks.assertAssessablePersonnel(ctx, [create.assesseeId]);
+            await SkillChecks.assertAssessableSkills(ctx, [create.skillId]);
+
             // A standalone check has no session date, so it was checked when it's recorded.
             const now = new Date();
             const record = await ctx.prisma.skillCheck.create({
@@ -101,6 +127,7 @@ export const skillChecksRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                     sessionId: null,
                     ...create,
+                    status: "Include",
                     checkedAt: now,
                     recordedAt: now,
                 },
