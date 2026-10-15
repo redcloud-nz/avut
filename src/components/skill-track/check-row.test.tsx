@@ -162,4 +162,14 @@ describe("SkillTrack_CheckRow", () => {
         );
         expect(screen.queryByLabelText("Has notes")).not.toBeInTheDocument();
     });
+
+    it("circles only the recorded result", () => {
+        renderRow({ check: { result: "Pass", notes: "" } });
+
+        const circles = document.querySelectorAll('[data-slot="pencil-circle"]');
+        expect(circles).toHaveLength(1);
+        expect(screen.getByRole("button", { name: "Competent" })).toContainElement(
+            circles[0] as HTMLElement,
+        );
+    });
 });

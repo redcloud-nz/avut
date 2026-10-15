@@ -23,7 +23,7 @@ export function SkillTrack_SessionReview_CardToggle({ title }: { title: string }
                 <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="group/toggle aria-expanded:bg-transparent aria-expanded:hover:bg-muted"
+                    className="group/toggle aria-expanded:bg-transparent aria-expanded:text-inherit aria-expanded:hover:bg-accent aria-expanded:hover:text-accent-foreground"
                 >
                     {/* Arrows apart to expand, together to collapse: not a sideways chevron,
                         which reads as a link elsewhere. */}

@@ -52,9 +52,12 @@ const SKILL_COL_WIDTH = "45%";
 const BAR_COL_WIDTH = "35%";
 const PCT_COL_WIDTH = "20%";
 
-const stickyFirstCol = "sticky left-0 z-10 bg-background";
+// Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card
+// colour as a gradient, since a translucent background would let them show through.
+const stickyFirstCol =
+    "sticky left-0 z-10 bg-card group-hover/row:bg-linear-to-r group-hover/row:from-accent/50 group-hover/row:to-accent/50";
 const headCell =
-    "h-9 border-b bg-background px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
+    "h-9 border-b bg-card px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide";
 
 export function SkillTrack_TeamCompetencyReport({
     syntheticChecksEnabled,
@@ -277,7 +280,7 @@ function TeamCompetencyReportView({
                                     colSpan={3}
                                 >
                                     {section.rows.map(({ skill, counts, currentPct }) => (
-                                        <tr key={skill.id} className="hover:bg-muted/40">
+                                        <tr key={skill.id} className="group/row hover:bg-accent/50">
                                             <th
                                                 scope="row"
                                                 className={cn(

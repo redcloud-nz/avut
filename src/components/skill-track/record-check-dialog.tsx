@@ -19,6 +19,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { PencilCircle } from "@/components/ui/pencil-circle";
 import { Textarea } from "@/components/ui/textarea";
 import {
     SKILL_CHECK_FAIL_TIERS,
@@ -153,13 +154,20 @@ function RecordCheck_Body({
                         return (
                             <Button
                                 key={option.value}
-                                variant={isSelected ? "outline" : "ghost"}
+                                variant="ghost"
                                 aria-pressed={isSelected}
-                                className="h-auto min-w-0 flex-col justify-start gap-1.5 px-1 py-1.5 text-[0.625rem] leading-tight font-normal whitespace-normal"
+                                // The chosen result is circled in pencil, as on the check row.
+                                className="relative h-auto min-w-0 flex-col justify-start gap-1.5 px-1 py-1.5 text-[0.625rem] leading-tight font-normal whitespace-normal aria-pressed:bg-transparent aria-pressed:text-inherit aria-pressed:hover:bg-accent"
                                 onClick={() => setStagedResult(option.value)}
                             >
                                 <Icon className={cn("size-5", className)} />
                                 <span className="text-muted-foreground">{option.label}</span>
+                                {isSelected && (
+                                    // Oversized: the loop is an ellipse inside its box, so the box
+                                    // has to overhang the tile for the ellipse to clear the
+                                    // icon and label at the corners.
+                                    <PencilCircle className="-top-2.5 -left-2 h-[calc(100%+1.25rem)] w-[calc(100%+1rem)]" />
+                                )}
                             </Button>
                         );
                     })}

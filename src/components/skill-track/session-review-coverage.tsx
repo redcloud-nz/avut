@@ -173,7 +173,7 @@ function CoverageCard<Id extends string>({
                             );
                             // Nothing to open for someone (or something) with no checks.
                             return entry.checks.length > 0 ? (
-                                <Item key={entry.id} size="sm" asChild className="hover:bg-muted">
+                                <Item key={entry.id} size="sm" asChild>
                                     <button type="button" onClick={() => onOpen(entry.id)}>
                                         {content}
                                     </button>

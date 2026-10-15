@@ -10,6 +10,7 @@ import { MessageSquareTextIcon, MoreHorizontalIcon } from "lucide-react";
 import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
 import { FieldContent, FieldLabel } from "@/components/ui/field";
+import { PencilCircle } from "@/components/ui/pencil-circle";
 import {
     SKILL_CHECK_FAIL_TIERS,
     SKILL_CHECK_PASS_TIERS,
@@ -143,14 +144,20 @@ export function SkillTrack_CheckRow({
                         return (
                             <Button
                                 key={result}
-                                variant={active ? "outline" : "ghost"}
+                                variant="ghost"
                                 size="icon"
                                 aria-label={ariaLabel}
                                 aria-pressed={active}
                                 disabled={isPending}
                                 onClick={() => handleTap(result)}
+                                // The recorded result is circled in pencil rather than filled, so it
+                                // reads as a mark on the form, not a pressed button.
+                                className="relative aria-pressed:bg-transparent aria-pressed:text-inherit aria-pressed:hover:bg-accent"
                             >
                                 <SkillCheckResultIcon result={result} />
+                                {active && (
+                                    <PencilCircle className="-top-1.5 -left-1.5 size-[calc(100%+0.75rem)]" />
+                                )}
                             </Button>
                         );
                     })
