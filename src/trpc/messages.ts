@@ -7,6 +7,8 @@ export const Messages = {
     alreadySubscribedToPackage: (packageName: string) =>
         `Your organisation is already subscribed to the skill package "${packageName}".`,
 
+    assessorNotSelf: () => `You can only record a skill check with yourself as the assessor.`,
+
     d4HAccessTokenNotFound: (tokenId: string) => `D4H Access Token(id=${tokenId}) not found.`,
 
     d4HAccessTokenRejected: (status: number) =>
