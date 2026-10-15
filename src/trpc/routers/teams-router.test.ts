@@ -5,11 +5,13 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { NotConfiguredError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
+import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -322,6 +324,25 @@ describe("teamsRouter.applyD4HTeamSync", () => {
         });
         expect(departed?.status).toBe("Active");
         expect(await db.person.findFirst({ where: { email: "grace@example.com" } })).toBeNull();
+    });
+
+    // `getConfiguredD4HAccessToken` throws `NotConfiguredError` when the org has D4H turned off or
+    // the caller has no personal token (#175, #174); the client needs its message, not a 500.
+    it("rejects plan and apply with PRECONDITION_FAILED when D4H isn't configured", async () => {
+        const { T, caller } = await seed();
+        const notConfigured = new NotConfiguredError(
+            "D4H integration is not enabled for this organisation.",
+        );
+        vi.mocked(getConfiguredD4HAccessToken)
+            .mockRejectedValueOnce(notConfigured)
+            .mockRejectedValueOnce(notConfigured);
+
+        await expect(
+            caller.planD4HTeamSync({ organizationId: T.org, teamId: T.team }),
+        ).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: notConfigured.message });
+        await expect(
+            caller.applyD4HTeamSync({ organizationId: T.org, teamId: T.team, planToken: "any" }),
+        ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     });
 });
 
