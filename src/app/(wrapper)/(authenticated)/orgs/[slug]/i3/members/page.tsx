@@ -16,12 +16,14 @@ import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import { getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganization } from "@/server/organization-access";
 
 export default async function I3Module_MembersList_SelectTeam_Page(
     props: PageProps<"/orgs/[slug]/i3/members">,
 ) {
     const { slug } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
 
     const { organization, session } = await requireOrganization(slug);
 
