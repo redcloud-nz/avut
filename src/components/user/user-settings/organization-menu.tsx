@@ -7,19 +7,7 @@
 import { LogOutIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon } from "@/components/icons";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-    MenuAction,
-    useMenuActionHotkeys,
-    type MenuActionProps,
-} from "@/components/ui/menu-action";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
 import { UserSettings_LeaveOrganization_Dialog } from "./leave-organization";
@@ -39,24 +27,9 @@ export function UserSettings_Organization_Menu({ membership }: { membership: Mem
         },
     ];
 
-    useMenuActionHotkeys(actions, "Organisation");
-
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="end">
-                    <DropdownMenuGroup>
-                        {actions.map((a) => (
-                            <MenuAction key={a.verb} {...a} />
-                        ))}
-                    </DropdownMenuGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu actions={actions} category="Organisation" />
 
             <UserSettings_LeaveOrganization_Dialog
                 membership={membership}

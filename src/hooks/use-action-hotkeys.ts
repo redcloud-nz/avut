@@ -9,7 +9,8 @@ import { useHotkeys } from "@tanstack/react-hotkeys";
 import { ActionHotkey, ActionVerb } from "@/lib/hotkeys";
 
 export interface ActionHotkeyEntry {
-    /** Action verb — determines the key via the {@link ActionHotkey} registry. */
+    /** Action verb — determines the key via the {@link ActionHotkey} registry. A verb with no
+     *  key there registers nothing. */
     verb: ActionVerb;
     /** Invoked when the shortcut fires (open a dialog, run a mutation, …). */
     run: () => void;
@@ -30,10 +31,16 @@ export interface ActionHotkeyEntry {
  */
 export function useActionHotkeys(entries: ActionHotkeyEntry[]): void {
     useHotkeys(
-        entries.map(({ verb, run, enabled = true, name, category }) => ({
-            hotkey: ActionHotkey[verb],
-            callback: () => run(),
-            options: { enabled, preventDefault: true, meta: { name, category } },
-        })),
+        entries.flatMap(({ verb, run, enabled = true, name, category }) => {
+            const hotkey = ActionHotkey[verb];
+            if (!hotkey) return [];
+            return [
+                {
+                    hotkey,
+                    callback: () => run(),
+                    options: { enabled, preventDefault: true, meta: { name, category } },
+                },
+            ];
+        }),
     );
 }

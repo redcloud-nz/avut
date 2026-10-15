@@ -7,15 +7,8 @@
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ObjectIcons } from "@/components/icons";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -37,25 +30,20 @@ export function AdminModule_TeamMembership_Menu({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["remove"] as const));
     const canDelete = useHasPermission({ team: ["delete"] });
 
+    const actions: MenuActionProps[] = [
+        {
+            verb: "delete",
+            label: "Remove from team",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => void setAction("remove", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        },
+    ];
+
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-44" align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                        disabled={!canDelete}
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => void setAction("remove", { history: "push" })}
-                    >
-                        <ObjectIcons.Delete /> Remove from team
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu actions={actions} category="Team membership" width="w-44" />
 
             <AdminModule_RemoveTeamMember_Dialog
                 organizationId={organization.id}
