@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { SystemAdmin_User_Content } from "@/components/system/admin/users/user-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { UserId } from "@/lib/schemas/user";
+import { SystemAdmin_User_Content } from "@/modules/system-admin/components/users/user-content";
 import { requireSystemAdmin } from "@/server/system-admin-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 

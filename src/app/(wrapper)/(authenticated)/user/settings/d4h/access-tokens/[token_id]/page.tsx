@@ -8,8 +8,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { UserSettings_D4HAccessTokenContent } from "@/components/user/user-settings/d4h-access-token-content";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import { UserSettings_D4HAccessTokenContent } from "@/modules/user-settings/components/d4h-access-token-content";
 import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/user/settings/d4h/access-tokens/[token_id]">;

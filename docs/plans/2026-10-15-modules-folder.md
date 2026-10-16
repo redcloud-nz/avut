@@ -268,7 +268,7 @@ d4h-views pages.
 
 **Done when:** `npm run check` passes; the d4h-views route tree holds only route files.
 
-### - [ ] Task 8 — `mechanical` — Move system-admin
+### - [x] Task 8 — `mechanical` — Move system-admin
 
 **Files:** `src/components/system/admin/**` → `src/modules/system-admin/components/**`;
 `src/app/(wrapper)/(authenticated)/layout.tsx` (the impersonation banner);
@@ -284,7 +284,7 @@ exemption silently disappears.
 **Done when:** `npm run check` passes; `src/components/system` no longer exists;
 `impersonation-banner.test.tsx` and `user-actions-menu.test.tsx` pass from their new paths.
 
-### - [ ] Task 9 — `mechanical` — Split user into user-dashboard and user-settings
+### - [x] Task 9 — `mechanical` — Split user into user-dashboard and user-settings
 
 **Files:** `src/components/user/{activity-stats,invitations,org-selector,signed-in-as}.tsx` →
 `src/modules/user-dashboard/components/`; `src/components/user/user-settings/**` →
