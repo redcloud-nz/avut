@@ -5,12 +5,12 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
+import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -20,7 +20,7 @@ describe("skillPackageSubscriptions.getPackage", () => {
     const T = {
         org: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
-        user: nanoId16(),
+        user: UserId.create(),
         pkg: SkillPackageId.create(),
         unpublishedPkg: SkillPackageId.create(),
         // Package used for the contents assertions:
@@ -267,7 +267,7 @@ describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", ()
     const T = {
         org: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
-        user: nanoId16(),
+        user: UserId.create(),
         livePkg: SkillPackageId.create(),
         // Deleted before deletePackage unpublished on delete, so still `published: true`.
         deletedPkg: SkillPackageId.create(),
@@ -364,7 +364,7 @@ describe("skillPackageSubscriptionsRouter withholds a withdrawn package from its
         // Subscribes to nothing.
         otherOrg: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
-        user: nanoId16(),
+        user: UserId.create(),
         livePkg: SkillPackageId.create(),
         unpublishedPkg: SkillPackageId.create(),
         archivedPkg: SkillPackageId.create(),

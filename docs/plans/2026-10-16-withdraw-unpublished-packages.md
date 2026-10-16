@@ -117,6 +117,6 @@ Unpublishing and archiving a skill package now withdraw its skills from subscrib
 
 ## Review notes
 
-- `src/client/skill-package-builder-effects.ts` `recoverPackage`: also invalidate `trpc.skillPackageSubscriptions.pathFilter()`, like the other five package-lifecycle effects (task 4).
-- Tests seed branded ids with `nanoId16()`: `src/server/services/skill-checks.test.ts` (subscription `id`) and `src/trpc/routers/skill-package-subscriptions-router.test.ts` (`user`). Use `SkillPackageSubscriptionId.create()` / `UserId.create()` (tasks 2, 3).
-- `src/modules/skill-track/components/catalogue-package-content.tsx`: show the "Subscribed · Withdrawn" badge only when `withdrawn && skillPackage.subscription`, so it doesn't flash after unsubscribing (task 5).
+- [x] `src/client/skill-package-builder-effects.ts` `recoverPackage`: also invalidate `trpc.skillPackageSubscriptions.pathFilter()`, like the other five package-lifecycle effects (task 4).
+- [x] Tests seed branded ids with `nanoId16()`: `src/server/services/skill-checks.test.ts` (subscription `id`) and `src/trpc/routers/skill-package-subscriptions-router.test.ts` (`user`). Use `SkillPackageSubscriptionId.create()` / `UserId.create()` (tasks 2, 3).
+- [x] `src/modules/skill-track/components/catalogue-package-content.tsx`: show the "Subscribed · Withdrawn" badge only when `withdrawn && skillPackage.subscription`, so it doesn't flash after unsubscribing (task 5).

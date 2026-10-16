@@ -209,6 +209,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.skillPackageSubscriptions.pathFilter()),
     ],
     restoreSkill: (vars, { updated }) => [
         write(

@@ -13,6 +13,7 @@ import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
@@ -170,7 +171,11 @@ describe("skill-checks", () => {
                 });
                 if (subscribed) {
                     await db.skillPackageSubscription.create({
-                        data: { id: nanoId16(), organizationId: B.org, skillPackageId },
+                        data: {
+                            id: SkillPackageSubscriptionId.create(),
+                            organizationId: B.org,
+                            skillPackageId,
+                        },
                     });
                 }
             }

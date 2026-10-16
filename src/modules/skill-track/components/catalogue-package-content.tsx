@@ -79,7 +79,9 @@ export function SkillTrack_CataloguePackage_Content({
                     <Saratoga.Header>
                         <Saratoga.Title>{skillPackage.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            {withdrawn && <Badge variant="outline">Subscribed · Withdrawn</Badge>}
+                            {withdrawn && skillPackage.subscription && (
+                                <Badge variant="outline">Subscribed · Withdrawn</Badge>
+                            )}
                             <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 {skillPackage.subscription ? (
                                     <Button
