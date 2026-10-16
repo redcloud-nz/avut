@@ -110,10 +110,9 @@ Unpublishing and archiving a skill package now withdraw its skills from subscrib
 
 ## Parked
 
-- `listAssessableSkills` and `assertAssessableSkills` include Archived skills and groups, while `getCompetencyMatrix` reports only Active skills. Decide whether Archived skills should be assessable.
-- Re-import unpublishes a published package (`prepareImport` sets `published: false` on update), which withdraws it from subscribers without warning.
-- `listSubscribedPackages` has no UI caller.
-- A package in its author's Rubbish bin (Deleted, so unpublished) is invisible to its subscribers, who can't unsubscribe from it. Recorded checks from other organisations block its purge (`otherOrgCheckBlocker`), so it can stay there indefinitely.
+- Filed: #402 Subscribers can't see or unsubscribe from a skill package in its author's Rubbish bin.
+- Filed: #403 DataItemDateValue relative time causes hydration mismatches (seen at the visual checkpoint).
+- Dropped by the user: Archived skills being assessable while reports show only Active ones; re-import unpublishing a published package; `listSubscribedPackages` having no UI caller.
 
 ## Review notes
 
