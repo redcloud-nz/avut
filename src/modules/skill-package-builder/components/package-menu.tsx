@@ -132,7 +132,7 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             disabled: !canDelete,
         });
     }
-    if (skillPackage.status != "Deleted" && !skillPackage.published) {
+    if (skillPackage.status == "Active" && !skillPackage.published) {
         actions.push({
             verb: "publish",
             label: "Publish",

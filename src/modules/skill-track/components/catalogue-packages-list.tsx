@@ -19,6 +19,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
+import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_CataloguePackages_List() {
@@ -73,7 +74,12 @@ export function SkillTrack_CataloguePackages_List() {
                 columnHelper.accessor("subscription", {
                     id: "status",
                     header: "Status",
-                    cell: (ctx) => (ctx.getValue() ? "Subscribed" : ""),
+                    cell: (ctx) =>
+                        ctx.getValue()
+                            ? SkillPackage.isAvailable(ctx.row.original)
+                                ? "Subscribed"
+                                : "Subscribed · Withdrawn"
+                            : "",
                     enableSorting: false,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,

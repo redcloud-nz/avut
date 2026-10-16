@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
@@ -23,20 +24,29 @@ import {
 } from "@/components/ui/dialog";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { route } from "@/lib/routes";
+import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_UnsubscribeFromPackage_Dialog({
     skillPackage,
     ...props
 }: DialogProps & {
-    skillPackage: { id: SkillPackageId; name: string };
+    skillPackage: Pick<SkillPackage, "id" | "name" | "published" | "status">;
 }) {
     const organization = useOrganization();
+    const router = useRouter();
+
+    // Once unsubscribed, a withdrawn package is no longer visible to this organisation
+    // (`getPackage` returns NOT_FOUND), so leave its page for the catalogue list.
+    const leavesPage = !SkillPackage.isAvailable(skillPackage);
 
     const mutation = useMutation(
         trpc.skillPackageSubscriptions.unsubscribeFromPackage.mutationOptions({
-            meta: { effects: skillPackageSubscriptionsEffects.unsubscribeFromPackage },
+            meta: {
+                effects: skillPackageSubscriptionsEffects.unsubscribeFromPackage,
+                navigates: leavesPage,
+            },
             onError(error) {
                 console.error("Failed to unsubscribe from skill package:", error);
                 toast.error(`Failed to unsubscribe from skill package: ${error.message}`);
@@ -47,7 +57,14 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                         Unsubscribed from <ObjectName>{skillPackage.name}</ObjectName>.
                     </>,
                 );
-                props.onOpenChange?.(false);
+                if (leavesPage) {
+                    // The navigation is the whole close: don't also clear the dialog param.
+                    router.push(
+                        route("/orgs/[slug]/skill-track/catalogue", { slug: organization.slug }),
+                    );
+                } else {
+                    props.onOpenChange?.(false);
+                }
             },
         }),
     );

@@ -172,6 +172,35 @@ function ChangeSessionSkills_Body({
         R.filter(({ groups }) => groups.length > 0),
     );
 
+    // Assigned skills outside the assessable set: their package has been withdrawn (or they are
+    // otherwise no longer assessable). Listed from the saved assignment, so a skill unticked here
+    // stays listed until Save and the change can be undone.
+    const assessableSkillIds = new Set(skills.map((skill) => skill.id));
+    const unavailableSkills = R.pipe(
+        assignedSkills,
+        R.filter((skill) => !assessableSkillIds.has(skill.id)),
+        R.sortBy((skill) => skill.name),
+    );
+    const unavailableSelectedCount = unavailableSkills.filter((s) => isSelected(s.id)).length;
+
+    function renderSkillField(skill: { id: SkillId; name: string; description?: string }) {
+        return (
+            <Field orientation="horizontal" key={skill.id}>
+                <Checkbox
+                    id={`skill-${skill.id}`}
+                    checked={isSelected(skill.id)}
+                    onCheckedChange={(checked) => handleChangeChecked(skill.id, checked === true)}
+                />
+                <FieldContent>
+                    <FieldLabel htmlFor={`skill-${skill.id}`}>{skill.name}</FieldLabel>
+                    {showSkillDescriptions && skill.description && (
+                        <FieldDescription>{skill.description}</FieldDescription>
+                    )}
+                </FieldContent>
+            </Field>
+        );
+    }
+
     return (
         <>
             <DialogBody>
@@ -185,7 +214,7 @@ function ChangeSessionSkills_Body({
                         Show skill descriptions
                     </FieldLabel>
                 </Field>
-                {packageSections.length === 0 && (
+                {packageSections.length === 0 && unavailableSkills.length === 0 && (
                     <p className="text-muted-foreground">
                         No assessable skills. Subscribe to a skill package first.
                     </p>
@@ -214,35 +243,7 @@ function ChangeSessionSkills_Body({
                                             <div className="text-sm font-medium text-muted-foreground mb-2">
                                                 {skillGroup.name}
                                             </div>
-                                            <FieldGroup>
-                                                {skills.map((skill) => (
-                                                    <Field orientation="horizontal" key={skill.id}>
-                                                        <Checkbox
-                                                            id={`skill-${skill.id}`}
-                                                            checked={isSelected(skill.id)}
-                                                            onCheckedChange={(checked) =>
-                                                                handleChangeChecked(
-                                                                    skill.id,
-                                                                    checked === true,
-                                                                )
-                                                            }
-                                                        />
-                                                        <FieldContent>
-                                                            <FieldLabel
-                                                                htmlFor={`skill-${skill.id}`}
-                                                            >
-                                                                {skill.name}
-                                                            </FieldLabel>
-                                                            {showSkillDescriptions &&
-                                                                skill.description && (
-                                                                    <FieldDescription>
-                                                                        {skill.description}
-                                                                    </FieldDescription>
-                                                                )}
-                                                        </FieldContent>
-                                                    </Field>
-                                                ))}
-                                            </FieldGroup>
+                                            <FieldGroup>{skills.map(renderSkillField)}</FieldGroup>
                                         </div>
                                     ))}
                                 </div>
@@ -250,6 +251,25 @@ function ChangeSessionSkills_Body({
                         </Collapsible>
                     );
                 })}
+                {unavailableSkills.length > 0 && (
+                    <Collapsible defaultOpen>
+                        <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
+                            <span>No longer available</span>
+                            <span className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
+                                <span>
+                                    {unavailableSelectedCount} of {unavailableSkills.length}{" "}
+                                    selected
+                                </span>
+                                <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
+                            </span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <FieldGroup className="pt-4">
+                                {unavailableSkills.map(renderSkillField)}
+                            </FieldGroup>
+                        </CollapsibleContent>
+                    </Collapsible>
+                )}
             </DialogBody>
             <DialogFooter>
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>

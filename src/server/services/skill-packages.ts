@@ -789,6 +789,10 @@ export async function getGroupDeleteImpact(
 /**
  * Archive a skill package (reversible via `restorePackage`). No-op, returning the
  * existing record unchanged, if the package is already `Archived`.
+ *
+ * Archiving also unpublishes, in the same transaction: the package leaves the catalogue, and its
+ * subscribers lose its skills from their sessions and reports. Restoring it doesn't publish it
+ * again.
  * @throws NotFoundError if the package does not exist in the organization.
  * @throws ValidationError if the package is `Deleted` — use `recoverPackage` first.
  */
@@ -811,8 +815,17 @@ export async function archivePackage(
     await ctx.prisma.$transaction([
         ctx.prisma.skillPackage.update({
             where: { id: skillPackageId },
-            data: { status: "Archived" },
+            data: { status: "Archived", published: false },
         }),
+        ...(existing.published
+            ? [
+                  ctx.logEvent({
+                      action: "Unpublish",
+                      objectType: "SkillPackage",
+                      objectId: skillPackageId,
+                  }),
+              ]
+            : []),
         ctx.logEvent({ action: "Archive", objectType: "SkillPackage", objectId: skillPackageId }),
     ]);
 
@@ -822,6 +835,10 @@ export async function archivePackage(
 /**
  * Restore an `Archived` skill package back to `Active`. No-op, returning the existing record
  * unchanged, if the package is already `Active`.
+ *
+ * Restoring doesn't publish: the package comes back unpublished, and its author publishes it
+ * again on purpose. A package archived before archiving unpublished can be `Archived` and
+ * `published` at once; restoring it unpublishes it, with an `Unpublish` log entry.
  * @throws NotFoundError if the package does not exist in the organization.
  * @throws ValidationError if the package is `Deleted` — use `recoverPackage` instead.
  */
@@ -841,7 +858,7 @@ export async function restorePackage(
         );
     }
 
-    return await setPackageActive(ctx, skillPackageId, "Restore");
+    return await setPackageActive(ctx, existing, "Restore");
 }
 
 /**
@@ -866,19 +883,35 @@ export async function recoverPackage(
         );
     }
 
-    return await setPackageActive(ctx, skillPackageId, "Recover");
+    return await setPackageActive(ctx, existing, "Recover");
 }
 
+/**
+ * Move a package back to `Active`, leaving it unpublished. A package that was still `published`
+ * (only a legacy `Archived` one can be: archiving and deleting both unpublish) gets an
+ * `Unpublish` entry ahead of the `Restore`/`Recover` one.
+ */
 async function setPackageActive(
     ctx: OrgServiceContext,
-    skillPackageId: SkillPackageId,
+    existing: SkillPackage,
     action: "Restore" | "Recover",
 ): Promise<SkillPackage> {
+    const skillPackageId = existing.id;
+
     await ctx.prisma.$transaction([
         ctx.prisma.skillPackage.update({
             where: { id: skillPackageId },
-            data: { status: "Active" },
+            data: { status: "Active", published: false },
         }),
+        ...(existing.published
+            ? [
+                  ctx.logEvent({
+                      action: "Unpublish",
+                      objectType: "SkillPackage",
+                      objectId: skillPackageId,
+                  }),
+              ]
+            : []),
         ctx.logEvent({ action, objectType: "SkillPackage", objectId: skillPackageId }),
     ]);
 

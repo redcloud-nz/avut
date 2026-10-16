@@ -457,7 +457,7 @@ export function SkillTrack_SessionByPerson_Content({
                                                         {ungroupedSkills.length > 0 && (
                                                             <div className="space-y-6">
                                                                 <div className="font-semibold border-b pb-1">
-                                                                    Other
+                                                                    No longer available
                                                                 </div>
                                                                 <div className="flex flex-col gap-5">
                                                                     {ungroupedSkills.map(renderRow)}
