@@ -7,8 +7,8 @@
 
 import { Metadata } from "next";
 
-import { AdminModule_TeamMembers_List } from "@/components/admin/teams/team-members-list";
 import { TeamId } from "@/lib/schemas/team";
+import { AdminModule_TeamMembers_List } from "@/modules/org-admin/components/teams/team-members-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 

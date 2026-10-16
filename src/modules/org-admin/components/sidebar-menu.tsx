@@ -5,11 +5,11 @@
 
 "use client";
 
-import { RubbishNavGate } from "@/components/admin/trash/rubbish-nav-gate";
 import { NavSubItem } from "@/components/nav/nav-section";
 import { Protect } from "@/components/protect";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
+import { RubbishNavGate } from "@/modules/org-admin/components/trash/rubbish-nav-gate";
 
 /** Nested pages for the Admin module's `NavCollapsible` section — not a standalone sidebar group. */
 export function Admin_Sidebar_Menu() {

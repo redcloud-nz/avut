@@ -8,7 +8,6 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
-import { RubbishNavGate } from "@/components/admin/trash/rubbish-nav-gate";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
@@ -21,6 +20,7 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { route } from "@/lib/routes";
+import { RubbishNavGate } from "@/modules/org-admin/components/trash/rubbish-nav-gate";
 
 export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/admin`>) {
     const { slug } = await props.params;

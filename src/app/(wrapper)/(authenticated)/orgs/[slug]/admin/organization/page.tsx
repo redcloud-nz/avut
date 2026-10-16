@@ -7,8 +7,6 @@
 
 import Link from "next/link";
 
-import { AdminModule_Organization_D4HCard } from "@/components/admin/organization/d4h-org-card";
-import { AdminModule_OrganizationMenu } from "@/components/admin/organization/organization-menu";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -24,6 +22,8 @@ import {
     DataList,
 } from "@/components/ui/data-item";
 import { route } from "@/lib/routes";
+import { AdminModule_Organization_D4HCard } from "@/modules/org-admin/components/organization/d4h-org-card";
+import { AdminModule_OrganizationMenu } from "@/modules/org-admin/components/organization/organization-menu";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 
 export default async function AdminModule_Organization_Page(

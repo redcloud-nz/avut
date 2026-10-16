@@ -8,7 +8,6 @@ import { Suspense } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { AdminModule_Person_LinkedUser_Card } from "@/components/admin/personnel/linked-user-card";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -31,6 +30,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
+import { AdminModule_Person_LinkedUser_Card } from "@/modules/org-admin/components/personnel/linked-user-card";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_PersonMenu } from "./person-menu";

@@ -9,7 +9,6 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { MembershipSourceBadge } from "@/components/admin/teams/membership-source-badge";
 import { TeamMembershipLink } from "@/components/entity-links/team-membership-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -19,6 +18,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/co
 import { useOrganization } from "@/hooks/use-organization";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { PersonRef } from "@/lib/schemas/person";
+import { MembershipSourceBadge } from "@/modules/org-admin/components/teams/membership-source-badge";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_Person_TeamMemberships_Card({ person }: { person: PersonRef }) {

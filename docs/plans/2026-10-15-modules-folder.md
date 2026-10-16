@@ -205,7 +205,7 @@ is empty.
 
 **Done when:** `npm run check` passes; `src/components/skill-package-builder` no longer exists.
 
-### - [ ] Task 4 — `mechanical` — Move org-admin
+### - [x] Task 4 — `mechanical` — Move org-admin
 
 **Files:** rest of `src/components/admin/**` → `src/modules/org-admin/components/**`;
 `orgs/[slug]/admin/organization/--update/update-organization.tsx` →

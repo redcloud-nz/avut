@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { AdminModule_TeamHistory_Content } from "@/components/admin/teams/team-history-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { TeamId } from "@/lib/schemas/team";
+import { AdminModule_TeamHistory_Content } from "@/modules/org-admin/components/teams/team-history-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 
