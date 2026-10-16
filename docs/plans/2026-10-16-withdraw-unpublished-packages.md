@@ -75,7 +75,7 @@ _End of review group 1._
     - **Leaving a withdrawn package:** once the subscriber unsubscribes, they can no longer see the package (`getPackage` returns NOT_FOUND). So when it isn't available, the Unsubscribe dialog's `onSuccess` navigates back to `/orgs/[slug]/skill-track/catalogue`.
   - **Done when:** a subscriber sees the badge and note on an unpublished package, can unsubscribe, and lands back on the catalogue list. `npm run check` passes.
 
-- [ ] **6. Sessions holding withdrawn skills** `visual`
+- [x] **6. Sessions holding withdrawn skills** — feat(skill-track): sessions list withdrawn skills under "No longer available" `visual`
   - **Files:** `src/modules/skill-track/components/change-session-skills.tsx`, `src/modules/skill-track/components/session-by-skill-content.tsx`, `src/modules/skill-track/components/session-by-person-content.tsx`
   - **Do:**
     - **`change-session-skills.tsx`:** add a final section, "No longer available", listing the assigned skills that aren't in `listAssessableSkills` (from `listSessionSkills` `assigned`). Their checkboxes can be unticked, which removes them through `removedSkillIds`. Once unticked, a skill stays listed, so the change can be undone before Save. Adding it back works only before Save; the server would reject it afterwards.

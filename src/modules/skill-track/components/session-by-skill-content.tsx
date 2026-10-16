@@ -399,7 +399,7 @@ export function SkillTrack_SessionBySkill_Content({
                                                                 {ungroupedSkills.length > 0 && (
                                                                     <SelectGroup>
                                                                         <SelectLabel>
-                                                                            Other
+                                                                            No longer available
                                                                         </SelectLabel>
                                                                         {ungroupedSkills.map(
                                                                             (skill) => (
@@ -454,7 +454,7 @@ export function SkillTrack_SessionBySkill_Content({
                                                     {ungroupedSkills.length > 0 && (
                                                         <div>
                                                             <div className="px-2 pt-2 font-semibold border-b">
-                                                                Other
+                                                                No longer available
                                                             </div>
                                                             {ungroupedSkills.map(renderSkillItem)}
                                                         </div>
