@@ -14,10 +14,6 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
-import { SkillTrack_SessionConfigDialogs } from "@/components/skill-track/session-config-dialogs";
-import { SkillsModule_Session_Contents_Card } from "@/components/skill-track/session-contents";
-import { SkillsModule_SessionMenu } from "@/components/skill-track/session-menu";
-import { SkillsModule_UpdateSession_Dialog } from "@/components/skill-track/update-session";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -47,6 +43,10 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_SessionConfigDialogs } from "@/modules/skill-track/components/session-config-dialogs";
+import { SkillsModule_Session_Contents_Card } from "@/modules/skill-track/components/session-contents";
+import { SkillsModule_SessionMenu } from "@/modules/skill-track/components/session-menu";
+import { SkillsModule_UpdateSession_Dialog } from "@/modules/skill-track/components/update-session";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillCheckSessionId }) {

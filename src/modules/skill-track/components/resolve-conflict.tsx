@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
-import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { Alert } from "@/components/ui/alert";
 import { MutationButton } from "@/components/ui/button";
 import {
@@ -36,6 +35,7 @@ import {
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { isCheckIncluded, SkillCheckConflict } from "@/lib/skill-check-conflicts";
+import { useRefetchSessionOnConflict } from "@/modules/skill-track/components/use-refetch-session-on-conflict";
 import { trpc } from "@/trpc/client";
 
 /** The radio value for excluding every check in the conflict. Never a check id (those are nanoids). */

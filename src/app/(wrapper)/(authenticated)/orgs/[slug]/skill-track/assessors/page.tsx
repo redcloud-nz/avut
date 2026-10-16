@@ -6,8 +6,8 @@
  */
 
 import { Std } from "@/components/blocks/std";
-import { SkillTrack_AssessorsList } from "@/components/skill-track/assessors-list";
 import { route } from "@/lib/routes";
+import { SkillTrack_AssessorsList } from "@/modules/skill-track/components/assessors-list";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

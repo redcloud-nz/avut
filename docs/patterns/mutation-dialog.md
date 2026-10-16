@@ -507,7 +507,7 @@ const returnFocus = useReturnFocus(returnFocusRef);
 When the trigger can unmount before the dialog closes (an item in a sheet or a
 `DropdownMenuItem`), pass a `fallbackRef` to a control that stays mounted, such
 as the sheet's or menu's own button. Focus goes there when the opener is gone.
-The session config dialogs (`src/components/skill-track/session-config-dialogs.tsx`)
+The session config dialogs (`src/modules/skill-track/components/session-config-dialogs.tsx`)
 are the worked example.
 
 Older menu-triggered dialogs instead call `preventDefault()` on

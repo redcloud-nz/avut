@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import type { SessionConfigAction } from "@/components/skill-track/session-config-dialogs";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import type { SessionConfigAction } from "@/modules/skill-track/components/session-config-dialogs";
 import { prefetch, trpc } from "@/trpc/server";
 
 /**

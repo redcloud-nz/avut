@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
-import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -39,6 +38,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { useReturnFocus } from "@/hooks/use-return-focus";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { useRefetchSessionOnConflict } from "@/modules/skill-track/components/use-refetch-session-on-conflict";
 import { trpc } from "@/trpc/client";
 
 /**

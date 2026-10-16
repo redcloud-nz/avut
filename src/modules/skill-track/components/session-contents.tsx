@@ -10,16 +10,16 @@ import Link from "next/link";
 import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Protect } from "@/components/protect";
-import {
-    useSessionConfigAction,
-    type SessionConfigAction,
-} from "@/components/skill-track/session-config-dialogs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { findConflicts, isConflictResolved } from "@/lib/skill-check-conflicts";
+import {
+    useSessionConfigAction,
+    type SessionConfigAction,
+} from "@/modules/skill-track/components/session-config-dialogs";
 import { trpc } from "@/trpc/client";
 
 export function SkillsModule_Session_Contents_Card({

@@ -14,20 +14,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
-import {
-    deriveStatus,
-    StatusBadge,
-    tallyStatuses,
-    type CompetencyStatus,
-} from "@/components/skill-track/reports/competency-status";
-import { SkillTrack_PersonScopeDialog } from "@/components/skill-track/reports/person-scope-dialog";
-import {
-    CheckDetailsTrigger,
-    ReportCellPopoversProvider,
-    SkillInfoTrigger,
-} from "@/components/skill-track/reports/report-cell-popovers";
-import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
-import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -43,6 +29,20 @@ import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { PersonId } from "@/lib/schemas/person";
 import { cn } from "@/lib/utils";
+import {
+    deriveStatus,
+    StatusBadge,
+    tallyStatuses,
+    type CompetencyStatus,
+} from "@/modules/skill-track/components/reports/competency-status";
+import { SkillTrack_PersonScopeDialog } from "@/modules/skill-track/components/reports/person-scope-dialog";
+import {
+    CheckDetailsTrigger,
+    ReportCellPopoversProvider,
+    SkillInfoTrigger,
+} from "@/modules/skill-track/components/reports/report-cell-popovers";
+import { SkillTrack_ScopeDialogMenuItem } from "@/modules/skill-track/components/reports/scope-dialog-menu-item";
+import { useSyntheticCompetencies } from "@/modules/skill-track/components/reports/synthetic-competency-data";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_PersonCompetencyReport({

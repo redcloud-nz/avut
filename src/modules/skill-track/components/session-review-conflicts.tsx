@@ -5,7 +5,6 @@
 "use client";
 
 import { Protect } from "@/components/protect";
-import { SkillTrack_SessionReview_CardToggle } from "@/components/skill-track/session-review-card-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -23,6 +22,7 @@ import {
     isConflictResolved,
     SkillCheckConflict,
 } from "@/lib/skill-check-conflicts";
+import { SkillTrack_SessionReview_CardToggle } from "@/modules/skill-track/components/session-review-card-toggle";
 
 interface SessionReviewConflictsProps {
     /** The card's element id, for in-page links to it. */

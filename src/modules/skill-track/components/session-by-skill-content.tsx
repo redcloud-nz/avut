@@ -15,22 +15,6 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Show } from "@/components/show";
-import { SkillTrack_CheckRow } from "@/components/skill-track/check-row";
-import { SkillTrack_RecordCheckDialog } from "@/components/skill-track/record-check-dialog";
-import {
-    SessionSkillOrder,
-    SkillTrack_RecordingOptionsSheet,
-} from "@/components/skill-track/recording-options-sheet";
-import { SkillTrack_SessionApprovedEmpty } from "@/components/skill-track/session-approved-empty";
-import {
-    sessionCheckKey,
-    usePendingChecks,
-    useSessionCheckRecorder,
-} from "@/components/skill-track/use-session-check-recorder";
-import {
-    useOtherAssessorChecks,
-    useSessionChecksSync,
-} from "@/components/skill-track/use-session-checks-sync";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -39,7 +23,9 @@ import { RainbowSpinner } from "@/components/ui/loading";
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
@@ -55,12 +41,28 @@ import {
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_CheckRow } from "@/modules/skill-track/components/check-row";
+import { SkillTrack_RecordCheckDialog } from "@/modules/skill-track/components/record-check-dialog";
+import {
+    SessionSkillOrder,
+    SkillTrack_RecordingOptionsSheet,
+} from "@/modules/skill-track/components/recording-options-sheet";
+import { SkillTrack_SessionApprovedEmpty } from "@/modules/skill-track/components/session-approved-empty";
+import {
+    sessionCheckKey,
+    usePendingChecks,
+    useSessionCheckRecorder,
+} from "@/modules/skill-track/components/use-session-check-recorder";
+import {
+    useOtherAssessorChecks,
+    useSessionChecksSync,
+} from "@/modules/skill-track/components/use-session-checks-sync";
 import { trpc } from "@/trpc/client";
 
 /** The (assessee, skill) check the record dialog is open on. */
 type CheckDialogTarget = { assesseeId: PersonId; skillId: SkillId };
 
-export function SkillTrack_SessionByPerson_Content({
+export function SkillTrack_SessionBySkill_Content({
     sessionId,
 }: {
     sessionId: SkillCheckSessionId;
@@ -133,20 +135,20 @@ export function SkillTrack_SessionByPerson_Content({
     // only a message in place of its content, and the record dialog is closed.
     const isApproved = session.status === "Include";
 
-    type Selected = { personId: PersonId; status: "Loading" | "Selected" } | null;
+    type Selected = { skillId: SkillId; status: "Loading" | "Selected" } | null;
     const [selected, setSelected] = useState<Selected>(null);
-    // A config change can take the selected person off the session. Clear the selection then
-    // (during render, so the stale person is never shown), so re-adding them later doesn't
-    // silently re-select them.
-    if (selected && !assignedPersonnel.some((person) => person.id === selected.personId)) {
+    // A config change can take the selected skill off the session. Clear the selection then
+    // (during render, so the stale skill is never shown), so re-adding it later doesn't
+    // silently re-select it.
+    if (selected && !sessionSkills.some((skill) => skill.id === selected.skillId)) {
         setSelected(null);
     }
 
-    async function handleSwitchPerson(personId: PersonId) {
-        setSelected({ personId, status: "Loading" });
+    async function handleSwitchSkill(skillId: SkillId) {
+        setSelected({ skillId, status: "Loading" });
         await new Promise((resolve) => setTimeout(resolve, 200));
 
-        setSelected({ personId, status: "Selected" });
+        setSelected({ skillId, status: "Selected" });
     }
 
     // The check the dialog targets. Closing only sets `dialogOpen` false and leaves `target` in
@@ -187,9 +189,9 @@ export function SkillTrack_SessionByPerson_Content({
 
     const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
 
-    // Group the session skills by skill package and group (for the "by-package-group" order).
-    // Packages are sorted by name, groups by sequence; skills keep the alphabetical order of
-    // `sessionSkills`. Packages/groups with no session skills are omitted.
+    // Group the session skills (the left-hand picker) by skill package and group (for the
+    // "by-package-group" order). Packages are sorted by name, groups by sequence; skills keep the
+    // alphabetical order of `sessionSkills`. Packages/groups with no session skills are omitted.
     const assessableSkillById = new Map(assessableSkills.map((skill) => [skill.id, skill]));
     const packageSections = R.pipe(
         skillPackages,
@@ -216,6 +218,24 @@ export function SkillTrack_SessionByPerson_Content({
     // Session skills that are no longer in the assessable set (e.g. subscription removed).
     const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
 
+    const renderSkillItem = (skill: (typeof sessionSkills)[number]) => (
+        <Item key={skill.id} asChild data-active={skill.id === selected?.skillId || undefined}>
+            <a
+                onClick={() => {
+                    handleSwitchSkill(skill.id);
+                }}
+            >
+                <ItemContent>
+                    <ItemTitle>{skill.name}</ItemTitle>
+                </ItemContent>
+
+                <ItemActions>
+                    <ChevronRightIcon className="size-4 text-muted-foreground" />
+                </ItemActions>
+            </a>
+        </Item>
+    );
+
     const navbar = (
         <Std.Navbar>
             <Std.Breadcrumbs
@@ -237,7 +257,7 @@ export function SkillTrack_SessionByPerson_Content({
                             session_id: sessionId,
                         }),
                     },
-                    "By Person",
+                    "By Skill",
                 ]}
             />
             <div className="flex items-center justify-end gap-1 grow">
@@ -263,11 +283,11 @@ export function SkillTrack_SessionByPerson_Content({
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>Assess by Person</Saratoga.Title>
+                        <Saratoga.Title>Assess by Skill</Saratoga.Title>
                         <Saratoga.Actions>
                             <SkillTrack_RecordingOptionsSheet
                                 sessionId={sessionId}
-                                mode="by-person"
+                                mode="by-skill"
                                 view={{ skillOrder, onSkillOrderChange: setSkillOrder }}
                             />
                         </Saratoga.Actions>
@@ -311,53 +331,137 @@ export function SkillTrack_SessionByPerson_Content({
                                 <div>
                                     <FieldGroup className="block lg:hidden">
                                         <Field>
-                                            <FieldLabel>Person</FieldLabel>
+                                            <FieldLabel>Skill</FieldLabel>
                                             <Select
-                                                value={selected?.personId ?? undefined}
+                                                value={selected?.skillId ?? undefined}
                                                 onValueChange={(value) => {
-                                                    handleSwitchPerson(value as PersonId);
+                                                    handleSwitchSkill(value as SkillId);
                                                 }}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select a person" />
+                                                    <SelectValue placeholder="Select a skill" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {assignedPersonnel.map((person) => (
-                                                        <SelectItem
-                                                            key={person.id}
-                                                            value={person.id}
-                                                        >
-                                                            {person.name}
-                                                        </SelectItem>
-                                                    ))}
+                                                    {match(skillOrder)
+                                                        .with("alphabetical", () =>
+                                                            sessionSkills.map((skill) => (
+                                                                <SelectItem
+                                                                    key={skill.id}
+                                                                    value={skill.id}
+                                                                >
+                                                                    {skill.name}
+                                                                </SelectItem>
+                                                            )),
+                                                        )
+                                                        .with("by-package-group", () => (
+                                                            <>
+                                                                {packageSections.flatMap(
+                                                                    ({ skillPackage, groups }) =>
+                                                                        groups.map(
+                                                                            ({
+                                                                                skillGroup,
+                                                                                skills,
+                                                                            }) => (
+                                                                                <SelectGroup
+                                                                                    key={
+                                                                                        skillGroup.id
+                                                                                    }
+                                                                                >
+                                                                                    <SelectLabel>
+                                                                                        {
+                                                                                            skillPackage.name
+                                                                                        }{" "}
+                                                                                        ·{" "}
+                                                                                        {
+                                                                                            skillGroup.name
+                                                                                        }
+                                                                                    </SelectLabel>
+                                                                                    {skills.map(
+                                                                                        (skill) => (
+                                                                                            <SelectItem
+                                                                                                key={
+                                                                                                    skill.id
+                                                                                                }
+                                                                                                value={
+                                                                                                    skill.id
+                                                                                                }
+                                                                                            >
+                                                                                                {
+                                                                                                    skill.name
+                                                                                                }
+                                                                                            </SelectItem>
+                                                                                        ),
+                                                                                    )}
+                                                                                </SelectGroup>
+                                                                            ),
+                                                                        ),
+                                                                )}
+                                                                {ungroupedSkills.length > 0 && (
+                                                                    <SelectGroup>
+                                                                        <SelectLabel>
+                                                                            Other
+                                                                        </SelectLabel>
+                                                                        {ungroupedSkills.map(
+                                                                            (skill) => (
+                                                                                <SelectItem
+                                                                                    key={skill.id}
+                                                                                    value={skill.id}
+                                                                                >
+                                                                                    {skill.name}
+                                                                                </SelectItem>
+                                                                            ),
+                                                                        )}
+                                                                    </SelectGroup>
+                                                                )}
+                                                            </>
+                                                        ))
+                                                        .exhaustive()}
                                                 </SelectContent>
                                             </Select>
                                         </Field>
                                     </FieldGroup>
                                     <ItemGroup className="hidden lg:block">
-                                        {assignedPersonnel.map((person) => (
-                                            <Item
-                                                key={person.id}
-                                                asChild
-                                                data-active={
-                                                    person.id === selected?.personId || undefined
-                                                }
-                                            >
-                                                <a
-                                                    onClick={() => {
-                                                        handleSwitchPerson(person.id);
-                                                    }}
-                                                >
-                                                    <ItemContent>
-                                                        <ItemTitle>{person.name}</ItemTitle>
-                                                    </ItemContent>
-
-                                                    <ItemActions>
-                                                        <ChevronRightIcon className="size-4 text-muted-foreground" />
-                                                    </ItemActions>
-                                                </a>
-                                            </Item>
-                                        ))}
+                                        {match(skillOrder)
+                                            .with("alphabetical", () =>
+                                                sessionSkills.map(renderSkillItem),
+                                            )
+                                            .with("by-package-group", () => (
+                                                <div className="space-y-6">
+                                                    {packageSections.map(
+                                                        ({ skillPackage, groups }) => (
+                                                            <div
+                                                                key={skillPackage.id}
+                                                                className="space-y-6"
+                                                            >
+                                                                <div className="font-semibold border-b pb-1">
+                                                                    {skillPackage.name}
+                                                                </div>
+                                                                {groups.map(
+                                                                    ({ skillGroup, skills }) => (
+                                                                        <div key={skillGroup.id}>
+                                                                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                                                                                {skillGroup.name}
+                                                                            </div>
+                                                                            {skills.map(
+                                                                                renderSkillItem,
+                                                                            )}
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                    {ungroupedSkills.length > 0 && (
+                                                        <div>
+                                                            <div className="px-2 pt-2 font-semibold border-b">
+                                                                Other
+                                                            </div>
+                                                            {ungroupedSkills.map(renderSkillItem)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                            .exhaustive()}
                                     </ItemGroup>
                                 </div>
                                 <Separator orientation="vertical" className="hidden lg:block" />
@@ -371,7 +475,7 @@ export function SkillTrack_SessionByPerson_Content({
                                                     <ArrowUpIcon className="block lg:hidden size-12 text-muted-foreground" />
                                                 </EmptyMedia>
                                                 <EmptyDescription>
-                                                    Select a person to assess their skills.
+                                                    Select a skill to assess.
                                                 </EmptyDescription>
                                             </Empty>
                                         ))
@@ -380,94 +484,41 @@ export function SkillTrack_SessionByPerson_Content({
                                                 <RainbowSpinner />
                                             </div>
                                         ))
-                                        .with({ status: "Selected" }, ({ personId }) => {
-                                            const renderRow = (
-                                                skill: (typeof sessionSkills)[number],
-                                            ) => (
-                                                <SkillTrack_CheckRow
-                                                    key={skill.id}
-                                                    title={skill.name}
-                                                    check={getSavedCheck(personId, skill.id)}
-                                                    pending={pendingChecks.get(
-                                                        sessionCheckKey(personId, skill.id),
-                                                    )}
-                                                    resultOptions={resultOptions}
-                                                    resultLabel={resultLabel}
-                                                    otherChecks={otherChecksByKey.get(
-                                                        sessionCheckKey(personId, skill.id),
-                                                    )}
-                                                    onRecord={(value) =>
-                                                        record({
-                                                            assesseeId: personId,
-                                                            skillId: skill.id,
-                                                            ...value,
-                                                        })
-                                                    }
-                                                    onRemove={() =>
-                                                        remove({
-                                                            assesseeId: personId,
-                                                            skillId: skill.id,
-                                                        })
-                                                    }
-                                                    onOpenDialog={() =>
-                                                        openDialog(personId, skill.id)
-                                                    }
-                                                />
-                                            );
-
-                                            return match(skillOrder)
-                                                .with("alphabetical", () => (
-                                                    <>{sessionSkills.map(renderRow)}</>
-                                                ))
-                                                .with("by-package-group", () => (
-                                                    <div className="space-y-6">
-                                                        {packageSections.map(
-                                                            ({ skillPackage, groups }) => (
-                                                                <div
-                                                                    key={skillPackage.id}
-                                                                    className="space-y-6"
-                                                                >
-                                                                    <div className="font-semibold border-b pb-1">
-                                                                        {skillPackage.name}
-                                                                    </div>
-                                                                    {groups.map(
-                                                                        ({
-                                                                            skillGroup,
-                                                                            skills,
-                                                                        }) => (
-                                                                            <div
-                                                                                key={skillGroup.id}
-                                                                            >
-                                                                                <div className="text-sm font-medium text-muted-foreground mb-2">
-                                                                                    {
-                                                                                        skillGroup.name
-                                                                                    }
-                                                                                </div>
-                                                                                <div className="flex flex-col gap-5">
-                                                                                    {skills.map(
-                                                                                        renderRow,
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                        ),
-                                                                    )}
-                                                                </div>
-                                                            ),
+                                        .with({ status: "Selected" }, ({ skillId }) => (
+                                            <>
+                                                {assignedPersonnel.map((person) => (
+                                                    <SkillTrack_CheckRow
+                                                        key={person.id}
+                                                        title={person.name}
+                                                        check={getSavedCheck(person.id, skillId)}
+                                                        pending={pendingChecks.get(
+                                                            sessionCheckKey(person.id, skillId),
                                                         )}
-                                                        {ungroupedSkills.length > 0 && (
-                                                            <div className="space-y-6">
-                                                                <div className="font-semibold border-b pb-1">
-                                                                    Other
-                                                                </div>
-                                                                <div className="flex flex-col gap-5">
-                                                                    {ungroupedSkills.map(renderRow)}
-                                                                </div>
-                                                            </div>
+                                                        resultOptions={resultOptions}
+                                                        resultLabel={resultLabel}
+                                                        otherChecks={otherChecksByKey.get(
+                                                            sessionCheckKey(person.id, skillId),
                                                         )}
-                                                    </div>
-                                                ))
-                                                .exhaustive();
-                                        })
+                                                        onRecord={(value) =>
+                                                            record({
+                                                                assesseeId: person.id,
+                                                                skillId,
+                                                                ...value,
+                                                            })
+                                                        }
+                                                        onRemove={() =>
+                                                            remove({
+                                                                assesseeId: person.id,
+                                                                skillId,
+                                                            })
+                                                        }
+                                                        onOpenDialog={() =>
+                                                            openDialog(person.id, skillId)
+                                                        }
+                                                    />
+                                                ))}
+                                            </>
+                                        ))
                                         .exhaustive()}
                                     {target && (
                                         <SkillTrack_RecordCheckDialog

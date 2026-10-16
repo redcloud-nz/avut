@@ -22,19 +22,6 @@ import { HelpButton } from "@/components/docs/help-button";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
-import { SkillsModule_ApproveSession_Dialog } from "@/components/skill-track/approve-session";
-import { SkillsModule_ReopenSession_Dialog } from "@/components/skill-track/reopen-session";
-import { SkillsModule_ResolveConflict_Dialog } from "@/components/skill-track/resolve-conflict";
-import {
-    ReviewChecksSubject,
-    SkillsModule_ReviewChecks_Dialog,
-} from "@/components/skill-track/review-checks-dialog";
-import { SkillTrack_SessionReview_Conflicts } from "@/components/skill-track/session-review-conflicts";
-import {
-    coverageSummary,
-    SkillTrack_SessionReview_Coverage,
-} from "@/components/skill-track/session-review-coverage";
-import { SkillTrack_SessionReview_Summary } from "@/components/skill-track/session-review-summary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +46,19 @@ import {
     SkillCheckConflict,
 } from "@/lib/skill-check-conflicts";
 import { coverageBy } from "@/lib/skill-check-coverage";
+import { SkillsModule_ApproveSession_Dialog } from "@/modules/skill-track/components/approve-session";
+import { SkillsModule_ReopenSession_Dialog } from "@/modules/skill-track/components/reopen-session";
+import { SkillsModule_ResolveConflict_Dialog } from "@/modules/skill-track/components/resolve-conflict";
+import {
+    ReviewChecksSubject,
+    SkillsModule_ReviewChecks_Dialog,
+} from "@/modules/skill-track/components/review-checks-dialog";
+import { SkillTrack_SessionReview_Conflicts } from "@/modules/skill-track/components/session-review-conflicts";
+import {
+    coverageSummary,
+    SkillTrack_SessionReview_Coverage,
+} from "@/modules/skill-track/components/session-review-coverage";
+import { SkillTrack_SessionReview_Summary } from "@/modules/skill-track/components/session-review-summary";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SessionReview_Content({
