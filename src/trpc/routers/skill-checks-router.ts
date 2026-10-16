@@ -62,15 +62,18 @@ function rethrowSessionCheckRace(
 export const skillChecksRouter = createTrpcRouter({
     /**
      * Creates a standalone skill check, outside any session. It's created as `Include`, counting in
-     * reports straight away, since no review or approval will ever move it there. Checks within a
+     * reports straight away, since no review or approval will ever move it there.
+     *
+     * `checkedAt` back-dates a historic result; omitted, the check is dated now. `recordedAt` is
+     * always now, so a back-dated check stays distinguishable from one recorded at the time. Checks within a
      * session are recorded through `skillCheckSessions.setSessionSkillCheck`, which enforces
      * assessor membership and the approval lock.
      *
      * With no review to catch a mistake, every id is checked here: the assessor must be the
      * caller's own linked person, the assessee a person in the organization, and the skill one it
      * can assess (`SkillChecks.assertAssessablePersonnel` / `assertAssessableSkills`).
-     * @throws TRPCError(BAD_REQUEST) if `sessionId` is not null, the caller has no linked person
-     * record, or the assessee or skill isn't valid in the organization.
+     * @throws TRPCError(BAD_REQUEST) if `sessionId` is not null, `checkedAt` is in the future, the
+     * caller has no linked person record, or the assessee or skill isn't valid in the organization.
      * @throws TRPCError(FORBIDDEN) if `assessorId` isn't the caller's linked person.
      */
     // `sessionId` stays in the input (nullable) so existing callers keep their shape; only `null`
@@ -80,23 +83,37 @@ export const skillChecksRouter = createTrpcRouter({
             z.object({
                 skillCheckId: SkillCheckId.schema,
                 sessionId: SkillCheckSessionId.schema.nullable(),
-                create: SkillCheck.schema.pick({
-                    assesseeId: true,
-                    assessorId: true,
-                    skillId: true,
-                    result: true,
-                    notes: true,
-                }),
+                create: SkillCheck.schema
+                    .pick({
+                        assesseeId: true,
+                        assessorId: true,
+                        skillId: true,
+                        result: true,
+                        notes: true,
+                    })
+                    .extend({ checkedAt: SkillCheck.schema.shape.checkedAt.optional() }),
             }),
         )
         .output(SkillCheck.schema)
         .mutation(async ({ ctx, input }) => {
-            const { skillCheckId, sessionId, create } = input;
+            const {
+                skillCheckId,
+                sessionId,
+                create: { checkedAt, ...create },
+            } = input;
 
             if (sessionId !== null) {
                 throw new TRPCError({
                     code: "BAD_REQUEST",
                     message: Messages.sessionCheckNotAllowed(sessionId),
+                });
+            }
+
+            const now = new Date();
+            if (checkedAt && new Date(checkedAt) > now) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: Messages.checkedAtInFuture(),
                 });
             }
 
@@ -119,8 +136,8 @@ export const skillChecksRouter = createTrpcRouter({
             await SkillChecks.assertAssessablePersonnel(ctx, [create.assesseeId]);
             await SkillChecks.assertAssessableSkills(ctx, [create.skillId]);
 
-            // A standalone check has no session date, so it was checked when it's recorded.
-            const now = new Date();
+            // A standalone check has no session date: it was checked when it's recorded, unless
+            // it's a historic result being back-dated.
             const record = await ctx.prisma.skillCheck.create({
                 data: {
                     id: skillCheckId,
@@ -128,7 +145,7 @@ export const skillChecksRouter = createTrpcRouter({
                     sessionId: null,
                     ...create,
                     status: "Include",
-                    checkedAt: now,
+                    checkedAt: checkedAt ? new Date(checkedAt) : now,
                     recordedAt: now,
                 },
             });

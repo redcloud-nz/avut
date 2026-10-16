@@ -9,6 +9,8 @@ export const Messages = {
 
     assessorNotSelf: () => `You can only record a skill check with yourself as the assessor.`,
 
+    checkedAtInFuture: () => `A skill check can't be dated in the future.`,
+
     d4HAccessTokenNotFound: (tokenId: string) => `D4H Access Token(id=${tokenId}) not found.`,
 
     d4HAccessTokenRejected: (status: number) =>
