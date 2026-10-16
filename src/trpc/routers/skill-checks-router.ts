@@ -296,7 +296,7 @@ export const skillChecksRouter = createTrpcRouter({
 
             const personnelIds = new Set(personnel.map((p) => p.id));
 
-            // Step 2: Resolve skill scope — active skills from active, published subscribed packages
+            // Step 2: Resolve skill scope — active skills from available subscribed packages
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: { organizationId: ctx.organizationId },
                 include: {
@@ -315,7 +315,7 @@ export const skillChecksRouter = createTrpcRouter({
 
             for (const sub of subscriptions) {
                 const pkg = sub.skillPackage;
-                if (pkg.status !== "Active" || !pkg.published || packageMap.has(pkg.id)) continue;
+                if (!SkillPackage.isAvailable(pkg) || packageMap.has(pkg.id)) continue;
 
                 packageMap.set(pkg.id, SkillPackage.fromRecord(pkg));
                 for (const group of pkg.groups) {

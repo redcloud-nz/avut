@@ -34,7 +34,7 @@
 
     `npm run check` passes.
 
-- [ ] **2. Subscriber reads use the predicate**
+- [x] **2. Subscriber reads use the predicate** — feat(skill-track): subscriber reads use the availability predicate
   - **Files:** `src/trpc/routers/skill-package-subscriptions-router.ts`, `src/server/services/skill-checks.ts`, `src/trpc/routers/skill-checks-router.ts`, and their tests (`skill-package-subscriptions-router.test.ts`, `skill-checks.test.ts`, `skill-checks-router.test.ts`). Task 3 covers `listPackages` and `getPackage`.
   - **Do:**
     - `listAssessableSkills`, `listSubscribedPackages`, and `assertAssessableSkills` filter the package with `availableSkillPackageWhere`, instead of `status: { not: "Deleted" }`. Update `assertAssessableSkills`'s JSDoc and its error message ("…from an available package this organisation subscribes to").

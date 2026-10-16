@@ -12,6 +12,7 @@ import { PersonId, PersonRef } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
 import type { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { availableSkillPackageWhere } from "@/lib/schemas/skill-package";
 import { findConflicts, isCheckIncluded } from "@/lib/skill-check-conflicts";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
@@ -444,7 +445,8 @@ export async function assertAssessablePersonnel(
 
 /**
  * Check that every id is a skill the organization can assess, as `listAssessableSkills` lists
- * them: not `Deleted`, from a package the organization subscribes to that isn't `Deleted` either.
+ * them: not `Deleted`, from an available package (`availableSkillPackageWhere`) the organization
+ * subscribes to.
  * @throws ValidationError naming any id that isn't.
  */
 export async function assertAssessableSkills(
@@ -458,7 +460,7 @@ export async function assertAssessableSkills(
             id: { in: skillIds },
             status: { not: "Deleted" },
             skillPackage: {
-                status: { not: "Deleted" },
+                ...availableSkillPackageWhere,
                 subscriptions: { some: { organizationId: ctx.organizationId } },
             },
         },
@@ -468,7 +470,7 @@ export async function assertAssessableSkills(
     const invalidIds = skillIds.filter((id) => !foundIds.has(id));
     if (invalidIds.length > 0) {
         throw new ValidationError(
-            `${invalidIds.map((id) => `Skill(id=${id})`).join(", ")} can't be assessed: a skill must come from a package this organisation subscribes to.`,
+            `${invalidIds.map((id) => `Skill(id=${id})`).join(", ")} can't be assessed: a skill must come from an available package this organisation subscribes to.`,
         );
     }
 }

@@ -936,6 +936,7 @@ describe("skillChecks — the session approval lock", () => {
     //   standaloneEditCheck → no session, by assessorPerson (for the edit test)
     //   orphanedCheck   → no session, its assessor purged (assessorId null)
     //   skill           → in pkg, which the org subscribes to; skill2..4 have no rows
+    //   withdrawnSkill  → in withdrawnPkg, which the org subscribes to but is unpublished
     //   otherOrg        → holds foreignPerson and foreignSkill (in foreignPkg, not subscribed)
     // Every check is seeded with checkedAt and recordedAt at SEEDED.
     // Each test writes to a check no other test reads, so they don't depend on order.
@@ -969,6 +970,8 @@ describe("skillChecks — the session approval lock", () => {
         foreignPerson: PersonId.create(),
         foreignPkg: SkillPackageId.create(),
         foreignSkill: SkillId.create(),
+        withdrawnPkg: SkillPackageId.create(),
+        withdrawnSkill: SkillId.create(),
     };
     const SEEDED = new Date("2026-01-01T00:00:00.000Z");
 
@@ -998,9 +1001,10 @@ describe("skillChecks — the session approval lock", () => {
                 email: `${T.foreignPerson}@example.com`,
             },
         });
-        for (const [pkgId, organizationId, skillId] of [
-            [T.pkg, T.org, T.skill],
-            [T.foreignPkg, T.otherOrg, T.foreignSkill],
+        for (const [pkgId, organizationId, skillId, published] of [
+            [T.pkg, T.org, T.skill, true],
+            [T.foreignPkg, T.otherOrg, T.foreignSkill, true],
+            [T.withdrawnPkg, T.org, T.withdrawnSkill, false],
         ] as const) {
             const skillGroupId = SkillGroupId.create();
             await db.skillPackage.create({
@@ -1010,7 +1014,7 @@ describe("skillChecks — the session approval lock", () => {
                     name: pkgId,
                     description: "",
                     properties: {},
-                    published: true,
+                    published,
                 },
             });
             await db.skillGroup.create({
@@ -1033,9 +1037,11 @@ describe("skillChecks — the session approval lock", () => {
                 },
             });
         }
-        await db.skillPackageSubscription.create({
-            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg },
-        });
+        for (const skillPackageId of [T.pkg, T.withdrawnPkg]) {
+            await db.skillPackageSubscription.create({
+                data: { id: nanoId16(), organizationId: T.org, skillPackageId },
+            });
+        }
 
         for (const [userId, personId] of [
             [T.assessorUser, T.assessorPerson],
@@ -1257,6 +1263,12 @@ describe("skillChecks — the session approval lock", () => {
                 "a skill from a package the organization doesn't subscribe to",
                 T.assessorUser,
                 { skillId: T.foreignSkill },
+                "BAD_REQUEST",
+            ],
+            [
+                "a skill from an unpublished package the organization subscribes to",
+                T.assessorUser,
+                { skillId: T.withdrawnSkill },
                 "BAD_REQUEST",
             ],
         ] as const) {

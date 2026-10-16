@@ -357,3 +357,91 @@ describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", ()
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 });
+
+describe("skillPackageSubscriptionsRouter withholds a withdrawn package from its subscribers", () => {
+    const T = {
+        org: OrganizationId.create(),
+        publisherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        livePkg: SkillPackageId.create(),
+        unpublishedPkg: SkillPackageId.create(),
+        archivedPkg: SkillPackageId.create(),
+        // Archived before archivePackage unpublished on archive, so still `published: true`.
+        unsubscribedArchivedPkg: SkillPackageId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, slug] of [
+            [T.org, "acme"],
+            [T.publisherOrg, "publisher"],
+        ] as const) {
+            await db.organization.create({
+                data: { id, name: slug, slug, createdAt: new Date() },
+            });
+        }
+        for (const [id, published, status] of [
+            [T.livePkg, true, "Active"],
+            [T.unpublishedPkg, false, "Active"],
+            [T.archivedPkg, false, "Archived"],
+            [T.unsubscribedArchivedPkg, true, "Archived"],
+        ] as const) {
+            await db.skillPackage.create({
+                data: {
+                    id,
+                    organizationId: T.publisherOrg,
+                    name: id,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    published,
+                    status,
+                },
+            });
+        }
+        for (const skillPackageId of [T.livePkg, T.unpublishedPkg, T.archivedPkg]) {
+            await db.skillPackageSubscription.create({
+                data: {
+                    id: SkillPackageSubscriptionId.create(),
+                    organizationId: T.org,
+                    skillPackageId,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillPackageSubscriptionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: {
+                    skillPackageSubscription: ["view", "subscribe"],
+                    organization: ["view"],
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("listSubscribedPackages leaves out the unpublished and the Archived package", async () => {
+        const subscribed = await makeCaller().listSubscribedPackages({ organizationId: T.org });
+        expect(subscribed.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("listAssessableSkills leaves out the unpublished and the Archived package", async () => {
+        const { skillPackages } = await makeCaller().listAssessableSkills({
+            organizationId: T.org,
+        });
+        expect(skillPackages.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("subscribeToPackage throws NOT_FOUND for an Archived package that is still published", async () => {
+        await expect(
+            makeCaller().subscribeToPackage({
+                organizationId: T.org,
+                skillPackageId: T.unsubscribedArchivedPkg,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});

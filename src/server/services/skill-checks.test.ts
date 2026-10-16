@@ -18,6 +18,7 @@ import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
+    assertAssessableSkills,
     assertSessionCheckTarget,
     assertSessionUnlocked,
     createSession,
@@ -108,6 +109,97 @@ describe("skill-checks", () => {
         it("allows a Draft or Exclude session", () => {
             expect(() => assertSessionUnlocked({ id: T.session, status: "Draft" })).not.toThrow();
             expect(() => assertSessionUnlocked({ id: T.session, status: "Exclude" })).not.toThrow();
+        });
+    });
+
+    describe("assertAssessableSkills", () => {
+        // Dataset (all in B.org), one skill per package:
+        //   available    → published, Active, subscribed    → assessable
+        //   unpublished  → unpublished, Active, subscribed  → not assessable
+        //   archived     → published, Archived, subscribed  → not assessable
+        //   unsubscribed → published, Active, not subscribed → not assessable
+        const B = {
+            org: OrganizationId.create(),
+            available: SkillId.create(),
+            unpublished: SkillId.create(),
+            archived: SkillId.create(),
+            unsubscribed: SkillId.create(),
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: { id: B.org, name: B.org, slug: B.org, createdAt: new Date() },
+            });
+            for (const [skillId, published, status, subscribed] of [
+                [B.available, true, "Active", true],
+                [B.unpublished, false, "Active", true],
+                [B.archived, true, "Archived", true],
+                [B.unsubscribed, true, "Active", false],
+            ] as const) {
+                const skillPackageId = SkillPackageId.create();
+                const skillGroupId = SkillGroupId.create();
+                await db.skillPackage.create({
+                    data: {
+                        id: skillPackageId,
+                        organizationId: B.org,
+                        name: skillPackageId,
+                        description: "",
+                        properties: {},
+                        published,
+                        status,
+                    },
+                });
+                await db.skillGroup.create({
+                    data: {
+                        id: skillGroupId,
+                        skillPackageId,
+                        name: skillGroupId,
+                        description: "",
+                        properties: {},
+                    },
+                });
+                await db.skill.create({
+                    data: {
+                        id: skillId,
+                        skillPackageId,
+                        skillGroupId,
+                        name: skillId,
+                        description: "",
+                        properties: {},
+                    },
+                });
+                if (subscribed) {
+                    await db.skillPackageSubscription.create({
+                        data: { id: nanoId16(), organizationId: B.org, skillPackageId },
+                    });
+                }
+            }
+        });
+
+        function ctxB() {
+            return createOrganizationMockContext({
+                organizationId: B.org,
+                user: { id: T.user },
+                permissions: {},
+                prisma: db,
+            });
+        }
+
+        it("accepts a skill from an available subscribed package", async () => {
+            await expect(assertAssessableSkills(ctxB(), [B.available])).resolves.toBeUndefined();
+        });
+
+        it.each([
+            ["an unpublished", B.unpublished],
+            ["an Archived", B.archived],
+            ["an unsubscribed", B.unsubscribed],
+        ])("rejects a skill from %s package, naming only that skill", async (_, skillId) => {
+            const error = await assertAssessableSkills(ctxB(), [B.available, skillId]).catch(
+                (e: unknown) => e,
+            );
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toContain(`Skill(id=${skillId})`);
+            expect((error as Error).message).not.toContain(B.available);
         });
     });
 

@@ -10,7 +10,11 @@ import { TRPCError } from "@trpc/server";
 import { OrganizationRef } from "@/lib/schemas/organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
-import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
+import {
+    availableSkillPackageWhere,
+    SkillPackage,
+    SkillPackageId,
+} from "@/lib/schemas/skill-package";
 import {
     SkillPackageSubscription,
     SkillPackageSubscriptionId,
@@ -161,6 +165,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
 
     /**
      * List the skills that are assessable for this organization based on their current skill package subscriptions.
+     * Only available packages count (see `SkillPackage.isAvailable`): a withdrawn package's skills are left out.
      */
     listAssessableSkills: organizationProcedure({ skillPackageSubscription: ["view"] })
         .output(
@@ -174,7 +179,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: {
                     organizationId: ctx.organizationId,
-                    skillPackage: { status: { not: "Deleted" } },
+                    skillPackage: availableSkillPackageWhere,
                 },
                 include: {
                     skillPackage: {
@@ -277,6 +282,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
 
     /**
      * List the packages that the organization is currently subscribed to, including details about the package and the subscription. Requires "view" skill on "Skills" module.
+     * Only available packages are listed (see `SkillPackage.isAvailable`); a withdrawn subscription is left out.
      * @returns An array of skill packages that the organization is subscribed to, including subscription details.
      */
     listSubscribedPackages: organizationProcedure({ skillPackageSubscription: ["view"] })
@@ -292,7 +298,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: {
                     organizationId: ctx.organizationId,
-                    skillPackage: { status: { not: "Deleted" } },
+                    skillPackage: availableSkillPackageWhere,
                 },
                 include: {
                     skillPackage: {
@@ -316,10 +322,10 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Subscribe the organization to the specified skill package, allowing access to the skills within the package. The package must be published and not already subscribed to by the organization.
+     * Subscribe the organization to the specified skill package, allowing access to the skills within the package. The package must be available (published and `Active`, see `SkillPackage.isAvailable`) and not already subscribed to by the organization.
      * @param skillPackageId The ID of the skill package to subscribe to.
      * @returns The created skill package subscription.
-     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or is not published.
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or is not available.
      * @throws TRPCError(BAD_REQUEST) if the organization is already subscribed to the skill package.
      */
     subscribeToPackage: organizationProcedure({ skillPackageSubscription: ["subscribe"] })
@@ -330,14 +336,14 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
         )
         .output(z.object({ created: SkillPackageSubscription.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillPackageId } }) => {
-            // Check if the package exists and is published
+            // Check if the package exists and is available
             const skillPackage = await ctx.prisma.skillPackage.findUnique({
                 where: {
                     id: skillPackageId,
                 },
             });
 
-            if (!skillPackage || !skillPackage.published || skillPackage.status === "Deleted") {
+            if (!skillPackage || !SkillPackage.isAvailable(skillPackage)) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.skillPackageNotFound(skillPackageId),
