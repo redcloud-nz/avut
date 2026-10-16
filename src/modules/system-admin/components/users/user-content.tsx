@@ -10,7 +10,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { SystemAdmin_UserActions_Menu } from "@/components/system/admin/users/user-actions-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -22,6 +21,7 @@ import {
 } from "@/components/ui/data-item";
 import { route } from "@/lib/routes";
 import { UserId } from "@/lib/schemas/user";
+import { SystemAdmin_UserActions_Menu } from "@/modules/system-admin/components/users/user-actions-menu";
 import { trpc } from "@/trpc/client";
 
 export function SystemAdmin_User_Content({ userId }: { userId: UserId }) {

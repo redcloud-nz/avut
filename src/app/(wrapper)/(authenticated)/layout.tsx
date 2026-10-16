@@ -16,7 +16,6 @@ import { ScopeSidebar_Modules } from "@/components/nav/scope-sidebar-modules";
 import { ScopeSwitcher, ScopeSwitcher_Skeleton } from "@/components/nav/scope-switcher";
 import { SidebarPortalOutlet, SidebarPortalProvider } from "@/components/nav/sidebar-portal";
 import { UserMenu, UserMenu_Skeleton } from "@/components/nav/user-menu";
-import { ImpersonationBanner } from "@/components/system/admin/impersonation-banner";
 import {
     Sidebar,
     SidebarContent,
@@ -24,13 +23,14 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar";
-import { TimeZoneAutoDetect } from "@/components/user/user-settings/timezone-auto-detect";
 import { WhatsNewVersionButton } from "@/components/whats-new/whats-new-button";
 import {
     WhatsNewBoundary,
     WhatsNewDialog,
     WhatsNewProvider,
 } from "@/components/whats-new/whats-new-dialog";
+import { ImpersonationBanner } from "@/modules/system-admin/components/impersonation-banner";
+import { TimeZoneAutoDetect } from "@/modules/user-settings/components/timezone-auto-detect";
 import { resolveUserModuleFlags } from "@/server/module-flags";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";

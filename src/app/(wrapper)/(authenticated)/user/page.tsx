@@ -9,10 +9,22 @@ import { Suspense } from "react";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ActivityStats_Card, ActivityStats_Skeleton } from "@/components/user/activity-stats";
-import { Invitations_Card, Invitations_Skeleton } from "@/components/user/invitations";
-import { OrgSelector_Card, OrgSelector_Skeleton } from "@/components/user/org-selector";
-import { SignedInAs_Card, SignedInAs_Skeleton } from "@/components/user/signed-in-as";
+import {
+    ActivityStats_Card,
+    ActivityStats_Skeleton,
+} from "@/modules/user-dashboard/components/activity-stats";
+import {
+    Invitations_Card,
+    Invitations_Skeleton,
+} from "@/modules/user-dashboard/components/invitations";
+import {
+    OrgSelector_Card,
+    OrgSelector_Skeleton,
+} from "@/modules/user-dashboard/components/org-selector";
+import {
+    SignedInAs_Card,
+    SignedInAs_Skeleton,
+} from "@/modules/user-dashboard/components/signed-in-as";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {

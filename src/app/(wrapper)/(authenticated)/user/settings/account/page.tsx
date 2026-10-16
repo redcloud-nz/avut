@@ -7,7 +7,7 @@
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { UserSettings_Account } from "@/components/user/user-settings/user-account-settings";
+import { UserSettings_Account } from "@/modules/user-settings/components/user-account-settings";
 
 export default async function UserSettings_Account_Page() {
     return (

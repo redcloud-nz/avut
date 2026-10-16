@@ -18,11 +18,11 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { SystemAdmin_CreateOrganization_Dialog } from "@/components/system/admin/organizations/create-organization-dialog";
 import { Badge } from "@/components/ui/badge";
 import { usePreferences } from "@/hooks/use-preferences";
 import { Modules, type ModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
+import { SystemAdmin_CreateOrganization_Dialog } from "@/modules/system-admin/components/organizations/create-organization-dialog";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
 type OrganizationRow = RouterOutput["organizations"]["listOrganizations"]["organizations"][number];

@@ -15,13 +15,13 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useUser } from "@/client/auth-queries";
 import { ObjectIcons } from "@/components/icons";
-import { SystemAdmin_BanUser_Dialog } from "@/components/system/admin/users/ban-user-dialog";
-import { SystemAdmin_DeleteUser_Dialog } from "@/components/system/admin/users/delete-user-dialog";
-import { SystemAdmin_ImpersonateUser_Dialog } from "@/components/system/admin/users/impersonate-user-dialog";
-import { SystemAdmin_SetUserRole_Dialog } from "@/components/system/admin/users/set-user-role-dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { UserId } from "@/lib/schemas/user";
+import { SystemAdmin_BanUser_Dialog } from "@/modules/system-admin/components/users/ban-user-dialog";
+import { SystemAdmin_DeleteUser_Dialog } from "@/modules/system-admin/components/users/delete-user-dialog";
+import { SystemAdmin_ImpersonateUser_Dialog } from "@/modules/system-admin/components/users/impersonate-user-dialog";
+import { SystemAdmin_SetUserRole_Dialog } from "@/modules/system-admin/components/users/set-user-role-dialog";
 import { type RouterOutput } from "@/trpc/client";
 
 type SystemAdminUser = RouterOutput["users"]["getUser"];

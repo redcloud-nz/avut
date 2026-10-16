@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { SystemAdmin_OrganizationSettings_Content } from "@/components/system/admin/organizations/organization-settings-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { SystemAdmin_OrganizationSettings_Content } from "@/modules/system-admin/components/organizations/organization-settings-content";
 import { resolveModuleFlags } from "@/server/module-flags";
 import { requireSystemAdmin } from "@/server/system-admin-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";

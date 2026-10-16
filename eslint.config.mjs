@@ -372,8 +372,8 @@ const config = [
       "src/client/dev-tools.ts",
       "src/components/auth/sign-in.tsx",
       "src/components/invitations/invitation-sign-in.tsx",
-      "src/components/system/admin/impersonation-banner.tsx",
-      "src/components/system/admin/users/impersonate-user-dialog.tsx",
+      "src/modules/system-admin/components/impersonation-banner.tsx",
+      "src/modules/system-admin/components/users/impersonate-user-dialog.tsx",
     ],
     rules: {
       "no-restricted-imports": [
