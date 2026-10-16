@@ -20,7 +20,7 @@
 
 ### Review group 1: data layer
 
-- [ ] **1. The availability predicate, and archive unpublishes**
+- [x] **1. The availability predicate, and archive unpublishes** — feat(skill-package-builder): availability predicate; archive unpublishes
   - **Files:** `src/lib/schemas/skill-package.ts`, `src/server/services/skill-packages.ts`, `src/server/services/skill-packages.test.ts`
   - **Do:**
     - In `skill-package.ts`, add `SkillPackage.isAvailable(pkg: Pick<SkillPackage, "published" | "status">): boolean` (`published && status === "Active"`), and an exported `availableSkillPackageWhere` constant (`{ published: true, status: "Active" } satisfies Prisma.SkillPackageWhereInput`), with a JSDoc on each saying what "available" means (see Decisions). Import only the Prisma _type_, so the file stays client-safe.

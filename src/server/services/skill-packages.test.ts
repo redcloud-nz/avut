@@ -673,3 +673,75 @@ describe("SkillPackages archive / restore / recover / delete", () => {
         expect(recovered).toMatchObject({ status: "Active", published: false });
     });
 });
+
+describe("SkillPackages archive / restore unpublish", () => {
+    const P = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        published: SkillPackageId.create(),
+        unpublished: SkillPackageId.create(),
+        legacyArchived: SkillPackageId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: P.org, name: "Acme", slug: "acme-unpublish", createdAt: new Date() },
+        });
+        const fixtures = [
+            { id: P.published, status: "Active", published: true },
+            { id: P.unpublished, status: "Active", published: false },
+            // Archived before archiving unpublished.
+            { id: P.legacyArchived, status: "Archived", published: true },
+        ] as const;
+        for (const { id, status, published } of fixtures) {
+            await db.skillPackage.create({
+                data: {
+                    id,
+                    organizationId: P.org,
+                    name: `Package ${id}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    status,
+                    published,
+                },
+            });
+        }
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: P.org,
+            user: { id: P.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    async function actionsFor(objectId: SkillPackageId) {
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillPackage", objectId },
+        });
+        return entries.map((entry) => entry.action).sort();
+    }
+
+    it("archivePackage unpublishes a published package, logging Unpublish and Archive", async () => {
+        const archived = await SkillPackages.archivePackage(ctx(), P.published);
+        expect(archived).toMatchObject({ status: "Archived", published: false });
+        expect(await actionsFor(P.published)).toEqual(["Archive", "Unpublish"]);
+    });
+
+    it("archivePackage logs only Archive for an unpublished package", async () => {
+        const archived = await SkillPackages.archivePackage(ctx(), P.unpublished);
+        expect(archived).toMatchObject({ status: "Archived", published: false });
+        expect(await actionsFor(P.unpublished)).toEqual(["Archive"]);
+    });
+
+    it("restorePackage brings a legacy Archived + published package back Active and unpublished", async () => {
+        const restored = await SkillPackages.restorePackage(ctx(), P.legacyArchived);
+        expect(restored).toMatchObject({ status: "Active", published: false });
+        expect(await actionsFor(P.legacyArchived)).toEqual(["Restore", "Unpublish"]);
+    });
+});
