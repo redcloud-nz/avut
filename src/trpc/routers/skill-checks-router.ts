@@ -62,12 +62,12 @@ function rethrowSessionCheckRace(
 export const skillChecksRouter = createTrpcRouter({
     /**
      * Creates a standalone skill check, outside any session. It's created as `Include`, counting in
-     * reports straight away, since no review or approval will ever move it there.
-     *
-     * `checkedAt` back-dates a historic result; omitted, the check is dated now. `recordedAt` is
-     * always now, so a back-dated check stays distinguishable from one recorded at the time. Checks within a
+     * reports straight away, since no review or approval will ever move it there. Checks within a
      * session are recorded through `skillCheckSessions.setSessionSkillCheck`, which enforces
      * assessor membership and the approval lock.
+     *
+     * `checkedAt` back-dates a historic result; omitted, the check is dated now. `recordedAt` is
+     * always now, so a back-dated check stays distinguishable from one recorded at the time.
      *
      * With no review to catch a mistake, every id is checked here: the assessor must be the
      * caller's own linked person, the assessee a person in the organization, and the skill one it

@@ -58,7 +58,8 @@ const CreateCheckSchema = z.object({
     assesseeId: PersonId.schema,
     skillId: SkillId.schema,
     result: SkillCheckResultValue.schema,
-    checkedAt: z.iso.datetime(),
+    /** Unset until the user picks a day, meaning today. */
+    checkedAt: z.iso.datetime().optional(),
     notes: z.string(),
 });
 
@@ -140,7 +141,7 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
             assesseeId: undefined,
             skillId: undefined,
             result: undefined,
-            checkedAt: new Date().toISOString(),
+            checkedAt: undefined,
             notes: "",
         },
     });
@@ -198,9 +199,10 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                                         assessorId: personSelf.id,
                                         // Today keeps the current time; only an earlier day is
                                         // sent, as that day's local midnight.
-                                        checkedAt: isToday(parseISO(checkedAt))
-                                            ? undefined
-                                            : checkedAt,
+                                        checkedAt:
+                                            checkedAt && !isToday(parseISO(checkedAt))
+                                                ? checkedAt
+                                                : undefined,
                                     },
                                 });
                             },
@@ -300,10 +302,10 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel>Date checked</FieldLabel>
                                         <DatePicker
-                                            value={field.value}
-                                            onValueChange={(newValue) =>
-                                                field.onChange(newValue ?? new Date().toISOString())
-                                            }
+                                            // Shown as today until a day is picked, without
+                                            // stamping the time the dialog opened into the form.
+                                            value={field.value ?? new Date().toISOString()}
+                                            onValueChange={(newValue) => field.onChange(newValue)}
                                             slotProps={{
                                                 calendar: { disabled: { after: new Date() } },
                                             }}
