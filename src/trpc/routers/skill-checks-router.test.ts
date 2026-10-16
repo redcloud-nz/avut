@@ -1190,6 +1190,41 @@ describe("skillChecks — the session approval lock", () => {
             }
         });
 
+        it("back-dates a check to the given checkedAt, keeping recordedAt as now", async () => {
+            const now = new Date("2026-10-01T09:00:00.000Z");
+            const checkedAt = "2025-03-14T11:00:00.000Z";
+            vi.useFakeTimers({ now, toFake: ["Date"] });
+            try {
+                const created = await makeCaller().createSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: SkillCheckId.create(),
+                    sessionId: null,
+                    create: { ...create, checkedAt },
+                });
+
+                expect(created).toMatchObject({ checkedAt, recordedAt: now.toISOString() });
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it("rejects a checkedAt in the future with BAD_REQUEST", async () => {
+            const skillCheckId = SkillCheckId.create();
+            await expect(
+                makeCaller().createSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId,
+                    sessionId: null,
+                    create: {
+                        ...create,
+                        checkedAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                    },
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+            expect(await db.skillCheck.findUnique({ where: { id: skillCheckId } })).toBeNull();
+        });
+
         it("rejects a session check with BAD_REQUEST — those go through setSessionSkillCheck", async () => {
             const skillCheckId = SkillCheckId.create();
             await expect(

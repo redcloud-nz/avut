@@ -97,7 +97,7 @@ describe("formatDiffValue", () => {
 
     it("formats ISO datetimes without milliseconds or with an offset", () => {
         const utc = prefs({ timeZone: "UTC", dateFormat: "iso-extended", timeFormat: "24-hour" });
-        // `formatISO`, as `DatePicker` emits it: no milliseconds, a local offset.
+        // `formatISO`: no milliseconds, a local offset.
         expect(formatDiffValue("2026-02-03T11:36:00+13:00", utc)).toBe("2026-02-02 22:36");
         expect(formatDiffValue("2026-02-02T22:36:00Z", utc)).toBe("2026-02-02 22:36");
         expect(formatDiffValue("2026-02-02T12:36:00.000-10:00", utc)).toBe("2026-02-02 22:36");

@@ -120,9 +120,9 @@ export function formatFieldPath(path: string[], labels?: Record<string, string>)
 
 /**
  * An ISO datetime with optional fractional seconds and a `Z` or `±hh:mm` offset. That covers
- * both `Date.prototype.toISOString()` (how `diffObject` stores a `Date`) and `formatISO` (what
- * `DatePicker` emits: no milliseconds, a local offset). Matched in full so a string that merely
- * starts with a date isn't reformatted.
+ * both `Date.prototype.toISOString()` (how `diffObject` stores a `Date`) and `formatISO` (no
+ * milliseconds, a local offset). Matched in full so a string that merely starts with a date isn't
+ * reformatted.
  */
 const ISO_DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 

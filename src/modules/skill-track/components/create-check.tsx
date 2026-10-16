@@ -5,6 +5,7 @@
 
 "use client";
 
+import { isToday, parseISO, subMonths } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { skillChecksEffects } from "@/client/skill-checks-effects";
+import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -56,6 +58,8 @@ const CreateCheckSchema = z.object({
     assesseeId: PersonId.schema,
     skillId: SkillId.schema,
     result: SkillCheckResultValue.schema,
+    /** Unset until the user picks a day, meaning today. */
+    checkedAt: z.iso.datetime().optional(),
     notes: z.string(),
 });
 
@@ -94,8 +98,8 @@ export function SkillTrack_CreateCheck_Dialog() {
                     <DialogTitle>Add Skill Check</DialogTitle>
                     <DialogDescription>
                         Record a single skill check outside of a session, such as an informal
-                        observation. It counts in reports straight away. You are recorded as the
-                        assessor.
+                        observation or a historical result. It counts in reports straight away. You
+                        are recorded as the assessor.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBoundary>
@@ -137,6 +141,7 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
             assesseeId: undefined,
             skillId: undefined,
             result: undefined,
+            checkedAt: undefined,
             notes: "",
         },
     });
@@ -148,8 +153,17 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                 console.error("Failed to add skill check", error);
                 toast.error(`Failed to add skill check: ${error.message}`);
             },
-            onSuccess() {
-                toast.success("Skill check added");
+            onSuccess(created) {
+                // Recent Skill Checks shows only the last month (`listRecentChecks`), so a check
+                // back-dated past that leaves the list as soon as it's added.
+                if (parseISO(created.checkedAt) < subMonths(new Date(), 1)) {
+                    toast.success("Skill check added", {
+                        description:
+                            "It's dated more than a month ago, so it won't appear under Recent Skill Checks.",
+                    });
+                } else {
+                    toast.success("Skill check added");
+                }
                 onDone();
             },
         }),
@@ -174,13 +188,22 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                     <form
                         id="add-check-form"
                         onSubmit={form.handleSubmit(
-                            (formData) => {
+                            ({ checkedAt, ...formData }) => {
                                 if (!personSelf) return;
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckId: SkillCheckId.create(),
                                     sessionId: null,
-                                    create: { ...formData, assessorId: personSelf.id },
+                                    create: {
+                                        ...formData,
+                                        assessorId: personSelf.id,
+                                        // Today keeps the current time; only an earlier day is
+                                        // sent, as that day's local midnight.
+                                        checkedAt:
+                                            checkedAt && !isToday(parseISO(checkedAt))
+                                                ? checkedAt
+                                                : undefined,
+                                    },
                                 });
                             },
                             (errors) => {
@@ -266,6 +289,27 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="checkedAt"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>Date checked</FieldLabel>
+                                        <DatePicker
+                                            // Shown as today until a day is picked, without
+                                            // stamping the time the dialog opened into the form.
+                                            value={field.value ?? new Date().toISOString()}
+                                            onValueChange={(newValue) => field.onChange(newValue)}
+                                            slotProps={{
+                                                calendar: { disabled: { after: new Date() } },
+                                            }}
+                                        />
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}
