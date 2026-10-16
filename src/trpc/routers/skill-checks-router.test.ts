@@ -15,6 +15,7 @@ import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -1039,7 +1040,11 @@ describe("skillChecks — the session approval lock", () => {
         }
         for (const skillPackageId of [T.pkg, T.withdrawnPkg]) {
             await db.skillPackageSubscription.create({
-                data: { id: nanoId16(), organizationId: T.org, skillPackageId },
+                data: {
+                    id: SkillPackageSubscriptionId.create(),
+                    organizationId: T.org,
+                    skillPackageId,
+                },
             });
         }
 
