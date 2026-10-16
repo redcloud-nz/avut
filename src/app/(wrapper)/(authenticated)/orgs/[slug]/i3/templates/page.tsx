@@ -11,8 +11,8 @@ import { Protect } from "@/components/protect";
 import { route } from "@/lib/routes";
 import { I3Module_CreateTemplate_Dialog } from "@/modules/i3/components/templates/create-template";
 import { I3Module_TemplateList } from "@/modules/i3/components/templates/templates-list";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
-import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -24,7 +24,7 @@ export default async function I3Module_TemplateList_Page(
 ) {
     const { slug } = await props.params;
     if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
-    const { organization } = await requireOrganizationWith(slug, { i3Template: ["view"] });
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(trpc.i3.listTemplates.queryOptions({ organizationId: organization.id }));
 

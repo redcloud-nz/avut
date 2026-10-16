@@ -44,7 +44,7 @@ artifact.
 ```tsx
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug, team_id } = await props.params;
-  const { organization } = await requireOrganization(slug);
+  const organization = await getOrganizationBySlug(slug);
 
   const teamId = TeamId.schema.parse(team_id);
   const team = await fetchQuery(
@@ -56,7 +56,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_Team_Page(props: Props) {
   const { slug, team_id } = await props.params;
-  const { organization } = await requireOrganization(slug);
+  const organization = await getOrganizationBySlug(slug);
 
   const teamId = TeamId.schema.parse(team_id);
 
@@ -77,6 +77,10 @@ Key points:
 - **Both `trpc` calls here are the `@/trpc/server` one** — it calls the router
   in-process, preserving the request's session; the `@/trpc/client` one exists for
   Client Components only and goes out over HTTP unauthenticated if used here by mistake.
+- **No permission check in `page.tsx`.** `getOrganizationBySlug` only resolves the org's
+  id; `teams.getTeam` checks the caller. See
+  [`route-access-control.md`](route-access-control.md) for why, and for the one case
+  (a read outside tRPC) that needs a check here.
 - **`generateMetadata` and the page body each resolve independently.** No shared
   `resolveX` helper. `generateMetadata` uses `fetchQuery` (awaited) because it needs
   the value synchronously to build the title. The page body only needs the parsed id —
