@@ -5,12 +5,12 @@
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
+import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -20,7 +20,7 @@ describe("skillPackageSubscriptions.getPackage", () => {
     const T = {
         org: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
-        user: nanoId16(),
+        user: UserId.create(),
         pkg: SkillPackageId.create(),
         unpublishedPkg: SkillPackageId.create(),
         // Package used for the contents assertions:
@@ -247,7 +247,7 @@ describe("skillPackageSubscriptions.getPackage", () => {
         expect(result.groups[0].skills[0]).not.toHaveProperty("frequency");
     });
 
-    it("throws NOT_FOUND for an unpublished package", async () => {
+    it("throws NOT_FOUND for an unpublished package the org doesn't subscribe to", async () => {
         await expect(
             makeCaller().getPackage({ organizationId: T.org, skillPackageId: T.unpublishedPkg }),
         ).rejects.toThrow(/not found/i);
@@ -267,7 +267,7 @@ describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", ()
     const T = {
         org: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
-        user: nanoId16(),
+        user: UserId.create(),
         livePkg: SkillPackageId.create(),
         // Deleted before deletePackage unpublished on delete, so still `published: true`.
         deletedPkg: SkillPackageId.create(),
@@ -353,6 +353,126 @@ describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", ()
             makeCaller().subscribeToPackage({
                 organizationId: T.org,
                 skillPackageId: T.unsubscribedDeletedPkg,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});
+
+describe("skillPackageSubscriptionsRouter withholds a withdrawn package from its subscribers", () => {
+    const T = {
+        org: OrganizationId.create(),
+        // Subscribes to nothing.
+        otherOrg: OrganizationId.create(),
+        publisherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        livePkg: SkillPackageId.create(),
+        unpublishedPkg: SkillPackageId.create(),
+        archivedPkg: SkillPackageId.create(),
+        // Archived before archivePackage unpublished on archive, so still `published: true`.
+        unsubscribedArchivedPkg: SkillPackageId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, slug] of [
+            [T.org, "acme"],
+            [T.otherOrg, "other"],
+            [T.publisherOrg, "publisher"],
+        ] as const) {
+            await db.organization.create({
+                data: { id, name: slug, slug, createdAt: new Date() },
+            });
+        }
+        for (const [id, published, status] of [
+            [T.livePkg, true, "Active"],
+            [T.unpublishedPkg, false, "Active"],
+            [T.archivedPkg, false, "Archived"],
+            [T.unsubscribedArchivedPkg, true, "Archived"],
+        ] as const) {
+            await db.skillPackage.create({
+                data: {
+                    id,
+                    organizationId: T.publisherOrg,
+                    name: id,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    published,
+                    status,
+                },
+            });
+        }
+        for (const skillPackageId of [T.livePkg, T.unpublishedPkg, T.archivedPkg]) {
+            await db.skillPackageSubscription.create({
+                data: {
+                    id: SkillPackageSubscriptionId.create(),
+                    organizationId: T.org,
+                    skillPackageId,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillPackageSubscriptionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: {
+                    skillPackageSubscription: ["view", "subscribe"],
+                    organization: ["view"],
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("listSubscribedPackages leaves out the unpublished and the Archived package", async () => {
+        const subscribed = await makeCaller().listSubscribedPackages({ organizationId: T.org });
+        expect(subscribed.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("listAssessableSkills leaves out the unpublished and the Archived package", async () => {
+        const { skillPackages } = await makeCaller().listAssessableSkills({
+            organizationId: T.org,
+        });
+        expect(skillPackages.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("listPackages shows a subscriber its withdrawn packages, but not a non-subscriber", async () => {
+        const forSubscriber = await makeCaller().listPackages({ organizationId: T.org });
+        expect(forSubscriber.map((p) => p.id).sort()).toEqual(
+            [T.livePkg, T.unpublishedPkg, T.archivedPkg].sort(),
+        );
+
+        const forOther = await makeCaller().listPackages({ organizationId: T.otherOrg });
+        expect(forOther.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("getPackage returns an unpublished package to a subscriber", async () => {
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: T.unpublishedPkg,
+        });
+        expect(result.id).toBe(T.unpublishedPkg);
+        expect(result.published).toBe(false);
+        expect(result.subscription).not.toBeNull();
+    });
+
+    it("getPackage throws NOT_FOUND for an unpublished package to a non-subscriber", async () => {
+        await expect(
+            makeCaller().getPackage({
+                organizationId: T.otherOrg,
+                skillPackageId: T.unpublishedPkg,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("subscribeToPackage throws NOT_FOUND for an Archived package that is still published", async () => {
+        await expect(
+            makeCaller().subscribeToPackage({
+                organizationId: T.org,
+                skillPackageId: T.unsubscribedArchivedPkg,
             }),
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });

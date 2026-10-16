@@ -8,9 +8,8 @@
 import { Std } from "@/components/blocks/std";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { route } from "@/lib/routes";
-import { requireOrganizationWith } from "@/server/organization-access";
-
-import { AdminModule_CreateD4HAccessToken_Form } from "./create-d4h-access-token";
+import { AdminModule_CreateD4HAccessToken_Form } from "@/modules/org-admin/components/d4h-access-tokens/create-d4h-access-token";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 
 export const metadata = {
     title: `Create D4H Access Token`,
@@ -20,7 +19,7 @@ export default async function AdminModule_CreateD4HAccessToken_Page(
     props: PageProps<`/orgs/[slug]/admin/d4h-access-tokens/--create`>,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["create"] });
+    const organization = await getOrganizationBySlug(slug);
 
     return (
         <>

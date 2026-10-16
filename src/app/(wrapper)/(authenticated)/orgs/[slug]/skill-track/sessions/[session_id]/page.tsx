@@ -7,9 +7,10 @@
 
 import { Metadata } from "next";
 
-import { SkillTrack_Session_Content } from "@/components/skill-track/session-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_Session_Content } from "@/modules/skill-track/components/session-content";
+import { prefetchSessionConfigDialog } from "@/modules/skill-track/lib/prefetch-session-config-dialog";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -34,6 +35,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function SkillTrack_Session_Page(props: Props) {
     const { slug, session_id } = await props.params;
+    const { action } = await props.searchParams;
     const organization = await getOrganizationBySlug(slug);
 
     const skillCheckSessionId = SkillCheckSessionId.schema.parse(session_id);
@@ -64,6 +66,13 @@ export default async function SkillTrack_Session_Page(props: Props) {
             scope: "assigned",
         }),
     );
+    // The Contents card's dialogs load their own lists once opened; prefetch only the one that
+    // `?action=` opens on arrival.
+    prefetchSessionConfigDialog({
+        action,
+        organizationId: organization.id,
+        sessionId: skillCheckSessionId,
+    });
 
     return (
         <HydrateClient>

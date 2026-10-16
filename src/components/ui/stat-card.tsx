@@ -15,6 +15,10 @@ export function StatCardGrid({ className, ...props }: React.ComponentProps<"div"
     return <div className={cn("grid grid-cols-2 gap-4 lg:grid-cols-4", className)} {...props} />;
 }
 
+/**
+ * A headline number. With `href` it's a control — raised, and links to the detail behind the
+ * number; without, it's a flat card.
+ */
 export function StatCard({
     icon: Icon,
     value,
@@ -25,20 +29,28 @@ export function StatCard({
     icon: LucideIcon;
     value: number | string;
     label: string;
-    href: Route;
+    href?: Route;
     className?: string;
 }) {
-    return (
+    const body = (
+        <>
+            <ItemHeader className="justify-between">
+                <ItemMedia>
+                    <Icon className="size-9 text-muted-foreground" />
+                </ItemMedia>
+                <ItemTitle className="min-w-14 text-3xl font-semibold">{value}</ItemTitle>
+            </ItemHeader>
+            <ItemDescription>{label}</ItemDescription>
+        </>
+    );
+
+    return href ? (
         <Item variant="outline" asChild className={cn(className, "h-[120px]")}>
-            <Link href={href}>
-                <ItemHeader className="justify-between">
-                    <ItemMedia>
-                        <Icon className="size-9 text-muted-foreground" />
-                    </ItemMedia>
-                    <ItemTitle className="min-w-14 text-3xl font-semibold">{value}</ItemTitle>
-                </ItemHeader>
-                <ItemDescription>{label}</ItemDescription>
-            </Link>
+            <Link href={href}>{body}</Link>
+        </Item>
+    ) : (
+        <Item variant="outline" className={cn(className, "h-[120px]")}>
+            {body}
         </Item>
     );
 }

@@ -5,13 +5,13 @@
 
 "use client";
 
-import { formatISO, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { ComponentProps } from "react";
 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatDate } from "@/lib/datetime";
+import { usePreferences } from "@/hooks/use-preferences";
 import { cn } from "@/lib/utils";
 
 export interface DatePickerProps {
@@ -41,16 +41,18 @@ export function DatePicker({
     slotProps = {},
     value,
 }: DatePickerProps) {
-    function handleSelect(selected: Date | undefined) {
-        const str = selected ? formatISO(selected) : undefined;
+    const { formatDate } = usePreferences();
 
-        onValueChange(str);
+    // `toISOString`, not `formatISO`: the schemas validate with `z.iso.datetime()`, which rejects
+    // the local offset (`+13:00`) `formatISO` writes.
+    function handleSelect(selected: Date | undefined) {
+        onValueChange(selected?.toISOString());
     }
 
     const selected = value ? parseISO(value) : undefined;
 
     const {
-        //calendar: calendarProps = {},
+        calendar: calendarProps = {},
         //popover: popoverProps = {},
         popoverContent: { className: popoverContentClassName, ...popoverContentProps } = {},
         popoverTrigger: { className: popoverTriggerClassName, ...popoverTriggerProps } = {},
@@ -84,6 +86,7 @@ export function DatePicker({
                 {...popoverContentProps}
             >
                 <Calendar
+                    {...calendarProps}
                     mode="single"
                     selected={selected}
                     captionLayout="dropdown"

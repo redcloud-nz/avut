@@ -33,7 +33,11 @@ interface I3IssueItemsNotificationEmailProps {
         email: string;
     };
     formData: I3IssueItemsFormData;
-    savedToD4H: true | { reason: string };
+    /**
+     * `true` when every item was recorded in D4H. Otherwise `reason` completes "…due to ___.",
+     * and `partial` means some items were recorded, so the email doesn't claim none were.
+     */
+    savedToD4H: true | { reason: string; partial?: boolean };
 }
 
 export default function I3IssueItemsNotificationEmail({
@@ -130,7 +134,9 @@ export default function I3IssueItemsNotificationEmail({
                             <Text className="text-[14px] text-black leading-6">
                                 {savedToD4H === true
                                     ? "This issuance has been recorded in D4H."
-                                    : `This issuance has not been recorded in D4H due to ${savedToD4H.reason}.`}
+                                    : savedToD4H.partial
+                                      ? `This issuance has only been partly recorded in D4H, due to ${savedToD4H.reason}.`
+                                      : `This issuance has not been recorded in D4H due to ${savedToD4H.reason}.`}
                             </Text>
                         </Section>
 

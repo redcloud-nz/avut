@@ -9,15 +9,16 @@ import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3Module_Template_Content } from "@/modules/i3/components/templates/template-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { I3Module_Template_Content } from "./template-content";
 
 type Props = PageProps<"/orgs/[slug]/i3/templates/[template_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, template_id } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "i3"))) return {};
     const organization = await getOrganizationBySlug(slug);
 
     const templateId = I3TemplateId.schema.parse(template_id);
@@ -32,6 +33,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 // its params with `use(props.params)` re-suspended and flashed the page spinner (#76).
 export default async function I3Module_Template_Page(props: Props) {
     const { slug, template_id } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
     const templateId = I3TemplateId.schema.parse(template_id);

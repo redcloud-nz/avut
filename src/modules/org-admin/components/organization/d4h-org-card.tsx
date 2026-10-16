@@ -1,0 +1,251 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
+import { toast } from "sonner";
+
+import { useMutation, useQuery } from "@tanstack/react-query";
+
+import { teamsEffects } from "@/client/teams-effects";
+import { D4HIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
+import { Button, MutationButton } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    DataItem,
+    DataItemDateValue,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
+import {
+    Dialog,
+    DialogBody,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { useOrganization } from "@/hooks/use-organization";
+import { getD4HServer } from "@/lib/d4h-servers";
+import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
+import { trpc } from "@/trpc/client";
+
+const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+
+function formatReportingStart(day: number | null, month: number | null): string | null {
+    if (day == null || month == null) return null;
+    const name = MONTHS[month - 1];
+    return name ? `${day} ${name}` : null;
+}
+
+export function AdminModule_Organization_D4HCard() {
+    const organization = useOrganization();
+
+    const { data: orgD4H } = useQuery(
+        trpc.teams.getOrganizationD4H.queryOptions({ organizationId: organization.id }),
+    );
+
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["d4h-org-unlink"] as const),
+    );
+
+    const syncMutation = useMutation(
+        trpc.teams.syncOrganizationD4H.mutationOptions({
+            meta: { effects: teamsEffects.syncOrganizationD4H },
+            onError: (error) => toast.error(`Sync failed: ${error.message}`),
+            onSuccess: () => toast.success("D4H organisation details refreshed"),
+        }),
+    );
+
+    if (!organization.settings.integrations.d4h.enabled || !orgD4H) return null;
+
+    const reportingStart = formatReportingStart(
+        orgD4H.d4hReportingStartDay,
+        orgD4H.d4hReportingStartMonth,
+    );
+    const canSync = orgD4H.d4hOrganisationId != null && orgD4H.linkedTeamCount > 0;
+    const teamsRemain = orgD4H.linkedTeamCount > 0;
+
+    return (
+        <Protect permissions={{ organization: ["update"] }}>
+            <Card>
+                <CardHeader>
+                    <CardTitle>D4H Integration</CardTitle>
+                    <CardAction className="flex gap-1">
+                        {canSync && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Sync with D4H"
+                                title="Sync with D4H"
+                                disabled={syncMutation.isPending}
+                                onClick={() =>
+                                    syncMutation.mutate({ organizationId: organization.id })
+                                }
+                            >
+                                <D4HIcons.Sync />
+                            </Button>
+                        )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Unlink from D4H"
+                            className="text-destructive hover:text-destructive"
+                            disabled={teamsRemain}
+                            title={
+                                teamsRemain
+                                    ? "Unlink all D4H-linked teams first"
+                                    : "Unlink from D4H"
+                            }
+                            onClick={() => void setAction("d4h-org-unlink", { history: "push" })}
+                        >
+                            <D4HIcons.Unlink />
+                        </Button>
+                    </CardAction>
+                </CardHeader>
+                <CardContent>
+                    <DataList>
+                        <DataItem inline>
+                            <DataItemTitle>D4H Organisation</DataItemTitle>
+                            <DataItemValue>
+                                {orgD4H.d4hOrganisationId ? (
+                                    <>
+                                        {orgD4H.d4hOrganisationName}
+                                        {orgD4H.d4hOrganisationName && " "}
+                                        <span className="text-muted-foreground">
+                                            (ID: {orgD4H.d4hOrganisationId})
+                                        </span>
+                                    </>
+                                ) : (
+                                    "Org-less (no D4H organisation)"
+                                )}
+                            </DataItemValue>
+                        </DataItem>
+                        <DataItem inline>
+                            <DataItemTitle>Server</DataItemTitle>
+                            <DataItemValue>{getD4HServer(orgD4H.serverCode).name}</DataItemValue>
+                        </DataItem>
+                        {orgD4H.d4hTimezone && (
+                            <DataItem inline>
+                                <DataItemTitle>Timezone</DataItemTitle>
+                                <DataItemValue>{orgD4H.d4hTimezone}</DataItemValue>
+                            </DataItem>
+                        )}
+                        {orgD4H.d4hCurrency && (
+                            <DataItem inline>
+                                <DataItemTitle>Currency</DataItemTitle>
+                                <DataItemValue>{orgD4H.d4hCurrency}</DataItemValue>
+                            </DataItem>
+                        )}
+                        {reportingStart && (
+                            <DataItem inline>
+                                <DataItemTitle>Reporting year starts</DataItemTitle>
+                                <DataItemValue>{reportingStart}</DataItemValue>
+                            </DataItem>
+                        )}
+                        <DataItem inline>
+                            <DataItemTitle>Linked teams</DataItemTitle>
+                            <DataItemValue>{orgD4H.linkedTeamCount}</DataItemValue>
+                        </DataItem>
+                        <DataItem inline>
+                            <DataItemTitle>Last synced</DataItemTitle>
+                            {orgD4H.lastSyncedAt ? (
+                                <DataItemDateValue date={orgD4H.lastSyncedAt} />
+                            ) : (
+                                <DataItemValue>Never</DataItemValue>
+                            )}
+                        </DataItem>
+                    </DataList>
+                </CardContent>
+            </Card>
+
+            <UnlinkDialog
+                orgD4H={orgD4H}
+                open={action === "d4h-org-unlink"}
+                onClose={() => void setAction(null, { history: "replace" })}
+            />
+        </Protect>
+    );
+}
+
+function UnlinkDialog({
+    orgD4H,
+    open,
+    onClose,
+}: {
+    orgD4H: OrganizationD4HData;
+    open: boolean;
+    onClose: () => void;
+}) {
+    const organization = useOrganization();
+
+    const mutation = useMutation(
+        trpc.teams.unlinkOrganizationFromD4H.mutationOptions({
+            meta: { effects: teamsEffects.unlinkOrganizationFromD4H },
+            onError: (error) => toast.error(`Failed to unlink: ${error.message}`),
+            onSuccess: () => {
+                toast.success("Organisation unlinked from D4H");
+                onClose();
+            },
+        }),
+    );
+
+    useEffect(() => {
+        if (open) mutation.reset();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
+
+    return (
+        <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Unlink {organization.name} from D4H</DialogTitle>
+                    <DialogDescription>
+                        Removes the org-level D4H link and its cached organisation data. Personnel,
+                        teams and memberships stay in AVUT. You can re-link later by linking a team
+                        to D4H.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                    {orgD4H.linkedTeamCount > 0 && (
+                        <p className="text-destructive text-sm">
+                            {orgD4H.linkedTeamCount} team(s) are still linked to D4H. Unlink them
+                            first.
+                        </p>
+                    )}
+                </DialogBody>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        variant="destructive"
+                        status={mutation.status}
+                        disabled={orgD4H.linkedTeamCount > 0}
+                        text={{ idle: "Unlink", pending: "Unlinking…", success: "Unlinked" }}
+                        onClick={() => mutation.mutate({ organizationId: organization.id })}
+                    />
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}

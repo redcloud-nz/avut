@@ -5,15 +5,16 @@
  * Path: /orgs/[slug]/skill-track/reports/team
  */
 
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { SkillTrack_TeamCompetencyReport } from "@/components/skill-track/reports/team-competency-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
+import { SkillTrack_TeamCompetencyReport } from "@/modules/skill-track/components/reports/team-competency-report";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -27,6 +28,9 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const { team } = await props.searchParams;
+    // Flag evaluation reads the clock, which Cache Components rejects until the render is
+    // marked request-time.
+    await connection();
     const syntheticChecksEnabled = await syntheticChecksFlag();
 
     prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }));
@@ -67,7 +71,7 @@ export default async function SkillTrack_ReportsTeamCompetency_Page(
                             href: route("/orgs/[slug]/skill-track/reports/team", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/report-team" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_TeamCompetencyReport

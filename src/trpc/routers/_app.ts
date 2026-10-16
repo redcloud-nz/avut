@@ -10,9 +10,11 @@ import { createTrpcRouter } from "../init";
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 import { d4hApiRouter } from "./d4h-api-router";
 import { formsRouter } from "./forms-router";
+import { historyRouter } from "./history-router";
 import { i3Router } from "./i3-router";
 import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
+import { organizationNotesRouter } from "./organization-notes-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
 import { settingsRouter } from "./settings-router";
@@ -20,19 +22,22 @@ import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 import { skillChecksRouter } from "./skill-checks-router";
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
 import { skillPackageSubscriptionsRouter } from "./skill-package-subscriptions-router";
-import { systemRouter } from "./system-router";
 import { teamsRouter } from "./teams-router";
 import { trashRouter } from "./trash-router";
+import { userNotesRouter } from "./user-notes-router";
 import { userRouter } from "./user-router";
 import { usersRouter } from "./users-router";
+import { whatsNewRouter } from "./whats-new-router";
 
 export const appRouter = createTrpcRouter({
     d4hAccessTokens: d4hAccessTokensRouter,
     d4hApi: d4hApiRouter,
     forms: formsRouter,
+    history: historyRouter,
     i3: i3Router,
     invitations: invitationsRouter,
     notifications: notificationsRouter,
+    organizationNotes: organizationNotesRouter,
     organizations: organizationsRouter,
     personnel: personnelRouter,
     settings: settingsRouter,
@@ -40,11 +45,12 @@ export const appRouter = createTrpcRouter({
     skillChecks: skillChecksRouter,
     skillPackageBuilder: skillPackageBuilderRouter,
     skillPackageSubscriptions: skillPackageSubscriptionsRouter,
-    system: systemRouter,
     teams: teamsRouter,
     trash: trashRouter,
     user: userRouter,
+    userNotes: userNotesRouter,
     users: usersRouter,
+    whatsNew: whatsNewRouter,
 });
 
 export type AppRouter = typeof appRouter;

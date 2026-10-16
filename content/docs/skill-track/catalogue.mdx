@@ -83,10 +83,21 @@ A group or skill carries two flags in the catalogue view:
 ## Subscribing
 
 A package's skills only become assessable once your organisation
-**subscribes** to it — a one-click action (with a confirmation dialogue) on the
-package page. Subscribing is an organisation-wide decision, not a per-user one:
-once subscribed, the package's skills are available to every session your
-organisation runs. **Unsubscribe** the same way to remove it.
+**subscribes** to it. Subscribing is an organisation-wide decision, not a
+per-user one, and only a **Skills Admin** can make it: **Subscribe** and
+**Unsubscribe** are on the package's page, each with a confirmation. The
+catalogue marks the packages you subscribe to as **Subscribed**.
 
-Building and publishing packages themselves is a separate area, available to
-the `skill-package-author` role.
+- **Subscribing** makes every skill in the package available to your
+  sessions. Reports show its active skills, as long as the package stays
+  published and its author hasn't archived it.
+- **Unsubscribing** takes the package's skills out of the session skill picker
+  and the reports straight away. Checks already recorded against them are kept,
+  and count again if you subscribe again.
+
+Packages aren't versioned. When the author changes a package, subscribers see
+the change straight away.
+
+Writing and publishing packages is a separate area, the
+[Skill Package Builder](/docs/skill-package-builder), for the Skills Author
+role.

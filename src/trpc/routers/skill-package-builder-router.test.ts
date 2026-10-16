@@ -663,7 +663,7 @@ describe("skillPackageBuilderRouter.deleteSkill/Group/Package / recover*", () =>
     });
 });
 
-describe("skillPackageBuilder.importSkillPackage", () => {
+describe("skillPackageBuilder.importPackageAsAdmin", () => {
     const T = {
         org: OrganizationId.create(),
         otherOrg: OrganizationId.create(),
@@ -741,7 +741,7 @@ describe("skillPackageBuilder.importSkillPackage", () => {
     }
 
     it("dryRun computes a plan without writing", async () => {
-        const result = await makeCaller().importSkillPackage({
+        const result = await makeCaller().importPackageAsAdmin({
             envelope: makeEnvelope(),
             targetOrganizationId: T.org,
             dryRun: true,
@@ -754,7 +754,7 @@ describe("skillPackageBuilder.importSkillPackage", () => {
     });
 
     it("imports the tree unpublished and writes one SkillPackage log entry", async () => {
-        const result = await makeCaller().importSkillPackage({
+        const result = await makeCaller().importPackageAsAdmin({
             envelope: makeEnvelope(),
             targetOrganizationId: T.org,
             dryRun: false,
@@ -783,14 +783,14 @@ describe("skillPackageBuilder.importSkillPackage", () => {
 
     it("refuses a package ID already owned by another organization", async () => {
         const envelope = makeEnvelope();
-        await makeCaller().importSkillPackage({
+        await makeCaller().importPackageAsAdmin({
             envelope,
             targetOrganizationId: T.org,
             dryRun: false,
         });
 
         await expect(
-            makeCaller().importSkillPackage({
+            makeCaller().importPackageAsAdmin({
                 envelope,
                 targetOrganizationId: T.otherOrg,
                 dryRun: true,

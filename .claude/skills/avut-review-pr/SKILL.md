@@ -1,76 +1,89 @@
 ---
 name: avut-review-pr
-description: Review a GitHub pull request for this repo and post the review as a single PR comment. Trigger when the user types /avut-review-pr with a PR number.
+description: Review GitHub pull requests as claude-avut and post the reviews. With `#<N>`, reviews that PR if it needs one. With no argument, reviews every open PR that requests a review from claude-avut, in parallel subagents. Trigger when the user types /avut-review-pr.
 effort: high
 manual: true
 ---
 
 # Review PR
 
-Reviews one GitHub pull request end-to-end and posts the result as a single comment on the PR.
+Posts formal GitHub reviews as `claude-avut`, a second `gh` identity. GitHub refuses a review where the author and the reviewer are the same account. The review itself is done by the `avut-code-reviewer` subagent: correctness plus `docs/conventions-checklist.md`, in fresh context. This skill works out which PRs to review, builds the review bodies, and posts them.
 
-`$ARGUMENTS` is the PR number (e.g. `94`). If it's missing or not a number, ask the user which PR to review and stop.
+**Posting doesn't need confirmation.** The user asked for this skill to review and post in one go. Show the result after posting.
 
-> Note: if the user says "D4H" when asking for this, they mean GitHub — the PR lives on `redcloud-nz/avut`.
+> If the user says "D4H" when asking for this, they mean GitHub. PRs live on `redcloud-nz/avut`.
 
-> Identity note: the review is posted as `claude-avut`, a separate GitHub account registered as a second `gh` identity, not as the PR author. GitHub refuses a review where author == reviewer; this is what makes a real (not just commented) review possible. See Step 5 for how the token is scoped in.
+## Modes
 
-## Step 1 — Identify the PR and confirm
+- **`#<N>`** (or a bare number or a PR URL): **specific PR mode**. Review that PR if it needs a review.
+- **No argument:** **queue mode**. Review every open PR where a review from `claude-avut` has been requested.
+- Anything else: ask which PR is meant, and stop.
 
-```bash
-gh pr view "$ARGUMENTS" --repo redcloud-nz/avut \
-  --json number,title,url,author,state,isDraft,headRefName,baseRefName,body,additions,deletions,changedFiles
-```
+## Step 1 — Prep (script)
 
-If the PR doesn't exist or the command errors, tell the user and stop.
-
-Show the user a one-line summary and **wait for explicit confirmation** that this is the PR they meant before doing anything else:
-
-> PR #94 — "Skill matrix header redesign" by alexwestphal (feature/skill-matrix-header → master, 12 files, +340 −80). Review this one?
-
-Do not proceed until they confirm. If they say it's the wrong PR, ask for the right number.
-
-## Step 2 — Gather the diff
+The mechanical part is one script call. It collects the candidates, applies the decision table below, and fetches each PR it doesn't skip to `refs/remotes/pr/<N>`, along with its base. It also gathers failing CI (with the tail of the failed log) and the earlier review:
 
 ```bash
-gh pr diff "$ARGUMENTS" --repo redcloud-nz/avut
+node .claude/skills/avut-review-pr/review-pr.ts prep <N>   # specific PR mode
+node .claude/skills/avut-review-pr/review-pr.ts prep       # queue mode
 ```
 
-Also read the PR description and any existing review comments for context:
+It prints JSON: `{ mode, prs: [...] }`. Each PR has `action` (`review` / `re-review` / `skip` / `unsure`) and a `reason`. Any PR that isn't skipped also has:
 
-```bash
-gh pr view "$ARGUMENTS" --repo redcloud-nz/avut --comments
-```
+- `ref` and `diffRange`: `origin/<base>...pr/<N>`
+- `sinceLastReview`: `<oid>..pr/<N>`, on a re-review where the earlier commit is still reachable
+- `description`
+- `ci`: `failing[]` with `logTail`, and `pending`
+- `previous`: the earlier review's `state`, `oid`, `reachable` and `body`
 
-And the CI result — CI runs lint, typecheck and the full test suite, so a review shouldn't re-run them:
+An empty `prs` in queue mode means nothing is waiting. Say so and stop.
 
-```bash
-gh pr checks "$ARGUMENTS" --repo redcloud-nz/avut
-```
+## Step 2 — Act on the decisions
 
-A failing check is a finding (`gh run view <run-id> --log-failed` shows why). If checks are pending or absent and the PR's branch is the one checked out here, `npm run check -- --all` gives the same answer; don't check a branch out just for this.
+The script applies this table. `decide()` in `review-pr.ts` implements it, and `review-pr.test.ts` pins it. Change the code, the test and this table together:
 
-Read the full current version of any non-trivially-changed file from the working tree (the local checkout is assumed to be on or near `master`; if a changed file can't be found locally, fall back to `gh` blob fetch). Don't review from the diff hunk alone when surrounding context matters.
+| Situation | `action` |
+| --- | --- |
+| Closed or merged | `skip` |
+| Authored by `claude-avut` | `skip` |
+| Draft | `unsure` |
+| No earlier review by `claude-avut` | `review` |
+| Earlier review on an older commit | `re-review` |
+| Earlier review at head, and a review re-requested (always true in queue mode) | `re-review` |
+| Earlier review at head, no new request | `skip` |
 
-**Read in parallel.** Once the diff shows which files matter, request all of them in a single message — one tool call per file, all in the same turn — rather than one file per turn. Every turn re-reads the whole conversation, so serial reads are the main cost of a review. Do the same for any follow-up lookups (callers, tests, the matching router/schema): list what you need, then fetch it together. If a later read genuinely depends on an earlier one, batch what you can and continue.
+- **`skip`:** report the reason and do nothing else.
+- **`unsure`:** ask the user once about every unsure PR together, with its reason. Offer "review", "comment-only review" or "skip". In queue mode, start the clear-cut reviews first and ask while they run.
+- If something in the JSON makes a decision look wrong, treat that PR as unsure and ask. For example, a `review` PR whose description says "do not review yet". Don't override the script silently.
 
-## Step 3 — Review
+## Step 3 — Earlier findings
 
-Run two passes over the diff:
+For each `re-review`, take the Blocking and Non-blocking items from `previous.body`. They go to the reviewer as the findings to verify.
 
-1. **General correctness & quality** — real bugs, broken edge cases, race conditions, missing error handling, plus reuse / simplification / efficiency cleanups. Scope findings to what the diff touches; don't relitigate unrelated pre-existing code.
-2. **AVUT house conventions** — invoke the `avut-conventions-review` skill and apply its checklist against this diff (tRPC router ordering/permissions/`ctx.logEvent`, `$transaction` vs `Promise.all`, D4H optionality + server-only boundaries, `nanoId16()`, Zod placement, `route()`, generated files, server/client data-fetching boundaries, `Protect`/UI blocks, test structure).
+## Step 4 — Run the reviewers
 
-For each finding note: severity, `file:line`, what's wrong, and the concrete fix.
+Run one `avut-code-reviewer` subagent per PR. With several PRs, start them all in **one message**, in the background. They only read, so they can share this checkout; each reads its own `pr/<N>` ref. With one PR, run it in the foreground.
 
-## Step 4 — Compose the review body
+Prompt for each:
 
-Write a single markdown review body with this structure:
+> Diff range: `origin/<base>...pr/<N>`. Read code at `pr/<N>` (`git show`, `git grep`), not from the working tree.
+> PR #<N> — <title>. It is meant to: <one or two sentences drawn from the PR body>.
+> Failing CI: <the failure, or "none">.
+> _(re-review only)_ Earlier findings to verify: <the list>. The earlier review was at `<oid>`. What changed since then is `<oid>..pr/<N>`, so look hardest at that, but judge the whole PR.
+
+Tell it about the PR body's "Worth a close look" line, and its "Pre-merge review" section if it has one. The second shows what `/avut-ship` already fixed.
+
+## Step 5 — Compose the review body
+
+For each PR, build the body from the subagent's report:
 
 ```markdown
 ## Review of #<n> — <title>
 
-<1–3 sentence summary: what the PR does and the overall verdict>
+<1–3 sentences: what the PR does, and the verdict. Say plainly when nothing blocking was found.>
+
+### Earlier findings
+- ✅ / ❌ / ◐ **`path/to/file.ts:42`** — <finding> — <fixed / what's left>
 
 ### Blocking
 - **`path/to/file.ts:42`** — <issue and fix>
@@ -88,36 +101,41 @@ Write a single markdown review body with this structure:
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
-Omit any section that has no items. If nothing blocking was found, say so plainly at the top.
+Leave out any empty section. Include _Earlier findings_ only on re-reviews.
 
-Decide the verdict from the findings:
+Before you post it, check each blocking finding by looking at the cited line yourself (`git show pr/<N>:<file>`). Downgrade or drop a finding that doesn't hold up. A wrong "Request changes" costs a pointless fix round.
 
-- Any `### Blocking` item → **Request changes**
-- No blocking items → **Approve**
-- Use **Comment** only if explicitly asked for feedback without a formal verdict (e.g. a WIP/draft PR)
+**The verdict:**
 
-## Step 5 — Confirm and post
+- A blocking finding, or an earlier finding marked ❌ → `--request-changes`
+- Otherwise → `--approve`
+- The user chose comment-only (a draft) → `--comment`
 
-Show the full drafted review and the verdict to the user and get explicit approval before posting — this is public state on someone's PR. A quick "here's the review, posting as a [verdict] unless you want changes" is fine.
+## Step 6 — Post
 
-Once approved, write the body to a tempfile and post it as an actual GitHub review under the `claude-avut` identity — scope the bot's token to just this command via `GH_TOKEN`, never `gh auth switch` (that would leave the wrong account active in this session):
+Write each body to its own file in the scratchpad, then:
 
 ```bash
-GH_TOKEN=$(gh auth token --user claude-avut) gh pr review "$ARGUMENTS" --repo redcloud-nz/avut \
-  --request-changes \   # or --approve / --comment, per the verdict above
-  --body-file <tmpfile>
+node .claude/skills/avut-review-pr/review-pr.ts post <N> <approve|request-changes|comment> <body-file>
 ```
 
-Use `--body-file`, never inline `--body` — the body is multi-paragraph markdown. Report back the review URL that `gh` prints.
+It posts as `claude-avut`, with that account's token scoped to the one call, and prints the review URL. The project allowlist covers every `review-pr.ts` command, `post` included, so it runs without a prompt; that is deliberate, and it is why only this skill should call `post`. Don't post with `gh pr review` directly. Posting a review clears the review request, so the queue doesn't pick the same PR up again.
 
-If the user then wants to review another PR, suggest they run `/clear` first — a review started on top of an earlier one carries all its diffs and reads in context on every turn. (Don't clear it yourself.)
+If posting fails, report it and leave the other PRs alone. Don't retry under the default account.
+
+## Step 7 — Show the output
+
+- **One PR:** the posted review body in full, the verdict and the review URL.
+- **Several PRs:** one row per PR (PR, title, verdict, blocking count, URL) and the rows for any PRs skipped, with the reason. Under the table, list each PR's blocking findings. The full bodies are at the URLs.
+
+Afterwards, run `node .claude/skills/avut-review-pr/review-pr.ts cleanup`. It removes the `pr/<N>` refs.
 
 ## Common mistakes
 
-- Skipping the Step 1 confirmation and reviewing the wrong PR
-- Reviewing only the diff hunks without reading the surrounding code
-- Reading changed files one per turn instead of in one parallel batch — each turn re-reads the whole context, so this multiplies the cost of the review
-- Posting without showing the user the drafted review first
-- Running only the generic pass and missing AVUT-specific convention violations
-- Posting under the default `gh` account (`alexwestphal`) instead of `claude-avut` via scoped `GH_TOKEN` — besides missing the point, GitHub silently downgrades a same-author review request or rejects it outright
-- Using `gh auth switch` instead of a scoped `GH_TOKEN` prefix, leaving the wrong account active for later commands in the session
+- Reviewing in the main session instead of `avut-code-reviewer`.
+- A reviewer reading the working tree instead of `pr/<N>`. That reviews the wrong code.
+- Starting batch reviewers one at a time instead of in one message.
+- Posting an unchecked blocking finding.
+- Re-reviewing from scratch, and not checking the earlier findings.
+- Running the `gh` or `git` steps by hand instead of `review-pr.ts`. It costs turns, it can apply the decision table inconsistently, and posting by hand risks using the wrong account (`alexwestphal`, or a `gh auth switch`).
+- Asking for approval before posting. This skill posts, then shows the result.

@@ -5,15 +5,16 @@
  * Path: /orgs/[slug]/skill-track/reports/person
  */
 
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { SkillTrack_PersonCompetencyReport } from "@/components/skill-track/reports/person-competency-report";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 import { syntheticChecksFlag } from "@/lib/flags";
 import { route } from "@/lib/routes";
 import { PersonId } from "@/lib/schemas/person";
+import { SkillTrack_PersonCompetencyReport } from "@/modules/skill-track/components/reports/person-competency-report";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -27,6 +28,9 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
     const { person, action } = await props.searchParams;
+    // Flag evaluation reads the clock, which Cache Components rejects until the render is
+    // marked request-time.
+    await connection();
     const syntheticChecksEnabled = await syntheticChecksFlag();
 
     const parsedPersonId =
@@ -68,7 +72,7 @@ export default async function SkillTrack_ReportsPersonCompetency_Page(
                             href: route("/orgs/[slug]/skill-track/reports/person", { slug }),
                         },
                     ]}
-                    actions={<HelpButton slug="skill-track/reports" />}
+                    actions={<HelpButton id="skill-track/report-person" />}
                 />
                 <Suspense fallback={<PageLoadingSpinner />}>
                     <SkillTrack_PersonCompetencyReport

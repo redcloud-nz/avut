@@ -5,20 +5,10 @@
  *  Path: /(wrapper)
  */
 
-import { Suspense, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
-import { ImpersonationBanner } from "@/components/system/admin/impersonation-banner";
 
 export default function AppLayout(props: { children: ReactNode }) {
-    return (
-        <AppProviders>
-            {/* `null` fallback matches the banner's own non-impersonating steady state, so
-                there's nothing to flash while `getSession` resolves. */}
-            <Suspense fallback={null}>
-                <ImpersonationBanner />
-            </Suspense>
-            {props.children}
-        </AppProviders>
-    );
+    return <AppProviders>{props.children}</AppProviders>;
 }

@@ -49,5 +49,19 @@ export function getScreenshot(id: string): ScreenshotEntry {
                 `Known ids: ${Object.keys(screenshotIndex).join(", ") || "(none)"}.`,
         );
     }
-    return entry;
+    return {
+        ...entry,
+        light: versioned(entry.light, entry.capturedAt),
+        dark: entry.dark && versioned(entry.dark, entry.capturedAt),
+    };
+}
+
+/**
+ * Blob serves each screenshot with a month-long `max-age` under a pathname that
+ * a re-capture overwrites in place, so browsers would keep showing the old
+ * bytes. Every upload stamps `capturedAt`, so it doubles as a cache-busting
+ * version on the URL.
+ */
+function versioned(source: ScreenshotSource, capturedAt: string): ScreenshotSource {
+    return { ...source, url: `${source.url}?v=${Date.parse(capturedAt)}` };
 }

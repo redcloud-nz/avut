@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { cacheLife, cacheTag } from "next/cache";
 import { notFound } from "next/navigation";
 import * as R from "remeda";
 
@@ -11,18 +12,26 @@ import { Std } from "@/components/blocks/std";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { env } from "@/lib/env";
 import { route } from "@/lib/routes";
-import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
-import { getOrganizationD4HAccessToken } from "@/server/d4h-access-token";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import {
+    d4hApiCacheTag,
+    D4HCredentialRef,
+    getOrganizationD4HAccessToken,
+    resolveD4HCredential,
+    toD4HCredentialRef,
+} from "@/server/d4h-access-token";
 import { getD4HFetchClient, getD4HTeamsAccessibleWithToken } from "@/server/d4h-api/client";
 import { requireOrganizationWith } from "@/server/organization-access";
 
-async function fetchEquipmentKinds(accessToken: D4HAccessToken_ServerOnly) {
+async function fetchEquipmentKinds(ref: D4HCredentialRef) {
     "use cache";
+    cacheLife("hours");
+    cacheTag(d4hApiCacheTag(ref.credentialId));
 
-    const fetchClient = getD4HFetchClient(accessToken);
+    const fetchClient = getD4HFetchClient(await resolveD4HCredential(ref));
 
-    const teams = await getD4HTeamsAccessibleWithToken(accessToken);
+    const teams = await getD4HTeamsAccessibleWithToken(ref);
 
     const kinds = (
         await Promise.all(
@@ -59,16 +68,16 @@ export default async function Admin_D4HAccessToken_EquipmentKinds_Page(
     if (!env.isDevelopment()) notFound();
 
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { d4hAccessToken: ["view"] });
+    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
 
     const accessToken = await getOrganizationD4HAccessToken({
-        tokenId: token_id,
+        tokenId: ProviderCredentialId.schema.parse(token_id),
         organizationId: organization.id,
     });
 
     if (!accessToken) notFound();
 
-    const fetched = await fetchEquipmentKinds(accessToken);
+    const fetched = await fetchEquipmentKinds(toD4HCredentialRef(accessToken));
 
     const kinds = fetched.map((kind) => ({
         raw: kind,

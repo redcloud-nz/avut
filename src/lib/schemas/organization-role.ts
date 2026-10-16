@@ -5,8 +5,8 @@
 
 import * as z from "zod";
 
-import type { OrganizationModuleId } from "@/lib/modules";
-import type { Role } from "@/lib/permissions";
+import { Modules, type OrganizationModuleId } from "@/lib/modules";
+import { roleCovers, type Role } from "@/lib/permissions";
 
 /**
  * Module ids that can actually gate a role. Excludes `org-admin` — it's `alwaysOn` and has no
@@ -15,15 +15,17 @@ import type { Role } from "@/lib/permissions";
  */
 type RoleGatingModuleId = Exclude<OrganizationModuleId, "org-admin">;
 
+// Display order: grouped by module (see `OrganizationRole.groups`), each module's admin role
+// first.
 const organizationRoleSchema = z.enum([
     "admin",
     "member",
-    "i3-editor",
     "i3-admin",
-    "skills-assessor",
+    "i3-editor",
     "skills-admin",
-    "skills-author",
+    "skills-assessor",
     "skills-reporter",
+    "skills-author",
 ]);
 
 interface OrganizationRoleInfo {
@@ -43,7 +45,7 @@ const organizationRoles = {
     admin: {
         displayName: "Admin",
         description:
-            "Has full access to organisation settings, users and roster management. Can manage users and roles.",
+            "Everything a Member can do, plus full access to organisation settings, users and roster management. Can manage users and roles.",
         isAdminAssignable: true,
     },
     member: {
@@ -51,18 +53,25 @@ const organizationRoles = {
         description: "Can view and interact with organisation resources.",
         isAdminAssignable: true,
     },
+    "i3-admin": {
+        displayName: "I3 Admin",
+        description:
+            "Everything an I3 Editor can do, plus managing I3 templates — creating, editing and deleting them, including trash/restore/purge.",
+        isAdminAssignable: true,
+        moduleId: "i3",
+    },
     "i3-editor": {
         displayName: "I3 Editor",
         description: "Can edit I3 content within the organisation.",
         isAdminAssignable: true,
         moduleId: "i3",
     },
-    "i3-admin": {
-        displayName: "I3 Admin",
+    "skills-admin": {
+        displayName: "Skills Admin",
         description:
-            "Manages I3 templates — creating, editing and deleting them, including trash/restore/purge. Not needed for everyday issue/inspect/return work, which is covered by I3 Editor.",
+            "Everything a Skills Assessor and Skills Reporter can do, plus approving and managing skill check sessions org-wide and deleting erroneous checks and sessions.",
         isAdminAssignable: true,
-        moduleId: "i3",
+        moduleId: "skill-track",
     },
     "skills-assessor": {
         displayName: "Skills Assessor",
@@ -70,10 +79,9 @@ const organizationRoles = {
         isAdminAssignable: true,
         moduleId: "skill-track",
     },
-    "skills-admin": {
-        displayName: "Skills Admin",
-        description:
-            "Approves and manages skill check sessions org-wide; can delete erroneous checks and sessions, but doesn't perform assessments itself.",
+    "skills-reporter": {
+        displayName: "Skills Reporter",
+        description: "Read-only access to skill check and skill check session reporting.",
         isAdminAssignable: true,
         moduleId: "skill-track",
     },
@@ -83,12 +91,6 @@ const organizationRoles = {
             "Creates and publishes skill packages (assessment templates) for the org to subscribe to — not to be confused with performing assessments.",
         isAdminAssignable: true,
         moduleId: "skill-package-builder",
-    },
-    "skills-reporter": {
-        displayName: "Skills Reporter",
-        description: "Read-only access to skill check and skill check session reporting.",
-        isAdminAssignable: true,
-        moduleId: "skill-track",
     },
 } satisfies Record<z.infer<typeof organizationRoleSchema>, OrganizationRoleInfo>;
 
@@ -102,8 +104,42 @@ export type ModuleGatedRoleOptions = readonly {
     enabled: boolean;
 }[];
 
+/**
+ * A titled set of roles a role picker shows together: the always-available roles under
+ * "Organisation", then one group per module, in role order.
+ */
+export interface OrganizationRoleGroup {
+    title: string;
+    moduleId?: RoleGatingModuleId;
+    roles: OrganizationRole[];
+}
+
+function roleGroups(): OrganizationRoleGroup[] {
+    const groups: OrganizationRoleGroup[] = [];
+    for (const [role, info] of Object.entries(organizationRoles) as [
+        OrganizationRole,
+        OrganizationRoleInfo,
+    ][]) {
+        const group = groups.find((g) => g.moduleId === info.moduleId);
+        if (group) group.roles.push(role);
+        else
+            groups.push({
+                title: info.moduleId ? Modules[info.moduleId].label : "Organisation",
+                moduleId: info.moduleId,
+                roles: [role],
+            });
+    }
+    return groups;
+}
+
+const roleSetSchema = z
+    .array(organizationRoleSchema)
+    .refine((roles) => new Set(roles).size === roles.length, "Roles must not repeat.");
+
 export const OrganizationRole = {
     schema: organizationRoleSchema,
+
+    groups: roleGroups(),
 
     /**
      * Display names for every role a stored membership can hold — the assignable roles plus
@@ -149,14 +185,35 @@ export const OrganizationRole = {
     },
 
     /**
+     * A member's non-owner roles with no repeats, possibly none — the shape an owner's role set
+     * takes, since `owner` alone is a valid membership. `owner` is handled entirely outside this
+     * schema (see `makeOwner`/`removeOwner`).
+     */
+    roleSetSchema,
+
+    /**
      * A member's complete role set as submitted from a form: at least one role, no repeats.
      * `owner` is handled entirely outside this schema (see `makeOwner`/`removeOwner`).
      * Membership rows store this comma-joined — see `serialize`.
      */
-    assignmentSchema: z
-        .array(organizationRoleSchema)
-        .refine((roles) => new Set(roles).size === roles.length, "Roles must not repeat.")
-        .refine((roles) => roles.length > 0, "Choose at least one role."),
+    assignmentSchema: roleSetSchema.refine(
+        (roles) => roles.length > 0,
+        "Choose at least one role.",
+    ),
+
+    /**
+     * The non-owner roles a role form starts from for a stored (comma-joined)
+     * `OrganizationUser.role` value: `parseStored`, less any role another stored non-owner role
+     * already covers. The picker shows those covered and locked, so leaving them in the value
+     * would keep a redundant role no one could untick. A role only `owner` covers is kept: it's
+     * what the member falls back to if their ownership is removed (`removeOwner`).
+     */
+    formDefaults(stored: string): OrganizationRole[] {
+        const roles = OrganizationRole.parseStored(stored);
+        return roles.filter(
+            (role) => !roles.some((other) => other !== role && roleCovers(other, role)),
+        );
+    },
 
     /** The stored `OrganizationUser.role` value for a role set: comma-joined. */
     serialize(roles: OrganizationRole[]): string {

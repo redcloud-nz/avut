@@ -9,9 +9,11 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { route } from "@/lib/routes";
-
-import { I3Module_CreateTemplate_Dialog } from "./create-template";
-import { I3Module_TemplateList } from "./templates-list";
+import { I3Module_CreateTemplate_Dialog } from "@/modules/i3/components/templates/create-template";
+import { I3Module_TemplateList } from "@/modules/i3/components/templates/templates-list";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
     title: "I3 Templates",
@@ -21,29 +23,32 @@ export default async function I3Module_TemplateList_Page(
     props: PageProps<"/orgs/[slug]/i3/templates">,
 ) {
     const { slug } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
+    const organization = await getOrganizationBySlug(slug);
+
+    prefetch(trpc.i3.listTemplates.queryOptions({ organizationId: organization.id }));
+
     return (
-        <>
-            <>
-                <Std.Navbar
-                    breadcrumbs={[
-                        { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
-                        "Templates",
-                    ]}
-                />
-                <Std.ScrollContainer>
-                    <Saratoga.Root>
-                        <Saratoga.Header>
-                            <Saratoga.Title>I3 Templates</Saratoga.Title>
-                            <Saratoga.Actions>
-                                <Protect permissions={{ i3Template: ["create"] }}>
-                                    <I3Module_CreateTemplate_Dialog />
-                                </Protect>
-                            </Saratoga.Actions>
-                        </Saratoga.Header>
-                        <I3Module_TemplateList />
-                    </Saratoga.Root>
-                </Std.ScrollContainer>
-            </>
-        </>
+        <HydrateClient>
+            <Std.Navbar
+                breadcrumbs={[
+                    { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
+                    "Templates",
+                ]}
+            />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>I3 Templates</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <Protect permissions={{ i3Template: ["create"] }}>
+                                <I3Module_CreateTemplate_Dialog />
+                            </Protect>
+                        </Saratoga.Actions>
+                    </Saratoga.Header>
+                    <I3Module_TemplateList />
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </HydrateClient>
     );
 }

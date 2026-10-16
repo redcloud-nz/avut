@@ -25,6 +25,14 @@ export const d4hAccessTokensEffects = createEffects<"d4hAccessTokens">()({
     deletePersonalAccessToken: () => [
         invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
     ],
+    refreshPersonalAccessToken: (vars) => [
+        invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
+        invalidate(
+            trpc.d4hAccessTokens.getPersonalAccessToken.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+    ],
     refreshToken: (vars) => [
         invalidate(
             trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({

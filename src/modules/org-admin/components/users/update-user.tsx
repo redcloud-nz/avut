@@ -1,0 +1,151 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+
+import { organizationsEffects } from "@/client/organizations-effects";
+import { ObjectIcons } from "@/components/icons";
+import {
+    memberRolesSchema,
+    RoleFields,
+} from "@/components/organization-roles/invitation-role-fields";
+import { Button, MutationButton } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogBody,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { FieldGroup } from "@/components/ui/field";
+import { ObjectName } from "@/components/ui/typography";
+import { useOrganization } from "@/hooks/use-organization";
+import { hasOwnerRole } from "@/lib/permissions";
+import { OrganizationRole } from "@/lib/schemas/organization-role";
+import { type AuthOrganizationMember } from "@/server/auth";
+import { trpc } from "@/trpc/client";
+
+export function AdminModule_UpdateUser_Dialog({
+    organizationUser,
+}: {
+    organizationUser: AuthOrganizationMember;
+}) {
+    const organization = useOrganization();
+
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
+
+    // `formDefaults` drops `owner` (granted and revoked separately) and any role another held
+    // role already covers, so this dialog only ever edits the non-owner roles.
+    const isOwner = hasOwnerRole(organizationUser.role);
+    const roleDefaults = { roles: OrganizationRole.formDefaults(organizationUser.role) };
+
+    const form = useForm({
+        resolver: zodResolver(memberRolesSchema(isOwner)),
+        defaultValues: roleDefaults,
+    });
+
+    const mutation = useMutation(
+        trpc.organizations.setOrganizationMemberRole.mutationOptions({
+            meta: { effects: organizationsEffects.setOrganizationMemberRole },
+            onError(error) {
+                console.error("Failed to update user roles:", error);
+                toast.error(`Failed to update user roles: ${error.message}`);
+            },
+            onSuccess() {
+                toast.success(
+                    <>
+                        User <ObjectName>{organizationUser.user.name}</ObjectName> roles updated.
+                    </>,
+                );
+
+                handleOpenChange(false);
+            },
+        }),
+    );
+
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset(roleDefaults);
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
+    // `isModuleEnabled` accounts for the module's Vercel flag as well as the org's own setting.
+    const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
+        organization.isModuleEnabled(id),
+    );
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <ObjectIcons.Edit />
+                </Button>
+            </DialogTrigger>
+            <DialogContent size="lg">
+                <DialogHeader>
+                    <DialogTitle>Update User Roles</DialogTitle>
+                    <DialogDescription>
+                        Update the roles for user{" "}
+                        <ObjectName>{organizationUser.user.name}</ObjectName>.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                    <FormProvider {...form}>
+                        <form
+                            id="update-user-form"
+                            onSubmit={form.handleSubmit(
+                                (data) => {
+                                    mutation.mutate({
+                                        organizationId: organization.id,
+                                        userId: organizationUser.userId,
+                                        roles: data.roles,
+                                    });
+                                },
+                                (errors) => {
+                                    console.error("Form validation errors:", errors);
+                                },
+                            )}
+                        >
+                            <FieldGroup>
+                                <RoleFields moduleGatedRoles={moduleGatedRoles} isOwner={isOwner} />
+                            </FieldGroup>
+                        </form>
+                    </FormProvider>
+                </DialogBody>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form="update-user-form"
+                        status={mutation.status}
+                        text={{
+                            idle: "Update User",
+                            pending: "Updating User",
+                            success: "User Updated",
+                        }}
+                    />
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}

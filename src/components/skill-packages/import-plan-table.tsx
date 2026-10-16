@@ -28,7 +28,7 @@ const ACTION_BADGE: Record<
     unchanged: { label: "Unchanged", variant: "outline" },
 };
 
-/** Renders the plan returned by `importPackage` / `importSkillPackage` (preview or applied). */
+/** Renders the plan returned by `importPackage` / `importPackageAsAdmin` (preview or applied). */
 export function SkillPackageImportPlanTable({
     plan,
     applied,

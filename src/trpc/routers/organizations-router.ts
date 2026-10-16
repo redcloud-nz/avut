@@ -10,7 +10,13 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import type { ModuleId } from "@/lib/modules";
-import { hasOwnerRole, roleSchema } from "@/lib/permissions";
+import {
+    grantableRoleSchema,
+    hasOwnerRole,
+    parseStoredRoles,
+    roleCovers,
+    roleSchema,
+} from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -28,41 +34,25 @@ import { Messages } from "../messages";
 const activeMember = { user: { status: { not: "Deleted" as const } } };
 
 /**
- * The memberships holding the `owner` role, filtered by `where`.
- *
- * `OrganizationUser.role` is comma-joined (an owner who is also an `i3-editor` is stored as
- * `"owner,i3-editor"`), so matching `role: "owner"` exactly would miss them. `contains` narrows
- * the query and the exact-role check afterwards keeps it from matching on a substring.
+ * The caller's organization's membership row for `userId`, skipping a Deleted (Rubbish bin)
+ * account.
+ * @throws TRPCError(NOT_FOUND) if the user isn't an active member.
  */
-export async function findOwnerMemberships(
-    prisma: Pick<PrismaClient, "organizationUser">,
-    where: { organizationId?: string | { in: string[] }; userId?: string },
+async function requireActiveMembership(
+    ctx: { prisma: PrismaClient; organizationId: OrganizationId },
+    userId: UserId,
 ) {
-    const rows = await prisma.organizationUser.findMany({
-        // A deleted account's membership is kept for recovery, but it can't act as an owner.
-        where: { ...where, role: { contains: "owner" }, user: { status: { not: "Deleted" } } },
-        select: { organizationId: true, userId: true, role: true },
+    const membership = await ctx.prisma.organizationUser.findFirst({
+        where: { organizationId: ctx.organizationId, userId, ...activeMember },
+        select: { id: true, role: true },
     });
-    return rows.filter((row) => hasOwnerRole(row.role));
-}
-
-/**
- * Guard against orphaning an organization: throws `BAD_REQUEST` if `userId` is the
- * organization's only `owner` (so removing them, or demoting them from `owner`, would
- * leave the org with no owner).
- */
-export async function assertNotLastOwner(
-    prisma: Pick<PrismaClient, "organizationUser">,
-    organizationId: string,
-    userId: string,
-) {
-    const owners = await findOwnerMemberships(prisma, { organizationId });
-    if (owners.length <= 1 && owners.some((o) => o.userId === userId)) {
+    if (!membership) {
         throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Cannot remove or demote the last owner of an organisation.",
+            code: "NOT_FOUND",
+            message: "That user is not a member of this organisation.",
         });
     }
+    return membership;
 }
 
 /**
@@ -300,7 +290,7 @@ export const organizationsRouter = createTrpcRouter({
                         select: {
                             providerCredentials: { where: { provider: "D4H" } },
                             personnel: true,
-                            skillChecks: true,
+                            skillChecks: { where: { status: { not: "Deleted" } } },
                             skillCheckSessions: true,
                             notes: true,
                             skillPackages: true,
@@ -354,6 +344,43 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
+     * Grant one role to an existing member, leaving the rest of their role set untouched. Gated
+     * per role by `roleGrant` rather than `member: ["update"]`, so a module admin can hand out
+     * the roles it covers (e.g. `skills-admin` → `skills-assessor`) without being able to edit
+     * anything else about a membership. Granting a role the member already holds is a no-op.
+     */
+    grantMemberRole: organizationProcedure()
+        .input(z.object({ userId: UserId.schema, role: grantableRoleSchema }))
+        .mutation(async ({ ctx, input }) => {
+            await ctx.hasPermission(ctx.organizationId, { roleGrant: [input.role] });
+
+            const membership = await requireActiveMembership(ctx, input.userId);
+            if (OrganizationRole.includes(membership.role, input.role)) {
+                return { id: membership.id };
+            }
+
+            const role = [...membership.role.split(",").filter(Boolean), input.role].join(",");
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: { id: membership.id },
+                    data: { role },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Granted ${OrganizationRole.displayNames[input.role]} to user ${input.userId}`,
+                }),
+            ]);
+
+            await revalidateOrganizationUser(input.userId);
+
+            return { id: membership.id };
+        }),
+
+    /**
      * Lists every member of the organization, shaped like Better Auth's own
      * `authClient.organization.listMembers` — a plain Prisma read of the same
      * `organization_users` table Better Auth's organization plugin already writes to.
@@ -379,6 +406,45 @@ export const organizationsRouter = createTrpcRouter({
             }));
         },
     ),
+
+    /**
+     * Lists the organization's members for granting or revoking `role` — only what the grant
+     * page needs, since a caller holding `roleGrant` alone (e.g. `skills-admin`) has no
+     * `member: ["view"]` and shouldn't see anyone's full role set. `coveredBy` names another role
+     * the member holds that already includes `role`, which makes granting it redundant.
+     */
+    listMembersForRoleGrant: organizationProcedure()
+        .input(z.object({ role: grantableRoleSchema }))
+        .query(async ({ ctx, input }) => {
+            await ctx.hasPermission(ctx.organizationId, { roleGrant: [input.role] });
+
+            const members = await ctx.prisma.organizationUser.findMany({
+                where: { organizationId: ctx.organizationId, ...activeMember },
+                select: {
+                    userId: true,
+                    role: true,
+                    user: { select: { name: true, email: true } },
+                },
+            });
+
+            return members
+                .map((member) => {
+                    const roles = parseStoredRoles(member.role);
+                    return {
+                        userId: member.userId,
+                        name: member.user.name,
+                        email: member.user.email,
+                        holdsRole: roles.includes(input.role),
+                        coveredBy:
+                            roles.find(
+                                (other) => other !== input.role && roleCovers(other, input.role),
+                            ) ?? null,
+                        // Revoking a member's only role would leave the membership empty.
+                        isOnlyRole: roles.length === 1 && roles[0] === input.role,
+                    };
+                })
+                .sort((a, b) => a.name.localeCompare(b.name));
+        }),
 
     listOrganizations: systemAdminProcedure.query(async ({ ctx }) => {
         const rows = await ctx.prisma.organization.findMany({
@@ -414,12 +480,20 @@ export const organizationsRouter = createTrpcRouter({
      * Grant a member ownership of the organization, in addition to whatever other roles they
      * already hold — `owner` is orthogonal to the flat role set, not exclusive with it. Only an
      * existing owner holds `member: ["owner"]`.
+     *
+     * `allowSystemAdmin` is the way back for an organization left with no owner: nobody inside
+     * it holds `member: ["owner"]` any more, so a system admin appoints one.
      */
-    makeOwner: organizationProcedure({ member: ["owner"] })
+    makeOwner: organizationProcedure({ member: ["owner"] }, { allowSystemAdmin: true })
         .input(z.object({ userId: UserId.schema }))
         .mutation(async ({ ctx, input }) => {
             const membership = await ctx.prisma.organizationUser.findFirst({
-                where: { organizationId: ctx.organizationId, userId: input.userId },
+                where: {
+                    organizationId: ctx.organizationId,
+                    userId: input.userId,
+                    // A Deleted (Rubbish bin) account can't be appointed the recovery owner.
+                    user: { status: { not: "Deleted" } },
+                },
                 select: { id: true, role: true },
             });
             if (!membership) {
@@ -455,8 +529,9 @@ export const organizationsRouter = createTrpcRouter({
         }),
 
     /**
-     * Remove a member from the organization. `BAD_REQUEST` if this would remove the
-     * organization's last `owner`.
+     * Remove a member from the organization. Only an owner (or a system admin) may remove a
+     * member who holds `owner`. Removing the last owner is allowed — the dialog warns, and a
+     * system admin can make someone an owner again (`makeOwner`).
      *
      * `allowSystemAdmin` lets a site-wide administrator remove a member of an organization
      * they don't themselves belong to (the system-admin console's org member management).
@@ -478,9 +553,9 @@ export const organizationsRouter = createTrpcRouter({
                 });
             }
 
-            // Only an owner removal can orphan the org — skip the owners query otherwise.
-            if (hasOwnerRole(membership.role)) {
-                await assertNotLastOwner(ctx.prisma, ctx.organizationId, input.userId);
+            // `member: ["delete"]` alone doesn't reach an owner — an admin can't remove one.
+            if (hasOwnerRole(membership.role) && !ctx.isSystemAdmin) {
+                await ctx.hasPermission(ctx.organizationId, { member: ["owner"] });
             }
 
             await ctx.prisma.$transaction([
@@ -501,8 +576,8 @@ export const organizationsRouter = createTrpcRouter({
 
     /**
      * Strip ownership from a member — the target must not be the caller (an owner cannot
-     * remove their own ownership; only a different owner can), and `BAD_REQUEST` if this would
-     * remove the organization's last `owner`. Only an existing owner holds `member: ["owner"]`.
+     * remove their own ownership; only a different owner can). Only an existing owner holds
+     * `member: ["owner"]`.
      */
     removeOwner: organizationProcedure({ member: ["owner"] })
         .input(z.object({ userId: UserId.schema }))
@@ -531,32 +606,80 @@ export const organizationsRouter = createTrpcRouter({
 
             const role = membership.role
                 .split(",")
-                .filter((r) => r !== "owner")
+                .filter((r) => r !== "" && r !== "owner")
                 .join(",");
+            // An owner may hold no other role (see `setOrganizationMemberRole`), but a membership
+            // without `owner` needs at least one.
+            if (role === "") {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message:
+                        "Owner is this member's only role. Give them another role before removing their ownership.",
+                });
+            }
 
-            // The last-owner check runs inside a serializable transaction with the write: two
-            // owners removing each other concurrently would otherwise both see two owners and
-            // leave the org with none. Under `Serializable` Postgres aborts one of them instead.
-            await ctx.prisma.$transaction(
-                async (tx) => {
-                    await assertNotLastOwner(tx, ctx.organizationId, input.userId);
-                    await tx.organizationUser.update({
-                        where: { id: membership.id },
-                        data: { role },
-                    });
-                    await ctx.logEvent(
-                        {
-                            action: "Update",
-                            objectType: "OrganizationMembership",
-                            objectId: membership.id,
-                            changes: [],
-                            description: `Removed owner status from user ${input.userId}`,
-                        },
-                        tx,
-                    );
-                },
-                { isolationLevel: "Serializable" },
-            );
+            // No last-owner check: the caller is an owner and can't target themselves, but two owners
+            // removing each other concurrently can still leave the org ownerless. That's allowed; a
+            // system admin recovers it with makeOwner.
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: { id: membership.id },
+                    data: { role },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Removed owner status from user ${input.userId}`,
+                }),
+            ]);
+
+            await revalidateOrganizationUser(input.userId);
+
+            return { id: membership.id };
+        }),
+
+    /**
+     * Revoke one role from an existing member — the reciprocal of `grantMemberRole`, under the
+     * same `roleGrant` permission. Revoking a role the member doesn't hold is a no-op; revoking
+     * their only role is refused, since a membership always holds at least one (an admin
+     * removes the member instead).
+     */
+    revokeMemberRole: organizationProcedure()
+        .input(z.object({ userId: UserId.schema, role: grantableRoleSchema }))
+        .mutation(async ({ ctx, input }) => {
+            await ctx.hasPermission(ctx.organizationId, { roleGrant: [input.role] });
+
+            const membership = await requireActiveMembership(ctx, input.userId);
+            if (!OrganizationRole.includes(membership.role, input.role)) {
+                return { id: membership.id };
+            }
+
+            const remaining = membership.role
+                .split(",")
+                .filter((role) => role !== "" && role !== input.role);
+            if (remaining.length === 0) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: `${OrganizationRole.displayNames[input.role]} is this member's only role, so it can't be revoked.`,
+                });
+            }
+            const role = remaining.join(",");
+
+            await ctx.prisma.$transaction([
+                ctx.prisma.organizationUser.update({
+                    where: { id: membership.id },
+                    data: { role },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "OrganizationMembership",
+                    objectId: membership.id,
+                    changes: [],
+                    description: `Revoked ${OrganizationRole.displayNames[input.role]} from user ${input.userId}`,
+                }),
+            ]);
 
             await revalidateOrganizationUser(input.userId);
 
@@ -576,7 +699,9 @@ export const organizationsRouter = createTrpcRouter({
         { member: ["update"] },
         { allowSystemAdmin: true },
     )
-        .input(z.object({ userId: UserId.schema, roles: OrganizationRole.assignmentSchema }))
+        // `roleSetSchema` rather than `assignmentSchema`: an owner may hold no other role, so
+        // the non-empty rule is checked below, once the membership is known.
+        .input(z.object({ userId: UserId.schema, roles: OrganizationRole.roleSetSchema }))
         .mutation(async ({ ctx, input }) => {
             const membership = await ctx.prisma.organizationUser.findFirst({
                 where: { organizationId: ctx.organizationId, userId: input.userId },
@@ -587,6 +712,10 @@ export const organizationsRouter = createTrpcRouter({
                     code: "NOT_FOUND",
                     message: "That user is not a member of this organisation.",
                 });
+            }
+
+            if (input.roles.length === 0 && !hasOwnerRole(membership.role)) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: "Choose at least one role." });
             }
 
             // Ownership is out-of-band here — preserve it if the member already has it.

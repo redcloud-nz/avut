@@ -23,8 +23,10 @@ function isValidTimeZone(value: string): boolean {
 
 const userSettingsSchema = z.object({
     /**
-     * Per-user module preferences, mirroring `OrganizationSettings.modules` — keyed by
-     * `UserModuleId` rather than `OrganizationModuleId`. Every user module is currently
+     * Per-user module preferences, mirroring `OrganizationSettings.modules` — keyed by the
+     * configurable (non-`alwaysOn`) `UserModuleId`s rather than `OrganizationModuleId`. A
+     * compile-time check in `src/lib/modules.ts` requires an entry for each of those; the
+     * `user-dashboard` entry predates `alwaysOn`. Every user module is currently
      * `alwaysOn` (see `src/lib/modules.ts`), so nothing reads `enabled` to gate access yet;
      * this exists so a module can grow per-user options later without a schema migration,
      * per issue #93.
@@ -33,17 +35,13 @@ const userSettingsSchema = z.object({
         "user-dashboard": z.object({
             enabled: z.boolean().default(true),
         }),
-        profile: z.object({
-            enabled: z.boolean().default(true),
-        }),
     }),
 
     /**
      * Preferences that change what the user sees, rather than what's available to them (compare
      * `modules` above). `dateFormat`/`timeFormat` name a preset from `DATE_FORMAT_PATTERNS`/
      * `TIME_FORMAT_PATTERNS` (`src/lib/datetime.ts`) rather than storing a raw date-fns pattern,
-     * so the set of choices stays curated. Not wired into `formatDate`/`formatDateTime` yet — see
-     * those functions' docstrings.
+     * so the set of choices stays curated. `formatDate`/`formatDateTime` require them.
      */
     display: z.object({
         dateFormat: z

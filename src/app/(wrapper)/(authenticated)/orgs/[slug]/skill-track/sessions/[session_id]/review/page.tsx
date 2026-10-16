@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { SkillTrack_SessionReview_Content } from "@/components/skill-track/session-review-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_SessionReview_Content } from "@/modules/skill-track/components/session-review-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -61,6 +61,26 @@ export default async function SkillTrack_SessionReview_Page(props: Props) {
             organizationId: organization.id,
             sessionId: skillCheckSessionId,
             scope: "all",
+        }),
+    );
+    prefetch(
+        trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    prefetch(
+        trpc.skillCheckSessions.listSessionSkills.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
+            scope: "assigned",
+        }),
+    );
+    prefetch(
+        trpc.skillChecks.listSkillChecks.queryOptions({
+            organizationId: organization.id,
+            sessionId: skillCheckSessionId,
         }),
     );
 

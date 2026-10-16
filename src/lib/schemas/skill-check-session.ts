@@ -35,11 +35,12 @@ const skillCheckSessionSchema = z.object({
 export const SkillCheckSession = {
     schema: skillCheckSessionSchema,
 
+    // No `status`: a session is created `Draft` and its status only moves through
+    // `approveSession` and `reopenSession`.
     modifiableSchema: skillCheckSessionSchema.pick({
         name: true,
         date: true,
         notes: true,
-        status: true,
     }),
 
     fromRecord: (record: SkillCheckSessionRecord) =>

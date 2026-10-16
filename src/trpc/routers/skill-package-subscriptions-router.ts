@@ -7,10 +7,15 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { OrganizationRef } from "@/lib/schemas/organization";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
-import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
+import {
+    availableSkillPackageWhere,
+    SkillPackage,
+    SkillPackageId,
+} from "@/lib/schemas/skill-package";
 import {
     SkillPackageSubscription,
     SkillPackageSubscriptionId,
@@ -45,16 +50,33 @@ const catalogueGroupSchema = SkillGroup.schema
     .extend({ skills: z.array(catalogueSkillSchema) });
 
 /**
+ * Prisma `where` for the packages an organization's catalogue shows: every available package
+ * (see `SkillPackage.isAvailable`), plus any withdrawn (unpublished or Archived, but not Deleted)
+ * package the organization still subscribes to, so it can find the package and unsubscribe.
+ */
+function catalogueSkillPackageWhere(organizationId: string) {
+    return {
+        OR: [
+            availableSkillPackageWhere,
+            { status: { not: "Deleted" }, subscriptions: { some: { organizationId } } },
+        ],
+    } satisfies Prisma.SkillPackageWhereInput;
+}
+
+/**
  * Router for managing skill package subscriptions and listing the groups and skills associated with the organization's subscribed skill packages.
  */
 export const skillPackageSubscriptionsRouter = createTrpcRouter({
     /**
-     * Get a single published skill package by ID, including this organization's subscription
-     * status and package-level counts.
+     * Get a single catalogue skill package by ID, including this organization's subscription
+     * status and package-level counts. The catalogue holds every available package, plus any
+     * withdrawn (unpublished or Archived) package this organization still subscribes to, so a
+     * subscriber can open it and unsubscribe.
      * @param skillPackageId The ID of the skill package to retrieve.
      * @returns The skill package with organization, subscription, skillCount, subscriptionCount,
      *   and its active groups (each with its active skills) for the catalogue contents view.
-     * @throws TRPCError(NOT_FOUND) if the package doesn't exist or isn't published.
+     * @throws TRPCError(NOT_FOUND) if the package doesn't exist, is Deleted, or is withdrawn and
+     *   this organization doesn't subscribe to it.
      *
      * Note: unlike the builder's `getPackage`, this response is NOT flat — a cache effect that
      * writes a mutation response wholesale into this query key would drop `groups`. Spread `old`.
@@ -77,8 +99,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
             const pkg = await ctx.prisma.skillPackage.findUnique({
                 where: {
                     id: skillPackageId,
-                    published: true,
-                    status: { not: "Deleted" },
+                    ...catalogueSkillPackageWhere(organizationId),
                 },
                 select: {
                     id: true,
@@ -161,6 +182,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
 
     /**
      * List the skills that are assessable for this organization based on their current skill package subscriptions.
+     * Only available packages count (see `SkillPackage.isAvailable`): a withdrawn package's skills are left out.
      */
     listAssessableSkills: organizationProcedure({ skillPackageSubscription: ["view"] })
         .output(
@@ -174,7 +196,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: {
                     organizationId: ctx.organizationId,
-                    skillPackage: { status: { not: "Deleted" } },
+                    skillPackage: availableSkillPackageWhere,
                 },
                 include: {
                     skillPackage: {
@@ -199,7 +221,9 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
         }),
 
     /**
-     * List all skill package that are published and available for subscription by the organization.
+     * List the catalogue: every available package (see `SkillPackage.isAvailable`), plus any
+     * withdrawn (unpublished or Archived) package this organization still subscribes to, so it can
+     * find the package and unsubscribe.
      * @returns An array of skill packages including subscription status for the organization.
      */
     listPackages: organizationProcedure({
@@ -219,11 +243,8 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
             ),
         )
         .query(async ({ ctx, input: { organizationId } }) => {
-            const publishedPackages = await ctx.prisma.skillPackage.findMany({
-                where: {
-                    published: true,
-                    status: { not: "Deleted" },
-                },
+            const cataloguePackages = await ctx.prisma.skillPackage.findMany({
+                where: catalogueSkillPackageWhere(organizationId),
                 select: {
                     id: true,
                     name: true,
@@ -259,7 +280,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
                 },
             });
 
-            return publishedPackages.map((pkg) => ({
+            return cataloguePackages.map((pkg) => ({
                 ...SkillPackage.fromRecord(pkg),
                 organization: {
                     id: pkg.organization.id,
@@ -277,6 +298,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
 
     /**
      * List the packages that the organization is currently subscribed to, including details about the package and the subscription. Requires "view" skill on "Skills" module.
+     * Only available packages are listed (see `SkillPackage.isAvailable`); a withdrawn subscription is left out.
      * @returns An array of skill packages that the organization is subscribed to, including subscription details.
      */
     listSubscribedPackages: organizationProcedure({ skillPackageSubscription: ["view"] })
@@ -292,7 +314,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: {
                     organizationId: ctx.organizationId,
-                    skillPackage: { status: { not: "Deleted" } },
+                    skillPackage: availableSkillPackageWhere,
                 },
                 include: {
                     skillPackage: {
@@ -316,10 +338,10 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Subscribe the organization to the specified skill package, allowing access to the skills within the package. The package must be published and not already subscribed to by the organization.
+     * Subscribe the organization to the specified skill package, allowing access to the skills within the package. The package must be available (published and `Active`, see `SkillPackage.isAvailable`) and not already subscribed to by the organization.
      * @param skillPackageId The ID of the skill package to subscribe to.
      * @returns The created skill package subscription.
-     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or is not published.
+     * @throws TRPCError(NOT_FOUND) if the skill package does not exist or is not available.
      * @throws TRPCError(BAD_REQUEST) if the organization is already subscribed to the skill package.
      */
     subscribeToPackage: organizationProcedure({ skillPackageSubscription: ["subscribe"] })
@@ -330,14 +352,14 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
         )
         .output(z.object({ created: SkillPackageSubscription.schema }))
         .mutation(async ({ ctx, input: { organizationId, skillPackageId } }) => {
-            // Check if the package exists and is published
+            // Check if the package exists and is available
             const skillPackage = await ctx.prisma.skillPackage.findUnique({
                 where: {
                     id: skillPackageId,
                 },
             });
 
-            if (!skillPackage || !skillPackage.published || skillPackage.status === "Deleted") {
+            if (!skillPackage || !SkillPackage.isAvailable(skillPackage)) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
                     message: Messages.skillPackageNotFound(skillPackageId),

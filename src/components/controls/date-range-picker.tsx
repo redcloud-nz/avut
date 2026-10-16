@@ -10,6 +10,7 @@ import { CalendarIcon } from "lucide-react";
 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { usePreferences } from "@/hooks/use-preferences";
 import { DateRange, formatDateRange } from "@/lib/schemas/date-range";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,8 @@ export function DateRangePicker({
     value,
     size = "default",
 }: DatePickerProps) {
+    const { display } = usePreferences();
+
     function handleSelect(selected: { from?: Date; to?: Date } | undefined) {
         const fromStr = selected?.from
             ? formatISO(selected.from, { representation: "date" })
@@ -63,7 +66,7 @@ export function DateRangePicker({
                 )}
             >
                 {selected ? (
-                    formatDateRange(selected)
+                    formatDateRange(selected, display)
                 ) : (
                     <span className="text-muted-foreground">{placeholder}</span>
                 )}

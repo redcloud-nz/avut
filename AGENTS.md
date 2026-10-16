@@ -6,6 +6,15 @@ A Next.js web application providing organizational management tools with optiona
 
 All org-scoped pages, module or not, live under `/orgs/[slug]/…`.
 
+### Modules
+
+UI code private to one module lives in `src/modules/<module-id>/`: components in `components/`, other module-private code (hooks, helpers) in `lib/`. Create a subfolder only when something goes in it. Folders use `modules.ts` ids, not route segments (`org-admin` and `system-admin` both have segment `admin`). The one folder that isn't a registry id is `user-settings`, for the `/user/settings/*` pages.
+
+- UI that more than one module uses lives in `src/components/` (the shared layer), never in either module. So do areas that aren't modules (`auth`, `invitations`, `docs`, `marketing`, the org dashboard).
+- Schemas stay in `src/lib/schemas/`: they're per domain, not per module.
+- A module never imports another module (lint). Outside `src/app`, which may import any module, only the sidebar-menu registry (`nav/{org,scope}-sidebar-modules.tsx`) and the docs demos (`docs/demo-*.tsx`) may import from `src/modules/`.
+- No barrel `index.ts` files: import each file directly.
+
 `src/generated/` (the Prisma client and `dmmf.ts`) is generated and gitignored — never edit it manually. `npm install` regenerates it; after switching to a branch that changes `prisma/schema.prisma`, run `npx prisma generate` yourself or the client and mock metadata will be stale.
 
 ---
@@ -69,6 +78,7 @@ The dev database holds records for **real people with their real email addresses
 
 - When you judge it's a good point to commit, stage the relevant changes and commit them without asking, then show the commit message you used.
 - Never `git push`, open a PR, or otherwise publish commits without explicit approval — committing locally is fine, sharing is not.
+- Issues in redcloud-nz/avut are the build backlog. Ideas and brainstorms not ready to build live in redcloud-nz/avut-ideas (`/avut-brainstorm` files there; `/avut-develop-feature` promotes one into an avut issue).
 - Feature PRs merge to `integration` (the default branch). `production` is the release target — see [`docs/releasing.md`](docs/releasing.md) for how a version gets there, and [`docs/branch-protection.md`](docs/branch-protection.md) for the branch rules.
 
 ## Worktrees
@@ -76,13 +86,36 @@ The dev database holds records for **real people with their real email addresses
 - All git worktrees go under `.claude/worktrees/<name>` inside the repo (gitignored). Don't create them as siblings of the repo or anywhere else — a single location keeps `git worktree list` and cleanup predictable.
 - Remove a worktree with `npm run worktree:remove <name>` — it drops the worktree's `db:branch` database copy first (a branch DB must never outlive its worktree), then runs `git worktree remove` + `prune`. Pass `git worktree remove` flags after `--` (e.g. `npm run worktree:remove <name> -- --force` when the tree has uncommitted changes). Plain `git worktree remove` still works but leaks the branch DB.
 - If a worktree directory was deleted by hand, run `git worktree prune` — and `npm run db:unbranch` from wherever `.env.local` was last pointed, or `dropdb avut_<slug>` directly, to clean up its branch DB.
-- Set up a fresh worktree with `npm run worktree:setup` (from inside it, or pass its name) — it copies `.env.local`, links `.vercel`, installs dependencies (on macOS by cloning the main checkout's `node_modules`, otherwise `npm ci`) and generates route types, and is safe to re-run — a re-run also regenerates the Prisma client, so use it after a schema change. It doesn't start a dev server: run one on its own port (`npm run dev -- -p 3100`; the main checkout uses 3000 and `dev-email` 3001), and ask first since the user may already have one up. `.claude/settings.local.json` (the personal permission allowlist) isn't copied, so expect more permission prompts until you re-add entries.
+- Set up a fresh worktree with `npm run worktree:setup` (from inside it, or pass its name) — it copies `.env.local`, links `.vercel`, installs dependencies (on macOS by cloning the main checkout's `node_modules`, otherwise `npm ci`), generates route types and allocates the worktree's dev-server port (see [Dev servers](#dev-servers)), and is safe to re-run — a re-run also regenerates the Prisma client, so use it after a schema change. `.claude/settings.local.json` (the personal permission allowlist) isn't copied, so expect more permission prompts until you re-add entries.
+- **"Run <skill> in worktree x"** (or `in:x` in a skill's arguments): if `.claude/worktrees/x` exists, enter it (`EnterWorktree` with `path`); otherwise create it (`EnterWorktree` with `name: "x"`, which branches from `origin/integration`) and run `npm run worktree:setup`. When the work is an existing branch, `git worktree add .claude/worktrees/x <branch>` first, then enter it. Then run the skill as usual: whatever it says about "the main checkout" or "the current checkout" means that worktree — its dev server, its branch, its `db:branch`. Stay there until the skill ends; removal is the user's call (`npm run worktree:remove`).
+
+## Dev servers
+
+Every checkout gets its own port, and Next allows only one `next dev` per checkout (a second one exits with "Another next dev server is already running").
+
+| Port  | Whose                                                                                                                                                           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3000  | The user's server in the main checkout. Agents may use it but never start it.                                                                                   |
+| 3001  | The user's `dev-email`. Agents don't run it.                                                                                                                    |
+| 3100  | An agent's server in the main checkout, only when the user's 3000 isn't running: `PORT=3100 npm run dev`. Stop it when you're done, since it blocks the user's. |
+| 3101+ | One fixed port per worktree, in its `.dev-port` (gitignored). `npm run dev` there serves on it.                                                                 |
+
+- Agents may start and stop servers on 3100 and up without asking. Never touch 3000 or 3001.
+- `npm run dev:port` prints the checkout's port: 3000 in the main checkout, the `.dev-port` in a worktree (allocating one on first use — the lowest free port from 3101).
+- `npm run dev` always passes the port explicitly, so a busy port fails instead of drifting onto 3001. Off 3000, the inspector moves too (port + 6229).
+- `npm run dev` first runs a read-only `prisma migrate status` and warns if the database is missing migrations this checkout has. It separates two cases:
+  - **Already on `integration`:** shared `avut` fell behind after someone merged a migration. `npm run prisma migrate deploy` catches it up, with permission like any other shared-database write.
+  - **Only on this branch:** never deploy these to `avut`. They go on a `db:branch` copy.
+
+  `AVUT_SKIP_MIGRATION_CHECK=1` skips the check.
+
+- better-auth's `baseURL` follows the server's own port (`src/lib/dev-server.ts`), and any localhost port is a trusted origin. Session cookies are shared across ports, so signing in once on 3000 (Google included) signs you in on every server on the same database — and signing in as someone else on any of them replaces that session everywhere. Google and GitHub sign-in only work on ports registered with the provider, so on other ports sign in on 3000 first, or use email and password.
 
 ---
 
 # Codebase Conventions
 
-How the code is written. Read the linked pattern doc before writing a new page or mutation rather than inferring the pattern from a neighbouring file.
+How the code is written. Read the linked pattern doc before writing a new page or mutation rather than inferring the pattern from a neighbouring file. [`docs/conventions-checklist.md`](docs/conventions-checklist.md) is the checklist of the rules below that lint doesn't enforce. Apply it when reviewing any diff here, alongside the correctness pass.
 
 Design specs live in [`docs/specs/`](docs/specs/README.md). Every spec, plan, research doc, and review under `docs/` carries a `**Date:**` line in its header _and_ the same date as a filename prefix (`YYYY-MM-DD-subject.md`) — see that folder's README before adding or renaming one.
 
@@ -106,7 +139,7 @@ See the pattern docs for the full shapes, code, and rationale — read the relev
 
 ## Permissions
 
-Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, `i3-editor`, `skills-assessor`, `skill-package-author`.
+Defined in `src/lib/permissions.ts`. Roles: `owner`, `admin`, `member`, plus per-module roles: `i3-editor`, `i3-admin` (I3); `skills-assessor`, `skills-reporter`, `skills-admin` (Skill Track); `skills-author` (Skill Package Builder). A member holds any combination; `owner` is granted separately (`makeOwner`/`removeOwner`).
 
 **Server-side** (tRPC): pass a permissions object to `organizationProcedure`:
 
@@ -139,6 +172,8 @@ For cases where the permission boolean needs to flow into the markup (e.g. disab
 ```
 
 Inside a dropdown/menu of actions, and for verifying a given `<Protect>`'s `permissions` actually match the mutation it guards, see [`docs/patterns/protect-permission-gating.md`](docs/patterns/protect-permission-gating.md).
+
+**Route access**: the procedure is the check, not the page or the layout. Layouts don't re-run on client-side navigation, so they guard nothing. A page checks permissions itself only when it reads data outside tRPC. See [`docs/patterns/route-access-control.md`](docs/patterns/route-access-control.md).
 
 ## Zod Schemas
 
@@ -185,14 +220,15 @@ Vitest with jsdom; tests live alongside source files. The conventions (prisma-mo
 
 Reusable layout systems in `src/components/blocks/`:
 
-| Block      | Purpose                                                                                                                                                                                                                 |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Std`      | Outer page shell — `Std.SidebarInset`, `Std.Navbar` (breadcrumbs), `Std.ScrollContainer`, `Std.IndexPage`, `Std.Breadcrumbs`                                                                                            |
-| `Saratoga` | Content layout within the shell — `Saratoga.Root`, `Saratoga.Header`, `Saratoga.Title`, `Saratoga.Actions`, `Saratoga.Columns`/`.Column`                                                                                |
-| `Kaga`     | Data table system wrapping TanStack Table — `Kaga.Table`, `Kaga.TableToolbar`, `Kaga.TablePagination`, `Kaga.defineColumns`, `Kaga.filterFns`                                                                           |
-| `Argus`    | Centered card layout for auth/form pages                                                                                                                                                                                |
-| `Eagle`    | JSON diff/parse comparison display (used in dev/import tooling)                                                                                                                                                         |
-| `Glorious` | Full-height matrix table — `Glorious.Root`, `Glorious.Header`/`.Title`/`.Subtitle`/`.Actions`, `Glorious.ScrollFrame`, `Glorious.Table`, `Glorious.TableHeader`, `Glorious.GroupSection` (collapsible sticky `<tbody>`) |
+| Block      | Purpose                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Std`      | Outer page shell — `Std.SidebarInset`, `Std.Navbar` (breadcrumbs), `Std.ScrollContainer`, `Std.IndexPage`, `Std.Breadcrumbs`                                                                                                                                                                                                                                                          |
+| `Saratoga` | Content layout within the shell — `Saratoga.Root`, `Saratoga.Header`, `Saratoga.Title`, `Saratoga.Actions`, `Saratoga.Columns`/`.Column`                                                                                                                                                                                                                                              |
+| `Kaga`     | Data table system wrapping TanStack Table — `Kaga.Table`, `Kaga.TableToolbar`, `Kaga.TablePagination`, `Kaga.defineColumns`, `Kaga.filterFns`                                                                                                                                                                                                                                         |
+| `Argus`    | Centered card layout for auth/form pages                                                                                                                                                                                                                                                                                                                                              |
+| `Eagle`    | JSON diff/parse comparison display (used in dev/import tooling)                                                                                                                                                                                                                                                                                                                       |
+| `Glorious` | Full-height matrix table — `Glorious.Root`, `Glorious.Header`/`.Title`/`.Subtitle`/`.Actions`, `Glorious.ScrollFrame`, `Glorious.Table`, `Glorious.TableHeader`, `Glorious.GroupSection` (collapsible sticky `<tbody>`)                                                                                                                                                               |
+| `Hermes`   | Master-detail layout under the navbar, in place of `Std.ScrollContainer` — `Hermes.Root` (render from the route's `layout.tsx`; picks the active pane from `useSelectedLayoutSegment()`), `Hermes.List`, `Hermes.Detail`, `Hermes.Placeholder`. Both panes at `md`+, only the active one below. `Hermes.Detail` crossfades on record change, so the record route has no `loading.tsx` |
 
 Typical page layout — shell in `page.tsx`, content in the client component:
 
@@ -231,7 +267,7 @@ Render an entity's name as a link to its detail page with the wrappers in `src/c
 
 The app has three real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
 
-`src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere.
+`src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere. A module's UI code lives in `src/modules/<module-id>/` (see [Modules](#modules)).
 
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
 - Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules

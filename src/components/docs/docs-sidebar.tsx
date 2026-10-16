@@ -9,6 +9,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { docsHref, type DocsNavSection } from "@/lib/docs-sections";
+import { updatesHref } from "@/lib/updates-shared";
 import { cn } from "@/lib/utils";
 
 /** Left-hand navigation for the public `/docs` site, built from the compiled collection. */
@@ -26,15 +27,26 @@ export function DocsSidebar({ nav }: { nav: DocsNavSection[] }) {
             >
                 Overview
             </Link>
-            <Link
-                href="/docs/glossary"
-                className={cn(
-                    "hover:text-foreground text-muted-foreground -mx-2 rounded px-2 py-1",
-                    pathname === "/docs/glossary" && "bg-muted text-foreground font-medium",
-                )}
-            >
-                Glossary
-            </Link>
+            <div className="flex flex-col gap-1">
+                <Link
+                    href="/docs/glossary"
+                    className={cn(
+                        "hover:text-foreground text-muted-foreground -mx-2 rounded px-2 py-1",
+                        pathname === "/docs/glossary" && "bg-muted text-foreground font-medium",
+                    )}
+                >
+                    Glossary
+                </Link>
+                <Link
+                    href={updatesHref()}
+                    className={cn(
+                        "hover:text-foreground text-muted-foreground -mx-2 rounded px-2 py-1",
+                        pathname === updatesHref() && "bg-muted text-foreground font-medium",
+                    )}
+                >
+                    What&apos;s new
+                </Link>
+            </div>
             {nav.map((section) => (
                 <div key={section.id} className="flex flex-col gap-1">
                     <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">

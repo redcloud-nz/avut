@@ -7,16 +7,18 @@
 
 import { Metadata } from "next";
 
-import { SkillPackageBuilder_PackageHistory_Content } from "@/components/skill-package-builder/package-history-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackageBuilder_PackageHistory_Content } from "@/modules/skill-package-builder/components/package-history-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
-import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
+import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/history`>;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, package_id } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "skill-package-builder"))) return {};
     const organization = await getOrganizationBySlug(slug);
 
     const skillPackageId = SkillPackageId.schema.parse(package_id);
@@ -32,6 +34,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function SkillPackageBuilder_PackageHistory_Page(props: Props) {
     const { slug, package_id } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "skill-package-builder"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
     const skillPackageId = SkillPackageId.schema.parse(package_id);
@@ -41,6 +44,17 @@ export default async function SkillPackageBuilder_PackageHistory_Page(props: Pro
             organizationId: organization.id,
             skillPackageId,
         }),
+    );
+    // Same input as `ObjectHistory`'s client query (no `limit`), so the keys match.
+    prefetchInfinite(
+        trpc.history.listObjectHistory.infiniteQueryOptions(
+            {
+                organizationId: organization.id,
+                objectType: "SkillPackage",
+                objectId: skillPackageId,
+            },
+            { getNextPageParam: (page) => page.nextCursor ?? undefined },
+        ),
     );
 
     return (

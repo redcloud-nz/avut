@@ -8,8 +8,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { UserSettings_OrganizationContent } from "@/components/user/user-settings/organization-content";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { UserSettings_OrganizationContent } from "@/modules/user-settings/components/organization-content";
 import { fetchQuery, HydrateClient, trpc } from "@/trpc/server";
 
 type Props = PageProps<"/user/settings/organizations/[organization_id]">;

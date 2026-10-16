@@ -1,6 +1,6 @@
 ---
 title: Skill Package Builder
-description: Authoring reusable skill packages.
+description: Writing skill packages, publishing them to the catalogue, and moving them between organisations.
 section: skill-package-builder
 order: 0
 keyTerms: ["skill-package", "skill", "skill-group"]
@@ -8,10 +8,51 @@ keyTerms: ["skill-package", "skill", "skill-group"]
 
 # Skill Package Builder
 
-A **skill package** is a set of skill groups and skills that other
-organisations can use from their Skill Track catalogue. The Skill Package
-Builder is where authors create and maintain them.
+A **skill package** is a set of skill groups and skills that any organisation
+can subscribe to from its [Skill Track catalogue](/docs/skill-track/catalogue).
+The Skill Package Builder is where your organisation writes and maintains the
+packages it publishes. You need the **Skills Author** role, and the module
+turned on in **Organisation Settings**.
 
-## Roles
+## Writing a package
 
-Authoring requires the `skill-package-author` role.
+**New** starts a package. Open it to add its **skill groups**, and the
+**skills** in each group.
+
+A skill's **Revalidation Frequency** is in months. It decides when a pass
+expires in [reports](/docs/skill-track/reports): a pass recorded 13 months ago
+on a skill with a frequency of 12 shows as Expired. A frequency of 0 means a
+pass never expires.
+
+Packages aren't versioned. Once a package is published, every change you make
+reaches its subscribers straight away.
+
+## Publishing and archiving
+
+The package's menu (⋮) controls who can see and use it:
+
+- **Publish** puts it in every organisation's catalogue, ready to subscribe to.
+- **Unpublish** takes it out of the catalogue, so nobody new can subscribe. Its
+  skills also leave existing subscribers' reports straight away, although their
+  sessions can still use them.
+- **Archive** marks a package you've finished with. While it's archived, its
+  skills leave subscribers' reports, but it stays in the catalogue, open to
+  subscription, and in the session skill picker. **Restore** brings it back.
+- **Delete** unpublishes the package and moves it to the
+  [Rubbish bin](/docs/admin/rubbish-bin). Subscribers lose its skills straight
+  away. A skill that another organisation has recorded checks against can't be
+  purged from the bin.
+
+<Callout type="warning">
+  Unpublishing and archiving affect subscribers more than their confirmation dialogs say. Think of
+  either as removing the package from every subscriber's reports.
+</Callout>
+
+## Moving a package
+
+**Export .json**, in the package's menu, downloads the whole package as a file,
+to copy it to another organisation or another AVUT instance.
+
+**Import**, on the package list, loads that file. A package that's already here
+is updated in place, anything the file leaves out is archived, and the result is
+always unpublished, so you can check it before publishing.

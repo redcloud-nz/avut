@@ -11,6 +11,8 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { Prisma } from "@/generated/prisma/client";
 import {
     ConflictError,
+    ForbiddenError,
+    NotConfiguredError,
     NotFoundError,
     PreconditionError,
     StalePlanError,
@@ -91,13 +93,16 @@ export const publicProcedure = t.procedure
             if (cause instanceof NotFoundError) {
                 throw new TRPCError({ code: "NOT_FOUND", message: cause.message, cause });
             }
+            if (cause instanceof ForbiddenError) {
+                throw new TRPCError({ code: "FORBIDDEN", message: cause.message, cause });
+            }
             if (cause instanceof ConflictError) {
                 throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
             }
             if (cause instanceof ValidationError) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: cause.message, cause });
             }
-            if (cause instanceof PreconditionError) {
+            if (cause instanceof PreconditionError || cause instanceof NotConfiguredError) {
                 throw new TRPCError({ code: "PRECONDITION_FAILED", message: cause.message, cause });
             }
             if (cause instanceof StalePlanError) {

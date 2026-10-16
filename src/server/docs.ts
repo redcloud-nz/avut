@@ -7,12 +7,12 @@
  * (see `src/lib/flags.ts` / `src/server/module-flags.ts`) is hidden entirely —
  * it drops out of the sidebar, 404s on direct navigation, and is excluded from
  * the search index. `getting-started` / `account` have no flag and are always
- * shown.
+ * shown. Help cards (`content/help/**`) hide along with their guide's section.
  */
 
 import "server-only";
 
-import { allDocs } from "content-collections";
+import { allDocs, allHelpCards, type HelpCard } from "content-collections";
 import { cache } from "react";
 
 import { getDocsNav, type Doc, type DocsNavSection } from "@/lib/docs";
@@ -54,4 +54,11 @@ export async function getVisibleDocBySlug(slug: string): Promise<Doc | undefined
 export async function getVisibleDocSlugs(): Promise<string[]> {
     const hidden = await hiddenDocsSectionIds();
     return allDocs.filter((d) => !hidden.has(d.section)).map((d) => d.slug);
+}
+
+/** Look up a help card by id, returning `undefined` if it or its guide's section is flag-hidden. */
+export async function getVisibleHelpCard(id: string): Promise<HelpCard | undefined> {
+    const card = allHelpCards.find((c) => c.id === id);
+    if (!card) return undefined;
+    return (await hiddenDocsSectionIds()).has(card.section) ? undefined : card;
 }

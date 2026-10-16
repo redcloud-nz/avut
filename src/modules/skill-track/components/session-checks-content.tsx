@@ -1,0 +1,239 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { ClipboardCheckIcon } from "lucide-react";
+import { useMemo } from "react";
+
+import { useSuspenseQueries } from "@tanstack/react-query";
+import {
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
+
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
+import { Show } from "@/components/show";
+import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { PersonId, PersonRef } from "@/lib/schemas/person";
+import { SkillId, SkillRef } from "@/lib/schemas/skill";
+import {
+    getEnabledSkillCheckResultOptions,
+    getSkillCheckResultLabel,
+    SKILL_CHECK_STATUS_LABELS,
+    SkillCheck,
+} from "@/lib/schemas/skill-check";
+import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { trpc } from "@/trpc/client";
+
+export function SkillTrack_SessionChecks_Content({
+    sessionId,
+}: {
+    sessionId: SkillCheckSessionId;
+}) {
+    const organization = useOrganization();
+
+    const [
+        { data: session },
+        { data: assessees },
+        { data: assessors },
+        { data: skills },
+        { data: skillChecks },
+    ] = useSuspenseQueries({
+        queries: [
+            trpc.skillCheckSessions.getSession.queryOptions({
+                organizationId: organization.id,
+                skillCheckSessionId: sessionId,
+            }),
+            trpc.skillCheckSessions.listSessionAssessees.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+                scope: "all",
+            }),
+            trpc.skillCheckSessions.listSessionAssessors.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+                scope: "all",
+            }),
+            trpc.skillCheckSessions.listSessionSkills.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+                scope: "all",
+            }),
+            trpc.skillChecks.listSkillChecks.queryOptions({
+                organizationId: organization.id,
+                sessionId: sessionId,
+            }),
+        ],
+    });
+
+    const assesseeById = useMemo(
+        () => new Map<PersonId, PersonRef>(assessees.map((p) => [p.id, p])),
+        [assessees],
+    );
+    const assessorById = useMemo(
+        () => new Map<PersonId, PersonRef>(assessors.map((p) => [p.id, p])),
+        [assessors],
+    );
+    const skillById = useMemo(
+        () => new Map<SkillId, SkillRef>(skills.map((s) => [s.id, s])),
+        [skills],
+    );
+
+    const resultOptions = useMemo(
+        () => getEnabledSkillCheckResultOptions(organization.settings),
+        [organization.settings],
+    );
+
+    type Row = SkillCheck;
+
+    const columns = useMemo(
+        () =>
+            Kaga.defineColumns<Row>((col) => [
+                col.accessor((row) => assesseeById.get(row.assesseeId)?.name ?? row.assesseeId, {
+                    id: "assessee",
+                    header: "Assessee",
+                    enableColumnFilter: false,
+                    enableGlobalFilter: true,
+                    enableHiding: false,
+                    enableSorting: true,
+                }),
+                col.accessor((row) => skillById.get(row.skillId)?.name ?? row.skillId, {
+                    id: "skill",
+                    header: "Skill",
+                    enableColumnFilter: false,
+                    enableGlobalFilter: true,
+                    enableHiding: false,
+                    enableSorting: true,
+                }),
+                col.accessor("result", {
+                    header: "Result",
+                    cell: (ctx) => getSkillCheckResultLabel(organization.settings, ctx.getValue()),
+                    enableColumnFilter: true,
+                    enableGlobalFilter: false,
+                    enableHiding: false,
+                    enableSorting: false,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: resultOptions,
+                    },
+                }),
+                col.accessor(
+                    (row) =>
+                        (row.assessorId ? assessorById.get(row.assessorId)?.name : undefined) ??
+                        row.assessorLabel ??
+                        row.assessorId ??
+                        "Deleted person",
+                    {
+                        id: "assessor",
+                        header: "Assessor",
+                        enableColumnFilter: false,
+                        enableGlobalFilter: true,
+                        enableHiding: true,
+                        enableSorting: true,
+                    },
+                ),
+                col.accessor("status", {
+                    header: "Status",
+                    cell: (ctx) => SKILL_CHECK_STATUS_LABELS[ctx.getValue()] ?? ctx.getValue(),
+                    enableColumnFilter: true,
+                    enableGlobalFilter: false,
+                    enableHiding: true,
+                    enableSorting: false,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: {
+                        columnOptions: [
+                            { label: "Draft", value: "Draft" },
+                            { label: "Pending review", value: "Pending" },
+                            { label: "Approved", value: "Include" },
+                            { label: "Excluded", value: "Exclude" },
+                        ],
+                    },
+                }),
+            ]),
+        [assesseeById, assessorById, skillById, organization.settings, resultOptions],
+    );
+
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
+    const table = useReactTable({
+        data: skillChecks,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        initialState: {
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
+            sorting: [{ id: "assessee", desc: false }],
+            columnVisibility: {
+                assessor: false,
+                status: false,
+            },
+        },
+    });
+
+    return (
+        <>
+            <Std.Navbar
+                breadcrumbs={[
+                    {
+                        label: "Skill Track",
+                        href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
+                    },
+                    {
+                        label: "Sessions",
+                        href: route("/orgs/[slug]/skill-track/sessions", {
+                            slug: organization.slug,
+                        }),
+                    },
+                    {
+                        label: session.name || session.id,
+                        href: route("/orgs/[slug]/skill-track/sessions/[session_id]", {
+                            slug: organization.slug,
+                            session_id: sessionId,
+                        }),
+                    },
+                    "Checks",
+                ]}
+                actions={<HelpButton id="skill-track/session" />}
+            />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>
+                            Skill checks recorded in {session.name || session.id}
+                        </Saratoga.Title>
+                    </Saratoga.Header>
+                    <Show
+                        when={skillChecks.length > 0}
+                        fallback={
+                            <Empty>
+                                <EmptyMedia>
+                                    <ClipboardCheckIcon className="size-12 text-muted-foreground" />
+                                </EmptyMedia>
+                                <EmptyDescription>
+                                    No skill checks have been recorded for this session yet.
+                                </EmptyDescription>
+                            </Empty>
+                        }
+                    >
+                        <div>
+                            <Kaga.TableToolbar table={table} />
+                            <Kaga.Table table={table} />
+                            <Kaga.TablePagination table={table} />
+                        </div>
+                    </Show>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </>
+    );
+}

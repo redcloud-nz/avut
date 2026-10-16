@@ -8,7 +8,6 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
-import { RubbishNavGate } from "@/components/admin/trash/rubbish-nav-gate";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
@@ -21,13 +20,14 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { route } from "@/lib/routes";
+import { RubbishNavGate } from "@/modules/org-admin/components/trash/rubbish-nav-gate";
 
 export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/admin`>) {
     const { slug } = await props.params;
 
     return (
         <>
-            <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton slug="admin" />} />
+            <Std.Navbar breadcrumbs={["Admin"]} actions={<HelpButton id="admin/dashboard" />} />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
@@ -71,6 +71,25 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                         <ItemTitle>Organisation</ItemTitle>
                                         <ItemDescription>
                                             Manage your organisation&apos;s details.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect permissions={{ organization: ["view"] }}>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/admin/organization-settings", {
+                                        slug,
+                                    })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Organisation Settings</ItemTitle>
+                                        <ItemDescription>
+                                            Configure your organisation&apos;s settings and modules.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

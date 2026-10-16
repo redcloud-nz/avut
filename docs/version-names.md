@@ -1,7 +1,15 @@
 # Version Names
 
-Proposed codenames for AVUT releases. Pick the next unused name from the top of
-the list.
+Proposed codenames for AVUT releases. A new codename is the name after the last
+used one, going down the list. Names above it (`veronica`, `chatham`, `torch`)
+were skipped, not left for later.
+
+Used so far: `philomel` (v0.8–v0.10), `laburnum` (v0.11).
+Reserved: `dunedin` (v0.12).
+
+The table is a shortlist, not the full story. When a name is used, its release
+notes get a short history of every HMS or HMNZS ship with a New Zealand
+connection that carried it (see [`releases/README.md`](releases/README.md#the-name)).
 
 ## Theme 1 — Ships of the New Zealand Division of the Royal Navy
 
@@ -16,7 +24,7 @@ Zealand service.
 | `chatham`    | Town-class cruiser                | 1920–1924  | Early flagship of the division, on loan from the Royal Navy.                                                                   |
 | `torch`      | Convoy sloop                      | 1921–1924  | Short-serving early sloop of the division.                                                                                     |
 | `philomel`   | Pearl-class cruiser               | 1921–1941  | The division's depot/training ship for its entire existence; the name lives on as the Devonport naval base, HMNZS Philomel.    |
-| `laburnum`   | Acacia-class sloop                | 1922–1935  | Auckland-based drill ship for the Royal Naval Volunteer Reserve.                                                               |
+| `laburnum`   | Acacia-class sloop                | 1922–1935  | Toured NZ ports and the Pacific Islands; left in 1935 to be a drill ship at Singapore, and was scuttled there in 1942.         |
 | `dunedin`    | Danae-class cruiser               | 1924–1937  | One of the two cruisers that replaced Chatham; sunk by U-124 in 1941 while in RN service.                                      |
 | `nucula`     | Fleet oiler (RFA)                 | 1924–1937  | The division's dedicated oil tanker.                                                                                           |
 | `diomede`    | Danae-class cruiser               | 1926–1935  | Sister ship to Dunedin; the pair formed the division's cruiser strength through the late 1920s.                                |

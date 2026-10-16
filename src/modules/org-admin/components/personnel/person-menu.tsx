@@ -1,0 +1,276 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import Link from "next/link";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+
+import { useQuery } from "@tanstack/react-query";
+
+import { ObjectIcons } from "@/components/icons";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { PersonData } from "@/lib/schemas/person";
+import { AdminModule_LinkUser_Dialog } from "@/modules/org-admin/components/person-user-link/link-user";
+import { AdminModule_UnlinkPerson_Dialog } from "@/modules/org-admin/components/person-user-link/unlink-person";
+import { AdminModule_AddTeamMembership_Dialog } from "@/modules/org-admin/components/teams/add-team-membership";
+import { trpc } from "@/trpc/client";
+
+import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
+import { AdminModule_DeletePerson_Dialog } from "./delete-person";
+import { AdminModule_InvitePerson_Dialog } from "./invite-person";
+import { AdminModule_RecoverPerson_Dialog } from "./recover-person";
+import { AdminModule_RestorePerson_Dialog } from "./restore-person";
+
+interface AdminModule_PersonMenuProps {
+    person: PersonData;
+}
+
+export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) {
+    const organization = useOrganization();
+
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral([
+            "update",
+            "delete",
+            "invite",
+            "archive",
+            "restore",
+            "recover",
+            "link-user",
+            "unlink-user",
+            "add-membership",
+        ] as const),
+    );
+
+    const canUpdate = useHasPermission({ person: ["update"] });
+    const canDelete = useHasPermission({ person: ["delete"] });
+    const canInvite = useHasPermission({ invitation: ["create"] });
+    const canViewMember = useHasPermission({ member: ["view"] });
+    const canUpdateLink = useHasPermission({ member: ["update"], person: ["update"] });
+    const canAddMembership = useHasPermission({ team: ["update"] });
+
+    // Non-suspense and permission-gated — a caller without `member: ["view"]` (what the
+    // procedure itself requires alongside `person: ["view"]`) never issues this query at all.
+    // While it's loading, or the caller lacks the permission, `linkedUser` is treated as
+    // unknown and the menu defaults to the "not linked" branch (Invite/Link, not Unlink) — the
+    // underlying invite/link/unlink mutations enforce their own permissions regardless of what
+    // the menu displays, so a wrong default here is a UX nit, not a security gap.
+    const { data: linkedUser } = useQuery(
+        trpc.personnel.getLinkedUser.queryOptions(
+            { organizationId: organization.id, personId: person.id },
+            { enabled: canViewMember },
+        ),
+    );
+
+    const actions: MenuActionProps[] = [
+        {
+            verb: "update",
+            label: "Edit",
+            icon: <ObjectIcons.Edit />,
+            onSelect: () => setAction("update", { history: "push" }),
+            disabled: !canUpdate,
+        },
+    ];
+    if (person.status === "Active") {
+        actions.push({
+            verb: "create",
+            label: "Add to team",
+            icon: <ObjectIcons.Create />,
+            onSelect: () => setAction("add-membership", { history: "push" }),
+            disabled: !canAddMembership,
+        });
+    }
+    if (person.status === "Active" && !linkedUser) {
+        actions.push({
+            verb: "invite",
+            label: "Invite to AVUT",
+            icon: <ObjectIcons.Invite />,
+            onSelect: () => setAction("invite", { history: "push" }),
+            disabled: !canInvite,
+        });
+    }
+    if (linkedUser) {
+        actions.push({
+            verb: "unlink",
+            label: "Unlink from user",
+            icon: <ObjectIcons.Unlink />,
+            onSelect: () => setAction("unlink-user", { history: "push" }),
+            disabled: !canUpdateLink,
+        });
+    } else {
+        actions.push({
+            verb: "link",
+            label: "Link to user",
+            icon: <ObjectIcons.Link />,
+            onSelect: () => setAction("link-user", { history: "push" }),
+            disabled: !canUpdateLink,
+        });
+    }
+    if (person.status === "Active") {
+        actions.push({
+            verb: "archive",
+            label: "Archive",
+            icon: <ObjectIcons.Archive />,
+            onSelect: () => setAction("archive", { history: "push" }),
+            disabled: !canUpdate,
+        });
+    } else if (person.status === "Archived") {
+        actions.push({
+            verb: "restore",
+            label: "Restore",
+            icon: <ObjectIcons.Restore />,
+            onSelect: () => setAction("restore", { history: "push" }),
+            disabled: !canUpdate,
+        });
+    } else {
+        actions.push({
+            verb: "recover",
+            label: "Recover from rubbish",
+            icon: <ObjectIcons.Recover />,
+            onSelect: () => setAction("recover", { history: "push" }),
+            disabled: !canDelete,
+        });
+    }
+    if (person.status !== "Deleted") {
+        actions.push({
+            verb: "delete",
+            label: "Delete",
+            icon: <ObjectIcons.Delete />,
+            onSelect: () => setAction("delete", { history: "push" }),
+            disabled: !canDelete,
+            destructive: true,
+        });
+    }
+
+    return (
+        <>
+            <EntityActionMenu
+                actions={actions}
+                category="Personnel"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={route(
+                                        "/orgs/[slug]/admin/personnel/[person_id]/history",
+                                        {
+                                            slug: organization.slug,
+                                            person_id: person.id,
+                                        },
+                                    )}
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
+            />
+
+            {/* Invite Person dialog */}
+            <AdminModule_InvitePerson_Dialog
+                person={person}
+                open={action === "invite"}
+                onOpenChange={(open) =>
+                    setAction(open ? "invite" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Archive Person dialog */}
+            <AdminModule_ArchivePerson_Dialog
+                person={person}
+                open={action === "archive"}
+                onOpenChange={(open) =>
+                    setAction(open ? "archive" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Restore Person dialog */}
+            <AdminModule_RestorePerson_Dialog
+                person={person}
+                open={action === "restore"}
+                onOpenChange={(open) =>
+                    setAction(open ? "restore" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Recover Person from Rubbish dialog */}
+            <AdminModule_RecoverPerson_Dialog
+                person={person}
+                open={action === "recover"}
+                onOpenChange={(open) =>
+                    setAction(open ? "recover" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Delete Person dialog*/}
+            <AdminModule_DeletePerson_Dialog
+                person={person}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Link User dialog */}
+            <AdminModule_LinkUser_Dialog
+                person={person}
+                open={action === "link-user"}
+                onOpenChange={(open) =>
+                    setAction(open ? "link-user" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            {/* Unlink User dialog */}
+            {linkedUser && (
+                <AdminModule_UnlinkPerson_Dialog
+                    userId={linkedUser.userId}
+                    userName={linkedUser.user.name}
+                    personName={person.name}
+                    open={action === "unlink-user"}
+                    onOpenChange={(open) =>
+                        setAction(open ? "unlink-user" : null, {
+                            history: open ? "push" : "replace",
+                        })
+                    }
+                />
+            )}
+
+            {/* Add Team Membership dialog */}
+            <AdminModule_AddTeamMembership_Dialog
+                person={person}
+                open={action === "add-membership"}
+                onOpenChange={(open) =>
+                    setAction(open ? "add-membership" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+        </>
+    );
+}

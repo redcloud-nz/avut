@@ -19,3 +19,16 @@ already exists. A plan is the how, once the what is settled.
   the filename prefix together — they must never disagree.
 - Link the spec it implements, if any, and note branch/worktree/DB-branching
   requirements up front.
+- A plan written ahead of building (`/avut-develop-feature --plan-only`) lives on
+  a `plan/<slug>` branch, in `.claude/worktrees/<slug>`, until it's picked up;
+  then the branch is renamed to `feat/<slug>` or `fix/<slug>`.
+  `git branch --list 'plan/*'` shows what's waiting. Such a plan also records
+  `**Written against:** integration @ <sha>`, so the pickup can tell what has
+  changed since.
+- A `/avut-develop-feature` plan's body carries Decisions, Tasks (tagged
+  `visual` and `mechanical`, and split into review groups), a one-line Docs
+  impact, Out of scope, and Parked. The last of those collects side findings
+  during the build, and each becomes a `follow-up` issue or is dropped before
+  ship. The skill describes each section. End-user docs are never a task: the
+  Docs impact line feeds the milestone's docs issue, which `/avut-docs` works
+  through.
