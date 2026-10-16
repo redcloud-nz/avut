@@ -50,7 +50,7 @@ The `prefetch` path costs a user without permission one extra failed request and
 
 Client Component pages (`"use client"`) can't hold a server check at all. They fetch through tRPC like everything else.
 
-`generateMetadata` follows the same rule. It must not redirect, so it uses `getOrganizationBySlug` plus `fetchQuery`, never `requireOrganization`.
+`generateMetadata` follows the same rule: `getOrganizationBySlug` plus `fetchQuery`. Avoid a `require…` call there: it can redirect, which `generateMetadata` mustn't do (see the comment in `orgs/[slug]/layout.tsx`).
 
 ---
 
@@ -58,9 +58,8 @@ Client Component pages (`"use client"`) can't hold a server check at all. They f
 
 When it reads data outside tRPC. Put the check next to the read, with the permission the matching procedure requires. Current cases:
 
-- **`admin/d4h-access-tokens/**`** read D4H with the organization's credential: `requireOrganizationWith(slug, { organization: ["update"] })`.
-- **`d4h-views/{teams,personnel}`, `i3/{members,equipment-kinds}`, `d4h-today`** read D4H with the viewer's own personal token: `requireOrganization(slug)`. The token bounds what they can see to what the viewer's own D4H account can see.
-- **`system/admin/**`** call `requireSystemAdmin()`in each page and in`generateMetadata`, as well as the layout.
+- The D4H access token pages under `admin/d4h-access-tokens/[token_id]/` that call `getD4HFetchClient` (`whoami`, `organisation`, `members`, `equipment-{categories,kinds,items,locations}`) read D4H with the organization's credential: `requireOrganizationWith(slug, { organization: ["update"] })`. The token list, create, detail and history pages read through tRPC and have no check of their own.
+- `d4h-views/{teams,personnel}`, `i3/{members,equipment-kinds}` and `d4h-today` read D4H with the viewer's own personal token: `requireOrganization(slug)`. The token bounds what they can see to what the viewer's own D4H account can see.
 
 ---
 
@@ -68,6 +67,7 @@ When it reads data outside tRPC. Put the check next to the read, with the permis
 
 - **Org name by slug.** `getOrganizationBySlug` in `orgs/[slug]/layout.tsx`'s `generateMetadata` can put an org's name in the tab title for any signed-in user who knows its slug.
 - **D4H view pages check membership only,** while the `d4hApi` procedures serving similar data also require `d4hEquipment:view`. The personal token limits them, as above.
+- **`system/admin` pages repeat `requireSystemAdmin()`** in each page and its `generateMetadata`, although they read only through `systemAdminProcedure`, and the `generateMetadata` call goes against the rule above. It's redundant under this rule, and left in place. Don't copy it into new org-scoped pages.
 
 ---
 
