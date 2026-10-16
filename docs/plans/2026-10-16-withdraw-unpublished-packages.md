@@ -55,7 +55,7 @@
     - **`listPackages` and `getPackage`** return an unpublished package to a subscriber, but not to a non-subscriber. The existing "throws NOT_FOUND for an unpublished package" test stays, as the non-subscriber case.
     - `npm run check` passes.
 
-- [ ] **4. Builder effects and menu** `mechanical`
+- [x] **4. Builder effects and menu** — feat(skill-package-builder): builder mutations refresh subscriptions; Publish only for Active `mechanical`
   - **Files:** `src/client/skill-package-builder-effects.ts`, `src/modules/skill-package-builder/components/package-menu.tsx`
   - **Do:**
     - The builder effects for `archivePackage`, `restorePackage`, `publishPackage`, `unpublishPackage` and `deletePackage` also invalidate `skillPackageSubscriptions` (the router-level filter, `trpc.skillPackageSubscriptions.pathFilter()`), because the author's own organisation may subscribe to its package.
