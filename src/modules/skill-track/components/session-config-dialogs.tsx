@@ -10,11 +10,11 @@ import { useEffect, type RefObject } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Protect } from "@/components/protect";
-import { SkillTrack_ChangeSessionAssessors_Dialog } from "@/components/skill-track/change-session-assessors";
-import { SkillTrack_ChangeSessionPersonnel_Dialog } from "@/components/skill-track/change-session-personnel";
-import { SkillTrack_ChangeSessionSkills_Dialog } from "@/components/skill-track/change-session-skills";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_ChangeSessionAssessors_Dialog } from "@/modules/skill-track/components/change-session-assessors";
+import { SkillTrack_ChangeSessionPersonnel_Dialog } from "@/modules/skill-track/components/change-session-personnel";
+import { SkillTrack_ChangeSessionSkills_Dialog } from "@/modules/skill-track/components/change-session-skills";
 import { trpc } from "@/trpc/client";
 
 const SESSION_CONFIG_ACTIONS = ["change-personnel", "change-skills", "change-assessors"] as const;

@@ -6,8 +6,6 @@
 
 import { ChevronRightIcon } from "lucide-react";
 
-import { ReviewChecksSubject } from "@/components/skill-track/review-checks-dialog";
-import { SkillTrack_SessionReview_CardToggle } from "@/components/skill-track/session-review-card-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -17,6 +15,8 @@ import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { isCheckIncluded } from "@/lib/skill-check-conflicts";
 import { Coverage } from "@/lib/skill-check-coverage";
+import { ReviewChecksSubject } from "@/modules/skill-track/components/review-checks-dialog";
+import { SkillTrack_SessionReview_CardToggle } from "@/modules/skill-track/components/session-review-card-toggle";
 
 interface SessionReviewCoverageProps {
     /** The element id of the pair of cards, for in-page links to them. */

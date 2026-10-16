@@ -7,7 +7,6 @@
 
 import { MessageSquareTextIcon, MoreHorizontalIcon } from "lucide-react";
 
-import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
 import { FieldContent, FieldLabel } from "@/components/ui/field";
 import { PencilCircle } from "@/components/ui/pencil-circle";
@@ -19,6 +18,7 @@ import {
 } from "@/lib/schemas/skill-check";
 import type { OtherAssessorCheck } from "@/lib/session-checks-sync";
 import { cn } from "@/lib/utils";
+import { SkillCheckResultIcon } from "@/modules/skill-track/components/result-icon";
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
 

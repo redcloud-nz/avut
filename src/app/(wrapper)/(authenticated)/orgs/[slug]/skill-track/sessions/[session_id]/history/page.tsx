@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { SkillTrack_SessionHistory_Content } from "@/components/skill-track/session-history-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_SessionHistory_Content } from "@/modules/skill-track/components/session-history-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 

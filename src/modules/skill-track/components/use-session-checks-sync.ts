@@ -8,7 +8,6 @@ import { useEffect, useMemo } from "react";
 
 import { useQuery, useQueryClient, type QueryFunctionContext } from "@tanstack/react-query";
 
-import { refetchSession } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { useOrganization } from "@/hooks/use-organization";
 import type { PersonId } from "@/lib/schemas/person";
 import type { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -21,6 +20,7 @@ import {
     type SessionCheckKey,
     type SessionChecksData,
 } from "@/lib/session-checks-sync";
+import { refetchSession } from "@/modules/skill-track/components/use-refetch-session-on-conflict";
 import { trpc, trpcClient } from "@/trpc/client";
 
 /** How often the recording pages poll the session cache while the tab is visible. */

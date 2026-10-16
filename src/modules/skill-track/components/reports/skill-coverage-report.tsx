@@ -13,19 +13,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Glorious } from "@/components/blocks/glorious";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
-import {
-    deriveStatus,
-    STATUS_RANK,
-    StatusBadge,
-    tallyStatuses,
-} from "@/components/skill-track/reports/competency-status";
-import {
-    CheckDetailsTrigger,
-    ReportCellPopoversProvider,
-} from "@/components/skill-track/reports/report-cell-popovers";
-import { SkillTrack_ScopeDialogMenuItem } from "@/components/skill-track/reports/scope-dialog-menu-item";
-import { SkillTrack_SkillScopeDialog } from "@/components/skill-track/reports/skill-scope-dialog";
-import { useSyntheticCompetencies } from "@/components/skill-track/reports/synthetic-competency-data";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -42,6 +29,19 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { SkillId } from "@/lib/schemas/skill";
 import { TeamId } from "@/lib/schemas/team";
 import { cn } from "@/lib/utils";
+import {
+    deriveStatus,
+    STATUS_RANK,
+    StatusBadge,
+    tallyStatuses,
+} from "@/modules/skill-track/components/reports/competency-status";
+import {
+    CheckDetailsTrigger,
+    ReportCellPopoversProvider,
+} from "@/modules/skill-track/components/reports/report-cell-popovers";
+import { SkillTrack_ScopeDialogMenuItem } from "@/modules/skill-track/components/reports/scope-dialog-menu-item";
+import { SkillTrack_SkillScopeDialog } from "@/modules/skill-track/components/reports/skill-scope-dialog";
+import { useSyntheticCompetencies } from "@/modules/skill-track/components/reports/synthetic-competency-data";
 import { trpc } from "@/trpc/client";
 
 // Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card

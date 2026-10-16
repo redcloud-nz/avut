@@ -7,13 +7,12 @@
 
 import { Metadata } from "next";
 
-import { SkillTrack_SessionBySkill_Content } from "@/components/skill-track/session-by-skill-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillTrack_SessionBySkill_Content } from "@/modules/skill-track/components/session-by-skill-content";
+import { prefetchSessionConfigDialog } from "@/modules/skill-track/lib/_prefetch-session-config-dialog";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { prefetchSessionConfigDialog } from "../_prefetch-session-config-dialog";
 
 type Props = PageProps<"/orgs/[slug]/skill-track/sessions/[session_id]/by-skill">;
 

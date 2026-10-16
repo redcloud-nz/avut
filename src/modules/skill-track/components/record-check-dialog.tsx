@@ -7,7 +7,6 @@
 
 import { useState } from "react";
 
-import { RESULT_ICONS } from "@/components/skill-track/result-icon";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -29,6 +28,7 @@ import {
     type SkillCheckResultOption,
 } from "@/lib/schemas/skill-check";
 import { cn } from "@/lib/utils";
+import { RESULT_ICONS } from "@/modules/skill-track/components/result-icon";
 
 type CheckValue = { result: SkillCheckResultValue; notes: string };
 

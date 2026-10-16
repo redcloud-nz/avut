@@ -7,13 +7,13 @@
 
 import { useState } from "react";
 
-import { SkillTrack_CheckRow } from "@/components/skill-track/check-row";
-import { SkillTrack_RecordCheckDialog } from "@/components/skill-track/record-check-dialog";
 import {
     DEFAULT_SKILL_CHECK_RESULT_LABELS,
     type SkillCheckResultOption,
     type SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
+import { SkillTrack_CheckRow } from "@/modules/skill-track/components/check-row";
+import { SkillTrack_RecordCheckDialog } from "@/modules/skill-track/components/record-check-dialog";
 
 // All seven of today's configurable results, so the dialog has a full set to choose from — a
 // real organization may have fewer enabled.

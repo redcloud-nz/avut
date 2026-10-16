@@ -22,11 +22,6 @@ import { useId, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Protect } from "@/components/protect";
-import {
-    SessionConfigAction,
-    SkillTrack_SessionConfigDialogs,
-    useSessionConfigAction,
-} from "@/components/skill-track/session-config-dialogs";
 import { Button } from "@/components/ui/button";
 import { Item, ItemContent, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import {
@@ -40,6 +35,11 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import {
+    SessionConfigAction,
+    SkillTrack_SessionConfigDialogs,
+    useSessionConfigAction,
+} from "@/modules/skill-track/components/session-config-dialogs";
 import { trpc } from "@/trpc/client";
 
 type SessionEntryMode = "by-person" | "by-skill";

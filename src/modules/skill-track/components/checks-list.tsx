@@ -22,7 +22,6 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
-import { SkillTrack_CreateCheck_Dialog } from "@/components/skill-track/create-check";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -32,6 +31,7 @@ import {
     getEnabledSkillCheckResultOptions,
     getSkillCheckResultLabel,
 } from "@/lib/schemas/skill-check";
+import { SkillTrack_CreateCheck_Dialog } from "@/modules/skill-track/components/create-check";
 import { trpc } from "@/trpc/client";
 
 export default function SkillTrack_ChecksList() {

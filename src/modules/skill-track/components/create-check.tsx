@@ -15,7 +15,6 @@ import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { skillChecksEffects } from "@/client/skill-checks-effects";
 import { ObjectIcons } from "@/components/icons";
-import { SkillCheckResultIcon } from "@/components/skill-track/result-icon";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -50,6 +49,7 @@ import {
     SkillCheckId,
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
+import { SkillCheckResultIcon } from "@/modules/skill-track/components/result-icon";
 import { trpc } from "@/trpc/client";
 
 const CreateCheckSchema = z.object({

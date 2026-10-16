@@ -9,10 +9,9 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
+import { SkillTrack_CataloguePackages_List } from "@/modules/skill-track/components/catalogue-packages-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { SkillTrack_CataloguePackages_List } from "./catalogue-packages-list";
 
 export const metadata = {
     title: `Catalogue ${TITLE_SEPARATOR} Skill Track`,

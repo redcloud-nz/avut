@@ -10,13 +10,13 @@ import { toast } from "sonner";
 import { hashKey, useMutation, useMutationState, useQueryClient } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
-import { useRefetchSessionOnConflict } from "@/components/skill-track/use-refetch-session-on-conflict";
 import { useOrganization } from "@/hooks/use-organization";
 import type { PersonId } from "@/lib/schemas/person";
 import type { SkillId } from "@/lib/schemas/skill";
 import type { SkillCheckResultValue } from "@/lib/schemas/skill-check";
 import type { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { sessionCheckKey, type SessionCheckKey } from "@/lib/session-checks-sync";
+import { useRefetchSessionOnConflict } from "@/modules/skill-track/components/use-refetch-session-on-conflict";
 import { trpc, type RouterInput } from "@/trpc/client";
 
 export { sessionCheckKey, type SessionCheckKey } from "@/lib/session-checks-sync";

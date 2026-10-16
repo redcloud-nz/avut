@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { SkillTrack_CataloguePackage_Content } from "@/components/skill-track/catalogue-package-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillTrack_CataloguePackage_Content } from "@/modules/skill-track/components/catalogue-package-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 

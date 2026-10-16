@@ -223,7 +223,7 @@ has no importers. Update the pattern doc's example paths and its "lives in
 **Done when:** `npm run check` passes; `src/components/admin` and `src/hooks/use-person.ts` no
 longer exist.
 
-### - [ ] Task 5 — `mechanical` — Move skill-track
+### - [x] Task 5 — `mechanical` — Move skill-track
 
 **Files:** `src/components/skill-track/**` → `src/modules/skill-track/components/**` (includes
 `reports/` and its tests); `orgs/[slug]/skill-track/checks/checks-list.tsx` and
