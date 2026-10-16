@@ -59,18 +59,18 @@ import {
 import { SkillTrack_SessionReview_Conflicts } from "@/modules/skill-track/components/session-review-conflicts";
 import {
     coverageSummary,
+    SESSION_REVIEW_SHOW_OPTIONS,
+    SessionReviewShow,
     SkillTrack_SessionReview_Coverage,
 } from "@/modules/skill-track/components/session-review-coverage";
 import { SkillTrack_SessionReview_Summary } from "@/modules/skill-track/components/session-review-summary";
 import { trpc } from "@/trpc/client";
 
-/** The review page's Show options, in menu order. */
-const SHOW_OPTIONS = ["all", "conflicts", "excluded"] as const;
 const SHOW_LABELS = {
     all: "All checks",
     conflicts: "Conflicts",
     excluded: "Excluded checks",
-} satisfies Record<(typeof SHOW_OPTIONS)[number], string>;
+} satisfies Record<SessionReviewShow, string>;
 
 export function SkillTrack_SessionReview_Content({
     sessionId,
@@ -186,7 +186,7 @@ export function SkillTrack_SessionReview_Content({
     // cover every check.
     const [show, setShow] = useQueryState(
         "show",
-        parseAsStringLiteral(SHOW_OPTIONS)
+        parseAsStringLiteral(SESSION_REVIEW_SHOW_OPTIONS)
             .withDefault("all")
             .withOptions({ history: "replace", clearOnDefault: true }),
     );
@@ -302,16 +302,19 @@ export function SkillTrack_SessionReview_Content({
             (conflict) => conflict.assesseeId === personId && conflict.skillId === skillId,
         ) ?? null;
     const canOpenResolve = canApprove && !isApproved && resolvingConflict !== null;
-    // The person (or skill) whose checks the check dialog shows: one listed with checks.
+    // The person (or skill) whose checks the check dialog shows: one listed with checks the Show
+    // option shows, so a narrowed dialog never opens empty.
     const reviewingPerson =
         action === "review-person"
-            ? (peopleCoverage.find((entry) => entry.id === personId && entry.checks.length > 0) ??
-              null)
+            ? (peopleCoverage.find(
+                  (entry) => entry.id === personId && entry.checks.some(showsCheck),
+              ) ?? null)
             : null;
     const reviewingSkill =
         action === "review-skill"
-            ? (skillsCoverage.find((entry) => entry.id === skillId && entry.checks.length > 0) ??
-              null)
+            ? (skillsCoverage.find(
+                  (entry) => entry.id === skillId && entry.checks.some(showsCheck),
+              ) ?? null)
             : null;
 
     function openAction(next: "reopen" | "approve") {
@@ -515,10 +518,10 @@ export function SkillTrack_SessionReview_Content({
                                     <DropdownMenuRadioGroup
                                         value={show}
                                         onValueChange={(value) =>
-                                            void setShow(value as (typeof SHOW_OPTIONS)[number])
+                                            void setShow(value as SessionReviewShow)
                                         }
                                     >
-                                        {SHOW_OPTIONS.map((option) => (
+                                        {SESSION_REVIEW_SHOW_OPTIONS.map((option) => (
                                             <DropdownMenuRadioItem key={option} value={option}>
                                                 {SHOW_LABELS[option]}
                                             </DropdownMenuRadioItem>

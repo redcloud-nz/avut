@@ -18,6 +18,10 @@ import { Coverage } from "@/lib/skill-check-coverage";
 import { ReviewChecksSubject } from "@/modules/skill-track/components/review-checks-dialog";
 import { SkillTrack_SessionReview_CardToggle } from "@/modules/skill-track/components/session-review-card-toggle";
 
+/** The review page's Show options, in menu order: every check, or only those in a conflict or excluded by hand. */
+export const SESSION_REVIEW_SHOW_OPTIONS = ["all", "conflicts", "excluded"] as const;
+export type SessionReviewShow = (typeof SESSION_REVIEW_SHOW_OPTIONS)[number];
+
 interface SessionReviewCoverageProps {
     /** The element id of the pair of cards, for in-page links to them. */
     id?: string;
@@ -34,7 +38,7 @@ interface SessionReviewCoverageProps {
     /** The checks in a conflict group: their pick is shown in the Conflicts card, so the excluded counts leave them out. */
     conflictCheckIds: ReadonlySet<SkillCheckId>;
     /** The page's Show option: the lists keep only the entries with a check it shows. */
-    show: "all" | "conflicts" | "excluded";
+    show: SessionReviewShow;
     /** Whether the Show option shows this check. */
     showsCheck(check: SkillCheck): boolean;
     /** Open a person's (or a skill's) checks in the review dialog, which the page hosts. */
@@ -121,7 +125,7 @@ function CoverageCard<Id extends string>({
     name(id: Id): string;
     coverageOf: "skills" | "personnel";
     conflictCheckIds: ReadonlySet<SkillCheckId>;
-    show: "all" | "conflicts" | "excluded";
+    show: SessionReviewShow;
     showsCheck(check: SkillCheck): boolean;
     onOpen(id: Id): void;
 }) {
