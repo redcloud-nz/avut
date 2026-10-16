@@ -10,8 +10,8 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
 import { SkillPackageBuilder_Packages_List } from "@/modules/skill-package-builder/components/packages-list";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
-import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export default async function SkillPackageBuilder_Index_Page(
@@ -19,7 +19,7 @@ export default async function SkillPackageBuilder_Index_Page(
 ) {
     const { slug } = await props.params;
     if (!(await isOrganizationModuleUsable(slug, "skill-package-builder"))) return null;
-    const { organization } = await requireOrganizationWith(slug, { skillPackage: ["view"] });
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(
         trpc.skillPackageBuilder.listPackages.queryOptions({ organizationId: organization.id }),

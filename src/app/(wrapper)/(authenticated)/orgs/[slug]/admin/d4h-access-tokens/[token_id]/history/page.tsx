@@ -10,14 +10,14 @@ import { Metadata } from "next";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { AdminModule_D4HAccessTokenHistory_Content } from "@/modules/org-admin/components/d4h-access-tokens/access-token-history-content";
-import { requireOrganizationWith } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history`>;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
+    const organization = await getOrganizationBySlug(slug);
 
     const tokenId = ProviderCredentialId.schema.parse(token_id);
     const accessToken = await fetchQuery(
@@ -35,7 +35,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_D4HAccessTokenHistory_Page(props: Props) {
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
+    const organization = await getOrganizationBySlug(slug);
 
     const tokenId = ProviderCredentialId.schema.parse(token_id);
 

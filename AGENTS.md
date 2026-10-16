@@ -173,6 +173,8 @@ For cases where the permission boolean needs to flow into the markup (e.g. disab
 
 Inside a dropdown/menu of actions, and for verifying a given `<Protect>`'s `permissions` actually match the mutation it guards, see [`docs/patterns/protect-permission-gating.md`](docs/patterns/protect-permission-gating.md).
 
+**Route access**: the procedure is the check, not the page or the layout. Layouts don't re-run on client-side navigation, so they guard nothing. A page checks permissions itself only when it reads data outside tRPC. See [`docs/patterns/route-access-control.md`](docs/patterns/route-access-control.md).
+
 ## Zod Schemas
 
 - Domain schemas live in `src/lib/schemas/`

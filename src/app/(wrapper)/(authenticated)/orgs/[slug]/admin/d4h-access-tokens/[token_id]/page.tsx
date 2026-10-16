@@ -9,14 +9,14 @@ import { Metadata } from "next";
 
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { AdminModule_D4HAccessToken_Content } from "@/modules/org-admin/components/d4h-access-tokens/access-token-content";
-import { requireOrganizationWith } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props = PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]`>;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
+    const organization = await getOrganizationBySlug(slug);
 
     const tokenId = ProviderCredentialId.schema.parse(token_id);
     const accessToken = await fetchQuery(
@@ -31,7 +31,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_D4HAccessToken_Page(props: Props) {
     const { slug, token_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { organization: ["update"] });
+    const organization = await getOrganizationBySlug(slug);
 
     const tokenId = ProviderCredentialId.schema.parse(token_id);
 

@@ -8,7 +8,7 @@
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
 import { SkillTrack_AssessorsList } from "@/modules/skill-track/components/assessors-list";
-import { requireOrganizationWith } from "@/server/organization-access";
+import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
@@ -19,9 +19,7 @@ export default async function SkillTrack_Assessors_Page(
     props: PageProps<"/orgs/[slug]/skill-track/assessors">,
 ) {
     const { slug } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, {
-        roleGrant: ["skills-assessor"],
-    });
+    const organization = await getOrganizationBySlug(slug);
 
     prefetch(
         trpc.organizations.listMembersForRoleGrant.queryOptions({
