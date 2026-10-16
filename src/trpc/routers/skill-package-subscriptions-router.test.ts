@@ -247,7 +247,7 @@ describe("skillPackageSubscriptions.getPackage", () => {
         expect(result.groups[0].skills[0]).not.toHaveProperty("frequency");
     });
 
-    it("throws NOT_FOUND for an unpublished package", async () => {
+    it("throws NOT_FOUND for an unpublished package the org doesn't subscribe to", async () => {
         await expect(
             makeCaller().getPackage({ organizationId: T.org, skillPackageId: T.unpublishedPkg }),
         ).rejects.toThrow(/not found/i);
@@ -361,6 +361,8 @@ describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", ()
 describe("skillPackageSubscriptionsRouter withholds a withdrawn package from its subscribers", () => {
     const T = {
         org: OrganizationId.create(),
+        // Subscribes to nothing.
+        otherOrg: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
         user: nanoId16(),
         livePkg: SkillPackageId.create(),
@@ -375,6 +377,7 @@ describe("skillPackageSubscriptionsRouter withholds a withdrawn package from its
     beforeAll(async () => {
         for (const [id, slug] of [
             [T.org, "acme"],
+            [T.otherOrg, "other"],
             [T.publisherOrg, "publisher"],
         ] as const) {
             await db.organization.create({
@@ -434,6 +437,35 @@ describe("skillPackageSubscriptionsRouter withholds a withdrawn package from its
             organizationId: T.org,
         });
         expect(skillPackages.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("listPackages shows a subscriber its withdrawn packages, but not a non-subscriber", async () => {
+        const forSubscriber = await makeCaller().listPackages({ organizationId: T.org });
+        expect(forSubscriber.map((p) => p.id).sort()).toEqual(
+            [T.livePkg, T.unpublishedPkg, T.archivedPkg].sort(),
+        );
+
+        const forOther = await makeCaller().listPackages({ organizationId: T.otherOrg });
+        expect(forOther.map((p) => p.id)).toEqual([T.livePkg]);
+    });
+
+    it("getPackage returns an unpublished package to a subscriber", async () => {
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: T.unpublishedPkg,
+        });
+        expect(result.id).toBe(T.unpublishedPkg);
+        expect(result.published).toBe(false);
+        expect(result.subscription).not.toBeNull();
+    });
+
+    it("getPackage throws NOT_FOUND for an unpublished package to a non-subscriber", async () => {
+        await expect(
+            makeCaller().getPackage({
+                organizationId: T.otherOrg,
+                skillPackageId: T.unpublishedPkg,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
     it("subscribeToPackage throws NOT_FOUND for an Archived package that is still published", async () => {

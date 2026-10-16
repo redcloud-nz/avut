@@ -47,7 +47,7 @@
     - **`subscribeToPackage`** rejects an Archived package that is still `published`, a legacy fixture.
     - `npm run check` passes.
 
-- [ ] **3. Subscribers can still see withdrawn packages in the catalogue**
+- [x] **3. Subscribers can still see withdrawn packages in the catalogue** — feat(skill-track): catalogue shows subscribers their withdrawn packages
   - **Files:** `src/trpc/routers/skill-package-subscriptions-router.ts`, `src/trpc/routers/skill-package-subscriptions-router.test.ts`
   - **Do:**
     - `listPackages`: the `where` becomes `OR: [availableSkillPackageWhere, { status: { not: "Deleted" }, subscriptions: { some: { organizationId } } }]`. The catalogue then also lists withdrawn packages this organisation still subscribes to. `getPackage` gets the same `where`, so a subscriber can open a withdrawn package and unsubscribe. A non-subscriber still gets NOT_FOUND for one. Update both JSDocs.
