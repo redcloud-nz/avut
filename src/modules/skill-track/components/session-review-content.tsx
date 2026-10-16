@@ -12,7 +12,7 @@ import {
     useQueryState,
     useQueryStates,
 } from "nuqs";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 import { useIsMutating, useSuspenseQueries } from "@tanstack/react-query";
 
@@ -29,6 +29,9 @@ import {
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
@@ -60,6 +63,14 @@ import {
 } from "@/modules/skill-track/components/session-review-coverage";
 import { SkillTrack_SessionReview_Summary } from "@/modules/skill-track/components/session-review-summary";
 import { trpc } from "@/trpc/client";
+
+/** The review page's Show options, in menu order. */
+const SHOW_OPTIONS = ["all", "conflicts", "excluded"] as const;
+const SHOW_LABELS = {
+    all: "All checks",
+    conflicts: "Conflicts",
+    excluded: "Excluded checks",
+} satisfies Record<(typeof SHOW_OPTIONS)[number], string>;
 
 export function SkillTrack_SessionReview_Content({
     sessionId,
@@ -168,6 +179,25 @@ export function SkillTrack_SessionReview_Content({
     const [includeUnassessedSkills, setIncludeUnassessedSkills] = useQueryState(
         "unassessedSkills",
         parseAsBoolean.withDefault(true).withOptions({ history: "replace", clearOnDefault: true }),
+    );
+    // Show option from the header menu: narrows the Personnel and Skills lists, and the checks in
+    // their dialogs, to the checks in a conflict, or to the ones excluded by hand (a conflict's
+    // unpicked checks are left out by its pick, which the Conflicts card shows). The figures still
+    // cover every check.
+    const [show, setShow] = useQueryState(
+        "show",
+        parseAsStringLiteral(SHOW_OPTIONS)
+            .withDefault("all")
+            .withOptions({ history: "replace", clearOnDefault: true }),
+    );
+    const showsCheck = useCallback(
+        (check: SkillCheck) =>
+            show === "conflicts"
+                ? conflictCheckIds.has(check.id)
+                : show === "excluded"
+                  ? !conflictCheckIds.has(check.id) && !isCheckIncluded(check)
+                  : true,
+        [show, conflictCheckIds],
     );
     const assessedPeople = useMemo(
         () => new Set(skillChecks.map((check) => check.assesseeId)),
@@ -370,7 +400,7 @@ export function SkillTrack_SessionReview_Content({
               subject: { kind: "person", id: reviewingPerson.id } as const,
               title: personName(reviewingPerson.id),
               description: coverageSummary(reviewingPerson, "skills"),
-              rows: reviewingPerson.checks.map((check) => ({
+              rows: reviewingPerson.checks.filter(showsCheck).map((check) => ({
                   check,
                   label: skillName(check.skillId),
               })),
@@ -381,7 +411,7 @@ export function SkillTrack_SessionReview_Content({
                 subject: { kind: "skill", id: reviewingSkill.id } as const,
                 title: skillName(reviewingSkill.id),
                 description: coverageSummary(reviewingSkill, "personnel"),
-                rows: reviewingSkill.checks.map((check) => ({
+                rows: reviewingSkill.checks.filter(showsCheck).map((check) => ({
                     check,
                     label: personName(check.assesseeId),
                 })),
@@ -480,6 +510,20 @@ export function SkillTrack_SessionReview_Content({
                                     >
                                         Unassessed skills
                                     </DropdownMenuCheckboxItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>Show</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup
+                                        value={show}
+                                        onValueChange={(value) =>
+                                            void setShow(value as (typeof SHOW_OPTIONS)[number])
+                                        }
+                                    >
+                                        {SHOW_OPTIONS.map((option) => (
+                                            <DropdownMenuRadioItem key={option} value={option}>
+                                                {SHOW_LABELS[option]}
+                                            </DropdownMenuRadioItem>
+                                        ))}
+                                    </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </Saratoga.Actions>
@@ -540,6 +584,8 @@ export function SkillTrack_SessionReview_Content({
                                 assesseeById={assesseeById}
                                 skillById={skillById}
                                 conflictCheckIds={conflictCheckIds}
+                                show={show}
+                                showsCheck={showsCheck}
                                 onOpen={openReview}
                             />
                         </Show>
@@ -548,7 +594,11 @@ export function SkillTrack_SessionReview_Content({
                                 sessionId={sessionId}
                                 subject={review.subject}
                                 title={review.title}
-                                description={review.description}
+                                description={
+                                    show === "all"
+                                        ? review.description
+                                        : `${review.description} · Showing ${SHOW_LABELS[show].toLowerCase()} only`
+                                }
                                 rows={reviewRows}
                                 assessorById={assessorById}
                                 conflictCheckIds={conflictCheckIds}

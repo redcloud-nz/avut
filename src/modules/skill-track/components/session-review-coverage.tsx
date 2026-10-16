@@ -33,6 +33,10 @@ interface SessionReviewCoverageProps {
     skillById: Map<SkillId, SkillRef>;
     /** The checks in a conflict group: their pick is shown in the Conflicts card, so the excluded counts leave them out. */
     conflictCheckIds: ReadonlySet<SkillCheckId>;
+    /** The page's Show option: the lists keep only the entries with a check it shows. */
+    show: "all" | "conflicts" | "excluded";
+    /** Whether the Show option shows this check. */
+    showsCheck(check: SkillCheck): boolean;
     /** Open a person's (or a skill's) checks in the review dialog, which the page hosts. */
     onOpen(subject: ReviewChecksSubject): void;
 }
@@ -53,6 +57,8 @@ export function SkillTrack_SessionReview_Coverage({
     assesseeById,
     skillById,
     conflictCheckIds,
+    show,
+    showsCheck,
     onOpen,
 }: SessionReviewCoverageProps) {
     const personName = (id: PersonId) => assesseeById.get(id)?.name ?? id;
@@ -67,6 +73,8 @@ export function SkillTrack_SessionReview_Coverage({
                 name={personName}
                 coverageOf="skills"
                 conflictCheckIds={conflictCheckIds}
+                show={show}
+                showsCheck={showsCheck}
                 onOpen={(id) => onOpen({ kind: "person", id })}
             />
             <CoverageCard
@@ -76,6 +84,8 @@ export function SkillTrack_SessionReview_Coverage({
                 name={skillName}
                 coverageOf="personnel"
                 conflictCheckIds={conflictCheckIds}
+                show={show}
+                showsCheck={showsCheck}
                 onOpen={(id) => onOpen({ kind: "skill", id })}
             />
         </div>
@@ -100,6 +110,8 @@ function CoverageCard<Id extends string>({
     name,
     coverageOf,
     conflictCheckIds,
+    show,
+    showsCheck,
     onOpen,
 }: {
     title: string;
@@ -109,6 +121,8 @@ function CoverageCard<Id extends string>({
     name(id: Id): string;
     coverageOf: "skills" | "personnel";
     conflictCheckIds: ReadonlySet<SkillCheckId>;
+    show: "all" | "conflicts" | "excluded";
+    showsCheck(check: SkillCheck): boolean;
     onOpen(id: Id): void;
 }) {
     // How many have checks, out of everyone: leaving the unassessed out of the list would make
@@ -123,6 +137,9 @@ function CoverageCard<Id extends string>({
             ? 0
             : entries.reduce((sum, entry) => sum + entry.covered, 0) / entries.length;
     const meanPercent = total === 0 ? 0 : Math.round((meanCovered / total) * 100);
+    // The figures above cover every entry; the Show option only narrows the list.
+    const shown =
+        show === "all" ? entries : entries.filter((entry) => entry.checks.some(showsCheck));
 
     return (
         <Collapsible asChild defaultOpen>
@@ -143,10 +160,18 @@ function CoverageCard<Id extends string>({
                 </CardHeader>
                 <CollapsibleContent asChild>
                     <CardContent className="flex flex-col has-data-[slot=item]:-my-2.5 has-data-[slot=item]:px-1">
-                        {entries.length === 0 && (
+                        {entries.length === 0 ? (
                             <p className="text-sm text-muted-foreground">No checks recorded.</p>
+                        ) : (
+                            shown.length === 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    {show === "conflicts"
+                                        ? "None with conflicts."
+                                        : "None with excluded checks."}
+                                </p>
+                            )
                         )}
-                        {entries.map((entry) => {
+                        {shown.map((entry) => {
                             // Checks left out by hand. A conflict's unpicked checks are left out by the
                             // pick, which the Conflicts card already shows.
                             const excluded = entry.checks.filter(

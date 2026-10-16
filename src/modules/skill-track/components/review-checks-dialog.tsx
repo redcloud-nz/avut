@@ -11,7 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
 import { Alert } from "@/components/ui/alert";
-import { MutationButton } from "@/components/ui/button";
+import { Button, MutationButton } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
@@ -132,6 +132,17 @@ export function SkillsModule_ReviewChecks_Dialog({
         );
     }
 
+    // Include all / Exclude all: drafts every editable check listed, which Save then sends like
+    // any other change.
+    const editableChecks = rows.map(({ check }) => check).filter(isEditable);
+    function setAllExcluded(excluded: boolean) {
+        setDraft((prev) => {
+            const next = new Map(prev);
+            for (const check of editableChecks) next.set(check.id, excluded);
+            return next;
+        });
+    }
+
     function handleSave() {
         if (changes.length === 0) return;
         // The subject this save is for: by the time it lands, Back/Forward may have moved the
@@ -151,6 +162,29 @@ export function SkillsModule_ReviewChecks_Dialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <DialogBody className="flex flex-col gap-4">
+                    {editableChecks.length > 1 && (
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={
+                                    mutation.isPending ||
+                                    editableChecks.every((c) => !isExcluded(c))
+                                }
+                                onClick={() => setAllExcluded(false)}
+                            >
+                                Include all
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={mutation.isPending || editableChecks.every(isExcluded)}
+                                onClick={() => setAllExcluded(true)}
+                            >
+                                Exclude all
+                            </Button>
+                        </div>
+                    )}
                     <ul className="flex flex-col gap-3">
                         {rows.map(({ check, label }) => (
                             <CheckRow
