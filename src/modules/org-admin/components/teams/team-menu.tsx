@@ -7,7 +7,6 @@
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { AdminModule_AddTeamMembership_Dialog } from "@/components/admin/teams/add-team-membership";
 import { D4HIcons, ObjectIcons } from "@/components/icons";
 import {
     DropdownMenuGroup,
@@ -20,6 +19,7 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
+import { AdminModule_AddTeamMembership_Dialog } from "@/modules/org-admin/components/teams/add-team-membership";
 
 import { AdminModule_ArchiveTeam_Dialog } from "./archive-team";
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";

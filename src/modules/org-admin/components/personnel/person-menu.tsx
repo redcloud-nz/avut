@@ -9,9 +9,6 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { AdminModule_LinkUser_Dialog } from "@/components/admin/person-user-link/link-user";
-import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/person-user-link/unlink-person";
-import { AdminModule_AddTeamMembership_Dialog } from "@/components/admin/teams/add-team-membership";
 import { ObjectIcons } from "@/components/icons";
 import {
     DropdownMenuGroup,
@@ -23,6 +20,9 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
+import { AdminModule_LinkUser_Dialog } from "@/modules/org-admin/components/person-user-link/link-user";
+import { AdminModule_UnlinkPerson_Dialog } from "@/modules/org-admin/components/person-user-link/unlink-person";
+import { AdminModule_AddTeamMembership_Dialog } from "@/modules/org-admin/components/teams/add-team-membership";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_ArchivePerson_Dialog } from "./archive-person";

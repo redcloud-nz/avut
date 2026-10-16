@@ -13,8 +13,7 @@ import { HelpButton } from "@/components/docs/help-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-
-import { AdminModule_UpdateOrganization_Form } from "./update-organization";
+import { AdminModule_UpdateOrganization_Form } from "@/modules/org-admin/components/organization/update-organization";
 
 export default function AdminModule_OrganizationUpdate_Page(
     props: PageProps<`/orgs/[slug]/admin/organization/--update`>,

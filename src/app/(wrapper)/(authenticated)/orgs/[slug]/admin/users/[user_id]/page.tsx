@@ -5,8 +5,8 @@
  * Paths: /orgs/[slug]/admin/users/[user_id]
  */
 
-import { AdminModule_User_Content } from "@/components/admin/users/user-content";
 import { UserId } from "@/lib/schemas/user";
+import { AdminModule_User_Content } from "@/modules/org-admin/components/users/user-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

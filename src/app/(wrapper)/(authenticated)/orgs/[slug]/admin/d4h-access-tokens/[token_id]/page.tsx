@@ -8,10 +8,9 @@
 import { Metadata } from "next";
 
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import { AdminModule_D4HAccessToken_Content } from "@/modules/org-admin/components/d4h-access-tokens/access-token-content";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { AdminModule_D4HAccessToken_Content } from "./access-token-content";
 
 type Props = PageProps<`/orgs/[slug]/admin/d4h-access-tokens/[token_id]`>;
 

@@ -7,10 +7,9 @@
 
 import { Std } from "@/components/blocks/std";
 import { route } from "@/lib/routes";
+import { AdminModule_D4HAccessTokensList } from "@/modules/org-admin/components/d4h-access-tokens/d4h-access-tokens-list";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
-
-import { AdminModule_D4HAccessTokensList } from "./d4h-access-tokens-list";
 
 export const metadata = {
     title: `D4H Access Tokens`,

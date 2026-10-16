@@ -5,10 +5,10 @@
  * Path: /orgs/[slug]/admin/rubbish-bin
  */
 
-import { AdminModule_Trash_List } from "@/components/admin/trash/trash-list";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
+import { AdminModule_Trash_List } from "@/modules/org-admin/components/trash/trash-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

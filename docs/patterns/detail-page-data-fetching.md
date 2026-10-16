@@ -26,13 +26,14 @@ on its own.
 ## File layout
 
 ```
-src/app/(authenticated)/orgs/[slug]/admin/teams/[team_id]/page.tsx   # route shell only
-src/components/admin/teams/team-content.tsx                          # "use client", all rendering
+src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/teams/[team_id]/page.tsx   # route shell only
+src/modules/org-admin/components/teams/team-content.tsx                         # "use client", all rendering
 ```
 
-The route folder holds only `page.tsx`. The content component lives under
-`src/components/admin/<domain>/`, named `<entity>-content.tsx`, alongside the other
-components for that domain (menus, dialogs, cards) — not in the route folder. This
+The route folder holds only `page.tsx`. The content component lives in its module, under
+`src/modules/<module-id>/components/<domain>/` (AGENTS.md → Modules), named
+`<entity>-content.tsx`, alongside the other components for that domain (menus, dialogs,
+cards) — not in the route folder. This
 mirrors where every other page-specific component for a domain already lives, and
 means the route folder stays a thin routing artifact.
 

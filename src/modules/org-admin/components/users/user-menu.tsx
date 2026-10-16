@@ -7,17 +7,17 @@
 import { CrownIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { AdminModule_LinkPerson_Dialog } from "@/components/admin/person-user-link/link-person";
-import { AdminModule_UnlinkPerson_Dialog } from "@/components/admin/person-user-link/unlink-person";
-import { AdminModule_DeleteUser_Dialog } from "@/components/admin/users/delete-user";
-import { AdminModule_MakeOwner_Dialog } from "@/components/admin/users/make-owner";
-import { AdminModule_RemoveOwner_Dialog } from "@/components/admin/users/remove-owner";
 import { ObjectIcons } from "@/components/icons";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { hasOwnerRole } from "@/lib/permissions";
 import { PersonData } from "@/lib/schemas/person";
 import { UserId } from "@/lib/schemas/user";
+import { AdminModule_LinkPerson_Dialog } from "@/modules/org-admin/components/person-user-link/link-person";
+import { AdminModule_UnlinkPerson_Dialog } from "@/modules/org-admin/components/person-user-link/unlink-person";
+import { AdminModule_DeleteUser_Dialog } from "@/modules/org-admin/components/users/delete-user";
+import { AdminModule_MakeOwner_Dialog } from "@/modules/org-admin/components/users/make-owner";
+import { AdminModule_RemoveOwner_Dialog } from "@/modules/org-admin/components/users/remove-owner";
 import { type AuthOrganizationMember } from "@/server/auth";
 
 interface AdminModule_UserMenuProps {

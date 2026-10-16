@@ -10,8 +10,6 @@ import Link from "next/link";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useSession } from "@/client/auth-queries";
-import { AdminModule_UpdateUser_Dialog } from "@/components/admin/users/update-user";
-import { AdminModule_User_Menu } from "@/components/admin/users/user-menu";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
@@ -28,6 +26,8 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
+import { AdminModule_UpdateUser_Dialog } from "@/modules/org-admin/components/users/update-user";
+import { AdminModule_User_Menu } from "@/modules/org-admin/components/users/user-menu";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_User_Content({ userId }: { userId: UserId }) {

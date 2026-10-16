@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { AdminModule_PersonHistory_Content } from "@/components/admin/personnel/person-history-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { PersonId } from "@/lib/schemas/person";
+import { AdminModule_PersonHistory_Content } from "@/modules/org-admin/components/personnel/person-history-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 

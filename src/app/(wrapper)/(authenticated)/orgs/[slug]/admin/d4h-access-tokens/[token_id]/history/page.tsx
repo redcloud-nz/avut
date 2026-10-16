@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { AdminModule_D4HAccessTokenHistory_Content } from "@/components/admin/d4h-access-tokens/access-token-history-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import { AdminModule_D4HAccessTokenHistory_Content } from "@/modules/org-admin/components/d4h-access-tokens/access-token-history-content";
 import { requireOrganizationWith } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
 
