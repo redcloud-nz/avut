@@ -71,9 +71,9 @@ export function SkillPackageBuilder_ArchivePackage_Dialog({
                 <DialogHeader>
                     <DialogTitle>Archive package</DialogTitle>
                     <DialogDescription>
-                        Archive package <ObjectName>{skillPackage.name}</ObjectName>. Archived
-                        packages are hidden from the catalogue and cannot be subscribed to. You can
-                        restore it later.
+                        Archive package <ObjectName>{skillPackage.name}</ObjectName>. Archiving also
+                        unpublishes it: it leaves the catalogue, and subscribers lose its skills
+                        from their sessions and reports. Restoring it doesn&apos;t publish it again.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>

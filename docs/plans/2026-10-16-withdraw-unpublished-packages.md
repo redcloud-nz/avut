@@ -83,7 +83,7 @@ _End of review group 1._
     - **By-skill and by-person pages:** the fallback group label "Other" becomes "No longer available", and only that label changes.
   - **Done when:** a session holding a skill from an unpublished package lists it under "No longer available" on both pages and in Change Skills, and it can be removed there. `npm run check` passes.
 
-- [ ] **7. Dialog wording and help cards** `visual` `mechanical`
+- [x] **7. Dialog wording and help cards** `visual` `mechanical` — docs(skill-package-builder): dialogs and help cards describe withdrawal
   - **Files:**
     - `src/modules/skill-package-builder/components/unpublish-package.tsx`
     - `src/modules/skill-package-builder/components/archive-package.tsx`
@@ -119,3 +119,4 @@ Unpublishing and archiving a skill package now withdraw its skills from subscrib
 
 - `src/client/skill-package-builder-effects.ts` `recoverPackage`: also invalidate `trpc.skillPackageSubscriptions.pathFilter()`, like the other five package-lifecycle effects (task 4).
 - Tests seed branded ids with `nanoId16()`: `src/server/services/skill-checks.test.ts` (subscription `id`) and `src/trpc/routers/skill-package-subscriptions-router.test.ts` (`user`). Use `SkillPackageSubscriptionId.create()` / `UserId.create()` (tasks 2, 3).
+- `src/modules/skill-track/components/catalogue-package-content.tsx`: show the "Subscribed · Withdrawn" badge only when `withdrawn && skillPackage.subscription`, so it doesn't flash after unsubscribing (task 5).
