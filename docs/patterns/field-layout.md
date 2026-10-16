@@ -27,7 +27,7 @@ the `448px` `@md` breakpoint, so **every `Field orientation="responsive"` inside
 `Dialog` renders vertically, always** — it's functionally identical to `vertical`
 there. `responsive` only does anything on a wider container, e.g. a field laid out
 directly in a `Saratoga.Column` or a page-embedded `Card` (see
-`admin/organization/--update/update-organization.tsx`).
+`src/modules/org-admin/components/organization/update-organization.tsx`).
 
 Since it's a no-op in every dialog, **omit `orientation` entirely on `Field`s inside a
 `Dialog`** rather than writing `orientation="responsive"` — one less prop, same

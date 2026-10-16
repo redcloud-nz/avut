@@ -33,9 +33,9 @@ src/modules/org-admin/components/teams/team-content.tsx                         
 The route folder holds only `page.tsx`. The content component lives in its module, under
 `src/modules/<module-id>/components/<domain>/` (AGENTS.md → Modules), named
 `<entity>-content.tsx`, alongside the other components for that domain (menus, dialogs,
-cards) — not in the route folder. This
-mirrors where every other page-specific component for a domain already lives, and
-means the route folder stays a thin routing artifact.
+cards) — not in the route folder. This mirrors where every other page-specific
+component for a domain already lives, and means the route folder stays a thin routing
+artifact.
 
 ---
 
