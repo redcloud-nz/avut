@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillTrack_SubscribeToPackage_Dialog } from "@/modules/skill-track/components/subscribe-package";
 import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/modules/skill-track/components/unsubscribe-package";
 import { trpc, type RouterOutput } from "@/trpc/client";
@@ -44,6 +44,10 @@ export function SkillTrack_CataloguePackage_Content({
             skillPackageId,
         }),
     );
+
+    // Only a subscriber can see a withdrawn (unpublished or archived) package: it can leave it,
+    // but not subscribe again.
+    const withdrawn = !SkillPackage.isAvailable(skillPackage);
 
     // The subscribe/unsubscribe dialogs are host-driven: their own success
     // effect flips `skillPackage.subscription`, which swaps the trigger button —
@@ -75,6 +79,7 @@ export function SkillTrack_CataloguePackage_Content({
                     <Saratoga.Header>
                         <Saratoga.Title>{skillPackage.name}</Saratoga.Title>
                         <Saratoga.Actions>
+                            {withdrawn && <Badge variant="outline">Subscribed · Withdrawn</Badge>}
                             <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                 {skillPackage.subscription ? (
                                     <Button
@@ -85,7 +90,7 @@ export function SkillTrack_CataloguePackage_Content({
                                     >
                                         Unsubscribe
                                     </Button>
-                                ) : (
+                                ) : withdrawn ? null : (
                                     <Button
                                         variant="outline"
                                         onClick={() =>
@@ -98,6 +103,13 @@ export function SkillTrack_CataloguePackage_Content({
                             </Protect>
                         </Saratoga.Actions>
                     </Saratoga.Header>
+                    {withdrawn && (
+                        <p className="text-muted-foreground text-sm">
+                            Its author has withdrawn this package. Its skills are out of your
+                            sessions and reports until it&apos;s published again. Checks already
+                            recorded are kept.
+                        </p>
+                    )}
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <Card>

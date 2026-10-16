@@ -66,7 +66,7 @@ _End of review group 1._
 
 ### Review group 2: UI (visual checkpoint)
 
-- [ ] **5. Catalogue shows withdrawn packages** `visual`
+- [x] **5. Catalogue shows withdrawn packages** — feat(skill-track): catalogue marks withdrawn packages; unsubscribing leaves the page `visual`
   - **Files:** `src/modules/skill-track/components/catalogue-packages-list.tsx`, `src/modules/skill-track/components/catalogue-package-content.tsx`
   - **Do:**
     - **List:** the status column is plain text today (`"Subscribed"`). A package where `!SkillPackage.isAvailable(pkg)` shows "Subscribed · Withdrawn" there, as text.
@@ -114,3 +114,8 @@ Unpublishing and archiving a skill package now withdraw its skills from subscrib
 - Re-import unpublishes a published package (`prepareImport` sets `published: false` on update), which withdraws it from subscribers without warning.
 - `listSubscribedPackages` has no UI caller.
 - A package in its author's Rubbish bin (Deleted, so unpublished) is invisible to its subscribers, who can't unsubscribe from it. Recorded checks from other organisations block its purge (`otherOrgCheckBlocker`), so it can stay there indefinitely.
+
+## Review notes
+
+- `src/client/skill-package-builder-effects.ts` `recoverPackage`: also invalidate `trpc.skillPackageSubscriptions.pathFilter()`, like the other five package-lifecycle effects (task 4).
+- Tests seed branded ids with `nanoId16()`: `src/server/services/skill-checks.test.ts` (subscription `id`) and `src/trpc/routers/skill-package-subscriptions-router.test.ts` (`user`). Use `SkillPackageSubscriptionId.create()` / `UserId.create()` (tasks 2, 3).
