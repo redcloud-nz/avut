@@ -33,8 +33,6 @@ export const SESSION_DATE_PATTERN = "EEE d MMM yyyy";
 /** The most days an all-day session can run, in the picker. */
 export const MAX_SESSION_DAYS = 14;
 
-const DAY_MS = 24 * 60 * 60_000;
-
 /** The form state's start time when the session it was built from has none (an all-day one). */
 export const DEFAULT_SESSION_START_TIME = "09:00";
 
@@ -213,11 +211,11 @@ export function sessionFormState(
         return allDayFormState(start, timing.days);
     }
     const end = timing.end && new TZDate(timing.end, orgZone);
-    if (
-        end &&
-        (end.getTime() - start.getTime() >= DAY_MS ||
-            format(end, "HH:mm") === format(start, "HH:mm"))
-    ) {
+    // Judged on the clock, as the picker offers it (an end on the start's day, or the next day
+    // before the start's time), not in elapsed time: across the April fall-back, 04:00 to 03:45
+    // the next day is 24h45 of real time but a session the picker made.
+    const endDay = end ? differenceInCalendarDays(end, start) : 0;
+    if (end && (endDay >= 2 || (endDay === 1 && format(end, "HH:mm") >= format(start, "HH:mm")))) {
         const firstDay = nearestLocalMidnight(start);
         return allDayFormState(
             firstDay,

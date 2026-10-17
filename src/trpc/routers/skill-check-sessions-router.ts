@@ -937,7 +937,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
      * @throws TRPCError(BAD_REQUEST) if the times are off-quarter or out of order.
      * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
-     * runs.
+     * runs, or another save moved its start since this one read it.
      */
     updateSession: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -952,17 +952,24 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             const existing = SkillCheckSession.fromRecord(record);
             SkillChecks.assertSessionUnlocked(existing);
 
+            const startsAt = new Date(update.startsAt);
+            const endsAt = update.endsAt === null ? null : new Date(update.endsAt);
+
             // Diffed against the raw stored start, not the parsed session's (which falls back to
             // `createdAt`), so the first save of a row with none logs `startsAt: null → value`.
+            // Both instants are re-serialised, so `…:00Z` and `…:00.000Z` don't diff as a change.
             const changes = diffObject(
                 {
                     ...SkillCheckSession.modifiableSchema.parse(existing),
                     startsAt: record.startsAt?.toISOString() ?? null,
                 },
-                update,
+                {
+                    ...update,
+                    startsAt: startsAt.toISOString(),
+                    endsAt: endsAt?.toISOString() ?? null,
+                },
             );
 
-            const startsAt = new Date(update.startsAt);
             const startChanged = record.startsAt?.getTime() !== startsAt.getTime();
 
             if (changes.length == 0) return { updated: existing, startChanged };
@@ -970,9 +977,14 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             const [, updated] = await ctx.prisma
                 .$transaction([
                     // Serializes with `approveSession` and with `setSessionSkillCheck`, whose lock
-                    // also checks the start; see `SkillChecks.lockUnapprovedSession`. Once it has
-                    // matched, it holds the session row, so the update below can't miss.
-                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
+                    // also checks the start; see `SkillChecks.lockUnapprovedSession`. Checks the
+                    // start too: `startChanged` came from the read above, so an overlapping save
+                    // that moved it must refuse this one rather than leave the checks stamped with
+                    // a start the session no longer has. Once it has matched, it holds the session
+                    // row, so the update below can't miss.
+                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId, {
+                        expectedStartsAt: record.startsAt,
+                    }),
                     ctx.prisma.skillCheckSession.update({
                         where: {
                             id: skillCheckSessionId,
@@ -982,7 +994,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         data: {
                             name: update.name,
                             startsAt,
-                            endsAt: update.endsAt === null ? null : new Date(update.endsAt),
+                            endsAt,
                             notes: update.notes,
                         },
                     }),
@@ -1001,7 +1013,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         changes,
                     }),
                 ])
-                .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
+                .catch(SkillChecks.rethrowSessionChanged(skillCheckSessionId));
 
             return { updated: SkillCheckSession.fromRecord(updated), startChanged };
         }),

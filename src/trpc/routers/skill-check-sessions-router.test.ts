@@ -1566,8 +1566,14 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                             update: update(),
                         }),
                     ).rejects.toMatchObject({ code: "CONFLICT" });
+                    // The lock also requires the start this save read, so an overlapping save that
+                    // moved it refuses this one instead of leaving the checks on a stale start.
                     expect(spy.mock.calls[0][0]).toMatchObject({
-                        where: { id: T.racedUpdate, status: { not: "Include" } },
+                        where: {
+                            id: T.racedUpdate,
+                            status: { not: "Include" },
+                            startsAt: SESSION_DATE,
+                        },
                     });
                 } finally {
                     spy.mockRestore();

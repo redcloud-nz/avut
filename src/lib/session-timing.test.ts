@@ -459,6 +459,19 @@ describe("sessionFormState", () => {
         });
     });
 
+    it("keeps a picker-made timed session that runs past 24h across the fall-back", () => {
+        // Sat 4 Apr 04:00 NZDT – Sun 5 Apr 03:45 NZST: 23h45 on the clock, 24h45 of real time.
+        expect(
+            sessionFormState("2026-04-03T15:00:00.000Z", "2026-04-04T15:45:00.000Z", NZ),
+        ).toEqual({
+            date: "2026-04-04",
+            allDay: false,
+            days: 1,
+            startTime: "04:00",
+            endTime: "03:45",
+        });
+    });
+
     it("reads a timed session ending at its start's time of day as all day, under 24h", () => {
         // Sat 26 Sep 09:00 NZST – Sun 27 Sep 09:00 NZDT is 23 hours, across the spring-forward.
         expect(
