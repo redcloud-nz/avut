@@ -24,7 +24,11 @@ export function DocsSearch({
 }: {
     /** Merged onto the input — sets its width. */
     className?: string;
-    /** Which edge of the input the results popover lines up with. */
+    /**
+     * Which edge of the input the results popover lines up with. `end` gives it a fixed width
+     * beyond the input's; `start` matches the input's width (for a full-width input, e.g. in a
+     * sheet, where a wider popover would overflow).
+     */
     align?: "start" | "end";
 }) {
     const router = useRouter();
@@ -131,8 +135,8 @@ export function DocsSearch({
                     id={listboxId}
                     role="listbox"
                     className={cn(
-                        "bg-popover absolute z-50 mt-1 w-80 rounded-md border p-1 shadow-md",
-                        align === "end" ? "right-0" : "left-0",
+                        "bg-popover absolute z-50 mt-1 rounded-md border p-1 shadow-md",
+                        align === "end" ? "right-0 w-80" : "left-0 w-full",
                     )}
                 >
                     {results.length === 0 ? (

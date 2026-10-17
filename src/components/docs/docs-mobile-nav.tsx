@@ -7,7 +7,7 @@
 
 import { MenuIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 
 import { DocsSearch } from "@/components/docs/docs-search";
 import { Button } from "@/components/ui/button";
@@ -19,22 +19,29 @@ function isOpenSearchCombobox(el: Element | null) {
 }
 
 /**
+ * Calls `onNavigate` once the pathname moves away from the one it mounted with. Rendered inside
+ * the sheet's content, so it only mounts while the sheet is open and the `usePathname()` read
+ * stays out of the static shell (under Cache Components it suspends during prerender).
+ */
+function CloseOnNavigate({ onNavigate }: { onNavigate: () => void }) {
+    const pathname = usePathname();
+    const [mountedPathname] = useState(pathname);
+
+    useEffect(() => {
+        if (pathname !== mountedPathname) onNavigate();
+    }, [pathname, mountedPathname, onNavigate]);
+
+    return null;
+}
+
+/**
  * The docs nav below `md`: a menu button (rendered before the logo in `PublicHeader`) that opens
  * a left sheet holding the docs search and `children` (the nav, passed in from the layout so its
  * Suspense boundary and flag read stay server-side). The sheet closes when the pathname changes
  * and when any link inside it is clicked, so picking the current page closes it too.
  */
 export function DocsMobileNav({ children }: { children: ReactNode }) {
-    const pathname = usePathname();
     const [open, setOpen] = useState(false);
-
-    // Close on navigation. Adjusting state during render rather than in an effect, per
-    // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-    const [prevPathname, setPrevPathname] = useState(pathname);
-    if (pathname !== prevPathname) {
-        setPrevPathname(pathname);
-        setOpen(false);
-    }
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -53,6 +60,12 @@ export function DocsMobileNav({ children }: { children: ReactNode }) {
                 side="left"
                 aria-describedby={undefined}
                 className="gap-0"
+                onOpenAutoFocus={(e) => {
+                    // Focus the sheet itself rather than its first tabbable element (the search
+                    // input), which would pop up the phone keyboard and fetch the search index.
+                    e.preventDefault();
+                    (e.currentTarget as HTMLElement | null)?.focus();
+                }}
                 onEscapeKeyDown={(e) => {
                     // Escape in open search results closes only the results (DocsSearch's own
                     // listener), not the sheet.
@@ -74,6 +87,9 @@ export function DocsMobileNav({ children }: { children: ReactNode }) {
                     }
                 }}
             >
+                <Suspense fallback={null}>
+                    <CloseOnNavigate onNavigate={() => setOpen(false)} />
+                </Suspense>
                 <SheetTitle className="sr-only">Docs</SheetTitle>
                 <div className="border-b p-4 pr-12">
                     <DocsSearch className="w-full" align="start" />
