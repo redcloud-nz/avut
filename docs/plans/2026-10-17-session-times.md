@@ -187,7 +187,7 @@ _End of review group A._
     - `npm run check` passes.
   - `visual`
 
-- [ ] **Task 8: Show session times on the detail page and the sessions list**
+- [x] **Task 8: Show session times on the detail page and the sessions list** — feat(skill-track): show session times on the detail page and list
   - **Files:** `src/modules/skill-track/lib/use-format-session-when.ts` (new), `src/modules/skill-track/components/session-content.tsx`, `src/modules/skill-track/components/sessions-list.tsx`.
   - **Do:**
     - The hook binds `formatSessionWhen` to `useOrganization()`'s zone and `usePreferences()`'s `display` settings.
@@ -223,3 +223,6 @@ Sessions take a start and an optional end, or run all day across one or more day
 
 - **Task 4, `updateSession` audit diff for a session with no stored start.** The diff currently runs against the parsed session, whose `startsAt` falls back to `createdAt`. As a result, a first save can log `prev = createdAt` instead of `null`, or log an `Update` with `changes: []` while the checks are re-stamped. Diff against the raw stored start instead: `{ ...SkillCheckSession.modifiableSchema.parse(existing), startsAt: record.startsAt?.toISOString() ?? null }`. Then drop the `!startChanged` special case from the early return, and assert the log entry's `startsAt null → value` change in the "writes the start of a session with none stored" test.
 - **Task 2, `sessionInstants` doc comment.** In zones where DST starts at midnight (America/Santiago, Asia/Beirut), local midnight doesn't exist, so an all-day session there reads as timed. Note this in the comment. NZ isn't affected.
+- **Task 7, editing a session after an org time-zone change.** An all-day session stored in the old zone classifies as timed, with an end exactly N×24h later. `sessionFormState` returns `endTime === startTime`, so the form can't be saved (even a rename fails) and the End select renders blank. Fix this in `sessionFormState`: when a timed span is 24h or more, or the end's time of day equals the start's, return the all-day form snapped to local midnight, or `endTime: null`. Also clamp `days` to `MAX_DAYS`. Add tests.
+- **Task 7, spring-forward gap in the dialogs.** On the NZ spring-forward day, a start inside the gap moves forward (02:15 → 03:15), so an end of 03:00 or 03:15 gives `endsAt <= startsAt`, and the user sees a raw server BAD_REQUEST toast. In both dialogs' submit handlers, `safeParse` the `sessionInstants(...)` output against `SkillCheckSession.inputSchema`, and on failure call `form.setError("when", …)` with a readable message.
+- **Task 6, stale `?action=update` on an approved session.** The edit dialog is now unmounted, so the param lingers and the dialog pops open after a reopen. Clear `action === "update"` when `isApproved`, as `session-config-dialogs.tsx:82` does.
