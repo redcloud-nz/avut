@@ -42,7 +42,7 @@
     - `compiledHeadingIds` in the test is extended to capture the tag level (`/\.h([1-6]),\{id:"([^"]*)"/g`), and a per-doc test asserts `doc.headings.map(({ id, depth }) => ({ id, depth }))` equals the rendered `(depth, id)` sequence across intro + rest.
     - Existing tests pass unchanged. `npm run check` passes.
 
-- [ ] **3. Docs move into their own route group** `mechanical`
+- [x] **3. Docs move into their own route group** `mechanical` — refactor(docs): move docs into their own route group
   - **Files:** move `src/app/(public)/(marketing)/docs/**` to `src/app/(public)/(docs)/docs/**` (`git mv`); `src/app/(public)/(docs)/docs/layout.tsx`; `src/app/(public)/(marketing)/layout.tsx` (header comment); `src/components/docs/docs-search.tsx` and `src/components/docs/help-sheet.tsx` (their `@/app/(public)/(marketing)/docs/…` type imports).
   - **Do:**
     - Move the whole `docs` segment into the new `(docs)` group with `git mv`, then run `npx next typegen`. Fix the two type imports.

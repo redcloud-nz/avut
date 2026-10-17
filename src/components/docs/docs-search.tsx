@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import type { DocsSearchRecord } from "@/app/(public)/(marketing)/docs/search-index.json/route";
+import type { DocsSearchRecord } from "@/app/(public)/(docs)/docs/search-index.json/route";
 import { Input } from "@/components/ui/input";
 import { docsHref } from "@/lib/docs-sections";
 import { cn } from "@/lib/utils";
