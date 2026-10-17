@@ -38,14 +38,13 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
     const isApproved = session.status === "Include";
 
     const actions: MenuActionProps[] = [
-        // Not disabled when approved: `updateSession` only refuses a date change, and the
-        // dialog locks that field itself. The dialog lives on the Session Details card.
+        // Approving locks the whole session, so Edit is off until it's reopened, as Record is.
         {
             verb: "update",
             label: "Edit",
             icon: <ObjectIcons.Edit />,
             onSelect: () => setAction("update", { history: "push" }),
-            disabled: !canUpdate,
+            disabled: !canUpdate || isApproved,
         },
         ...(isApproved
             ? [

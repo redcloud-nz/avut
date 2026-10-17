@@ -149,9 +149,16 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                 <CardHeader>
                                     <CardTitle>Session Details</CardTitle>
                                     <CardAction>
-                                        <Protect permissions={{ skillCheckSession: ["update"] }}>
-                                            <SkillsModule_UpdateSession_Dialog session={session} />
-                                        </Protect>
+                                        {/* Not mounted when approved, so ?action=update can't open it either. */}
+                                        {!isApproved && (
+                                            <Protect
+                                                permissions={{ skillCheckSession: ["update"] }}
+                                            >
+                                                <SkillsModule_UpdateSession_Dialog
+                                                    session={session}
+                                                />
+                                            </Protect>
+                                        )}
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>

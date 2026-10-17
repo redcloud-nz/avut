@@ -153,7 +153,7 @@ _End of review group A._
   - **Done when:** an admin can view and change the zone, a non-editor sees it read-only, and `npm run check` passes.
   - `visual`, `mechanical`
 
-- [ ] **Task 6: Session page: Edit off for approved sessions**
+- [x] **Task 6: Session page: Edit off for approved sessions** — feat(skill-track): Edit is off for approved sessions
   - **Files:** `src/modules/skill-track/components/session-menu.tsx`, `src/modules/skill-track/components/session-content.tsx`, `content/help/skill-track/session.mdx`.
   - **Do:**
     - The Edit action is `disabled` when `isApproved`, as Record already is on the session page. Replace the comment explaining why it wasn't.
