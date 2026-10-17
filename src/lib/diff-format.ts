@@ -56,9 +56,11 @@ export interface DescribeChangeOptions {
  * Field-label overrides per object type, for fields whose humanised name reads badly.
  *
  * Keyed by the **entry's own** `objectType`, not the page's: a related `TeamMembership` entry on
- * a Person's history carries `TeamMembership` fields. Empty until a real field needs one.
+ * a Person's history carries `TeamMembership` fields.
  */
-export const FieldLabels: Partial<Record<LogObjectType, Record<string, string>>> = {};
+export const FieldLabels: Partial<Record<LogObjectType, Record<string, string>>> = {
+    Skill: { skillGroupId: "Group", skillPackageId: "Package" },
+};
 
 /** Object-type labels where humanising the type name isn't good enough. */
 const objectTypeLabelOverrides: Partial<Record<LogObjectType, string>> = {
@@ -328,6 +330,39 @@ const relatedActionPhrases: Partial<
             Recover: "Recovered membership of",
             Restore: "Restored membership of",
             Update: "Updated membership of",
+        },
+    },
+    Skill: {
+        SkillPackage: {
+            Archive: "Archived skill",
+            Create: "Added skill",
+            Delete: "Deleted skill",
+            Move: "Moved skill",
+            Purge: "Permanently deleted skill",
+            Recover: "Recovered skill",
+            Restore: "Restored skill",
+            Update: "Updated skill",
+        },
+        SkillGroup: {
+            Archive: "Archived skill",
+            Create: "Added skill",
+            Delete: "Deleted skill",
+            Move: "Moved skill",
+            Purge: "Permanently deleted skill",
+            Recover: "Recovered skill",
+            Restore: "Restored skill",
+            Update: "Updated skill",
+        },
+    },
+    SkillGroup: {
+        SkillPackage: {
+            Archive: "Archived group",
+            Create: "Added group",
+            Delete: "Deleted group",
+            Purge: "Permanently deleted group",
+            Recover: "Recovered group",
+            Restore: "Restored group",
+            Update: "Updated group",
         },
     },
 };

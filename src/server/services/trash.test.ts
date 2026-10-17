@@ -38,6 +38,11 @@ describe("Trash service", () => {
         freshTeam: TeamId.create(),
         undatedTeam: TeamId.create(),
         check: SkillCheckId.create(),
+        // A package of this org's own, with a Deleted group and a Deleted skill to purge.
+        ownPkg: SkillPackageId.create(),
+        binnedGroup: SkillGroupId.create(),
+        keptGroup: SkillGroupId.create(),
+        binnedSkill: SkillId.create(),
     };
 
     const db = createMockPrisma();
@@ -173,6 +178,47 @@ describe("Trash service", () => {
             },
         });
 
+        await db.skillPackage.create({
+            data: {
+                id: T.ownPkg,
+                organizationId: T.org,
+                name: "Own",
+                description: "",
+                tags: [],
+                properties: {},
+            },
+        });
+        for (const [id, status] of [
+            [T.binnedGroup, "Deleted"],
+            [T.keptGroup, "Active"],
+        ] as const) {
+            await db.skillGroup.create({
+                data: {
+                    id,
+                    skillPackageId: T.ownPkg,
+                    name: id,
+                    description: "",
+                    tags: [],
+                    properties: {},
+                    sequence: 0,
+                    status,
+                },
+            });
+        }
+        await db.skill.create({
+            data: {
+                id: T.binnedSkill,
+                skillPackageId: T.ownPkg,
+                skillGroupId: T.keptGroup,
+                name: "Binned",
+                description: "",
+                tags: [],
+                properties: {},
+                sequence: 0,
+                status: "Deleted",
+            },
+        });
+
         await logDelete("Team", T.expiredTeam, daysAgo(31));
         await logDelete("Team", T.freshTeam, daysAgo(5));
         await logDelete("SkillPackage", T.sharedPkg, daysAgo(60));
@@ -227,6 +273,36 @@ describe("Trash service", () => {
                 where: { objectType: "Person", objectId: T.assessor, action: "Purge" },
             }),
         ).toHaveLength(1);
+    });
+
+    async function purgeRefs(objectType: string, objectId: string) {
+        const [entry] = await db.logEntry.findMany({
+            where: { objectType, objectId, action: "Purge" },
+            include: { objects: true },
+        });
+        return entry!.objects
+            .filter((ref) => ref.role !== "primary")
+            .map((ref) => `${ref.role}:${ref.objectType}:${ref.objectId}`)
+            .sort();
+    }
+
+    it("purging a skill refs its package and group", async () => {
+        await Trash.purge(ctx(), "skill", T.binnedSkill);
+
+        expect(await db.skill.findUnique({ where: { id: T.binnedSkill } })).toBeNull();
+        expect(await purgeRefs("Skill", T.binnedSkill)).toEqual([
+            `context:SkillGroup:${T.keptGroup}`,
+            `context:SkillPackage:${T.ownPkg}`,
+        ]);
+    });
+
+    it("purging a skill group refs its package", async () => {
+        await Trash.purge(ctx(), "skillGroup", T.binnedGroup);
+
+        expect(await db.skillGroup.findUnique({ where: { id: T.binnedGroup } })).toBeNull();
+        expect(await purgeRefs("SkillGroup", T.binnedGroup)).toEqual([
+            `context:SkillPackage:${T.ownPkg}`,
+        ]);
     });
 
     it("recover moves a Deleted row back to Active through the entity's service", async () => {

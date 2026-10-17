@@ -19,6 +19,7 @@ import {
     type ExportedSkill,
     type SkillPackageExport as SkillPackageExportType,
 } from "@/lib/schemas/skill-package-export";
+import type { LogEntryRef } from "@/server/log-entry";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -100,6 +101,53 @@ export async function requirePackageById(
     }
 
     return SkillPackage.fromRecord(existingPackage);
+}
+
+/**
+ * The refs a `Skill` log entry carries, so it also shows on its package's and group's History
+ * pages (#342): the package and the group, both as `context`. Every call site that logs a
+ * `Skill` entry uses this, so none can forget the group.
+ */
+export function skillLogRefs(skill: Pick<Skill, "skillPackageId" | "skillGroupId">): LogEntryRef[] {
+    return [
+        { objectType: "SkillPackage", objectId: skill.skillPackageId, role: "context" },
+        { objectType: "SkillGroup", objectId: skill.skillGroupId, role: "context" },
+    ];
+}
+
+/**
+ * The refs a `SkillGroup` log entry carries, so it also shows on its package's History page
+ * (#342): the package, as `context`.
+ */
+export function groupLogRefs(group: Pick<SkillGroup, "skillPackageId">): LogEntryRef[] {
+    return [{ objectType: "SkillPackage", objectId: group.skillPackageId, role: "context" }];
+}
+
+/**
+ * The refs a `Skill` move entry carries (#342): the old group as `from` and the new one as `to`,
+ * so the move shows on both groups' History pages. The package is `context` when it is unchanged,
+ * otherwise the old package is `from` and the new one `to`. Used by `moveSkill` and by an import
+ * that changes a skill's group.
+ */
+export function skillMoveLogRefs({
+    from,
+    to,
+}: {
+    from: Pick<Skill, "skillPackageId" | "skillGroupId">;
+    to: Pick<Skill, "skillPackageId" | "skillGroupId">;
+}): LogEntryRef[] {
+    const packageRefs: LogEntryRef[] =
+        from.skillPackageId === to.skillPackageId
+            ? [{ objectType: "SkillPackage", objectId: to.skillPackageId, role: "context" }]
+            : [
+                  { objectType: "SkillPackage", objectId: from.skillPackageId, role: "from" },
+                  { objectType: "SkillPackage", objectId: to.skillPackageId, role: "to" },
+              ];
+    return [
+        ...packageRefs,
+        { objectType: "SkillGroup", objectId: from.skillGroupId, role: "from" },
+        { objectType: "SkillGroup", objectId: to.skillGroupId, role: "to" },
+    ];
 }
 
 /**
@@ -198,6 +246,7 @@ export interface SkillPackageWriteItem {
         objectId: string;
         changes?: DiffChange[];
         description?: string;
+        refs?: LogEntryRef[];
     };
 }
 
@@ -314,6 +363,15 @@ export async function prepareImport(
                       pick(skill, SKILL_COMPARE_KEYS),
                   )
                 : diffObject({}, pick(skill, SKILL_COMPARE_KEYS));
+            // A move to another group reads "Group: X → Y", like `moveSkill`'s entry (#342).
+            if (currentSkill && groupChanged) {
+                skillDiff.push({
+                    type: "obj_mod",
+                    path: ["skillGroupId"],
+                    prev: currentSkill.skillGroupId,
+                    curr: group.id,
+                });
+            }
             skillChanges.set(skill.id, skillDiff);
             skillNodes.push({
                 kind: "skill",
@@ -422,6 +480,7 @@ export async function prepareImport(
                     objectType: "SkillGroup",
                     objectId: node.id,
                     description: `No longer present in re-imported skill package "${incoming.name}".`,
+                    refs: groupLogRefs({ skillPackageId: incoming.id }),
                 },
             });
             continue;
@@ -458,6 +517,7 @@ export async function prepareImport(
                 objectType: "SkillGroup",
                 objectId: node.id,
                 changes: groupChanges.get(node.id),
+                refs: groupLogRefs({ skillPackageId: incoming.id }),
             },
         });
     }
@@ -473,12 +533,32 @@ export async function prepareImport(
                     objectType: "Skill",
                     objectId: node.id,
                     description: `No longer present in re-imported skill package "${incoming.name}".`,
+                    refs: skillLogRefs({
+                        skillPackageId: incoming.id,
+                        skillGroupId: SkillGroupId.schema.parse(
+                            existingSkills.get(node.id)!.skillGroupId,
+                        ),
+                    }),
                 },
             });
             continue;
         }
         const skill = skillsById.get(node.id as SkillId)!;
         const group = incoming.groups.find((g) => g.skills.some((s) => s.id === skill.id))!;
+        // A skill re-imported into a different group refs its old group as `from` and its new
+        // one as `to`, in place of the group `context` ref, so the move shows on both (#342).
+        const previousGroupId = existingSkills.get(skill.id)?.skillGroupId;
+        const current = { skillPackageId: incoming.id, skillGroupId: group.id };
+        const refs =
+            previousGroupId !== undefined && previousGroupId !== group.id
+                ? skillMoveLogRefs({
+                      from: {
+                          skillPackageId: incoming.id,
+                          skillGroupId: SkillGroupId.schema.parse(previousGroupId),
+                      },
+                      to: current,
+                  })
+                : skillLogRefs(current);
         writeItems.push({
             write: (db) =>
                 db.skill.upsert({
@@ -516,6 +596,7 @@ export async function prepareImport(
                 objectType: "Skill",
                 objectId: node.id,
                 changes: skillChanges.get(node.id),
+                refs,
             },
         });
     }
@@ -544,7 +625,12 @@ export async function archiveSkill(ctx: OrgServiceContext, skillId: SkillId): Pr
 
     await ctx.prisma.$transaction([
         ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Archived" } }),
-        ctx.logEvent({ action: "Archive", objectType: "Skill", objectId: skillId }),
+        ctx.logEvent({
+            action: "Archive",
+            objectType: "Skill",
+            objectId: skillId,
+            refs: skillLogRefs(existing),
+        }),
     ]);
 
     return await requireSkillById(ctx, skillId);
@@ -569,7 +655,7 @@ export async function restoreSkill(ctx: OrgServiceContext, skillId: SkillId): Pr
         );
     }
 
-    return await setSkillActive(ctx, skillId, "Restore");
+    return await setSkillActive(ctx, existing, "Restore");
 }
 
 /**
@@ -591,17 +677,24 @@ export async function recoverSkill(ctx: OrgServiceContext, skillId: SkillId): Pr
         );
     }
 
-    return await setSkillActive(ctx, skillId, "Recover");
+    return await setSkillActive(ctx, existing, "Recover");
 }
 
 async function setSkillActive(
     ctx: OrgServiceContext,
-    skillId: SkillId,
+    existing: Skill,
     action: "Restore" | "Recover",
 ): Promise<Skill> {
+    const skillId = existing.id;
+
     await ctx.prisma.$transaction([
         ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Active" } }),
-        ctx.logEvent({ action, objectType: "Skill", objectId: skillId }),
+        ctx.logEvent({
+            action,
+            objectType: "Skill",
+            objectId: skillId,
+            refs: skillLogRefs(existing),
+        }),
     ]);
 
     return await requireSkillById(ctx, skillId);
@@ -621,7 +714,12 @@ export async function deleteSkill(ctx: OrgServiceContext, skillId: SkillId): Pro
 
     await ctx.prisma.$transaction([
         ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Deleted" } }),
-        ctx.logEvent({ action: "Delete", objectType: "Skill", objectId: skillId }),
+        ctx.logEvent({
+            action: "Delete",
+            objectType: "Skill",
+            objectId: skillId,
+            refs: skillLogRefs(existing),
+        }),
     ]);
 
     return await requireSkillById(ctx, skillId);
@@ -672,7 +770,12 @@ export async function archiveGroup(
             where: { id: skillGroupId },
             data: { status: "Archived" },
         }),
-        ctx.logEvent({ action: "Archive", objectType: "SkillGroup", objectId: skillGroupId }),
+        ctx.logEvent({
+            action: "Archive",
+            objectType: "SkillGroup",
+            objectId: skillGroupId,
+            refs: groupLogRefs(existing),
+        }),
     ]);
 
     return await requireGroupById(ctx, skillGroupId);
@@ -700,7 +803,7 @@ export async function restoreGroup(
         );
     }
 
-    return await setGroupActive(ctx, skillGroupId, "Restore");
+    return await setGroupActive(ctx, existing, "Restore");
 }
 
 /**
@@ -725,17 +828,24 @@ export async function recoverGroup(
         );
     }
 
-    return await setGroupActive(ctx, skillGroupId, "Recover");
+    return await setGroupActive(ctx, existing, "Recover");
 }
 
 async function setGroupActive(
     ctx: OrgServiceContext,
-    skillGroupId: SkillGroupId,
+    existing: SkillGroup,
     action: "Restore" | "Recover",
 ): Promise<SkillGroup> {
+    const skillGroupId = existing.id;
+
     await ctx.prisma.$transaction([
         ctx.prisma.skillGroup.update({ where: { id: skillGroupId }, data: { status: "Active" } }),
-        ctx.logEvent({ action, objectType: "SkillGroup", objectId: skillGroupId }),
+        ctx.logEvent({
+            action,
+            objectType: "SkillGroup",
+            objectId: skillGroupId,
+            refs: groupLogRefs(existing),
+        }),
     ]);
 
     return await requireGroupById(ctx, skillGroupId);
@@ -761,7 +871,12 @@ export async function deleteGroup(
 
     await ctx.prisma.$transaction([
         ctx.prisma.skillGroup.update({ where: { id: skillGroupId }, data: { status: "Deleted" } }),
-        ctx.logEvent({ action: "Delete", objectType: "SkillGroup", objectId: skillGroupId }),
+        ctx.logEvent({
+            action: "Delete",
+            objectType: "SkillGroup",
+            objectId: skillGroupId,
+            refs: groupLogRefs(existing),
+        }),
     ]);
 
     return await requireGroupById(ctx, skillGroupId);

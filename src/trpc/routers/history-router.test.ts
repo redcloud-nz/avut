@@ -148,7 +148,7 @@ describe("history.listObjectHistory", () => {
         await expect(caller.listObjectHistory(tokenInput)).resolves.toEqual({
             entries: [],
             nextCursor: null,
-            names: { Person: {}, Skill: {} },
+            names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} },
         });
     });
 
@@ -208,12 +208,37 @@ describe("history.listObjectHistory", () => {
     it("gives an admin every related type but the registry types it can't view", async () => {
         await makeCaller("admin").listObjectHistory(personInput);
 
-        // `admin` holds neither `skillCheckSession:view` nor `skillPackage:view`.
+        // `admin` holds neither `skillCheckSession:view` nor `skillPackage:view`, which gates
+        // `Skill` and `SkillGroup` as well as `SkillPackage`.
         const expected = LogObjectType.values.filter(
-            (type) => type !== "SkillCheckSession" && type !== "SkillPackage",
+            (type) =>
+                type !== "SkillCheckSession" &&
+                type !== "Skill" &&
+                type !== "SkillGroup" &&
+                type !== "SkillPackage",
         );
         expect([...lastRelatedTypes()].sort()).toEqual([...expected].sort());
     });
+
+    it.each(["Skill", "SkillGroup"] as const)(
+        "lets a skills-author read a %s's history and refuses an admin",
+        async (objectType) => {
+            const input = { organizationId: T.org, objectType, objectId: "some-record" };
+
+            await expect(makeCaller("skills-author").listObjectHistory(input)).resolves.toEqual({
+                entries: [],
+                nextCursor: null,
+                names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} },
+            });
+            vi.mocked(ObjectHistory.list).mockClear();
+
+            // `admin` lacks `skillPackage:view`.
+            await expect(makeCaller("admin").listObjectHistory(input)).rejects.toMatchObject({
+                code: "FORBIDDEN",
+            });
+            expect(ObjectHistory.list).not.toHaveBeenCalled();
+        },
+    );
 
     it("gates a registry type missing from RelatedEntryPermissions by its page permission", async () => {
         await makeCaller("member").listObjectHistory(personInput);
