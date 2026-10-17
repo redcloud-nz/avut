@@ -355,7 +355,7 @@ dataset per `describe` (`.claude/rules/testing.md`) and build the context as
     effects; a second overseer shows the conflict toast; focus returns to the row's menu button
     after Revoke closes; `npm run check` passes.
 
-- [ ] **9. Groups card on the system-admin organization page** `visual` `mechanical`
+- [x] **9. Groups card on the system-admin organization page** `visual` `mechanical` — `feat(organization-groups): add groups card to the system-admin organization page`
   - **Files:** `src/app/(wrapper)/(authenticated)/system/admin/organizations/[organizationId]/page.tsx`,
     `src/modules/system-admin/components/organizations/organization-content.tsx`.
   - **Do:** Prefetch `organizationGroups.listGroupsForOrganization` on the page and add a
