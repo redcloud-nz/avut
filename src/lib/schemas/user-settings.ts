@@ -6,20 +6,7 @@
 import * as z from "zod";
 
 import { createSettingsSchema, defineSettingsSlices } from "./settings-schema";
-
-/**
- * Whether the runtime recognises `value` as an IANA zone. Asking `Intl` rather than
- * checking against a baked-in list, so the check tracks whatever zone database the runtime
- * ships with instead of going stale.
- */
-function isValidTimeZone(value: string): boolean {
-    try {
-        new Intl.DateTimeFormat("en-US", { timeZone: value });
-        return true;
-    } catch {
-        return false;
-    }
-}
+import { TimeZone } from "./time-zone";
 
 const userSettingsSchema = z.object({
     /**
@@ -60,10 +47,7 @@ const userSettingsSchema = z.object({
          * Defaults to the zone the organisations using this actually operate in, rather than
          * UTC, which would be wrong for every one of them.
          */
-        timeZone: z
-            .string()
-            .refine(isValidTimeZone, "Unknown IANA time zone")
-            .default("Pacific/Auckland"),
+        timeZone: TimeZone.schema.default("Pacific/Auckland"),
     }),
 });
 
