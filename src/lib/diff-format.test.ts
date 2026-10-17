@@ -305,6 +305,20 @@ describe("relatedActionPhrase", () => {
         expect(relatedActionPhrase("TeamMembership", "Team", "Delete")).toBe("Removed team member");
     });
 
+    it("names skill-package entries from the page's point of view", () => {
+        expect(relatedActionPhrase("Skill", "SkillPackage", "Update")).toBe("Updated skill");
+        expect(relatedActionPhrase("Skill", "SkillGroup", "Create")).toBe("Added skill");
+        expect(relatedActionPhrase("Skill", "SkillGroup", "Move")).toBe("Moved skill");
+        expect(relatedActionPhrase("SkillGroup", "SkillPackage", "Archive")).toBe("Archived group");
+        expect(relatedActionPhrase("Skill", "SkillPackage", "Purge")).toBe(
+            "Permanently deleted skill",
+        );
+        expect(relatedActionPhrase("SkillGroup", "SkillPackage", "Purge")).toBe(
+            "Permanently deleted group",
+        );
+        expect(relatedActionPhrase("SkillGroup", "SkillPackage", "Move")).toBeUndefined();
+    });
+
     it("returns undefined when there is no phrase", () => {
         expect(relatedActionPhrase("TeamMembership", "Team", "Approve")).toBeUndefined();
         expect(relatedActionPhrase("OrganizationMembership", "Person", "Update")).toBeUndefined();

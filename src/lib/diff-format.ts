@@ -332,6 +332,39 @@ const relatedActionPhrases: Partial<
             Update: "Updated membership of",
         },
     },
+    Skill: {
+        SkillPackage: {
+            Archive: "Archived skill",
+            Create: "Added skill",
+            Delete: "Deleted skill",
+            Move: "Moved skill",
+            Purge: "Permanently deleted skill",
+            Recover: "Recovered skill",
+            Restore: "Restored skill",
+            Update: "Updated skill",
+        },
+        SkillGroup: {
+            Archive: "Archived skill",
+            Create: "Added skill",
+            Delete: "Deleted skill",
+            Move: "Moved skill",
+            Purge: "Permanently deleted skill",
+            Recover: "Recovered skill",
+            Restore: "Restored skill",
+            Update: "Updated skill",
+        },
+    },
+    SkillGroup: {
+        SkillPackage: {
+            Archive: "Archived group",
+            Create: "Added group",
+            Delete: "Deleted group",
+            Purge: "Permanently deleted group",
+            Recover: "Recovered group",
+            Restore: "Restored group",
+            Update: "Updated group",
+        },
+    },
 };
 
 /**

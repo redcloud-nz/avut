@@ -116,7 +116,7 @@ _End of review group 1._
     - **Existing tests:** "keeps refs of other types by id" (`name: null`) and the `listOwn` `names` expectation are updated.
     - `npm run check` passes.
 
-- [ ] **5. Related-entry phrases for skill-package objects**
+- [x] **5. Related-entry phrases for skill-package objects** — feat(history): add related-entry phrases for skill-package objects
   - **Files:** `src/lib/diff-format.ts`, `src/lib/diff-format.test.ts`
   - **Do:** add the `relatedActionPhrases` entries from Decisions: `Skill` on `SkillPackage`, `SkillGroup` on `SkillPackage`, and `Skill` on `SkillGroup`. Each covers `Archive`, `Create`, `Delete`, `Move` (Skill only), `Purge`, `Recover`, `Restore` and `Update`.
   - **Done when:** `diff-format.test.ts` covers one phrase from each pair, plus `Move` and `Purge`. `npm run check` passes.
