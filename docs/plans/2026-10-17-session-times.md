@@ -198,6 +198,41 @@ _End of review group A._
 
 _End of review group B. Visual checkpoint: the org settings General card, a Draft and an approved session page, the create and edit dialogs in each mode, and the sessions list._
 
+### Review group C: picker redesign (from the Group B visual checkpoint)
+
+- [ ] **Task 9: Tile-style picker with "+ Add end date" / "+ Add time" (Facebook-events style)**
+  - **Files:** `src/modules/skill-track/components/session-when-picker.tsx`, `content/help/skill-track/sessions.mdx`.
+  - **Decided at the checkpoint** (user, 2026-10-17):
+    - The end date is for all-day sessions only. Timed sessions stay on one day, with end times after midnight labelled "(next day)" as now.
+    - One "+ Add time" link adds the start and end time together.
+    - The zone stays as the hint text under the tiles, not a tile.
+  - **Do:**
+    - Replace the "All day" `Switch`, the day-count `Select` and the inline time selects with **tiles**: bordered, rounded boxes, each with a leading icon, a small muted label and the value under it, laid out in a wrapping row like Facebook's event form.
+    - Each tile is itself the control's trigger:
+      - **Start date:** a `Calendar` popover.
+      - **End date:** a `Calendar` popover. Dates before the start and more than `MAX_DAYS - 1` days after it are disabled. A × on the tile removes the end date.
+      - **Start time** and **End time:** quarter-hour `Select`s. The End time options are as now: the start is left out, and wrapped times are labelled "(next day)". A × on the End time tile clears it, meaning no end.
+    - **The three states:**
+      - **Date only:** all day, 1 day. Shows the Start date tile, with "+ Add end date" and "+ Add time" links below.
+      - **End date:** all day, N days. Shows the Start date and End date tiles and a "+ Add time" link. Adding a time clears the end date, because an end date is all-day only.
+      - **Time:** timed. Shows the Start date, Start time and End time tiles, and a "Remove time" link that goes back to all day, 1 day. There's no "+ Add end date" here.
+      - When the End time tile has been cleared, show a "+ Add end time" link in its place.
+    - **Mapping onto the form state:** the existing `SessionFormState` is unchanged.
+      - `allDay = no time`
+      - `days = endDate − date + 1`
+      - "+ Add time" sets `startTime` to `DEFAULT_SESSION_START_TIME`, or keeps the existing one, and `endTime` to start + 2h. That end may wrap to the next day.
+      - `sessionInstants` and `sessionFormState` don't change.
+    - Keep the zone hint line, its try/catch fallback, and the empty-value guards on every `Select` (commit `fix(skill-track): picker crashes on Radix's empty select value`).
+    - Label each tile for accessibility (`aria-label` on the trigger).
+    - Update the sessions help card wording to match the links.
+  - **Done when:**
+    - Every transition works without a crash: date only → + end date → × end date; date only → + time → × end time → + end time → Remove time.
+    - Opening the Edit dialog on an all-day 3-day session, a timed session with an end, and a timed session with no end shows the right tiles.
+    - `npm run check` passes.
+  - `visual`
+
+_End of review group C. Visual checkpoint: the create and edit dialogs in each state._
+
 ## Before shipping
 
 - Run #361's read-only data check against **production**: no sessions on org-local midnight, how many are off-quarter, and how many have a null `startsAt`/`endsAt`. The user runs it, or approves it. Nothing in this branch writes data, and null `startsAt` rows are handled either way.
