@@ -23,7 +23,7 @@
 
 ### Review group 1: data and plumbing
 
-- [ ] **1. Glossary hides terms for flag-hidden modules (#363)**
+- [x] **1. Glossary hides terms for flag-hidden modules (#363)** — feat(docs): hide glossary terms for flag-hidden modules (#363)
   - **Files:** `src/lib/glossary.ts`, `src/lib/glossary.test.ts`, `src/server/docs.ts`, `src/app/(public)/(marketing)/docs/glossary/page.tsx`
   - **Do:**
     - In `src/lib/glossary.ts`, add a pure `visibleGlossaryEntries(entries, hidden: ReadonlySet<string>): GlossaryEntry[]`. It drops entries whose `modules` is non-empty and entirely in `hidden`. For kept entries it removes hidden ids from `modules` (badges) and drops `relatedTerms` slugs that aren't in the kept set. JSDoc it with the rule from Decisions. Keep it here, not in `src/server/docs.ts`, so its test doesn't import `@/lib/flags` (whose `vercelAdapter()` runs at import time).
