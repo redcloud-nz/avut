@@ -952,14 +952,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             const existing = SkillCheckSession.fromRecord(record);
             SkillChecks.assertSessionUnlocked(existing);
 
-            const changes = diffObject(SkillCheckSession.modifiableSchema.parse(existing), update);
+            // Diffed against the raw stored start, not the parsed session's (which falls back to
+            // `createdAt`), so the first save of a row with none logs `startsAt: null → value`.
+            const changes = diffObject(
+                {
+                    ...SkillCheckSession.modifiableSchema.parse(existing),
+                    startsAt: record.startsAt?.toISOString() ?? null,
+                },
+                update,
+            );
 
             const startsAt = new Date(update.startsAt);
             const startChanged = record.startsAt?.getTime() !== startsAt.getTime();
 
-            // No changes. A row with no stored start still saves it, though the parsed session
-            // (showing `createdAt`) diffs equal.
-            if (changes.length == 0 && !startChanged) return { updated: existing, startChanged };
+            if (changes.length == 0) return { updated: existing, startChanged };
 
             const [, updated] = await ctx.prisma
                 .$transaction([

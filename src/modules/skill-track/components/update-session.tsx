@@ -33,10 +33,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
-import { sessionFormState, sessionInstants } from "@/lib/session-timing";
+import { sessionFormState } from "@/lib/session-timing";
 import { trpc } from "@/trpc/client";
 
-import { sessionDialogSchema, SkillTrack_SessionWhenPicker } from "./session-when-picker";
+import {
+    parseSessionDialog,
+    sessionDialogSchema,
+    SkillTrack_SessionWhenPicker,
+} from "./session-when-picker";
 
 export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
     const organization = useOrganization();
@@ -111,12 +115,18 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                     <form
                         id="update-session-form"
                         onSubmit={form.handleSubmit(
-                            ({ when, ...formData }) =>
+                            (values) => {
+                                const parsed = parseSessionDialog(values, orgZone);
+                                if (!parsed.success) {
+                                    form.setError("when", { message: parsed.message });
+                                    return;
+                                }
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: session.id,
-                                    update: { ...formData, ...sessionInstants(when, orgZone) },
-                                }),
+                                    update: parsed.data,
+                                });
+                            },
                             (errors) => {
                                 console.error("Form validation errors:", errors);
                             },

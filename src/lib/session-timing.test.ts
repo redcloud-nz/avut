@@ -10,6 +10,7 @@ import {
     DEFAULT_SESSION_START_TIME,
     formatSessionWhen,
     isQuarterHour,
+    MAX_SESSION_DAYS,
     sessionFormState,
     sessionInstants,
     sessionTiming,
@@ -420,6 +421,56 @@ describe("sessionFormState", () => {
         expect(sessionFormState(TUE_3_FEB_1900, null, "Pacific/Honolulu")).toMatchObject({
             date: "2026-02-02",
             startTime: "20:00",
+        });
+    });
+
+    describe("an all-day session stored before the org's zone changed", () => {
+        const allDay = (date: string, days: number) => ({
+            date,
+            allDay: true,
+            days,
+            startTime: DEFAULT_SESSION_START_TIME,
+            endTime: null,
+        });
+
+        it("reads back all day when the new zone is ahead", () => {
+            // Sat 7 – Sun 8 Feb midnight in Sydney (AEDT) is 02:00 – 02:00 NZDT.
+            expect(
+                sessionFormState("2026-02-06T13:00:00.000Z", "2026-02-07T13:00:00.000Z", NZ),
+            ).toEqual(allDay("2026-02-07", 1));
+        });
+
+        it("reads back all day when the new zone is behind", () => {
+            // Sat 7 – Mon 9 Feb midnight NZDT is Fri 22:00 – Sun 22:00 in Sydney.
+            expect(sessionFormState(SAT_7_FEB, MON_9_FEB, "Australia/Sydney")).toEqual(
+                allDay("2026-02-07", 2),
+            );
+        });
+    });
+
+    it("reads a timed session of 24h or more as all day", () => {
+        // Tue 3 Feb 19:00 – Wed 4 Feb 21:00 NZDT, 26 hours: Wed 4 Feb, the nearest midnights.
+        expect(sessionFormState(TUE_3_FEB_1900, "2026-02-04T08:00:00.000Z", NZ)).toEqual({
+            date: "2026-02-04",
+            allDay: true,
+            days: 1,
+            startTime: DEFAULT_SESSION_START_TIME,
+            endTime: null,
+        });
+    });
+
+    it("reads a timed session ending at its start's time of day as all day, under 24h", () => {
+        // Sat 26 Sep 09:00 NZST – Sun 27 Sep 09:00 NZDT is 23 hours, across the spring-forward.
+        expect(
+            sessionFormState("2026-09-25T21:00:00.000Z", "2026-09-26T20:00:00.000Z", NZ),
+        ).toMatchObject({ date: "2026-09-26", allDay: true, days: 1, endTime: null });
+    });
+
+    it("clamps days to MAX_SESSION_DAYS", () => {
+        // Sat 7 Feb – Mon 9 Mar midnight NZDT, 30 days.
+        expect(sessionFormState(SAT_7_FEB, "2026-03-08T11:00:00.000Z", NZ)).toMatchObject({
+            allDay: true,
+            days: MAX_SESSION_DAYS,
         });
     });
 });

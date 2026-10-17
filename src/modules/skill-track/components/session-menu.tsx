@@ -7,6 +7,7 @@
 import { LockOpenIcon } from "lucide-react";
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect } from "react";
 
 import { ObjectIcons, SessionReviewIcon } from "@/components/icons";
 import {
@@ -36,6 +37,13 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
 
     // Reopen only exists for an approved session; a Draft one has nothing to reopen.
     const isApproved = session.status === "Include";
+
+    // The edit dialog isn't mounted for an approved session, so it can't clear its own param. A
+    // stale `?action=update` (a shared link, or one left by approving with the dialog open) would
+    // otherwise open it as soon as the session is reopened. Replaces the history entry.
+    useEffect(() => {
+        if (isApproved && action === "update") void setAction(null, { history: "replace" });
+    }, [isApproved, action, setAction]);
 
     const actions: MenuActionProps[] = [
         // Approving locks the whole session, so Edit is off until it's reopened, as Record is.

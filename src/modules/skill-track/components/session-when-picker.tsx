@@ -7,7 +7,15 @@
 
 import { addDays, differenceInCalendarDays, format, parse } from "date-fns";
 import { CalendarIcon, ClockIcon, PlusIcon, XIcon, type LucideIcon } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ReactNode,
+    type Ref,
+    type RefObject,
+} from "react";
 import * as z from "zod";
 
 import { TZDate } from "@date-fns/tz";
@@ -24,17 +32,19 @@ import {
 } from "@/components/ui/select";
 import { usePreferences } from "@/hooks/use-preferences";
 import { TIME_FORMAT_PATTERNS } from "@/lib/datetime";
-import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import {
+    SkillCheckSession,
+    type ModifiableSkillCheckSession,
+} from "@/lib/schemas/skill-check-session";
 import {
     DEFAULT_SESSION_START_TIME,
+    MAX_SESSION_DAYS,
     SESSION_DATE_PATTERN,
     sessionInstants,
     zoneAbbreviation,
     type SessionFormState,
 } from "@/lib/session-timing";
 import { cn } from "@/lib/utils";
-
-const MAX_DAYS = 14;
 
 /** "00:00", "00:15", … "23:45". */
 const QUARTER_HOURS = Array.from({ length: 96 }, (_, index) => {
@@ -117,16 +127,25 @@ function RemovableTile({
 
 /** A small primary-coloured "+ Add …" (or "Remove …") link under the tiles. */
 function TileLink({
+    ref,
     onClick,
     plus = true,
     children,
 }: {
+    ref?: Ref<HTMLButtonElement>;
     onClick: () => void;
     plus?: boolean;
     children: ReactNode;
 }) {
     return (
-        <Button type="button" variant="link" size="xs" className="h-auto px-0" onClick={onClick}>
+        <Button
+            ref={ref}
+            type="button"
+            variant="link"
+            size="xs"
+            className="h-auto px-0"
+            onClick={onClick}
+        >
             {plus && <PlusIcon />}
             {children}
         </Button>
@@ -138,7 +157,7 @@ export const sessionWhenSchema = z
     .object({
         date: z.iso.date(),
         allDay: z.boolean(),
-        days: z.number().int().min(1).max(MAX_DAYS),
+        days: z.number().int().min(1).max(MAX_SESSION_DAYS),
         startTime: z.string(),
         endTime: z.string().nullable(),
     })
@@ -153,6 +172,31 @@ export const sessionWhenSchema = z
 export const sessionDialogSchema = SkillCheckSession.modifiableSchema
     .pick({ name: true, notes: true })
     .extend({ when: sessionWhenSchema });
+
+/**
+ * A session dialog's values as `createSession`/`updateSession` take them: `sessionInstants`
+ * checked against `SkillCheckSession.inputSchema`, so a refusal shows on the "When" field rather
+ * than as the server's BAD_REQUEST. `sessionWhenSchema` already rules out the rest, so what's left
+ * is a start inside a spring-forward gap (02:15 on NZ's last Sunday of September): it moves
+ * forward by the gap, onto or past an end that was after it on the clock.
+ */
+export function parseSessionDialog(
+    { when, ...fields }: z.infer<typeof sessionDialogSchema>,
+    orgZone: string,
+): { success: true; data: ModifiableSkillCheckSession } | { success: false; message: string } {
+    const instants = sessionInstants(when, orgZone);
+    const parsed = SkillCheckSession.inputSchema.safeParse({ ...fields, ...instants });
+    if (parsed.success) return { success: true, data: parsed.data };
+
+    const startMoved =
+        !when.allDay && format(new TZDate(instants.startsAt, orgZone), "HH:mm") !== when.startTime;
+    return {
+        success: false,
+        message: startMoved
+            ? "The clocks go forward at that start time, so the session would start later than shown, at or after its end. Pick a later end time or a different start."
+            : (parsed.error.issues[0]?.message ?? "Those times can't be saved"),
+    };
+}
 
 /** A new session's picker state: today in the org's zone, all day. */
 export function defaultSessionWhen(orgZone: string): SessionFormState {
@@ -221,7 +265,24 @@ export function SkillTrack_SessionWhenPicker({
         }
     }, [value, orgZone]);
 
-    function update(patch: Partial<SessionFormState>) {
+    // Every "+ Add …", "Remove time" and × removes itself, so each says which control takes the
+    // focus once the tiles have re-rendered, rather than leaving it to fall back to the dialog.
+    const startDateRef = useRef<HTMLButtonElement>(null);
+    const endDateRef = useRef<HTMLButtonElement>(null);
+    const startTimeRef = useRef<HTMLButtonElement>(null);
+    const endTimeRef = useRef<HTMLButtonElement>(null);
+    const addTimeRef = useRef<HTMLButtonElement>(null);
+    const focusNext = useRef<RefObject<HTMLButtonElement | null> | null>(null);
+
+    const timed = !value.allDay;
+    const hasEndTime = timed && value.endTime != null;
+    useEffect(() => {
+        focusNext.current?.current?.focus();
+        focusNext.current = null;
+    }, [hasEndDate, timed, hasEndTime]);
+
+    function update(patch: Partial<SessionFormState>, focus?: RefObject<HTMLButtonElement | null>) {
+        if (focus) focusNext.current = focus;
         onChange({ ...value, ...patch });
     }
 
@@ -233,8 +294,9 @@ export function SkillTrack_SessionWhenPicker({
         <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-2">
                 <Popover open={openCalendar === "start"} onOpenChange={calendarOpenChange("start")}>
+                    {/* No aria-label: the visible label and date name the button, so the date is announced. */}
                     <PopoverTrigger
-                        aria-label="Start date"
+                        ref={startDateRef}
                         aria-invalid={invalid}
                         className={TILE_CLASS}
                     >
@@ -259,13 +321,16 @@ export function SkillTrack_SessionWhenPicker({
                 </Popover>
 
                 {hasEndDate && (
-                    <RemovableTile label="End date" onRemove={() => update({ days: 1 })}>
+                    <RemovableTile
+                        label="End date"
+                        onRemove={() => update({ days: 1 }, startDateRef)}
+                    >
                         <Popover
                             open={openCalendar === "end"}
                             onOpenChange={calendarOpenChange("end")}
                         >
                             <PopoverTrigger
-                                aria-label="End date"
+                                ref={endDateRef}
                                 aria-invalid={invalid}
                                 className={cn(TILE_CLASS, "pr-9")}
                             >
@@ -281,13 +346,13 @@ export function SkillTrack_SessionWhenPicker({
                                     required
                                     disabled={[
                                         { before: day },
-                                        { after: addDays(day, MAX_DAYS - 1) },
+                                        { after: addDays(day, MAX_SESSION_DAYS - 1) },
                                     ]}
                                     onSelect={(selected) => {
-                                        // Picking the start day itself makes it a one-day session again.
-                                        update({
-                                            days: differenceInCalendarDays(selected, day) + 1,
-                                        });
+                                        // Picking the start day itself makes it a one-day session
+                                        // again, removing this tile, as its × does.
+                                        const days = differenceInCalendarDays(selected, day) + 1;
+                                        update({ days }, days === 1 ? startDateRef : undefined);
                                         setOpenCalendar(null);
                                     }}
                                     autoFocus
@@ -320,6 +385,7 @@ export function SkillTrack_SessionWhenPicker({
                         }}
                     >
                         <SelectTrigger
+                            ref={startTimeRef}
                             aria-label="Start time"
                             aria-invalid={invalid}
                             className={SELECT_TILE_CLASS}
@@ -339,7 +405,10 @@ export function SkillTrack_SessionWhenPicker({
                 )}
 
                 {!value.allDay && value.endTime != null && (
-                    <RemovableTile label="End time" onRemove={() => update({ endTime: null })}>
+                    <RemovableTile
+                        label="End time"
+                        onRemove={() => update({ endTime: null }, startDateRef)}
+                    >
                         <Select
                             value={value.endTime}
                             onValueChange={(endTime) => {
@@ -348,6 +417,7 @@ export function SkillTrack_SessionWhenPicker({
                             }}
                         >
                             <SelectTrigger
+                                ref={endTimeRef}
                                 aria-label="End time"
                                 aria-invalid={invalid}
                                 className={cn(SELECT_TILE_CLASS, "pr-9")}
@@ -372,17 +442,23 @@ export function SkillTrack_SessionWhenPicker({
 
             <div className="flex flex-wrap gap-x-4">
                 {value.allDay && !hasEndDate && (
-                    <TileLink onClick={() => update({ days: 2 })}>Add end date</TileLink>
+                    <TileLink onClick={() => update({ days: 2 }, endDateRef)}>
+                        Add end date
+                    </TileLink>
                 )}
                 {value.allDay && (
                     // An end date is all-day only, so adding a time clears it.
                     <TileLink
+                        ref={addTimeRef}
                         onClick={() =>
-                            update({
-                                allDay: false,
-                                days: 1,
-                                endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS),
-                            })
+                            update(
+                                {
+                                    allDay: false,
+                                    days: 1,
+                                    endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS),
+                                },
+                                startTimeRef,
+                            )
                         }
                     >
                         Add time
@@ -391,14 +467,20 @@ export function SkillTrack_SessionWhenPicker({
                 {!value.allDay && value.endTime == null && (
                     <TileLink
                         onClick={() =>
-                            update({ endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS) })
+                            update(
+                                { endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS) },
+                                endTimeRef,
+                            )
                         }
                     >
                         Add end time
                     </TileLink>
                 )}
                 {!value.allDay && (
-                    <TileLink plus={false} onClick={() => update({ allDay: true, days: 1 })}>
+                    <TileLink
+                        plus={false}
+                        onClick={() => update({ allDay: true, days: 1 }, addTimeRef)}
+                    >
                         Remove time
                     </TileLink>
                 )}

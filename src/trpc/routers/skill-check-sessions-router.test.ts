@@ -2115,6 +2115,19 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
         });
         expect(row.startsAt?.toISOString()).toBe(NULL_CREATED_AT.toISOString());
         expect((await checkStamps())[T.nullCheck].checkedAt).toBe(NULL_CREATED_AT.toISOString());
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillCheckSession", objectId: T.nullSession, action: "Update" },
+        });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].changes).toEqual([
+            {
+                type: "obj_mod",
+                path: ["startsAt"],
+                prev: null,
+                curr: NULL_CREATED_AT.toISOString(),
+            },
+        ]);
     });
 });
 

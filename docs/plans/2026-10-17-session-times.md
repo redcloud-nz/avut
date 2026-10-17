@@ -252,11 +252,15 @@ Sessions take a start and an optional end, or run all day across one or more day
 
 ## Parked
 
+Filed as #408 (lost-race tests) and #409 (`Date.now()` in the create dialog).
+
 - **Lost-race tests run on an already-approved session.** In `skill-check-sessions-router.test.ts`, the `guarded` loop of lost-race tests runs after the `approveSession` race test, which leaves `racedSession` at `Include` (prisma-mock runs the rest of a failed transaction). They still assert that the lock was called, but the session isn't Draft, so the pre-check may be what refuses. Give them their own Draft session, as Task 3 did for `updateSession` (`racedUpdate`).
 
 - **The create dialog reads `Date.now()` during render.** Next.js logs "encountered the unstable value `Date.now()` while prerendering" for `/orgs/[slug]/skill-track/sessions`, because `defaultSessionWhen` runs in the `useForm` defaults. The same pattern is already on integration (`date: new Date().toISOString()`). A fix has to avoid both a placeholder-date flash and a crash when the dialog is opened by URL.
 
 ## Review notes
+
+All fixed in fix(skill-track): session times review notes.
 
 - **Task 4, `updateSession` audit diff for a session with no stored start.** The diff currently runs against the parsed session, whose `startsAt` falls back to `createdAt`. As a result, a first save can log `prev = createdAt` instead of `null`, or log an `Update` with `changes: []` while the checks are re-stamped. Diff against the raw stored start instead: `{ ...SkillCheckSession.modifiableSchema.parse(existing), startsAt: record.startsAt?.toISOString() ?? null }`. Then drop the `!startChanged` special case from the early return, and assert the log entry's `startsAt null → value` change in the "writes the start of a session with none stored" test.
 - **Task 2, `sessionInstants` doc comment.** In zones where DST starts at midnight (America/Santiago, Asia/Beirut), local midnight doesn't exist, so an all-day session there reads as timed. Note this in the comment. NZ isn't affected.

@@ -36,11 +36,11 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
-import { sessionInstants } from "@/lib/session-timing";
 import { trpc } from "@/trpc/client";
 
 import {
     defaultSessionWhen,
+    parseSessionDialog,
     sessionDialogSchema,
     SkillTrack_SessionWhenPicker,
 } from "./session-when-picker";
@@ -137,12 +137,18 @@ export function SkillTrack_CreateSession_Dialog() {
                     <form
                         id="new-session-form"
                         onSubmit={form.handleSubmit(
-                            ({ when, ...formData }) =>
+                            (values) => {
+                                const parsed = parseSessionDialog(values, orgZone);
+                                if (!parsed.success) {
+                                    form.setError("when", { message: parsed.message });
+                                    return;
+                                }
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: SkillCheckSessionId.create(),
-                                    create: { ...formData, ...sessionInstants(when, orgZone) },
-                                }),
+                                    create: parsed.data,
+                                });
+                            },
                             (errors) => {
                                 console.error("Form validation errors:", errors);
                             },
