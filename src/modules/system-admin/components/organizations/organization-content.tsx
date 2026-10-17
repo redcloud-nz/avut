@@ -11,6 +11,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { OrganizationGroupLink } from "@/components/entity-links/organization-group-link";
 import { UserLink } from "@/components/entity-links/user-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +29,13 @@ import { Modules, type ModuleId } from "@/lib/modules";
 import { hasOwnerRole } from "@/lib/permissions";
 import { route } from "@/lib/routes";
 import { OrganizationId } from "@/lib/schemas/organization";
+import {
+    OrganizationGroupMembershipStatus,
+    OrganizationGroupRole,
+} from "@/lib/schemas/organization-group";
 import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
+import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 import { SystemAdmin_AddMember_Dialog } from "./add-member-dialog";
@@ -54,6 +60,10 @@ export function SystemAdmin_Organization_Content({
 }) {
     const { data: organization } = useSuspenseQuery(
         trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }),
+    );
+
+    const { data: groupMemberships } = useSuspenseQuery(
+        trpc.organizationGroups.listGroupsForOrganization.queryOptions({ organizationId }),
     );
 
     // Which specialty roles are offered follows the organization's enabled modules and the
@@ -244,6 +254,73 @@ export function SystemAdmin_Organization_Content({
                                                         </td>
                                                     </tr>
                                                 ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Groups</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    {groupMemberships.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            Not in any group.
+                                        </p>
+                                    ) : (
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="text-left text-muted-foreground">
+                                                    <th className="py-1 pr-4 font-medium">Group</th>
+                                                    <th className="py-1 pr-4 font-medium">Role</th>
+                                                    <th className="py-1 font-medium">Membership</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {groupMemberships.map((membership) => {
+                                                    const active = membership.status === "Active";
+                                                    return (
+                                                        <tr
+                                                            key={membership.id}
+                                                            className={cn(
+                                                                "border-t",
+                                                                !active && "text-muted-foreground",
+                                                            )}
+                                                        >
+                                                            <td className="py-1 pr-4">
+                                                                <OrganizationGroupLink
+                                                                    group={membership.group}
+                                                                />
+                                                            </td>
+                                                            <td className="py-1 pr-4">
+                                                                {
+                                                                    OrganizationGroupRole
+                                                                        .displayNames[
+                                                                        membership.role
+                                                                    ]
+                                                                }
+                                                            </td>
+                                                            <td className="py-1">
+                                                                <Badge
+                                                                    variant={
+                                                                        active
+                                                                            ? "secondary"
+                                                                            : "outline"
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        OrganizationGroupMembershipStatus
+                                                                            .displayNames[
+                                                                            membership.status
+                                                                        ]
+                                                                    }
+                                                                </Badge>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     )}

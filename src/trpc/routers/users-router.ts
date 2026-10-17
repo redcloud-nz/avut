@@ -22,17 +22,9 @@ import {
     createTrpcRouter,
     organizationProcedure,
     systemAdminProcedure,
-    type SystemAdminContext,
 } from "../init";
 import { Messages } from "../messages";
-
-/** A system admin's context, as the account service takes it: every entry system-scoped. */
-function systemServiceContext(ctx: SystemAdminContext): UserAccounts.SystemServiceContext {
-    return {
-        prisma: ctx.prisma,
-        logSystemEvent: (options, tx) => ctx.logEvent({ scope: "system", ...options }, tx),
-    };
-}
+import { systemServiceContext } from "../system-service-context";
 
 /**
  * Router for organization user (member) management, including the link between a user account

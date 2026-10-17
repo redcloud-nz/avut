@@ -6,8 +6,8 @@
 import { cacheTag, revalidateTag } from "next/cache";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationGroupId } from "@/lib/schemas/organization-group";
 import { ProviderCredentialId, type Provider } from "@/lib/schemas/provider-credential";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -38,6 +38,7 @@ describe("getOrganizationProviderCredential", () => {
     const T = {
         org: OrganizationId.create(),
         otherOrg: OrganizationId.create(),
+        group: OrganizationGroupId.create(),
         orgCredential: ProviderCredentialId.create(),
         groupCredential: ProviderCredentialId.create(),
         otherOrgCredential: ProviderCredentialId.create(),
@@ -57,6 +58,10 @@ describe("getOrganizationProviderCredential", () => {
 
         await prisma.user.create({
             data: { id: T.user, name: "U", email: `${T.user}@x.test`, emailVerified: true },
+        });
+
+        await prisma.organizationGroup.create({
+            data: { id: T.group, name: "Group", slug: T.group },
         });
 
         const seed = (
@@ -86,7 +91,7 @@ describe("getOrganizationProviderCredential", () => {
             });
 
         await seed(T.orgCredential, T.org, null);
-        await seed(T.groupCredential, T.org, nanoId16());
+        await seed(T.groupCredential, T.org, T.group);
         await seed(T.otherOrgCredential, T.otherOrg, null);
         await seed(T.personalCredential, T.org, null, T.user);
     });
@@ -149,6 +154,7 @@ describe("getProviderCredentialForOwner", () => {
         otherOrg: OrganizationId.create(),
         user: UserId.create(),
         otherUser: UserId.create(),
+        group: OrganizationGroupId.create(),
         orgCredential: ProviderCredentialId.create(),
         groupCredential: ProviderCredentialId.create(),
         personalCredential: ProviderCredentialId.create(),
@@ -170,6 +176,10 @@ describe("getProviderCredentialForOwner", () => {
                 data: { id, name: "U", email: `${id}@x.test`, emailVerified: true },
             });
         }
+
+        await prisma.organizationGroup.create({
+            data: { id: T.group, name: "Group", slug: T.group },
+        });
 
         const seed = (id: string, userId: string | null, groupId: string | null = null) =>
             prisma.providerCredential.create({
@@ -193,7 +203,7 @@ describe("getProviderCredentialForOwner", () => {
             });
 
         await seed(T.orgCredential, null);
-        await seed(T.groupCredential, null, nanoId16());
+        await seed(T.groupCredential, null, T.group);
         await seed(T.personalCredential, T.user);
         await seed(T.otherUserCredential, T.otherUser);
     });

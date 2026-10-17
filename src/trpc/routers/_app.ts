@@ -14,6 +14,7 @@ import { historyRouter } from "./history-router";
 import { i3Router } from "./i3-router";
 import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
+import { organizationGroupsRouter } from "./organization-groups-router";
 import { organizationNotesRouter } from "./organization-notes-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
@@ -37,6 +38,7 @@ export const appRouter = createTrpcRouter({
     i3: i3Router,
     invitations: invitationsRouter,
     notifications: notificationsRouter,
+    organizationGroups: organizationGroupsRouter,
     organizationNotes: organizationNotesRouter,
     organizations: organizationsRouter,
     personnel: personnelRouter,

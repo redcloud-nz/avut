@@ -26,6 +26,12 @@ importing another router's helper is the symptom that led here. Piloted on
 organizationId, userId, logEvent }` — not `AuthenticatedOrganizationContext`. The tRPC type
   structurally satisfies it, so no adapter is needed at call sites; the point is that a service
   stays callable from a Server Component or a test with no tRPC context to build.
+- A system-scoped service (`user-accounts.ts`, `organization-groups.ts`) takes
+  `SystemServiceContext` (`service-context.ts`) — `{ prisma, logSystemEvent }`, where
+  `logSystemEvent` writes `scope: "system"` entries. Build it in a router with
+  `systemServiceContext(ctx)` from `src/trpc/system-service-context.ts`. It deliberately does not
+  satisfy `UserServiceContext`, so it can't be passed to a user- or org-scoped service, or to
+  `withBatch`.
 - A user-scoped service (one acting on the caller's own records, with no organization — e.g.
   `user-notes.ts`) takes `UserServiceContext` (`service-context.ts`) — `{ prisma, userId,
 logEvent }` — which `authenticatedProcedure`'s context satisfies exactly. An `OrgServiceContext`

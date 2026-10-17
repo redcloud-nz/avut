@@ -43,6 +43,19 @@ export default async function SystemAdmin_Index_Page() {
                             </Link>
                         </Item>
                         <Item asChild>
+                            <Link href="/system/admin/groups">
+                                <ItemContent>
+                                    <ItemTitle>Groups</ItemTitle>
+                                    <ItemDescription>
+                                        Bind organisations together as groups.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
                             <Link href="/system/admin/users">
                                 <ItemContent>
                                     <ItemTitle>Users</ItemTitle>

@@ -16,3 +16,14 @@ import "server-only";
 export function isPrismaRecordNotFound(error: unknown): boolean {
     return error instanceof Object && "code" in error && error.code === "P2025";
 }
+
+/**
+ * Whether `error` is Prisma's `P2002` unique-constraint violation: what a concurrent duplicate
+ * insert raises after a `findFirst`/`findUnique` pre-check has already passed, so callers map it
+ * to the domain error their pre-check would have thrown.
+ *
+ * Duck-typed on `code` for the same reason as `isPrismaRecordNotFound`.
+ */
+export function isUniqueViolation(error: unknown): boolean {
+    return error instanceof Object && "code" in error && error.code === "P2002";
+}
