@@ -95,8 +95,8 @@ export function SystemAdmin_EditGroup_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline">
-                    <ObjectIcons.Edit /> <span className="hidden md:inline">Edit</span>
+                <Button variant="ghost" size="icon" aria-label="Edit group">
+                    <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>
             <DialogContent>

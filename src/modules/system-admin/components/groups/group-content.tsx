@@ -5,16 +5,13 @@
 "use client";
 
 import Link from "next/link";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { ObjectIcons } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -32,16 +29,14 @@ import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 import { SystemAdmin_AddGroupMember_Dialog } from "./add-group-member-dialog";
-import { SystemAdmin_DeleteGroup_Dialog } from "./delete-group-dialog";
 import { SystemAdmin_EditGroup_Dialog } from "./edit-group-dialog";
 import { SystemAdmin_GroupMemberActionsMenu } from "./group-member-actions-menu";
+import { SystemAdmin_Group_Menu } from "./group-menu";
 
 export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGroupId }) {
     const { data: group } = useSuspenseQuery(
         trpc.organizationGroups.getGroup.queryOptions({ groupId }),
     );
-
-    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["delete"] as const));
 
     const activeOrganizationIds = group.memberships
         .filter((m) => m.status === "Active")
@@ -61,14 +56,7 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
                     <Saratoga.Header>
                         <Saratoga.Title>{group.name}</Saratoga.Title>
                         <Saratoga.Actions>
-                            <SystemAdmin_EditGroup_Dialog group={group} />
-                            <Button
-                                variant="outline"
-                                onClick={() => void setAction("delete", { history: "push" })}
-                            >
-                                <ObjectIcons.Delete />
-                                <span className="hidden md:inline">Delete</span>
-                            </Button>
+                            <SystemAdmin_Group_Menu group={group} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
 
@@ -76,7 +64,10 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
                         <Saratoga.Column slot="main">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Identity</CardTitle>
+                                    <CardTitle>Group Details</CardTitle>
+                                    <CardAction>
+                                        <SystemAdmin_EditGroup_Dialog group={group} />
+                                    </CardAction>
                                 </CardHeader>
                                 <CardContent>
                                     <DataList>
@@ -96,10 +87,6 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
                                                 {group.slug}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={group.createdAt} />
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
                             </Card>
@@ -107,12 +94,12 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Members</CardTitle>
-                                    <div className="ml-auto">
+                                    <CardAction>
                                         <SystemAdmin_AddGroupMember_Dialog
                                             groupId={group.id}
                                             activeOrganizationIds={activeOrganizationIds}
                                         />
-                                    </div>
+                                    </CardAction>
                                 </CardHeader>
                                 <CardContent>
                                     {group.memberships.length === 0 ? (
@@ -194,19 +181,26 @@ export function SystemAdmin_Group_Content({ groupId }: { groupId: OrganizationGr
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>
+
+                        <Saratoga.Column slot="secondary">
+                            <Card>
+                                <CardContent>
+                                    <DataList>
+                                        <DataItem inline>
+                                            <DataItemTitle>Created</DataItemTitle>
+                                            <DataItemDateValue date={group.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={group.updatedAt} />
+                                        </DataItem>
+                                    </DataList>
+                                </CardContent>
+                            </Card>
+                        </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
             </Std.ScrollContainer>
-
-            <SystemAdmin_DeleteGroup_Dialog
-                group={group}
-                open={action === "delete"}
-                onOpenChange={(open) =>
-                    void setAction(open ? "delete" : null, {
-                        history: open ? "push" : "replace",
-                    })
-                }
-            />
         </>
     );
 }

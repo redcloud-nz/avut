@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { organizationGroupsEffects } from "@/client/organization-groups-effects";
-import { CreateNewIcon } from "@/components/icons";
+import { ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -73,8 +73,8 @@ export function SystemAdmin_AddGroupMember_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">Add Organisation</span>
+                <Button variant="ghost" size="icon" aria-label="Add organisation">
+                    <ObjectIcons.Create />
                 </Button>
             </DialogTrigger>
             <DialogContent>

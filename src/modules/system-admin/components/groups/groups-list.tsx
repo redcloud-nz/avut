@@ -93,6 +93,7 @@ export function SystemAdmin_Groups_List() {
             columnFilters: [],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
+            columnVisibility: { createdAt: false },
         },
     });
 
