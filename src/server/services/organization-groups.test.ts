@@ -192,3 +192,243 @@ describe("OrganizationGroups: groups", () => {
         expect(entries[0].description).toContain("Lapsed Group");
     });
 });
+
+describe("OrganizationGroups: memberships", () => {
+    const T = {
+        admin: UserId.create(),
+        orgA: OrganizationId.create(),
+        orgB: OrganizationId.create(),
+        orgC: OrganizationId.create(),
+        orgD: OrganizationId.create(),
+        orgE: OrganizationId.create(),
+        orgF: OrganizationId.create(),
+        orgG: OrganizationId.create(),
+        /** Active overseer A, active member B, revoked member C. */
+        main: OrganizationGroupId.create(),
+        mainA: OrganizationGroupMembershipId.create(),
+        mainB: OrganizationGroupMembershipId.create(),
+        mainC: OrganizationGroupMembershipId.create(),
+        /** Only a revoked overseer (D). */
+        lapsed: OrganizationGroupId.create(),
+        /** Active overseer E, active members F and G. */
+        rotate: OrganizationGroupId.create(),
+        rotateE: OrganizationGroupMembershipId.create(),
+        rotateF: OrganizationGroupMembershipId.create(),
+        rotateG: OrganizationGroupMembershipId.create(),
+    };
+
+    const db = createMockPrisma();
+    const actor = { userId: T.admin };
+
+    const ctx: SystemServiceContext = {
+        prisma: db,
+        logSystemEvent: (options, tx = db) =>
+            recordLogEntry({ scope: "system", actor, actorLabel: "Admin", ...options }, tx),
+    };
+
+    async function entriesFor(objectId: string) {
+        return db.logEntry.findMany({
+            where: { objectType: "OrganizationGroupMembership", objectId },
+        });
+    }
+
+    async function contextRefsOf(logEntryId: string) {
+        return db.logEntryObject.findMany({ where: { logEntryId, role: "context" } });
+    }
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: { id: T.admin, name: "Admin", email: "admin@example.com", role: "admin" },
+        });
+        for (const [id, name] of [
+            [T.orgA, "Alpha SAR"],
+            [T.orgB, "Bravo SAR"],
+            [T.orgC, "Charlie SAR"],
+            [T.orgD, "Delta SAR"],
+            [T.orgE, "Echo SAR"],
+            [T.orgF, "Foxtrot SAR"],
+            [T.orgG, "Golf SAR"],
+        ] as const) {
+            await db.organization.create({ data: { id, name, slug: id, createdAt: new Date() } });
+        }
+        for (const [id, name, slug] of [
+            [T.main, "Main Group", "main"],
+            [T.lapsed, "Lapsed Group", "lapsed"],
+            [T.rotate, "Rotate Group", "rotate"],
+        ] as const) {
+            await db.organizationGroup.create({ data: { id, name, slug } });
+        }
+        for (const [id, groupId, organizationId, role, status] of [
+            [T.mainA, T.main, T.orgA, "Overseer", "Active"],
+            [T.mainB, T.main, T.orgB, "Member", "Active"],
+            [T.mainC, T.main, T.orgC, "Member", "Revoked"],
+            [OrganizationGroupMembershipId.create(), T.lapsed, T.orgD, "Overseer", "Revoked"],
+            [T.rotateE, T.rotate, T.orgE, "Overseer", "Active"],
+            [T.rotateF, T.rotate, T.orgF, "Member", "Active"],
+            [T.rotateG, T.rotate, T.orgG, "Member", "Active"],
+        ] as const) {
+            await db.organizationGroupMembership.create({
+                data: { id, groupId, organizationId, role, status },
+            });
+        }
+    });
+
+    it("adds a member, logging one system-scoped Create that refs the org and group", async () => {
+        const result = await OrganizationGroups.addMember(ctx, {
+            groupId: T.main,
+            organizationId: T.orgD,
+            role: "Member",
+        });
+
+        expect(result).toMatchObject({ groupId: T.main, organizationId: T.orgD });
+        expect(await OrganizationGroups.requireMembershipById(ctx, result.id)).toMatchObject({
+            role: "Member",
+            status: "Active",
+        });
+        const entries = await entriesFor(result.id);
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({
+            scope: "system",
+            action: "Create",
+            organizationId: null,
+            ownerId: null,
+        });
+        expect(entries[0].description).toContain("Delta SAR");
+        expect(entries[0].description).toContain("Main Group");
+        expect(await contextRefsOf(entries[0].id)).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ objectType: "Organization", objectId: T.orgD }),
+                expect.objectContaining({ objectType: "OrganizationGroup", objectId: T.main }),
+            ]),
+        );
+    });
+
+    it("refuses to add an organization that is already an active member", async () => {
+        await expect(
+            OrganizationGroups.addMember(ctx, {
+                groupId: T.main,
+                organizationId: T.orgB,
+                role: "Member",
+            }),
+        ).rejects.toThrow(ConflictError);
+        expect(await entriesFor(T.mainB)).toHaveLength(0);
+    });
+
+    it("refuses a second active overseer via addMember", async () => {
+        await expect(
+            OrganizationGroups.addMember(ctx, {
+                groupId: T.main,
+                organizationId: T.orgF,
+                role: "Overseer",
+            }),
+        ).rejects.toThrow(/already has an overseer/);
+        expect(
+            await db.organizationGroupMembership.findFirst({
+                where: { groupId: T.main, organizationId: T.orgF },
+            }),
+        ).toBeNull();
+    });
+
+    it("refuses a second active overseer via setMemberRole", async () => {
+        await expect(
+            OrganizationGroups.setMemberRole(ctx, { membershipId: T.mainB, role: "Overseer" }),
+        ).rejects.toThrow(/already has an overseer/);
+        expect((await OrganizationGroups.requireMembershipById(ctx, T.mainB)).role).toBe("Member");
+    });
+
+    it("doesn't let a revoked overseer block a new one", async () => {
+        const { id } = await OrganizationGroups.addMember(ctx, {
+            groupId: T.lapsed,
+            organizationId: T.orgA,
+            role: "Overseer",
+        });
+
+        expect(await OrganizationGroups.requireMembershipById(ctx, id)).toMatchObject({
+            role: "Overseer",
+            status: "Active",
+        });
+    });
+
+    it("lets the overseer be demoted and another member promoted", async () => {
+        await OrganizationGroups.setMemberRole(ctx, { membershipId: T.rotateE, role: "Member" });
+        await OrganizationGroups.setMemberRole(ctx, { membershipId: T.rotateF, role: "Overseer" });
+
+        const groups = await OrganizationGroups.listGroups(ctx);
+        expect(groups.find((g) => g.id === T.rotate)?.overseer).toMatchObject({ id: T.orgF });
+
+        const entries = await entriesFor(T.rotateF);
+        expect(entries).toHaveLength(1);
+        expect(entries[0]).toMatchObject({ scope: "system", action: "Update" });
+        expect(entries[0].changes).toEqual([
+            expect.objectContaining({ path: ["role"], prev: "Member", curr: "Overseer" }),
+        ]);
+        expect(await contextRefsOf(entries[0].id)).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ objectType: "Organization", objectId: T.orgF }),
+            ]),
+        );
+    });
+
+    it("treats setting the current role as a no-op, with no log entry", async () => {
+        const result = await OrganizationGroups.setMemberRole(ctx, {
+            membershipId: T.mainB,
+            role: "Member",
+        });
+
+        expect(result).toEqual({ id: T.mainB, groupId: T.main, organizationId: T.orgB });
+        expect(await entriesFor(T.mainB)).toHaveLength(0);
+    });
+
+    it("refuses to revoke or change the role of a revoked membership", async () => {
+        await expect(OrganizationGroups.revokeMember(ctx, T.mainC)).rejects.toThrow(ConflictError);
+        await expect(
+            OrganizationGroups.setMemberRole(ctx, { membershipId: T.mainC, role: "Overseer" }),
+        ).rejects.toThrow(ConflictError);
+        expect(await entriesFor(T.mainC)).toHaveLength(0);
+    });
+
+    it("revokes a membership, and re-adding reuses the same row", async () => {
+        const revoked = await OrganizationGroups.revokeMember(ctx, T.rotateG);
+        expect(revoked).toEqual({ id: T.rotateG, groupId: T.rotate, organizationId: T.orgG });
+        expect((await OrganizationGroups.requireMembershipById(ctx, T.rotateG)).status).toBe(
+            "Revoked",
+        );
+
+        const readded = await OrganizationGroups.addMember(ctx, {
+            groupId: T.rotate,
+            organizationId: T.orgG,
+            role: "Member",
+        });
+        expect(readded.id).toBe(T.rotateG);
+        expect((await OrganizationGroups.requireMembershipById(ctx, T.rotateG)).status).toBe(
+            "Active",
+        );
+
+        const entries = await entriesFor(T.rotateG);
+        expect(entries).toHaveLength(2);
+        expect(entries.map((e) => [e.scope, e.action])).toEqual(
+            expect.arrayContaining([
+                ["system", "Revoke"],
+                ["system", "Update"],
+            ]),
+        );
+        for (const entry of entries) {
+            expect(await contextRefsOf(entry.id)).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ objectType: "Organization", objectId: T.orgG }),
+                ]),
+            );
+        }
+    });
+
+    it("lists an organization's memberships of any status, with the group ref", async () => {
+        expect(await OrganizationGroups.listGroupsForOrganization(ctx, T.orgC)).toEqual([
+            {
+                id: T.mainC,
+                role: "Member",
+                status: "Revoked",
+                group: { id: T.main, name: "Main Group" },
+            },
+        ]);
+    });
+});

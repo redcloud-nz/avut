@@ -244,7 +244,7 @@ dataset per `describe` (`.claude/rules/testing.md`) and build the context as
     revoked rows; each write produces exactly one `scope: "system"` log entry with the expected
     action. `npm run check` passes.
 
-- [ ] **4. `OrganizationGroups` service: memberships**
+- [x] **4. `OrganizationGroups` service: memberships** — `feat(organization-groups): add organization group membership service`
   - **Files:** `src/server/services/organization-groups.ts`,
     `src/server/services/organization-groups.test.ts`.
   - **Do:** Implement:

@@ -17,7 +17,14 @@ import * as z from "zod";
 
 import { diffObject } from "@/lib/diff";
 import { ConflictError, NotFoundError } from "@/lib/errors";
-import { OrganizationGroupData, OrganizationGroupId } from "@/lib/schemas/organization-group";
+import type { OrganizationId } from "@/lib/schemas/organization";
+import {
+    OrganizationGroupData,
+    OrganizationGroupId,
+    OrganizationGroupMembershipId,
+    OrganizationGroupRole,
+} from "@/lib/schemas/organization-group";
+import type { LogEntryRef } from "@/server/log-entry";
 import { isUniqueViolation } from "@/server/prisma-errors";
 
 import type { SystemServiceContext } from "./service-context";
@@ -230,4 +237,263 @@ export async function deleteGroup(
     ]);
 
     return { id: groupId };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Memberships
+// ---------------------------------------------------------------------------------------------
+
+/** What every membership mutation returns: enough for cache effects to find the affected lists. */
+export interface MembershipMutationResult {
+    id: OrganizationGroupMembershipId;
+    groupId: OrganizationGroupId;
+    organizationId: OrganizationId;
+}
+
+/**
+ * A membership entry's primary is the membership; these refs tie it to the organization (so the
+ * fan-out index surfaces it there) and to the group.
+ */
+function membershipRefs(groupId: string, organizationId: string): LogEntryRef[] {
+    return [
+        { objectType: "Organization", objectId: organizationId, role: "context" },
+        { objectType: "OrganizationGroup", objectId: groupId, role: "context" },
+    ];
+}
+
+function roleLabel(role: OrganizationGroupRole) {
+    return OrganizationGroupRole.displayNames[role].toLowerCase();
+}
+
+/**
+ * The membership with `membershipId`, with its group's `{ id, name }` and its organization's
+ * `{ id, name, slug }`.
+ * @throws NotFoundError if there is no such membership.
+ */
+export async function requireMembershipById(
+    ctx: SystemServiceContext,
+    membershipId: OrganizationGroupMembershipId,
+) {
+    const membership = await ctx.prisma.organizationGroupMembership.findUnique({
+        where: { id: membershipId },
+        include: {
+            group: { select: { id: true, name: true } },
+            organization: organizationSelect,
+        },
+    });
+    if (!membership) {
+        throw new NotFoundError(`OrganizationGroupMembership(${membershipId}) not found.`);
+    }
+    return membership;
+}
+
+/**
+ * Every membership `organizationId` has had (any status), with its group's `{ id, name }`,
+ * ordered by group name.
+ */
+export async function listGroupsForOrganization(
+    ctx: SystemServiceContext,
+    organizationId: OrganizationId,
+) {
+    const memberships = await ctx.prisma.organizationGroupMembership.findMany({
+        where: { organizationId },
+        select: {
+            id: true,
+            role: true,
+            status: true,
+            group: { select: { id: true, name: true } },
+        },
+        orderBy: { group: { name: "asc" } },
+    });
+
+    return memberships.map((m) => ({
+        id: m.id as OrganizationGroupMembershipId,
+        role: m.role,
+        status: m.status,
+        group: { id: m.group.id as OrganizationGroupId, name: m.group.name },
+    }));
+}
+
+/**
+ * Throws `ConflictError` if the group already has an active overseer. Only `Active` rows count,
+ * so a revoked row that kept `role: Overseer` doesn't block. The check-then-write race is
+ * accepted: only system admins write, and a second overseer is visible and fixable in the UI.
+ */
+async function assertNoActiveOverseer(
+    ctx: SystemServiceContext,
+    group: { id: string; name: string },
+) {
+    const overseer = await ctx.prisma.organizationGroupMembership.findFirst({
+        where: { groupId: group.id, role: "Overseer", status: "Active" },
+        select: { organization: { select: { name: true } } },
+    });
+    if (overseer) {
+        throw new ConflictError(
+            `Group ${group.name} already has an overseer (${overseer.organization.name}). Make it a member first.`,
+        );
+    }
+}
+
+/**
+ * Add `organizationId` to the group with `role`. An organization whose membership was revoked
+ * gets that same row back (`status: Active`, the given role), logged as `Update`; otherwise a new
+ * row is created and logged as `Create`.
+ * @throws NotFoundError if the group or organization doesn't exist.
+ * @throws ConflictError if the organization is already an active member, or `role` is `Overseer`
+ *   and the group already has an active overseer.
+ */
+export async function addMember(
+    ctx: SystemServiceContext,
+    input: {
+        groupId: OrganizationGroupId;
+        organizationId: OrganizationId;
+        role: OrganizationGroupRole;
+    },
+): Promise<MembershipMutationResult> {
+    const { groupId, organizationId, role } = input;
+    const group = await requireGroupById(ctx, groupId);
+    const organization = await ctx.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { id: true, name: true },
+    });
+    if (!organization) throw new NotFoundError(`Organization(${organizationId}) not found.`);
+
+    const alreadyMember = `${organization.name} is already a member of group ${group.name}.`;
+    const existing = await ctx.prisma.organizationGroupMembership.findUnique({
+        where: { groupId_organizationId: { groupId, organizationId } },
+    });
+    if (existing?.status === "Active") throw new ConflictError(alreadyMember);
+    if (role === "Overseer") await assertNoActiveOverseer(ctx, group);
+
+    const refs = membershipRefs(groupId, organizationId);
+
+    if (existing) {
+        // Reactivate the revoked row rather than creating a second one.
+        const id = existing.id as OrganizationGroupMembershipId;
+        await ctx.prisma.$transaction([
+            ctx.prisma.organizationGroupMembership.update({
+                where: { id },
+                data: { role, status: "Active" },
+            }),
+            ctx.logSystemEvent({
+                action: "Update",
+                objectType: "OrganizationGroupMembership",
+                objectId: id,
+                changes: diffObject(
+                    { role: existing.role, status: existing.status },
+                    { role, status: "Active" },
+                ),
+                description: `Re-added ${organization.name} to group ${group.name} as ${roleLabel(role)}.`,
+                refs,
+            }),
+        ]);
+        return { id, groupId, organizationId };
+    }
+
+    const id = OrganizationGroupMembershipId.create();
+    try {
+        await ctx.prisma.$transaction([
+            ctx.prisma.organizationGroupMembership.create({
+                data: { id, groupId, organizationId, role, status: "Active" },
+            }),
+            ctx.logSystemEvent({
+                action: "Create",
+                objectType: "OrganizationGroupMembership",
+                objectId: id,
+                changes: diffObject({}, { role, status: "Active" }),
+                description: `Added ${organization.name} to group ${group.name} as ${roleLabel(role)}.`,
+                refs,
+            }),
+        ]);
+    } catch (error) {
+        // A concurrent add created the (groupId, organizationId) row after the check above.
+        if (isUniqueViolation(error)) throw new ConflictError(alreadyMember);
+        throw error;
+    }
+    return { id, groupId, organizationId };
+}
+
+/**
+ * Change an active membership's role. Setting the role it already has is a no-op: no write and
+ * no log entry.
+ * @throws NotFoundError if there is no such membership.
+ * @throws ConflictError if the membership isn't `Active`, or `role` is `Overseer` and the group
+ *   already has an active overseer.
+ */
+export async function setMemberRole(
+    ctx: SystemServiceContext,
+    input: { membershipId: OrganizationGroupMembershipId; role: OrganizationGroupRole },
+): Promise<MembershipMutationResult> {
+    const { membershipId, role } = input;
+    const { group, organization, ...membership } = await requireMembershipById(ctx, membershipId);
+    const result = {
+        id: membershipId,
+        groupId: group.id as OrganizationGroupId,
+        organizationId: organization.id as OrganizationId,
+    };
+
+    if (membership.status !== "Active") {
+        throw new ConflictError(
+            `${organization.name} is not an active member of group ${group.name}.`,
+        );
+    }
+    if (membership.role === role) return result;
+    if (role === "Overseer") await assertNoActiveOverseer(ctx, group);
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.organizationGroupMembership.update({
+            where: { id: membershipId },
+            data: { role },
+        }),
+        ctx.logSystemEvent({
+            action: "Update",
+            objectType: "OrganizationGroupMembership",
+            objectId: membershipId,
+            changes: diffObject({ role: membership.role }, { role }),
+            description: `Made ${organization.name} ${roleLabel(role)} of group ${group.name}.`,
+            refs: membershipRefs(group.id, organization.id),
+        }),
+    ]);
+
+    return result;
+}
+
+/**
+ * Revoke an active membership. The row stays (`status: Revoked`) so its history survives, and
+ * re-adding the organization reactivates it.
+ * @throws NotFoundError if there is no such membership.
+ * @throws ConflictError if the membership isn't `Active`.
+ */
+export async function revokeMember(
+    ctx: SystemServiceContext,
+    membershipId: OrganizationGroupMembershipId,
+): Promise<MembershipMutationResult> {
+    const { group, organization, ...membership } = await requireMembershipById(ctx, membershipId);
+
+    if (membership.status !== "Active") {
+        throw new ConflictError(
+            `${organization.name} is not an active member of group ${group.name}.`,
+        );
+    }
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.organizationGroupMembership.update({
+            where: { id: membershipId },
+            data: { status: "Revoked" },
+        }),
+        ctx.logSystemEvent({
+            action: "Revoke",
+            objectType: "OrganizationGroupMembership",
+            objectId: membershipId,
+            changes: diffObject({ status: membership.status }, { status: "Revoked" }),
+            description: `Revoked ${organization.name}'s membership of group ${group.name}.`,
+            refs: membershipRefs(group.id, organization.id),
+        }),
+    ]);
+
+    return {
+        id: membershipId,
+        groupId: group.id as OrganizationGroupId,
+        organizationId: organization.id as OrganizationId,
+    };
 }
