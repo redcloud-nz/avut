@@ -85,6 +85,13 @@ describe("objectTypesForModule", () => {
         expect(objectTypesForModule("i3").sort()).toEqual(["I3Template", "I3TemplateVariant"]);
     });
 
+    it("attributes organization groups to the system-admin module", () => {
+        expect(objectTypesForModule("system-admin").sort()).toEqual([
+            "OrganizationGroup",
+            "OrganizationGroupMembership",
+        ]);
+    });
+
     it("returns an empty list for a module with no logged entities", () => {
         expect(objectTypesForModule("forms")).toEqual([]);
     });

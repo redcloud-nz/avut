@@ -140,8 +140,57 @@ model Organization {
   i3Templates   I3Template[]   @relation("i3_template_to_organization")
   formInstances FormInstance[] @relation("form_instance_to_organization")
 
+  groupMemberships OrganizationGroupMembership[] @relation("organization_group_membership_to_organization")
+
   @@unique([slug])
   @@map("organizations")
+}
+
+/// A set of organizations bound together (avut#382). v1 is the fabric only: the link grants
+/// nothing until a capability consumes it.
+model OrganizationGroup {
+  id        String   @id
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships         OrganizationGroupMembership[] @relation("organization_group_membership_to_organization_group")
+  providerCredentials ProviderCredential[]          @relation("provider_credential_to_organization_group")
+
+  @@map("organization_groups")
+}
+
+/// One organization's place in a group. Revoking keeps the row (status Revoked); re-adding the
+/// organization reactivates it.
+model OrganizationGroupMembership {
+  id             String                            @id
+  groupId        String
+  group          OrganizationGroup                 @relation("organization_group_membership_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization                      @relation("organization_group_membership_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationGroupRole
+  status         OrganizationGroupMembershipStatus
+  createdAt      DateTime                          @default(now())
+  updatedAt      DateTime                          @updatedAt
+
+  @@unique([groupId, organizationId])
+  @@index([groupId])
+  @@index([organizationId])
+  @@map("organization_group_memberships")
+}
+
+enum OrganizationGroupRole {
+  Overseer
+  Member
+}
+
+enum OrganizationGroupMembershipStatus {
+  /// DORMANT: reserved for the later invite → accept flow; never written in v1.
+  Invited
+  Active
+  Revoked
 }
 
 model OrganizationConfig {
@@ -401,22 +450,23 @@ enum Provider {
 /// Generalizes D4HAccessToken's former encrypted-credential storage across every
 /// external-service integration (see #286). D4H itself now runs on this table.
 model ProviderCredential {
-  id             String        @id
+  id             String             @id
   provider       Provider
   organizationId String?
-  organization   Organization? @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization?      @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
-  user           User?         @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
-  /// Nullable, unused until OrganizationGroup (#198) exists. No FK yet — added ahead of need
-  /// because #284 already commits to group-owned credentials being real.
+  user           User?              @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  /// Owning OrganizationGroup (avut#382). Nothing writes it yet: group-owned credentials arrive
+  /// with redcloud-nz/avut-ideas#18.
   groupId        String?
+  group          OrganizationGroup? @relation("provider_credential_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
   label          String
   token          String
   status         String
   expiresAt      DateTime
-  metadata       Json          @default("{}")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  metadata       Json               @default("{}")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   linkedTeams          Team_D4H[]         @relation("team_d4h_link_token")
   syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")

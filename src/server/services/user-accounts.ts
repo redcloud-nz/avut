@@ -18,24 +18,14 @@
 
 import "server-only";
 
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { PrismaClient } from "@/generated/prisma/client";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import { Operations } from "@/lib/operations";
 import { hasOwnerRole } from "@/lib/permissions";
-import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { USER_RETENTION_DAYS, type UserId } from "@/lib/schemas/user";
 import { createLogBatch, formatActorLabel, recordLogEntry } from "@/server/log-entry";
 
-import type { LogEventOptions } from "./service-context";
-
-export interface SystemServiceContext {
-    prisma: PrismaClient;
-    /** Writes a `scope: "system"` entry — the only scope that survives the account's purge. */
-    logSystemEvent: (
-        options: LogEventOptions,
-        tx?: Prisma.TransactionClient,
-    ) => Prisma.PrismaPromise<LogEntryRecord>;
-}
+import type { SystemServiceContext } from "./service-context";
 
 async function requireUser(ctx: SystemServiceContext, userId: UserId) {
     const user = await ctx.prisma.user.findUnique({
