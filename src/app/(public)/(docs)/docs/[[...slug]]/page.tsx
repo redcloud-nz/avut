@@ -15,7 +15,9 @@ import { Suspense } from "react";
 
 import { MDXContent } from "@content-collections/mdx/react";
 
+import { SaratogaContentsSpacer } from "@/components/blocks/saratoga-contents";
 import { DocsArticle_Skeleton } from "@/components/docs/docs-article-skeleton";
+import { DocsContents } from "@/components/docs/docs-contents";
 import { DocsFlagsProvider } from "@/components/docs/docs-flags-context";
 import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";
@@ -47,7 +49,13 @@ export async function generateMetadata({ params }: DocsPageProps): Promise<Metad
 // See docs/reviews/2026-09-12-suspense-boundaries.md §3.
 export default function DocsPage({ params }: DocsPageProps) {
     return (
-        <Suspense fallback={<DocsArticle_Skeleton />}>
+        <Suspense
+            fallback={
+                <div className="max-w-3xl">
+                    <DocsArticle_Skeleton />
+                </div>
+            }
+        >
             <DocsArticle params={params} />
         </Suspense>
     );
@@ -58,14 +66,25 @@ async function DocsArticle({ params }: DocsPageProps) {
     const doc = await getVisibleDocBySlug((slug ?? []).join("/"));
     if (!doc) notFound();
     const syntheticChecksEnabled = await syntheticChecksFlag();
+    const hasContents = doc.headings.filter((h) => h.depth === 2 || h.depth === 3).length >= 2;
 
     return (
         <DocsFlagsProvider syntheticChecksEnabled={syntheticChecksEnabled}>
-            <article>
-                <MDXContent code={doc.introMdx} components={docsMdxComponents} />
-                <KeyTerms slugs={doc.keyTerms} />
-                {doc.restMdx && <MDXContent code={doc.restMdx} components={docsMdxComponents} />}
-            </article>
+            <div className="flex gap-10">
+                <article className="min-w-0 max-w-3xl flex-1">
+                    <MDXContent code={doc.introMdx} components={docsMdxComponents} />
+                    <KeyTerms slugs={doc.keyTerms} />
+                    {doc.restMdx && (
+                        <MDXContent code={doc.restMdx} components={docsMdxComponents} />
+                    )}
+                    {/* Lets the last sections scroll up to the "On this page" trigger line. Only
+                        when that list shows: it needs two or more `##`/`###` headings. */}
+                    {hasContents && <SaratogaContentsSpacer className="lg:hidden xl:block" />}
+                </article>
+                <aside className="hidden w-52 shrink-0 xl:block">
+                    <DocsContents headings={doc.headings} />
+                </aside>
+            </div>
         </DocsFlagsProvider>
     );
 }

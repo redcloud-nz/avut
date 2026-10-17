@@ -24,7 +24,7 @@ export default function UpdatesPage() {
     const entries = getAllUpdates();
 
     return (
-        <div>
+        <div className="max-w-3xl">
             <h1 className="mt-2 mb-4 text-3xl font-bold tracking-tight">What&apos;s new</h1>
             <p className="text-muted-foreground mb-8 leading-7">
                 What&apos;s new in each release of AVUT, newest first.

@@ -68,7 +68,7 @@ _End of review group 1._
     - Add optional props `offset?: number` (default `24`) and `className?: string`, merged onto the `<nav>` with `cn("hidden lg:block sticky top-4 text-sm", className)`. Give `SaratogaContentsSpacer` a `className` prop too, merged the same way (Task 6 gates it to `xl`). Update the header comment to mention both scroll modes.
   - **Done when:** `npm run check` passes, and the org settings page's contents list still highlights sections as it scrolls (checked at this group's visual checkpoint).
 
-- [ ] **6. Three columns: scrollable nav and "On this page"** `visual`
+- [x] **6. Three columns: scrollable nav and "On this page"** `visual` — feat(docs): three columns with scrollable nav and "On this page"
   - **Files:** `src/app/(public)/(docs)/docs/layout.tsx`, `src/app/(public)/(docs)/docs/[[...slug]]/page.tsx`, `src/app/(public)/(docs)/docs/glossary/page.tsx`, `src/app/(public)/(docs)/docs/updates/page.tsx`, `src/components/docs/docs-contents.tsx` (new), `src/components/docs/mdx-components.tsx` (only if `scroll-mt-20` needs changing)
   - **Do:**
     - **Layout:** the container becomes `mx-auto w-full max-w-7xl px-6 md:px-10` (the header's padding), so the edges line up. The sidebar `<aside>` keeps `hidden w-56 shrink-0 md:block`. Its inner wrapper becomes `sticky top-[<header height>] max-h-[calc(100svh-<header height>)] overflow-y-auto`, with the vertical padding moved inside it, so the whole nav is reachable at any scroll position. Measure the header's rendered height (about 61px: `py-3.5` around a 32px logo plus its border) and use one value throughout. `<main>` drops `max-w-3xl` and stays `min-w-0 flex-1`.

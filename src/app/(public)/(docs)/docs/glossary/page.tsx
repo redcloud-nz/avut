@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 // wants the Suspense below it. See docs/reviews/2026-09-12-suspense-boundaries.md §3.
 export default function GlossaryPage() {
     return (
-        <article>
+        <article className="max-w-3xl">
             <h1 className="mt-2 mb-4 text-3xl font-bold tracking-tight">Glossary</h1>
             <p className="text-muted-foreground mb-8 leading-7">
                 Definitions for the terms used across AVUT&apos;s documentation.
