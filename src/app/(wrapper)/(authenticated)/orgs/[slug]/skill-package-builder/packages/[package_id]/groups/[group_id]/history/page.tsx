@@ -1,0 +1,66 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Paths: /orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/history
+ */
+
+import { Metadata } from "next";
+
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackageBuilder_GroupHistory_Content } from "@/modules/skill-package-builder/components/group-history-content";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
+import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
+
+type Props =
+    PageProps<`/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/history`>;
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const { slug, group_id } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "skill-package-builder"))) return {};
+    const organization = await getOrganizationBySlug(slug);
+
+    const skillGroupId = SkillGroupId.schema.parse(group_id);
+    const skillGroup = await fetchQuery(
+        trpc.skillPackageBuilder.getGroup.queryOptions({
+            organizationId: organization.id,
+            skillGroupId,
+        }),
+    );
+
+    return { title: `${skillGroup.name} History ${TITLE_SEPARATOR} Skill Package Builder` };
+}
+
+export default async function SkillPackageBuilder_GroupHistory_Page(props: Props) {
+    const { slug, group_id } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "skill-package-builder"))) return null;
+    const organization = await getOrganizationBySlug(slug);
+
+    const skillGroupId = SkillGroupId.schema.parse(group_id);
+
+    prefetch(
+        trpc.skillPackageBuilder.getGroup.queryOptions({
+            organizationId: organization.id,
+            skillGroupId,
+        }),
+    );
+    // Same input as `ObjectHistory`'s client query (no `limit`), so the keys match.
+    prefetchInfinite(
+        trpc.history.listObjectHistory.infiniteQueryOptions(
+            {
+                organizationId: organization.id,
+                objectType: "SkillGroup",
+                objectId: skillGroupId,
+            },
+            { getNextPageParam: (page) => page.nextCursor ?? undefined },
+        ),
+    );
+
+    return (
+        <HydrateClient>
+            <SkillPackageBuilder_GroupHistory_Content skillGroupId={skillGroupId} />
+        </HydrateClient>
+    );
+}

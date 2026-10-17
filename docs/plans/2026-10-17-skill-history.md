@@ -140,7 +140,7 @@ _End of review group 2._
     - A move shows on both groups' pages, with from/to visible.
     - `npm run check` passes.
 
-- [ ] **7. Group and skill History pages, menu items, help card** `visual` `mechanical`
+- [x] **7. Group and skill History pages, menu items, help card** `visual` `mechanical` — feat(history): add group and skill History pages and menu items
   - **Files:**
     - `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/history/page.tsx` (new)
     - `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-package-builder/packages/[package_id]/skills/[skill_id]/history/page.tsx` (new)

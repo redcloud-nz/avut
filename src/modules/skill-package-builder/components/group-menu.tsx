@@ -4,11 +4,19 @@
  */
 "use client";
 
+import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 
@@ -24,6 +32,8 @@ interface SkillPackageBuilder_Group_MenuProps {
 export function SkillPackageBuilder_Group_Menu({
     skillGroup,
 }: SkillPackageBuilder_Group_MenuProps) {
+    const organization = useOrganization();
+
     const [action, setAction] = useQueryState(
         "action",
         parseAsStringLiteral(["delete", "archive", "restore", "recover"] as const),
@@ -73,7 +83,32 @@ export function SkillPackageBuilder_Group_Menu({
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="Groups" width="w-40" />
+            <EntityActionMenu
+                actions={actions}
+                category="Groups"
+                width="w-40"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild>
+                                <Link
+                                    href={route(
+                                        "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]/history",
+                                        {
+                                            slug: organization.slug,
+                                            package_id: skillGroup.skillPackageId,
+                                            group_id: skillGroup.id,
+                                        },
+                                    )}
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
+            />
 
             <SkillPackageBuilder_DeleteSkillGroup_Dialog
                 skillGroup={skillGroup}
