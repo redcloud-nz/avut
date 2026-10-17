@@ -164,18 +164,21 @@ export const skillCheckSessionsRouter = createTrpcRouter({
     /**
      * Create a new skill check session for the organization. The caller is assigned as the
      * session's sole assessor, so they must have a linked person record.
-     * @param name The name of the session.
-     * @param startsAt Optional start datetime for the session.
-     * @param endsAt Optional end datetime for the session.
-     * @param notes Optional notes for the session.
+     * @param skillCheckSessionId The ID for the new session.
+     * @param create.name The name of the session; blank gives `Session #<number>`.
+     * @param create.startsAt When the session starts, on a quarter hour.
+     * @param create.endsAt When it ends, on a quarter hour and after `startsAt`, or `null` for no
+     *   end.
+     * @param create.notes Notes for the session.
      * @returns The created skill check session, in `Draft` status.
-     * @throws TRPCError(BAD_REQUEST) if the caller has no linked person record.
+     * @throws TRPCError(BAD_REQUEST) if the caller has no linked person record, or the times are
+     *   off-quarter or out of order.
      */
     createSession: organizationProcedure({ skillCheckSession: ["create"] })
         .input(
             z.object({
                 skillCheckSessionId: SkillCheckSessionId.schema,
-                create: SkillCheckSession.modifiableSchema,
+                create: SkillCheckSession.inputSchema,
             }),
         )
         .output(
@@ -201,8 +204,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 organizationId,
                 name: create.name.trim() || `Session #${sessionNumber}`,
                 sessionNumber,
-                startsAt: new Date(create.date),
-                endsAt: new Date(create.date),
+                startsAt: new Date(create.startsAt),
+                endsAt: create.endsAt === null ? null : new Date(create.endsAt),
                 notes: create.notes,
                 status: "Draft",
                 assessors: { connect: [{ id: assessorPersonId }] },
@@ -805,7 +808,8 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * updates the result and notes of the caller's existing check on that key. The assessor is
      * the caller's linked person, derived server-side. Either way the check ends up `Draft`: an
      * update sends a `Pending` or `Exclude` check in a reopened session back for fresh review.
-     * Either way the check's `recordedAt` is now and its `checkedAt` the session's date.
+     * Either way the check's `recordedAt` is now and its `checkedAt` the session's `startsAt` (its
+     * `createdAt` if it has none stored).
      * Re-recording over a `Deleted` tombstone revives that row.
      * @returns The created or updated skill check.
      * @throws TRPCError(NOT_FOUND) if the session does not exist.
@@ -813,7 +817,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * is not part of the session.
      * @throws TRPCError(FORBIDDEN) if the caller is not an assigned assessor for the session.
      * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
-     * runs, or its date changed since it was read (so `checkedAt` would carry the old date).
+     * runs, or its start changed since it was read (so `checkedAt` would carry the old start).
      */
     // Recording a check within a session the caller assesses needs both halves: a session update
     // and `skillCheck: ["create"]` (the "records checks" grant). `skillCheck` has no `"update"`
@@ -850,14 +854,16 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 sessionId: skillCheckSessionId,
                 skillId,
             };
-            const stamps = { checkedAt: new Date(session.date), recordedAt: new Date() };
+            // `session.startsAt` falls back to `createdAt` on a row with no stored start, so the
+            // lock below compares the raw column instead.
+            const stamps = { checkedAt: new Date(session.startsAt), recordedAt: new Date() };
             const [, check] = await ctx.prisma
                 .$transaction([
-                    // Serializes with `approveSession` and `updateSession`'s date change, and
-                    // refuses once the date `checkedAt` copies has moved; see
+                    // Serializes with `approveSession` and `updateSession`'s start change, and
+                    // refuses once the start `checkedAt` copies has moved; see
                     // `SkillChecks.lockUnapprovedSession`.
                     SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId, {
-                        expectedDate: stamps.checkedAt,
+                        expectedStartsAt: session.storedStartsAt,
                     }),
                     // Upsert on the unique key, so a double tap can't race two creates.
                     ctx.prisma.skillCheck.upsert({
@@ -910,85 +916,106 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Update a skill check session's name, date and notes. The name and notes stay editable while
-     * the session is approved; the date is locked while approved, so approved competency dates only
-     * move through a reopen, which goes back through review.
+     * Update a skill check session's name, start, end and notes. An approved session is
+     * read-only, even for a no-op update: changing it means reopening it, which goes back through
+     * review.
      *
-     * A date change re-stamps `checkedAt` on every check in the session, tombstones included (so a
-     * revived tombstone doesn't carry the old date), and leaves `recordedAt` alone. It needs no log
-     * entry of its own: the session's Update entry records the date change. Its transaction opens
-     * with `SkillChecks.lockUnapprovedSession`, so an approval landing after the pre-check refuses
-     * it rather than moving an approved session's dates.
+     * Every write runs in one transaction that opens with `SkillChecks.lockUnapprovedSession`, so
+     * an approval landing after the pre-check refuses it rather than editing an approved session.
+     * A `startsAt` change (a time-only one included) also re-stamps `checkedAt` on every check in
+     * the session, tombstones included (so a revived tombstone doesn't carry the old start), and
+     * leaves `recordedAt` alone. An `endsAt`-only change doesn't. The re-stamp needs no log entry
+     * of its own: the session's Update entry records the start change.
+     *
+     * The start is compared against the stored column, not the parsed session (which shows
+     * `createdAt` for a row with none), so the first save of a row with no stored start writes it
+     * and re-stamps its checks.
      * @param skillCheckSessionId The ID of the skill check session to update.
-     * @param update The fields to update on the skill check session.
-     * @returns The updated skill check session, and whether its date (and so its checks'
+     * @param update The fields to update on the skill check session; `endsAt: null` for no end.
+     * @returns The updated skill check session, and whether its start (and so its checks'
      *   `checkedAt`) changed.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
-     * @throws TRPCError(CONFLICT) if the date changes while the session is approved.
+     * @throws TRPCError(BAD_REQUEST) if the times are off-quarter or out of order.
+     * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
+     * runs, or another save moved its start since this one read it.
      */
     updateSession: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
             z.object({
                 skillCheckSessionId: SkillCheckSessionId.schema,
-                update: SkillCheckSession.modifiableSchema,
+                update: SkillCheckSession.inputSchema,
             }),
         )
-        .output(z.object({ updated: SkillCheckSession.schema, dateChanged: z.boolean() }))
+        .output(z.object({ updated: SkillCheckSession.schema, startChanged: z.boolean() }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
-            const existing = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+            const record = await SkillChecks.requireSessionRecordById(ctx, skillCheckSessionId);
+            const existing = SkillCheckSession.fromRecord(record);
+            SkillChecks.assertSessionUnlocked(existing);
 
-            const changes = diffObject(SkillCheckSession.modifiableSchema.parse(existing), update);
+            const startsAt = new Date(update.startsAt);
+            const endsAt = update.endsAt === null ? null : new Date(update.endsAt);
 
-            if (changes.length == 0) return { updated: existing, dateChanged: false }; // No changes
+            // Diffed against the raw stored start, not the parsed session's (which falls back to
+            // `createdAt`), so the first save of a row with none logs `startsAt: null → value`.
+            // Both instants are re-serialised, so `…:00Z` and `…:00.000Z` don't diff as a change.
+            const changes = diffObject(
+                {
+                    ...SkillCheckSession.modifiableSchema.parse(existing),
+                    startsAt: record.startsAt?.toISOString() ?? null,
+                },
+                {
+                    ...update,
+                    startsAt: startsAt.toISOString(),
+                    endsAt: endsAt?.toISOString() ?? null,
+                },
+            );
 
-            const date = new Date(update.date);
-            const dateChanged = new Date(existing.date).getTime() !== date.getTime();
-            if (dateChanged) SkillChecks.assertSessionUnlocked(existing);
+            const startChanged = record.startsAt?.getTime() !== startsAt.getTime();
 
-            // Thunks, so each branch builds its statements in transaction order.
-            const updateSessionRow = () =>
-                ctx.prisma.skillCheckSession.update({
-                    where: {
-                        id: skillCheckSessionId,
-                        organizationId,
-                    },
-                    include: {},
-                    data: {
-                        name: update.name,
-                        startsAt: date,
-                        endsAt: date,
-                        notes: update.notes,
-                    },
-                });
-            const logEntry = () =>
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "SkillCheckSession",
-                    objectId: skillCheckSessionId,
-                    changes,
-                });
-
-            if (!dateChanged) {
-                const [updated] = await ctx.prisma.$transaction([updateSessionRow(), logEntry()]);
-                return { updated: SkillCheckSession.fromRecord(updated), dateChanged };
-            }
+            if (changes.length == 0) return { updated: existing, startChanged };
 
             const [, updated] = await ctx.prisma
                 .$transaction([
                     // Serializes with `approveSession` and with `setSessionSkillCheck`, whose lock
-                    // also checks the date; see `SkillChecks.lockUnapprovedSession`. Once it has
-                    // matched, it holds the session row, so `updateSessionRow` can't miss.
-                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
-                    updateSessionRow(),
-                    ctx.prisma.skillCheck.updateMany({
-                        where: { organizationId, sessionId: skillCheckSessionId },
-                        data: { checkedAt: date },
+                    // also checks the start; see `SkillChecks.lockUnapprovedSession`. Checks the
+                    // start too: `startChanged` came from the read above, so an overlapping save
+                    // that moved it must refuse this one rather than leave the checks stamped with
+                    // a start the session no longer has. Once it has matched, it holds the session
+                    // row, so the update below can't miss.
+                    SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId, {
+                        expectedStartsAt: record.startsAt,
                     }),
-                    logEntry(),
+                    ctx.prisma.skillCheckSession.update({
+                        where: {
+                            id: skillCheckSessionId,
+                            organizationId,
+                        },
+                        include: {},
+                        data: {
+                            name: update.name,
+                            startsAt,
+                            endsAt,
+                            notes: update.notes,
+                        },
+                    }),
+                    ...(startChanged
+                        ? [
+                              ctx.prisma.skillCheck.updateMany({
+                                  where: { organizationId, sessionId: skillCheckSessionId },
+                                  data: { checkedAt: startsAt },
+                              }),
+                          ]
+                        : []),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillCheckSession",
+                        objectId: skillCheckSessionId,
+                        changes,
+                    }),
                 ])
-                .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
+                .catch(SkillChecks.rethrowSessionChanged(skillCheckSessionId));
 
-            return { updated: SkillCheckSession.fromRecord(updated), dateChanged };
+            return { updated: SkillCheckSession.fromRecord(updated), startChanged };
         }),
 
     /**

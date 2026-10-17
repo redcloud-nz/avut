@@ -26,6 +26,18 @@ export async function requireSessionById(
     ctx: OrgServiceContext,
     sessionId: SkillCheckSessionId,
 ): Promise<SkillCheckSession> {
+    return SkillCheckSession.fromRecord(await requireSessionRecordById(ctx, sessionId));
+}
+
+/**
+ * `requireSessionById`'s stored row, unparsed, for a caller that compares against a raw column:
+ * `startsAt` may be null, which the parsed session hides behind `createdAt`.
+ * @throws NotFoundError if the session does not exist or does not belong to the organization.
+ */
+export async function requireSessionRecordById(
+    ctx: OrgServiceContext,
+    sessionId: SkillCheckSessionId,
+) {
     const session = await ctx.prisma.skillCheckSession.findUnique({
         where: {
             id: sessionId,
@@ -37,15 +49,15 @@ export async function requireSessionById(
         throw new NotFoundError(`SkillCheckSession(id=${sessionId}) not found.`);
     }
 
-    return SkillCheckSession.fromRecord(session);
+    return session;
 }
 
 /**
  * The single lock rule for a skill check session: an approved session (`status === "Include"`)
  * accepts no writes to its checks or its configuration (assessees, skills, assessors) until it is
- * reopened. Every procedure that writes either calls this after loading the session. Its name
- * and notes stay editable, and it can still be deleted. Its date is locked too: `updateSession`
- * calls this when the date changes, since that re-stamps the checks' `checkedAt`.
+ * reopened. Every procedure that writes either calls this after loading the session, and so does
+ * `updateSession`: an approved session's name, times and notes are locked too. It can still be
+ * deleted.
  *
  * Check-then-write, so on its own it can't stop a write racing an approval: a write whose check
  * passed just before an approval committed would still land, and could overwrite the approval's
@@ -81,23 +93,25 @@ export function sessionLockedError(sessionId: SkillCheckSessionId): ConflictErro
  * the Approve dialog is open makes that approval refuse. That's intended: the approver reviews the
  * change and approves again.
  *
- * `expectedDate` also requires the session's date to still be the one the caller read, for a write
- * that copies it (`setSessionSkillCheck`'s `checkedAt`). `updateSession` re-stamps the checks under
- * this same row lock when the date changes, so without it a check written just after a date change
- * committed would keep the old date for good. With it, P2025 means "approved, or the date moved":
- * map it with `rethrowSessionChanged`, not `rethrowSessionLocked`.
+ * `expectedStartsAt` also requires the session's stored `startsAt` to still be the one the caller
+ * read, for a write that copies it (`setSessionSkillCheck`'s `checkedAt`). `updateSession`
+ * re-stamps the checks under this same row lock when `startsAt` changes, so without it a check
+ * written just after a start change committed would keep the old start for good. Pass the **raw**
+ * stored value, not the parsed session's (which falls back to `createdAt`): `null` matches a row
+ * whose `startsAt` is still null. With it, P2025 means "approved, or the start moved": map it with
+ * `rethrowSessionChanged`, not `rethrowSessionLocked`.
  */
 export function lockUnapprovedSession(
     ctx: OrgServiceContext,
     sessionId: SkillCheckSessionId,
-    { expectedDate }: { expectedDate?: Date } = {},
+    { expectedStartsAt }: { expectedStartsAt?: Date | null } = {},
 ) {
     return ctx.prisma.skillCheckSession.update({
         where: {
             id: sessionId,
             organizationId: ctx.organizationId,
             status: { not: "Include" },
-            ...(expectedDate ? { startsAt: expectedDate } : {}),
+            ...(expectedStartsAt !== undefined ? { startsAt: expectedStartsAt } : {}),
         },
         data: { updatedAt: new Date() },
     });
@@ -117,9 +131,9 @@ export function rethrowSessionLocked(sessionId: SkillCheckSessionId) {
 }
 
 /**
- * `rethrowSessionLocked` for a transaction opened by `lockUnapprovedSession` with `expectedDate`,
- * whose P2025 means the session was approved or its date changed since the caller read it. The
- * same proviso on later statements applies.
+ * `rethrowSessionLocked` for a transaction opened by `lockUnapprovedSession` with
+ * `expectedStartsAt`, whose P2025 means the session was approved or its start changed since the
+ * caller read it. The same proviso on later statements applies.
  */
 export function rethrowSessionChanged(sessionId: SkillCheckSessionId) {
     return (error: unknown): never => {
@@ -128,7 +142,7 @@ export function rethrowSessionChanged(sessionId: SkillCheckSessionId) {
     };
 }
 
-/** The error `rethrowSessionChanged` throws: the session was approved or its date changed. */
+/** The error `rethrowSessionChanged` throws: the session was approved or its start changed. */
 export function sessionChangedError(sessionId: SkillCheckSessionId): ConflictError {
     return new ConflictError(
         `SkillCheckSession(id=${sessionId}) changed since you opened it. Reload and try again.`,
@@ -138,10 +152,13 @@ export function sessionChangedError(sessionId: SkillCheckSessionId): ConflictErr
 /**
  * A skill check session together with the ids of its assessees and skills, as loaded by
  * `requireSessionAssessor` — enough to validate a single check's target without another query.
+ * `storedStartsAt` is the raw `startsAt` column (null on a row that never had one, where the
+ * parsed `startsAt` falls back to `createdAt`), for `lockUnapprovedSession`'s `expectedStartsAt`.
  */
 export type SessionWithMembers = SkillCheckSession & {
     assesseeIds: PersonId[];
     skillIds: SkillId[];
+    storedStartsAt: Date | null;
 };
 
 /**
@@ -195,6 +212,7 @@ export async function requireSessionAssessor(
             ...SkillCheckSession.fromRecord(session),
             assesseeIds: session.assessees.map(({ id }) => PersonId.schema.parse(id)),
             skillIds: session.skills.map(({ id }) => SkillId.schema.parse(id)),
+            storedStartsAt: session.startsAt,
         },
         assessorId,
     };

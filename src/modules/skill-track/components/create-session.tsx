@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
-import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -36,8 +35,15 @@ import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { trpc } from "@/trpc/client";
+
+import {
+    defaultSessionWhen,
+    parseSessionDialog,
+    sessionDialogSchema,
+    SkillTrack_SessionWhenPicker,
+} from "./session-when-picker";
 
 export function SkillTrack_CreateSession_Dialog() {
     const organization = useOrganization();
@@ -67,13 +73,14 @@ export function SkillTrack_CreateSession_Dialog() {
         ? `Session #${nextSessionNumberQuery.data.nextSessionNumber}`
         : "Session Name";
 
+    const orgZone = organization.settings.general.timeZone;
+
+    // A function, so each open starts on today rather than the day the page loaded.
+    const formValues = () => ({ name: "", notes: "", when: defaultSessionWhen(orgZone) });
+
     const form = useForm({
-        resolver: zodResolver(SkillCheckSession.modifiableSchema),
-        defaultValues: {
-            name: "",
-            date: new Date().toISOString(),
-            notes: "",
-        },
+        resolver: zodResolver(sessionDialogSchema),
+        defaultValues: formValues(),
     });
 
     const mutation = useMutation(
@@ -104,7 +111,7 @@ export function SkillTrack_CreateSession_Dialog() {
 
     useEffect(() => {
         if (dialogOpen) {
-            form.reset();
+            form.reset(formValues());
             mutation.reset();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
@@ -130,12 +137,18 @@ export function SkillTrack_CreateSession_Dialog() {
                     <form
                         id="new-session-form"
                         onSubmit={form.handleSubmit(
-                            (formData) =>
+                            (values) => {
+                                const parsed = parseSessionDialog(values, orgZone);
+                                if (!parsed.success) {
+                                    form.setError("when", { message: parsed.message });
+                                    return;
+                                }
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: SkillCheckSessionId.create(),
-                                    create: formData,
-                                }),
+                                    create: parsed.data,
+                                });
+                            },
                             (errors) => {
                                 console.error("Form validation errors:", errors);
                             },
@@ -156,14 +169,16 @@ export function SkillTrack_CreateSession_Dialog() {
                                 )}
                             />
                             <Controller
-                                name="date"
+                                name="when"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel>Date</FieldLabel>
-                                        <DatePicker
+                                        <FieldLabel>When</FieldLabel>
+                                        <SkillTrack_SessionWhenPicker
                                             value={field.value}
-                                            onValueChange={(newValue) => field.onChange(newValue)}
+                                            onChange={field.onChange}
+                                            orgZone={orgZone}
+                                            invalid={fieldState.invalid}
                                         />
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />

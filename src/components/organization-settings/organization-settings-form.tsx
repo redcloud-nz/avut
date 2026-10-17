@@ -12,6 +12,7 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { D4HIntegration_SettingsCard } from "./d4h-integration-settings";
 import { EmailIntegration_SettingsCard } from "./email-integration-settings";
 import { Feature_SettingsCard } from "./feature-settings-card";
+import { General_SettingsCard } from "./general-settings";
 import { Personnel_SettingsCard } from "./personnel-settings";
 import { RubbishBin_SettingsCard } from "./rubbish-bin-settings";
 import { SkillTrackModule_SettingsCard } from "./skill-track-module-settings";
@@ -45,7 +46,16 @@ export function OrganizationSettingsForm({
 }) {
     return (
         <>
-            <div id="personnel" className="space-y-4 scroll-mt-4">
+            <div id="general" className="space-y-4 scroll-mt-4">
+                <h3 className="text-lg font-semibold tracking-tight">General</h3>
+                <General_SettingsCard
+                    organizationId={organizationId}
+                    settings={settings}
+                    canEdit={canEdit}
+                />
+            </div>
+
+            <div id="personnel" className="space-y-4 pt-6 scroll-mt-4">
                 <h3 className="text-lg font-semibold tracking-tight">Personnel</h3>
                 <Personnel_SettingsCard
                     organizationId={organizationId}
@@ -147,6 +157,7 @@ export function getOrganizationSettingsFormSections(
     moduleFlags: ModuleFlagState,
 ): SaratogaContentsItem[] {
     return [
+        { id: "general", label: "General" },
         { id: "personnel", label: "Personnel" },
         { id: "rubbish-bin", label: "Rubbish Bin" },
         { id: "integrations", label: "Integrations" },
