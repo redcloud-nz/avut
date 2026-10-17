@@ -169,7 +169,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                         <DataItem inline>
                                             <DataItemTitle>Date</DataItemTitle>
                                             <DataItemValue>
-                                                {formatDate(session.date)}
+                                                {formatDate(session.startsAt)}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem>

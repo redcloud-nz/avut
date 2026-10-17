@@ -372,7 +372,8 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
         organizationId: T.org,
         sessionNumber: 1,
         name: "Session 1",
-        date: new Date(0).toISOString(),
+        startsAt: new Date(0).toISOString(),
+        endsAt: null,
         notes: "",
         status: "Draft",
         createdAt: new Date(0).toISOString(),
@@ -500,22 +501,27 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
         const vars = {
             organizationId: T.org,
             skillCheckSessionId: T.session,
-            update: { name: updated.name, date: updated.date, notes: updated.notes },
+            update: {
+                name: updated.name,
+                startsAt: updated.startsAt,
+                endsAt: updated.endsAt,
+                notes: updated.notes,
+            },
         };
 
-        it("invalidates only the sessions list when the date is unchanged", () => {
+        it("invalidates only the sessions list when the start is unchanged", () => {
             const effects = skillCheckSessionsEffects.updateSession(vars, {
                 updated,
-                dateChanged: false,
+                startChanged: false,
             });
 
             expect(invalidatedKeys(effects)).toEqual(["sessions"]);
         });
 
-        it("also invalidates the checkedAt readers when the date changed", () => {
+        it("also invalidates the checkedAt readers when the start changed", () => {
             const effects = skillCheckSessionsEffects.updateSession(vars, {
                 updated,
-                dateChanged: true,
+                startChanged: true,
             });
 
             expect(invalidatedKeys(effects)).toEqual([
@@ -527,9 +533,10 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             ]);
         });
 
-        it("re-stamps checkedAt on the session cache's rows only when the date changed", () => {
-            const newDate = new Date(86_400_000).toISOString();
-            const moved = { ...updated, date: newDate };
+        it("re-stamps checkedAt on the session cache's rows only when the start changed", () => {
+            // A time-only move: the server re-stamps on any `startsAt` change.
+            const newStart = new Date(15 * 60_000).toISOString();
+            const moved = { ...updated, startsAt: newStart };
             const row: SessionCheck = {
                 id: SkillCheckId.create(),
                 organizationId: T.org,
@@ -551,17 +558,17 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
 
             const effects = skillCheckSessionsEffects.updateSession(vars, {
                 updated: moved,
-                dateChanged: true,
+                startChanged: true,
             });
             expect(applySessionChecksWrite(effects, old)).toEqual({
                 ...old,
-                checks: [{ ...row, checkedAt: newDate }],
+                checks: [{ ...row, checkedAt: newStart }],
             });
             expect(applySessionChecksWrite(effects, undefined)).toBeUndefined();
 
             const unchanged = skillCheckSessionsEffects.updateSession(vars, {
                 updated,
-                dateChanged: false,
+                startChanged: false,
             });
             expect(
                 writesTo(

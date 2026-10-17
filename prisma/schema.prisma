@@ -626,7 +626,14 @@ model SkillCheckSession {
   skills         Skill[]          @relation("skill_check_session_skills")
   name           String
   sessionNumber  Int
+  /// When the session starts, read in the org's time zone (`OrganizationSettings.general.timeZone`):
+  /// local midnight on the first day for an all-day session, the start time for a timed one. All
+  /// day is derived, not stored: both ends on local midnight and `endsAt > startsAt`. Null only on
+  /// old rows (the API shows `createdAt`); every write sets it. Session checks copy it as `checkedAt`.
   startsAt       DateTime?
+  /// When the session ends: local midnight N calendar days after `startsAt` for an N-day all-day
+  /// session, the end time for a timed one (under 24h, may cross midnight), or null for a timed
+  /// session with no end. Older rows store `endsAt = startsAt` for "no end", which reads the same.
   endsAt         DateTime?
   notes          String?
   status         SkillCheckStatus @default(Draft)
@@ -660,8 +667,9 @@ model SkillCheck {
   notes          String
   status         SkillCheckStatus   @default(Draft)
   /// When the assessment happened. Competency expiry, the competency matrix and the reports use it.
-  /// A session check takes the session's date (set by `setSessionSkillCheck`, re-stamped when the
-  /// session's date changes); a standalone check takes the time it was created. No default, so
+  /// A session check takes the session's `startsAt` (set by `setSessionSkillCheck`, re-stamped when
+  /// the session's `startsAt` changes, or its `createdAt` while it has none); a standalone check
+  /// takes the time it was created. No default, so
   /// every writer has to set it.
   checkedAt      DateTime
   /// When an assessor last recorded or removed the check: the session checks sync cursor and the

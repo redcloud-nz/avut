@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import { snapToQuarter } from "@/lib/session-timing";
 import { trpc } from "@/trpc/client";
 
 export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
@@ -43,13 +44,18 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
+    // A legacy session can start off the quarter hour, which `inputSchema` refuses: seed it
+    // snapped, so saving it as shown works.
+    const formValues = () => ({
+        name: session.name,
+        startsAt: snapToQuarter(session.startsAt).toISOString(),
+        endsAt: null,
+        notes: session.notes,
+    });
+
     const form = useForm({
-        resolver: zodResolver(SkillCheckSession.modifiableSchema),
-        defaultValues: {
-            name: session.name,
-            date: session.date,
-            notes: session.notes,
-        },
+        resolver: zodResolver(SkillCheckSession.inputSchema),
+        defaultValues: formValues(),
     });
 
     const mutation = useMutation(
@@ -81,11 +87,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
 
     useEffect(() => {
         if (dialogOpen) {
-            form.reset({
-                name: session.name,
-                date: session.date,
-                notes: session.notes,
-            });
+            form.reset(formValues());
             mutation.reset();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
@@ -133,7 +135,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                                 )}
                             />
                             <Controller
-                                name="date"
+                                name="startsAt"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>

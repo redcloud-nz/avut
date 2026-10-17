@@ -94,7 +94,7 @@ A skill check session gets a real start and end, defined in an **org time zone**
     - An approval racing the update is refused (P2025 → locked).
     - `npm run check` passes.
 
-- [ ] **Task 4: Session API on `startsAt`/`endsAt`**
+- [x] **Task 4: Session API on `startsAt`/`endsAt`** — feat(skill-track): session API on startsAt/endsAt
   - **Files:**
     - `src/lib/schemas/skill-check-session.ts`
     - `src/trpc/routers/skill-check-sessions-router.ts`
@@ -218,3 +218,8 @@ Sessions take a start and an optional end, or run all day across one or more day
 ## Parked
 
 - **Lost-race tests run on an already-approved session.** In `skill-check-sessions-router.test.ts`, the `guarded` loop of lost-race tests runs after the `approveSession` race test, which leaves `racedSession` at `Include` (prisma-mock runs the rest of a failed transaction). They still assert that the lock was called, but the session isn't Draft, so the pre-check may be what refuses. Give them their own Draft session, as Task 3 did for `updateSession` (`racedUpdate`).
+
+## Review notes
+
+- **Task 4, `updateSession` audit diff for a session with no stored start.** The diff currently runs against the parsed session, whose `startsAt` falls back to `createdAt`. As a result, a first save can log `prev = createdAt` instead of `null`, or log an `Update` with `changes: []` while the checks are re-stamped. Diff against the raw stored start instead: `{ ...SkillCheckSession.modifiableSchema.parse(existing), startsAt: record.startsAt?.toISOString() ?? null }`. Then drop the `!startChanged` special case from the early return, and assert the log entry's `startsAt null → value` change in the "writes the start of a session with none stored" test.
+- **Task 2, `sessionInstants` doc comment.** In zones where DST starts at midnight (America/Santiago, Asia/Beirut), local midnight doesn't exist, so an all-day session there reads as timed. Note this in the comment. NZ isn't affected.

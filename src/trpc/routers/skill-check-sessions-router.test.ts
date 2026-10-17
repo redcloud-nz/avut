@@ -374,6 +374,39 @@ describe("skillCheckSessions.setSessionSkillCheck + deleteSessionSkillCheck", ()
             }
         });
 
+        it("records a check on a session with no stored startsAt, stamping checkedAt = createdAt", async () => {
+            const sessionId = SkillCheckSessionId.create();
+            const createdAt = new Date("2026-02-01T03:04:05.678Z");
+            await db.skillCheckSession.create({
+                data: {
+                    id: sessionId,
+                    organizationId: T.org,
+                    name: "No start",
+                    sessionNumber: 3,
+                    notes: "",
+                    createdAt,
+                    assessors: { connect: [{ id: T.assessorPerson }] },
+                    assessees: { connect: [{ id: T.assessee }] },
+                    skills: { connect: [{ id: T.skill1 }] },
+                },
+            });
+            const updateSpy = vi.spyOn(db.skillCheckSession, "update");
+            try {
+                const created = await makeCaller(T.assessorUser).setSessionSkillCheck({
+                    ...target,
+                    skillCheckSessionId: sessionId,
+                    skillId: T.skill1,
+                    result: "Pass",
+                    notes: "",
+                });
+                expect(created.checkedAt).toBe(createdAt.toISOString());
+                // The lock compares the raw column, not the `createdAt` fallback.
+                expect(updateSpy.mock.calls[0][0].where).toMatchObject({ startsAt: null });
+            } finally {
+                updateSpy.mockRestore();
+            }
+        });
+
         it("refuses with CONFLICT when the session's date moved after it was read", async () => {
             // Fake a date change committing between the up-front read and the write: the read
             // sees the session's old date, so the lock's `startsAt` condition misses.
@@ -585,6 +618,7 @@ describe("skillCheckSessions.createSession", () => {
         unlinkedUser: UserId.create(),
         linkedPerson: PersonId.create(),
     };
+    const START = "2026-03-14T06:15:00.000Z";
 
     const db = createMockPrisma();
 
@@ -632,7 +666,8 @@ describe("skillCheckSessions.createSession", () => {
             skillCheckSessionId: SkillCheckSessionId.create(),
             create: {
                 name: "Session A",
-                date: new Date().toISOString(),
+                startsAt: START,
+                endsAt: null,
                 notes: "",
             },
         });
@@ -641,6 +676,55 @@ describe("skillCheckSessions.createSession", () => {
         expect(created.status).toBe("Draft");
     });
 
+    it("stores a null endsAt as null", async () => {
+        const id = SkillCheckSessionId.create();
+        const { created } = await makeCaller(T.linkedUser).createSession({
+            organizationId: T.org,
+            skillCheckSessionId: id,
+            create: { name: "No end", startsAt: START, endsAt: null, notes: "" },
+        });
+
+        expect(created).toMatchObject({ startsAt: START, endsAt: null });
+        const row = await db.skillCheckSession.findUniqueOrThrow({ where: { id } });
+        expect(row.startsAt?.toISOString()).toBe(START);
+        expect(row.endsAt).toBeNull();
+    });
+
+    it("stores a non-null endsAt", async () => {
+        const id = SkillCheckSessionId.create();
+        const end = "2026-03-14T08:45:00.000Z";
+        const { created } = await makeCaller(T.linkedUser).createSession({
+            organizationId: T.org,
+            skillCheckSessionId: id,
+            create: { name: "With end", startsAt: START, endsAt: end, notes: "" },
+        });
+
+        expect(created).toMatchObject({ startsAt: START, endsAt: end });
+        const row = await db.skillCheckSession.findUniqueOrThrow({ where: { id } });
+        expect(row.endsAt?.toISOString()).toBe(end);
+    });
+
+    const invalidTimes = {
+        "an off-quarter start": { startsAt: "2026-03-14T06:20:00.000Z", endsAt: null },
+        "a start with stray seconds": { startsAt: "2026-03-14T06:15:01.000Z", endsAt: null },
+        "an off-quarter end": { startsAt: START, endsAt: "2026-03-14T07:05:00.000Z" },
+        "an end equal to the start": { startsAt: START, endsAt: START },
+        "an end before the start": { startsAt: START, endsAt: "2026-03-14T06:00:00.000Z" },
+    };
+    for (const [label, times] of Object.entries(invalidTimes)) {
+        it(`refuses ${label} with BAD_REQUEST`, async () => {
+            const id = SkillCheckSessionId.create();
+            await expect(
+                makeCaller(T.linkedUser).createSession({
+                    organizationId: T.org,
+                    skillCheckSessionId: id,
+                    create: { name: "Bad", ...times, notes: "" },
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            expect(await db.skillCheckSession.findUnique({ where: { id } })).toBeNull();
+        });
+    }
+
     it("throws BAD_REQUEST when the caller has no linked person record", async () => {
         await expect(
             makeCaller(T.unlinkedUser).createSession({
@@ -648,7 +732,8 @@ describe("skillCheckSessions.createSession", () => {
                 skillCheckSessionId: SkillCheckSessionId.create(),
                 create: {
                     name: "Session B",
-                    date: new Date().toISOString(),
+                    startsAt: START,
+                    endsAt: null,
                     notes: "",
                 },
             }),
@@ -661,7 +746,8 @@ describe("skillCheckSessions.createSession", () => {
             skillCheckSessionId: SkillCheckSessionId.create(),
             create: {
                 name: "Session C",
-                date: new Date().toISOString(),
+                startsAt: START,
+                endsAt: null,
                 notes: "",
             },
         });
@@ -670,7 +756,8 @@ describe("skillCheckSessions.createSession", () => {
             skillCheckSessionId: SkillCheckSessionId.create(),
             create: {
                 name: "Session D",
-                date: new Date().toISOString(),
+                startsAt: START,
+                endsAt: null,
                 notes: "",
             },
         });
@@ -686,7 +773,7 @@ describe("skillCheckSessions.createSession", () => {
         const { created } = await makeCaller(T.linkedUser).createSession({
             organizationId: T.org,
             skillCheckSessionId: SkillCheckSessionId.create(),
-            create: { name: "", date: new Date().toISOString(), notes: "" },
+            create: { name: "", startsAt: START, endsAt: null, notes: "" },
         });
 
         expect(created.name).toBe(`Session #${nextSessionNumber}`);
@@ -714,7 +801,8 @@ describe("skillCheckSessions.createSession", () => {
             skillCheckSessionId: SkillCheckSessionId.create(),
             create: {
                 name: "Session E",
-                date: new Date().toISOString(),
+                startsAt: START,
+                endsAt: null,
                 notes: "",
             },
         });
@@ -1400,7 +1488,8 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                     skillCheckSessionId: T.approvedSession,
                     update: {
                         name: "Renamed",
-                        date: existing.startsAt!.toISOString(),
+                        startsAt: existing.startsAt!.toISOString(),
+                        endsAt: null,
                         notes: "After",
                     },
                 }),
@@ -1423,21 +1512,23 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                     skillCheckSessionId: T.approvedSession,
                     update: {
                         name: existing.name,
-                        date: existing.startsAt!.toISOString(),
+                        startsAt: existing.startsAt!.toISOString(),
+                        endsAt: null,
                         notes: existing.notes ?? "",
                     },
                 }),
             ).rejects.toMatchObject({ code: "CONFLICT" });
         });
 
-        it("refuses a date change on an approved session with CONFLICT", async () => {
+        it("refuses a start change on an approved session with CONFLICT", async () => {
             await expect(
                 makeCaller().updateSession({
                     organizationId: T.org,
                     skillCheckSessionId: T.approvedSession,
                     update: {
                         name: "Renamed",
-                        date: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                        startsAt: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                        endsAt: null,
                         notes: "After",
                     },
                 }),
@@ -1447,12 +1538,14 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
         const racedUpdates = {
             "a name-only edit": () => ({
                 name: "Renamed",
-                date: SESSION_DATE.toISOString(),
+                startsAt: SESSION_DATE.toISOString(),
+                endsAt: null,
                 notes: "",
             }),
-            "a date change": () => ({
+            "a start change": () => ({
                 name: "Session 5",
-                date: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                startsAt: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                endsAt: null,
                 notes: "",
             }),
         };
@@ -1681,6 +1774,8 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
     //   session      → Draft, dated SESSION_DATE; liveCheck (Pending) + deadCheck (Deleted),
     //                  both recorded RECORDED_AT
     //   otherSession → Draft, dated SESSION_DATE; otherCheck, which no edit of session touches
+    //   legacySession → Draft, off-quarter LEGACY_START with endsAt === startsAt; legacyCheck
+    //   nullSession  → Draft, startsAt/endsAt null, created NULL_CREATED_AT; nullCheck
     const T = {
         org: OrganizationId.create(),
         user: UserId.create(),
@@ -1694,7 +1789,13 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
         deadCheck: SkillCheckId.create(),
         otherSession: SkillCheckSessionId.create(),
         otherCheck: SkillCheckId.create(),
+        legacySession: SkillCheckSessionId.create(),
+        legacyCheck: SkillCheckId.create(),
+        nullSession: SkillCheckSessionId.create(),
+        nullCheck: SkillCheckId.create(),
     };
+    const LEGACY_START = new Date("2026-03-14T11:35:20.203Z");
+    const NULL_CREATED_AT = new Date("2026-03-10T21:00:00.000Z");
     const SESSION_DATE = new Date("2026-03-14T00:00:00.000Z");
     const NEW_DATE = new Date("2026-04-02T00:00:00.000Z");
     const RECORDED_AT = new Date("2026-03-14T09:30:00.000Z");
@@ -1782,6 +1883,50 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
                 },
             });
         }
+
+        await db.skillCheckSession.create({
+            data: {
+                id: T.legacySession,
+                organizationId: T.org,
+                name: "Legacy",
+                sessionNumber: 3,
+                status: "Draft",
+                startsAt: LEGACY_START,
+                endsAt: LEGACY_START,
+                notes: "",
+            },
+        });
+        await db.skillCheckSession.create({
+            data: {
+                id: T.nullSession,
+                organizationId: T.org,
+                name: "No start",
+                sessionNumber: 4,
+                status: "Draft",
+                notes: "",
+                createdAt: NULL_CREATED_AT,
+            },
+        });
+        for (const [id, sessionId, checkedAt] of [
+            [T.legacyCheck, T.legacySession, LEGACY_START],
+            [T.nullCheck, T.nullSession, NULL_CREATED_AT],
+        ] as const) {
+            await db.skillCheck.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    sessionId,
+                    assesseeId: T.person,
+                    assessorId: T.person,
+                    skillId: T.skillA,
+                    result: "Pass",
+                    notes: "",
+                    status: "Pending",
+                    checkedAt,
+                    recordedAt: RECORDED_AT,
+                },
+            });
+        }
     });
 
     function makeCaller() {
@@ -1796,7 +1941,9 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
 
     async function checkStamps() {
         const rows = await db.skillCheck.findMany({
-            where: { id: { in: [T.liveCheck, T.deadCheck, T.otherCheck] } },
+            where: {
+                id: { in: [T.liveCheck, T.deadCheck, T.otherCheck, T.legacyCheck, T.nullCheck] },
+            },
         });
         return Object.fromEntries(
             rows.map((row) => [
@@ -1809,14 +1956,23 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
         );
     }
 
+    // These run in order against `session`: each starts from where the last left it.
+    const minutesAfter = (date: Date, minutes: number) =>
+        new Date(date.getTime() + minutes * 60_000).toISOString();
+
     it("leaves checkedAt alone on a name-only edit", async () => {
-        const { dateChanged } = await makeCaller().updateSession({
+        const { startChanged } = await makeCaller().updateSession({
             organizationId: T.org,
             skillCheckSessionId: T.session,
-            update: { name: "Renamed", date: SESSION_DATE.toISOString(), notes: "" },
+            update: {
+                name: "Renamed",
+                startsAt: SESSION_DATE.toISOString(),
+                endsAt: null,
+                notes: "",
+            },
         });
 
-        expect(dateChanged).toBe(false);
+        expect(startChanged).toBe(false);
         const stamps = await checkStamps();
         for (const id of [T.liveCheck, T.deadCheck, T.otherCheck]) {
             expect(stamps[id]).toEqual({
@@ -1826,15 +1982,55 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
         }
     });
 
-    it("moves every check's checkedAt on a date edit, tombstones included, and no recordedAt", async () => {
-        const { updated, dateChanged } = await makeCaller().updateSession({
+    it("leaves checkedAt alone on an endsAt-only change", async () => {
+        const endsAt = minutesAfter(SESSION_DATE, 180);
+        const { updated, startChanged } = await makeCaller().updateSession({
             organizationId: T.org,
             skillCheckSessionId: T.session,
-            update: { name: "Renamed", date: NEW_DATE.toISOString(), notes: "" },
+            update: { name: "Renamed", startsAt: SESSION_DATE.toISOString(), endsAt, notes: "" },
         });
 
-        expect(dateChanged).toBe(true);
-        expect(updated.date).toBe(NEW_DATE.toISOString());
+        expect(startChanged).toBe(false);
+        expect(updated.endsAt).toBe(endsAt);
+        const stamps = await checkStamps();
+        for (const id of [T.liveCheck, T.deadCheck]) {
+            expect(stamps[id].checkedAt).toBe(SESSION_DATE.toISOString());
+        }
+    });
+
+    it("re-stamps checkedAt on a time-only start change", async () => {
+        const startsAt = minutesAfter(SESSION_DATE, 15);
+        const { updated, startChanged } = await makeCaller().updateSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            update: {
+                name: "Renamed",
+                startsAt,
+                endsAt: minutesAfter(SESSION_DATE, 180),
+                notes: "",
+            },
+        });
+
+        expect(startChanged).toBe(true);
+        expect(updated.startsAt).toBe(startsAt);
+        const stamps = await checkStamps();
+        for (const id of [T.liveCheck, T.deadCheck]) {
+            expect(stamps[id]).toEqual({
+                checkedAt: startsAt,
+                recordedAt: RECORDED_AT.toISOString(),
+            });
+        }
+    });
+
+    it("moves every check's checkedAt on a date edit, tombstones included, and no recordedAt", async () => {
+        const { updated, startChanged } = await makeCaller().updateSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.session,
+            update: { name: "Renamed", startsAt: NEW_DATE.toISOString(), endsAt: null, notes: "" },
+        });
+
+        expect(startChanged).toBe(true);
+        expect(updated).toMatchObject({ startsAt: NEW_DATE.toISOString(), endsAt: null });
         const stamps = await checkStamps();
         for (const id of [T.liveCheck, T.deadCheck]) {
             expect(stamps[id]).toEqual({
@@ -1846,6 +2042,79 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
             checkedAt: SESSION_DATE.toISOString(),
             recordedAt: RECORDED_AT.toISOString(),
         });
+    });
+
+    const invalidTimes = {
+        "an off-quarter start": { startsAt: minutesAfter(NEW_DATE, 7), endsAt: null },
+        "an off-quarter end": {
+            startsAt: NEW_DATE.toISOString(),
+            endsAt: minutesAfter(NEW_DATE, 50),
+        },
+        "an end equal to the start": {
+            startsAt: NEW_DATE.toISOString(),
+            endsAt: NEW_DATE.toISOString(),
+        },
+        "an end before the start": {
+            startsAt: NEW_DATE.toISOString(),
+            endsAt: minutesAfter(NEW_DATE, -15),
+        },
+    };
+    for (const [label, times] of Object.entries(invalidTimes)) {
+        it(`refuses ${label} with BAD_REQUEST and leaves the session alone`, async () => {
+            const before = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.session },
+            });
+            await expect(
+                makeCaller().updateSession({
+                    organizationId: T.org,
+                    skillCheckSessionId: T.session,
+                    update: { name: "Invalid", ...times, notes: "" },
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            const after = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.session },
+            });
+            expect(after).toEqual(before);
+        });
+    }
+
+    it("saves a legacy off-quarter session with a snapped start and a new name", async () => {
+        const snapped = "2026-03-14T11:30:00.000Z";
+        const { updated, startChanged } = await makeCaller().updateSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.legacySession,
+            update: { name: "Legacy renamed", startsAt: snapped, endsAt: null, notes: "" },
+        });
+
+        expect(startChanged).toBe(true);
+        expect(updated).toMatchObject({ name: "Legacy renamed", startsAt: snapped, endsAt: null });
+        const row = await db.skillCheckSession.findUniqueOrThrow({
+            where: { id: T.legacySession },
+        });
+        expect(row.startsAt?.toISOString()).toBe(snapped);
+        expect(row.endsAt).toBeNull();
+        expect((await checkStamps())[T.legacyCheck].checkedAt).toBe(snapped);
+    });
+
+    it("writes the start of a session with none stored, even when nothing else changed", async () => {
+        const { updated, startChanged } = await makeCaller().updateSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.nullSession,
+            update: {
+                name: "No start",
+                startsAt: NULL_CREATED_AT.toISOString(),
+                endsAt: null,
+                notes: "",
+            },
+        });
+
+        expect(startChanged).toBe(true);
+        expect(updated.startsAt).toBe(NULL_CREATED_AT.toISOString());
+        const row = await db.skillCheckSession.findUniqueOrThrow({
+            where: { id: T.nullSession },
+        });
+        expect(row.startsAt?.toISOString()).toBe(NULL_CREATED_AT.toISOString());
+        expect((await checkStamps())[T.nullCheck].checkedAt).toBe(NULL_CREATED_AT.toISOString());
     });
 });
 

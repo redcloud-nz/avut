@@ -5,6 +5,7 @@
 
 "use client";
 
+import { startOfDay } from "date-fns";
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect } from "react";
@@ -68,10 +69,11 @@ export function SkillTrack_CreateSession_Dialog() {
         : "Session Name";
 
     const form = useForm({
-        resolver: zodResolver(SkillCheckSession.modifiableSchema),
+        resolver: zodResolver(SkillCheckSession.inputSchema),
         defaultValues: {
             name: "",
-            date: new Date().toISOString(),
+            startsAt: startOfDay(new Date()).toISOString(),
+            endsAt: null,
             notes: "",
         },
     });
@@ -156,7 +158,7 @@ export function SkillTrack_CreateSession_Dialog() {
                                 )}
                             />
                             <Controller
-                                name="date"
+                                name="startsAt"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
