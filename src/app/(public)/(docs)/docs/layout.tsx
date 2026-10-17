@@ -12,6 +12,7 @@
 
 import { Suspense, type ReactNode } from "react";
 
+import { DocsMobileNav } from "@/components/docs/docs-mobile-nav";
 import { DocsNav_Skeleton } from "@/components/docs/docs-nav-skeleton";
 import { DocsSearch } from "@/components/docs/docs-search";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
@@ -28,13 +29,20 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-svh w-full flex-col bg-background text-foreground">
             <PublicHeader
                 wide
+                menu={
+                    <DocsMobileNav>
+                        <Suspense fallback={<DocsNav_Skeleton />}>
+                            <DocsNav />
+                        </Suspense>
+                    </DocsMobileNav>
+                }
                 search={
                     <div className="hidden md:block">
                         <DocsSearch className="w-40 lg:w-56" />
                     </div>
                 }
             />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 md:px-10">
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-6 md:px-10">
                 <div className="flex flex-1 gap-10">
                     <aside className="hidden w-56 shrink-0 md:block">
                         {/* 61px is the sticky header's height (see `docs-contents.tsx`). The padding

@@ -56,15 +56,17 @@ export function PublicHeader({
     menu?: ReactNode;
     /** Rendered first in the right-hand nav — the docs search. */
     search?: ReactNode;
-    /** Widens the container to `max-w-7xl` so the header's edges line up with the docs columns. */
+    /** Widens the container to `max-w-7xl` so the header's edges line up with the docs columns, and tightens it below `sm`. */
     wide?: boolean;
 }) {
     return (
         <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
             <div
                 className={cn(
-                    "mx-auto flex items-center justify-between gap-6 px-6 py-3.5 md:px-10",
-                    wide ? "max-w-7xl" : "max-w-[1120px]",
+                    "mx-auto flex items-center justify-between py-3.5 md:px-10",
+                    // Below `sm`, `wide` (the docs) tightens the padding and gaps to make room for
+                    // the `menu` button at 360px. The docs body matches this padding.
+                    wide ? "max-w-7xl gap-3 px-4 sm:gap-6 sm:px-6" : "max-w-[1120px] gap-6 px-6",
                 )}
             >
                 <div className="flex items-center gap-2">
@@ -80,7 +82,12 @@ export function PublicHeader({
                         />
                     </Link>
                 </div>
-                <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+                <nav
+                    className={cn(
+                        "flex items-center text-sm text-muted-foreground",
+                        wide ? "gap-2 sm:gap-4" : "gap-4",
+                    )}
+                >
                     {search}
                     <Link href="/tools" className="hidden hover:text-foreground sm:inline">
                         Tools

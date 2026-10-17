@@ -78,7 +78,7 @@ _End of review group 1._
     - **Jump offset:** a heading's `scroll-mt` must stay at or below the trigger `offset`, or clicking an entry won't highlight it. `scroll-mt-20` (80px) against about 61 + 24 = 85px is fine; keep it unless the measured header height says otherwise. `mdx-components.tsx` is shared with the in-app `?help=` sheet, so if it changes, check the sheet too.
   - **Done when:** at `xl` a long guide (e.g. Skill Track → Sessions) shows nav | article | "On this page", with the current section highlighted while the window scrolls, and clicking an entry lands its heading just below the header, highlighted. The nav scrolls on its own once taller than the viewport. At `md`–`lg` the contents column is hidden. Glossary and What's new keep their `max-w-3xl` width. `npm run check` passes.
 
-- [ ] **7. Mobile nav sheet** `visual`
+- [x] **7. Mobile nav sheet** `visual` — feat(docs): mobile nav sheet with search
   - **Files:** `src/components/docs/docs-mobile-nav.tsx` (new), `src/app/(public)/(docs)/docs/layout.tsx`, possibly `src/components/nav/public-header.tsx` (padding below `sm`)
   - **Do:**
     - `DocsMobileNav` (client) takes `children` (the nav). It uses `Sheet` from `src/components/ui/sheet.tsx`, `side="left"`. The trigger is a ghost icon `Button` (`MenuIcon` from lucide, `aria-label="Docs menu"`, `md:hidden`), always enabled. The content has a visually hidden `SheetTitle` ("Docs"), then `<DocsSearch className="w-full" align="start" />` and `children`, scrollable.
