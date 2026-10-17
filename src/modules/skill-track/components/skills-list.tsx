@@ -31,6 +31,10 @@ import { trpc } from "@/trpc/client";
 
 type SkillRow = Skill & { group: SkillGroup | undefined; skillPackage: SkillPackage };
 
+function isArchived(row: SkillRow) {
+    return row.status !== "Active" || (row.group !== undefined && row.group.status !== "Active");
+}
+
 /**
  * Every skill in the organization's subscribed packages, flat. Reads the same query as the
  * dashboard's Skills stat card, so the two always agree on the count.
@@ -60,16 +64,19 @@ export function SkillTrack_SkillsList() {
             .sort(
                 (a, b) =>
                     a.skillPackage.name.localeCompare(b.skillPackage.name) ||
+                    a.skillPackageId.localeCompare(b.skillPackageId) ||
                     (a.group?.sequence ?? 0) - (b.group?.sequence ?? 0) ||
                     a.sequence - b.sequence,
             );
     }, [assessable]);
 
+    // Packages from different publishers can share a name; the filter matches on the name, so
+    // list each name once.
     const packageOptions = useMemo(
         () =>
-            assessable.skillPackages
-                .map((pkg) => ({ label: pkg.name, value: pkg.name }))
-                .sort((a, b) => a.label.localeCompare(b.label)),
+            [...new Set(assessable.skillPackages.map((pkg) => pkg.name))]
+                .sort((a, b) => a.localeCompare(b))
+                .map((name) => ({ label: name, value: name })),
         [assessable.skillPackages],
     );
 
@@ -78,6 +85,17 @@ export function SkillTrack_SkillsList() {
             Kaga.defineColumns<SkillRow>((col) => [
                 col.accessor("name", {
                     header: "Skill",
+                    // The reports and the package's catalogue page leave archived skills out, so
+                    // say why a row here is missing from them.
+                    cell: (ctx) =>
+                        isArchived(ctx.row.original) ? (
+                            <span className="flex items-center gap-2">
+                                {ctx.getValue()}
+                                <Badge variant="outline">Archived</Badge>
+                            </span>
+                        ) : (
+                            ctx.getValue()
+                        ),
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
