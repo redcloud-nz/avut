@@ -26,7 +26,10 @@ import { getVisibleDocsNav } from "@/server/docs";
 // frame prerenderable. See docs/reviews/2026-09-12-suspense-boundaries.md §3.
 export default function DocsLayout({ children }: { children: ReactNode }) {
     return (
-        <div className="flex min-h-svh w-full flex-col bg-background text-foreground">
+        <div
+            data-slot="docs-shell"
+            className="flex min-h-svh w-full flex-col bg-background text-foreground"
+        >
             <PublicHeader
                 wide
                 menu={
@@ -46,8 +49,10 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                 <div className="flex flex-1 gap-10">
                     <aside className="hidden w-56 shrink-0 md:block">
                         {/* 61px is the sticky header's height (see `docs-contents.tsx`). The padding
-                            lives inside the scroll area so the whole nav stays reachable. */}
-                        <div className="sticky top-[61px] max-h-[calc(100svh-61px)] overflow-y-auto py-8">
+                            lives inside the scroll area so the whole nav stays reachable; `-mx-2 px-2`
+                            makes room for the links' `-mx-2` highlight, which would otherwise make
+                            the column scroll sideways. */}
+                        <div className="sticky top-[61px] -mx-2 max-h-[calc(100svh-61px)] overflow-x-hidden overflow-y-auto px-2 py-8 [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
                             <Suspense fallback={<DocsNav_Skeleton />}>
                                 <DocsNav />
                             </Suspense>

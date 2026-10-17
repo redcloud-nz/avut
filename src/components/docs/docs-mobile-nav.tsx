@@ -94,7 +94,9 @@ export function DocsMobileNav({ children }: { children: ReactNode }) {
                 <div className="border-b p-4 pr-12">
                     <DocsSearch className="w-full" align="start" />
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+                <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable]">
+                    {children}
+                </div>
             </SheetContent>
         </Sheet>
     );
