@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
-import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -34,8 +33,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
-import { snapToQuarter } from "@/lib/session-timing";
+import { sessionFormState, sessionInstants } from "@/lib/session-timing";
 import { trpc } from "@/trpc/client";
+
+import { sessionDialogSchema, SkillTrack_SessionWhenPicker } from "./session-when-picker";
 
 export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
     const organization = useOrganization();
@@ -44,17 +45,18 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
-    // A legacy session can start off the quarter hour, which `inputSchema` refuses: seed it
-    // snapped, so saving it as shown works.
+    const orgZone = organization.settings.general.timeZone;
+
+    // `sessionFormState` snaps a legacy off-quarter start or end, which `inputSchema` refuses, so
+    // the dialog shows the value that will be saved.
     const formValues = () => ({
         name: session.name,
-        startsAt: snapToQuarter(session.startsAt).toISOString(),
-        endsAt: null,
         notes: session.notes,
+        when: sessionFormState(session.startsAt, session.endsAt, orgZone),
     });
 
     const form = useForm({
-        resolver: zodResolver(SkillCheckSession.inputSchema),
+        resolver: zodResolver(sessionDialogSchema),
         defaultValues: formValues(),
     });
 
@@ -109,11 +111,11 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                     <form
                         id="update-session-form"
                         onSubmit={form.handleSubmit(
-                            (formData) =>
+                            ({ when, ...formData }) =>
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: session.id,
-                                    update: formData,
+                                    update: { ...formData, ...sessionInstants(when, orgZone) },
                                 }),
                             (errors) => {
                                 console.error("Form validation errors:", errors);
@@ -135,14 +137,16 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                                 )}
                             />
                             <Controller
-                                name="startsAt"
+                                name="when"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel>Date</FieldLabel>
-                                        <DatePicker
+                                        <FieldLabel>When</FieldLabel>
+                                        <SkillTrack_SessionWhenPicker
                                             value={field.value}
-                                            onValueChange={(newValue) => field.onChange(newValue)}
+                                            onChange={field.onChange}
+                                            orgZone={orgZone}
+                                            invalid={fieldState.invalid}
                                         />
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />

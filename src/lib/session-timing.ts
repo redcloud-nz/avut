@@ -28,7 +28,7 @@ import { TIME_FORMAT_PATTERNS, type DisplayPreferences } from "@/lib/datetime";
 const QUARTER_HOUR_MS = 15 * 60_000;
 
 /** The written date pattern a session's day renders in. Fixed, not the viewer's `dateFormat`, because the weekday matters for a session. */
-const SESSION_DATE_PATTERN = "EEE d MMM yyyy";
+export const SESSION_DATE_PATTERN = "EEE d MMM yyyy";
 
 /** The form state's start time when the session it was built from has none (an all-day one). */
 export const DEFAULT_SESSION_START_TIME = "09:00";
@@ -235,7 +235,7 @@ function toUtcIso(date: Date): string {
  * The zone's short name at `date` ("NZDT", or "GMT-4" where en-NZ has no abbreviation). Pinned
  * to `en-NZ` so the server render and the browser agree.
  */
-function zoneAbbreviation(date: Date, zone: string): string {
+export function zoneAbbreviation(date: Date, zone: string): string {
     return (
         new Intl.DateTimeFormat("en-NZ", { timeZone: zone, timeZoneName: "short" })
             .formatToParts(date)

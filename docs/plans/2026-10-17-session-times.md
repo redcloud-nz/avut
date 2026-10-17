@@ -162,7 +162,7 @@ _End of review group A._
   - **Done when:** an approved session offers no way to open the edit dialog, a Draft one does, and `npm run check` passes.
   - `visual`, `mechanical`
 
-- [ ] **Task 7: Start/end picker in the create and update session dialogs**
+- [x] **Task 7: Start/end picker in the create and update session dialogs** — feat(skill-track): start/end picker in the session dialogs
   - **Files:**
     - `src/modules/skill-track/components/session-when-picker.tsx` (new)
     - `src/modules/skill-track/components/create-session.tsx`
