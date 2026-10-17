@@ -164,7 +164,7 @@ Review groups: **A** = Tasks 1–2 (schema + vocabulary), **B** = Tasks 3–5 (s
 
 ### Group A — schema and vocabulary
 
-- [ ] **1. Schema, migration and id/data schemas**
+- [x] **1. Schema, migration and id/data schemas** — `feat(organization-groups): add group and membership schema`
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<timestamp>_organization_groups/`,
     `src/lib/schemas/organization-group.ts` (new), `src/lib/schemas/organization-group.test.ts`
     (new), `src/server/provider-credential.test.ts`.
