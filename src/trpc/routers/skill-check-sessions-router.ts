@@ -910,21 +910,21 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Update a skill check session's name, date and notes. The name and notes stay editable while
-     * the session is approved; the date is locked while approved, so approved competency dates only
-     * move through a reopen, which goes back through review.
+     * Update a skill check session's name, date and notes. An approved session is read-only, even
+     * for a no-op update: changing it means reopening it, which goes back through review.
      *
-     * A date change re-stamps `checkedAt` on every check in the session, tombstones included (so a
-     * revived tombstone doesn't carry the old date), and leaves `recordedAt` alone. It needs no log
-     * entry of its own: the session's Update entry records the date change. Its transaction opens
-     * with `SkillChecks.lockUnapprovedSession`, so an approval landing after the pre-check refuses
-     * it rather than moving an approved session's dates.
+     * Every write runs in one transaction that opens with `SkillChecks.lockUnapprovedSession`, so
+     * an approval landing after the pre-check refuses it rather than editing an approved session.
+     * A date change also re-stamps `checkedAt` on every check in the session, tombstones included
+     * (so a revived tombstone doesn't carry the old date), and leaves `recordedAt` alone. It needs
+     * no log entry of its own: the session's Update entry records the date change.
      * @param skillCheckSessionId The ID of the skill check session to update.
      * @param update The fields to update on the skill check session.
      * @returns The updated skill check session, and whether its date (and so its checks'
      *   `checkedAt`) changed.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
-     * @throws TRPCError(CONFLICT) if the date changes while the session is approved.
+     * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
+     * runs.
      */
     updateSession: organizationProcedure({ skillCheckSession: ["update"] })
         .input(
@@ -936,6 +936,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         .output(z.object({ updated: SkillCheckSession.schema, dateChanged: z.boolean() }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
             const existing = await SkillChecks.requireSessionById(ctx, skillCheckSessionId);
+            SkillChecks.assertSessionUnlocked(existing);
 
             const changes = diffObject(SkillCheckSession.modifiableSchema.parse(existing), update);
 
@@ -943,48 +944,40 @@ export const skillCheckSessionsRouter = createTrpcRouter({
 
             const date = new Date(update.date);
             const dateChanged = new Date(existing.date).getTime() !== date.getTime();
-            if (dateChanged) SkillChecks.assertSessionUnlocked(existing);
-
-            // Thunks, so each branch builds its statements in transaction order.
-            const updateSessionRow = () =>
-                ctx.prisma.skillCheckSession.update({
-                    where: {
-                        id: skillCheckSessionId,
-                        organizationId,
-                    },
-                    include: {},
-                    data: {
-                        name: update.name,
-                        startsAt: date,
-                        endsAt: date,
-                        notes: update.notes,
-                    },
-                });
-            const logEntry = () =>
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "SkillCheckSession",
-                    objectId: skillCheckSessionId,
-                    changes,
-                });
-
-            if (!dateChanged) {
-                const [updated] = await ctx.prisma.$transaction([updateSessionRow(), logEntry()]);
-                return { updated: SkillCheckSession.fromRecord(updated), dateChanged };
-            }
 
             const [, updated] = await ctx.prisma
                 .$transaction([
                     // Serializes with `approveSession` and with `setSessionSkillCheck`, whose lock
                     // also checks the date; see `SkillChecks.lockUnapprovedSession`. Once it has
-                    // matched, it holds the session row, so `updateSessionRow` can't miss.
+                    // matched, it holds the session row, so the update below can't miss.
                     SkillChecks.lockUnapprovedSession(ctx, skillCheckSessionId),
-                    updateSessionRow(),
-                    ctx.prisma.skillCheck.updateMany({
-                        where: { organizationId, sessionId: skillCheckSessionId },
-                        data: { checkedAt: date },
+                    ctx.prisma.skillCheckSession.update({
+                        where: {
+                            id: skillCheckSessionId,
+                            organizationId,
+                        },
+                        include: {},
+                        data: {
+                            name: update.name,
+                            startsAt: date,
+                            endsAt: date,
+                            notes: update.notes,
+                        },
                     }),
-                    logEntry(),
+                    ...(dateChanged
+                        ? [
+                              ctx.prisma.skillCheck.updateMany({
+                                  where: { organizationId, sessionId: skillCheckSessionId },
+                                  data: { checkedAt: date },
+                              }),
+                          ]
+                        : []),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "SkillCheckSession",
+                        objectId: skillCheckSessionId,
+                        changes,
+                    }),
                 ])
                 .catch(SkillChecks.rethrowSessionLocked(skillCheckSessionId));
 

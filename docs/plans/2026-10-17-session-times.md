@@ -81,7 +81,7 @@ A skill check session gets a real start and end, defined in an **org time zone**
     - `sessionInstants` ∘ `sessionFormState` round-tripping, plus the spring-forward gap (a 02:15 start on the last Sunday of September), with whatever behaviour the code chooses asserted explicitly
   - Then `npm run check` passes.
 
-- [ ] **Task 3: Approved sessions are read-only (server)**
+- [x] **Task 3: Approved sessions are read-only (server)** — feat(skill-track): approved sessions are read-only
   - **Files:** `src/trpc/routers/skill-check-sessions-router.ts` (`updateSession`), `src/trpc/routers/skill-check-sessions-router.test.ts`, `src/modules/skill-track/components/update-session.tsx` (drop `dateLocked`).
   - **Do:**
     - `updateSession` calls `assertSessionUnlocked(existing)` before the `changes.length == 0` early return.
@@ -217,4 +217,4 @@ Sessions take a start and an optional end, or run all day across one or more day
 
 ## Parked
 
-(none yet)
+- **Lost-race tests run on an already-approved session.** In `skill-check-sessions-router.test.ts`, the `guarded` loop of lost-race tests runs after the `approveSession` race test, which leaves `racedSession` at `Include` (prisma-mock runs the rest of a failed transaction). They still assert that the lock was called, but the session isn't Draft, so the pre-check may be what refuses. Give them their own Draft session, as Task 3 did for `updateSession` (`racedUpdate`).

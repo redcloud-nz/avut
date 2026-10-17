@@ -1151,7 +1151,9 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
     //   draftSession    → Draft, the lock doesn't apply
     //   approvedSession → Include, every guarded procedure refuses with CONFLICT
     //   toApprove       → Draft, with one check, approved by the "approves a Draft session" test
-    //   racedSession    → Draft, no checks (for the lost-race tests)
+    //   racedSession    → Draft, no checks (for the lost-race tests); the approveSession one can
+    //                     leave it approved, as prisma-mock runs the rest of a failed transaction
+    //   racedUpdate     → Draft, no checks (for updateSession's lost-race tests)
     //   person          → an eligible assessor (skills-assessor), also used as an assessee
     //   skill           → in pkg, which the org subscribes to
     const T = {
@@ -1166,7 +1168,9 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
         toApprove: SkillCheckSessionId.create(),
         toApproveCheck: SkillCheckId.create(),
         racedSession: SkillCheckSessionId.create(),
+        racedUpdate: SkillCheckSessionId.create(),
     };
+    const SESSION_DATE = new Date("2026-03-14T00:00:00.000Z");
 
     const db = createMockPrisma();
 
@@ -1229,6 +1233,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
             { id: T.approvedSession, sessionNumber: 2, status: "Include" },
             { id: T.toApprove, sessionNumber: 3, status: "Draft" },
             { id: T.racedSession, sessionNumber: 4, status: "Draft" },
+            { id: T.racedUpdate, sessionNumber: 5, status: "Draft" },
         ] as const;
         for (const { id, sessionNumber, status } of sessions) {
             await db.skillCheckSession.create({
@@ -1238,8 +1243,8 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                     name: `Session ${sessionNumber}`,
                     sessionNumber,
                     status,
-                    startsAt: new Date(),
-                    endsAt: new Date(),
+                    startsAt: SESSION_DATE,
+                    endsAt: SESSION_DATE,
                     notes: "",
                 },
             });
@@ -1384,19 +1389,45 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
     });
 
     describe("updateSession", () => {
-        it("still edits an approved session's name and notes", async () => {
+        it("refuses a name and notes edit on an approved session with CONFLICT and leaves it unchanged", async () => {
             const existing = await db.skillCheckSession.findUniqueOrThrow({
                 where: { id: T.approvedSession },
             });
 
-            const { updated, dateChanged } = await makeCaller().updateSession({
-                organizationId: T.org,
-                skillCheckSessionId: T.approvedSession,
-                update: { name: "Renamed", date: existing.startsAt!.toISOString(), notes: "After" },
+            await expect(
+                makeCaller().updateSession({
+                    organizationId: T.org,
+                    skillCheckSessionId: T.approvedSession,
+                    update: {
+                        name: "Renamed",
+                        date: existing.startsAt!.toISOString(),
+                        notes: "After",
+                    },
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+
+            const after = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.approvedSession },
+            });
+            expect(after).toMatchObject({ name: existing.name, notes: existing.notes });
+        });
+
+        it("refuses a no-op update of an approved session with CONFLICT", async () => {
+            const existing = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.approvedSession },
             });
 
-            expect(updated).toMatchObject({ name: "Renamed", notes: "After", status: "Include" });
-            expect(dateChanged).toBe(false);
+            await expect(
+                makeCaller().updateSession({
+                    organizationId: T.org,
+                    skillCheckSessionId: T.approvedSession,
+                    update: {
+                        name: existing.name,
+                        date: existing.startsAt!.toISOString(),
+                        notes: existing.notes ?? "",
+                    },
+                }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
         });
 
         it("refuses a date change on an approved session with CONFLICT", async () => {
@@ -1413,29 +1444,43 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
             ).rejects.toMatchObject({ code: "CONFLICT" });
         });
 
-        it("reports a date change on a session approved after the pre-check (P2025) as CONFLICT", async () => {
-            // prisma-mock can't interleave a concurrent approval, so fake the lost race's error.
-            const spy = vi
-                .spyOn(db.skillCheckSession, "update")
-                .mockRejectedValueOnce(
-                    Object.assign(new Error("Record to update not found."), { code: "P2025" }),
-                );
-            try {
-                await expect(
-                    makeCaller().updateSession({
-                        organizationId: T.org,
-                        skillCheckSessionId: T.racedSession,
-                        update: {
-                            name: "Session 4",
-                            date: new Date("2020-01-01T00:00:00.000Z").toISOString(),
-                            notes: "",
-                        },
-                    }),
-                ).rejects.toMatchObject({ code: "CONFLICT" });
-            } finally {
-                spy.mockRestore();
-            }
-        });
+        const racedUpdates = {
+            "a name-only edit": () => ({
+                name: "Renamed",
+                date: SESSION_DATE.toISOString(),
+                notes: "",
+            }),
+            "a date change": () => ({
+                name: "Session 5",
+                date: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                notes: "",
+            }),
+        };
+        for (const [edit, update] of Object.entries(racedUpdates)) {
+            it(`reports ${edit} of a session approved after the pre-check (P2025) as CONFLICT`, async () => {
+                // prisma-mock can't interleave a concurrent approval, so fake the lost race's
+                // error on the transaction's first statement, the session-row lock.
+                const spy = vi
+                    .spyOn(db.skillCheckSession, "update")
+                    .mockRejectedValueOnce(
+                        Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+                    );
+                try {
+                    await expect(
+                        makeCaller().updateSession({
+                            organizationId: T.org,
+                            skillCheckSessionId: T.racedUpdate,
+                            update: update(),
+                        }),
+                    ).rejects.toMatchObject({ code: "CONFLICT" });
+                    expect(spy.mock.calls[0][0]).toMatchObject({
+                        where: { id: T.racedUpdate, status: { not: "Include" } },
+                    });
+                } finally {
+                    spy.mockRestore();
+                }
+            });
+        }
     });
 });
 
