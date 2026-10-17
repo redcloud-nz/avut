@@ -94,7 +94,7 @@ _End of review group 1._
 
 ### Review group 2: read side
 
-- [ ] **4. Names for skill-package objects in history**
+- [x] **4. Names for skill-package objects in history** — feat(history): name skill-package objects in history entries and refs
   - **Files:** `src/lib/schemas/object-history.ts`, `src/server/services/object-history.ts`, `src/server/services/object-history.test.ts`, `src/components/history/object-history.tsx` (the `names` merge only), `src/trpc/routers/history-router.test.ts` (mocked `names`)
   - **Do:**
     - **Schema:**
@@ -175,4 +175,13 @@ Groups and skills now have History pages, and package History covers changes to 
 
 ## Parked
 
-_(empty)_
+- **Import re-parenting a skill from another package logs no move.**
+  - **What happens:** `prepareImport` only knows this package's skills (`existingSkills`). A skill id in the envelope that now lives in another of the org's packages (after a cross-package `moveSkill`, say) is planned as `create`. The upsert then moves it back silently, and the entry carries only the new location's refs.
+  - **Fix:** look up envelope skill ids missing from `existingSkills`, and use `skillMoveLogRefs` for them.
+  - **Not done here:** the re-parenting upsert predates this branch.
+
+## Review notes
+
+- **Group 1 — import moves have no group diff** (`src/server/services/skill-packages.ts`, `prepareImport`). When an import moves a skill to another group (`groupChanged`), the entry carries `from`/`to` group refs. Its `changes` come from `SKILL_COMPARE_KEYS`, which leaves out `skillGroupId`, so both groups' pages show a bare "Updated" with no group change line.
+  - **Fix:** when `groupChanged`, include a `skillGroupId` change (prev → curr) in that skill's changes, so it renders "Group: X → Y" like `moveSkill`'s entry.
+  - **Optional:** use `SkillGroupId.schema.parse` in place of the `as SkillGroupId` casts there, matching `trash.ts`.

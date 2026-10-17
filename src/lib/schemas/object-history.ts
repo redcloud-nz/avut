@@ -95,7 +95,7 @@ export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>
 };
 
 /** The record types an id-valued change field can name. */
-export type IdFieldTarget = "Person" | "Skill";
+export type IdFieldTarget = "Person" | "Skill" | "SkillGroup" | "SkillPackage";
 
 /**
  * Change fields whose values are record ids, keyed by the **entry's own** `objectType`, then the
@@ -104,6 +104,8 @@ export type IdFieldTarget = "Person" | "Skill";
  * session's "Skills: added QVzbUJCSUj0NM13P" reads as the skill's name.
  */
 export const IdFields: Partial<Record<LogObjectType, Record<string, IdFieldTarget>>> = {
+    // `moveSkill` (#342): "Group: Medical → Rescue".
+    Skill: { skillGroupId: "SkillGroup", skillPackageId: "SkillPackage" },
     SkillCheckSession: { skills: "Skill", assessees: "Person", assessors: "Person" },
 };
 
@@ -140,8 +142,11 @@ export type OtherRefObjectType = z.infer<typeof otherRefObjectTypeSchema>;
 /**
  * Another object an entry mentions. `person`/`team` is `null` when the record has since been
  * purged or the caller can't view that type; the UI then renders plain text, not a link. Any other
- * type is shown by type only. `role` is a plain string (not `LogRefRole`) so a retired value on a
- * historical row renders verbatim instead of failing the page.
+ * type carries its id and a `name`: the record's current name for a `Skill`, `SkillGroup` or
+ * `SkillPackage` in this organization's own packages that the caller may view, else `null`
+ * (purged, unviewable, another org's, or a type whose names aren't resolved). `role` is a plain
+ * string (not `LogRefRole`) so a retired value on a historical row renders verbatim instead of
+ * failing the page.
  */
 export const ObjectHistoryRef = {
     schema: z.union([
@@ -159,6 +164,7 @@ export const ObjectHistoryRef = {
             objectType: otherRefObjectTypeSchema,
             role: z.string(),
             objectId: z.string(),
+            name: z.string().nullable(),
         }),
     ]),
 } as const;
@@ -178,6 +184,13 @@ export const ObjectHistoryEntry = {
         action: z.string(),
         objectType: z.string(),
         objectId: z.string(),
+        /**
+         * The current name of the entry's own object, resolved only for `Skill`, `SkillGroup` and
+         * `SkillPackage` in this organization's own packages, and only when the caller may view
+         * the type. `null` otherwise: purged, unviewable, another org's (a subscribed package's
+         * included), or any other type. The UI must not stand a ref's name in for it.
+         */
+        objectName: z.string().nullable(),
         /** `primary` when the entry is about the asked-for object, `related` when it only mentions it. */
         relation: z.enum(["primary", "related"]),
         /** The acting user's name — never their email. */
@@ -207,6 +220,8 @@ export const ObjectHistoryPage = {
         names: z.object({
             Person: z.record(z.string(), z.string()),
             Skill: z.record(z.string(), z.string()),
+            SkillGroup: z.record(z.string(), z.string()),
+            SkillPackage: z.record(z.string(), z.string()),
         }),
     }),
 } as const;

@@ -8,6 +8,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { DiffChange } from "@/lib/diff";
 import { nanoId16 } from "@/lib/id";
 import { LogBatchId, LogEntryId, LogEntryObjectId, LogObjectType } from "@/lib/schemas/log-entry";
+import type { ObjectHistoryEntry } from "@/lib/schemas/object-history";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
@@ -348,8 +349,9 @@ describe("ObjectHistory.list", () => {
         });
 
         expect(entries.map((e) => e.sequence)).toEqual([SEQ.unrelated]);
+        // `SkillPackage` names resolve, but this package doesn't exist.
         expect(entries[0].refs).toEqual([
-            { objectType: "SkillPackage", role: "context", objectId: T.skillPackage },
+            { objectType: "SkillPackage", role: "context", objectId: T.skillPackage, name: null },
         ]);
     });
 
@@ -567,6 +569,279 @@ describe("ObjectHistory.list names for IdFields changes", () => {
     });
 });
 
+describe("ObjectHistory.list names for skill-package objects", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        ownPackage: SkillPackageId.create(),
+        groupA: SkillGroupId.create(),
+        groupB: SkillGroupId.create(),
+        ownSkill: SkillId.create(),
+        // Referenced by a log entry, but the row itself has been purged.
+        purgedSkill: SkillId.create(),
+        // Another org's package the org subscribes to; its skill is also linked to an org session.
+        subscribedPackage: SkillPackageId.create(),
+        subscribedGroup: SkillGroupId.create(),
+        subscribedSkill: SkillId.create(),
+        // Another org's package the org has nothing to do with.
+        foreignPackage: SkillPackageId.create(),
+        foreignGroup: SkillGroupId.create(),
+        foreignSkill: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+    };
+
+    const SEQ = {
+        update: 1,
+        move: 2,
+        purge: 3,
+        subscribedEntry: 4,
+        session: 5,
+        crossMove: 6,
+    };
+
+    const db = createMockPrisma();
+    const ctx = { prisma: db, organizationId: T.org };
+    const allTypes = LogObjectType.values;
+
+    const packageRef = { objectType: "SkillPackage", objectId: T.ownPackage, role: "context" };
+
+    async function log(entry: {
+        sequence: number;
+        action: string;
+        objectType: string;
+        objectId: string;
+        changes?: DiffChange[];
+        refs: { objectType: string; objectId: string; role: string }[];
+    }) {
+        const { refs, changes = [], ...rest } = entry;
+        await db.logEntry.create({
+            data: {
+                id: LogEntryId.create(),
+                scope: "organization",
+                organizationId: T.org,
+                userId: T.user,
+                changes: changes as never,
+                ...rest,
+                objects: {
+                    create: [
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: entry.objectType,
+                            objectId: entry.objectId,
+                            role: "primary",
+                        },
+                        ...refs.map((ref) => ({ id: LogEntryObjectId.create(), ...ref })),
+                    ],
+                },
+            },
+        });
+    }
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        await db.user.create({ data: { id: T.user, name: "Una User", email: "una@example.com" } });
+        for (const [id, organizationId, name] of [
+            [T.ownPackage, T.org, "First Aid"],
+            [T.subscribedPackage, T.otherOrg, "Comms"],
+            [T.foreignPackage, T.otherOrg, "Secret Package"],
+        ] as const) {
+            await db.skillPackage.create({ data: { id, organizationId, name, description: "" } });
+        }
+        for (const [id, skillPackageId, name] of [
+            [T.groupA, T.ownPackage, "Medical"],
+            [T.groupB, T.ownPackage, "Rescue"],
+            [T.subscribedGroup, T.subscribedPackage, "Radio Group"],
+            [T.foreignGroup, T.foreignPackage, "Secret Group"],
+        ] as const) {
+            await db.skillGroup.create({ data: { id, skillPackageId, name, description: "" } });
+        }
+        for (const [id, skillPackageId, skillGroupId, name] of [
+            [T.ownSkill, T.ownPackage, T.groupB, "CPR"],
+            [T.subscribedSkill, T.subscribedPackage, T.subscribedGroup, "Radio"],
+            [T.foreignSkill, T.foreignPackage, T.foreignGroup, "Secret"],
+        ] as const) {
+            await db.skill.create({
+                data: { id, skillPackageId, skillGroupId, name, description: "" },
+            });
+        }
+        await db.skillPackageSubscription.create({
+            data: {
+                id: SkillPackageSubscriptionId.create(),
+                organizationId: T.org,
+                skillPackageId: T.subscribedPackage,
+            },
+        });
+        await db.skillCheckSession.create({
+            data: {
+                id: T.session,
+                organizationId: T.org,
+                name: "Session",
+                sessionNumber: 1,
+                skills: { connect: [{ id: T.subscribedSkill }] },
+            },
+        });
+
+        await log({
+            sequence: SEQ.update,
+            action: "Update",
+            objectType: "Skill",
+            objectId: T.ownSkill,
+            refs: [packageRef, { objectType: "SkillGroup", objectId: T.groupA, role: "context" }],
+        });
+        await log({
+            sequence: SEQ.move,
+            action: "Move",
+            objectType: "Skill",
+            objectId: T.ownSkill,
+            changes: [{ type: "obj_mod", path: ["skillGroupId"], prev: T.groupA, curr: T.groupB }],
+            refs: [
+                packageRef,
+                { objectType: "SkillGroup", objectId: T.groupA, role: "from" },
+                { objectType: "SkillGroup", objectId: T.groupB, role: "to" },
+            ],
+        });
+        await log({
+            sequence: SEQ.purge,
+            action: "Purge",
+            objectType: "Skill",
+            objectId: T.purgedSkill,
+            refs: [packageRef, { objectType: "SkillGroup", objectId: T.groupA, role: "context" }],
+        });
+        // A stray entry about a subscribed skill that mentions the org's package.
+        await log({
+            sequence: SEQ.subscribedEntry,
+            action: "Update",
+            objectType: "Skill",
+            objectId: T.subscribedSkill,
+            refs: [packageRef],
+        });
+        // The subscribed skill is both an `IdFields` id and a ref here.
+        await log({
+            sequence: SEQ.session,
+            action: "Update",
+            objectType: "SkillCheckSession",
+            objectId: T.session,
+            changes: [{ type: "arr_add", path: ["skills"], value: T.subscribedSkill }],
+            refs: [
+                packageRef,
+                { objectType: "Skill", objectId: T.subscribedSkill, role: "context" },
+                { objectType: "Skill", objectId: T.foreignSkill, role: "context" },
+                { objectType: "SkillPackage", objectId: T.foreignPackage, role: "context" },
+            ],
+        });
+        // A cross-package move into another org's package: its ids don't resolve.
+        await log({
+            sequence: SEQ.crossMove,
+            action: "Move",
+            objectType: "Skill",
+            objectId: T.ownSkill,
+            changes: [
+                { type: "obj_mod", path: ["skillGroupId"], prev: T.groupA, curr: T.foreignGroup },
+                {
+                    type: "obj_mod",
+                    path: ["skillPackageId"],
+                    prev: T.ownPackage,
+                    curr: T.foreignPackage,
+                },
+            ],
+            refs: [{ ...packageRef, role: "from" }],
+        });
+    });
+
+    const listPackage = (relatedTypes: readonly LogObjectType[] = allTypes) =>
+        ObjectHistory.list(ctx, {
+            objectType: "SkillPackage",
+            objectId: T.ownPackage,
+            relatedTypes,
+            limit: 50,
+        });
+
+    const entryAt = (entries: ObjectHistoryEntry[], sequence: number) =>
+        entries.find((e) => e.sequence === sequence)!;
+
+    it("names a related skill entry's own object and its group ref", async () => {
+        const { entries } = await listPackage();
+
+        expect(entryAt(entries, SEQ.update)).toMatchObject({
+            relation: "related",
+            objectName: "CPR",
+            refs: [
+                { objectType: "SkillGroup", role: "context", objectId: T.groupA, name: "Medical" },
+            ],
+        });
+        expect(entryAt(entries, SEQ.move).refs).toEqual([
+            { objectType: "SkillGroup", role: "from", objectId: T.groupA, name: "Medical" },
+            { objectType: "SkillGroup", role: "to", objectId: T.groupB, name: "Rescue" },
+        ]);
+    });
+
+    it("names a skill entry on its group's page", async () => {
+        const { entries } = await ObjectHistory.list(ctx, {
+            objectType: "SkillGroup",
+            objectId: T.groupA,
+            relatedTypes: allTypes,
+            limit: 50,
+        });
+
+        expect(entryAt(entries, SEQ.move)).toMatchObject({
+            relation: "related",
+            objectName: "CPR",
+        });
+    });
+
+    it("leaves names of types not in relatedTypes null", async () => {
+        const { entries } = await listPackage(allTypes.filter((t) => t !== "SkillGroup"));
+
+        expect(entryAt(entries, SEQ.update).objectName).toBe("CPR");
+        expect(entryAt(entries, SEQ.update).refs).toEqual([
+            { objectType: "SkillGroup", role: "context", objectId: T.groupA, name: null },
+        ]);
+
+        // Primary entries pass without their type, but don't resolve their name.
+        const skillPage = await ObjectHistory.list(ctx, {
+            objectType: "Skill",
+            objectId: T.ownSkill,
+            relatedTypes: allTypes.filter((t) => t !== "Skill"),
+            limit: 50,
+        });
+        expect(skillPage.entries.map((e) => e.objectName)).toEqual([null, null, null]);
+    });
+
+    it("never names another org's skill, even one the org subscribes to", async () => {
+        const { entries, names } = await listPackage();
+
+        expect(entryAt(entries, SEQ.subscribedEntry).objectName).toBeNull();
+        expect(entryAt(entries, SEQ.session).refs).toEqual([
+            { objectType: "Skill", role: "context", objectId: T.subscribedSkill, name: null },
+            { objectType: "Skill", role: "context", objectId: T.foreignSkill, name: null },
+            { objectType: "SkillPackage", role: "context", objectId: T.foreignPackage, name: null },
+        ]);
+        // The same skill still resolves as a session's `IdFields` id.
+        expect(names.Skill).toEqual({ [T.subscribedSkill]: "Radio" });
+    });
+
+    it("gives a purged skill's entry no name, not its group's", async () => {
+        const { entries } = await listPackage();
+
+        expect(entryAt(entries, SEQ.purge)).toMatchObject({
+            objectName: null,
+            refs: [{ objectType: "SkillGroup", objectId: T.groupA, name: "Medical" }],
+        });
+    });
+
+    it("resolves a move's group and package ids, within the org's own packages", async () => {
+        const { names } = await listPackage();
+
+        expect(names.SkillGroup).toEqual({ [T.groupA]: "Medical", [T.groupB]: "Rescue" });
+        expect(names.SkillPackage).toEqual({ [T.ownPackage]: "First Aid" });
+    });
+});
+
 describe("ObjectHistory.listOwn", () => {
     const T = {
         org: OrganizationId.create(),
@@ -693,7 +968,7 @@ describe("ObjectHistory.listOwn", () => {
             refs: [],
         });
         expect(nextCursor).toBeNull();
-        expect(names).toEqual({ Person: {}, Skill: {} });
+        expect(names).toEqual({ Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} });
     });
 
     it("returns nothing for another user's note", async () => {
