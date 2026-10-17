@@ -178,3 +178,30 @@ export const glossaryBySlug: ReadonlyMap<string, GlossaryEntry> = new Map(
 export function getGlossaryEntriesSorted(): GlossaryEntry[] {
     return [...glossaryEntries].sort((a, b) => a.term.localeCompare(b.term));
 }
+
+/**
+ * The entries to show when the modules in `hidden` are flag-hidden.
+ *
+ * An entry tagged with modules is dropped when every one of them is hidden; an entry with no
+ * `modules` always shows. A kept entry loses the badges of its hidden modules, and its
+ * `relatedTerms` lose any slug whose entry was dropped (that anchor no longer exists on the page).
+ * Pure, so it can be tested without `@/lib/flags`; `getVisibleGlossaryEntries` in
+ * `src/server/docs.ts` supplies the hidden set.
+ */
+export function visibleGlossaryEntries(
+    entries: readonly GlossaryEntry[],
+    hidden: ReadonlySet<string>,
+): GlossaryEntry[] {
+    const kept = entries.filter(
+        (entry) =>
+            !entry.modules ||
+            entry.modules.length === 0 ||
+            entry.modules.some((moduleId) => !hidden.has(moduleId)),
+    );
+    const keptSlugs = new Set(kept.map((entry) => entry.slug));
+    return kept.map((entry) => ({
+        ...entry,
+        modules: entry.modules?.filter((moduleId) => !hidden.has(moduleId)),
+        relatedTerms: entry.relatedTerms?.filter((slug) => keptSlugs.has(slug)),
+    }));
+}

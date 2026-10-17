@@ -194,6 +194,10 @@
   html {
     @apply font-sans;
   }
+  /* The docs site scrolls the window, not a `Std.ScrollContainer`, so the viewport scrollbar gets the same styling. */
+  html:has([data-slot="docs-shell"]) {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
 }
 
 @media print {
