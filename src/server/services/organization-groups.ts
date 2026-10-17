@@ -128,10 +128,10 @@ export async function getGroupDetail(ctx: SystemServiceContext, groupId: Organiz
         createdAt: rest.createdAt,
         updatedAt: rest.updatedAt,
         memberships: memberships.map((m) => ({
-            id: m.id,
+            id: m.id as OrganizationGroupMembershipId,
             role: m.role,
             status: m.status,
-            organization: m.organization,
+            organization: { ...m.organization, id: m.organization.id as OrganizationId },
         })),
     };
 }

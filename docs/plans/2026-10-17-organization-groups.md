@@ -332,7 +332,7 @@ dataset per `describe` (`.claude/rules/testing.md`) and build the context as
     through the task-5 effects with no manual cache calls; delete of a group with an active
     member shows the conflict; `npm run check` passes.
 
-- [ ] **8. Group detail page: members** `visual`
+- [x] **8. Group detail page: members** `visual` — `feat(organization-groups): add group members card with add, role change and revoke`
   - **Files:** `src/modules/system-admin/components/groups/group-content.tsx`,
     `src/modules/system-admin/components/groups/add-group-member-dialog.tsx` (new),
     `src/modules/system-admin/components/groups/revoke-group-member-dialog.tsx` (new),
