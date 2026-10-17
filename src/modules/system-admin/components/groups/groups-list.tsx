@@ -75,7 +75,7 @@ export function SystemAdmin_Groups_List() {
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
-                    enableHiding: false,
+                    enableHiding: true,
                 }),
             ]),
         [formatDate],

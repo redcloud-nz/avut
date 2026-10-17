@@ -19,10 +19,10 @@ directly:
 
 | Entity             | Wrapper                 | Prop                                                     |
 | ------------------ | ----------------------- | -------------------------------------------------------- |
+| Organisation Group | `OrganizationGroupLink` | `group: OrganizationGroupRef`                            |
 | Person             | `PersonLink`            | `person: PersonRef & Partial<Pick<PersonData, "email">>` |
 | Team               | `TeamLink`              | `team: TeamRef & Partial<Pick<TeamData, "description">>` |
 | Team Membership    | `TeamMembershipLink`    | `teamMembership: TeamMembershipRef`                      |
-| Organisation Group | `OrganizationGroupLink` | `group: OrganizationGroupRef`                            |
 | User               | `UserLink`              | `user: UserRef & Partial<Pick<UserData, "email">>`       |
 
 Each wrapper resolves its own route via `route()`, sources `organization.slug` from
