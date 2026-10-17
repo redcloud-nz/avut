@@ -31,7 +31,7 @@
     - Glossary page: keep the `<h1>` and intro paragraph static. Move the `<dl>` into an async `GlossaryEntries` component behind `<Suspense>` inside `page.tsx` (not a `loading.tsx`), with a short skeleton fallback. It awaits `getVisibleGlossaryEntries()`. Add a comment explaining why the page isn't `async`, in the style of `docs/[[...slug]]/page.tsx`.
   - **Done when:** `glossary.test.ts` covers: an entry with no modules is kept; one whose only module is hidden is dropped; one with a hidden and a visible module is kept with only the visible badge; a `relatedTerms` slug pointing at a dropped entry is removed. On the dev server, entries for flag-hidden modules (e.g. the I3 `ppe-template` entry with dev defaults) disappear from `/docs/glossary` and the rest render. `npm run check` passes.
 
-- [ ] **2. Heading outline with labels and levels**
+- [x] **2. Heading outline with labels and levels** — feat(docs): heading outline with labels and levels
   - **Files:** `content-collections/heading-anchors.ts`, `content-collections/heading-anchors.test.ts`, `content-collections.ts`
   - **Do:**
     - Add `export interface HeadingOutlineItem { id: string; label: string; depth: number }` and `headingOutline(markdown)`, which walks the markdown exactly as `headingAnchors` does now and records the `#` count as `depth`. `label` is the heading's display text: `headingText(...)` with emphasis and code markers (`*`, `` ` ``) removed and whitespace collapsed. The slug is still computed from `headingText(...)` as today, so ids don't change.

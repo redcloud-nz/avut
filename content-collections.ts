@@ -15,7 +15,7 @@ import * as z from "zod";
 import { defineCollection, defineConfig } from "@content-collections/core";
 import { compileMDX } from "@content-collections/mdx";
 
-import { headingAnchors } from "./content-collections/heading-anchors";
+import { headingAnchors, headingOutline } from "./content-collections/heading-anchors";
 
 // GFM adds table syntax (among other things) — `docsMdxComponents` already
 // styles `table`/`th`/`td`, so wire the plugin in to match.
@@ -85,6 +85,12 @@ const docs = defineCollection({
              * guards against duplicates).
              */
             anchors: headingAnchors(doc.content),
+            /**
+             * This doc's headings with their display labels and levels, for its
+             * "On this page" contents list. Computed over the whole document,
+             * like `anchors`, so the ids match the rendered ones.
+             */
+            headings: headingOutline(doc.content),
             /** `true` for a section landing page (`<section>/index.mdx`). */
             isSectionIndex: doc._meta.path.endsWith("index") && slug !== "",
         };
