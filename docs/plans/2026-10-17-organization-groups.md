@@ -292,7 +292,7 @@ dataset per `describe` (`.claude/rules/testing.md`) and build the context as
 
 ### Group C — UI (`visual`)
 
-- [ ] **6. Groups list page and group entity link** `visual` `mechanical`
+- [x] **6. Groups list page and group entity link** `visual` `mechanical` — `feat(organization-groups): add groups list page and group entity link`
   - **Files:** `src/app/(wrapper)/(authenticated)/system/admin/groups/page.tsx` (new),
     `src/modules/system-admin/components/groups/groups-list.tsx` (new),
     `src/modules/system-admin/components/groups/create-group-dialog.tsx` (new),
