@@ -5,15 +5,15 @@
 
 "use client";
 
-import { addDays, format, parse } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { useId, useMemo } from "react";
+import { addDays, differenceInCalendarDays, format, parse } from "date-fns";
+import { CalendarIcon, ClockIcon, PlusIcon, XIcon, type LucideIcon } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import * as z from "zod";
 
 import { TZDate } from "@date-fns/tz";
 
+import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     Select,
@@ -22,7 +22,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { usePreferences } from "@/hooks/use-preferences";
 import { TIME_FORMAT_PATTERNS } from "@/lib/datetime";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
@@ -37,15 +36,102 @@ import { cn } from "@/lib/utils";
 
 const MAX_DAYS = 14;
 
-/** The `Select` value standing in for "no end time" (Radix refuses an empty-string item value). */
-const NO_END_TIME = "none";
-
 /** "00:00", "00:15", … "23:45". */
 const QUARTER_HOURS = Array.from({ length: 96 }, (_, index) => {
     const hours = String(Math.floor(index / 4)).padStart(2, "0");
     const minutes = String((index % 4) * 15).padStart(2, "0");
     return `${hours}:${minutes}`;
 });
+
+/** How long a newly added time runs, in quarter hours: "+ Add time" and "+ Add end time" end 2h after the start. */
+const DEFAULT_TIMED_QUARTERS = 8;
+
+/** The quarter-hour time `quarters` after `time`, wrapping past midnight. */
+function laterTime(time: string, quarters: number): string {
+    const index = QUARTER_HOURS.indexOf(time);
+    return QUARTER_HOURS[(index + quarters) % QUARTER_HOURS.length];
+}
+
+/** A tile: a bordered box holding an icon, a small label and the value. It's the trigger of its control. */
+const TILE_CLASS = cn(
+    "flex min-w-40 items-center gap-2.5 rounded-lg border border-input bg-transparent py-1.5 pr-2 pl-2.5 text-left text-sm whitespace-nowrap transition-colors outline-none",
+    "hover:bg-accent aria-expanded:bg-accent",
+    "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+    "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+    "dark:bg-input/30 dark:hover:bg-input/50",
+);
+
+/** `SelectTrigger` fixes its height through `data-[size=default]`, so a tile overrides it there. */
+const SELECT_TILE_CLASS = cn(TILE_CLASS, "data-[size=default]:h-auto");
+
+/** A tile's icon, label and value, inside its trigger. */
+function TileBody({
+    icon: Icon,
+    label,
+    children,
+}: {
+    icon: LucideIcon;
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <>
+            <Icon className="text-muted-foreground size-4 shrink-0" />
+            <span className="flex flex-1 flex-col">
+                <span className="text-muted-foreground text-xs">{label}</span>
+                <span>{children}</span>
+            </span>
+        </>
+    );
+}
+
+/**
+ * A tile with a × that removes what it holds. The × sits over the trigger's right edge rather
+ * than inside it, since a button can't nest in another; give the trigger `pr-9` to clear it.
+ */
+function RemovableTile({
+    label,
+    onRemove,
+    children,
+}: {
+    label: string;
+    onRemove: () => void;
+    children: ReactNode;
+}) {
+    return (
+        <div className="relative">
+            {children}
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label={`Remove ${label.toLowerCase()}`}
+                className="absolute top-1/2 right-1.5 -translate-y-1/2"
+                onClick={onRemove}
+            >
+                <XIcon />
+            </Button>
+        </div>
+    );
+}
+
+/** A small primary-coloured "+ Add …" (or "Remove …") link under the tiles. */
+function TileLink({
+    onClick,
+    plus = true,
+    children,
+}: {
+    onClick: () => void;
+    plus?: boolean;
+    children: ReactNode;
+}) {
+    return (
+        <Button type="button" variant="link" size="xs" className="h-auto px-0" onClick={onClick}>
+            {plus && <PlusIcon />}
+            {children}
+        </Button>
+    );
+}
 
 /** The picker's state in a form. An end time equal to the start time isn't a session (`sessionInstants` refuses it). */
 export const sessionWhenSchema = z
@@ -80,9 +166,14 @@ export function defaultSessionWhen(orgZone: string): SessionFormState {
 }
 
 /**
- * When a skill check session runs: a start date, then either a number of whole days or a start
- * time and an optional end time, all in the org's zone. Controlled over `SessionFormState`;
+ * When a skill check session runs, as a row of tiles in the style of Facebook's event form: a
+ * start date, then either an end date (all day over several days) or a start time and an
+ * optional end time, all in the org's zone. Controlled over `SessionFormState`;
  * `sessionInstants` turns the value into what's stored.
+ *
+ * Which tiles show follows from the value alone, so an edit dialog opens on the right ones: End
+ * date when an all-day session runs more than one day, the time tiles when it's timed, End time
+ * when it has an end.
  */
 export function SkillTrack_SessionWhenPicker({
     value,
@@ -95,12 +186,15 @@ export function SkillTrack_SessionWhenPicker({
     orgZone: string;
     invalid?: boolean;
 }) {
-    const id = useId();
     const { display } = usePreferences();
     const timePattern = TIME_FORMAT_PATTERNS[display.timeFormat];
+    const [openCalendar, setOpenCalendar] = useState<"start" | "end" | null>(null);
 
-    // The day as a local `Date`, only for the calendar and for formatting: no instant is read from it.
+    // The days as local `Date`s, only for the calendars and for formatting: no instant is read from them.
     const day = parse(value.date, "yyyy-MM-dd", new Date());
+    const lastDay = addDays(day, value.days - 1);
+
+    const hasEndDate = value.allDay && value.days > 1;
 
     const timeLabel = (time: string) => format(parse(time, "HH:mm", new Date()), timePattern);
 
@@ -131,22 +225,22 @@ export function SkillTrack_SessionWhenPicker({
         onChange({ ...value, ...patch });
     }
 
+    function calendarOpenChange(which: "start" | "end") {
+        return (open: boolean) => setOpenCalendar(open ? which : null);
+    }
+
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <Popover>
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+                <Popover open={openCalendar === "start"} onOpenChange={calendarOpenChange("start")}>
                     <PopoverTrigger
-                        id={`${id}-date`}
                         aria-label="Start date"
                         aria-invalid={invalid}
-                        className={cn(
-                            "border-input flex h-8 w-fit items-center justify-between gap-2 border bg-transparent pr-2 pl-2.5 py-2 text-xs whitespace-nowrap transition-colors outline-none",
-                            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
-                            "aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
-                        )}
+                        className={TILE_CLASS}
                     >
-                        {format(day, SESSION_DATE_PATTERN)}
-                        <CalendarIcon className="size-4 opacity-50" />
+                        <TileBody icon={CalendarIcon} label="Start date">
+                            {format(day, SESSION_DATE_PATTERN)}
+                        </TileBody>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto overflow-hidden p-0">
                         <Calendar
@@ -155,57 +249,60 @@ export function SkillTrack_SessionWhenPicker({
                             defaultMonth={day}
                             captionLayout="dropdown"
                             required
-                            onSelect={(selected) =>
-                                update({ date: format(selected, "yyyy-MM-dd") })
-                            }
+                            onSelect={(selected) => {
+                                update({ date: format(selected, "yyyy-MM-dd") });
+                                setOpenCalendar(null);
+                            }}
                             autoFocus
                         />
                     </PopoverContent>
                 </Popover>
-                <div className="flex items-center gap-2">
-                    <Switch
-                        id={`${id}-all-day`}
-                        checked={value.allDay}
-                        onCheckedChange={(allDay) => update({ allDay })}
-                    />
-                    <Label htmlFor={`${id}-all-day`}>All day</Label>
-                </div>
-            </div>
 
-            {value.allDay ? (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <Select
-                        value={String(value.days)}
-                        // Radix fires "" when it mounts or resets inside a form; that isn't a choice.
-                        onValueChange={(days) => {
-                            if (days) update({ days: Number(days) });
-                        }}
-                    >
-                        <SelectTrigger aria-label="Number of days" aria-invalid={invalid}>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {Array.from({ length: MAX_DAYS }, (_, index) => index + 1).map(
-                                (days) => (
-                                    <SelectItem key={days} value={String(days)}>
-                                        {days === 1 ? "1 day" : `${days} days`}
-                                    </SelectItem>
-                                ),
-                            )}
-                        </SelectContent>
-                    </Select>
-                    {value.days > 1 && (
-                        <span className="text-muted-foreground text-xs">
-                            Last day {format(addDays(day, value.days - 1), SESSION_DATE_PATTERN)}
-                        </span>
-                    )}
-                </div>
-            ) : (
-                <div className="flex flex-wrap items-center gap-2">
+                {hasEndDate && (
+                    <RemovableTile label="End date" onRemove={() => update({ days: 1 })}>
+                        <Popover
+                            open={openCalendar === "end"}
+                            onOpenChange={calendarOpenChange("end")}
+                        >
+                            <PopoverTrigger
+                                aria-label="End date"
+                                aria-invalid={invalid}
+                                className={cn(TILE_CLASS, "pr-9")}
+                            >
+                                <TileBody icon={CalendarIcon} label="End date">
+                                    {format(lastDay, SESSION_DATE_PATTERN)}
+                                </TileBody>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto overflow-hidden p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={lastDay}
+                                    defaultMonth={lastDay}
+                                    required
+                                    disabled={[
+                                        { before: day },
+                                        { after: addDays(day, MAX_DAYS - 1) },
+                                    ]}
+                                    onSelect={(selected) => {
+                                        // Picking the start day itself makes it a one-day session again.
+                                        update({
+                                            days: differenceInCalendarDays(selected, day) + 1,
+                                        });
+                                        setOpenCalendar(null);
+                                    }}
+                                    autoFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </RemovableTile>
+                )}
+
+                {!value.allDay && (
                     <Select
                         value={value.startTime}
                         onValueChange={(startTime) => {
-                            if (!startTime) return; // Radix's mount/reset "", as for `days`
+                            // Radix fires "" when it mounts or resets inside a form; that isn't a choice.
+                            if (!startTime) return;
                             // An end equal to the new start isn't on offer: drop it.
                             update({
                                 startTime,
@@ -213,8 +310,14 @@ export function SkillTrack_SessionWhenPicker({
                             });
                         }}
                     >
-                        <SelectTrigger aria-label="Start time" aria-invalid={invalid}>
-                            <SelectValue />
+                        <SelectTrigger
+                            aria-label="Start time"
+                            aria-invalid={invalid}
+                            className={SELECT_TILE_CLASS}
+                        >
+                            <TileBody icon={ClockIcon} label="Start time">
+                                <SelectValue />
+                            </TileBody>
                         </SelectTrigger>
                         <SelectContent>
                             {QUARTER_HOURS.map((time) => (
@@ -224,28 +327,73 @@ export function SkillTrack_SessionWhenPicker({
                             ))}
                         </SelectContent>
                     </Select>
-                    <span className="text-muted-foreground text-xs">to</span>
-                    <Select
-                        value={value.endTime ?? NO_END_TIME}
-                        onValueChange={(endTime) => {
-                            if (!endTime) return; // Radix's mount/reset "", as for `days`
-                            update({ endTime: endTime === NO_END_TIME ? null : endTime });
-                        }}
+                )}
+
+                {!value.allDay && value.endTime != null && (
+                    <RemovableTile label="End time" onRemove={() => update({ endTime: null })}>
+                        <Select
+                            value={value.endTime}
+                            onValueChange={(endTime) => {
+                                if (!endTime) return; // Radix's mount/reset "", as for the start time
+                                update({ endTime });
+                            }}
+                        >
+                            <SelectTrigger
+                                aria-label="End time"
+                                aria-invalid={invalid}
+                                className={cn(SELECT_TILE_CLASS, "pr-9")}
+                            >
+                                <TileBody icon={ClockIcon} label="End time">
+                                    <SelectValue />
+                                </TileBody>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {endOptions.map(({ time, nextDay }) => (
+                                    <SelectItem key={time} value={time}>
+                                        {nextDay
+                                            ? `${timeLabel(time)} (next day)`
+                                            : timeLabel(time)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </RemovableTile>
+                )}
+            </div>
+
+            <div className="flex flex-wrap gap-x-4">
+                {value.allDay && !hasEndDate && (
+                    <TileLink onClick={() => update({ days: 2 })}>Add end date</TileLink>
+                )}
+                {value.allDay && (
+                    // An end date is all-day only, so adding a time clears it.
+                    <TileLink
+                        onClick={() =>
+                            update({
+                                allDay: false,
+                                days: 1,
+                                endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS),
+                            })
+                        }
                     >
-                        <SelectTrigger aria-label="End time" aria-invalid={invalid}>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={NO_END_TIME}>No end time</SelectItem>
-                            {endOptions.map(({ time, nextDay }) => (
-                                <SelectItem key={time} value={time}>
-                                    {nextDay ? `${timeLabel(time)} (next day)` : timeLabel(time)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
+                        Add time
+                    </TileLink>
+                )}
+                {!value.allDay && value.endTime == null && (
+                    <TileLink
+                        onClick={() =>
+                            update({ endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS) })
+                        }
+                    >
+                        Add end time
+                    </TileLink>
+                )}
+                {!value.allDay && (
+                    <TileLink plus={false} onClick={() => update({ allDay: true, days: 1 })}>
+                        Remove time
+                    </TileLink>
+                )}
+            </div>
 
             <p className="text-muted-foreground text-xs">{zoneHint}</p>
         </div>

@@ -200,7 +200,7 @@ _End of review group B. Visual checkpoint: the org settings General card, a Draf
 
 ### Review group C: picker redesign (from the Group B visual checkpoint)
 
-- [ ] **Task 9: Tile-style picker with "+ Add end date" / "+ Add time" (Facebook-events style)**
+- [x] **Task 9: Tile-style picker with "+ Add end date" / "+ Add time" (Facebook-events style)**
   - **Files:** `src/modules/skill-track/components/session-when-picker.tsx`, `content/help/skill-track/sessions.mdx`.
   - **Decided at the checkpoint** (user, 2026-10-17):
     - The end date is for all-day sessions only. Timed sessions stay on one day, with end times after midnight labelled "(next day)" as now.
@@ -253,6 +253,8 @@ Sessions take a start and an optional end, or run all day across one or more day
 ## Parked
 
 - **Lost-race tests run on an already-approved session.** In `skill-check-sessions-router.test.ts`, the `guarded` loop of lost-race tests runs after the `approveSession` race test, which leaves `racedSession` at `Include` (prisma-mock runs the rest of a failed transaction). They still assert that the lock was called, but the session isn't Draft, so the pre-check may be what refuses. Give them their own Draft session, as Task 3 did for `updateSession` (`racedUpdate`).
+
+- **The create dialog reads `Date.now()` during render.** Next.js logs "encountered the unstable value `Date.now()` while prerendering" for `/orgs/[slug]/skill-track/sessions`, because `defaultSessionWhen` runs in the `useForm` defaults. The same pattern is already on integration (`date: new Date().toISOString()`). A fix has to avoid both a placeholder-date flash and a crash when the dialog is opened by URL.
 
 ## Review notes
 
