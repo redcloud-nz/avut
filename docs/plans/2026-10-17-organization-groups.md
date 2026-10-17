@@ -315,7 +315,7 @@ dataset per `describe` (`.claude/rules/testing.md`) and build the context as
     create dialog creates a group, lands on its page and shows a slug conflict inline;
     `npm run check` passes.
 
-- [ ] **7. Group detail page: identity, edit, delete** `visual` `mechanical`
+- [x] **7. Group detail page: identity, edit, delete** `visual` `mechanical` — `feat(organization-groups): add group detail page with edit and delete`
   - **Files:** `src/app/(wrapper)/(authenticated)/system/admin/groups/[groupId]/page.tsx` (new),
     `src/modules/system-admin/components/groups/group-content.tsx` (new),
     `src/modules/system-admin/components/groups/edit-group-dialog.tsx` (new),

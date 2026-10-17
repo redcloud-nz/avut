@@ -5,10 +5,38 @@
  * Path: /system/admin/groups/[groupId]
  */
 
-import { notFound } from "next/navigation";
+import { Metadata } from "next";
 
-// Placeholder so the `/system/admin/groups/[groupId]` route type exists for the list page's links;
-// Task 7 replaces it with the real detail page.
-export default function SystemAdmin_Group_Page() {
-    notFound();
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { OrganizationGroupId } from "@/lib/schemas/organization-group";
+import { SystemAdmin_Group_Content } from "@/modules/system-admin/components/groups/group-content";
+import { requireSystemAdmin } from "@/server/system-admin-access";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
+
+type Props = PageProps<"/system/admin/groups/[groupId]">;
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const { groupId: raw } = await props.params;
+    const groupId = OrganizationGroupId.schema.parse(raw);
+
+    const group = await fetchQuery(trpc.organizationGroups.getGroup.queryOptions({ groupId }));
+
+    return {
+        title: `${group.name} ${TITLE_SEPARATOR} Groups`,
+    };
+}
+
+export default async function SystemAdmin_Group_Page(props: Props) {
+    await requireSystemAdmin();
+
+    const { groupId: raw } = await props.params;
+    const groupId = OrganizationGroupId.schema.parse(raw);
+
+    prefetch(trpc.organizationGroups.getGroup.queryOptions({ groupId }));
+
+    return (
+        <HydrateClient>
+            <SystemAdmin_Group_Content groupId={groupId} />
+        </HydrateClient>
+    );
 }
