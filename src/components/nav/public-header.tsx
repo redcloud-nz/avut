@@ -10,7 +10,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { SiGithub } from "@icons-pack/react-simple-icons";
 
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "@/components/ui/link";
 import { docsHref } from "@/lib/docs-sections";
 import { REPO_URL } from "@/lib/site";
+import { cn } from "@/lib/utils";
 import { hasActiveSession } from "@/server/session";
 
 function SignedOutCta() {
@@ -45,24 +46,42 @@ async function HeaderCta() {
 
 export function PublicHeader({
     showCta = true,
+    menu,
+    search,
+    wide = false,
 }: {
     /** Off on `/auth/*` — showing sign-in/sign-up CTAs while already on that flow is redundant. */
     showCta?: boolean;
+    /** Rendered before the logo, grouped with it — the docs' mobile nav trigger. */
+    menu?: ReactNode;
+    /** Rendered first in the right-hand nav — the docs search. */
+    search?: ReactNode;
+    /** Widens the container to `max-w-7xl` so the header's edges line up with the docs columns. */
+    wide?: boolean;
 }) {
     return (
         <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
-            <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-6 px-6 py-3.5 md:px-10">
-                <Link href="/" className="shrink-0">
-                    <Image
-                        src="/avut-logo.svg"
-                        alt="A.V.U.T."
-                        width={96}
-                        height={32}
-                        loading="eager"
-                        className="h-auto w-24 dark:invert"
-                    />
-                </Link>
+            <div
+                className={cn(
+                    "mx-auto flex items-center justify-between gap-6 px-6 py-3.5 md:px-10",
+                    wide ? "max-w-7xl" : "max-w-[1120px]",
+                )}
+            >
+                <div className="flex items-center gap-2">
+                    {menu}
+                    <Link href="/" className="shrink-0">
+                        <Image
+                            src="/avut-logo.svg"
+                            alt="A.V.U.T."
+                            width={96}
+                            height={32}
+                            loading="eager"
+                            className="h-auto w-24 dark:invert"
+                        />
+                    </Link>
+                </div>
                 <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {search}
                     <Link href="/tools" className="hidden hover:text-foreground sm:inline">
                         Tools
                     </Link>

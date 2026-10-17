@@ -18,7 +18,15 @@ import { cn } from "@/lib/utils";
 type Result = Pick<DocsSearchRecord, "slug" | "title" | "section" | "description">;
 
 /** Client-side docs search. Loads the static index lazily on first focus. */
-export function DocsSearch() {
+export function DocsSearch({
+    className,
+    align = "end",
+}: {
+    /** Merged onto the input — sets its width. */
+    className?: string;
+    /** Which edge of the input the results popover lines up with. */
+    align?: "start" | "end";
+}) {
     const router = useRouter();
     const listboxId = useId();
     const [query, setQuery] = useState("");
@@ -94,7 +102,7 @@ export function DocsSearch() {
                     showPopover && activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined
                 }
                 placeholder="Search docs…"
-                className="h-8 w-40 sm:w-56"
+                className={cn("h-8", className)}
                 value={query}
                 onFocus={() => {
                     setOpen(true);
@@ -122,7 +130,10 @@ export function DocsSearch() {
                 <div
                     id={listboxId}
                     role="listbox"
-                    className="bg-popover absolute right-0 z-50 mt-1 w-80 rounded-md border p-1 shadow-md"
+                    className={cn(
+                        "bg-popover absolute z-50 mt-1 w-80 rounded-md border p-1 shadow-md",
+                        align === "end" ? "right-0" : "left-0",
+                    )}
                 >
                     {results.length === 0 ? (
                         <p className="text-muted-foreground px-2 py-3 text-sm">No matches.</p>

@@ -53,7 +53,7 @@ _End of review group 1._
 
 ### Review group 2: layout (visual checkpoint)
 
-- [ ] **4. Search moves into the header** `visual`
+- [x] **4. Search moves into the header** `visual` — feat(docs): move docs search into the public header
   - **Files:** `src/components/nav/public-header.tsx`, `src/components/docs/docs-search.tsx`, `src/app/(public)/(docs)/docs/layout.tsx`
   - **Do:**
     - `PublicHeader` gains `menu?: ReactNode`, `search?: ReactNode` and `wide?: boolean` (see Decisions), each with a one-line JSDoc as `showCta` has. `menu` renders before the logo link, the two grouped in a `flex items-center gap-2` wrapper. `search` renders first inside the `<nav>`. `wide` swaps `max-w-[1120px]` for `max-w-7xl`.
