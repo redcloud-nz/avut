@@ -387,3 +387,21 @@ None. `content/docs/` and `content/help/` have no system-admin pages.
   (avut-ideas#18).
 
 ## Parked
+
+- **History gate for memberships when entries go org-facing.** `OrganizationGroupMembership` is
+  in neither `HistoryObjects` nor `RelatedEntryPermissions` (`src/lib/schemas/object-history.ts`).
+  Harmless while every group entry is `scope: "system"` (forced `organizationId: null`, so
+  `ObjectHistory.list` can't match it), but when decision 3 is revisited and these entries become
+  org-scoped or reach an org feed, add a gate for it there.
+
+## Review notes
+
+- `organization-groups.ts` `updateGroup` (Task 3): writes and logs an `Update` with
+  `changes: []` when nothing changed. Return `{ id: groupId }` early when `changes.length === 0`
+  (as `organization-notes.ts:127` does), plus a test that a no-change update writes no log entry.
+- `organization-groups.ts` `deleteGroup` (Task 3): the active-member check runs outside the
+  transaction; add a one-line comment at the guard accepting the race, like
+  `assertNoActiveOverseer`'s.
+- `organization-groups.ts` `getGroupDetail` (Task 3): cast `memberships[].id` to
+  `OrganizationGroupMembershipId` as `listGroupsForOrganization` does, so the UI can pass it to
+  `setMemberRole`/`revokeMember` without its own cast.
