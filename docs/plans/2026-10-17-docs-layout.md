@@ -61,7 +61,7 @@ _End of review group 1._
     - The docs layout passes `wide` and `search={<DocsSearch className="hidden md:block md:w-40 lg:w-56" />}` (or wraps it so it's hidden below `md`), and deletes the `h-14 … border-b` sub-bar (the "AVUT Docs" link and its search). Keep the layout non-async and `<DocsNav>` behind its `<Suspense>`.
   - **Done when:** search works from the header on `/docs` pages; the header row doesn't overflow at `md` (768px), signed out; `/`, `/tools` and `/policies/*` look exactly as before. `npm run check` passes.
 
-- [ ] **5. `SaratogaContents` works with window scroll**
+- [x] **5. `SaratogaContents` works with window scroll** — feat(blocks): SaratogaContents works with window scroll
   - **Files:** `src/components/blocks/saratoga-contents.tsx`
   - **Do:**
     - When `navRef.current?.closest('[data-slot="scroll-container"]')` is null, measure against the window: listen for `scroll` on `window`; "at the bottom" is `window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1`; the trigger line is `offset` px from the viewport top. With a container, the trigger line stays `container.getBoundingClientRect().top + offset`, so the existing path is unchanged.
