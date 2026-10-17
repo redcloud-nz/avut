@@ -191,7 +191,7 @@ Review groups: **A** = Tasks 1–2 (schema + vocabulary), **B** = Tasks 3–5 (s
     `create()` producing a valid id; neither `provider-credential.test.ts` `describe` uses a
     random `groupId` (prisma-mock won't catch a missed one); `npm run check` passes.
 
-- [ ] **2. Log vocabulary and shared system-service context**
+- [x] **2. Log vocabulary and shared system-service context** — `feat(organization-groups): add group log vocabulary and shared system service context`
   - **Files:** `src/lib/schemas/log-entry.ts`, `src/lib/schemas/log-entry.test.ts`,
     `src/server/services/service-context.ts`, `src/server/services/user-accounts.ts`,
     `src/server/services/user-accounts.test.ts` (import only), `src/trpc/system-service-context.ts`

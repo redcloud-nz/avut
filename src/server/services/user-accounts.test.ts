@@ -13,6 +13,7 @@ import { UserNoteId } from "@/lib/schemas/user-note";
 import { recordLogEntry } from "@/server/log-entry";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 
+import type { SystemServiceContext } from "./service-context";
 import * as UserAccounts from "./user-accounts";
 
 describe("UserAccounts", () => {
@@ -29,7 +30,7 @@ describe("UserAccounts", () => {
     const db = createMockPrisma();
     const actor = { userId: T.admin };
 
-    const ctx: UserAccounts.SystemServiceContext = {
+    const ctx: SystemServiceContext = {
         prisma: db,
         logSystemEvent: (options, tx = db) =>
             recordLogEntry({ scope: "system", actor, actorLabel: "Admin", ...options }, tx),

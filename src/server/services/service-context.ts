@@ -53,6 +53,23 @@ export type OrgServiceContext = UserServiceContext & {
 };
 
 /**
+ * The narrow context a system-scoped domain service takes (`user-accounts.ts`,
+ * `organization-groups.ts`) — one acting as a system admin, with no organization or owner scope.
+ * Build it in a router with `systemServiceContext(ctx)` from `src/trpc/system-service-context.ts`.
+ *
+ * It deliberately has no `userId` or `logEvent`, so it does not satisfy `UserServiceContext`: it
+ * can't be passed to a user- or org-scoped service, or to `withBatch`.
+ */
+export interface SystemServiceContext {
+    prisma: PrismaClient;
+    /** Writes a `scope: "system"` entry — the only scope that survives the account's purge. */
+    logSystemEvent: (
+        options: LogEventOptions,
+        tx?: Prisma.TransactionClient,
+    ) => Prisma.PrismaPromise<LogEntryRecord>;
+}
+
+/**
  * Binds an existing `LogBatch` so every `ctx.logEvent` call made through the returned context
  * joins it, without threading a `batchId` parameter through every helper in between. Does not
  * create the batch — pass the id from `createLogBatch`.
