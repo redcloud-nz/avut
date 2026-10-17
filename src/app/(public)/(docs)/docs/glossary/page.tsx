@@ -14,6 +14,7 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { ScrollToHash } from "@/components/docs/scroll-to-hash";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { glossaryBySlug } from "@/lib/glossary";
@@ -48,39 +49,42 @@ async function GlossaryEntries() {
     const entries = await getVisibleGlossaryEntries();
 
     return (
-        <dl className="flex flex-col gap-8">
-            {entries.map((entry) => (
-                <div key={entry.slug} id={entry.slug} className="scroll-mt-20">
-                    <dt className="flex items-center gap-2">
-                        <span className="text-xl font-semibold">{entry.term}</span>
-                        {entry.modules?.map((moduleId) => (
-                            <Badge key={moduleId} variant="outline">
-                                {Modules[moduleId].label}
-                            </Badge>
-                        ))}
-                    </dt>
-                    <dd className="mt-1 leading-7">
-                        <p>{entry.longDefinition}</p>
-                        {entry.relatedTerms && entry.relatedTerms.length > 0 && (
-                            <p className="text-muted-foreground mt-2 text-sm">
-                                See also:{" "}
-                                {entry.relatedTerms.map((slug, i) => (
-                                    <span key={slug}>
-                                        {i > 0 && ", "}
-                                        <Link
-                                            href={`/docs/glossary#${slug}` as Route}
-                                            className="text-primary underline underline-offset-2 hover:no-underline"
-                                        >
-                                            {glossaryBySlug.get(slug)?.term ?? slug}
-                                        </Link>
-                                    </span>
-                                ))}
-                            </p>
-                        )}
-                    </dd>
-                </div>
-            ))}
-        </dl>
+        <>
+            <ScrollToHash />
+            <dl className="flex flex-col gap-8">
+                {entries.map((entry) => (
+                    <div key={entry.slug} id={entry.slug} className="scroll-mt-20">
+                        <dt className="flex items-center gap-2">
+                            <span className="text-xl font-semibold">{entry.term}</span>
+                            {entry.modules?.map((moduleId) => (
+                                <Badge key={moduleId} variant="outline">
+                                    {Modules[moduleId].label}
+                                </Badge>
+                            ))}
+                        </dt>
+                        <dd className="mt-1 leading-7">
+                            <p>{entry.longDefinition}</p>
+                            {entry.relatedTerms && entry.relatedTerms.length > 0 && (
+                                <p className="text-muted-foreground mt-2 text-sm">
+                                    See also:{" "}
+                                    {entry.relatedTerms.map((slug, i) => (
+                                        <span key={slug}>
+                                            {i > 0 && ", "}
+                                            <Link
+                                                href={`/docs/glossary#${slug}` as Route}
+                                                className="text-primary underline underline-offset-2 hover:no-underline"
+                                            >
+                                                {glossaryBySlug.get(slug)?.term ?? slug}
+                                            </Link>
+                                        </span>
+                                    ))}
+                                </p>
+                            )}
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </>
     );
 }
 
