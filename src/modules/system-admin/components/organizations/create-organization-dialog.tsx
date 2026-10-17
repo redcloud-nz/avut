@@ -42,19 +42,12 @@ import { Input } from "@/components/ui/input";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { route } from "@/lib/routes";
 import { OrganizationData } from "@/lib/schemas/organization";
+import { slugify } from "@/modules/system-admin/lib/slugify";
 import { trpc } from "@/trpc/client";
 
 const createOrganizationFormSchema = OrganizationData.createSchema.extend({
     addSelfAsOwner: z.boolean(),
 });
-
-function slugify(value: string) {
-    return value
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
-}
 
 /**
  * `?action=create` dialog for provisioning a new organization from the system-admin
