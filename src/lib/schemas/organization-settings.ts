@@ -13,6 +13,7 @@ import {
     SKILL_CHECK_RESULT_VALUES,
     SkillCheckResultValue,
 } from "./skill-check-result";
+import { TimeZone } from "./time-zone";
 
 const SKILL_TRACK_DEFAULT_ENABLED_RESULTS: readonly SkillCheckResultValue[] = [
     "NotTaught",
@@ -66,6 +67,12 @@ export const RUBBISH_BIN_MAX_RETENTION_DAYS = 90;
 const organizationSettingsSchema = z.object({
     general: z.object({
         publicDomain: z.string().regex(z.regexes.domain, "Invalid domain format").optional(),
+        /*
+         * The IANA zone the organisation operates in. Skill check session start and end times
+         * are defined against it: an all-day session runs from local midnight to local midnight
+         * in this zone. Changing it doesn't re-anchor sessions already stored.
+         */
+        timeZone: TimeZone.schema.default("Pacific/Auckland"),
     }),
 
     integrations: z.object({

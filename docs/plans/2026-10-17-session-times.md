@@ -56,7 +56,7 @@ A skill check session gets a real start and end, defined in an **org time zone**
 
 ### Review group A: data layer
 
-- [ ] **Task 1: Org time zone setting (schema)**
+- [x] **Task 1: Org time zone setting (schema)** — feat(settings): org time zone setting (general.timeZone)
   - **Files:** `src/lib/schemas/time-zone.ts` (new), `src/lib/schemas/user-settings.ts`, `src/lib/schemas/organization-settings.ts`, plus tests (`src/lib/schemas/time-zone.test.ts`, and extend `settings-schema.test.ts` or an org-settings test).
   - **Do:** Move `isValidTimeZone` into `time-zone.ts` and export `TimeZone.schema` (`z.string().refine(isValidTimeZone, "Unknown IANA time zone")`). Use it for `display.timeZone`. Add `general.timeZone: TimeZone.schema.default("Pacific/Auckland")` to `OrganizationSettings`. Don't add an object-level default to `general`.
   - **Done when:**
