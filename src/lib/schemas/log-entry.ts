@@ -68,8 +68,7 @@ export type LogScope = (typeof logScopeValues)[number];
  * marked DORMANT reach no database today. `Ban`/`Unban`/`Impersonate` are
  * constructed only in `server/auth-hooks/auth-log-hooks.ts`, whose better-auth
  * `databaseHooks` wire was written and then reverted, so nothing calls it.
- * `Move` has no producer at all — `skill-package-builder-router`'s `moveSkill`
- * still logs `Update`. They are kept because the vocabulary is the design, not
+ * They are kept because the vocabulary is the design, not
  * a census of the current call sites — but a reader should be able to tell
  * which half is live.
  *
@@ -87,7 +86,7 @@ const logActionValues = [
     "Create",
     "Delete",
     "Impersonate", // DORMANT — reverted databaseHooks wire
-    "Move", // DORMANT — moveSkill logs "Update"
+    "Move", // skill-package-builder moveSkill
     "Publish",
     "Purge",
     "Recover",
@@ -154,9 +153,11 @@ export type LogObjectType = (typeof logObjectTypeValues)[number];
  * with `objectType: "SkillPackage"` is unambiguous against the same role with
  * `objectType: "SkillGroup"`.
  *
- * `from` and `to` are DORMANT: every live call site passes `context`, or
- * nothing at all (`recordLogEntry` writes the `primary` row itself). They are
- * the intended shape for a move/transfer entry, which nothing emits yet.
+ * `from` and `to` are the shape for a move: the old and new location. Their
+ * users are `moveSkill` in `skill-package-builder-router` and skill-package
+ * import, both through `SkillPackages.skillMoveLogRefs`. Every other call site
+ * passes `context`, or nothing at all (`recordLogEntry` writes the `primary`
+ * row itself).
  */
 const logRefRoleValues = ["primary", "context", "from", "to"] as const;
 

@@ -56,9 +56,11 @@ export interface DescribeChangeOptions {
  * Field-label overrides per object type, for fields whose humanised name reads badly.
  *
  * Keyed by the **entry's own** `objectType`, not the page's: a related `TeamMembership` entry on
- * a Person's history carries `TeamMembership` fields. Empty until a real field needs one.
+ * a Person's history carries `TeamMembership` fields.
  */
-export const FieldLabels: Partial<Record<LogObjectType, Record<string, string>>> = {};
+export const FieldLabels: Partial<Record<LogObjectType, Record<string, string>>> = {
+    Skill: { skillGroupId: "Group", skillPackageId: "Package" },
+};
 
 /** Object-type labels where humanising the type name isn't good enough. */
 const objectTypeLabelOverrides: Partial<Record<LogObjectType, string>> = {

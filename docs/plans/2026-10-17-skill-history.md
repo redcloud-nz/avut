@@ -70,7 +70,7 @@
     - **Purge:** purging a skill and a group.
     - `npm run check` passes.
 
-- [ ] **3. Package and group refs on router-written entries; moves log `Move` with `from`/`to`**
+- [x] **3. Package and group refs on router-written entries; moves log `Move` with `from`/`to`** — feat(history): ref package and group on router-written skill entries; log moves as Move
   - **Files:** `src/trpc/routers/skill-package-builder-router.ts`, `src/trpc/routers/skill-package-builder-router.test.ts`, `src/lib/schemas/log-entry.ts` (comments only), `src/lib/diff-format.ts` (`FieldLabels` only)
   - **Do:**
     - `createGroup`, `updateGroup` and `reorderGroupSkills` (a `SkillGroup` `Update`): `refs: SkillPackages.groupLogRefs(…)`. `reorderGroups` logs the package itself, so it is unchanged.

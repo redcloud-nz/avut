@@ -124,6 +124,33 @@ export function groupLogRefs(group: Pick<SkillGroup, "skillPackageId">): LogEntr
 }
 
 /**
+ * The refs a `Skill` move entry carries (#342): the old group as `from` and the new one as `to`,
+ * so the move shows on both groups' History pages. The package is `context` when it is unchanged,
+ * otherwise the old package is `from` and the new one `to`. Used by `moveSkill` and by an import
+ * that changes a skill's group.
+ */
+export function skillMoveLogRefs({
+    from,
+    to,
+}: {
+    from: Pick<Skill, "skillPackageId" | "skillGroupId">;
+    to: Pick<Skill, "skillPackageId" | "skillGroupId">;
+}): LogEntryRef[] {
+    const packageRefs: LogEntryRef[] =
+        from.skillPackageId === to.skillPackageId
+            ? [{ objectType: "SkillPackage", objectId: to.skillPackageId, role: "context" }]
+            : [
+                  { objectType: "SkillPackage", objectId: from.skillPackageId, role: "from" },
+                  { objectType: "SkillPackage", objectId: to.skillPackageId, role: "to" },
+              ];
+    return [
+        ...packageRefs,
+        { objectType: "SkillGroup", objectId: from.skillGroupId, role: "from" },
+        { objectType: "SkillGroup", objectId: to.skillGroupId, role: "to" },
+    ];
+}
+
+/**
  * Build a portable export envelope for a skill-package authoring tree. Pure — the caller
  * supplies the already-loaded records.
  */
@@ -510,14 +537,17 @@ export async function prepareImport(
         // A skill re-imported into a different group refs its old group as `from` and its new
         // one as `to`, in place of the group `context` ref, so the move shows on both (#342).
         const previousGroupId = existingSkills.get(skill.id)?.skillGroupId;
-        const refs: LogEntryRef[] =
+        const current = { skillPackageId: incoming.id, skillGroupId: group.id };
+        const refs =
             previousGroupId !== undefined && previousGroupId !== group.id
-                ? [
-                      { objectType: "SkillPackage", objectId: incoming.id, role: "context" },
-                      { objectType: "SkillGroup", objectId: previousGroupId, role: "from" },
-                      { objectType: "SkillGroup", objectId: group.id, role: "to" },
-                  ]
-                : skillLogRefs({ skillPackageId: incoming.id, skillGroupId: group.id });
+                ? skillMoveLogRefs({
+                      from: {
+                          skillPackageId: incoming.id,
+                          skillGroupId: previousGroupId as SkillGroupId,
+                      },
+                      to: current,
+                  })
+                : skillLogRefs(current);
         writeItems.push({
             write: (db) =>
                 db.skill.upsert({
