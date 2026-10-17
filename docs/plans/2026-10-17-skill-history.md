@@ -125,7 +125,7 @@ _End of review group 2._
 
 ### Review group 3: UI (visual checkpoint)
 
-- [ ] **6. History timeline names skill-package objects** `visual`
+- [x] **6. History timeline names skill-package objects** `visual` — feat(history): name skill-package objects in the history timeline
   - **Files:** `src/components/history/object-history.tsx`
   - **Do:**
     - **Refs:** `refName` returns the generic ref's `name` when set. `HistoryRef` renders a named generic ref as its type label plus the name as plain text, and an unnamed one as now. A `from`/`to` ref is prefixed "from"/"to".
@@ -185,3 +185,6 @@ Groups and skills now have History pages, and package History covers changes to 
 - **Group 1 — import moves have no group diff** (`src/server/services/skill-packages.ts`, `prepareImport`). When an import moves a skill to another group (`groupChanged`), the entry carries `from`/`to` group refs. Its `changes` come from `SKILL_COMPARE_KEYS`, which leaves out `skillGroupId`, so both groups' pages show a bare "Updated" with no group change line.
   - **Fix:** when `groupChanged`, include a `skillGroupId` change (prev → curr) in that skill's changes, so it renders "Group: X → Y" like `moveSkill`'s entry.
   - **Optional:** use `SkillGroupId.schema.parse` in place of the `as SkillGroupId` casts there, matching `trash.ts`.
+- **Group 2: test gaps** (`src/server/services/object-history.test.ts`, "names for skill-package objects"). Add two cases:
+  - A `SkillGroup` entry on the package page resolves its `objectName`. So far every named entry object is a Skill.
+  - A ref to `T.foreignGroup` on an entry comes back `name: null`. So far the foreign group only appears inside `changes`.
