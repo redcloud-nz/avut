@@ -114,8 +114,17 @@ export function SkillTrack_SessionWhenPicker({
     }, [value.startTime]);
 
     const zoneHint = useMemo(() => {
-        const { startsAt } = sessionInstants({ ...value, endTime: null }, orgZone);
-        return `Times in ${orgZone} (${zoneAbbreviation(new Date(startsAt), orgZone)})`;
+        // Only the start matters here, so ask for a timed one with no end. It renders on every
+        // keystroke, so a half-formed value falls back to the bare zone rather than throwing.
+        try {
+            const { startsAt } = sessionInstants(
+                { ...value, allDay: false, endTime: null },
+                orgZone,
+            );
+            return `Times in ${orgZone} (${zoneAbbreviation(new Date(startsAt), orgZone)})`;
+        } catch {
+            return `Times in ${orgZone}`;
+        }
     }, [value, orgZone]);
 
     function update(patch: Partial<SessionFormState>) {
@@ -167,7 +176,10 @@ export function SkillTrack_SessionWhenPicker({
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <Select
                         value={String(value.days)}
-                        onValueChange={(days) => update({ days: Number(days) })}
+                        // Radix fires "" when it mounts or resets inside a form; that isn't a choice.
+                        onValueChange={(days) => {
+                            if (days) update({ days: Number(days) });
+                        }}
                     >
                         <SelectTrigger aria-label="Number of days" aria-invalid={invalid}>
                             <SelectValue />
@@ -192,13 +204,14 @@ export function SkillTrack_SessionWhenPicker({
                 <div className="flex flex-wrap items-center gap-2">
                     <Select
                         value={value.startTime}
-                        onValueChange={(startTime) =>
+                        onValueChange={(startTime) => {
+                            if (!startTime) return; // Radix's mount/reset "", as for `days`
                             // An end equal to the new start isn't on offer: drop it.
                             update({
                                 startTime,
                                 endTime: value.endTime === startTime ? null : value.endTime,
-                            })
-                        }
+                            });
+                        }}
                     >
                         <SelectTrigger aria-label="Start time" aria-invalid={invalid}>
                             <SelectValue />
@@ -214,9 +227,10 @@ export function SkillTrack_SessionWhenPicker({
                     <span className="text-muted-foreground text-xs">to</span>
                     <Select
                         value={value.endTime ?? NO_END_TIME}
-                        onValueChange={(endTime) =>
-                            update({ endTime: endTime === NO_END_TIME ? null : endTime })
-                        }
+                        onValueChange={(endTime) => {
+                            if (!endTime) return; // Radix's mount/reset "", as for `days`
+                            update({ endTime: endTime === NO_END_TIME ? null : endTime });
+                        }}
                     >
                         <SelectTrigger aria-label="End time" aria-invalid={invalid}>
                             <SelectValue />
