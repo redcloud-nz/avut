@@ -28,6 +28,7 @@ import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
 import { trpc } from "@/trpc/client";
 
 import { SkillTrack_CreateSession_Dialog } from "./create-session";
@@ -35,6 +36,7 @@ import { SkillTrack_CreateSession_Dialog } from "./create-session";
 export default function SkillTrack_Sessions_List() {
     const organization = useOrganization();
     const { formatDate } = usePreferences();
+    const formatSessionWhen = useFormatSessionWhen();
 
     const { data: sessions } = useSuspenseQuery(
         trpc.skillCheckSessions.listSessions.queryOptions({
@@ -61,6 +63,13 @@ export default function SkillTrack_Sessions_List() {
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor("startsAt", {
+                    header: "When",
+                    cell: (ctx) => formatSessionWhen(ctx.getValue(), ctx.row.original.endsAt),
+                    enableSorting: true,
+                    enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
                 columnHelper.accessor((row) => row.assessors.map((a) => a.name).join(", "), {
@@ -94,7 +103,7 @@ export default function SkillTrack_Sessions_List() {
                     },
                 }),
             ]),
-        [organization.slug, formatDate],
+        [organization.slug, formatDate, formatSessionWhen],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

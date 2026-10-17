@@ -238,7 +238,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             }),
         ),
     ],
-    updateSession: (vars, { updated, dateChanged }) => [
+    updateSession: (vars, { updated, startChanged }) => [
         write(
             trpc.skillCheckSessions.getSession.queryKey({
                 organizationId: vars.organizationId,
@@ -251,9 +251,9 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                 organizationId: vars.organizationId,
             }),
         ),
-        // A date change re-stamps every check's `checkedAt` server-side, so the reads that show or
+        // A start change re-stamps every check's `checkedAt` server-side, so the reads that show or
         // order by it refetch: the session's check lists, the competency matrix and recent checks.
-        ...(dateChanged
+        ...(startChanged
             ? [
                   invalidate(
                       trpc.skillChecks.listSkillChecks.queryFilter({
@@ -273,7 +273,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                   ),
                   // The session cache too, but by hand: invalidating it would only run a delta
                   // poll, which can't see the re-stamp (it leaves `recordedAt` alone). The server
-                  // set every row in the session to the new date, so do the same here.
+                  // set every row in the session to the new start, so do the same here.
                   write(
                       sessionChecksQueryKey(vars.organizationId, vars.skillCheckSessionId),
                       (old) =>
@@ -281,7 +281,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                               ...old,
                               checks: old.checks.map((check) => ({
                                   ...check,
-                                  checkedAt: updated.date,
+                                  checkedAt: updated.startsAt,
                               })),
                           },
                   ),

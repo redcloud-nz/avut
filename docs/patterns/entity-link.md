@@ -17,12 +17,13 @@ Design discussed in #299.
 should reach for the per-entity wrapper in `src/components/entity-links/`, not `EntityLink`
 directly:
 
-| Entity          | Wrapper              | Prop                                                     |
-| --------------- | -------------------- | -------------------------------------------------------- |
-| Person          | `PersonLink`         | `person: PersonRef & Partial<Pick<PersonData, "email">>` |
-| Team            | `TeamLink`           | `team: TeamRef & Partial<Pick<TeamData, "description">>` |
-| Team Membership | `TeamMembershipLink` | `teamMembership: TeamMembershipRef`                      |
-| User            | `UserLink`           | `user: UserRef & Partial<Pick<UserData, "email">>`       |
+| Entity             | Wrapper                 | Prop                                                     |
+| ------------------ | ----------------------- | -------------------------------------------------------- |
+| Organisation Group | `OrganizationGroupLink` | `group: OrganizationGroupRef`                            |
+| Person             | `PersonLink`            | `person: PersonRef & Partial<Pick<PersonData, "email">>` |
+| Team               | `TeamLink`              | `team: TeamRef & Partial<Pick<TeamData, "description">>` |
+| Team Membership    | `TeamMembershipLink`    | `teamMembership: TeamMembershipRef`                      |
+| User               | `UserLink`              | `user: UserRef & Partial<Pick<UserData, "email">>`       |
 
 Each wrapper resolves its own route via `route()`, sources `organization.slug` from
 `useOrganization()` internally (callers don't need it in scope just to render a link — drop

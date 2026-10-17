@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { skillCheckSessionsEffects } from "@/client/skill-check-sessions-effects";
-import { DatePicker } from "@/components/controls/date-picker";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -29,12 +28,19 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import { sessionFormState } from "@/lib/session-timing";
 import { trpc } from "@/trpc/client";
+
+import {
+    parseSessionDialog,
+    sessionDialogSchema,
+    SkillTrack_SessionWhenPicker,
+} from "./session-when-picker";
 
 export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
     const organization = useOrganization();
@@ -43,17 +49,19 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
-    // An approved session's date is locked (`updateSession` refuses a change): moving it would
-    // move its approved checks' competency dates without going back through review.
-    const dateLocked = session.status === "Include";
+    const orgZone = organization.settings.general.timeZone;
+
+    // `sessionFormState` snaps a legacy off-quarter start or end, which `inputSchema` refuses, so
+    // the dialog shows the value that will be saved.
+    const formValues = () => ({
+        name: session.name,
+        notes: session.notes,
+        when: sessionFormState(session.startsAt, session.endsAt, orgZone),
+    });
 
     const form = useForm({
-        resolver: zodResolver(SkillCheckSession.modifiableSchema),
-        defaultValues: {
-            name: session.name,
-            date: session.date,
-            notes: session.notes,
-        },
+        resolver: zodResolver(sessionDialogSchema),
+        defaultValues: formValues(),
     });
 
     const mutation = useMutation(
@@ -85,11 +93,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
 
     useEffect(() => {
         if (dialogOpen) {
-            form.reset({
-                name: session.name,
-                date: session.date,
-                notes: session.notes,
-            });
+            form.reset(formValues());
             mutation.reset();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
@@ -111,12 +115,18 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                     <form
                         id="update-session-form"
                         onSubmit={form.handleSubmit(
-                            (formData) =>
+                            (values) => {
+                                const parsed = parseSessionDialog(values, orgZone);
+                                if (!parsed.success) {
+                                    form.setError("when", { message: parsed.message });
+                                    return;
+                                }
                                 mutation.mutate({
                                     organizationId: organization.id,
                                     skillCheckSessionId: session.id,
-                                    update: formData,
-                                }),
+                                    update: parsed.data,
+                                });
+                            },
                             (errors) => {
                                 console.error("Form validation errors:", errors);
                             },
@@ -137,24 +147,17 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                                 )}
                             />
                             <Controller
-                                name="date"
+                                name="when"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
-                                    <Field
-                                        data-invalid={fieldState.invalid}
-                                        data-disabled={dateLocked}
-                                    >
-                                        <FieldLabel>Date</FieldLabel>
-                                        <DatePicker
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel>When</FieldLabel>
+                                        <SkillTrack_SessionWhenPicker
                                             value={field.value}
-                                            onValueChange={(newValue) => field.onChange(newValue)}
-                                            slotProps={{ popoverTrigger: { disabled: dateLocked } }}
+                                            onChange={field.onChange}
+                                            orgZone={orgZone}
+                                            invalid={fieldState.invalid}
                                         />
-                                        {dateLocked && (
-                                            <FieldDescription>
-                                                Reopen the session to change its date.
-                                            </FieldDescription>
-                                        )}
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}

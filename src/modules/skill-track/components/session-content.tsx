@@ -39,7 +39,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOrganization } from "@/hooks/use-organization";
-import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
@@ -47,11 +46,12 @@ import { SkillTrack_SessionConfigDialogs } from "@/modules/skill-track/component
 import { SkillsModule_Session_Contents_Card } from "@/modules/skill-track/components/session-contents";
 import { SkillsModule_SessionMenu } from "@/modules/skill-track/components/session-menu";
 import { SkillsModule_UpdateSession_Dialog } from "@/modules/skill-track/components/update-session";
+import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillCheckSessionId }) {
     const organization = useOrganization();
-    const { formatDate } = usePreferences();
+    const formatSessionWhen = useFormatSessionWhen();
 
     const { data: session } = useSuspenseQuery(
         trpc.skillCheckSessions.getSession.queryOptions({
@@ -149,9 +149,16 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                 <CardHeader>
                                     <CardTitle>Session Details</CardTitle>
                                     <CardAction>
-                                        <Protect permissions={{ skillCheckSession: ["update"] }}>
-                                            <SkillsModule_UpdateSession_Dialog session={session} />
-                                        </Protect>
+                                        {/* Not mounted when approved, so ?action=update can't open it either. */}
+                                        {!isApproved && (
+                                            <Protect
+                                                permissions={{ skillCheckSession: ["update"] }}
+                                            >
+                                                <SkillsModule_UpdateSession_Dialog
+                                                    session={session}
+                                                />
+                                            </Protect>
+                                        )}
                                     </CardAction>
                                 </CardHeader>
                                 <CardContent>
@@ -167,9 +174,12 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                             <DataItemValue>{session.name}</DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
-                                            <DataItemTitle>Date</DataItemTitle>
+                                            <DataItemTitle>When</DataItemTitle>
                                             <DataItemValue>
-                                                {formatDate(session.date)}
+                                                {formatSessionWhen(
+                                                    session.startsAt,
+                                                    session.endsAt,
+                                                )}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem>

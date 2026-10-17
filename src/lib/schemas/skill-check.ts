@@ -54,7 +54,7 @@ export const SkillCheck = {
         result: SkillCheckResultValue.schema,
         notes: z.string(),
         status: z.enum(["Draft", "Pending", "Include", "Exclude", "Deleted"]),
-        /** When the assessment happened: the session's date, or a standalone check's creation. */
+        /** When the assessment happened: the session's `startsAt`, or a standalone check's creation. */
         checkedAt: z.iso.datetime(),
         /** When an assessor last recorded or removed the check; approval doesn't move it. */
         recordedAt: z.iso.datetime(),

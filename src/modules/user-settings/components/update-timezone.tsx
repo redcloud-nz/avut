@@ -11,6 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { timeZoneOptions } from "@/components/controls/time-zone-options";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -25,27 +26,10 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { UserSettings } from "@/lib/schemas/user-settings";
 
 import { useUserSettingsMutation } from "./use-user-settings-mutation";
-
-/**
- * Every IANA zone the runtime knows, each with today's UTC offset as its subtitle so a zone can
- * be identified without recognising its name.
- */
-function timeZoneOptions(): SearchableSelectOption[] {
-    return Intl.supportedValuesOf("timeZone").map((zone) => ({
-        value: zone,
-        label: zone,
-        subtitle: new Intl.DateTimeFormat("en-US", {
-            timeZone: zone,
-            timeZoneName: "shortOffset",
-        })
-            .formatToParts(new Date())
-            .find((part) => part.type === "timeZoneName")?.value,
-    }));
-}
 
 /** `?action=update-time-zone` — self-triggered (Recipe A): the trigger button lives here. */
 export function UserSettings_UpdateTimeZone_Dialog({ settings }: { settings: UserSettings }) {

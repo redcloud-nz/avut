@@ -26,6 +26,7 @@ import { auth, type AuthOrganizationMember } from "@/server/auth";
 import { revalidateOrganization } from "@/server/cache/organization";
 import { getOrganizationUserRoles } from "@/server/cache/organization-user";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
+import { isUniqueViolation } from "@/server/prisma-errors";
 
 import { createTrpcRouter, organizationProcedure, systemAdminProcedure } from "../init";
 import { Messages } from "../messages";
@@ -67,14 +68,6 @@ async function assertUserExists(prisma: Pick<PrismaClient, "user">, userId: stri
     if (!user || user.status === "Deleted") {
         throw new TRPCError({ code: "NOT_FOUND", message: `User ${userId} not found.` });
     }
-}
-
-/**
- * Whether `error` is a Prisma unique-constraint violation (`P2002`) — what a concurrent duplicate
- * insert raises after a `findFirst` pre-check has already passed.
- */
-function isUniqueViolation(error: unknown): boolean {
-    return error instanceof Object && "code" in error && error.code === "P2002";
 }
 
 export const organizationsRouter = createTrpcRouter({

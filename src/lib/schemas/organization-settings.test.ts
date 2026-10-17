@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { OrganizationId } from "@/lib/schemas/organization";
 
-import { OrganizationSettings } from "./organization-settings";
+import { OrganizationSettings, OrganizationSettingsSlices } from "./organization-settings";
 import { SKILL_CHECK_RESULT_VALUES } from "./skill-check-result";
 
 describe("OrganizationSettings default skill-track result config", () => {
@@ -71,5 +71,37 @@ describe("OrganizationSettings default skill-track result config", () => {
             enabled: true,
             label: "Fail",
         });
+    });
+});
+
+describe("OrganizationSettings general.timeZone", () => {
+    it("defaults to Pacific/Auckland", () => {
+        expect(OrganizationSettings.default().general.timeZone).toBe("Pacific/Auckland");
+    });
+
+    it("resolves the default for an org whose stored general rows predate the setting", () => {
+        const restored = OrganizationSettings.fromRecords([
+            { key: "general.publicDomain", value: "example.org" },
+        ]);
+
+        expect(restored.general).toEqual({
+            publicDomain: "example.org",
+            timeZone: "Pacific/Auckland",
+        });
+    });
+
+    it("accepts a known zone in a general slice patch and rejects an unknown one", () => {
+        const parsed = OrganizationSettingsSlices.input.parse({
+            slice: "general",
+            patch: { timeZone: "America/New_York" },
+        });
+        expect(parsed.patch).toEqual({ timeZone: "America/New_York" });
+
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "general",
+                patch: { timeZone: "Mars/Olympus_Mons" },
+            }),
+        ).toThrow("Unknown IANA time zone");
     });
 });
