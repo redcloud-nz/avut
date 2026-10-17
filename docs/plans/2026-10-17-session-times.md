@@ -65,7 +65,7 @@ A skill check session gets a real start and end, defined in an **org time zone**
     - The `general` slice patch rejects an unknown zone.
     - Tests cover all three, and `npm run check` passes.
 
-- [ ] **Task 2: `src/lib/session-timing.ts`**
+- [x] **Task 2: `src/lib/session-timing.ts`** — feat(skill-track): session timing helpers in the org's time zone
   - **Files:** `src/lib/session-timing.ts` (new), `src/lib/session-timing.test.ts` (new).
   - **Do:** Implement `sessionTiming`, `formatSessionWhen`, `sessionInstants`, `sessionFormState`, `snapToQuarter` and `isQuarterHour` as in Decisions. Use `TZDate` and `addDays` from `@date-fns/tz`/`date-fns`, as `src/lib/datetime.ts` does.
   - **Done when:** tests cover every row of #361's table, plus:
