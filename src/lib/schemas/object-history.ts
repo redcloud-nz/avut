@@ -172,6 +172,25 @@ export const ObjectHistoryRef = {
 export type ObjectHistoryRef = z.infer<typeof ObjectHistoryRef.schema>;
 
 /**
+ * The types whose names the service resolves (#342): an entry's own `objectName`, and a generic
+ * ref's `name`. A related entry of one of these types names itself in its summary.
+ */
+const selfNamedObjectTypeValues = [
+    "Skill",
+    "SkillGroup",
+    "SkillPackage",
+] as const satisfies readonly LogObjectType[];
+
+export const SelfNamedObjectType = {
+    values: selfNamedObjectTypeValues,
+    /** Takes a plain string: stored rows aren't parsed strictly. */
+    is: (type: string): type is SelfNamedObjectType =>
+        (selfNamedObjectTypeValues as readonly string[]).includes(type),
+} as const;
+
+export type SelfNamedObjectType = (typeof selfNamedObjectTypeValues)[number];
+
+/**
  * One log entry as a History page shows it.
  *
  * `action` and `objectType` are plain strings, not `LogAction`/`LogObjectType`: stored rows are

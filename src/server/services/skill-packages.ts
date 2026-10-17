@@ -363,6 +363,15 @@ export async function prepareImport(
                       pick(skill, SKILL_COMPARE_KEYS),
                   )
                 : diffObject({}, pick(skill, SKILL_COMPARE_KEYS));
+            // A move to another group reads "Group: X → Y", like `moveSkill`'s entry (#342).
+            if (currentSkill && groupChanged) {
+                skillDiff.push({
+                    type: "obj_mod",
+                    path: ["skillGroupId"],
+                    prev: currentSkill.skillGroupId,
+                    curr: group.id,
+                });
+            }
             skillChanges.set(skill.id, skillDiff);
             skillNodes.push({
                 kind: "skill",
@@ -526,7 +535,9 @@ export async function prepareImport(
                     description: `No longer present in re-imported skill package "${incoming.name}".`,
                     refs: skillLogRefs({
                         skillPackageId: incoming.id,
-                        skillGroupId: existingSkills.get(node.id)!.skillGroupId as SkillGroupId,
+                        skillGroupId: SkillGroupId.schema.parse(
+                            existingSkills.get(node.id)!.skillGroupId,
+                        ),
                     }),
                 },
             });
@@ -543,7 +554,7 @@ export async function prepareImport(
                 ? skillMoveLogRefs({
                       from: {
                           skillPackageId: incoming.id,
-                          skillGroupId: previousGroupId as SkillGroupId,
+                          skillGroupId: SkillGroupId.schema.parse(previousGroupId),
                       },
                       to: current,
                   })

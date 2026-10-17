@@ -22,6 +22,7 @@ import type { LogObjectType } from "@/lib/schemas/log-entry";
 import {
     idFieldTarget,
     OtherRefObjectType,
+    SelfNamedObjectType,
     type HistoryObjectType,
     type IdFieldTarget,
     type ObjectHistoryEntry,
@@ -269,25 +270,16 @@ interface NamedObjects {
     entryObjects: { objectType: string; objectId: string }[];
 }
 
-/** The types whose names fill `objectName` and a generic ref's `name` (#342). */
-const namedObjectTypes = ["Skill", "SkillGroup", "SkillPackage"] as const;
-
-type NamedObjectType = (typeof namedObjectTypes)[number];
-
-function isNamedObjectType(type: string): type is NamedObjectType {
-    return (namedObjectTypes as readonly string[]).includes(type);
-}
-
 interface ResolvedNames {
     /** `Person` refs, only those the caller may view. */
     persons: Map<string, PersonRef>;
     /** `Team` refs, only those the caller may view. */
     teams: Map<string, TeamRef>;
     /**
-     * Names for entry objects and refs of the `namedObjectTypes`: only types the caller may view,
+     * Names for entry objects and refs of the `SelfNamedObjectType`s: only types the caller may view,
      * and only records in the org's own packages.
      */
-    objects: Record<NamedObjectType, Map<string, string>>;
+    objects: Record<SelfNamedObjectType, Map<string, string>>;
     /** Names for the ids in `IdFields` changes, by target type. */
     idFields: Record<IdFieldTarget, Map<string, string>>;
 }
@@ -307,7 +299,9 @@ function emptyNames(): ResolvedNames {
 }
 
 function objectNameOf(names: ResolvedNames, objectType: string, objectId: string): string | null {
-    return isNamedObjectType(objectType) ? (names.objects[objectType].get(objectId) ?? null) : null;
+    return SelfNamedObjectType.is(objectType)
+        ? (names.objects[objectType].get(objectId) ?? null)
+        : null;
 }
 
 /** The `[id, name]` pairs of `rows` whose id is in `ids`. */
@@ -344,7 +338,7 @@ async function resolveNames(
         relatedTypes.includes(type)
             ? new Set(refs.filter((r) => r.objectType === type).map((r) => r.objectId))
             : new Set<string>();
-    const objectIdsOf = (type: NamedObjectType) =>
+    const objectIdsOf = (type: SelfNamedObjectType) =>
         relatedTypes.includes(type)
             ? new Set(
                   [...refs, ...entryObjects]

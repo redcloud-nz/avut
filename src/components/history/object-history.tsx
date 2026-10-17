@@ -32,6 +32,7 @@ import {
 import { LogObjectType } from "@/lib/schemas/log-entry";
 import {
     idFieldTarget,
+    SelfNamedObjectType,
     type HistoryObjectType,
     type IdFieldTarget,
     type ObjectHistoryEntry,
@@ -226,21 +227,7 @@ function ObjectHistoryEntryItem({
         (entry.relation === "related"
             ? `${actionPastTenseLabel(entry.action)} ${lowerFirst(objectTypeLabel(entry.objectType))}`
             : actionPastTenseLabel(entry.action));
-    // A ref with no name to show (purged, not viewable) is left out of the sentence rather than
-    // standing in as its type ("Added to team team"); the details still list it as unavailable.
-    // A skill-package object names itself instead ("Updated skill CPR — …"), phrased or not. With
-    // no `objectName` (purged, not viewable) it reads as the bare phrase: a ref's name would pass
-    // a purged skill's group off as the skill.
-    const inlineNames =
-        entry.relation !== "related"
-            ? []
-            : selfNamedTypes.has(entry.objectType)
-              ? entry.objectName
-                  ? [entry.objectName]
-                  : []
-              : phrase
-                ? entry.refs.flatMap((ref) => refName(ref) ?? [])
-                : [];
+    const inlineNames = summaryNames(entry, phrase);
 
     // Plain text, read as a sentence: "Added to team Erehwon Logistics — Demo Owner", with only
     // the relative time after it. In a narrow list (the `<li>` is the container) it drops to the
@@ -321,8 +308,21 @@ function ObjectHistoryEntryItem({
 
 type IdFieldNames = ObjectHistoryPage["names"];
 
-/** Entry types whose `objectName` the service resolves, so a related entry names itself. */
-const selfNamedTypes: ReadonlySet<string> = new Set(["Skill", "SkillGroup", "SkillPackage"]);
+/**
+ * The names a related entry's summary reads after its verb. A ref with no name to show (purged,
+ * not viewable) is left out of the sentence rather than standing in as its type ("Added to team
+ * team"); the details still list it as unavailable. A skill-package object names itself instead
+ * ("Updated skill CPR — …"), phrased or not. With no `objectName` (purged, not viewable) it reads
+ * as the bare phrase: a ref's name would pass a purged skill's group off as the skill.
+ */
+function summaryNames(entry: ObjectHistoryEntry, phrase: string | undefined): string[] {
+    if (entry.relation !== "related") return [];
+    if (SelfNamedObjectType.is(entry.objectType)) {
+        return entry.objectName ? [entry.objectName] : [];
+    }
+    if (!phrase) return [];
+    return entry.refs.flatMap((ref) => refName(ref) ?? []);
+}
 
 /**
  * For a change in an `IdFields` field, a `valueLabel` that shows each id as its record's name, or

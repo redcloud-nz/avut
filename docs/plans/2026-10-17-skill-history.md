@@ -179,12 +179,16 @@ Groups and skills now have History pages, and package History covers changes to 
   - **What happens:** `prepareImport` only knows this package's skills (`existingSkills`). A skill id in the envelope that now lives in another of the org's packages (after a cross-package `moveSkill`, say) is planned as `create`. The upsert then moves it back silently, and the entry carries only the new location's refs.
   - **Fix:** look up envelope skill ids missing from `existingSkills`, and use `skillMoveLogRefs` for them.
   - **Not done here:** the re-parenting upsert predates this branch.
+  - **Filed** as [#412](https://github.com/redcloud-nz/avut/issues/412).
 
 ## Review notes
 
-- **Group 1 — import moves have no group diff** (`src/server/services/skill-packages.ts`, `prepareImport`). When an import moves a skill to another group (`groupChanged`), the entry carries `from`/`to` group refs. Its `changes` come from `SKILL_COMPARE_KEYS`, which leaves out `skillGroupId`, so both groups' pages show a bare "Updated" with no group change line.
+- **Group 1 — import moves have no group diff** (`src/server/services/skill-packages.ts`, `prepareImport`). When an import moves a skill to another group (`groupChanged`), the entry carries `from`/`to` group refs. Its `changes` come from `SKILL_COMPARE_KEYS`, which leaves out `skillGroupId`, so both groups' pages show a bare "Updated" with no group change line. — fixed in `fix(history): diff import group moves and share the self-named types list` (optional cast cleanup done too)
   - **Fix:** when `groupChanged`, include a `skillGroupId` change (prev → curr) in that skill's changes, so it renders "Group: X → Y" like `moveSkill`'s entry.
   - **Optional:** use `SkillGroupId.schema.parse` in place of the `as SkillGroupId` casts there, matching `trash.ts`.
-- **Group 2: test gaps** (`src/server/services/object-history.test.ts`, "names for skill-package objects"). Add two cases:
+- **Group 2: test gaps** (`src/server/services/object-history.test.ts`, "names for skill-package objects"). Add two cases: — fixed in `fix(history): diff import group moves and share the self-named types list`
   - A `SkillGroup` entry on the package page resolves its `objectName`. So far every named entry object is a Skill.
   - A ref to `T.foreignGroup` on an entry comes back `name: null`. So far the foreign group only appears inside `changes`.
+- **Group 3: one list of self-named types** (`src/components/history/object-history.tsx`, `selfNamedTypes`). The UI hardcodes `["Skill", "SkillGroup", "SkillPackage"]`, the types whose `objectName` the service resolves. — fixed in `fix(history): diff import group moves and share the self-named types list` (optional helper done too)
+  - **Fix:** export that list from `src/lib/schemas/object-history.ts` next to `objectName`, and use it in both the service and the UI.
+  - **Optional:** flatten the three-deep `inlineNames` ternary into a small early-return helper.

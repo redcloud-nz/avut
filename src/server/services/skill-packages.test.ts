@@ -284,6 +284,15 @@ describe("SkillPackages.prepareImport", () => {
             `from:SkillGroup:${T.groupFoundations}`,
             `to:SkillGroup:${T.groupAdvanced}`,
         ]);
+        const moved = await db.logEntry.findFirst({
+            where: { objectType: "Skill", objectId: T.skillComms, action: "Update" },
+        });
+        expect(moved?.changes).toContainEqual({
+            type: "obj_mod",
+            path: ["skillGroupId"],
+            prev: T.groupFoundations,
+            curr: T.groupAdvanced,
+        });
         expect(
             await refsOf(db, { objectType: "Skill", objectId: T.skillRescue, action: "Archive" }),
         ).toEqual([`context:SkillGroup:${T.groupAdvanced}`, pkg]);

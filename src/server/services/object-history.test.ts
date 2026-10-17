@@ -598,6 +598,7 @@ describe("ObjectHistory.list names for skill-package objects", () => {
         subscribedEntry: 4,
         session: 5,
         crossMove: 6,
+        groupUpdate: 7,
     };
 
     const db = createMockPrisma();
@@ -749,7 +750,17 @@ describe("ObjectHistory.list names for skill-package objects", () => {
                     curr: T.foreignPackage,
                 },
             ],
-            refs: [{ ...packageRef, role: "from" }],
+            refs: [
+                { ...packageRef, role: "from" },
+                { objectType: "SkillGroup", objectId: T.foreignGroup, role: "to" },
+            ],
+        });
+        await log({
+            sequence: SEQ.groupUpdate,
+            action: "Update",
+            objectType: "SkillGroup",
+            objectId: T.groupA,
+            refs: [packageRef],
         });
     });
 
@@ -778,6 +789,15 @@ describe("ObjectHistory.list names for skill-package objects", () => {
             { objectType: "SkillGroup", role: "from", objectId: T.groupA, name: "Medical" },
             { objectType: "SkillGroup", role: "to", objectId: T.groupB, name: "Rescue" },
         ]);
+    });
+
+    it("names a related group entry's own object", async () => {
+        const { entries } = await listPackage();
+
+        expect(entryAt(entries, SEQ.groupUpdate)).toMatchObject({
+            relation: "related",
+            objectName: "Medical",
+        });
     });
 
     it("names a skill entry on its group's page", async () => {
@@ -820,6 +840,9 @@ describe("ObjectHistory.list names for skill-package objects", () => {
             { objectType: "Skill", role: "context", objectId: T.subscribedSkill, name: null },
             { objectType: "Skill", role: "context", objectId: T.foreignSkill, name: null },
             { objectType: "SkillPackage", role: "context", objectId: T.foreignPackage, name: null },
+        ]);
+        expect(entryAt(entries, SEQ.crossMove).refs).toEqual([
+            { objectType: "SkillGroup", role: "to", objectId: T.foreignGroup, name: null },
         ]);
         // The same skill still resolves as a session's `IdFields` id.
         expect(names.Skill).toEqual({ [T.subscribedSkill]: "Radio" });
