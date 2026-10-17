@@ -6,14 +6,22 @@
 import { allDocs } from "content-collections";
 import { describe, expect, it } from "vitest";
 
-import { headingAnchors } from "./heading-anchors";
+import { headingAnchors, headingOutline } from "./heading-anchors";
 
 /**
- * The heading ids in esbuild's compiled MDX output, in order: `x.h2,{id:"…"`.
+ * The headings in esbuild's compiled MDX output, in order: `x.h2,{id:"…"`.
  * Matching the element keeps out other `id` props, like `<Screenshot id="…">`.
  */
+function compiledHeadings(code: string): { id: string; depth: number }[] {
+    return [...code.matchAll(/\.h([1-6]),\{id:"([^"]*)"/g)].map((match) => ({
+        id: match[2],
+        depth: Number(match[1]),
+    }));
+}
+
+/** The heading ids in esbuild's compiled MDX output, in order. */
 function compiledHeadingIds(code: string): string[] {
-    return [...code.matchAll(/\.h[1-6],\{id:"([^"]*)"/g)].map((match) => match[1]);
+    return compiledHeadings(code).map((heading) => heading.id);
 }
 
 describe("headingAnchors", () => {
@@ -45,6 +53,25 @@ describe("headingAnchors", () => {
     });
 });
 
+describe("headingOutline", () => {
+    it("records depth and a label without code markers", () => {
+        expect(headingOutline("# Title\n\n## The `code` part")).toEqual([
+            { id: "title", label: "Title", depth: 1 },
+            { id: "the-code-part", label: "The code part", depth: 2 },
+        ]);
+    });
+
+    it("keeps link text in the label", () => {
+        expect(headingOutline("### See [the guide](/x)")).toEqual([
+            { id: "see-the-guide", label: "See the guide", depth: 3 },
+        ]);
+    });
+
+    it("drops emphasis markers and collapses whitespace", () => {
+        expect(headingOutline("## A  **bold**   *move*")[0].label).toBe("A bold move");
+    });
+});
+
 describe("doc anchors", () => {
     it.each(allDocs.map((doc) => [doc._meta.filePath, doc] as const))(
         "%s: anchors match the rendered heading ids",
@@ -54,6 +81,17 @@ describe("doc anchors", () => {
                 ...(doc.restMdx ? compiledHeadingIds(doc.restMdx) : []),
             ];
             expect(rendered).toEqual(doc.anchors);
+        },
+    );
+
+    it.each(allDocs.map((doc) => [doc._meta.filePath, doc] as const))(
+        "%s: headings match the rendered heading ids and levels",
+        (_path, doc) => {
+            const rendered = [
+                ...compiledHeadings(doc.introMdx),
+                ...(doc.restMdx ? compiledHeadings(doc.restMdx) : []),
+            ];
+            expect(doc.headings.map(({ id, depth }) => ({ id, depth }))).toEqual(rendered);
         },
     );
 

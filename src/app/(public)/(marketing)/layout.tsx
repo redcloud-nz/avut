@@ -2,9 +2,10 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Shared shell for the marketing-facing public pages — `/`, `/docs`, `/policies/*` — with the
+ * Shared shell for the marketing-facing public pages — `/`, `/tools`, `/policies/*` — with the
  * full header (Docs link, GitHub, theme toggle, sign-in/sign-up CTA) and footer. `/auth/*` gets
- * its own sibling layout with the CTA hidden — see `(public)/auth/layout.tsx`.
+ * its own sibling layout with the CTA hidden — see `(public)/auth/layout.tsx` — and `/docs`
+ * owns its header and footer in `(public)/(docs)/docs/layout.tsx`.
  */
 
 import type { ReactNode } from "react";

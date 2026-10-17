@@ -13,7 +13,7 @@ import type { ComponentProps } from "react";
 import { MDXContent } from "@content-collections/mdx/react";
 import { useQuery } from "@tanstack/react-query";
 
-import type { HelpCardPayload } from "@/app/(public)/(marketing)/docs/help/[...slug]/route";
+import type { HelpCardPayload } from "@/app/(public)/(docs)/docs/help/[...slug]/route";
 import { DocsFlagsProvider } from "@/components/docs/docs-flags-context";
 import { KeyTerms } from "@/components/docs/key-terms";
 import { docsMdxComponents } from "@/components/docs/mdx-components";

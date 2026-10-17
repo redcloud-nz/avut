@@ -7,6 +7,12 @@
  * with several sections (e.g. a settings form with more than one card); a single-section page
  * gets more value from an empty secondary column than a one-item list pointing at itself, so
  * this renders nothing once there are fewer than two entries (counting nested `children`).
+ *
+ * Works in two scroll modes: inside a `Std.ScrollContainer` (the app shell, where the page
+ * scrolls in that `overflow-y-auto` element) it measures against that container; with no such
+ * ancestor (e.g. the public docs pages) it measures against the window. Either way the trigger
+ * line sits `offset` px below the top of what scrolls — pass a larger `offset` when a sticky
+ * header covers the top of the viewport.
  */
 
 "use client";
@@ -27,16 +33,30 @@ function flatten(items: SaratogaContentsItem[]): SaratogaContentsItem[] {
     return items.flatMap((item) => [item, ...(item.children ?? [])]);
 }
 
-export function SaratogaContents({ items }: { items: SaratogaContentsItem[] }) {
+export function SaratogaContents({
+    items,
+    offset = 24,
+    className,
+}: {
+    items: SaratogaContentsItem[];
+    /** Px from the top of the scroll viewport to the line a heading must pass to become current. */
+    offset?: number;
+    /** Merged onto the `<nav>`, e.g. to change its breakpoint or `sticky top-…`. */
+    className?: string;
+}) {
     const flat = flatten(items);
     const [activeId, setActiveId] = useState<string | undefined>(flat[0]?.id);
     const navRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
-        // The page scrolls inside `Std.ScrollContainer` (`overflow-y-auto`), not the window, so
-        // this has to measure against that ancestor rather than the viewport.
-        const container = navRef.current?.closest('[data-slot="scroll-container"]');
-        if (!container) return;
+        const nav = navRef.current;
+        if (!nav) return;
+
+        // In the app shell the page scrolls inside `Std.ScrollContainer` (`overflow-y-auto`), not
+        // the window, so measure against that ancestor when there is one; otherwise the window.
+        const container = nav.closest('[data-slot="scroll-container"]');
+        const scrollTarget: HTMLElement | Window =
+            container instanceof HTMLElement ? container : window;
 
         const ids = flat.map((item) => item.id);
 
@@ -52,14 +72,15 @@ export function SaratogaContents({ items }: { items: SaratogaContentsItem[] }) {
             // page can never themselves reach the trigger line below — there isn't enough
             // content left under them to keep scrolling. Treat "at the bottom" as "on the last
             // entry" rather than leaving it permanently unreachable.
-            const atBottom =
-                container!.scrollTop + container!.clientHeight >= container!.scrollHeight - 1;
+            const atBottom = container
+                ? container.scrollTop + container.clientHeight >= container.scrollHeight - 1
+                : window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1;
             if (atBottom) {
                 setActiveId(ids[ids.length - 1]);
                 return;
             }
 
-            const triggerY = container!.getBoundingClientRect().top + 24;
+            const triggerY = (container ? container.getBoundingClientRect().top : 0) + offset;
 
             let current = ids[0];
             for (const id of ids) {
@@ -79,10 +100,10 @@ export function SaratogaContents({ items }: { items: SaratogaContentsItem[] }) {
         }
 
         updateActiveId();
-        container.addEventListener("scroll", onScroll, { passive: true });
-        return () => container.removeEventListener("scroll", onScroll);
+        scrollTarget.addEventListener("scroll", onScroll, { passive: true });
+        return () => scrollTarget.removeEventListener("scroll", onScroll);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- `flat` is a new array each render; its ids are what actually matter.
-    }, [flat.map((item) => item.id).join(",")]);
+    }, [flat.map((item) => item.id).join(","), offset]);
 
     if (flat.length < 2) return null;
 
@@ -93,7 +114,7 @@ export function SaratogaContents({ items }: { items: SaratogaContentsItem[] }) {
         );
 
     return (
-        <nav ref={navRef} className="hidden lg:block sticky top-4 text-sm">
+        <nav ref={navRef} className={cn("hidden lg:block sticky top-4 text-sm", className)}>
             <p className="mb-2 font-medium text-muted-foreground">On this page</p>
             <ul className="space-y-1">
                 {items.map((item) => (
@@ -130,6 +151,6 @@ export function SaratogaContents({ items }: { items: SaratogaContentsItem[] }) {
  * column's own height: they're independent grid items, so padding out the TOC's column doesn't
  * reliably carry over to how far the *main* column's own content can scroll.
  */
-export function SaratogaContentsSpacer() {
-    return <div aria-hidden className="hidden h-[50vh] lg:block" />;
+export function SaratogaContentsSpacer({ className }: { className?: string }) {
+    return <div aria-hidden className={cn("hidden h-[50vh] lg:block", className)} />;
 }
