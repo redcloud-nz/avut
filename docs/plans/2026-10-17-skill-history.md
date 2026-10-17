@@ -49,7 +49,7 @@
     - The existing "gives an admin every related type but the registry types it can't view" expectation also excludes `Skill`/`SkillGroup`.
     - `npm run check` passes.
 
-- [ ] **2. Package and group refs on service-written entries**
+- [x] **2. Package and group refs on service-written entries** — feat(history): ref package and group on service-written skill entries
   - **Files:** `src/server/services/skill-packages.ts`, `src/server/services/skill-packages.test.ts`, `src/server/services/trash.ts`, `src/server/services/trash.test.ts`
   - **Do:**
     - **Helpers:** add and export `skillLogRefs(skill: Pick<Skill, "skillPackageId" | "skillGroupId">): LogEntryRef[]` (package `context` + group `context`) and `groupLogRefs(group: Pick<SkillGroup, "skillPackageId">): LogEntryRef[]` (package `context`), each with a JSDoc pointing at #342. Import `LogEntryRef` as a type from `@/server/log-entry`.

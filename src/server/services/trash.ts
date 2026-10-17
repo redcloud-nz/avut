@@ -29,7 +29,7 @@ import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
-import { createLogBatch } from "@/server/log-entry";
+import { createLogBatch, type LogEntryRef } from "@/server/log-entry";
 
 import * as I3Templates from "./i3-templates";
 import * as OrgSettings from "./organization-settings";
@@ -84,6 +84,7 @@ function purgeLog(
     type: TrashableEntityId,
     id: string,
     name: string,
+    refs?: LogEntryRef[],
 ): ReturnType<TrashPurgeContext["logEvent"]> {
     const entity = TrashableEntities[type];
     return ctx.logEvent({
@@ -91,6 +92,7 @@ function purgeLog(
         objectType: entity.objectType,
         objectId: id,
         description: `${entity.label} "${name}" permanently deleted from the Rubbish bin.`,
+        refs,
     });
 }
 
@@ -297,8 +299,22 @@ const handlers: Record<TrashableEntityId, TrashHandler> = {
         },
         purgeBlocker: (ctx, id) => otherOrgCheckBlocker(ctx, { skillGroupId: id }, "group"),
         async purge(ctx, id, name) {
+            // The group's own page is gone after this, so its package's History is where the
+            // purge shows (#342).
+            const group = await ctx.prisma.skillGroup.findFirstOrThrow({
+                where: { id, skillPackage: { organizationId: ctx.organizationId } },
+                select: { skillPackageId: true },
+            });
             await ctx.prisma.$transaction([
-                purgeLog(ctx, "skillGroup", id, name),
+                purgeLog(
+                    ctx,
+                    "skillGroup",
+                    id,
+                    name,
+                    SkillPackages.groupLogRefs({
+                        skillPackageId: SkillPackageId.schema.parse(group.skillPackageId),
+                    }),
+                ),
                 ctx.prisma.skillGroup.delete({ where: { id } }),
             ]);
         },
@@ -324,8 +340,23 @@ const handlers: Record<TrashableEntityId, TrashHandler> = {
         },
         purgeBlocker: (ctx, id) => otherOrgCheckBlocker(ctx, { id }, "skill"),
         async purge(ctx, id, name) {
+            // The skill's own page is gone after this, so its package's and group's History
+            // pages are where the purge shows (#342).
+            const skill = await ctx.prisma.skill.findFirstOrThrow({
+                where: { id, skillPackage: { organizationId: ctx.organizationId } },
+                select: { skillPackageId: true, skillGroupId: true },
+            });
             await ctx.prisma.$transaction([
-                purgeLog(ctx, "skill", id, name),
+                purgeLog(
+                    ctx,
+                    "skill",
+                    id,
+                    name,
+                    SkillPackages.skillLogRefs({
+                        skillPackageId: SkillPackageId.schema.parse(skill.skillPackageId),
+                        skillGroupId: SkillGroupId.schema.parse(skill.skillGroupId),
+                    }),
+                ),
                 ctx.prisma.skill.delete({ where: { id } }),
             ]);
         },
