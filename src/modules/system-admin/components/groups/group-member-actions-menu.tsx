@@ -59,7 +59,11 @@ export function SystemAdmin_GroupMemberActionsMenu({
         parseAsStringLiteral(["revoke-member"] as const),
     );
     const [membershipId, setMembershipId] = useQueryState("membershipId", parseAsString);
-    const revokeDialogOpen = action === "revoke-member" && membershipId === membership.id;
+    // Only an active row can be revoked, so a pasted or restored URL naming a revoked row stays shut.
+    const revokeDialogOpen =
+        action === "revoke-member" &&
+        membershipId === membership.id &&
+        membership.status === "Active";
 
     function openRevoke() {
         void setMembershipId(membership.id, { history: "push" });

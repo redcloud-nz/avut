@@ -388,7 +388,7 @@ None. `content/docs/` and `content/help/` have no system-admin pages.
 
 ## Parked
 
-- **History gate for memberships when entries go org-facing.** `OrganizationGroupMembership` is
+- **History gate for memberships when entries go org-facing.** Filed as #406. `OrganizationGroupMembership` is
   in neither `HistoryObjects` nor `RelatedEntryPermissions` (`src/lib/schemas/object-history.ts`).
   Harmless while every group entry is `scope: "system"` (forced `organizationId: null`, so
   `ObjectHistory.list` can't match it), but when decision 3 is revisited and these entries become
@@ -396,12 +396,23 @@ None. `content/docs/` and `content/help/` have no system-admin pages.
 
 ## Review notes
 
-- `organization-groups.ts` `updateGroup` (Task 3): writes and logs an `Update` with
-  `changes: []` when nothing changed. Return `{ id: groupId }` early when `changes.length === 0`
-  (as `organization-notes.ts:127` does), plus a test that a no-change update writes no log entry.
-- `organization-groups.ts` `deleteGroup` (Task 3): the active-member check runs outside the
-  transaction; add a one-line comment at the guard accepting the race, like
-  `assertNoActiveOverseer`'s.
-- `organization-groups.ts` `getGroupDetail` (Task 3): cast `memberships[].id` to
-  `OrganizationGroupMembershipId` as `listGroupsForOrganization` does, so the UI can pass it to
-  `setMemberRole`/`revokeMember` without its own cast.
+- [x] `organization-groups.ts` `updateGroup` (Task 3): writes and logs an `Update` with
+      `changes: []` when nothing changed. Return `{ id: groupId }` early when `changes.length === 0`
+      (as `organization-notes.ts:127` does), plus a test that a no-change update writes no log entry.
+- [x] `organization-groups.ts` `deleteGroup` (Task 3): the active-member check runs outside the
+      transaction; add a one-line comment at the guard accepting the race, like
+      `assertNoActiveOverseer`'s.
+- [x] `organization-groups.ts` `getGroupDetail` (Task 3): cast `memberships[].id` to
+      `OrganizationGroupMembershipId` as `listGroupsForOrganization` does, so the UI can pass it to
+      `setMemberRole`/`revokeMember` without its own cast. (Done in Task 8's commit — just tick.)
+- [x] `group-member-actions-menu.tsx` (Task 8): `revokeDialogOpen` should also require
+      `membership.status === "Active"`, so a pasted or history-restored
+      `?action=revoke-member&membershipId=<revoked row>` doesn't open a confirm that can only fail.
+      (Keeping the per-row ownership: it mirrors `SystemAdmin_MemberActionsMenu`, a deliberate
+      deviation from mutation-dialog.md's host-owned nested-entity shape.)
+- [x] `delete-group-dialog.tsx` (Task 7): replace `onCloseAutoFocus={(e) => e.preventDefault()}`
+      with `useReturnFocus()` spread on `AlertDialogContent` (the Delete button isn't a
+      `DialogTrigger`), per mutation-dialog.md → "Returning focus without a `DialogTrigger`".
+- [x] `create-group-dialog.tsx` / `edit-group-dialog.tsx` (Tasks 6–7): three identical `slugify`
+      copies in the module (with `create-organization-dialog.tsx`); move it to
+      `src/modules/system-admin/lib/slugify.ts` and import it in all three.

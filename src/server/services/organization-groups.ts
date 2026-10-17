@@ -184,6 +184,8 @@ export async function updateGroup(
     await assertSlugAvailable(ctx, slug, groupId);
 
     const changes = diffObject({ name: existing.name, slug: existing.slug }, { name, slug });
+    if (changes.length === 0) return { id: groupId };
+
     try {
         await ctx.prisma.$transaction([
             ctx.prisma.organizationGroup.update({ where: { id: groupId }, data: { name, slug } }),
@@ -214,6 +216,8 @@ export async function deleteGroup(
 ): Promise<{ id: OrganizationGroupId }> {
     const group = await requireGroupById(ctx, groupId);
 
+    // The check runs outside the transaction, so a member added in between would cascade away with
+    // the group. Accepted: only system admins write, and they'd be racing themselves.
     const activeMembers = await ctx.prisma.organizationGroupMembership.count({
         where: { groupId, status: "Active" },
     });

@@ -33,15 +33,8 @@ import { Input } from "@/components/ui/input";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { route } from "@/lib/routes";
 import { OrganizationGroupData } from "@/lib/schemas/organization-group";
+import { slugify } from "@/modules/system-admin/lib/slugify";
 import { trpc } from "@/trpc/client";
-
-function slugify(value: string) {
-    return value
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
-}
 
 /**
  * `?action=create-group` dialog for creating a group from the system-admin groups list.

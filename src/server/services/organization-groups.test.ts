@@ -161,6 +161,21 @@ describe("OrganizationGroups: groups", () => {
         expect((await OrganizationGroups.requireGroupById(ctx, id)).name).toBe("Keep Slug Renamed");
     });
 
+    it("writes no log entry for an update that changes nothing", async () => {
+        const { id } = await OrganizationGroups.createGroup(ctx, {
+            name: "Unchanged",
+            slug: "unchanged",
+        });
+
+        await OrganizationGroups.updateGroup(ctx, {
+            groupId: id,
+            name: "Unchanged",
+            slug: "unchanged",
+        });
+
+        expect((await entriesFor(id)).filter((e) => e.action === "Update")).toHaveLength(0);
+    });
+
     it("refuses an update onto another group's slug", async () => {
         await expect(
             OrganizationGroups.updateGroup(ctx, {

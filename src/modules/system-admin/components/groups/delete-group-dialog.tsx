@@ -23,19 +23,25 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { OrganizationGroupId } from "@/lib/schemas/organization-group";
 import { trpc } from "@/trpc/client";
 
 /**
  * `?action=delete` confirm dialog for hard-deleting a group. Host-driven (`open` /
- * `onOpenChange` come from `SystemAdmin_Group_Content`). The service refuses while any membership
+ * `onOpenChange` come from `SystemAdmin_Group_Menu`). The service refuses while any membership
  * is active; that conflict shows inside the dialog.
+ *
+ * Opened from a menu item rather than a `DialogTrigger`, so `useReturnFocus` returns focus on
+ * close. No fallback: the menu has closed and refocused its own trigger, which stays mounted in
+ * the page header, before the URL change opens this dialog.
  */
 export function SystemAdmin_DeleteGroup_Dialog({
     group,
     ...props
 }: ComponentProps<typeof AlertDialog> & { group: { id: OrganizationGroupId; name: string } }) {
     const router = useRouter();
+    const returnFocus = useReturnFocus();
 
     const mutation = useMutation(
         trpc.organizationGroups.deleteGroup.mutationOptions({
@@ -65,7 +71,7 @@ export function SystemAdmin_DeleteGroup_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
+            <AlertDialogContent {...returnFocus}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete Group</AlertDialogTitle>
                     <AlertDialogDescription>

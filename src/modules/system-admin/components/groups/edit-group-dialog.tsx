@@ -29,15 +29,8 @@ import {
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { OrganizationGroupData, OrganizationGroupId } from "@/lib/schemas/organization-group";
+import { slugify } from "@/modules/system-admin/lib/slugify";
 import { trpc } from "@/trpc/client";
-
-function slugify(value: string) {
-    return value
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "-")
-        .replace(/[^a-z0-9-]/g, "");
-}
 
 /**
  * `?action=edit` dialog for changing a group's name and slug. Follows
