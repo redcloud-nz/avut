@@ -137,7 +137,7 @@ _End of review group A._
 
 ### Review group B: UI (one visual checkpoint at the end)
 
-- [ ] **Task 5: Org time zone on the organisation settings page**
+- [x] **Task 5: Org time zone on the organisation settings page** — feat(settings): org time zone card on the organisation settings page
   - **Files:**
     - `src/components/controls/time-zone-options.ts` (new, `timeZoneOptions()` moved from `src/modules/user-settings/components/update-timezone.tsx`)
     - `src/modules/user-settings/components/update-timezone.tsx`
