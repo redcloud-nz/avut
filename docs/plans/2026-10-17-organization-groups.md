@@ -269,7 +269,7 @@ dataset per `describe` (`.claude/rules/testing.md`) and build the context as
     exactly one `scope: "system"` log entry with the expected action and org ref.
     `npm run check` passes.
 
-- [ ] **5. `organizationGroups` tRPC router and cache effects**
+- [x] **5. `organizationGroups` tRPC router and cache effects** — `feat(organization-groups): add organization groups router and cache effects`
   - **Files:** `src/trpc/routers/organization-groups-router.ts` (new),
     `src/trpc/routers/organization-groups-router.test.ts` (new), `src/trpc/routers/_app.ts`,
     `src/client/organization-groups-effects.ts` (new).
