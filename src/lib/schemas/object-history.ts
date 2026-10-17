@@ -20,7 +20,9 @@ const historyObjectTypeValues = [
     "D4HAccessToken",
     "OrganizationNote",
     "Person",
+    "Skill",
     "SkillCheckSession",
+    "SkillGroup",
     "SkillPackage",
     "Team",
 ] as const satisfies readonly LogObjectType[];
@@ -59,8 +61,12 @@ export const HistoryObjects: Record<HistoryObjectType, { permissions: Permission
     OrganizationNote: { permissions: { organizationNote: ["view"] } },
     // personnel.getPerson
     Person: { permissions: { person: ["view"] } },
+    // skillPackageBuilder.getSkill
+    Skill: { permissions: { skillPackage: ["view"] } },
     // skillCheckSessions.getSession
     SkillCheckSession: { permissions: { skillCheckSession: ["view"] } },
+    // skillPackageBuilder.getGroup
+    SkillGroup: { permissions: { skillPackage: ["view"] } },
     // skillPackageBuilder.getPackage
     SkillPackage: { permissions: { skillPackage: ["view"] } },
     // teams.getTeam

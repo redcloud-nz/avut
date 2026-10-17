@@ -41,7 +41,7 @@
 
 ### Review group 1: write side
 
-- [ ] **1. Skill and SkillGroup History types**
+- [x] **1. Skill and SkillGroup History types** — feat(history): add Skill and SkillGroup history object types
   - **Files:** `src/lib/schemas/object-history.ts`, `src/trpc/routers/history-router.test.ts`
   - **Do:** add `"Skill"` and `"SkillGroup"` to `historyObjectTypeValues` and `HistoryObjects` (`{ skillPackage: ["view"] }`, with comments naming `skillPackageBuilder.getSkill` / `getGroup`).
   - **Done when:**
