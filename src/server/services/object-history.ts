@@ -22,6 +22,7 @@ import type { LogObjectType } from "@/lib/schemas/log-entry";
 import {
     idFieldTarget,
     OtherRefObjectType,
+    SelfNamedObjectType,
     type HistoryObjectType,
     type IdFieldTarget,
     type ObjectHistoryEntry,
@@ -52,7 +53,7 @@ export interface ListObjectHistoryInput extends PageInput {
     /**
      * The object types whose *related* entries the caller may see — the mapped types in
      * `RelatedEntryPermissions` the caller holds, plus every type that map doesn't list. Entries
-     * about the object itself always pass. Also gates `Person`/`Team` ref name resolution.
+     * about the object itself always pass. Also gates ref name resolution, and `objectName`.
      */
     relatedTypes: readonly LogObjectType[];
 }
@@ -82,7 +83,7 @@ export async function list(
             OR: [{ objectType, objectId }, { objectType: { in: [...relatedTypes] } }],
         },
         { objectType, objectId, cursor, limit },
-        (refs, idFieldIds) => resolveNames(ctx, refs, relatedTypes, idFieldIds),
+        (objects, idFieldIds) => resolveNames(ctx, objects, relatedTypes, idFieldIds),
     );
 }
 
@@ -91,9 +92,9 @@ export async function list(
  * it through a ref, newest first. Never reads another user's log or any organization's.
  *
  * - No related-entry gating: every row is the caller's own.
- * - Ref and `IdFields` names aren't resolved, since there's no organization to scope a lookup
- *   to: a `Person`/`Team` ref comes back `null`, and `names` is empty. No user-scoped entry
- *   carries either today.
+ * - Ref, `objectName` and `IdFields` names aren't resolved, since there's no organization to
+ *   scope a lookup to: a `Person`/`Team` ref comes back `null`, every `name` and `objectName` is
+ *   `null`, and `names` is empty. No user-scoped entry carries any of these today.
  * - Paged, and each entry mapped, as `listPage` describes.
  */
 export async function listOwn(
@@ -119,13 +120,14 @@ export async function listOwn(
  *   user's deletion (`onDelete: SetNull`) — `actorLabel` with its trailing ` <email>` stripped.
  *   Never an email.
  * - `changes` that fail to parse come back as `[]`.
- * - `resolve` names the page's refs and `IdFields` ids.
+ * - `resolve` names the page's refs, its entries' own objects (`objectName`), and its `IdFields`
+ *   ids.
  */
 async function listPage(
     prisma: PrismaClient,
     scopeWhere: Prisma.LogEntryWhereInput,
     { objectType, objectId, cursor, limit }: PageInput & { objectType: LogObjectType },
-    resolve: (refs: StoredRef[], idFieldIds: IdFieldIds) => Promise<ResolvedNames>,
+    resolve: (objects: NamedObjects, idFieldIds: IdFieldIds) => Promise<ResolvedNames>,
 ): Promise<ObjectHistoryPage> {
     const rows = await prisma.logEntry.findMany({
         where: {
@@ -165,7 +167,7 @@ async function listPage(
     const changes = page.map((row) => changesSchema.parse(row.changes));
 
     const names = await resolve(
-        refRows.flat(),
+        { refs: refRows.flat(), entryObjects: page },
         collectIdFieldIds(page.map((row, index) => ({ row, changes: changes[index] }))),
     );
 
@@ -180,6 +182,7 @@ async function listPage(
             action: row.action,
             objectType: row.objectType,
             objectId: row.objectId,
+            objectName: objectNameOf(names, row.objectType, row.objectId),
             relation: isAskedFor(row) ? "primary" : "related",
             actorName: row.user?.name ?? (label === opLabel ? null : label),
             impersonatorName: row.impersonator?.name ?? null,
@@ -195,8 +198,10 @@ async function listPage(
         entries,
         nextCursor,
         names: {
-            Person: Object.fromEntries(names.idFieldPersons),
-            Skill: Object.fromEntries(names.idFieldSkills),
+            Person: Object.fromEntries(names.idFields.Person),
+            Skill: Object.fromEntries(names.idFields.Skill),
+            SkillGroup: Object.fromEntries(names.idFields.SkillGroup),
+            SkillPackage: Object.fromEntries(names.idFields.SkillPackage),
         },
     };
 }
@@ -211,7 +216,12 @@ type IdFieldIds = Record<IdFieldTarget, Set<string>>;
 function collectIdFieldIds(
     rows: { row: { objectType: string }; changes: DiffChange[] }[],
 ): IdFieldIds {
-    const ids: IdFieldIds = { Person: new Set(), Skill: new Set() };
+    const ids: IdFieldIds = {
+        Person: new Set(),
+        Skill: new Set(),
+        SkillGroup: new Set(),
+        SkillPackage: new Set(),
+    };
 
     for (const { row, changes } of rows) {
         for (const change of changes) {
@@ -253,24 +263,50 @@ interface StoredRef {
     role: string;
 }
 
+interface NamedObjects {
+    /** The page's refs, other than each entry's own object and the asked-for object. */
+    refs: StoredRef[];
+    /** Each entry's own object, for `objectName`. */
+    entryObjects: { objectType: string; objectId: string }[];
+}
+
 interface ResolvedNames {
     /** `Person` refs, only those the caller may view. */
     persons: Map<string, PersonRef>;
     /** `Team` refs, only those the caller may view. */
     teams: Map<string, TeamRef>;
-    /** Names for the `Person` ids in `IdFields` changes. */
-    idFieldPersons: Map<string, string>;
-    /** Names for the `Skill` ids in `IdFields` changes. */
-    idFieldSkills: Map<string, string>;
+    /**
+     * Names for entry objects and refs of the `SelfNamedObjectType`s: only types the caller may view,
+     * and only records in the org's own packages.
+     */
+    objects: Record<SelfNamedObjectType, Map<string, string>>;
+    /** Names for the ids in `IdFields` changes, by target type. */
+    idFields: Record<IdFieldTarget, Map<string, string>>;
 }
 
 function emptyNames(): ResolvedNames {
     return {
         persons: new Map(),
         teams: new Map(),
-        idFieldPersons: new Map(),
-        idFieldSkills: new Map(),
+        objects: { Skill: new Map(), SkillGroup: new Map(), SkillPackage: new Map() },
+        idFields: {
+            Person: new Map(),
+            Skill: new Map(),
+            SkillGroup: new Map(),
+            SkillPackage: new Map(),
+        },
     };
+}
+
+function objectNameOf(names: ResolvedNames, objectType: string, objectId: string): string | null {
+    return SelfNamedObjectType.is(objectType)
+        ? (names.objects[objectType].get(objectId) ?? null)
+        : null;
+}
+
+/** The `[id, name]` pairs of `rows` whose id is in `ids`. */
+function namesIn(rows: { id: string; name: string }[], ids: Set<string>): Map<string, string> {
+    return new Map(rows.filter(({ id }) => ids.has(id)).map(({ id, name }) => [id, name]));
 }
 
 /**
@@ -278,16 +314,23 @@ function emptyNames(): ResolvedNames {
  *
  * - `Person`/`Team` refs, only for types the caller may view. A ref missing from the result was
  *   purged, or isn't viewable.
+ * - `Skill`/`SkillGroup`/`SkillPackage` entry objects and refs (#342), only for types the caller
+ *   may view, and only records in the org's own packages. A subscribed or session-linked skill
+ *   never resolves here, even when the `IdFields` lookup below matches it.
  * - Ids in `IdFields` changes, with no extra gate: whoever can view the page's object already sees
  *   these names on its own detail page (a session lists its assessees and skills). Person ids share
  *   the ref lookup. A skill resolves when its package is the org's own, or one the org subscribes
  *   to (a session can use a subscribed package's skills), or when it's linked to one of the org's
  *   own sessions — so an old entry still reads after the org unsubscribes. A stray id naming
- *   another org's skill matches none of these. An id not found is absent.
+ *   another org's skill matches none of these. `SkillGroup`/`SkillPackage` ids (a move's) resolve
+ *   within the org's own packages. An id not found is absent.
+ *
+ * Each type's ids from both sources share one lookup and are then split by source, so a name
+ * found for one never leaks into the other's map.
  */
 async function resolveNames(
     ctx: ObjectHistoryContext,
-    refs: StoredRef[],
+    { refs, entryObjects }: NamedObjects,
     relatedTypes: readonly LogObjectType[],
     idFieldIds: IdFieldIds,
 ): Promise<ResolvedNames> {
@@ -295,13 +338,27 @@ async function resolveNames(
         relatedTypes.includes(type)
             ? new Set(refs.filter((r) => r.objectType === type).map((r) => r.objectId))
             : new Set<string>();
+    const objectIdsOf = (type: SelfNamedObjectType) =>
+        relatedTypes.includes(type)
+            ? new Set(
+                  [...refs, ...entryObjects]
+                      .filter((o) => o.objectType === type)
+                      .map((o) => o.objectId),
+              )
+            : new Set<string>();
 
     const refPersonIds = refIdsOf("Person");
     const teamIds = [...refIdsOf("Team")];
     const personIds = [...new Set([...refPersonIds, ...idFieldIds.Person])];
-    const skillIds = [...idFieldIds.Skill];
 
-    const [persons, teams, skills] = await Promise.all([
+    const objectSkillIds = objectIdsOf("Skill");
+    const objectGroupIds = objectIdsOf("SkillGroup");
+    const objectPackageIds = objectIdsOf("SkillPackage");
+    const skillIds = [...new Set([...objectSkillIds, ...idFieldIds.Skill])];
+    const groupIds = [...new Set([...objectGroupIds, ...idFieldIds.SkillGroup])];
+    const packageIds = [...new Set([...objectPackageIds, ...idFieldIds.SkillPackage])];
+
+    const [persons, teams, skills, groups, packages] = await Promise.all([
         personIds.length === 0
             ? []
             : ctx.prisma.person.findMany({
@@ -331,9 +388,34 @@ async function resolveNames(
                           { sessions: { some: { organizationId: ctx.organizationId } } },
                       ],
                   },
+                  select: {
+                      id: true,
+                      name: true,
+                      skillPackage: { select: { organizationId: true } },
+                  },
+              }),
+        groupIds.length === 0
+            ? []
+            : ctx.prisma.skillGroup.findMany({
+                  where: {
+                      id: { in: groupIds },
+                      skillPackage: { organizationId: ctx.organizationId },
+                  },
+                  select: { id: true, name: true },
+              }),
+        packageIds.length === 0
+            ? []
+            : ctx.prisma.skillPackage.findMany({
+                  where: { id: { in: packageIds }, organizationId: ctx.organizationId },
                   select: { id: true, name: true },
               }),
     ]);
+
+    // The skill lookup also matches subscribed and session-linked skills, for `IdFields`. Only
+    // the org's own may name an entry object or a ref.
+    const ownSkills = skills.filter(
+        ({ skillPackage }) => skillPackage.organizationId === ctx.organizationId,
+    );
 
     return {
         // Only the ref ids go in here: a person named in a change but not viewable as a ref
@@ -344,10 +426,17 @@ async function resolveNames(
                 .map(({ id, name }) => [id, { id: PersonId.schema.parse(id), name }]),
         ),
         teams: new Map(teams.map(({ id, name }) => [id, { id: TeamId.schema.parse(id), name }])),
-        idFieldPersons: new Map(
-            persons.filter(({ id }) => idFieldIds.Person.has(id)).map(({ id, name }) => [id, name]),
-        ),
-        idFieldSkills: new Map(skills.map(({ id, name }) => [id, name])),
+        objects: {
+            Skill: namesIn(ownSkills, objectSkillIds),
+            SkillGroup: namesIn(groups, objectGroupIds),
+            SkillPackage: namesIn(packages, objectPackageIds),
+        },
+        idFields: {
+            Person: namesIn(persons, idFieldIds.Person),
+            Skill: namesIn(skills, idFieldIds.Skill),
+            SkillGroup: namesIn(groups, idFieldIds.SkillGroup),
+            SkillPackage: namesIn(packages, idFieldIds.SkillPackage),
+        },
     };
 }
 
@@ -370,6 +459,7 @@ function toRef(ref: StoredRef, names: ResolvedNames): ObjectHistoryRef {
                 objectType: OtherRefObjectType.schema.parse(ref.objectType),
                 role: ref.role,
                 objectId: ref.objectId,
+                name: objectNameOf(names, ref.objectType, ref.objectId),
             };
     }
 }

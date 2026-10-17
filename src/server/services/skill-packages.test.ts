@@ -21,6 +21,19 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import * as SkillPackages from "./skill-packages";
 
+/** The non-primary refs of the one entry matching `where`, as `role:objectType:objectId`. */
+async function refsOf(
+    db: ReturnType<typeof createMockPrisma>,
+    where: { objectType: string; objectId: string; action: string },
+): Promise<string[]> {
+    const entries = await db.logEntry.findMany({ where, include: { objects: true } });
+    expect(entries).toHaveLength(1);
+    return entries[0]!.objects
+        .filter((ref) => ref.role !== "primary")
+        .map((ref) => `${ref.role}:${ref.objectType}:${ref.objectId}`)
+        .sort();
+}
+
 const T = {
     orgA: OrganizationId.create(),
     orgB: OrganizationId.create(),
@@ -202,6 +215,87 @@ describe("SkillPackages.prepareImport", () => {
         expect(stored?.status).toBe("Archived");
         const rescueStored = await db.skill.findUnique({ where: { id: T.skillRescue } });
         expect(rescueStored?.status).toBe("Active");
+    });
+
+    it("refs each entry's package and group, with from/to for a skill moved between groups", async () => {
+        const ctx = createOrganizationMockContext({
+            organizationId: T.orgA,
+            user: { id: UserId.create() },
+            permissions: {},
+            prisma: db,
+        });
+        async function applyLogged(env: SkillPackageExport) {
+            const { writeItems } = await SkillPackages.prepareImport(db, env, T.orgA);
+            for (const item of writeItems) {
+                await db.$transaction([item.write(db), ctx.logEvent(item.log)]);
+            }
+        }
+        const skill = (id: SkillId, name: string, sequence: number) => ({
+            id,
+            name,
+            description: "",
+            tags: [],
+            properties: {},
+            sequence,
+            frequency: 12,
+            defaultInclude: true,
+            defaultRequired: false,
+        });
+        const advanced = (skills: ReturnType<typeof skill>[]) => ({
+            id: T.groupAdvanced,
+            name: "Advanced",
+            description: "",
+            tags: [],
+            properties: {},
+            sequence: 2,
+            defaultInclude: false,
+            skills,
+        });
+
+        // Foundations (Safety, Comms) + Advanced (Rescue).
+        const first = envelope();
+        first.package.groups.push(advanced([skill(T.skillRescue, "Rescue", 1)]));
+        await applyLogged(first);
+
+        // Rename Safety, move Comms to Advanced, drop Rescue.
+        const second = envelope();
+        second.package.groups[0]!.skills = [skill(T.skillSafety, "Safety (renamed)", 1)];
+        second.package.groups.push(advanced([skill(T.skillComms, "Comms", 1)]));
+        await applyLogged(second);
+
+        const pkg = `context:SkillPackage:${T.pkg}`;
+        expect(
+            await refsOf(db, {
+                objectType: "SkillGroup",
+                objectId: T.groupAdvanced,
+                action: "Create",
+            }),
+        ).toEqual([pkg]);
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillRescue, action: "Create" }),
+        ).toEqual([`context:SkillGroup:${T.groupAdvanced}`, pkg]);
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillSafety, action: "Update" }),
+        ).toEqual([`context:SkillGroup:${T.groupFoundations}`, pkg]);
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillComms, action: "Update" }),
+        ).toEqual([
+            pkg,
+            `from:SkillGroup:${T.groupFoundations}`,
+            `to:SkillGroup:${T.groupAdvanced}`,
+        ]);
+        const moved = await db.logEntry.findFirst({
+            where: { objectType: "Skill", objectId: T.skillComms, action: "Update" },
+        });
+        expect(moved?.changes).toContainEqual({
+            type: "obj_mod",
+            path: ["skillGroupId"],
+            prev: T.groupFoundations,
+            curr: T.groupAdvanced,
+        });
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillRescue, action: "Archive" }),
+        ).toEqual([`context:SkillGroup:${T.groupAdvanced}`, pkg]);
     });
 
     it("reports unchanged rows on an identical re-import", async () => {
@@ -637,6 +731,19 @@ describe("SkillPackages archive / restore / recover / delete", () => {
                 where: { objectType: "SkillPackage", objectId: L.pkg, action: "Recover" },
             }),
         ).toHaveLength(1);
+    });
+
+    it("refs the package and group on every skill and group lifecycle entry", async () => {
+        const pkg = `context:SkillPackage:${L.pkg}`;
+        for (const action of ["Archive", "Restore", "Delete", "Recover"]) {
+            expect(await refsOf(db, { objectType: "Skill", objectId: L.skill, action })).toEqual([
+                `context:SkillGroup:${L.group}`,
+                pkg,
+            ]);
+            expect(
+                await refsOf(db, { objectType: "SkillGroup", objectId: L.group, action }),
+            ).toEqual([pkg]);
+        }
     });
 
     it("getSkillDeleteImpact counts recorded skill checks", async () => {
