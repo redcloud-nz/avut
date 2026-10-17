@@ -220,7 +220,7 @@ naming, domain errors from `src/lib/errors.ts`, no `TRPCError`) and pair every w
 dataset per `describe` (`.claude/rules/testing.md`) and build the context as
 `user-accounts.test.ts:32` does.
 
-- [ ] **3. `OrganizationGroups` service: groups**
+- [x] **3. `OrganizationGroups` service: groups** — `feat(organization-groups): add organization groups service for groups`
   - **Files:** `src/server/services/organization-groups.ts` (new),
     `src/server/services/organization-groups.test.ts` (new), `src/server/prisma-errors.ts`,
     `src/trpc/routers/organizations-router.ts` (import only).
