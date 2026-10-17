@@ -303,10 +303,19 @@ export function SkillTrack_SessionWhenPicker({
                         onValueChange={(startTime) => {
                             // Radix fires "" when it mounts or resets inside a form; that isn't a choice.
                             if (!startTime) return;
-                            // An end equal to the new start isn't on offer: drop it.
+                            // Keep the session's length: the end moves with the start, as in a
+                            // calendar app. The length is 1–95 quarters (an end never equals its
+                            // start), so the moved end can't land on the new start either.
+                            const length =
+                                value.endTime === null
+                                    ? null
+                                    : (QUARTER_HOURS.indexOf(value.endTime) -
+                                          QUARTER_HOURS.indexOf(value.startTime) +
+                                          QUARTER_HOURS.length) %
+                                      QUARTER_HOURS.length;
                             update({
                                 startTime,
-                                endTime: value.endTime === startTime ? null : value.endTime,
+                                endTime: length ? laterTime(startTime, length) : null,
                             });
                         }}
                     >
