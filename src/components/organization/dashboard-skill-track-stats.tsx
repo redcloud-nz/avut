@@ -54,21 +54,19 @@ function Organization_Dashboard_SkillPackageAndSkillStats() {
         }),
     );
 
-    const catalogueHref = route("/orgs/[slug]/skill-track/catalogue", { slug });
-
     return (
         <>
             <StatCard
                 label="Skill Packages"
                 value={assessable.skillPackages.length}
                 icon={PackageIcon}
-                href={catalogueHref}
+                href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
             />
             <StatCard
                 label="Skills"
                 value={assessable.skills.length}
                 icon={PocketKnifeIcon}
-                href={catalogueHref}
+                href={route("/orgs/[slug]/skill-track/skills", { slug })}
             />
         </>
     );
