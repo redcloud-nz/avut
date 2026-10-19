@@ -90,7 +90,7 @@
 
 ### Review group B: pages and entry points (visual checkpoint at the end)
 
-- [ ] **Task 4: skill detail page**
+- [x] **Task 4: skill detail page** (feat(skill-track): add skill detail page)
   - `visual`
   - **Files:**
     - new `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-track/skills/[skill_id]/page.tsx`
@@ -179,3 +179,7 @@ New Skill and Skill Group pages, reached from the Skills list and the catalogue 
 ## Parked
 
 - `deleteGroup` (`src/server/services/skill-packages.ts`) soft-deletes a group without cascading to its skills, so Active skills in a Deleted group stay assessable and appear in the Skills list with no group. Decide whether to cascade or block the delete.
+
+## Review notes
+
+- Tasks 1–2 tests: every "withdrawn" case is unpublished-but-Active. Add a published, **Archived** package the org subscribes to (returned) to the `getSkill` or `getGroup` fixtures, covering the other half of `catalogueSkillPackageWhere`'s withdrawn branch.
