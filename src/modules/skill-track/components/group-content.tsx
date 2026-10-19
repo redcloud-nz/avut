@@ -4,14 +4,13 @@
  */
 "use client";
 
-import Link from "next/link";
-
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillLink } from "@/components/entity-links/skill-link";
+import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -95,6 +94,10 @@ export function SkillTrack_SkillGroup_Content({
                                 <CardContent>
                                     <DataList>
                                         <DataItem inline>
+                                            <DataItemTitle>Group ID</DataItemTitle>
+                                            <DataItemValue>{group.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{group.name}</DataItemValue>
                                         </DataItem>
@@ -105,9 +108,9 @@ export function SkillTrack_SkillGroup_Content({
                                         <DataItem inline>
                                             <DataItemTitle>Package</DataItemTitle>
                                             <DataItemValue>
-                                                <Link href={packageHref}>
-                                                    {group.skillPackage.name}
-                                                </Link>
+                                                <SkillPackageLink
+                                                    skillPackage={group.skillPackage}
+                                                />
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
@@ -127,7 +130,7 @@ export function SkillTrack_SkillGroup_Content({
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
-                                            <DataItemTitle>Included by default</DataItemTitle>
+                                            <DataItemTitle>Included</DataItemTitle>
                                             <DataItemValue>
                                                 {group.defaultInclude ? "Yes" : "No"}
                                             </DataItemValue>
@@ -184,10 +187,6 @@ export function SkillTrack_SkillGroup_Content({
                             <Card>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Group ID</DataItemTitle>
-                                            <DataItemValue>{group.id}</DataItemValue>
-                                        </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Created</DataItemTitle>
                                             <DataItemDateValue date={group.createdAt} />

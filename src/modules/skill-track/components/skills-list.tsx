@@ -21,6 +21,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { SkillLink } from "@/components/entity-links/skill-link";
+import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
 import { Show } from "@/components/show";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
@@ -120,14 +121,7 @@ export function SkillTrack_SkillsList() {
                     id: "package",
                     header: "Package",
                     cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/skill-track/catalogue/[package_id]", {
-                                slug: organization.slug,
-                                package_id: ctx.row.original.skillPackageId,
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
+                        <SkillPackageLink skillPackage={ctx.row.original.skillPackage} />
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
@@ -158,7 +152,7 @@ export function SkillTrack_SkillsList() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [organization.slug, packageOptions],
+        [packageOptions],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

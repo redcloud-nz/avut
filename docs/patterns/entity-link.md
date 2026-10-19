@@ -23,6 +23,7 @@ directly:
 | Person             | `PersonLink`            | `person: PersonRef & Partial<Pick<PersonData, "email">>` |
 | Skill              | `SkillLink`             | `skill: SkillRef`                                        |
 | Skill Group        | `SkillGroupLink`        | `group: SkillGroupRef`                                   |
+| Skill Package      | `SkillPackageLink`      | `skillPackage: SkillPackageRef`                          |
 | Team               | `TeamLink`              | `team: TeamRef & Partial<Pick<TeamData, "description">>` |
 | Team Membership    | `TeamMembershipLink`    | `teamMembership: TeamMembershipRef`                      |
 | User               | `UserLink`              | `user: UserRef & Partial<Pick<UserData, "email">>`       |

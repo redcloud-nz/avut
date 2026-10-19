@@ -179,6 +179,9 @@ New Skill and Skill Group pages, reached from the Skills list and the catalogue 
 ## Parked
 
 - `deleteGroup` (`src/server/services/skill-packages.ts`) soft-deletes a group without cascading to its skills, so Active skills in a Deleted group stay assessable and appear in the Skills list with no group. Decide whether to cascade or block the delete.
+- ~~No `SkillPackageLink` wrapper~~: built in-branch after the visual checkpoint (user noticed the hover mismatch).
+- Turn `/skill-track/checks` into a general skill-check filtering/search page, then add a "Recent checks" item to the skill page's **Related** card that links to it filtered by skill (user's idea, 2026-10-19).
+- Filed as #417: move record IDs from the information card to the secondary Created/Updated card on every detail page. These two pages keep the ID in the information card until then, matching the rest.
 
 ## Review notes
 

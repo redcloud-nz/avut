@@ -12,9 +12,10 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
+import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
+import { ItemLinkActionIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DataItem,
@@ -23,6 +24,7 @@ import {
     DataItemValue,
     DataList,
 } from "@/components/ui/data-item";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
@@ -76,19 +78,6 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                             {skill.name}
                             {archived && <Badge variant="outline">Archived</Badge>}
                         </Saratoga.Title>
-                        {coverageAvailable && (
-                            <Protect permissions={{ skillCheck: ["view"] }}>
-                                <Saratoga.Actions>
-                                    <Button asChild variant="outline">
-                                        <Link
-                                            href={`${route("/orgs/[slug]/skill-track/reports/skill", { slug: organization.slug })}?skill=${skill.id}`}
-                                        >
-                                            Skill Coverage
-                                        </Link>
-                                    </Button>
-                                </Saratoga.Actions>
-                            </Protect>
-                        )}
                     </Saratoga.Header>
                     {withdrawn && (
                         <p className="text-muted-foreground text-sm">
@@ -106,12 +95,24 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                 <CardContent>
                                     <DataList>
                                         <DataItem inline>
+                                            <DataItemTitle>Skill ID</DataItemTitle>
+                                            <DataItemValue>{skill.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{skill.name}</DataItemValue>
                                         </DataItem>
                                         <DataItem>
                                             <DataItemTitle>Description</DataItemTitle>
                                             <DataItemValue>{skill.description}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Package</DataItemTitle>
+                                            <DataItemValue>
+                                                <SkillPackageLink
+                                                    skillPackage={skill.skillPackage}
+                                                />
+                                            </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Group</DataItemTitle>
@@ -126,22 +127,6 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                                 ) : (
                                                     "—"
                                                 )}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Package</DataItemTitle>
-                                            <DataItemValue>
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/skill-track/catalogue/[package_id]",
-                                                        {
-                                                            slug: organization.slug,
-                                                            package_id: skill.skillPackageId,
-                                                        },
-                                                    )}
-                                                >
-                                                    {skill.skillPackage.name}
-                                                </Link>
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
@@ -173,7 +158,7 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
-                                            <DataItemTitle>Included by default</DataItemTitle>
+                                            <DataItemTitle>Included</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.defaultInclude ? "Yes" : "No"}
                                             </DataItemValue>
@@ -183,13 +168,37 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                             </Card>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
+                            {/* Coverage is the only related view so far, so the card shows only
+                                when it does. */}
+                            {coverageAvailable && (
+                                <Protect permissions={{ skillCheck: ["view"] }}>
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Related</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="px-2 -my-2">
+                                            <Item className="px-2" size="sm" asChild>
+                                                <Link
+                                                    href={`${route("/orgs/[slug]/skill-track/reports/skill", { slug: organization.slug })}?skill=${skill.id}`}
+                                                >
+                                                    <ItemContent>
+                                                        <ItemTitle>Skill Coverage</ItemTitle>
+                                                        <ItemDescription>
+                                                            who holds this skill
+                                                        </ItemDescription>
+                                                    </ItemContent>
+                                                    <ItemActions>
+                                                        <ItemLinkActionIcon className="size-4" />
+                                                    </ItemActions>
+                                                </Link>
+                                            </Item>
+                                        </CardContent>
+                                    </Card>
+                                </Protect>
+                            )}
                             <Card>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Skill ID</DataItemTitle>
-                                            <DataItemValue>{skill.id}</DataItemValue>
-                                        </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Created</DataItemTitle>
                                             <DataItemDateValue date={skill.createdAt} />
