@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ConflictError } from "@/lib/errors";
 import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
+import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import {
     D4HSyncItem,
     D4HSyncItemDraft,
@@ -18,9 +19,11 @@ import {
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
+import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { UserId } from "@/lib/schemas/user";
+import { fetchD4HTeamMembersForSync } from "@/server/d4h-api/client";
 import { createLogBatch } from "@/server/log-entry";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
@@ -31,12 +34,34 @@ import {
     BuildD4HSyncPlanInput,
     buildSyncPlan,
     BuildSyncPlanInput,
+    createD4HSyncPlan,
     D4H_TEAM_SYNC_KIND,
     D4HMembershipSnapshot,
     D4HSyncTeamMembershipInput,
     executeD4HSyncPlan,
+    syncImmediately,
     SyncMembershipInput,
 } from "./d4h-team-sync";
+
+// Only `createD4HSyncPlan`/`syncImmediately` reach D4H; each test sets the roster it returns.
+const d4hApi = vi.hoisted(() => ({ members: [] as D4HMember[] }));
+
+vi.mock("@/server/d4h-api/client", () => ({
+    getD4HTokenMetadata: vi.fn(async () => ({
+        d4HTeams: [{ id: 4242, resourceType: "Team", title: "Alpha D4H" }],
+        d4HOrganisations: [],
+    })),
+    fetchD4HTeamDetailCached: vi.fn(async () => ({
+        id: 4242,
+        resourceType: "Team",
+        title: "Alpha D4H",
+        timezone: "Pacific/Auckland",
+    })),
+    fetchD4HTeamMembersForSync: vi.fn(async () => d4hApi.members),
+    fetchD4HOrganisationCached: vi.fn(async () => {
+        throw new Error("not expected for an org-less linked team");
+    }),
+}));
 
 function member(overrides: Partial<D4HMember> & { id: number }): D4HMember {
     return D4HMember.schema.parse({
@@ -1414,6 +1439,101 @@ describe("executeD4HSyncPlan", () => {
             expect(plan.outcomes).toEqual([{ itemId: `archive:${ids[0]}`, result: "applied" }]);
             const teamD4H = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
             expect(teamD4H.lastSyncedAt).toBeNull();
+        });
+    });
+
+    describe("createD4HSyncPlan and syncImmediately", () => {
+        const token: D4HAccessToken_ServerOnly = {
+            id: ProviderCredentialId.create(),
+            organizationId: T.org,
+            userId: T.user,
+            label: "Test token",
+            serverCode: "us",
+            token: "fake-token",
+            metadata: { d4HTeams: [], d4HOrganisations: [] },
+        };
+
+        const teamD4HOf = (teamId: TeamId) => db.team_D4H.findUniqueOrThrow({ where: { teamId } });
+
+        it("persists a ready plan for the team's D4H team", async () => {
+            const teamId = await seedTeam();
+            d4hApi.members = [member({ id: 901, email: { value: "Ready@x.com", verified: true } })];
+
+            const result = await createD4HSyncPlan(makeCtx(), {
+                teamD4H: await teamD4HOf(teamId),
+                token,
+            });
+
+            if (result.status !== "ready") throw new Error("expected a ready plan");
+            expect(result.plan.d4hTeamId).toBe(D4H_TEAM);
+            expect(result.plan.items.map((i) => i.itemId)).toEqual(["add:901", "metadata"]);
+            const row = await db.batchUpdatePlan.findUniqueOrThrow({
+                where: { id: result.planId },
+            });
+            expect(row).toMatchObject({
+                organizationId: T.org,
+                kind: D4H_TEAM_SYNC_KIND,
+                targetType: "Team",
+                targetId: teamId,
+                status: "Pending",
+                createdById: T.user,
+            });
+            expect(D4HSyncPlan.schema.parse(row.payload)).toEqual(result.plan);
+        });
+
+        it("returns in-progress, building nothing, while another plan for the team executes", async () => {
+            const teamId = await seedTeam();
+            const running = await seedPlan(teamId, []);
+            await BatchUpdatePlans.claim(makeCtx(), running, new Date());
+            vi.mocked(fetchD4HTeamMembersForSync).mockClear();
+
+            const result = await createD4HSyncPlan(makeCtx(), {
+                teamD4H: await teamD4HOf(teamId),
+                token,
+            });
+
+            expect(result).toEqual({ status: "in-progress" });
+            expect(fetchD4HTeamMembersForSync).not.toHaveBeenCalled();
+            expect(await db.batchUpdatePlan.count({ where: { targetId: teamId } })).toBe(1);
+        });
+
+        it("syncImmediately imports the D4H members in the caller's batch", async () => {
+            const teamId = await seedTeam();
+            d4hApi.members = [member({ id: 902, email: { value: "imm@x.com", verified: true } })];
+            const batchId = await newBatchId();
+
+            const result = await syncImmediately(makeCtx(), {
+                teamD4H: await teamD4HOf(teamId),
+                token,
+                batchId,
+            });
+
+            expect(result.plan.counts.additions).toBe(1);
+            expect(result.outcomes).toContainEqual({ itemId: "add:902", result: "applied" });
+            const person = await db.person.findFirstOrThrow({ where: { email: "imm@x.com" } });
+            const membership = await db.teamMembership.findFirstOrThrow({
+                where: { teamId, personId: person.id },
+                include: { d4h: true },
+            });
+            expect(membership.d4h?.d4hMemberId).toBe(902);
+            const plan = await db.batchUpdatePlan.findFirstOrThrow({
+                where: { targetId: teamId },
+            });
+            expect(plan).toMatchObject({ status: "Completed", logBatchId: batchId });
+        });
+
+        it("syncImmediately refuses while another sync of the team runs", async () => {
+            const teamId = await seedTeam();
+            const running = await seedPlan(teamId, []);
+            await BatchUpdatePlans.claim(makeCtx(), running, new Date());
+
+            await expect(
+                syncImmediately(makeCtx(), {
+                    teamD4H: await teamD4HOf(teamId),
+                    token,
+                    batchId: await newBatchId(),
+                }),
+            ).rejects.toBeInstanceOf(ConflictError);
         });
     });
 });

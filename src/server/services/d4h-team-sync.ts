@@ -18,7 +18,7 @@ import {
     StalePlanError,
     ValidationError,
 } from "@/lib/errors";
-import type { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
+import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import {
     D4HSyncItem,
@@ -1707,4 +1707,163 @@ export async function executeD4HSyncPlan(
         });
         throw e;
     }
+}
+
+//
+// Creating a persisted plan, and the link flow's immediate sync.
+// See docs/plans/2026-10-19-d4h-sync-plans.md, "Router, flows and UI".
+//
+
+/** Fetch both sides of a linked team, shaped for `buildD4HSyncPlan`. */
+export async function fetchD4HSyncPlanInput(
+    ctx: OrgServiceContext,
+    args: { teamD4H: TeamD4HRecord; token: D4HAccessToken_ServerOnly },
+): Promise<BuildD4HSyncPlanInput> {
+    const { teamD4H, token } = args;
+    const credentialRef = toD4HCredentialRef(token);
+
+    const [tokenMetadata, teamDetail, d4hMembers] = await Promise.all([
+        getD4HTokenMetadata(credentialRef),
+        fetchD4HTeamDetailCached(credentialRef, teamD4H.d4hTeamId),
+        fetchD4HTeamMembersForSync(token, teamD4H.d4hTeamId),
+    ]);
+
+    const ref = tokenMetadata.d4HTeams.find((t) => t.id === teamD4H.d4hTeamId);
+    if (!ref) {
+        throw new NotFoundError(
+            `D4H Team ${teamD4H.d4hTeamId} is no longer accessible with your token.`,
+        );
+    }
+    const owningOrgId = ref.owner?.id ?? null;
+
+    const [membershipRows, people, d4hOrg, orgRow] = await Promise.all([
+        ctx.prisma.teamMembership.findMany({
+            where: { teamId: teamD4H.teamId, organizationId: ctx.organizationId },
+            include: { d4h: true, person: { select: { id: true, name: true, email: true } } },
+        }),
+        ctx.prisma.person.findMany({
+            where: { organizationId: ctx.organizationId },
+            select: { email: true, status: true },
+        }),
+        owningOrgId === null
+            ? null
+            : fetchD4HOrganisationCached(credentialRef, teamD4H.d4hTeamId, owningOrgId),
+        owningOrgId === null
+            ? null
+            : ctx.prisma.organization_D4H.findUnique({
+                  where: { organizationId: ctx.organizationId },
+              }),
+    ]);
+
+    const emailsOf = (deleted: boolean) =>
+        new Set(
+            people
+                .filter((p) => (p.status === "Deleted") === deleted)
+                .map((p) => normaliseD4HEmail(p.email)),
+        );
+
+    return {
+        d4hTeamId: teamD4H.d4hTeamId,
+        d4hMembers,
+        teamMemberships: membershipRows.map((row) => ({
+            teamMembershipId: row.id,
+            personId: row.person.id,
+            personName: row.person.name,
+            personEmail: row.person.email,
+            status: row.status as D4HSyncTeamMembershipInput["status"],
+            d4h: row.d4h
+                ? {
+                      d4hMemberId: row.d4h.d4hMemberId,
+                      d4hStatus: row.d4h.d4hStatus,
+                      d4hPosition: row.d4h.d4hPosition,
+                      d4hRef: row.d4h.d4hRef,
+                      d4hRoleId: row.d4h.d4hRoleId,
+                  }
+                : null,
+        })),
+        existingPersonEmails: emailsOf(false),
+        deletedPersonEmails: emailsOf(true),
+        metadata: {
+            team: {
+                before: {
+                    d4hTeamName: teamD4H.d4hTeamName,
+                    d4hOrganisationId: teamD4H.d4hOrganisationId,
+                    d4hTimezone: teamD4H.d4hTimezone,
+                },
+                incoming: {
+                    d4hTeamName: ref.title,
+                    d4hOrganisationId: owningOrgId,
+                    d4hTimezone: teamDetail.timezone,
+                },
+            },
+            organization: d4hOrg
+                ? {
+                      before: {
+                          d4hOrganisationName: orgRow?.d4hOrganisationName ?? null,
+                          d4hTimezone: orgRow?.d4hTimezone ?? null,
+                          d4hCurrency: orgRow?.d4hCurrency ?? null,
+                          d4hReportingStartDay: orgRow?.d4hReportingStartDay ?? null,
+                          d4hReportingStartMonth: orgRow?.d4hReportingStartMonth ?? null,
+                      },
+                      incoming: {
+                          d4hOrganisationName: d4hOrg.title,
+                          d4hTimezone: d4hOrg.timezone,
+                          d4hCurrency: d4hOrg.currency,
+                          d4hReportingStartDay: d4hOrg.reportingStartDay,
+                          d4hReportingStartMonth: d4hOrg.reportingStartMonth,
+                      },
+                  }
+                : null,
+        },
+    };
+}
+
+export type CreateD4HSyncPlanResult =
+    | { status: "in-progress" }
+    | { status: "ready"; planId: BatchUpdatePlanId; plan: D4HSyncPlan };
+
+/**
+ * Build a D4H sync plan for a linked team from a fresh fetch of both sides, and persist it as a
+ * `Pending` `d4h-team-sync` `BatchUpdatePlan`. While another sync of the team is executing, returns
+ * `in-progress` without fetching or building anything. The plan row is bookkeeping, not audited.
+ */
+export async function createD4HSyncPlan(
+    ctx: OrgServiceContext,
+    args: { teamD4H: TeamD4HRecord; token: D4HAccessToken_ServerOnly },
+): Promise<CreateD4HSyncPlanResult> {
+    const target: BatchUpdatePlans.PlanTarget = {
+        kind: D4H_TEAM_SYNC_KIND,
+        targetType: "Team",
+        targetId: args.teamD4H.teamId,
+    };
+    if (await BatchUpdatePlans.findExecuting(ctx, target, new Date())) {
+        return { status: "in-progress" };
+    }
+
+    const plan = buildD4HSyncPlan(await fetchD4HSyncPlanInput(ctx, args));
+    const row = await BatchUpdatePlans.create(ctx, { ...target, payload: plan });
+    return { status: "ready", planId: BatchUpdatePlanId.schema.parse(row.id), plan };
+}
+
+/**
+ * Plan and execute straight away with nothing skipped: the first sync of a link or a
+ * create-from-D4H, in the caller's `LogBatch`. Returns the executed plan, whose `counts` and
+ * `skipped` the link toast reads, with each item's outcome.
+ *
+ * @throws ConflictError if another sync of the team is already running.
+ */
+export async function syncImmediately(
+    ctx: OrgServiceContext,
+    args: { teamD4H: TeamD4HRecord; token: D4HAccessToken_ServerOnly; batchId: string },
+): Promise<{ plan: D4HSyncPlan; outcomes: D4HSyncItemOutcome[] }> {
+    const created = await createD4HSyncPlan(ctx, { teamD4H: args.teamD4H, token: args.token });
+    if (created.status === "in-progress") {
+        throw new ConflictError("A sync of this team is already running.");
+    }
+    const { outcomes } = await executeD4HSyncPlan(ctx, {
+        planId: created.planId,
+        skipItemIds: [],
+        batchId: args.batchId,
+    });
+    return { plan: created.plan, outcomes };
 }

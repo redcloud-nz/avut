@@ -185,7 +185,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
     - the plan storing `logBatchId`
   - `npm run check` passes.
 
-- [ ] **5. Plan creation and immediate sync**
+- [x] **5. Plan creation and immediate sync** — feat(d4h): add createD4HSyncPlan and syncImmediately
   - **Files:** `src/server/services/d4h-team-sync.ts`, `src/server/services/d4h-team-sync.test.ts`.
   - **Do:** add these beside the old ones:
     - **`createD4HSyncPlan(ctx, { teamD4H, token })`:** returns `{ status: "in-progress" }` if `findExecuting` finds a plan. Otherwise it fetches the inputs with `fetchD4HSyncInputs`, builds with `buildD4HSyncPlan`, persists with `BatchUpdatePlans.create`, and returns `{ status: "ready", planId, plan }`.
