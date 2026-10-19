@@ -8,7 +8,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons } from "@/components/icons";
@@ -51,7 +51,7 @@ import {
     type D4HSyncSkipReason,
 } from "@/lib/schemas/d4h-sync-plan";
 import { TeamData } from "@/lib/schemas/team";
-import { trpc } from "@/trpc/client";
+import { trpc, trpcClient } from "@/trpc/client";
 
 const ACTIONS = ["d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
@@ -306,18 +306,8 @@ function SyncDialog({
 }) {
     const organization = useOrganization();
 
-    // Set while the server reports another sync of the team running, so the notice stays up while
-    // the next poll is in flight instead of flashing back to "Loading preview…".
-    const [running, setRunning] = useState(false);
-
-    // Creating the plan writes a row, so it's a mutation fired on open (and on each poll or
-    // refresh) rather than a query.
-    const createPlan = useMutation(
-        trpc.teams.createD4HTeamSyncPlan.mutationOptions({
-            onSuccess: (result) => setRunning(result.status === "in-progress"),
-            onError: () => setRunning(false),
-        }),
-    );
+    // Each open (and each "Refresh preview") is a new attempt, and so a new plan. 0 = not yet opened.
+    const [attempt, setAttempt] = useState(0);
 
     // Whether the dialog is open, for the execute callbacks, which outlive a Back-button close.
     const openRef = useRef(open);
@@ -327,12 +317,20 @@ function SyncDialog({
             meta: { effects: teamsEffects.executeD4HTeamSyncPlan },
             onError: (error) => {
                 // A CONFLICT is shown in the dialog, with a way to refresh the preview.
-                if (error.data?.code !== "CONFLICT") toast.error(`Sync failed: ${error.message}`);
+                // A dialog closed mid-apply can't show it, so it toasts too.
+                if (error.data?.code !== "CONFLICT" || !openRef.current) {
+                    toast.error(`Sync failed: ${error.message}`);
+                }
             },
-            onSuccess: ({ outcomes }) => {
+            onSuccess: ({ plan, outcomes }) => {
                 // The dialog shows the results; only a dialog closed mid-apply needs a toast.
                 if (openRef.current) return;
-                const applied = outcomes.filter((o) => o.result === "applied").length;
+                // Count the items the user could tick, as the result view does (not a no-op
+                // metadata item).
+                const counted = new Set(selectableItems(plan.payload).map((i) => i.itemId));
+                const applied = outcomes.filter(
+                    (o) => o.result === "applied" && counted.has(o.itemId),
+                ).length;
                 toast.success(`Synced with D4H: ${applied} change(s) applied`);
             },
         }),
@@ -345,47 +343,53 @@ function SyncDialog({
         itemIds: [],
     });
 
-    function requestPlan() {
-        createPlan.mutate({ organizationId: organization.id, teamId: team.id });
-    }
+    // Creating the plan writes a row, so the procedure is a mutation. It's loaded through a query
+    // keyed on the attempt, not `useMutation` fired from an effect: StrictMode's simulated unmount
+    // detaches a mutation observer and its result never arrives, while a query re-attaches and
+    // de-duplicates the in-flight request. While another sync of the team runs, it polls.
+    const createPlan = useQuery({
+        queryKey: ["d4h-team-sync-plan", organization.id, team.id, attempt],
+        queryFn: () =>
+            trpcClient.teams.createD4HTeamSyncPlan.mutate({
+                organizationId: organization.id,
+                teamId: team.id,
+            }),
+        enabled: open && attempt > 0,
+        staleTime: Infinity,
+        gcTime: 0,
+        retry: false,
+        refetchOnWindowFocus: false,
+        refetchInterval: (query) =>
+            query.state.data?.status === "in-progress" ? POLL_INTERVAL_MS : false,
+    });
 
-    // Guards against StrictMode running the open effect twice, which would create two plans.
-    const planRequested = useRef(false);
+    // A new attempt on each open transition. The ref survives StrictMode's double effect, so one
+    // open is one plan.
+    const wasOpen = useRef(false);
 
     useEffect(() => {
         openRef.current = open;
         if (!open) {
-            planRequested.current = false;
-            // Reset on close, so a reopen never shows the previous plan with Apply enabled. A
-            // close mid-apply (the Back button) keeps both, and a reopen picks the apply back up.
-            if (!execute.isPending) {
-                createPlan.reset();
-                execute.reset();
-                setRunning(false);
-            }
+            wasOpen.current = false;
+            // A close mid-apply (the Back button) keeps the apply, and a reopen picks it back up.
+            if (!execute.isPending) execute.reset();
             return;
         }
-        if (planRequested.current || execute.isPending) return;
-        planRequested.current = true;
+        if (wasOpen.current) return;
+        wasOpen.current = true;
+        if (execute.isPending) return;
         execute.reset();
-        requestPlan();
+        setAttempt((a) => a + 1);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- act on the open transition only
     }, [open]);
 
-    // While another sync of the team runs, create a plan again every few seconds.
-    useEffect(() => {
-        if (!open || createPlan.data?.status !== "in-progress") return;
-        const timer = setTimeout(requestPlan, POLL_INTERVAL_MS);
-        return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- re-arm on each poll result only
-    }, [open, createPlan.data]);
-
     function refreshPreview() {
         execute.reset();
-        createPlan.reset();
-        requestPlan();
+        setAttempt((a) => a + 1);
     }
 
+    // Kept on screen while a poll is in flight, so the notice doesn't flash back to loading.
+    const running = createPlan.data?.status === "in-progress";
     const ready = createPlan.data?.status === "ready" ? createPlan.data : null;
     const skipItemIds = ready && unticked.planId === ready.planId ? unticked.itemIds : [];
     const conflict = execute.error?.data?.code === "CONFLICT" ? execute.error : null;

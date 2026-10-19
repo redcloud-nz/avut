@@ -290,3 +290,8 @@ The sync dialog changes: rows can be skipped, there's a result summary after App
 - (Task 6) `executeD4HTeamSyncPlan` and the executor both run `requireById` + the team lookup; fold this into the lazy-batch change so the router stops duplicating them.
 - (Task 6) `teams-effects.ts`: move `executeD4HTeamSyncPlan` next to the other D4H effects.
 - (Task 8) Spec §10 checklist rows 6 and 9 still name `planD4HTeamSync`/`applyD4HTeamSync`/`buildSyncPlan`; rename them to the new names.
+- (Task 9) Close mid-apply, let it settle, reopen: the previous result view can flash for a frame. Reset `execute` in `onSettled` when the dialog is closed.
+- (Task 9) If the component unmounts while open, `openRef` stays true and the success toast is skipped; clear it in an unmount cleanup.
+- (Task 9) Checkbox lists: use the repo's `Field orientation="horizontal"` + `Checkbox id` + `FieldLabel htmlFor` pattern (`change-session-personnel.tsx`), and label each group (`fieldset`/legend or `aria-labelledby`).
+- (Task 9) Copy: "Team metadata: left Name, Timezone alone, edited since the preview" → "<name>: <fields> not changed (edited in AVUT since the preview)"; show "untick any you don't want…" only when there are tickable items, otherwise a neutral description.
+- (Task 9) `content/help/admin/teams.mdx`: rewrap the new sync paragraph to ~80 columns like the rest of the file.
