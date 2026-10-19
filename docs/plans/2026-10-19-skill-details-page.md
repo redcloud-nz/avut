@@ -82,7 +82,7 @@
       - Archived skills listed and Deleted skills left out, in `sequence` order
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 3: invalidate the new queries on subscribe/unsubscribe**
+- [x] **Task 3: invalidate the new queries on subscribe/unsubscribe** (feat(skill-track): invalidate skill and group queries on subscription change)
   - `mechanical`
   - **Files:** `src/client/skill-package-subscriptions-effects.ts`
   - **Do:** In both `subscribeToPackage` and `unsubscribeFromPackage`, add `invalidate(trpc.skillPackageSubscriptions.getSkill.queryFilter({ organizationId: vars.organizationId }))` and the same for `getGroup`, next to the existing `invalidate`s. Follow the file's existing shape.
