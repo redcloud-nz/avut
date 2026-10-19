@@ -9,7 +9,7 @@ import { TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { OrganizationRef } from "@/lib/schemas/organization";
-import { Skill } from "@/lib/schemas/skill";
+import { Skill, SkillId } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import {
     availableSkillPackageWhere,
@@ -25,9 +25,9 @@ import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
 /**
- * The public, catalogue-facing shape of a package's skills and groups: names, descriptions,
- * ordering, and default include/required flags only — never `properties`, `tags`, or timestamps,
- * which must not leak to orgs that aren't subscribed.
+ * The catalogue-facing shape of a package's skills and groups: names, descriptions, ordering,
+ * and default include/required flags only. The pick keeps the catalogue contents payload small;
+ * the fields it leaves out aren't sensitive (`getSkill` returns them in full).
  */
 const catalogueSkillSchema = Skill.schema.pick({
     id: true,
@@ -177,6 +177,62 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
                         ? SkillPackageSubscription.fromRecord(pkg.subscriptions[0])
                         : null,
                 groups: pkg.groups,
+            };
+        }),
+
+    /**
+     * Get a single skill by ID, with its group, its package, and whether this organization
+     * subscribes to that package. A skill is visible when its package is in the catalogue (see
+     * `catalogueSkillPackageWhere`): every available package, plus a withdrawn (unpublished or
+     * Archived) package this organization still subscribes to. An Archived skill is returned.
+     * @param skillId The ID of the skill to retrieve.
+     * @returns The skill, plus `group` (its skill group, or null when that group is Deleted; the
+     *   key is `group`, as in the Skills list's rows, not Prisma's `skillGroup`), `skillPackage`,
+     *   and `subscribed`.
+     * @throws TRPCError(NOT_FOUND) if the skill doesn't exist or is Deleted, or its package is
+     *   Deleted, or withdrawn and this organization doesn't subscribe to it.
+     */
+    getSkill: organizationProcedure({ skillPackageSubscription: ["view"] })
+        .input(z.object({ skillId: SkillId.schema }))
+        .output(
+            Skill.schema.extend({
+                group: SkillGroup.schema.nullable(),
+                skillPackage: SkillPackage.schema,
+                subscribed: z.boolean(),
+            }),
+        )
+        .query(async ({ ctx, input: { organizationId, skillId } }) => {
+            const skill = await ctx.prisma.skill.findFirst({
+                where: {
+                    id: skillId,
+                    status: { not: "Deleted" },
+                    skillPackage: catalogueSkillPackageWhere(organizationId),
+                },
+                include: {
+                    skillGroup: true,
+                    skillPackage: {
+                        include: {
+                            subscriptions: { where: { organizationId }, select: { id: true } },
+                        },
+                    },
+                },
+            });
+
+            if (!skill) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillNotFound(skillId),
+                });
+            }
+
+            return {
+                ...Skill.fromRecord(skill),
+                group:
+                    skill.skillGroup.status === "Deleted"
+                        ? null
+                        : SkillGroup.fromRecord(skill.skillGroup),
+                skillPackage: SkillPackage.fromRecord(skill.skillPackage),
+                subscribed: skill.skillPackage.subscriptions.length > 0,
             };
         }),
 

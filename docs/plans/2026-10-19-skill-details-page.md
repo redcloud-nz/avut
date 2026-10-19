@@ -44,7 +44,7 @@
 
 ### Review group A: data layer
 
-- [ ] **Task 1: `skillPackageSubscriptions.getSkill`**
+- [x] **Task 1: `skillPackageSubscriptions.getSkill`** (feat(skill-track): add skillPackageSubscriptions.getSkill)
   - **Files:** `src/trpc/routers/skill-package-subscriptions-router.ts`, `src/trpc/routers/skill-package-subscriptions-router.test.ts`
   - **Do:** Add `getSkill: organizationProcedure({ skillPackageSubscription: ["view"] })`, placed after `getPackage` (procedures are alphabetical, per `src/trpc/CLAUDE.md`).
     - Input `{ skillId: SkillId.schema }`.
