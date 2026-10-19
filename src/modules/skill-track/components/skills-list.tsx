@@ -27,6 +27,7 @@ import { route } from "@/lib/routes";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
+import { formatFrequency } from "@/modules/skill-track/lib/format-frequency";
 import { trpc } from "@/trpc/client";
 
 type SkillRow = Skill & { group: SkillGroup | undefined; skillPackage: SkillPackage };
@@ -87,15 +88,26 @@ export function SkillTrack_SkillsList() {
                     header: "Skill",
                     // The reports and the package's catalogue page leave archived skills out, so
                     // say why a row here is missing from them.
-                    cell: (ctx) =>
-                        isArchived(ctx.row.original) ? (
-                            <span className="flex items-center gap-2">
+                    cell: (ctx) => {
+                        const link = (
+                            <Link
+                                href={route("/orgs/[slug]/skill-track/skills/[skill_id]", {
+                                    slug: organization.slug,
+                                    skill_id: ctx.row.original.id,
+                                })}
+                            >
                                 {ctx.getValue()}
+                            </Link>
+                        );
+                        return isArchived(ctx.row.original) ? (
+                            <span className="flex items-center gap-2">
+                                {link}
                                 <Badge variant="outline">Archived</Badge>
                             </span>
                         ) : (
-                            ctx.getValue()
-                        ),
+                            link
+                        );
+                    },
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
@@ -103,6 +115,23 @@ export function SkillTrack_SkillsList() {
                 col.accessor((row) => row.group?.name ?? "", {
                     id: "group",
                     header: "Group",
+                    cell: (ctx) => {
+                        const group = ctx.row.original.group;
+                        return group ? (
+                            <Link
+                                href={route(
+                                    "/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]",
+                                    {
+                                        slug: organization.slug,
+                                        package_id: group.skillPackageId,
+                                        group_id: group.id,
+                                    },
+                                )}
+                            >
+                                {group.name}
+                            </Link>
+                        ) : null;
+                    },
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
@@ -128,12 +157,7 @@ export function SkillTrack_SkillsList() {
                 }),
                 col.accessor("frequency", {
                     header: "Frequency",
-                    cell: (ctx) => {
-                        const months = ctx.getValue();
-                        return months > 0
-                            ? `${months} ${months === 1 ? "month" : "months"}`
-                            : "None";
-                    },
+                    cell: (ctx) => formatFrequency(ctx.getValue()),
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,

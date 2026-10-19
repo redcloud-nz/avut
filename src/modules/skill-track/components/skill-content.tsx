@@ -26,6 +26,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillPackage } from "@/lib/schemas/skill-package";
+import { formatFrequency } from "@/modules/skill-track/lib/format-frequency";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
@@ -48,11 +49,6 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
     // The coverage report covers only Active skills in available packages the organization
     // subscribes to; for anything else it would show "Unknown Skill".
     const coverageAvailable = skill.subscribed && !withdrawn && skill.status === "Active";
-
-    const frequency =
-        skill.frequency > 0
-            ? `${skill.frequency} ${skill.frequency === 1 ? "month" : "months"}`
-            : "None";
 
     return (
         <>
@@ -155,7 +151,9 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Frequency</DataItemTitle>
-                                            <DataItemValue>{frequency}</DataItemValue>
+                                            <DataItemValue>
+                                                {formatFrequency(skill.frequency)}
+                                            </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Tags</DataItemTitle>

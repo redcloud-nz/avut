@@ -144,7 +144,7 @@
     - The skill page's Group links to the group page.
     - `npm run check` is clean.
 
-- [ ] **Task 6: entry points and `formatFrequency`**
+- [x] **Task 6: entry points and `formatFrequency`** (feat(skill-track): link skills and groups from the list and catalogue)
   - `visual`, `mechanical`
   - **Files:**
     - new `src/modules/skill-track/lib/format-frequency.ts`
