@@ -47,9 +47,8 @@ import { SKILL_TRACK_RESULT_GROUPS } from "./skill-track-result-groups";
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
 
 /**
- * The settings schema's result config, with a message a person can act on (the shared schema's
- * default for a cleared label is Zod's "Too small…"). A label is only required while its result is
- * switched on: a switched-off result's input is disabled, so an error there couldn't be fixed.
+ * The settings schema's result config, with the label required only while its result is switched
+ * on: a switched-off result's input is disabled, so an error there couldn't be fixed.
  */
 const resultFormSchema = z
     .object({ enabled: z.boolean(), label: z.string() })
