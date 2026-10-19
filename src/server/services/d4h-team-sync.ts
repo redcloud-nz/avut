@@ -19,7 +19,13 @@ import {
     ValidationError,
 } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
+import {
+    D4HSyncItem,
+    D4HSyncItemDraft,
+    D4HSyncPlan,
+    D4HSyncSkipReason,
+    SyncPlan,
+} from "@/lib/schemas/d4h-sync-plan";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { PersonId } from "@/lib/schemas/person";
 import type { TeamD4HRecord } from "@/lib/schemas/team";
@@ -262,6 +268,248 @@ export function buildSyncPlan(input: BuildSyncPlanInput): SyncPlan {
             updates: updates.length,
             archivals: archivals.length,
             reactivations: reactivations.length,
+        },
+    });
+}
+
+//
+// Pure builder for the persisted plan (`D4HSyncPlan`), the payload of a `d4h-team-sync`
+// `BatchUpdatePlan`. See docs/plans/2026-10-19-d4h-sync-plans.md, "Plan builder rules".
+//
+
+type D4HSyncMetadataItem = Extract<D4HSyncItem, { kind: "metadata" }>;
+
+/** One membership of the team, D4H-linked or manual, in any status. */
+export type D4HSyncTeamMembershipInput = {
+    teamMembershipId: string;
+    personId: string;
+    personName: string;
+    personEmail: string;
+    status: "Active" | "Archived" | "Deleted";
+    /** The `TeamMembership_D4H` row; null for a manual membership. */
+    d4h: (D4HMembershipSnapshot & { d4hMemberId: number }) | null;
+};
+
+export type BuildD4HSyncPlanInput = {
+    d4hTeamId: number;
+    /** D4H members already filtered to OPERATIONAL + NON_OPERATIONAL. */
+    d4hMembers: D4HMember[];
+    /** Every membership of this team: linked and manual, `Deleted` ones included. */
+    teamMemberships: D4HSyncTeamMembershipInput[];
+    /** Normalised (trimmed, lowercased) emails of people in the org that aren't `Deleted`. */
+    existingPersonEmails: ReadonlySet<string>;
+    /** Normalised emails of `Deleted` people (#183). */
+    deletedPersonEmails: ReadonlySet<string>;
+    /** The stored and incoming `Team_D4H` fields, and `Organization_D4H` for an org-bearing team. */
+    metadata: Pick<D4HSyncMetadataItem, "team" | "organization">;
+};
+
+export function normaliseD4HEmail(email: string): string {
+    return email.trim().toLowerCase();
+}
+
+function snapshotOf(d4h: D4HMembershipSnapshot): D4HMembershipSnapshot {
+    return {
+        d4hStatus: d4h.d4hStatus,
+        d4hPosition: d4h.d4hPosition,
+        d4hRef: d4h.d4hRef,
+        d4hRoleId: d4h.d4hRoleId,
+    };
+}
+
+/** The flat shape the metadata diff is shown in: team fields, then org fields keyed `org…`. */
+function flatMetadata(
+    team: D4HSyncMetadataItem["team"]["before"],
+    org: NonNullable<D4HSyncMetadataItem["organization"]>["before"] | null,
+): Record<string, string | number | null> {
+    return {
+        d4hTeamName: team.d4hTeamName,
+        d4hOrganisationId: team.d4hOrganisationId,
+        d4hTimezone: team.d4hTimezone,
+        ...(org
+            ? {
+                  orgName: org.d4hOrganisationName,
+                  orgTimezone: org.d4hTimezone,
+                  orgCurrency: org.d4hCurrency,
+                  orgReportingStartDay: org.d4hReportingStartDay,
+                  orgReportingStartMonth: org.d4hReportingStartMonth,
+              }
+            : {}),
+    };
+}
+
+/**
+ * Reconcile the D4H team against this team's memberships. A D4H member matched to a non-`Deleted`
+ * linked membership by `d4hMemberId` is updated or reactivated. Any other member is checked in
+ * this order, the first match winning:
+ *
+ * 1. blank email → skipped `missing-email`
+ * 2. email shared with another D4H member → skipped `duplicate-email` (#144)
+ * 3. email of a `Deleted` person → skipped `person-in-rubbish-bin` (#183)
+ * 4. the person's membership on this team is `Deleted` → skipped `membership-in-rubbish-bin`
+ * 5. the person's membership is linked to a D4H member who is gone → `relink`
+ * 6. otherwise → `add`
+ *
+ * An `Active` linked membership whose member is gone, and that isn't relinked, is archived.
+ */
+export function buildD4HSyncPlan(input: BuildD4HSyncPlanInput): D4HSyncPlan {
+    const linked = input.teamMemberships.flatMap((m) =>
+        m.d4h !== null && m.status !== "Deleted" ? [{ ...m, d4h: m.d4h, status: m.status }] : [],
+    );
+    const linkedByMemberId = new Map(linked.map((m) => [m.d4h.d4hMemberId, m]));
+    // A person has at most one membership per team, so an email picks at most one.
+    const membershipByEmail = new Map(
+        input.teamMemberships.map((m) => [normaliseD4HEmail(m.personEmail), m]),
+    );
+    const d4hMemberIds = new Set(input.d4hMembers.map((m) => m.id));
+
+    const emailCounts = new Map<string, number>();
+    for (const member of input.d4hMembers) {
+        const email = normaliseD4HEmail(member.email.value);
+        if (email) emailCounts.set(email, (emailCounts.get(email) ?? 0) + 1);
+    }
+
+    type Draft<K extends D4HSyncItemDraft["kind"]> = Extract<D4HSyncItemDraft, { kind: K }>;
+    const additions: Draft<"add">[] = [];
+    const relinks: Draft<"relink">[] = [];
+    const updates: Draft<"update">[] = [];
+    const reactivations: Draft<"reactivate">[] = [];
+    const archivals: Draft<"archive">[] = [];
+    const skipped: D4HSyncPlan["skipped"] = [];
+    const relinkedMembershipIds = new Set<string>();
+
+    const skip = (member: D4HMember, reason: D4HSyncSkipReason) =>
+        skipped.push({ d4hMemberId: member.id, name: member.name, reason });
+
+    for (const member of input.d4hMembers) {
+        const incoming = snapshotFromD4HMember(member);
+        const matched = linkedByMemberId.get(member.id);
+
+        if (matched) {
+            const before = snapshotOf(matched.d4h);
+            const changes = diffObject(before, incoming);
+            const common = {
+                teamMembershipId: matched.teamMembershipId,
+                personId: matched.personId,
+                personName: matched.personName,
+                d4hMemberId: member.id,
+                incoming,
+                changes,
+            };
+            if (matched.status === "Archived") {
+                reactivations.push({
+                    kind: "reactivate",
+                    itemId: `reactivate:${matched.teamMembershipId}`,
+                    ...common,
+                });
+            } else if (changes.length > 0) {
+                updates.push({
+                    kind: "update",
+                    itemId: `update:${matched.teamMembershipId}`,
+                    before,
+                    ...common,
+                });
+            }
+            continue;
+        }
+
+        const email = normaliseD4HEmail(member.email.value);
+        if (!email) {
+            skip(member, "missing-email");
+            continue;
+        }
+        if ((emailCounts.get(email) ?? 0) > 1) {
+            skip(member, "duplicate-email");
+            continue;
+        }
+        if (input.deletedPersonEmails.has(email)) {
+            skip(member, "person-in-rubbish-bin");
+            continue;
+        }
+
+        const membership = membershipByEmail.get(email);
+        if (membership?.status === "Deleted") {
+            skip(member, "membership-in-rubbish-bin");
+            continue;
+        }
+
+        if (membership && membership.d4h && !d4hMemberIds.has(membership.d4h.d4hMemberId)) {
+            const before = snapshotOf(membership.d4h);
+            relinks.push({
+                kind: "relink",
+                itemId: `relink:${membership.teamMembershipId}`,
+                teamMembershipId: membership.teamMembershipId,
+                personId: membership.personId,
+                personName: membership.personName,
+                previousD4hMemberId: membership.d4h.d4hMemberId,
+                d4hMemberId: member.id,
+                membershipStatus: membership.status,
+                before,
+                incoming,
+                changes: diffObject(before, incoming),
+            });
+            relinkedMembershipIds.add(membership.teamMembershipId);
+            continue;
+        }
+
+        // A membership still linked to another D4H member falls through to an add too; the
+        // executor reports it as `skipped-changed: linked-to-another-member`.
+        additions.push({
+            kind: "add",
+            itemId: `add:${member.id}`,
+            d4hMemberId: member.id,
+            personName: member.name,
+            email: member.email.value.trim(),
+            incoming,
+            personMatch: input.existingPersonEmails.has(email) ? "existing" : "new",
+            adoptsMembership: membership !== undefined && membership.d4h === null,
+        });
+    }
+
+    for (const membership of linked) {
+        if (membership.status !== "Active") continue;
+        if (d4hMemberIds.has(membership.d4h.d4hMemberId)) continue;
+        if (relinkedMembershipIds.has(membership.teamMembershipId)) continue;
+        archivals.push({
+            kind: "archive",
+            itemId: `archive:${membership.teamMembershipId}`,
+            teamMembershipId: membership.teamMembershipId,
+            personId: membership.personId,
+            personName: membership.personName,
+            d4hMemberId: membership.d4h.d4hMemberId,
+        });
+    }
+
+    const byNameThenItemId = (a: { personName: string; itemId: string }, b: typeof a) =>
+        a.personName.localeCompare(b.personName) || a.itemId.localeCompare(b.itemId);
+    for (const list of [additions, relinks, updates, reactivations, archivals]) {
+        list.sort(byNameThenItemId);
+    }
+    skipped.sort((a, b) => a.name.localeCompare(b.name) || a.d4hMemberId - b.d4hMemberId);
+
+    const { team, organization } = input.metadata;
+    const metadata: Draft<"metadata"> = {
+        kind: "metadata",
+        itemId: "metadata",
+        team,
+        organization,
+        changes: diffObject(
+            flatMetadata(team.before, organization?.before ?? null),
+            flatMetadata(team.incoming, organization?.incoming ?? null),
+        ),
+    };
+
+    return D4HSyncPlan.schema.parse({
+        d4hTeamId: input.d4hTeamId,
+        items: [...additions, ...relinks, ...updates, ...reactivations, ...archivals, metadata],
+        skipped,
+        counts: {
+            additions: additions.length,
+            relinks: relinks.length,
+            updates: updates.length,
+            reactivations: reactivations.length,
+            archivals: archivals.length,
+            skipped: skipped.length,
         },
     });
 }
