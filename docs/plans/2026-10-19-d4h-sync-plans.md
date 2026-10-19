@@ -99,13 +99,13 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
 
 ### Review group 1: table and lifecycle
 
-- [ ] **1. `BatchUpdatePlan` model and its schema file**
+- [x] **1. `BatchUpdatePlan` model and its schema file** — feat(db): add BatchUpdatePlan model and schema
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<ts>_batch_update_plan/migration.sql`, `src/lib/schemas/batch-update-plan.ts` (new).
   - **Do:**
     - Add the model and the `BatchUpdatePlanStatus` enum from Decisions, with relations on `Organization` and `User`.
     - `npm run db:branch d4h-sync`, then, with permission, `npm run prisma migrate dev --name batch_update_plan`.
     - The schema file exports `BatchUpdatePlanId` (`zodNanoId16` brand plus `create()`, like `TeamMembershipId` in `src/lib/schemas/team-membership.ts`) and `BatchUpdatePlanStatus` (a Zod enum matching the Prisma enum).
-  - **Done when:** the migration applies to `avut_d4h-sync`, `npx prisma generate` succeeds, and `npm run check` passes.
+  - **Done when:** the migration applies to `avut_d4h_sync`, `npx prisma generate` succeeds, and `npm run check` passes.
 
 - [ ] **2. Generic plan lifecycle service**
   - **Files:** `src/server/services/batch-update-plans.ts` (new), `src/server/services/batch-update-plans.test.ts` (new).
