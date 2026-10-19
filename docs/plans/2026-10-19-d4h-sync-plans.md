@@ -198,7 +198,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
 
 ### Review group 3: switch over, cron, spec
 
-- [ ] **6. Switch router and dialog to persisted plans; remove the token path**
+- [x] **6. Switch router and dialog to persisted plans; remove the token path** — feat(d4h): switch team sync to persisted plans and remove the token path
   - **Files:** `src/trpc/routers/teams-router.ts`, `src/trpc/routers/teams-router.test.ts`, `src/client/teams-effects.ts`, `src/modules/org-admin/components/teams/d4h-link-card.tsx`, `src/server/services/d4h-team-sync.ts`, `src/server/services/d4h-team-sync.test.ts`, `src/lib/schemas/d4h-sync-plan.ts`, `src/lib/errors.ts`, `src/trpc/init.ts`.
   - **Do:**
     - **Router:**
@@ -250,7 +250,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
     - **While Apply is pending:** the dialog can't be dismissed (`onOpenChange` ignores close, and Cancel is disabled), and reopening doesn't reset the mutation.
     - **On success:** replace the body with a result summary (counts by outcome, and a list of the `skipped-changed` items with their reasons) and a Close button, instead of the toast-and-close.
     - **A `CONFLICT` on execute** shows its message and offers "Refresh preview", which creates a new plan.
-    - **Skipped groups:** add "Skipped (email shared by several D4H members)" and "Skipped (team membership in the Rubbish bin)".
+    - **Skipped groups:** add "Skipped (email shared by several D4H members)", "Skipped (team membership in the Rubbish bin)" and "Skipped (person already linked to another D4H member)".
     - Update the help card's sync paragraph to match.
   - **Done when:** `npm run check` passes, and at the visual checkpoint the dialog previews, skips an item, applies, and shows results on a D4H-linked test team. An Apply in a second tab of the same plan, or of an older one, gets the conflict message.
 
@@ -283,3 +283,5 @@ The sync dialog changes: rows can be skipped, there's a result summary after App
 - (Task 3) `D4HSyncItemOutcome.reason` → a `z.enum` of the reasons the executor produces, with `changed(reason)` typed against it (Task 9's label map then gets an exhaustiveness check).
 - (Task 4) `isLinkedOnTeam`: replace the cross-org `findMany` + JS filter with a scoped `findFirst` on `teamMembership: { teamId, organizationId }`.
 - (Task 4) If `finish(Failed)` throws, it must not replace the original error: swallow/log its failure and always rethrow the original.
+- (Task 6) `src/server/services/teams.ts:241`: `createMembership`'s doc comment still refers to the deleted `adoptExistingMembership`; update it.
+- (Task 6) `executeD4HTeamSyncPlan` opens its LogBatch before the executor's guards/claim, so a refused execute leaves an empty batch. Open the batch lazily (after `claim` succeeds), e.g. by passing a batch factory to the executor.

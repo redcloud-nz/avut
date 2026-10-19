@@ -5,10 +5,10 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 
 import { teamsEffects } from "@/client/teams-effects";
 import { D4HIcons } from "@/components/icons";
@@ -42,7 +42,12 @@ import {
 } from "@/components/ui/select";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
-import { isSyncPlanEmpty, SyncPlan } from "@/lib/schemas/d4h-sync-plan";
+import {
+    D4HSyncPlan,
+    isD4HSyncPlanEmpty,
+    type D4HSyncItem,
+    type D4HSyncSkipReason,
+} from "@/lib/schemas/d4h-sync-plan";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
@@ -240,18 +245,8 @@ function LinkDialog_Body({ team, onClose }: { team: TeamData; onClose: () => voi
             meta: { effects: teamsEffects.linkTeamToD4H },
             onError: (error) => toast.error(error.message),
             onSuccess: ({ plan }) => {
-                // A Rubbish-bin skip needs the admin to act, unlike a missing email — say so.
-                const inBin = plan.skipped.filter(
-                    (s) => s.reason === "person-in-rubbish-bin",
-                ).length;
-                const skippedSuffix =
-                    plan.counts.skipped === 0
-                        ? ""
-                        : inBin === 0
-                          ? `, ${plan.counts.skipped} skipped`
-                          : `, ${plan.counts.skipped} skipped (${inBin} in the Rubbish bin — recover or delete them forever, then sync)`;
                 toast.success(
-                    `Linked to D4H — ${plan.counts.additions} member(s) imported${skippedSuffix}`,
+                    `Linked to D4H — ${plan.counts.additions} member(s) imported${describeSkipped(plan)}`,
                 );
                 onClose();
             },
@@ -308,53 +303,43 @@ function SyncDialog({
     onClose: () => void;
 }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
-    const planQuery = useQuery(
-        trpc.teams.planD4HTeamSync.queryOptions(
-            { organizationId: organization.id, teamId: team.id },
-            { enabled: open, staleTime: 0 },
-        ),
-    );
-
-    const [staleNotice, setStaleNotice] = useState(false);
+    // Creating the plan writes a row, so it's a mutation fired once per open rather than a query.
+    const createPlan = useMutation(trpc.teams.createD4HTeamSyncPlan.mutationOptions());
 
     const mutation = useMutation(
-        trpc.teams.applyD4HTeamSync.mutationOptions({
-            meta: { effects: teamsEffects.applyD4HTeamSync },
-            onError: (error) => {
-                if (error.shape?.cause?.name === "StalePlanError") {
-                    setStaleNotice(true);
-                    void queryClient.invalidateQueries(
-                        trpc.teams.planD4HTeamSync.queryFilter({
-                            organizationId: organization.id,
-                            teamId: team.id,
-                        }),
-                    );
-                } else {
-                    toast.error(`Sync failed: ${error.message}`);
-                }
-            },
-            onSuccess: ({ plan }) => {
+        trpc.teams.executeD4HTeamSyncPlan.mutationOptions({
+            meta: { effects: teamsEffects.executeD4HTeamSyncPlan },
+            onError: (error) => toast.error(`Sync failed: ${error.message}`),
+            onSuccess: ({ plan: { payload } }) => {
+                const c = payload.counts;
                 toast.success(
-                    `Synced: +${plan.counts.additions} ~${plan.counts.updates} ` +
-                        `archived ${plan.counts.archivals} reactivated ${plan.counts.reactivations} ` +
-                        `skipped ${plan.counts.skipped}`,
+                    `Synced: +${c.additions} relinked ${c.relinks} ~${c.updates} ` +
+                        `archived ${c.archivals} reactivated ${c.reactivations} ` +
+                        `skipped ${c.skipped}`,
                 );
                 onClose();
             },
         }),
     );
 
+    // Guards against StrictMode running the open effect twice, which would create two plans.
+    const planRequested = useRef(false);
+
     useEffect(() => {
-        if (open) {
-            setStaleNotice(false);
-            mutation.reset();
+        if (!open) {
+            planRequested.current = false;
+            return;
         }
+        if (planRequested.current) return;
+        planRequested.current = true;
+        mutation.reset();
+        createPlan.mutate({ organizationId: organization.id, teamId: team.id });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
-    const plan = planQuery.data;
+    const created = createPlan.data;
+    const ready = created?.status === "ready" ? created : null;
 
     return (
         <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
@@ -364,31 +349,29 @@ function SyncDialog({
                     <DialogDescription>Review the changes before applying them.</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    {staleNotice && (
-                        <p className="rounded bg-amber-100 p-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-                            The D4H data changed since this preview loaded. Review the updated
-                            changes below and apply again.
-                        </p>
+                    {(createPlan.isIdle || createPlan.isPending) && (
+                        <p className="text-sm">Loading preview…</p>
                     )}
-
-                    {planQuery.isLoading && <p className="text-sm">Loading preview…</p>}
-                    {planQuery.isError && (
-                        <p className="text-destructive text-sm">{planQuery.error.message}</p>
+                    {createPlan.isError && (
+                        <p className="text-destructive text-sm">{createPlan.error.message}</p>
                     )}
-                    {plan && <SyncPlanView plan={plan} />}
+                    {created?.status === "in-progress" && (
+                        <p className="text-sm">A sync of this team is running.</p>
+                    )}
+                    {ready && <SyncPlanView plan={ready.plan} />}
                 </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         status={mutation.status}
-                        disabled={!plan || isSyncPlanEmpty(plan)}
+                        disabled={!ready || isD4HSyncPlanEmpty(ready.plan)}
                         text={{ idle: "Apply", pending: "Applying…", success: "Applied" }}
                         onClick={() =>
-                            plan &&
+                            ready &&
                             mutation.mutate({
                                 organizationId: organization.id,
-                                teamId: team.id,
-                                planToken: plan.planToken,
+                                planId: ready.planId,
+                                skipItemIds: [],
                             })
                         }
                     />
@@ -398,7 +381,30 @@ function SyncDialog({
     );
 }
 
-function SyncPlanView({ plan }: { plan: SyncPlan }) {
+/** How the link toast names each reason a D4H member wasn't imported. */
+const SKIP_REASON_LABELS: Record<D4HSyncSkipReason, string> = {
+    "missing-email": "no email",
+    "person-in-rubbish-bin": "person in the Rubbish bin",
+    "duplicate-email": "email shared by several D4H members",
+    "membership-in-rubbish-bin": "membership in the Rubbish bin",
+    "linked-to-another-member": "person linked to another D4H member",
+};
+
+/** The link toast's skipped suffix, e.g. `, 3 skipped (2 no email, 1 person in the Rubbish bin)`. */
+function describeSkipped(plan: D4HSyncPlan): string {
+    if (plan.skipped.length === 0) return "";
+    const parts = (Object.keys(SKIP_REASON_LABELS) as D4HSyncSkipReason[]).flatMap((reason) => {
+        const count = plan.skipped.filter((s) => s.reason === reason).length;
+        return count === 0 ? [] : [`${count} ${SKIP_REASON_LABELS[reason]}`];
+    });
+    return `, ${plan.skipped.length} skipped (${parts.join(", ")})`;
+}
+
+function itemsOf<K extends D4HSyncItem["kind"]>(plan: D4HSyncPlan, kind: K) {
+    return plan.items.filter((i): i is Extract<D4HSyncItem, { kind: K }> => i.kind === kind);
+}
+
+function SyncPlanView({ plan }: { plan: D4HSyncPlan }) {
     const skippedGroup = (
         <>
             <Group
@@ -413,7 +419,7 @@ function SyncPlanView({ plan }: { plan: SyncPlan }) {
             />
         </>
     );
-    if (isSyncPlanEmpty(plan)) {
+    if (isD4HSyncPlanEmpty(plan)) {
         return (
             <div className="space-y-3 text-sm">
                 <p className="text-muted-foreground text-sm">Already in sync.</p>
@@ -421,16 +427,21 @@ function SyncPlanView({ plan }: { plan: SyncPlan }) {
             </div>
         );
     }
+    const metadataChanges = itemsOf(plan, "metadata").flatMap((m) => m.changes);
     return (
         <div className="space-y-3 text-sm">
-            <Group title="Add" rows={plan.additions.map((a) => `${a.name} (${a.email})`)} />
-            <Group title="Update" rows={plan.updates.map((u) => u.personName)} />
-            <Group title="Reactivate" rows={plan.reactivations.map((r) => r.personName)} />
-            <Group title="Archive" rows={plan.archivals.map((a) => a.personName)} />
-            {plan.teamMetadataChanges.length > 0 && (
+            <Group
+                title="Add"
+                rows={itemsOf(plan, "add").map((a) => `${a.personName} (${a.email})`)}
+            />
+            <Group title="Re-link" rows={itemsOf(plan, "relink").map((r) => r.personName)} />
+            <Group title="Update" rows={itemsOf(plan, "update").map((u) => u.personName)} />
+            <Group title="Reactivate" rows={itemsOf(plan, "reactivate").map((r) => r.personName)} />
+            <Group title="Archive" rows={itemsOf(plan, "archive").map((a) => a.personName)} />
+            {metadataChanges.length > 0 && (
                 <Group
                     title="Team metadata"
-                    rows={[`${plan.teamMetadataChanges.length} field(s) changed`]}
+                    rows={[`${metadataChanges.length} field(s) changed`]}
                 />
             )}
             {skippedGroup}

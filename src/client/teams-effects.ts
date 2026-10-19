@@ -31,7 +31,8 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
 ];
 
 export const teamsEffects = createEffects<"teams">()({
-    applyD4HTeamSync: (vars) => teamCaches(vars),
+    executeD4HTeamSyncPlan: (vars, { plan }) =>
+        teamCaches({ organizationId: vars.organizationId, teamId: plan.teamId }),
     archiveTeam: (vars, { updated }) => [
         write(
             trpc.teams.getTeam.queryKey({

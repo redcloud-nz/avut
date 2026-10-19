@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { NotConfiguredError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
+import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
@@ -148,11 +149,12 @@ describe("teamsRouter.getTeam", () => {
     });
 });
 
-describe("teamsRouter.applyD4HTeamSync", () => {
+describe("teamsRouter D4H sync plans", () => {
     async function seed() {
         const db = createMockPrisma();
         const T = {
             org: OrganizationId.create(),
+            otherOrg: OrganizationId.create(),
             user: nanoId16(),
             team: TeamId.create(),
             departedPerson: PersonId.create(),
@@ -161,6 +163,9 @@ describe("teamsRouter.applyD4HTeamSync", () => {
 
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.otherOrg, name: "Other", slug: "other", createdAt: new Date() },
         });
         await db.team.create({
             data: {
@@ -214,20 +219,31 @@ describe("teamsRouter.applyD4HTeamSync", () => {
                 prisma: db,
             }),
         );
-        return { db, T, caller };
+
+        async function createPlan() {
+            const created = await caller.createD4HTeamSyncPlan({
+                organizationId: T.org,
+                teamId: T.team,
+            });
+            if (created.status !== "ready") throw new Error("expected a ready plan");
+            return created;
+        }
+
+        return { db, T, caller, createPlan };
     }
 
-    it("archives departed members, adds new ones, and batches every log entry", async () => {
-        const { db, T, caller } = await seed();
+    it("creates a plan, then executes it: archives departed members, adds new ones, one batch", async () => {
+        const { db, T, caller, createPlan } = await seed();
 
-        const plan = await caller.planD4HTeamSync({ organizationId: T.org, teamId: T.team });
-        const { plan: applied } = await caller.applyD4HTeamSync({
+        const { planId } = await createPlan();
+        const { plan: executed } = await caller.executeD4HTeamSyncPlan({
             organizationId: T.org,
-            teamId: T.team,
-            planToken: plan.planToken,
+            planId,
+            skipItemIds: [],
         });
 
-        expect(applied.counts).toMatchObject({ additions: 1, archivals: 1 });
+        expect(executed).toMatchObject({ id: planId, teamId: T.team });
+        expect(executed.payload.counts).toMatchObject({ additions: 1, archivals: 1 });
 
         const departed = await db.teamMembership.findUnique({
             where: { teamId_personId: { teamId: T.team, personId: T.departedPerson } },
@@ -253,15 +269,18 @@ describe("teamsRouter.applyD4HTeamSync", () => {
         expect(batchIds.size).toBe(1);
         const batch = await db.logBatch.findUnique({ where: { id: [...batchIds][0]! } });
         expect(batch).toMatchObject({ operationKey: "d4h-team-sync", userId: T.user });
+
+        const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+        expect(row).toMatchObject({ status: "Completed", logBatchId: batch!.id });
     });
 
-    it("adopts a membership a concurrent sync created first instead of crashing", async () => {
-        const { db, T, caller } = await seed();
+    it("takes over a membership a concurrent manual add created first instead of crashing", async () => {
+        const { db, T, caller, createPlan } = await seed();
 
-        const plan = await caller.planD4HTeamSync({ organizationId: T.org, teamId: T.team });
+        const { planId } = await createPlan();
 
-        // Simulate a second, concurrent applyD4HTeamSync call winning the race: it creates
-        // the TeamMembership row for Grace between our findUnique and our own create, so our
+        // Simulate a concurrent manual add winning the race: it creates an unlinked
+        // TeamMembership row for Grace between the executor's lookup and its own create, so the
         // create loses to the unique constraint on (teamId, personId) — see issue #164.
         const originalCreate = db.teamMembership.create.bind(db.teamMembership) as (
             args: unknown,
@@ -274,9 +293,10 @@ describe("teamsRouter.applyD4HTeamSync", () => {
         };
         createSpy.mockImplementationOnce((args) => {
             return (async () => {
+                const { d4h: _linked, ...manual } = args.data;
                 await originalCreate({
                     ...args,
-                    data: { ...args.data, id: TeamMembershipId.create() },
+                    data: { ...manual, id: TeamMembershipId.create() },
                 });
                 const raceError = new Error("Unique constraint failed on (teamId, personId)");
                 Object.assign(raceError, { code: "P2002" });
@@ -284,65 +304,189 @@ describe("teamsRouter.applyD4HTeamSync", () => {
             })();
         });
 
-        const { plan: applied } = await caller.applyD4HTeamSync({
+        const { outcomes } = await caller.executeD4HTeamSyncPlan({
             organizationId: T.org,
-            teamId: T.team,
-            planToken: plan.planToken,
+            planId,
+            skipItemIds: [],
         });
-
-        expect(applied.counts).toMatchObject({ additions: 1 });
         createSpy.mockRestore();
 
+        expect(outcomes).toContainEqual({ itemId: "add:501", result: "applied" });
         const grace = await db.person.findFirstOrThrow({
             where: { organizationId: T.org, email: "grace@example.com" },
         });
         const memberships = await db.teamMembership.findMany({
             where: { teamId: T.team, personId: grace.id },
+            include: { d4h: true },
         });
         expect(memberships).toHaveLength(1);
         expect(memberships[0]?.status).toBe("Active");
-
-        const d4h = await db.teamMembership_D4H.findUnique({
-            where: { teamMembershipId: memberships[0]!.id },
-        });
-        expect(d4h?.d4hMemberId).toBe(501);
+        expect(memberships[0]?.d4h?.d4hMemberId).toBe(501);
     });
 
-    it("rejects a stale planToken with a StalePlanError and writes nothing", async () => {
+    it("gives NOT_FOUND for another organization's plan", async () => {
         const { db, T, caller } = await seed();
+        const otherPlan = BatchUpdatePlanId.create();
+        await db.batchUpdatePlan.create({
+            data: {
+                id: otherPlan,
+                organizationId: T.otherOrg,
+                kind: "d4h-team-sync",
+                targetType: "Team",
+                targetId: T.team,
+                status: "Pending",
+                payload: {},
+            },
+        });
 
         await expect(
-            caller.applyD4HTeamSync({
+            caller.executeD4HTeamSyncPlan({
                 organizationId: T.org,
-                teamId: T.team,
-                planToken: "stale-token-that-will-not-match",
+                planId: otherPlan,
+                skipItemIds: [],
             }),
-        ).rejects.toThrow();
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: otherPlan } });
+        expect(row.status).toBe("Pending");
+    });
 
-        const departed = await db.teamMembership.findUnique({
-            where: { teamId_personId: { teamId: T.team, personId: T.departedPerson } },
-        });
-        expect(departed?.status).toBe("Active");
+    it("gives CONFLICT executing the same plan twice", async () => {
+        const { T, caller, createPlan } = await seed();
+        const { planId } = await createPlan();
+
+        await caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] });
+        await expect(
+            caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+
+    it("gives CONFLICT executing a plan whose team was archived since, and writes nothing", async () => {
+        const { db, T, caller, createPlan } = await seed();
+        const { planId } = await createPlan();
+        await db.team.update({ where: { id: T.team }, data: { status: "Archived" } });
+
+        await expect(
+            caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
         expect(await db.person.findFirst({ where: { email: "grace@example.com" } })).toBeNull();
+        const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+        expect(row.status).toBe("Pending");
+    });
+
+    it("gives BAD_REQUEST creating a plan for an archived team", async () => {
+        const { db, T, caller } = await seed();
+        await db.team.update({ where: { id: T.team }, data: { status: "Archived" } });
+
+        await expect(
+            caller.createD4HTeamSyncPlan({ organizationId: T.org, teamId: T.team }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 
     // `getConfiguredD4HAccessToken` throws `NotConfiguredError` when the org has D4H turned off or
     // the caller has no personal token (#175, #174); the client needs its message, not a 500.
-    it("rejects plan and apply with PRECONDITION_FAILED when D4H isn't configured", async () => {
-        const { T, caller } = await seed();
+    // Executing needs no token: the plan carries everything.
+    it("needs a D4H token to create a plan but not to execute one", async () => {
+        const { db, T, caller, createPlan } = await seed();
         const notConfigured = new NotConfiguredError(
             "D4H integration is not enabled for this organisation.",
         );
-        vi.mocked(getConfiguredD4HAccessToken)
-            .mockRejectedValueOnce(notConfigured)
-            .mockRejectedValueOnce(notConfigured);
+        const tokenMock = vi.mocked(getConfiguredD4HAccessToken);
 
+        tokenMock.mockRejectedValueOnce(notConfigured);
         await expect(
-            caller.planD4HTeamSync({ organizationId: T.org, teamId: T.team }),
+            caller.createD4HTeamSyncPlan({ organizationId: T.org, teamId: T.team }),
         ).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: notConfigured.message });
+
+        const { planId } = await createPlan();
+        const original = tokenMock.getMockImplementation();
+        tokenMock.mockRejectedValue(notConfigured);
+        try {
+            await caller.executeD4HTeamSyncPlan({
+                organizationId: T.org,
+                planId,
+                skipItemIds: [],
+            });
+        } finally {
+            tokenMock.mockImplementation(original!);
+        }
+        const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+        expect(row.status).toBe("Completed");
+    });
+
+    it("unlinking supersedes the team's pending plan", async () => {
+        const { db, T, caller, createPlan } = await seed();
+        const { planId } = await createPlan();
+
+        await caller.unlinkTeamFromD4H({ organizationId: T.org, teamId: T.team });
+
+        const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+        expect(row.status).toBe("Superseded");
         await expect(
-            caller.applyD4HTeamSync({ organizationId: T.org, teamId: T.team, planToken: "any" }),
-        ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+    });
+});
+
+describe("teamsRouter link and create from D4H", () => {
+    async function seed() {
+        const db = createMockPrisma();
+        const T = {
+            org: OrganizationId.create(),
+            user: nanoId16(),
+            team: TeamId.create(),
+        };
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: { id: T.team, organizationId: T.org, name: "Alpha", properties: {}, tags: [] },
+        });
+        const caller = teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { team: ["create", "update"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+        return { db, T, caller };
+    }
+
+    async function expectGraceImported(db: ReturnType<typeof createMockPrisma>, teamId: string) {
+        const grace = await db.person.findFirstOrThrow({ where: { email: "grace@example.com" } });
+        const membership = await db.teamMembership.findFirstOrThrow({
+            where: { teamId, personId: grace.id },
+            include: { d4h: true },
+        });
+        expect(membership.d4h?.d4hMemberId).toBe(501);
+        const plan = await db.batchUpdatePlan.findFirstOrThrow({ where: { targetId: teamId } });
+        expect(plan.status).toBe("Completed");
+        const batch = await db.logBatch.findUniqueOrThrow({ where: { id: plan.logBatchId! } });
+        expect(batch.operationKey).toBe("d4h-team-link");
+    }
+
+    it("linkTeamToD4H imports the D4H members and returns the plan's counts", async () => {
+        const { db, T, caller } = await seed();
+
+        const { plan } = await caller.linkTeamToD4H({
+            organizationId: T.org,
+            teamId: T.team,
+            d4hTeamId: 4242,
+        });
+
+        expect(plan.counts).toMatchObject({ additions: 1, skipped: 0 });
+        await expectGraceImported(db, T.team);
+    });
+
+    it("createTeamFromD4H imports the D4H members", async () => {
+        const { db, T, caller } = await seed();
+
+        const { created } = await caller.createTeamFromD4H({
+            organizationId: T.org,
+            d4hTeamId: 4242,
+        });
+
+        expect(created.d4h?.d4hTeamId).toBe(4242);
+        await expectGraceImported(db, created.id);
     });
 });
 
