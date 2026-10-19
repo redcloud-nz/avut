@@ -42,9 +42,8 @@ import {
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
 
 /**
- * The settings schema's bounds, with messages a person can act on — the shared schema's default
- * for a cleared input is Zod's "expected number, received NaN", and `.int()` would otherwise only
- * ever see whole numbers.
+ * The settings schema's bounds, with messages that name the unit ("…days") rather than the
+ * generic ones from `@/lib/zod-error-map`.
  */
 const retentionFormSchema = z.object({
     retentionDays: z
