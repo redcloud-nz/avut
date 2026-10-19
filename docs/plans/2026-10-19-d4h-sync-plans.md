@@ -231,7 +231,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
   - **Do:** copy `src/app/api/cron/purge-rubbish/route.ts` and `src/server/cron/purge-rubbish.ts`, calling `BatchUpdatePlans.runCleanup(prisma, now)` and returning its counts. Schedule it daily, offset from purge-rubbish (`30 14 * * *`).
   - **Done when:** a route test (mocking the `src/server/cron` binding and `serverEnv`) shows a missing or wrong bearer gives 401 and the right one gives 200. `npm run check` passes.
 
-- [ ] **8. Spec update**
+- [x] **8. Spec update** — docs(specs): describe persisted D4H sync plans in the linking spec
   - **Files:** `docs/specs/2026-09-10-d4h-linking.md`.
   - **Do:**
     - Rewrite §6.5, §7.1, §7.3 and §8's sync-dialog paragraph for the persisted-plan flow: create, then execute by id, skip by item id, per-item preconditions and outcomes, one execution per team, the 24-hour expiry and the cleanup cron, and `lastSyncedAt` being the snapshot time.
