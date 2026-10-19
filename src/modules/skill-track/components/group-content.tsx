@@ -11,6 +11,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import { SkillLink } from "@/components/entity-links/skill-link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -148,18 +149,9 @@ export function SkillTrack_SkillGroup_Content({
                                             {group.skills.map((skill) => (
                                                 <li key={skill.id} className="px-3 py-2">
                                                     <div className="flex items-center gap-2">
-                                                        <Link
-                                                            href={route(
-                                                                "/orgs/[slug]/skill-track/skills/[skill_id]",
-                                                                {
-                                                                    slug: organization.slug,
-                                                                    skill_id: skill.id,
-                                                                },
-                                                            )}
-                                                            className="text-sm font-medium"
-                                                        >
-                                                            {skill.name}
-                                                        </Link>
+                                                        <span className="text-sm font-medium">
+                                                            <SkillLink skill={skill} />
+                                                        </span>
                                                         {skill.status !== "Active" && (
                                                             <Badge variant="outline">
                                                                 Archived

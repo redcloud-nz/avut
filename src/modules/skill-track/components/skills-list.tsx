@@ -19,6 +19,8 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
+import { SkillLink } from "@/components/entity-links/skill-link";
 import { Show } from "@/components/show";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
@@ -89,16 +91,7 @@ export function SkillTrack_SkillsList() {
                     // The reports and the package's catalogue page leave archived skills out, so
                     // say why a row here is missing from them.
                     cell: (ctx) => {
-                        const link = (
-                            <Link
-                                href={route("/orgs/[slug]/skill-track/skills/[skill_id]", {
-                                    slug: organization.slug,
-                                    skill_id: ctx.row.original.id,
-                                })}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        );
+                        const link = <SkillLink skill={ctx.row.original} />;
                         return isArchived(ctx.row.original) ? (
                             <span className="flex items-center gap-2">
                                 {link}
@@ -117,20 +110,7 @@ export function SkillTrack_SkillsList() {
                     header: "Group",
                     cell: (ctx) => {
                         const group = ctx.row.original.group;
-                        return group ? (
-                            <Link
-                                href={route(
-                                    "/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]",
-                                    {
-                                        slug: organization.slug,
-                                        package_id: group.skillPackageId,
-                                        group_id: group.id,
-                                    },
-                                )}
-                            >
-                                {group.name}
-                            </Link>
-                        ) : null;
+                        return group ? <SkillGroupLink group={group} /> : null;
                     },
                     enableSorting: true,
                     enableGlobalFilter: true,

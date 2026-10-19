@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -12,6 +11,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
+import { SkillLink } from "@/components/entity-links/skill-link";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,6 @@ export function SkillTrack_CataloguePackage_Content({
                                             <PackageGroup
                                                 key={group.id}
                                                 group={group}
-                                                slug={organization.slug}
                                                 skillPackageId={skillPackage.id}
                                             />
                                         ))
@@ -230,29 +230,16 @@ export function SkillTrack_CataloguePackage_Content({
 
 function PackageGroup({
     group,
-    slug,
     skillPackageId,
 }: {
     group: CataloguePackageGroup;
-    slug: string;
     skillPackageId: SkillPackageId;
 }) {
     return (
         <div>
             <div className="flex items-center gap-2">
                 <h3 className="font-medium">
-                    <Link
-                        href={route(
-                            "/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]",
-                            {
-                                slug,
-                                package_id: skillPackageId,
-                                group_id: group.id,
-                            },
-                        )}
-                    >
-                        {group.name}
-                    </Link>
+                    <SkillGroupLink group={{ ...group, skillPackageId }} />
                 </h3>
                 {!group.defaultInclude && <Badge variant="outline">Not included by default</Badge>}
             </div>
@@ -266,15 +253,9 @@ function PackageGroup({
                     {group.skills.map((skill) => (
                         <li key={skill.id} className="px-3 py-2">
                             <div className="flex items-center gap-2">
-                                <Link
-                                    href={route("/orgs/[slug]/skill-track/skills/[skill_id]", {
-                                        slug,
-                                        skill_id: skill.id,
-                                    })}
-                                    className="text-sm font-medium"
-                                >
-                                    {skill.name}
-                                </Link>
+                                <span className="text-sm font-medium">
+                                    <SkillLink skill={skill} />
+                                </span>
                                 {skill.defaultRequired && (
                                     <Badge variant="secondary">Required</Badge>
                                 )}

@@ -182,4 +182,14 @@ New Skill and Skill Group pages, reached from the Skills list and the catalogue 
 
 ## Review notes
 
-- Tasks 1–2 tests: every "withdrawn" case is unpublished-but-Active. Add a published, **Archived** package the org subscribes to (returned) to the `getSkill` or `getGroup` fixtures, covering the other half of `catalogueSkillPackageWhere`'s withdrawn branch.
+- Done: Tasks 1–2 tests: every "withdrawn" case is unpublished-but-Active. Add a published, **Archived** package the org subscribes to (returned) to the `getSkill` or `getGroup` fixtures, covering the other half of `catalogueSkillPackageWhere`'s withdrawn branch.
+- Done: `content/help/skill-track/skills.mdx`: the Task 4 trim went too far (cards may run to 250 words, per `content/README.md`). Restore:
+  - "a check older than that counts as expired in the reports" with Frequency
+  - the search/Package filter sentence
+  - "the same set the session skill picker uses"
+- Done: `skills.mdx`: the coverage-link sentence says it's absent only for an archived skill. Say it shows only for an active skill in a package you subscribe to that hasn't been withdrawn. Note that the Archived badge also shows when only the skill's group is archived (the link can still show then).
+- Done: `content/help/skill-track/catalogue.mdx`: the subscribe bullet's "while it stays published" lost "and isn't archived by its author". Put it back.
+- Done: Entity links (AGENTS.md → Entity Links, `docs/patterns/entity-link.md`):
+  - Add `src/components/entity-links/skill-link.tsx` (`SkillLink`, built on the existing `SkillRef`) and `skill-group-link.tsx` (`SkillGroupLink`, with a new `SkillGroupRef` `{ id, skillPackageId, name }` in `src/lib/schemas/skill-group.ts`, since the route needs the package id).
+  - Use them for every skill and group name link this branch added: `skill-content.tsx`, `group-content.tsx`, `skills-list.tsx`, `catalogue-package-content.tsx`.
+- Done: `skill-content.tsx`: when the coverage link is allowed but the user lacks `skillCheck: ["view"]`, `Saratoga.Actions` renders empty. Put the `Protect` outside `Saratoga.Actions`.

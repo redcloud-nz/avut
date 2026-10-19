@@ -11,6 +11,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,8 +77,8 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                             {archived && <Badge variant="outline">Archived</Badge>}
                         </Saratoga.Title>
                         {coverageAvailable && (
-                            <Saratoga.Actions>
-                                <Protect permissions={{ skillCheck: ["view"] }}>
+                            <Protect permissions={{ skillCheck: ["view"] }}>
+                                <Saratoga.Actions>
                                     <Button asChild variant="outline">
                                         <Link
                                             href={`${route("/orgs/[slug]/skill-track/reports/skill", { slug: organization.slug })}?skill=${skill.id}`}
@@ -85,8 +86,8 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                             Skill Coverage
                                         </Link>
                                     </Button>
-                                </Protect>
-                            </Saratoga.Actions>
+                                </Saratoga.Actions>
+                            </Protect>
                         )}
                     </Saratoga.Header>
                     {withdrawn && (
@@ -116,18 +117,12 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                             <DataItemTitle>Group</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.group ? (
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]",
-                                                            {
-                                                                slug: organization.slug,
-                                                                package_id: skill.skillPackageId,
-                                                                group_id: skill.group.id,
-                                                            },
-                                                        )}
-                                                    >
-                                                        {skill.group.name}
-                                                    </Link>
+                                                    <SkillGroupLink
+                                                        group={{
+                                                            ...skill.group,
+                                                            skillPackageId: skill.skillPackageId,
+                                                        }}
+                                                    />
                                                 ) : (
                                                     "—"
                                                 )}

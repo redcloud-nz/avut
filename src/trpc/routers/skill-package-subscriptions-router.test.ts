@@ -498,6 +498,9 @@ describe("skillPackageSubscriptions.getSkill", () => {
         // Unpublished, subscribed.
         withdrawnPkg: SkillPackageId.create(),
         withdrawnSkill: SkillId.create(),
+        // Published but Archived, subscribed.
+        archivedPkg: SkillPackageId.create(),
+        archivedPkgSkill: SkillId.create(),
         // Unpublished, not subscribed.
         unsubscribedWithdrawnPkg: SkillPackageId.create(),
         unsubscribedWithdrawnSkill: SkillId.create(),
@@ -523,6 +526,7 @@ describe("skillPackageSubscriptions.getSkill", () => {
             [T.livePkg, true, "Active", true, T.liveGroup, T.liveSkill],
             [T.openPkg, true, "Active", false, SkillGroupId.create(), T.openSkill],
             [T.withdrawnPkg, false, "Active", true, SkillGroupId.create(), T.withdrawnSkill],
+            [T.archivedPkg, true, "Archived", true, SkillGroupId.create(), T.archivedPkgSkill],
             [
                 T.unsubscribedWithdrawnPkg,
                 false,
@@ -660,6 +664,18 @@ describe("skillPackageSubscriptions.getSkill", () => {
 
         expect(result.id).toBe(T.withdrawnSkill);
         expect(result.skillPackage.published).toBe(false);
+        expect(result.subscribed).toBe(true);
+    });
+
+    it("returns a skill in a published but Archived package the org subscribes to", async () => {
+        const result = await makeCaller().getSkill({
+            organizationId: T.org,
+            skillId: T.archivedPkgSkill,
+        });
+
+        expect(result.id).toBe(T.archivedPkgSkill);
+        expect(result.skillPackage.published).toBe(true);
+        expect(result.skillPackage.status).toBe("Archived");
         expect(result.subscribed).toBe(true);
     });
 
