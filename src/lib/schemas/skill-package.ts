@@ -73,3 +73,12 @@ export const availableSkillPackageWhere = {
 } satisfies Prisma.SkillPackageWhereInput;
 
 export type ModifiableSkillPackage = z.infer<typeof SkillPackage.modifiableSchema>;
+
+export const SkillPackageRef = {
+    schema: z.object({
+        id: SkillPackageId.schema,
+        name: z.string().min(1).max(100),
+    }),
+} as const;
+
+export type SkillPackageRef = z.infer<typeof SkillPackageRef.schema>;
