@@ -6,6 +6,10 @@
     {
       "path": "/api/cron/purge-rubbish",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-batch-update-plans",
+      "schedule": "30 14 * * *"
     }
   ]
 }

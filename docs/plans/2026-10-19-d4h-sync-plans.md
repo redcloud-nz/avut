@@ -226,7 +226,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
     - link and create still import members and return `counts`
   - `grep -rn "planToken\|StalePlanError" src` is empty, and `npm run check` passes.
 
-- [ ] **7. Cleanup cron** `mechanical`
+- [x] **7. Cleanup cron** — feat(d4h): add daily batch-update-plan cleanup cron `mechanical`
   - **Files:** `src/app/api/cron/cleanup-batch-update-plans/route.ts` (new), `src/app/api/cron/cleanup-batch-update-plans/route.test.ts` (new), `src/server/cron/cleanup-batch-update-plans.ts` (new), `vercel.json`.
   - **Do:** copy `src/app/api/cron/purge-rubbish/route.ts` and `src/server/cron/purge-rubbish.ts`, calling `BatchUpdatePlans.runCleanup(prisma, now)` and returning its counts. Schedule it daily, offset from purge-rubbish (`30 14 * * *`).
   - **Done when:** a route test (mocking the `src/server/cron` binding and `serverEnv`) shows a missing or wrong bearer gives 401 and the right one gives 200. `npm run check` passes.
