@@ -10,6 +10,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
+import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
+import { SkillLink } from "@/components/entity-links/skill-link";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,6 +76,7 @@ export function SkillTrack_CataloguePackage_Content({
                     },
                     skillPackage.name,
                 ]}
+                actions={<HelpButton id="skill-track/catalogue" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -164,7 +168,11 @@ export function SkillTrack_CataloguePackage_Content({
                                         </p>
                                     ) : (
                                         skillPackage.groups.map((group) => (
-                                            <PackageGroup key={group.id} group={group} />
+                                            <PackageGroup
+                                                key={group.id}
+                                                group={group}
+                                                skillPackageId={skillPackage.id}
+                                            />
                                         ))
                                     )}
                                 </CardContent>
@@ -220,11 +228,19 @@ export function SkillTrack_CataloguePackage_Content({
     );
 }
 
-function PackageGroup({ group }: { group: CataloguePackageGroup }) {
+function PackageGroup({
+    group,
+    skillPackageId,
+}: {
+    group: CataloguePackageGroup;
+    skillPackageId: SkillPackageId;
+}) {
     return (
         <div>
             <div className="flex items-center gap-2">
-                <h3 className="font-medium">{group.name}</h3>
+                <h3 className="font-medium">
+                    <SkillGroupLink group={{ ...group, skillPackageId }} />
+                </h3>
                 {!group.defaultInclude && <Badge variant="outline">Not included by default</Badge>}
             </div>
             {group.description && (
@@ -237,7 +253,9 @@ function PackageGroup({ group }: { group: CataloguePackageGroup }) {
                     {group.skills.map((skill) => (
                         <li key={skill.id} className="px-3 py-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">{skill.name}</span>
+                                <span className="text-sm font-medium">
+                                    <SkillLink skill={skill} />
+                                </span>
                                 {skill.defaultRequired && (
                                     <Badge variant="secondary">Required</Badge>
                                 )}

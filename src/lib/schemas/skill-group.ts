@@ -58,3 +58,13 @@ export const SkillGroup = {
 export type SkillGroup = z.infer<typeof skillGroupSchema>;
 
 export type ModifiableSkillGroup = z.infer<typeof SkillGroup.modifiableSchema>;
+
+export const SkillGroupRef = {
+    schema: z.object({
+        id: SkillGroupId.schema,
+        skillPackageId: SkillPackageId.schema,
+        name: z.string().min(1).max(100),
+    }),
+} as const;
+
+export type SkillGroupRef = z.infer<typeof SkillGroupRef.schema>;
