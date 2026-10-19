@@ -32,6 +32,7 @@ import {
     InputGroupInput,
     InputGroupText,
 } from "@/components/ui/input-group";
+import { numberInputProps } from "@/lib/number-input";
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
     OrganizationSettings,
@@ -141,16 +142,7 @@ export function OrganizationSettings_UpdateRubbishBin_Dialog({
                                             <InputGroupInput
                                                 id="rubbish-bin-retention-days"
                                                 type="number"
-                                                // A cleared input holds NaN; show it as empty
-                                                // rather than passing NaN to the DOM.
-                                                value={Number.isNaN(field.value) ? "" : field.value}
-                                                onChange={(ev) =>
-                                                    field.onChange(
-                                                        ev.currentTarget.value === ""
-                                                            ? NaN
-                                                            : Number(ev.currentTarget.value),
-                                                    )
-                                                }
+                                                {...numberInputProps(field)}
                                                 aria-invalid={fieldState.invalid}
                                             />
                                             <InputGroupAddon align="inline-end">
