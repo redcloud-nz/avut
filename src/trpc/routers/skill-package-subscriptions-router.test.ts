@@ -709,3 +709,242 @@ describe("skillPackageSubscriptions.getSkill", () => {
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });
+
+describe("skillPackageSubscriptions.getGroup", () => {
+    const T = {
+        org: OrganizationId.create(),
+        publisherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        // Published and Active, subscribed by T.org.
+        livePkg: SkillPackageId.create(),
+        liveGroup: SkillGroupId.create(),
+        archivedGroup: SkillGroupId.create(),
+        deletedGroup: SkillGroupId.create(),
+        firstSkill: SkillId.create(),
+        archivedSkill: SkillId.create(),
+        deletedSkill: SkillId.create(),
+        // Published and Active, not subscribed.
+        openPkg: SkillPackageId.create(),
+        openGroup: SkillGroupId.create(),
+        // Unpublished, subscribed.
+        withdrawnPkg: SkillPackageId.create(),
+        withdrawnGroup: SkillGroupId.create(),
+        // Unpublished, not subscribed.
+        unsubscribedWithdrawnPkg: SkillPackageId.create(),
+        unsubscribedWithdrawnGroup: SkillGroupId.create(),
+        // Deleted, still subscribed.
+        deletedPkg: SkillPackageId.create(),
+        deletedPkgGroup: SkillGroupId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, slug] of [
+            [T.org, "acme"],
+            [T.publisherOrg, "publisher"],
+        ] as const) {
+            await db.organization.create({
+                data: { id, name: slug, slug, createdAt: new Date() },
+            });
+        }
+
+        // [package, published, status, subscribed, group]: one Active group each.
+        for (const [skillPackageId, published, status, subscribed, skillGroupId] of [
+            [T.livePkg, true, "Active", true, T.liveGroup],
+            [T.openPkg, true, "Active", false, T.openGroup],
+            [T.withdrawnPkg, false, "Active", true, T.withdrawnGroup],
+            [T.unsubscribedWithdrawnPkg, false, "Active", false, T.unsubscribedWithdrawnGroup],
+            [T.deletedPkg, true, "Deleted", true, T.deletedPkgGroup],
+        ] as const) {
+            await db.skillPackage.create({
+                data: {
+                    id: skillPackageId,
+                    organizationId: T.publisherOrg,
+                    name: `Package ${skillPackageId}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    published,
+                    status,
+                },
+            });
+            if (subscribed) {
+                await db.skillPackageSubscription.create({
+                    data: {
+                        id: SkillPackageSubscriptionId.create(),
+                        organizationId: T.org,
+                        skillPackageId,
+                    },
+                });
+            }
+            await db.skillGroup.create({
+                data: {
+                    id: skillGroupId,
+                    skillPackageId,
+                    name: `Group ${skillGroupId}`,
+                    description: "",
+                    properties: {},
+                    tags: ["tag"],
+                    sequence: 0,
+                },
+            });
+        }
+
+        for (const [id, status, sequence] of [
+            [T.archivedGroup, "Archived", 1],
+            [T.deletedGroup, "Deleted", 2],
+        ] as const) {
+            await db.skillGroup.create({
+                data: {
+                    id,
+                    skillPackageId: T.livePkg,
+                    name: `Group ${id}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    sequence,
+                    status,
+                },
+            });
+        }
+
+        // Created out of sequence order, to check the ordering.
+        for (const [id, status, sequence] of [
+            [T.archivedSkill, "Archived", 2],
+            [T.deletedSkill, "Deleted", 1],
+            [T.firstSkill, "Active", 0],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.livePkg,
+                    skillGroupId: T.liveGroup,
+                    name: `Skill ${id}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    sequence,
+                    status,
+                },
+            });
+        }
+    });
+
+    function makeCaller(permissions: Permissions = { skillPackageSubscription: ["view"] }) {
+        return skillPackageSubscriptionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { ...permissions, organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("returns a group in a subscribed, available package with its package", async () => {
+        const result = await makeCaller().getGroup({
+            organizationId: T.org,
+            skillPackageId: T.livePkg,
+            skillGroupId: T.liveGroup,
+        });
+
+        expect(result.id).toBe(T.liveGroup);
+        expect(result.tags).toEqual(["tag"]);
+        expect(result.skillPackage.id).toBe(T.livePkg);
+        expect(result.subscribed).toBe(true);
+    });
+
+    it("lists Archived skills and leaves out Deleted ones, in sequence order", async () => {
+        const result = await makeCaller().getGroup({
+            organizationId: T.org,
+            skillPackageId: T.livePkg,
+            skillGroupId: T.liveGroup,
+        });
+
+        expect(result.skills.map((skill) => skill.id)).toEqual([T.firstSkill, T.archivedSkill]);
+        expect(result.skills[1].status).toBe("Archived");
+    });
+
+    it("returns a group in an available package the org doesn't subscribe to", async () => {
+        const result = await makeCaller().getGroup({
+            organizationId: T.org,
+            skillPackageId: T.openPkg,
+            skillGroupId: T.openGroup,
+        });
+
+        expect(result.id).toBe(T.openGroup);
+        expect(result.subscribed).toBe(false);
+    });
+
+    it("returns a group in a withdrawn package the org subscribes to", async () => {
+        const result = await makeCaller().getGroup({
+            organizationId: T.org,
+            skillPackageId: T.withdrawnPkg,
+            skillGroupId: T.withdrawnGroup,
+        });
+
+        expect(result.id).toBe(T.withdrawnGroup);
+        expect(result.skillPackage.published).toBe(false);
+        expect(result.subscribed).toBe(true);
+    });
+
+    it("throws NOT_FOUND for a group in a withdrawn package the org doesn't subscribe to", async () => {
+        await expect(
+            makeCaller().getGroup({
+                organizationId: T.org,
+                skillPackageId: T.unsubscribedWithdrawnPkg,
+                skillGroupId: T.unsubscribedWithdrawnGroup,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("throws NOT_FOUND for a group in a Deleted package the org still subscribes to", async () => {
+        await expect(
+            makeCaller().getGroup({
+                organizationId: T.org,
+                skillPackageId: T.deletedPkg,
+                skillGroupId: T.deletedPkgGroup,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("returns an Archived group", async () => {
+        const result = await makeCaller().getGroup({
+            organizationId: T.org,
+            skillPackageId: T.livePkg,
+            skillGroupId: T.archivedGroup,
+        });
+
+        expect(result.status).toBe("Archived");
+    });
+
+    it("throws NOT_FOUND for a Deleted group", async () => {
+        await expect(
+            makeCaller().getGroup({
+                organizationId: T.org,
+                skillPackageId: T.livePkg,
+                skillGroupId: T.deletedGroup,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("throws NOT_FOUND for a group id paired with a different package id", async () => {
+        await expect(
+            makeCaller().getGroup({
+                organizationId: T.org,
+                skillPackageId: T.openPkg,
+                skillGroupId: T.liveGroup,
+            }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("is forbidden without skillPackageSubscription:view permission", async () => {
+        await expect(
+            makeCaller({}).getGroup({
+                organizationId: T.org,
+                skillPackageId: T.livePkg,
+                skillGroupId: T.liveGroup,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});

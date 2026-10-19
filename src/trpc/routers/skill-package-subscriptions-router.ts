@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { OrganizationRef } from "@/lib/schemas/organization";
 import { Skill, SkillId } from "@/lib/schemas/skill";
-import { SkillGroup } from "@/lib/schemas/skill-group";
+import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import {
     availableSkillPackageWhere,
     SkillPackage,
@@ -67,6 +67,63 @@ function catalogueSkillPackageWhere(organizationId: string) {
  * Router for managing skill package subscriptions and listing the groups and skills associated with the organization's subscribed skill packages.
  */
 export const skillPackageSubscriptionsRouter = createTrpcRouter({
+    /**
+     * Get a single skill group by ID, with its skills, its package, and whether this organization
+     * subscribes to that package. A group is visible when its package is in the catalogue (see
+     * `catalogueSkillPackageWhere`): every available package, plus a withdrawn (unpublished or
+     * Archived) package this organization still subscribes to. An Archived group is returned.
+     * @param skillPackageId The ID of the package the group must belong to.
+     * @param skillGroupId The ID of the skill group to retrieve.
+     * @returns The skill group, plus `skillPackage`, `subscribed`, and `skills` (its non-Deleted
+     *   skills, Archived included, in `sequence` order).
+     * @throws TRPCError(NOT_FOUND) if the group doesn't exist, is Deleted, or belongs to a
+     *   different package, or its package is Deleted, or withdrawn and this organization doesn't
+     *   subscribe to it.
+     */
+    getGroup: organizationProcedure({ skillPackageSubscription: ["view"] })
+        .input(
+            z.object({ skillPackageId: SkillPackageId.schema, skillGroupId: SkillGroupId.schema }),
+        )
+        .output(
+            SkillGroup.schema.extend({
+                skillPackage: SkillPackage.schema,
+                subscribed: z.boolean(),
+                skills: z.array(Skill.schema),
+            }),
+        )
+        .query(async ({ ctx, input: { organizationId, skillPackageId, skillGroupId } }) => {
+            const group = await ctx.prisma.skillGroup.findFirst({
+                where: {
+                    id: skillGroupId,
+                    skillPackageId,
+                    status: { not: "Deleted" },
+                    skillPackage: catalogueSkillPackageWhere(organizationId),
+                },
+                include: {
+                    skills: { where: { status: { not: "Deleted" } }, orderBy: { sequence: "asc" } },
+                    skillPackage: {
+                        include: {
+                            subscriptions: { where: { organizationId }, select: { id: true } },
+                        },
+                    },
+                },
+            });
+
+            if (!group) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.skillGroupNotFound(skillGroupId),
+                });
+            }
+
+            return {
+                ...SkillGroup.fromRecord(group),
+                skillPackage: SkillPackage.fromRecord(group.skillPackage),
+                subscribed: group.skillPackage.subscriptions.length > 0,
+                skills: group.skills.map(Skill.fromRecord),
+            };
+        }),
+
     /**
      * Get a single catalogue skill package by ID, including this organization's subscription
      * status and package-level counts. The catalogue holds every available package, plus any

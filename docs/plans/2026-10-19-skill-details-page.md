@@ -67,7 +67,7 @@
       - a caller without `skillPackageSubscription: ["view"]` (`FORBIDDEN`)
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 2: `skillPackageSubscriptions.getGroup`**
+- [x] **Task 2: `skillPackageSubscriptions.getGroup`** (feat(skill-track): add skillPackageSubscriptions.getGroup)
   - **Files:** `src/trpc/routers/skill-package-subscriptions-router.ts`, `src/trpc/routers/skill-package-subscriptions-router.test.ts`
   - **Do:** Add `getGroup: organizationProcedure({ skillPackageSubscription: ["view"] })`, placed before `getPackage`.
     - Input `{ skillPackageId: SkillPackageId.schema, skillGroupId: SkillGroupId.schema }`.
