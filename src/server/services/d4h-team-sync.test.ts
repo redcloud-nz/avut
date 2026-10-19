@@ -394,7 +394,7 @@ describe("buildD4HSyncPlan — relink", () => {
         expect(plan.counts.archivals).toBe(0);
     });
 
-    it("doesn't relink while the old D4H member is still present", () => {
+    it("skips as linked-to-another-member, without relinking, while the old D4H member is still present", () => {
         const old = tm({ email: "re@x.com", d4h: { d4hMemberId: 10 } });
         const plan = buildD4HSyncPlan(
             input({
@@ -408,10 +408,11 @@ describe("buildD4HSyncPlan — relink", () => {
         );
         expect(itemsOf(plan, "relink")).toHaveLength(0);
         expect(itemsOf(plan, "archive")).toHaveLength(0);
-        // Falls through to an add; the executor reports it as linked-to-another-member.
-        expect(itemsOf(plan, "add")).toEqual([
-            expect.objectContaining({ d4hMemberId: 11, adoptsMembership: false }),
+        expect(itemsOf(plan, "add")).toHaveLength(0);
+        expect(plan.skipped).toEqual([
+            expect.objectContaining({ d4hMemberId: 11, reason: "linked-to-another-member" }),
         ]);
+        expect(plan.counts.skipped).toBe(1);
     });
 });
 

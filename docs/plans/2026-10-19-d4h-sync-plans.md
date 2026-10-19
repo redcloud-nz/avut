@@ -83,6 +83,7 @@ Reading the code also turned up a related bug, part of the #144 family. A member
 - **#144, duplicate emails:** skip every D4H member whose normalised email (trimmed, lowercased) appears more than once in the D4H team and who isn't already matched to a membership by `d4hMemberId`. The skip reason is `duplicate-email`, and the dialog lists them. Members matched by id keep updating as normal.
 - **Re-link:** a D4H member who isn't matched by id, has a unique email, and whose email belongs to the person on a non-`Deleted`, D4H-linked membership of this team, where that membership's `d4hMemberId` is no longer in D4H, becomes a `relink` item. Executing it rewrites `d4hMemberId` and the D4H details, and reactivates the membership if it's archived. That membership gets no archival item.
 - **Membership in the Rubbish bin:** a D4H member whose person's membership on this team is `Deleted` is skipped at plan time with reason `membership-in-rubbish-bin`, so it doesn't fail as `skipped-changed` on every sync.
+- **Linked to another member:** a D4H member not matched by id, whose email belongs to the person on a membership of this team linked to a _different_ D4H member who is still in D4H, is skipped at plan time with reason `linked-to-another-member`. It's neither a relink nor a duplicate, and as an add it would fail as `skipped-changed` on every sync. (Found during Task 3.)
 
 ### Router, flows and UI
 
@@ -135,7 +136,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
 
 ### Review group 2: D4H builder, executor and plan creation (added beside the old path)
 
-- [ ] **3. D4H plan payload schema and builder**
+- [x] **3. D4H plan payload schema and builder** — feat(d4h): add D4HSyncPlan payload schema and buildD4HSyncPlan builder
   - **Files:** `src/lib/schemas/d4h-sync-plan.ts`, `src/server/services/d4h-team-sync.ts` (the pure builder section), `src/server/services/d4h-team-sync.test.ts`.
   - **Do:** add these beside the existing `SyncPlan` and `buildSyncPlan`, leaving those untouched until Task 6:
     - **`D4HSyncPlan` schema:**

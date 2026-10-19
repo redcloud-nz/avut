@@ -348,7 +348,9 @@ function flatMetadata(
  * 3. email of a `Deleted` person → skipped `person-in-rubbish-bin` (#183)
  * 4. the person's membership on this team is `Deleted` → skipped `membership-in-rubbish-bin`
  * 5. the person's membership is linked to a D4H member who is gone → `relink`
- * 6. otherwise → `add`
+ * 6. the person's membership is linked to another D4H member who is still in D4H → skipped
+ *    `linked-to-another-member`
+ * 7. otherwise → `add`
  *
  * An `Active` linked membership whose member is gone, and that isn't relinked, is archived.
  */
@@ -452,8 +454,12 @@ export function buildD4HSyncPlan(input: BuildD4HSyncPlanInput): D4HSyncPlan {
             continue;
         }
 
-        // A membership still linked to another D4H member falls through to an add too; the
-        // executor reports it as `skipped-changed: linked-to-another-member`.
+        if (membership?.d4h) {
+            // Linked to a different D4H member who is still in D4H: neither a relink nor an add.
+            skip(member, "linked-to-another-member");
+            continue;
+        }
+
         additions.push({
             kind: "add",
             itemId: `add:${member.id}`,
@@ -462,7 +468,8 @@ export function buildD4HSyncPlan(input: BuildD4HSyncPlanInput): D4HSyncPlan {
             email: member.email.value.trim(),
             incoming,
             personMatch: input.existingPersonEmails.has(email) ? "existing" : "new",
-            adoptsMembership: membership !== undefined && membership.d4h === null,
+            // Any membership left here is a non-`Deleted` manual one.
+            adoptsMembership: membership !== undefined,
         });
     }
 

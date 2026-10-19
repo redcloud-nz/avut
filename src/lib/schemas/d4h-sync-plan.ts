@@ -265,12 +265,15 @@ const d4hSyncItemSchema = z.discriminatedUnion("kind", [
  * - `person-in-rubbish-bin`: the email belongs to a person in the Rubbish bin (#183).
  * - `duplicate-email`: several D4H members share the email, so it can't pick a person (#144).
  * - `membership-in-rubbish-bin`: the person's membership on this team is in the Rubbish bin.
+ * - `linked-to-another-member`: the person's membership on this team is linked to a different
+ *   D4H member who is still in D4H.
  */
 const d4hSyncSkipReasonSchema = z.enum([
     "missing-email",
     "person-in-rubbish-bin",
     "duplicate-email",
     "membership-in-rubbish-bin",
+    "linked-to-another-member",
 ]);
 
 const d4hSyncPlanSchema = z.object({
