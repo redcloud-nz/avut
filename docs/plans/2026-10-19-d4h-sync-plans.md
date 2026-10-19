@@ -268,3 +268,10 @@ The sync dialog changes: rows can be skipped, there's a result summary after App
 ## Parked
 
 (none yet)
+
+## Review notes
+
+- (Task 2) `batch-update-plans.ts` `ALREADY_RUNNING` says "A sync of this team is already running" in a kind-agnostic service. Make it generic ("Another run of this operation is already in progress") and let the D4H executor/router rephrase it for teams.
+- (Task 2) `finish` stamps `completedAt: new Date()`; take an injected `now` like every other lifecycle function, and assert the exact time in tests.
+- (Task 2) `payload`/`outcomes` are typed `unknown` and cast to `Prisma.InputJsonValue`; narrow the parameter types to `Prisma.InputJsonValue` so `null`/`undefined` are caught at compile time.
+- (Task 2) `runCleanup`'s doc comment: note that a stale-and-expired plan is counted in both `failed` and `deleted`.
