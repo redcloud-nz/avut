@@ -118,12 +118,7 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                             <DataItemTitle>Group</DataItemTitle>
                                             <DataItemValue>
                                                 {skill.group ? (
-                                                    <SkillGroupLink
-                                                        group={{
-                                                            ...skill.group,
-                                                            skillPackageId: skill.skillPackageId,
-                                                        }}
-                                                    />
+                                                    <SkillGroupLink group={skill.group} />
                                                 ) : (
                                                     "—"
                                                 )}
