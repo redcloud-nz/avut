@@ -161,7 +161,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
     - the existing add/update/archive/reactivate cases, ported over
   - `npm run check` passes.
 
-- [ ] **4. Per-item executor**
+- [x] **4. Per-item executor** — feat(d4h): add executeD4HSyncPlan per-item executor
   - **Files:** `src/server/services/d4h-team-sync.ts`, `src/server/services/d4h-team-sync.test.ts`.
   - **Do:** add `executeD4HSyncPlan(ctx, { planId, skipItemIds, batchId })`:
     - `BatchUpdatePlans.requireById`
@@ -276,3 +276,4 @@ The sync dialog changes: rows can be skipped, there's a result summary after App
 - (Task 2) `finish` stamps `completedAt: new Date()`; take an injected `now` like every other lifecycle function, and assert the exact time in tests.
 - (Task 2) `payload`/`outcomes` are typed `unknown` and cast to `Prisma.InputJsonValue`; narrow the parameter types to `Prisma.InputJsonValue` so `null`/`undefined` are caught at compile time.
 - (Task 2) `runCleanup`'s doc comment: note that a stale-and-expired plan is counted in both `failed` and `deleted`.
+- (Task 4) Keep parity with the old path: a sync whose metadata item writes nothing still leaves an entry in its LogBatch. Pair the completion `lastSyncedAt` write with a Team `logEvent` ("Synced with linked D4H team — no metadata changes.") when the metadata item wrote no fields, so a no-op or all-skipped sync doesn't leave an empty LogBatch.

@@ -18,17 +18,19 @@ import {
     StalePlanError,
     ValidationError,
 } from "@/lib/errors";
+import type { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import {
     D4HSyncItem,
     D4HSyncItemDraft,
+    D4HSyncItemOutcome,
     D4HSyncPlan,
     D4HSyncSkipReason,
     SyncPlan,
 } from "@/lib/schemas/d4h-sync-plan";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { PersonId } from "@/lib/schemas/person";
-import type { TeamD4HRecord } from "@/lib/schemas/team";
+import { TeamId, type TeamD4HRecord } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
@@ -38,6 +40,7 @@ import {
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
 import { D4HLinkAction } from "@/server/d4h-link-invariants";
+import * as BatchUpdatePlans from "@/server/services/batch-update-plans";
 import * as Personnel from "@/server/services/personnel";
 
 import type { OrgServiceContext } from "./service-context";
@@ -1211,4 +1214,497 @@ export async function runTeamSync(
 
     await applyD4HSyncPlan(ctx, { plan, inputs, batchId: args.batchId });
     return { plan };
+}
+
+//
+// Executing a persisted plan (`D4HSyncPlan`, the payload of a `d4h-team-sync` `BatchUpdatePlan`).
+// See docs/plans/2026-10-19-d4h-sync-plans.md, "The D4H payload and executor".
+//
+
+export const D4H_TEAM_SYNC_KIND = "d4h-team-sync";
+
+type AddItem = Extract<D4HSyncItem, { kind: "add" }>;
+type UpdateItem = Extract<D4HSyncItem, { kind: "update" }>;
+type ReactivateItem = Extract<D4HSyncItem, { kind: "reactivate" }>;
+type ArchiveItem = Extract<D4HSyncItem, { kind: "archive" }>;
+type RelinkItem = Extract<D4HSyncItem, { kind: "relink" }>;
+
+/** The order items run in, whatever order the payload lists them in. */
+const EXECUTION_ORDER: readonly D4HSyncItem["kind"][] = [
+    "add",
+    "relink",
+    "update",
+    "reactivate",
+    "archive",
+    "metadata",
+];
+
+/** An item's outcome without its `itemId`, which the loop adds. */
+type ItemResult = Omit<D4HSyncItemOutcome, "itemId">;
+
+const applied: ItemResult = { result: "applied" };
+const changed = (reason: string): ItemResult => ({ result: "skipped-changed", reason });
+
+function isUniqueViolation(e: unknown): boolean {
+    return e instanceof Object && "code" in e && e.code === "P2002";
+}
+
+function sameSnapshot(a: D4HMembershipSnapshot, b: D4HMembershipSnapshot): boolean {
+    return (
+        a.d4hStatus === b.d4hStatus &&
+        a.d4hPosition === b.d4hPosition &&
+        a.d4hRef === b.d4hRef &&
+        a.d4hRoleId === b.d4hRoleId
+    );
+}
+
+/** Whether any membership of this team, in any status, is linked to `d4hMemberId`. */
+async function isLinkedOnTeam(
+    ctx: OrgServiceContext,
+    teamId: string,
+    d4hMemberId: number,
+): Promise<boolean> {
+    const rows = await ctx.prisma.teamMembership_D4H.findMany({
+        where: { d4hMemberId },
+        include: { teamMembership: { select: { teamId: true, organizationId: true } } },
+    });
+    return rows.some(
+        (r) =>
+            r.teamMembership.teamId === teamId &&
+            r.teamMembership.organizationId === ctx.organizationId,
+    );
+}
+
+/** A membership of this team with its D4H link, or null if it no longer exists. */
+function findTeamMembership(ctx: OrgServiceContext, teamId: string, teamMembershipId: string) {
+    return ctx.prisma.teamMembership.findFirst({
+        where: { id: teamMembershipId, teamId, organizationId: ctx.organizationId },
+        select: { id: true, status: true, d4h: true },
+    });
+}
+
+async function executeAdd(
+    ctx: OrgServiceContext,
+    teamId: string,
+    item: AddItem,
+): Promise<ItemResult> {
+    if (await isLinkedOnTeam(ctx, teamId, item.d4hMemberId)) return changed("already-linked");
+
+    let person = await Personnel.getByEmail(ctx, item.email);
+    if (person?.status === "Deleted") return changed("person-in-rubbish-bin");
+    if (!person) {
+        person = (
+            await Personnel.create(ctx, PersonId.create(), {
+                name: item.personName,
+                email: item.email,
+                tags: [],
+                properties: {},
+            })
+        ).created;
+    }
+    const personId = person.id;
+
+    /** Take over the person's existing membership on this team, if it's a live manual one. */
+    const takeOver = async (existing: {
+        id: string;
+        status: string;
+        d4h: { d4hMemberId: number } | null;
+    }): Promise<ItemResult> => {
+        if (existing.status === "Deleted") return changed("membership-in-rubbish-bin");
+        if (existing.d4h) return changed("linked-to-another-member");
+        await ctx.prisma.$transaction([
+            ctx.prisma.teamMembership.update({
+                where: { id: existing.id },
+                data: {
+                    status: "Active",
+                    d4h: { create: { d4hMemberId: item.d4hMemberId, ...item.incoming } },
+                },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "TeamMembership",
+                objectId: existing.id,
+                description: "Adopted a manual membership as D4H-managed.",
+                changes: diffObject({ status: existing.status }, { status: "Active" }),
+                refs: personTeamRefs(personId, teamId),
+            }),
+        ]);
+        return applied;
+    };
+
+    const membershipOfPerson = () =>
+        ctx.prisma.teamMembership.findUnique({
+            where: { teamId_personId: { teamId, personId } },
+            select: { id: true, status: true, d4h: { select: { d4hMemberId: true } } },
+        });
+
+    const existing = await membershipOfPerson();
+    if (existing) return takeOver(existing);
+
+    const teamMembershipId = TeamMembershipId.create();
+    try {
+        await ctx.prisma.$transaction([
+            ctx.prisma.teamMembership.create({
+                data: {
+                    id: teamMembershipId,
+                    organizationId: ctx.organizationId,
+                    teamId,
+                    personId,
+                    status: "Active",
+                    d4h: { create: { d4hMemberId: item.d4hMemberId, ...item.incoming } },
+                },
+            }),
+            ctx.logEvent({
+                action: "Create",
+                objectType: "TeamMembership",
+                objectId: teamMembershipId,
+                description: "Added from linked D4H team.",
+                refs: personTeamRefs(personId, teamId),
+            }),
+        ]);
+        return applied;
+    } catch (e) {
+        // Lost a race with a concurrent manual add that created this membership between the
+        // lookup above and this create: take over the row it created instead.
+        if (!isUniqueViolation(e)) throw e;
+        const raced = await membershipOfPerson();
+        if (!raced) throw e;
+        return takeOver(raced);
+    }
+}
+
+async function executeRelink(
+    ctx: OrgServiceContext,
+    teamId: string,
+    item: RelinkItem,
+): Promise<ItemResult> {
+    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+    if (!membership) return changed("membership-missing");
+    if (membership.status === "Deleted") return changed("membership-in-rubbish-bin");
+    if (membership.d4h?.d4hMemberId !== item.previousD4hMemberId) {
+        return changed("d4h-member-changed");
+    }
+    if (await isLinkedOnTeam(ctx, teamId, item.d4hMemberId)) return changed("already-linked");
+
+    const reactivates = membership.status === "Archived";
+    await ctx.prisma.$transaction([
+        ctx.prisma.teamMembership.update({
+            where: { id: membership.id },
+            data: {
+                ...(reactivates ? { status: "Active" as const } : {}),
+                d4h: { update: { d4hMemberId: item.d4hMemberId, ...item.incoming } },
+            },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "TeamMembership",
+            objectId: membership.id,
+            description: "Re-linked to a new D4H member with the same email.",
+            changes: [
+                ...diffObject(
+                    { d4hMemberId: item.previousD4hMemberId },
+                    { d4hMemberId: item.d4hMemberId },
+                ),
+                ...(reactivates ? diffObject({ status: "Archived" }, { status: "Active" }) : []),
+                ...diffObject(snapshotOf(membership.d4h), item.incoming),
+            ],
+            refs: personTeamRefs(item.personId, teamId),
+        }),
+    ]);
+    return applied;
+}
+
+async function executeUpdate(
+    ctx: OrgServiceContext,
+    teamId: string,
+    item: UpdateItem,
+): Promise<ItemResult> {
+    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+    if (!membership) return changed("membership-missing");
+    if (membership.status === "Deleted") return changed("membership-in-rubbish-bin");
+    if (membership.d4h?.d4hMemberId !== item.d4hMemberId) return changed("d4h-member-changed");
+    if (!sameSnapshot(membership.d4h, item.before)) return changed("details-changed");
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.teamMembership_D4H.update({
+            where: { teamMembershipId: membership.id },
+            data: item.incoming,
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "TeamMembership",
+            objectId: membership.id,
+            changes: item.changes,
+            refs: personTeamRefs(item.personId, teamId),
+        }),
+    ]);
+    return applied;
+}
+
+async function executeReactivate(
+    ctx: OrgServiceContext,
+    teamId: string,
+    item: ReactivateItem,
+): Promise<ItemResult> {
+    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+    if (!membership) return changed("membership-missing");
+    if (membership.status !== "Archived") return changed("not-archived");
+    if (membership.d4h?.d4hMemberId !== item.d4hMemberId) return changed("d4h-member-changed");
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.teamMembership.update({
+            where: { id: membership.id },
+            data: { status: "Active", d4h: { update: item.incoming } },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "TeamMembership",
+            objectId: membership.id,
+            description: "Reactivated — member is back in the linked D4H team.",
+            changes: [
+                ...diffObject({ status: "Archived" }, { status: "Active" }),
+                ...diffObject(snapshotOf(membership.d4h), item.incoming),
+            ],
+            refs: personTeamRefs(item.personId, teamId),
+        }),
+    ]);
+    return applied;
+}
+
+async function executeArchive(
+    ctx: OrgServiceContext,
+    teamId: string,
+    item: ArchiveItem,
+): Promise<ItemResult> {
+    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+    if (!membership) return changed("membership-missing");
+    if (membership.status !== "Active") return changed("not-active");
+    if (membership.d4h?.d4hMemberId !== item.d4hMemberId) return changed("d4h-member-changed");
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.teamMembership.update({
+            where: { id: membership.id },
+            data: { status: "Archived" },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "TeamMembership",
+            objectId: membership.id,
+            description: "Archived — member is no longer in the linked D4H team.",
+            changes: diffObject({ status: "Active" }, { status: "Archived" }),
+            refs: personTeamRefs(item.personId, teamId),
+        }),
+    ]);
+    return applied;
+}
+
+type FieldValue = string | number | null;
+
+/**
+ * Gate one cache row's fields on the plan's `before`: of the fields the plan changes, write those
+ * whose current value still equals `before`, and report the others by their display key. A missing
+ * row reports every field the plan changes.
+ */
+function gateFields<T extends Record<string, FieldValue>>(
+    displayKeys: NoInfer<{ [K in keyof T]: string }>,
+    before: T,
+    incoming: NoInfer<T>,
+    current: NoInfer<T> | null,
+) {
+    const write: Partial<T> = {};
+    const writeBefore: Partial<T> = {};
+    const skippedFields: string[] = [];
+    for (const key of Object.keys(displayKeys) as (keyof T)[]) {
+        if (incoming[key] === before[key]) continue;
+        if (current === null || current[key] !== before[key]) {
+            skippedFields.push(displayKeys[key]);
+            continue;
+        }
+        write[key] = incoming[key];
+        writeBefore[key] = before[key];
+    }
+    return { write, writeBefore, skippedFields };
+}
+
+/** Each cache field, mapped to its key in the metadata item's flat display diff. */
+const TEAM_FIELD_KEYS = {
+    d4hTeamName: "d4hTeamName",
+    d4hOrganisationId: "d4hOrganisationId",
+    d4hTimezone: "d4hTimezone",
+} as const;
+const ORG_FIELD_KEYS = {
+    d4hOrganisationName: "orgName",
+    d4hTimezone: "orgTimezone",
+    d4hCurrency: "orgCurrency",
+    d4hReportingStartDay: "orgReportingStartDay",
+    d4hReportingStartMonth: "orgReportingStartMonth",
+} as const;
+
+async function executeMetadata(
+    ctx: OrgServiceContext,
+    teamId: string,
+    item: D4HSyncMetadataItem,
+): Promise<ItemResult> {
+    const [teamRow, orgRow] = await Promise.all([
+        ctx.prisma.team_D4H.findUnique({ where: { teamId } }),
+        item.organization
+            ? ctx.prisma.organization_D4H.findUnique({
+                  where: { organizationId: ctx.organizationId },
+              })
+            : null,
+    ]);
+
+    const team = gateFields(TEAM_FIELD_KEYS, item.team.before, item.team.incoming, teamRow);
+    const org = item.organization
+        ? gateFields(ORG_FIELD_KEYS, item.organization.before, item.organization.incoming, orgRow)
+        : null;
+
+    const writes: Prisma.PrismaPromise<unknown>[] = [];
+    if (Object.keys(team.write).length > 0) {
+        writes.push(
+            ctx.prisma.team_D4H.update({ where: { teamId }, data: team.write }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "Team",
+                objectId: teamId,
+                description: "Refreshed D4H team metadata.",
+                changes: diffObject(team.writeBefore, team.write),
+            }),
+        );
+    }
+    if (org && Object.keys(org.write).length > 0) {
+        writes.push(
+            ctx.prisma.organization_D4H.update({
+                where: { organizationId: ctx.organizationId },
+                data: org.write,
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "Organization",
+                objectId: ctx.organizationId,
+                description: "Refreshed cached D4H organisation attributes.",
+                changes: diffObject(org.writeBefore, org.write),
+            }),
+        );
+    }
+
+    const skippedFields = [...team.skippedFields, ...(org?.skippedFields ?? [])];
+    if (writes.length === 0 && skippedFields.length > 0) {
+        return { result: "skipped-changed", reason: "fields-changed", skippedFields };
+    }
+    if (writes.length > 0) await ctx.prisma.$transaction(writes);
+    return skippedFields.length > 0 ? { result: "applied", skippedFields } : applied;
+}
+
+function executeItem(ctx: OrgServiceContext, teamId: string, item: D4HSyncItem) {
+    switch (item.kind) {
+        case "add":
+            return executeAdd(ctx, teamId, item);
+        case "relink":
+            return executeRelink(ctx, teamId, item);
+        case "update":
+            return executeUpdate(ctx, teamId, item);
+        case "reactivate":
+            return executeReactivate(ctx, teamId, item);
+        case "archive":
+            return executeArchive(ctx, teamId, item);
+        case "metadata":
+            return executeMetadata(ctx, teamId, item);
+    }
+}
+
+/**
+ * Execute a persisted D4H sync plan item by item, from the stored payload: no D4H token and no D4H
+ * fetch. Each item checks its precondition at execute time and records an outcome (`applied`,
+ * `skipped-by-user`, or `skipped-changed` with a reason) rather than failing the plan. Items run in
+ * the order add, relink, update, reactivate, archive, metadata, each committing its write together
+ * with its `logEvent`, joined to `batchId`.
+ *
+ * On success the plan is `Completed`, and `Team_D4H.lastSyncedAt` (and `Organization_D4H`'s, for
+ * an org-bearing team) is set to the plan's `createdAt`, the time of the snapshot. If an item
+ * throws, the plan is `Failed` with the outcomes so far, `lastSyncedAt` is left alone, and the
+ * error is rethrown.
+ *
+ * @throws NotFoundError if the plan does not exist within the organization.
+ * @throws ConflictError if the plan isn't a D4H team sync, its team is no longer active or no
+ *   longer linked to the plan's D4H team, or the plan can't be claimed (already run, superseded,
+ *   expired, or another sync of the team is running).
+ */
+export async function executeD4HSyncPlan(
+    ctx: OrgServiceContext,
+    args: { planId: BatchUpdatePlanId; skipItemIds: readonly string[]; batchId: string },
+): Promise<{
+    plan: { id: BatchUpdatePlanId; teamId: TeamId; payload: D4HSyncPlan };
+    outcomes: D4HSyncItemOutcome[];
+}> {
+    const { planId, batchId } = args;
+    const row = await BatchUpdatePlans.requireById(ctx, planId);
+
+    // Guards, before the payload is parsed or the plan claimed.
+    if (row.kind !== D4H_TEAM_SYNC_KIND || row.targetType !== "Team") {
+        throw new ConflictError("This plan isn't a D4H team sync.");
+    }
+    const team = await ctx.prisma.team.findFirst({
+        where: { id: row.targetId, organizationId: ctx.organizationId },
+        include: { d4h: true },
+    });
+    if (!team || team.status !== "Active") {
+        throw new ConflictError("The team is no longer active, so this sync can't be applied.");
+    }
+    const stored = D4HSyncPlan.schema.pick({ d4hTeamId: true }).safeParse(row.payload);
+    if (!team.d4h || !stored.success || stored.data.d4hTeamId !== team.d4h.d4hTeamId) {
+        throw new ConflictError(
+            "The team is no longer linked to this preview's D4H team. Refresh it and try again.",
+        );
+    }
+    const teamId = TeamId.schema.parse(team.id);
+
+    await BatchUpdatePlans.claim(ctx, planId, new Date());
+
+    const ctxBatch = withBatch(ctx, batchId);
+    const skip = new Set(args.skipItemIds);
+    const outcomes: D4HSyncItemOutcome[] = [];
+
+    try {
+        const payload = D4HSyncPlan.schema.parse(row.payload);
+        const items = EXECUTION_ORDER.flatMap((kind) =>
+            payload.items.filter((item) => item.kind === kind),
+        );
+
+        for (const item of items) {
+            const result: ItemResult = skip.has(item.itemId)
+                ? { result: "skipped-by-user" }
+                : await executeItem(ctxBatch, teamId, item);
+            outcomes.push({ itemId: item.itemId, ...result });
+        }
+
+        // Bookkeeping, not audited: AVUT reflects D4H as of the plan's snapshot.
+        await ctx.prisma.team_D4H.update({
+            where: { teamId },
+            data: { lastSyncedAt: row.createdAt },
+        });
+        const orgBearing = payload.items.some(
+            (item) => item.kind === "metadata" && item.organization !== null,
+        );
+        if (orgBearing) {
+            await ctx.prisma.organization_D4H.updateMany({
+                where: { organizationId: ctx.organizationId },
+                data: { lastSyncedAt: row.createdAt },
+            });
+        }
+
+        await BatchUpdatePlans.finish(ctx, planId, {
+            status: "Completed",
+            outcomes,
+            logBatchId: batchId,
+        });
+        return { plan: { id: planId, teamId, payload }, outcomes };
+    } catch (e) {
+        await BatchUpdatePlans.finish(ctx, planId, {
+            status: "Failed",
+            outcomes,
+            logBatchId: batchId,
+        });
+        throw e;
+    }
 }
