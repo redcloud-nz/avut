@@ -285,3 +285,8 @@ The sync dialog changes: rows can be skipped, there's a result summary after App
 - (Task 4) If `finish(Failed)` throws, it must not replace the original error: swallow/log its failure and always rethrow the original.
 - (Task 6) `src/server/services/teams.ts:241`: `createMembership`'s doc comment still refers to the deleted `adoptExistingMembership`; update it.
 - (Task 6) `executeD4HTeamSyncPlan` opens its LogBatch before the executor's guards/claim, so a refused execute leaves an empty batch. Open the batch lazily (after `claim` succeeds), e.g. by passing a batch factory to the executor.
+- (Task 6) `syncImmediately` throws `ConflictError` on `in-progress` after the link/create transaction has committed (unlink → relink within 10 min while an old run is executing). Return the `in-progress` case and have link/create report "Linked; a sync is already running — sync again shortly" instead of a CONFLICT error.
+- (Task 6) The link toast reads planned `counts`; count `outcomes` with `result === "applied"` per kind instead.
+- (Task 6) `executeD4HTeamSyncPlan` and the executor both run `requireById` + the team lookup; fold this into the lazy-batch change so the router stops duplicating them.
+- (Task 6) `teams-effects.ts`: move `executeD4HTeamSyncPlan` next to the other D4H effects.
+- (Task 8) Spec §10 checklist rows 6 and 9 still name `planD4HTeamSync`/`applyD4HTeamSync`/`buildSyncPlan`; rename them to the new names.
