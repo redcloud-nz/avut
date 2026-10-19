@@ -11,6 +11,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,7 @@ export function SkillTrack_CataloguePackage_Content({
                     },
                     skillPackage.name,
                 ]}
+                actions={<HelpButton id="skill-track/catalogue" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
