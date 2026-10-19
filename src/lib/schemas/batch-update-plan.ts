@@ -5,10 +5,15 @@
 
 import * as z from "zod";
 
-import type { BatchUpdatePlanStatus as BatchUpdatePlanStatusRecord } from "@/generated/prisma/client";
+import type {
+    BatchUpdatePlan as BatchUpdatePlanRecord,
+    BatchUpdatePlanStatus as BatchUpdatePlanStatusRecord,
+} from "@/generated/prisma/client";
 
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
+
+export type { BatchUpdatePlanRecord };
 
 export const BatchUpdatePlanId = {
     schema: zodNanoId16("BatchUpdatePlanId expected").brand<"BatchUpdatePlanId">(),

@@ -107,7 +107,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
     - The schema file exports `BatchUpdatePlanId` (`zodNanoId16` brand plus `create()`, like `TeamMembershipId` in `src/lib/schemas/team-membership.ts`) and `BatchUpdatePlanStatus` (a Zod enum matching the Prisma enum).
   - **Done when:** the migration applies to `avut_d4h_sync`, `npx prisma generate` succeeds, and `npm run check` passes.
 
-- [ ] **2. Generic plan lifecycle service**
+- [x] **2. Generic plan lifecycle service** — feat(services): add BatchUpdatePlan lifecycle service
   - **Files:** `src/server/services/batch-update-plans.ts` (new), `src/server/services/batch-update-plans.test.ts` (new).
   - **Do:** follow `src/server/services/CLAUDE.md` (an `OrgServiceContext`, domain errors from `src/lib/errors.ts`). Export:
     - `create(ctx, { kind, targetType, targetId, payload })` returns the row (id from `BatchUpdatePlanId.create()`, `createdById: ctx.userId`).
