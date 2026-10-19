@@ -242,7 +242,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
 
 ### Review group 4: dialog (`visual` checkpoint)
 
-- [ ] **9. Sync dialog: skip checkboxes, in-progress polling, per-item results** `visual`
+- [x] **9. Sync dialog: skip checkboxes, in-progress polling, per-item results** — feat(d4h): skippable items, in-progress polling and results in the sync dialog `visual`
   - **Files:** `src/modules/org-admin/components/teams/d4h-link-card.tsx`, `content/help/admin/teams.mdx` (if it describes the sync dialog).
   - **Do:**
     - **Items:** each row gets a checkbox, ticked by default. Apply sends the unticked ids as `skipItemIds`.
