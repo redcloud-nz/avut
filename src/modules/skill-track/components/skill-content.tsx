@@ -119,7 +119,22 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                         <DataItem inline>
                                             <DataItemTitle>Group</DataItemTitle>
                                             <DataItemValue>
-                                                {skill.group?.name ?? "—"}
+                                                {skill.group ? (
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]",
+                                                            {
+                                                                slug: organization.slug,
+                                                                package_id: skill.skillPackageId,
+                                                                group_id: skill.group.id,
+                                                            },
+                                                        )}
+                                                    >
+                                                        {skill.group.name}
+                                                    </Link>
+                                                ) : (
+                                                    "—"
+                                                )}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>

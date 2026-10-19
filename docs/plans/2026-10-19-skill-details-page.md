@@ -120,7 +120,7 @@
       - Keep the card under ~150 words (`wc -w`), tightening the existing text if needed.
   - **Done when:** the page renders for a subscribed skill, an unsubscribed one, an archived one (no coverage link) and one in a Deleted group. `npm run check` is clean.
 
-- [ ] **Task 5: skill group detail page**
+- [x] **Task 5: skill group detail page** (feat(skill-track): add skill group detail page)
   - `visual`
   - **Files:**
     - new `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]/page.tsx`
