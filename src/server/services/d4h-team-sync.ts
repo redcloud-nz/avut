@@ -930,7 +930,7 @@ type FieldValue = string | number | null;
 /**
  * Gate one cache row's fields on the plan's `before`: of the fields the plan changes, write those
  * whose current value still equals `before`, and report the others by their display key. A missing
- * row reports every field the plan changes.
+ * row reports every field the plan changes. `writeKeys` are the display keys of the fields written.
  */
 function gateFields<T extends Record<string, FieldValue>>(
     displayKeys: NoInfer<{ [K in keyof T]: string }>,
@@ -940,6 +940,7 @@ function gateFields<T extends Record<string, FieldValue>>(
 ) {
     const write: Partial<T> = {};
     const writeBefore: Partial<T> = {};
+    const writeKeys: string[] = [];
     const skippedFields: string[] = [];
     for (const key of Object.keys(displayKeys) as (keyof T)[]) {
         if (incoming[key] === before[key]) continue;
@@ -949,8 +950,9 @@ function gateFields<T extends Record<string, FieldValue>>(
         }
         write[key] = incoming[key];
         writeBefore[key] = before[key];
+        writeKeys.push(displayKeys[key]);
     }
-    return { write, writeBefore, skippedFields };
+    return { write, writeBefore, writeKeys, skippedFields };
 }
 
 /** Each cache field, mapped to its key in the metadata item's flat display diff. */
@@ -967,6 +969,11 @@ const ORG_FIELD_KEYS = {
     d4hReportingStartMonth: "orgReportingStartMonth",
 } as const;
 
+/**
+ * Each part's write repeats its `before` values in its `where`, so a field edited between the
+ * check and the write makes that part's update match nothing: it then writes and logs nothing,
+ * and reports its fields as changed. Both parts share one transaction.
+ */
 async function executeMetadata(
     ctx: OrgServiceContext,
     teamId: string,
@@ -985,41 +992,64 @@ async function executeMetadata(
     const org = item.organization
         ? gateFields(ORG_FIELD_KEYS, item.organization.before, item.organization.incoming, orgRow)
         : null;
+    const teamWrites = team.writeKeys.length > 0;
+    const orgWrites = org !== null && org.writeKeys.length > 0;
 
-    const writes: Prisma.PrismaPromise<unknown>[] = [];
-    if (Object.keys(team.write).length > 0) {
-        writes.push(
-            ctx.prisma.team_D4H.update({ where: { teamId }, data: team.write }),
-            ctx.logEvent({
-                action: "Update",
-                objectType: "Team",
-                objectId: teamId,
-                description: "Refreshed D4H team metadata.",
-                changes: diffObject(team.writeBefore, team.write),
-            }),
-        );
-    }
-    if (org && Object.keys(org.write).length > 0) {
-        writes.push(
-            ctx.prisma.organization_D4H.update({
-                where: { organizationId: ctx.organizationId },
-                data: org.write,
-            }),
-            ctx.logEvent({
-                action: "Update",
-                objectType: "Organization",
-                objectId: ctx.organizationId,
-                description: "Refreshed cached D4H organisation attributes.",
-                changes: diffObject(org.writeBefore, org.write),
-            }),
-        );
-    }
+    const { wrote, lostFields } =
+        teamWrites || orgWrites
+            ? await ctx.prisma.$transaction(async (tx) => {
+                  let wrote = false;
+                  const lostFields: string[] = [];
+                  if (teamWrites) {
+                      const { count } = await tx.team_D4H.updateMany({
+                          where: { teamId, ...team.writeBefore },
+                          data: team.write,
+                      });
+                      if (count > 0) {
+                          wrote = true;
+                          await ctx.logEvent(
+                              {
+                                  action: "Update",
+                                  objectType: "Team",
+                                  objectId: teamId,
+                                  description: "Refreshed D4H team metadata.",
+                                  changes: diffObject(team.writeBefore, team.write),
+                              },
+                              tx,
+                          );
+                      } else {
+                          lostFields.push(...team.writeKeys);
+                      }
+                  }
+                  if (org && orgWrites) {
+                      const { count } = await tx.organization_D4H.updateMany({
+                          where: { organizationId: ctx.organizationId, ...org.writeBefore },
+                          data: org.write,
+                      });
+                      if (count > 0) {
+                          wrote = true;
+                          await ctx.logEvent(
+                              {
+                                  action: "Update",
+                                  objectType: "Organization",
+                                  objectId: ctx.organizationId,
+                                  description: "Refreshed cached D4H organisation attributes.",
+                                  changes: diffObject(org.writeBefore, org.write),
+                              },
+                              tx,
+                          );
+                      } else {
+                          lostFields.push(...org.writeKeys);
+                      }
+                  }
+                  return { wrote, lostFields };
+              })
+            : { wrote: false, lostFields: [] };
 
-    const skippedFields = [...team.skippedFields, ...(org?.skippedFields ?? [])];
-    if (writes.length === 0 && skippedFields.length > 0) {
+    const skippedFields = [...team.skippedFields, ...(org?.skippedFields ?? []), ...lostFields];
+    if (!wrote && skippedFields.length > 0) {
         return { result: "skipped-changed", reason: "fields-changed", skippedFields };
     }
-    if (writes.length > 0) await ctx.prisma.$transaction(writes);
     return skippedFields.length > 0 ? { result: "applied", skippedFields } : applied;
 }
 
@@ -1052,16 +1082,17 @@ function executeItem(ctx: OrgServiceContext, teamId: string, item: D4HSyncItem) 
  * description.
  *
  * On success the plan is `Completed`, and `Team_D4H.lastSyncedAt` (and `Organization_D4H`'s, for
- * an org-bearing team) is set to the plan's `createdAt`, the time of the snapshot. When the
- * metadata item wrote no fields, a Team entry records the sync, so the batch is never empty. If an
- * item throws, the plan is `Failed` with the outcomes so far, `lastSyncedAt` is left alone, and the
+ * an org-bearing team, unless it's already later) is set to the plan's `createdAt`, the time of
+ * the snapshot. When the metadata item wrote no fields, a Team entry records the sync, so the
+ * batch is never empty. If an item throws, or the team's link to the plan's D4H team is gone by
+ * the end, the plan is `Failed` with the outcomes so far, `lastSyncedAt` is left alone, and the
  * error is rethrown.
  *
  * @throws NotFoundError if the plan does not exist within the organization.
  * @throws PlanAlreadyRunningError if another sync of the team is running.
  * @throws ConflictError if the plan isn't a D4H team sync, its team is no longer active or no
- *   longer linked to the plan's D4H team, or the plan can't be claimed (already run, superseded,
- *   or expired).
+ *   longer linked to the plan's D4H team (before the run, or by its end), or the plan can't be
+ *   claimed (already run, superseded, or expired).
  */
 export async function executeD4HSyncPlan(
     ctx: OrgServiceContext,
@@ -1131,30 +1162,56 @@ export async function executeD4HSyncPlan(
             metadataItem !== undefined &&
             metadataItem.changes.length > 0 &&
             outcomes.some((o) => o.itemId === metadataItem.itemId && o.result === "applied");
-        await ctx.prisma.$transaction([
-            ctx.prisma.team_D4H.update({
-                where: { teamId },
-                data: { lastSyncedAt: row.createdAt },
-            }),
-            ...(metadataItem?.organization
-                ? [
-                      ctx.prisma.organization_D4H.updateMany({
-                          where: { organizationId: ctx.organizationId },
-                          data: { lastSyncedAt: row.createdAt },
-                      }),
-                  ]
-                : []),
-            ...(metadataWrote
-                ? []
-                : [
-                      ctxBatch.logEvent({
-                          action: "Update",
-                          objectType: "Team",
-                          objectId: teamId,
-                          description: "Synced with linked D4H team — no metadata changes.",
-                      }),
-                  ]),
-        ]);
+
+        // The team may have been unlinked (and perhaps relinked) while the items ran: don't mark
+        // a different link as synced. The write's `where` repeats the check, so a change between
+        // the two matches nothing (P2025) and rolls the completion back.
+        const linkChanged = () =>
+            new ConflictError(
+                "The team's D4H link changed while this sync ran, so it wasn't marked as synced.",
+            );
+        const link = await ctx.prisma.team_D4H.findUnique({
+            where: { teamId },
+            select: { d4hTeamId: true },
+        });
+        if (link?.d4hTeamId !== payload.d4hTeamId) throw linkChanged();
+        try {
+            await ctx.prisma.$transaction([
+                ctx.prisma.team_D4H.update({
+                    where: { teamId, d4hTeamId: payload.d4hTeamId },
+                    data: { lastSyncedAt: row.createdAt },
+                }),
+                ...(metadataItem?.organization
+                    ? [
+                          // Never moves backwards: a newer plan of another team may have finished
+                          // first.
+                          ctx.prisma.organization_D4H.updateMany({
+                              where: {
+                                  organizationId: ctx.organizationId,
+                                  OR: [
+                                      { lastSyncedAt: null },
+                                      { lastSyncedAt: { lt: row.createdAt } },
+                                  ],
+                              },
+                              data: { lastSyncedAt: row.createdAt },
+                          }),
+                      ]
+                    : []),
+                ...(metadataWrote
+                    ? []
+                    : [
+                          ctxBatch.logEvent({
+                              action: "Update",
+                              objectType: "Team",
+                              objectId: teamId,
+                              description: "Synced with linked D4H team — no metadata changes.",
+                          }),
+                      ]),
+            ]);
+        } catch (e) {
+            if (hasPrismaCode(e, "P2025")) throw linkChanged();
+            throw e;
+        }
 
         await BatchUpdatePlans.finish(
             ctx,

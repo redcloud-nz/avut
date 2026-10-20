@@ -8,6 +8,7 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
+import { ConflictError } from "@/lib/errors";
 import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { D4HSyncItemOutcome, D4HSyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
@@ -742,7 +743,10 @@ export const teamsRouter = createTrpcRouter({
      * Unlink a team from D4H. `TeamMembership_D4H` rows cascade away; the
      * `TeamMembership` rows stay (they become manually-managed). In org-less mode
      * this also removes the org-level link. Supersedes the team's pending D4H sync plans, so a
-     * preview left open can't be applied afterwards. See docs/specs/2026-09-10-d4h-linking.md §6.3.
+     * preview left open can't be applied afterwards. Refused while a sync of the team is running,
+     * so a run can't go on writing to a link that's gone. See docs/specs/2026-09-10-d4h-linking.md
+     * §6.3.
+     * @throws ConflictError if a sync of the team is running.
      */
     unlinkTeamFromD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema }))
@@ -758,6 +762,17 @@ export const teamsRouter = createTrpcRouter({
                 throw new TRPCError({ code: "BAD_REQUEST", message: "Team is not linked to D4H" });
             }
 
+            const syncTarget: BatchUpdatePlans.PlanTarget = {
+                kind: D4HTeamSync.D4H_TEAM_SYNC_KIND,
+                targetType: "Team",
+                targetId: teamId,
+            };
+            if (await BatchUpdatePlans.findExecuting(ctx, syncTarget, new Date())) {
+                throw new ConflictError(
+                    "A sync of this team is running. Try again once it finishes.",
+                );
+            }
+
             const orgD4H = await ctx.prisma.organization_D4H.findUnique({
                 where: { organizationId },
             });
@@ -765,11 +780,7 @@ export const teamsRouter = createTrpcRouter({
 
             await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.delete({ where: { teamId } }),
-                BatchUpdatePlans.supersedePending(ctx, {
-                    kind: D4HTeamSync.D4H_TEAM_SYNC_KIND,
-                    targetType: "Team",
-                    targetId: teamId,
-                }),
+                BatchUpdatePlans.supersedePending(ctx, syncTarget),
                 ...(orgLessMode
                     ? [ctx.prisma.organization_D4H.delete({ where: { organizationId } })]
                     : []),

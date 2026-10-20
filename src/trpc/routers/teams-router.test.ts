@@ -13,6 +13,7 @@ import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
+import { EXECUTION_STALE_MS } from "@/server/services/batch-update-plans";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -427,6 +428,33 @@ describe("teamsRouter D4H sync plans", () => {
             caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] }),
         ).rejects.toMatchObject({ code: "CONFLICT" });
     });
+
+    it.each([
+        ["stale", { executionStartedAt: new Date(Date.now() - EXECUTION_STALE_MS - 1000) }],
+        ["finished", { status: "Completed" as const }],
+    ])(
+        "refuses to unlink while a sync is executing, then unlinks once it's %s",
+        async (_, then) => {
+            const { db, T, caller, createPlan } = await seed();
+            const { planId } = await createPlan();
+            await db.batchUpdatePlan.update({
+                where: { id: planId },
+                data: { status: "Executing", executionStartedAt: new Date() },
+            });
+
+            await expect(
+                caller.unlinkTeamFromD4H({ organizationId: T.org, teamId: T.team }),
+            ).rejects.toMatchObject({
+                code: "CONFLICT",
+                message: "A sync of this team is running. Try again once it finishes.",
+            });
+            expect(await db.team_D4H.findUnique({ where: { teamId: T.team } })).not.toBeNull();
+
+            await db.batchUpdatePlan.update({ where: { id: planId }, data: then });
+            await caller.unlinkTeamFromD4H({ organizationId: T.org, teamId: T.team });
+            expect(await db.team_D4H.findUnique({ where: { teamId: T.team } })).toBeNull();
+        },
+    );
 });
 
 describe("teamsRouter link and create from D4H", () => {

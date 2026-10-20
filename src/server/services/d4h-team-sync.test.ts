@@ -1354,6 +1354,163 @@ describe("executeD4HSyncPlan", () => {
                 lastSyncedAt: plan.createdAt,
             });
         });
+
+        const orgBefore = {
+            d4hOrganisationName: "Org",
+            d4hTimezone: "Pacific/Auckland",
+            d4hCurrency: "NZD",
+            d4hReportingStartDay: 1,
+            d4hReportingStartMonth: 4,
+        };
+
+        /** A fresh org with its own `Organization_D4H` row, and a team in it. */
+        async function seedOrgBearingTeam(over: { lastSyncedAt?: Date } = {}) {
+            const organizationId = OrganizationId.create();
+            await db.organization.create({
+                data: {
+                    id: organizationId,
+                    name: organizationId,
+                    slug: organizationId,
+                    createdAt: new Date(),
+                },
+            });
+            await db.organization_D4H.create({
+                data: {
+                    organizationId,
+                    serverCode: "test",
+                    d4hOrganisationId: 7,
+                    ...orgBefore,
+                    lastSyncedAt: over.lastSyncedAt ?? null,
+                },
+            });
+            return { organizationId, teamId: await seedTeam({ organizationId }) };
+        }
+
+        /** Run `change` straight after the executor's next read of `model`'s row. */
+        function changeAfterRead(
+            model: "team_D4H" | "organization_D4H",
+            change: () => Promise<unknown>,
+        ) {
+            const delegate = db[model] as unknown as {
+                findUnique: (args: unknown) => Promise<unknown>;
+            };
+            const original = delegate.findUnique.bind(delegate);
+            return vi.spyOn(delegate, "findUnique").mockImplementationOnce(((args: unknown) =>
+                (async () => {
+                    const row = await original(args);
+                    await change();
+                    return row;
+                })()) as never);
+        }
+
+        it("leaves a team field edited between its check and its write alone", async () => {
+            const teamId = await seedTeam();
+            const planId = await seedPlan(teamId, [
+                {
+                    ...quietMetadata(),
+                    team: { before: quietTeam, incoming: { ...quietTeam, d4hTeamName: "B" } },
+                    changes: diffObject({ d4hTeamName: "A" }, { d4hTeamName: "B" }),
+                },
+            ]);
+
+            const spy = changeAfterRead("team_D4H", () =>
+                db.team_D4H.update({ where: { teamId }, data: { d4hTeamName: "Renamed" } }),
+            );
+            let result;
+            try {
+                result = await execute(planId);
+            } finally {
+                spy.mockRestore();
+            }
+
+            expect(outcomeOf(result, "metadata")).toEqual({
+                itemId: "metadata",
+                result: "skipped-changed",
+                reason: "fields-changed",
+                skippedFields: ["d4hTeamName"],
+            });
+            const row = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
+            expect(row.d4hTeamName).toBe("Renamed");
+            const logged = await db.logEntry.findMany({ where: { batchId: result.batchId } });
+            expect(logged.map((e) => e.description)).toEqual([
+                "Synced with linked D4H team — no metadata changes.",
+            ]);
+        });
+
+        it("leaves an org field edited between its check and its write alone", async () => {
+            const { organizationId, teamId } = await seedOrgBearingTeam();
+            const planId = await seedPlan(
+                teamId,
+                [
+                    {
+                        ...quietMetadata(),
+                        team: { before: quietTeam, incoming: { ...quietTeam, d4hTeamName: "B" } },
+                        organization: {
+                            before: orgBefore,
+                            incoming: { ...orgBefore, d4hCurrency: "AUD" },
+                        },
+                        changes: diffObject(
+                            { d4hTeamName: "A", orgCurrency: "NZD" },
+                            { d4hTeamName: "B", orgCurrency: "AUD" },
+                        ),
+                    },
+                ],
+                { organizationId },
+            );
+
+            const spy = changeAfterRead("organization_D4H", () =>
+                db.organization_D4H.update({
+                    where: { organizationId },
+                    data: { d4hCurrency: "EUR" },
+                }),
+            );
+            let result;
+            try {
+                result = await execute(planId, [], organizationId);
+            } finally {
+                spy.mockRestore();
+            }
+
+            expect(outcomeOf(result, "metadata")).toEqual({
+                itemId: "metadata",
+                result: "applied",
+                skippedFields: ["orgCurrency"],
+            });
+            const orgRow = await db.organization_D4H.findUniqueOrThrow({
+                where: { organizationId },
+            });
+            expect(orgRow.d4hCurrency).toBe("EUR");
+            const teamRow = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
+            expect(teamRow.d4hTeamName).toBe("B");
+            const logged = await db.logEntry.findMany({ where: { batchId: result.batchId } });
+            expect(logged.map((e) => e.description)).toEqual(["Refreshed D4H team metadata."]);
+        });
+
+        it("never moves the org's lastSyncedAt backwards", async () => {
+            const later = new Date(Date.now() + 60 * 60 * 1000);
+            const { organizationId, teamId } = await seedOrgBearingTeam({ lastSyncedAt: later });
+            const planId = await seedPlan(
+                teamId,
+                [
+                    {
+                        ...quietMetadata(),
+                        organization: { before: orgBefore, incoming: orgBefore },
+                    },
+                ],
+                { organizationId },
+            );
+
+            await execute(planId, [], organizationId);
+
+            const orgRow = await db.organization_D4H.findUniqueOrThrow({
+                where: { organizationId },
+            });
+            expect(orgRow.lastSyncedAt).toEqual(later);
+            const plan = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+            expect(plan.status).toBe("Completed");
+            const teamRow = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
+            expect(teamRow.lastSyncedAt).toEqual(plan.createdAt);
+        });
     });
 
     describe("the plan's lifecycle", () => {
@@ -1495,6 +1652,75 @@ describe("executeD4HSyncPlan", () => {
             await expect(execute(planId)).rejects.toThrow(/no longer linked/);
             const plan = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
             expect(plan.status).toBe("Pending");
+        });
+
+        it("fails, marking nothing synced, when the team is relinked while items run", async () => {
+            const teamId = await seedTeam();
+            const personId = await seedPerson("relinked-mid-run@x.com");
+            const membershipId = await seedMembership(teamId, personId, {
+                d4h: { d4hMemberId: 90 },
+            });
+            const planId = await seedPlan(teamId, [
+                {
+                    kind: "archive",
+                    itemId: `archive:${membershipId}`,
+                    teamMembershipId: membershipId,
+                    personId,
+                    personName: "R",
+                    d4hMemberId: 90,
+                },
+            ]);
+
+            const spy = changeAfterCheck(() =>
+                db.team_D4H.update({ where: { teamId }, data: { d4hTeamId: D4H_TEAM + 1 } }),
+            );
+            try {
+                await expect(execute(planId)).rejects.toThrow(/D4H link changed/);
+            } finally {
+                spy.mockRestore();
+            }
+
+            const plan = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+            expect(plan.status).toBe("Failed");
+            expect(plan.outcomes).toEqual([
+                { itemId: `archive:${membershipId}`, result: "applied" },
+                { itemId: "metadata", result: "applied" },
+            ]);
+            const teamD4H = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
+            expect(teamD4H.lastSyncedAt).toBeNull();
+        });
+
+        it("fails when the link changes between the final check and the completion write", async () => {
+            const teamId = await seedTeam();
+            const planId = await seedPlan(teamId, []);
+
+            // The metadata item reads the row first; the completion check reads it second.
+            const original = db.team_D4H.findUnique.bind(db.team_D4H) as unknown as (
+                args: unknown,
+            ) => Promise<unknown>;
+            let reads = 0;
+            const spy = vi.spyOn(db.team_D4H, "findUnique").mockImplementation(((args: unknown) =>
+                (async () => {
+                    const row = await original(args);
+                    reads += 1;
+                    if (reads === 2) {
+                        await db.team_D4H.update({
+                            where: { teamId },
+                            data: { d4hTeamId: D4H_TEAM + 1 },
+                        });
+                    }
+                    return row;
+                })()) as never);
+            try {
+                await expect(execute(planId)).rejects.toThrow(/D4H link changed/);
+            } finally {
+                spy.mockRestore();
+            }
+
+            const plan = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+            expect(plan.status).toBe("Failed");
+            const teamD4H = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
+            expect(teamD4H.lastSyncedAt).toBeNull();
         });
 
         it("refuses a plan whose team is archived, or a plan of another kind", async () => {
