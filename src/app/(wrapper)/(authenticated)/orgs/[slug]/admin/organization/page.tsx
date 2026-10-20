@@ -59,7 +59,7 @@ export default async function AdminModule_Organization_Page(
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                aria-label="Edit organisation"
+                                                aria-label="Update organisation"
                                                 asChild
                                             >
                                                 <Link

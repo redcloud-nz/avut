@@ -57,6 +57,18 @@ function classTokens(opening) {
   return stringsIn(attribute(opening, "className")?.value).flatMap((value) => value.split(/\s+/));
 }
 
+function isAriaHidden(opening) {
+  const value = attribute(opening, "aria-hidden")?.value;
+  if (value === undefined) return false;
+  if (value === null) return true; // bare `aria-hidden`
+  const literal = value.type === "JSXExpressionContainer" ? value.expression : value;
+  return !(literal.type === "Literal" && (literal.value === false || literal.value === "false"));
+}
+
+function hasOwnName(opening) {
+  return ["aria-label", "aria-labelledby", "title"].some((name) => attribute(opening, name));
+}
+
 /** Whether a JSX child (or expression) contributes text to the accessible name. */
 function hasName(node) {
   switch (node.type) {
@@ -66,14 +78,17 @@ function hasName(node) {
       return node.expression.type !== "JSXEmptyExpression" && hasName(node.expression);
     case "JSXElement": {
       const opening = node.openingElement;
-      if (attribute(opening, "aria-hidden")) return false;
+      if (isAriaHidden(opening)) return false;
       if (attribute(opening, "aria-label") || attribute(opening, "aria-labelledby")) return true;
       return node.children.some(hasName);
     }
     case "JSXFragment":
       return node.children.some(hasName);
     case "Literal":
-      return typeof node.value === "string" ? node.value.trim() !== "" : node.value != null;
+      // React renders numbers but not booleans or null.
+      return typeof node.value === "string"
+        ? node.value.trim() !== ""
+        : typeof node.value === "number";
     case "ConditionalExpression":
       return hasName(node.consequent) || hasName(node.alternate);
     case "LogicalExpression":
@@ -90,10 +105,14 @@ function hasName(node) {
   }
 }
 
-/** Descendant elements hidden below a breakpoint with `hidden <bp>:inline` and the like. */
+/**
+ * Descendant elements hidden below a breakpoint with `hidden <bp>:inline` and the like. Skips
+ * `aria-hidden` subtrees: they aren't part of the name (a keyboard-shortcut badge, say).
+ */
 function responsivelyHidden(node, found = []) {
   for (const child of node.children ?? []) {
     if (child.type === "JSXElement") {
+      if (isAriaHidden(child.openingElement)) continue;
       const tokens = classTokens(child.openingElement);
       if (tokens.includes("hidden") && tokens.some((token) => RESPONSIVE_SHOW.test(token))) {
         found.push(child);
@@ -119,6 +138,9 @@ const rule = {
         const opening = node.openingElement;
         if (elementName(opening) !== "Button") return;
 
+        // A Button named by its own attributes doesn't depend on its children for a name.
+        if (hasOwnName(opening)) return;
+
         for (const hidden of responsivelyHidden(node)) {
           context.report({ node: hidden.openingElement, message: HIDDEN_MESSAGE });
         }
@@ -126,8 +148,6 @@ const rule = {
         const size = stringsIn(attribute(opening, "size")?.value);
         if (!size.some((value) => value.startsWith("icon"))) return;
         if (opening.attributes.some((attr) => attr.type === "JSXSpreadAttribute")) return;
-        if (attribute(opening, "aria-label") || attribute(opening, "aria-labelledby")) return;
-        if (attribute(opening, "title")) return;
         if (node.children.some(hasName)) return;
 
         context.report({ node: opening, message: ICON_MESSAGE });
