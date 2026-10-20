@@ -15,7 +15,6 @@ import {
     NotConfiguredError,
     NotFoundError,
     PreconditionError,
-    StalePlanError,
     ValidationError,
 } from "@/lib/errors";
 import { Permissions } from "@/lib/permissions";
@@ -108,9 +107,6 @@ export const publicProcedure = t.procedure
             }
             if (cause instanceof PreconditionError || cause instanceof NotConfiguredError) {
                 throw new TRPCError({ code: "PRECONDITION_FAILED", message: cause.message, cause });
-            }
-            if (cause instanceof StalePlanError) {
-                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
             }
             if (cause instanceof FieldConflictError) {
                 throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
