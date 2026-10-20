@@ -25,13 +25,12 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
             teamId: vars.teamId,
         }),
     ),
-    // D4H team link/unlink/sync also creates, drops, or refreshes the org-level
+    // D4H team unlink/sync also drops or refreshes the org-level
     // `Organization_D4H` row and its cached metadata.
     invalidate(trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId })),
 ];
 
 export const teamsEffects = createEffects<"teams">()({
-    applyD4HTeamSync: (vars) => teamCaches(vars),
     archiveTeam: (vars, { updated }) => [
         write(
             trpc.teams.getTeam.queryKey({
@@ -73,8 +72,23 @@ export const teamsEffects = createEffects<"teams">()({
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
-    linkTeamToD4H: (vars) => teamCaches(vars),
+    // Linking imports nobody, so the memberships are untouched; the first sync refreshes them.
+    linkTeamToD4H: (vars, { updated }) => [
+        write(
+            trpc.teams.getTeam.queryKey({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+            updated,
+        ),
+        invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId }),
+        ),
+    ],
     unlinkTeamFromD4H: (vars) => teamCaches(vars),
+    executeD4HTeamSyncPlan: (vars, { plan }) =>
+        teamCaches({ organizationId: vars.organizationId, teamId: plan.teamId }),
     syncOrganizationD4H: (vars) => [
         invalidate(
             trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId }),

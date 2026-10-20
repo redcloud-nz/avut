@@ -55,6 +55,7 @@ model User {
   ownedLogEntries           LogEntry[]         @relation("log_entry_to_owner")
   impersonatedLogEntries    LogEntry[]         @relation("log_entry_to_impersonator")
   logBatches                LogBatch[]         @relation("log_batch_to_user")
+  batchUpdatePlans          BatchUpdatePlan[]  @relation("batch_update_plan_to_user")
 
   @@unique([email])
   @@map("users")
@@ -141,6 +142,8 @@ model Organization {
   formInstances FormInstance[] @relation("form_instance_to_organization")
 
   groupMemberships OrganizationGroupMembership[] @relation("organization_group_membership_to_organization")
+
+  batchUpdatePlans BatchUpdatePlan[] @relation("batch_update_plan_to_organization")
 
   @@unique([slug])
   @@map("organizations")
@@ -430,6 +433,43 @@ model LogBatch {
 
   @@index([operationKey, startedAt])
   @@map("log_batches")
+}
+
+/// A planned bulk operation, persisted between preview and execution, so execution applies exactly
+/// the items the user saw. Generic across kinds; `(kind, targetType, targetId)` is the lock key.
+/// Each kind validates `payload` and `outcomes` with its own schema. Bookkeeping, not audited
+/// itself: executing it logs under the `LogBatch` it records. See
+/// `src/server/services/batch-update-plans.ts`.
+model BatchUpdatePlan {
+  id                 String                @id
+  organizationId     String
+  organization       Organization          @relation("batch_update_plan_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  /// The kind of operation, e.g. `"d4h-team-sync"`.
+  kind               String
+  targetType         String
+  targetId           String
+  status             BatchUpdatePlanStatus
+  payload            Json
+  outcomes           Json?
+  createdById        String?
+  createdBy          User?                 @relation("batch_update_plan_to_user", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt          DateTime              @default(now())
+  executionStartedAt DateTime?
+  completedAt        DateTime?
+  logBatchId         String?
+
+  @@index([organizationId, kind, targetType, targetId, status])
+  @@map("batch_update_plans")
+}
+
+/// `Pending → Executing → Completed | Failed`, plus `Superseded`. Expired plans are deleted by
+/// cleanup rather than given a status.
+enum BatchUpdatePlanStatus {
+  Pending
+  Executing
+  Completed
+  Failed
+  Superseded
 }
 
 enum AccountDeletedBy {

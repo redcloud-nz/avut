@@ -8,7 +8,9 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { diffObject } from "@/lib/diff";
-import { SyncPlan } from "@/lib/schemas/d4h-sync-plan";
+import { ConflictError } from "@/lib/errors";
+import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
+import { D4HSyncItemOutcome, D4HSyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
@@ -16,6 +18,7 @@ import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-members
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
+import * as BatchUpdatePlans from "@/server/services/batch-update-plans";
 import * as D4HTeamSync from "@/server/services/d4h-team-sync";
 import * as Teams from "@/server/services/teams";
 
@@ -41,14 +44,39 @@ const teamMembershipRowInclude = {
 
 export const teamsRouter = createTrpcRouter({
     /**
-     * Apply a previewed D4H team sync. Re-fetches and re-plans server-side; if the
-     * fresh plan no longer matches `planToken` it rejects with a `StalePlanError`
-     * cause and writes nothing. See docs/specs/2026-09-10-d4h-linking.md §7.
+     * Archives a team in the organization. Idempotent — archiving an already-archived
+     * team returns it unchanged.
+     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
      */
-    applyD4HTeamSync: organizationProcedure({ team: ["update"] })
-        .input(z.object({ teamId: TeamId.schema, planToken: z.string() }))
-        .output(z.object({ plan: SyncPlan.schema }))
-        .mutation(async ({ ctx, input: { organizationId, teamId, planToken } }) => {
+    archiveTeam: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.object({ updated: TeamData.schema }))
+        .mutation(async ({ ctx, input: { teamId } }) => {
+            return { updated: await Teams.archive(ctx, teamId) };
+        }),
+
+    /**
+     * Preview a D4H sync of a linked team: fetch both sides, build the plan, and persist it as a
+     * pending `d4h-team-sync` plan for `executeD4HTeamSyncPlan` to apply by id. While another sync
+     * of the team is running, returns `in-progress` without building a plan.
+     *
+     * Writes no `logEvent`: the plan row is bookkeeping, not a change to any record. Executing it
+     * logs each change it makes under its `d4h-team-sync` `LogBatch`.
+     * See docs/plans/2026-10-19-d4h-sync-plans.md.
+     */
+    createD4HTeamSyncPlan: organizationProcedure({ team: ["update"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(
+            z.discriminatedUnion("status", [
+                z.object({ status: z.literal("in-progress") }),
+                z.object({
+                    status: z.literal("ready"),
+                    planId: BatchUpdatePlanId.schema,
+                    plan: D4HSyncPlan.schema,
+                }),
+            ]),
+        )
+        .mutation(async ({ ctx, input: { organizationId, teamId } }) => {
             const team = await ctx.prisma.team.findUnique({
                 where: { id: teamId, organizationId },
                 include: { d4h: true },
@@ -68,34 +96,7 @@ export const teamsRouter = createTrpcRouter({
 
             const token = await getConfiguredD4HAccessToken(organizationId, ctx.userId);
 
-            const batch = await createLogBatch(
-                {
-                    operationKey: "d4h-team-sync",
-                    userId: ctx.userId,
-                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                    description: `Synchronised team "${team.name}" from its linked D4H team`,
-                },
-                ctx.prisma,
-            );
-
-            return D4HTeamSync.runTeamSync(ctx, {
-                teamD4H: team.d4h,
-                token,
-                batchId: batch.id,
-                requireFreshMatch: planToken,
-            });
-        }),
-
-    /**
-     * Archives a team in the organization. Idempotent — archiving an already-archived
-     * team returns it unchanged.
-     * @throws TRPCError(NOT_FOUND) if the team does not exist within the organization.
-     */
-    archiveTeam: organizationProcedure({ team: ["update"] })
-        .input(z.object({ teamId: TeamId.schema }))
-        .output(z.object({ updated: TeamData.schema }))
-        .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.archive(ctx, teamId) };
+            return D4HTeamSync.createD4HSyncPlan(ctx, { teamD4H: team.d4h, token });
         }),
 
     /**
@@ -143,8 +144,8 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Create a new AVUT team from a D4H team, link it, and run the first membership
-     * sync — all in one operation batch. `name` defaults to the D4H team title.
+     * Create a new AVUT team from a D4H team and link it, in one operation batch. It imports
+     * nobody: the first sync is previewed like any other. `name` defaults to the D4H team title.
      */
     createTeamFromD4H: organizationProcedure({ team: ["create"] })
         .input(z.object({ d4hTeamId: z.number(), name: z.string().optional() }))
@@ -184,7 +185,7 @@ export const teamsRouter = createTrpcRouter({
                     operationKey: "d4h-team-link",
                     userId: ctx.userId,
                     actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                    description: `Created team "${name}" from D4H and synced its members`,
+                    description: `Created team "${name}" from D4H`,
                 },
                 ctx.prisma,
             );
@@ -192,7 +193,7 @@ export const teamsRouter = createTrpcRouter({
             await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const teamId = TeamId.create();
-            const [team] = await ctx.prisma.$transaction([
+            await ctx.prisma.$transaction([
                 ctx.prisma.team.create({
                     data: {
                         id: teamId,
@@ -211,7 +212,6 @@ export const teamsRouter = createTrpcRouter({
                             },
                         },
                     },
-                    include: { d4h: true },
                 }),
                 ctx.logEvent({
                     action: "Create",
@@ -224,12 +224,6 @@ export const teamsRouter = createTrpcRouter({
                     batchId: batch.id,
                 }),
             ]);
-
-            await D4HTeamSync.runTeamSync(ctx, {
-                teamD4H: team.d4h!,
-                token: resolved.token,
-                batchId: batch.id,
-            });
 
             const created = await Teams.requireById(ctx, teamId);
             return { created };
@@ -341,6 +335,47 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
+     * Execute a pending D4H sync plan from `createD4HTeamSyncPlan`, skipping the items in
+     * `skipItemIds`. Applies the stored plan item by item, with no D4H token and no D4H fetch,
+     * under a `d4h-team-sync` `LogBatch`. Any user with `team: ["update"]` may execute any pending
+     * plan in the org.
+     * @throws TRPCError(NOT_FOUND) if the plan does not exist within the organization.
+     * @throws TRPCError(CONFLICT) if the plan can't be executed: already run, superseded, expired,
+     *   another sync of the team is running, or the team is no longer active or linked.
+     */
+    executeD4HTeamSyncPlan: organizationProcedure({ team: ["update"] })
+        .input(z.object({ planId: BatchUpdatePlanId.schema, skipItemIds: z.array(z.string()) }))
+        .output(
+            z.object({
+                plan: z.object({
+                    id: BatchUpdatePlanId.schema,
+                    teamId: TeamId.schema,
+                    payload: D4HSyncPlan.schema,
+                }),
+                outcomes: z.array(D4HSyncItemOutcome.schema),
+            }),
+        )
+        .mutation(async ({ ctx, input: { planId, skipItemIds } }) => {
+            return D4HTeamSync.executeD4HSyncPlan(ctx, {
+                planId,
+                skipItemIds,
+                // Opened only once the plan is claimed, so a refused execute leaves no batch.
+                openBatch: async (team) => {
+                    const batch = await createLogBatch(
+                        {
+                            operationKey: "d4h-team-sync",
+                            userId: ctx.userId,
+                            actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                            description: `Synchronised team "${team.name}" from its linked D4H team`,
+                        },
+                        ctx.prisma,
+                    );
+                    return batch.id;
+                },
+            });
+        }),
+
+    /**
      * The org-level D4H link (`Organization_D4H`) for the current org, or `null`
      * if the org has never linked a team to D4H. Read model for the admin
      * organisation page's D4H card. See docs/specs/2026-09-10-d4h-linking.md §3.1.
@@ -444,12 +479,13 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level
-     * D4H link and running the first membership sync. See docs/specs/2026-09-10-d4h-linking.md §6.1.
+     * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level D4H link. It
+     * imports nobody: the first sync is previewed and applied through `createD4HTeamSyncPlan` and
+     * `executeD4HTeamSyncPlan` like any other. See docs/specs/2026-09-10-d4h-linking.md §6.1.
      */
     linkTeamToD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema, d4hTeamId: z.number() }))
-        .output(z.object({ plan: SyncPlan.schema }))
+        .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { organizationId, teamId, d4hTeamId } }) => {
             const team = await ctx.prisma.team.findUnique({
                 where: { id: teamId, organizationId },
@@ -504,14 +540,14 @@ export const teamsRouter = createTrpcRouter({
                     operationKey: "d4h-team-link",
                     userId: ctx.userId,
                     actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                    description: `Linked team "${team.name}" to D4H and synced its members`,
+                    description: `Linked team "${team.name}" to D4H`,
                 },
                 ctx.prisma,
             );
 
             await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
-            const [teamD4H] = await ctx.prisma.$transaction([
+            await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.create({
                     data: {
                         teamId,
@@ -531,11 +567,7 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return D4HTeamSync.runTeamSync(ctx, {
-                teamD4H,
-                token: resolved.token,
-                batchId: batch.id,
-            });
+            return { updated: await Teams.requireById(ctx, teamId) };
         }),
 
     /**
@@ -594,35 +626,6 @@ export const teamsRouter = createTrpcRouter({
                 team: record.team,
                 person: record.person,
             }));
-        }),
-
-    /**
-     * Preview the changes a D4H sync would make to a linked team. Pure read — no writes.
-     */
-    planD4HTeamSync: organizationProcedure({ team: ["update"] })
-        .input(z.object({ teamId: TeamId.schema }))
-        .output(SyncPlan.schema)
-        .query(async ({ ctx, input: { organizationId, teamId } }) => {
-            const team = await ctx.prisma.team.findUnique({
-                where: { id: teamId, organizationId },
-                include: { d4h: true },
-            });
-            if (!team) {
-                throw new TRPCError({ code: "NOT_FOUND", message: Messages.teamNotFound(teamId) });
-            }
-            if (!team.d4h) {
-                throw new TRPCError({ code: "BAD_REQUEST", message: "Team is not linked to D4H" });
-            }
-            if (team.status !== "Active") {
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "Team is archived and cannot be synced with D4H",
-                });
-            }
-
-            const token = await getConfiguredD4HAccessToken(organizationId, ctx.userId);
-
-            return D4HTeamSync.planD4HSync(ctx, { teamD4H: team.d4h, token });
         }),
 
     /**
@@ -716,6 +719,14 @@ export const teamsRouter = createTrpcRouter({
      * Unlink a team from D4H. `TeamMembership_D4H` rows cascade away; the
      * `TeamMembership` rows stay (they become manually-managed). In org-less mode
      * this also removes the org-level link. See docs/specs/2026-09-10-d4h-linking.md §6.3.
+     *
+     * Supersedes the team's pending D4H sync plans first, so a preview left open can't be claimed
+     * once the running-sync check has looked, then refuses while a sync of the team is running.
+     * Without row locks this narrows the race with a sync rather than closing it: a plan created
+     * and claimed in the milliseconds between that check and the delete could still start, and
+     * the executor's own re-check of the link after claiming catches all but a delete landing
+     * while its items are already running.
+     * @throws ConflictError if a sync of the team is running.
      */
     unlinkTeamFromD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema }))
@@ -731,6 +742,21 @@ export const teamsRouter = createTrpcRouter({
                 throw new TRPCError({ code: "BAD_REQUEST", message: "Team is not linked to D4H" });
             }
 
+            const syncTarget: BatchUpdatePlans.PlanTarget = {
+                kind: D4HTeamSync.D4H_TEAM_SYNC_KIND,
+                targetType: "Team",
+                targetId: teamId,
+            };
+            // Supersede before checking: a plan still `Pending` after the check could otherwise
+            // be claimed between the check and the delete. Superseding is harmless if the unlink
+            // is then refused; the dialog creates a fresh plan on its next open.
+            await BatchUpdatePlans.supersedePending(ctx, syncTarget);
+            if (await BatchUpdatePlans.findExecuting(ctx, syncTarget, new Date())) {
+                throw new ConflictError(
+                    "A sync of this team is running. Try again once it finishes.",
+                );
+            }
+
             const orgD4H = await ctx.prisma.organization_D4H.findUnique({
                 where: { organizationId },
             });
@@ -738,6 +764,8 @@ export const teamsRouter = createTrpcRouter({
 
             await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.delete({ where: { teamId } }),
+                // Again, for a plan created since the first supersede.
+                BatchUpdatePlans.supersedePending(ctx, syncTarget),
                 ...(orgLessMode
                     ? [ctx.prisma.organization_D4H.delete({ where: { organizationId } })]
                     : []),
