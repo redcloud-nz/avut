@@ -91,13 +91,14 @@ export function SkillPackageBuilder_Group_Contents_List({
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label="Reorder skills"
                                 onClick={() => setAction("reorder-skills", { history: "push" })}
                             >
                                 <ReorderIcon />
                             </Button>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
+                                    <Button variant="ghost" size="icon" aria-label="Show options">
                                         <FilterColumnValuesIcon />
                                     </Button>
                                 </DropdownMenuTrigger>

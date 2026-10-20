@@ -95,7 +95,7 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <ObjectIcons.Import /> <span className="hidden md:inline">Import</span>
+                    <ObjectIcons.Import /> <span className="sr-only md:not-sr-only">Import</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>

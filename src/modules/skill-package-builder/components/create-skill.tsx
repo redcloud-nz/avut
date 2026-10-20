@@ -155,7 +155,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="New skill">
                     <ObjectIcons.Create />
                 </Button>
             </DialogTrigger>

@@ -55,7 +55,8 @@ export function I3Module_CreateTemplate_Dialog() {
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <ObjectIcons.Create /> <span className="hidden md:inline">New Template</span>
+                    <ObjectIcons.Create />{" "}
+                    <span className="sr-only md:not-sr-only">New Template</span>
                 </Button>
             </DialogTrigger>
             <DialogContent size="lg">

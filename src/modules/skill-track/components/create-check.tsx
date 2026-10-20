@@ -88,9 +88,9 @@ export function SkillTrack_CreateCheck_Dialog() {
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline" aria-label="Add Check">
+                <Button variant="outline">
                     <ObjectIcons.Create />
-                    <span className="hidden sm:inline">Add Check</span>
+                    <span className="sr-only sm:not-sr-only">Add Check</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>

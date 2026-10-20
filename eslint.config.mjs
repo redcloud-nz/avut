@@ -8,6 +8,7 @@ import nextTypeScript from "eslint-config-next/typescript";
 import prettier from "eslint-config-prettier";
 import boundaries from "eslint-plugin-boundaries";
 
+import buttonAccessibleName from "./eslint-rules/button-accessible-name.mjs";
 import idsViaSchemas from "./eslint-rules/ids-via-schemas.mjs";
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
 import noDeprecatedZod from "./eslint-rules/no-deprecated-zod.mjs";
@@ -24,6 +25,7 @@ import zodImportStyle from "./eslint-rules/zod-import-style.mjs";
 const avut = {
   rules: {
     "nz-spelling": nzSpelling,
+    "button-accessible-name": buttonAccessibleName,
     "ids-via-schemas": idsViaSchemas,
     "no-deep-relative-imports": noDeepRelativeImports,
     "no-deprecated-zod": noDeprecatedZod,
@@ -321,6 +323,15 @@ const config = [
     plugins: { avut },
     rules: {
       "avut/ids-via-schemas": "error",
+    },
+  },
+  {
+    // Every <Button> keeps an accessible name: icon-size buttons carry an aria-label, and labels
+    // hidden below a breakpoint stay in the accessibility tree (`sr-only md:not-sr-only`).
+    files: ["src/**/*.tsx"],
+    plugins: { avut },
+    rules: {
+      "avut/button-accessible-name": "error",
     },
   },
   {

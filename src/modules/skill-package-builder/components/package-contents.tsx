@@ -97,6 +97,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label="Reorder groups"
                                 onClick={() => setAction("reorder-groups", { history: "push" })}
                             >
                                 <ReorderIcon />
@@ -107,6 +108,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                                         variant="ghost"
                                         size="icon-sm"
                                         className="text-muted-foreground"
+                                        aria-label="Show options"
                                     >
                                         <FilterColumnValuesIcon />
                                     </Button>

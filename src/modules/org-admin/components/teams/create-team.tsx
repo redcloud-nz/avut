@@ -118,7 +118,7 @@ export function AdminModule_CreateTeam_Dialog() {
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <ObjectIcons.Create /> <span className="hidden md:inline">New Team</span>
+                    <ObjectIcons.Create /> <span className="sr-only md:not-sr-only">New Team</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>

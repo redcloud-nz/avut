@@ -122,7 +122,7 @@ export function SkillTrack_CreateSession_Dialog() {
             <DialogTrigger asChild>
                 <Button variant="outline">
                     <ObjectIcons.Create />
-                    <span className="hidden sm:inline">New Session</span>
+                    <span className="sr-only sm:not-sr-only">New Session</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>

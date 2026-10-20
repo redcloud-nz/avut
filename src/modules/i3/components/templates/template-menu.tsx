@@ -31,7 +31,7 @@ export function I3Module_Template_Menu({ template }: { template: I3Template }) {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" aria-label="Actions">
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>

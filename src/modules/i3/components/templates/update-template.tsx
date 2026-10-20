@@ -51,7 +51,7 @@ export function I3Module_UpdateTemplate_Dialog({ template }: { template: I3Templ
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Update template">
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>

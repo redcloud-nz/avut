@@ -119,7 +119,7 @@ export function SkillPackageBuilder_CreatePackage_Dialog() {
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">New</span>
+                    <CreateNewIcon /> <span className="sr-only md:not-sr-only">New</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>

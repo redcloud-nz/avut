@@ -229,7 +229,13 @@ function SortableGroup({
             )}
             data-dragging={isDragging}
         >
-            <Button variant="ghost" size="icon" className="cursor-move" ref={handleRef}>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="cursor-move"
+                aria-label={`Drag to reorder ${group.name}`}
+                ref={handleRef}
+            >
                 <GripVerticalIcon />
             </Button>
 
@@ -239,6 +245,7 @@ function SortableGroup({
                 <Button
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Move ${group.name} up`}
                     disabled={index === 0}
                     onClick={() => onSwap(index, index - 1)}
                 >
@@ -247,6 +254,7 @@ function SortableGroup({
                 <Button
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Move ${group.name} down`}
                     disabled={isLast}
                     onClick={() => onSwap(index, index + 1)}
                 >

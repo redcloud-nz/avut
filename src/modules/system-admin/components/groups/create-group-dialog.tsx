@@ -101,7 +101,7 @@ export function SystemAdmin_CreateGroup_Dialog() {
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">Create Group</span>
+                    <CreateNewIcon /> <span className="sr-only md:not-sr-only">Create Group</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>
