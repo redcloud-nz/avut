@@ -144,8 +144,8 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Create a new AVUT team from a D4H team, link it, and run the first membership
-     * sync — all in one operation batch. `name` defaults to the D4H team title.
+     * Create a new AVUT team from a D4H team and link it, in one operation batch. It imports
+     * nobody: the first sync is previewed like any other. `name` defaults to the D4H team title.
      */
     createTeamFromD4H: organizationProcedure({ team: ["create"] })
         .input(z.object({ d4hTeamId: z.number(), name: z.string().optional() }))
@@ -185,7 +185,7 @@ export const teamsRouter = createTrpcRouter({
                     operationKey: "d4h-team-link",
                     userId: ctx.userId,
                     actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                    description: `Created team "${name}" from D4H and synced its members`,
+                    description: `Created team "${name}" from D4H`,
                 },
                 ctx.prisma,
             );
@@ -193,7 +193,7 @@ export const teamsRouter = createTrpcRouter({
             await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
             const teamId = TeamId.create();
-            const [team] = await ctx.prisma.$transaction([
+            await ctx.prisma.$transaction([
                 ctx.prisma.team.create({
                     data: {
                         id: teamId,
@@ -212,7 +212,6 @@ export const teamsRouter = createTrpcRouter({
                             },
                         },
                     },
-                    include: { d4h: true },
                 }),
                 ctx.logEvent({
                     action: "Create",
@@ -225,14 +224,6 @@ export const teamsRouter = createTrpcRouter({
                     batchId: batch.id,
                 }),
             ]);
-
-            // A team created just now has no other sync running, so this never returns
-            // `in-progress`.
-            await D4HTeamSync.syncImmediately(ctx, {
-                teamD4H: team.d4h!,
-                token: resolved.token,
-                batchId: batch.id,
-            });
 
             const created = await Teams.requireById(ctx, teamId);
             return { created };
@@ -488,24 +479,13 @@ export const teamsRouter = createTrpcRouter({
         }),
 
     /**
-     * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level
-     * D4H link and running the first membership sync. See docs/specs/2026-09-10-d4h-linking.md §6.1.
-     * Returns `in-progress` instead of the sync's result when another sync of the team was still
-     * running (an unlink and relink within the stale window): the link stands, and the user syncs
-     * again shortly.
+     * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level D4H link. It
+     * imports nobody: the first sync is previewed and applied through `createD4HTeamSyncPlan` and
+     * `executeD4HTeamSyncPlan` like any other. See docs/specs/2026-09-10-d4h-linking.md §6.1.
      */
     linkTeamToD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema, d4hTeamId: z.number() }))
-        .output(
-            z.discriminatedUnion("status", [
-                z.object({ status: z.literal("in-progress") }),
-                z.object({
-                    status: z.literal("synced"),
-                    plan: D4HSyncPlan.schema,
-                    outcomes: z.array(D4HSyncItemOutcome.schema),
-                }),
-            ]),
-        )
+        .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { organizationId, teamId, d4hTeamId } }) => {
             const team = await ctx.prisma.team.findUnique({
                 where: { id: teamId, organizationId },
@@ -560,14 +540,14 @@ export const teamsRouter = createTrpcRouter({
                     operationKey: "d4h-team-link",
                     userId: ctx.userId,
                     actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                    description: `Linked team "${team.name}" to D4H and synced its members`,
+                    description: `Linked team "${team.name}" to D4H`,
                 },
                 ctx.prisma,
             );
 
             await D4HTeamSync.upsertOrganizationD4H(ctx, { action, resolved, batchId: batch.id });
 
-            const [teamD4H] = await ctx.prisma.$transaction([
+            await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.create({
                     data: {
                         teamId,
@@ -587,11 +567,7 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            return D4HTeamSync.syncImmediately(ctx, {
-                teamD4H,
-                token: resolved.token,
-                batchId: batch.id,
-            });
+            return { updated: await Teams.requireById(ctx, teamId) };
         }),
 
     /**

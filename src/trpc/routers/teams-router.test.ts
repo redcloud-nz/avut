@@ -481,62 +481,40 @@ describe("teamsRouter link and create from D4H", () => {
         return { db, T, caller };
     }
 
-    async function expectGraceImported(db: ReturnType<typeof createMockPrisma>, teamId: string) {
-        const grace = await db.person.findFirstOrThrow({ where: { email: "grace@example.com" } });
-        const membership = await db.teamMembership.findFirstOrThrow({
-            where: { teamId, personId: grace.id },
-            include: { d4h: true },
+    /** The link created nobody and no plan, and wrote the Team entry under a `d4h-team-link` batch. */
+    async function expectLinkedWithoutImport(
+        db: ReturnType<typeof createMockPrisma>,
+        teamId: string,
+        action: "Create" | "Update",
+    ) {
+        const link = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
+        expect(link.d4hTeamId).toBe(4242);
+        expect(await db.person.findFirst({ where: { email: "grace@example.com" } })).toBeNull();
+        expect(await db.teamMembership.count({ where: { teamId } })).toBe(0);
+        expect(await db.batchUpdatePlan.count({ where: { targetId: teamId } })).toBe(0);
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: teamId },
         });
-        expect(membership.d4h?.d4hMemberId).toBe(501);
-        const plan = await db.batchUpdatePlan.findFirstOrThrow({ where: { targetId: teamId } });
-        expect(plan.status).toBe("Completed");
-        const batch = await db.logBatch.findUniqueOrThrow({ where: { id: plan.logBatchId! } });
+        expect(entries.map((e) => e.action)).toEqual([action]);
+        const batch = await db.logBatch.findUniqueOrThrow({ where: { id: entries[0].batchId! } });
         expect(batch.operationKey).toBe("d4h-team-link");
     }
 
-    it("linkTeamToD4H imports the D4H members and returns the outcomes", async () => {
+    it("linkTeamToD4H links the team and imports nobody", async () => {
         const { db, T, caller } = await seed();
 
-        const result = await caller.linkTeamToD4H({
+        const { updated } = await caller.linkTeamToD4H({
             organizationId: T.org,
             teamId: T.team,
             d4hTeamId: 4242,
         });
 
-        if (result.status !== "synced") throw new Error("expected a sync");
-        expect(result.plan.counts).toMatchObject({ additions: 1, skipped: 0 });
-        expect(result.outcomes).toContainEqual({ itemId: "add:501", result: "applied" });
-        await expectGraceImported(db, T.team);
+        expect(updated.d4h?.d4hTeamId).toBe(4242);
+        await expectLinkedWithoutImport(db, T.team, "Update");
     });
 
-    it("linkTeamToD4H links and reports in-progress, not CONFLICT, while an old sync still runs", async () => {
-        const { db, T, caller } = await seed();
-        // A run from before an unlink, still executing.
-        await db.batchUpdatePlan.create({
-            data: {
-                id: BatchUpdatePlanId.create(),
-                organizationId: T.org,
-                kind: "d4h-team-sync",
-                targetType: "Team",
-                targetId: T.team,
-                status: "Executing",
-                executionStartedAt: new Date(),
-                payload: {},
-            },
-        });
-
-        const result = await caller.linkTeamToD4H({
-            organizationId: T.org,
-            teamId: T.team,
-            d4hTeamId: 4242,
-        });
-
-        expect(result).toEqual({ status: "in-progress" });
-        expect(await db.team_D4H.findUnique({ where: { teamId: T.team } })).not.toBeNull();
-        expect(await db.person.findFirst({ where: { email: "grace@example.com" } })).toBeNull();
-    });
-
-    it("createTeamFromD4H imports the D4H members", async () => {
+    it("createTeamFromD4H creates the linked team and imports nobody", async () => {
         const { db, T, caller } = await seed();
 
         const { created } = await caller.createTeamFromD4H({
@@ -545,7 +523,7 @@ describe("teamsRouter link and create from D4H", () => {
         });
 
         expect(created.d4h?.d4hTeamId).toBe(4242);
-        await expectGraceImported(db, created.id);
+        await expectLinkedWithoutImport(db, created.id, "Create");
     });
 });
 

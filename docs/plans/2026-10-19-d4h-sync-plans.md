@@ -256,7 +256,7 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
 
 ### Review group 5: preview the first sync (added at ship, 2026-10-20)
 
-- [ ] **10. Link and create-from-D4H open the sync preview instead of importing straight away** `visual`
+- [x] **10. Link and create-from-D4H open the sync preview instead of importing straight away** — feat(d4h): preview the first sync after linking a team `visual`
   - **Why:** asked by the user at ship time. The first import should go through the same review-and-skip dialog as any other sync. This matters most for linking an existing team, where manual memberships are taken over.
   - **Files:** `src/trpc/routers/teams-router.ts`, `src/trpc/routers/teams-router.test.ts`, `src/server/services/d4h-team-sync.ts`, `src/server/services/d4h-team-sync.test.ts`, `src/client/teams-effects.ts`, `src/modules/org-admin/components/teams/d4h-link-card.tsx`, `src/modules/org-admin/components/teams/import-team-from-d4h.tsx`, `docs/specs/2026-09-10-d4h-linking.md`, `content/help/admin/teams.mdx`.
   - **Do:**

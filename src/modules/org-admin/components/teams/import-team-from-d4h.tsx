@@ -54,14 +54,14 @@ export function AdminModule_Teams_ImportTeamFromD4H_Dialog(props: DialogProps) {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBoundary>
-                    <ImportTeamFromD4H_Body onDone={() => props.onOpenChange?.(false)} />
+                    <ImportTeamFromD4H_Body />
                 </DialogBoundary>
             </DialogContent>
         </Dialog>
     );
 }
 
-function ImportTeamFromD4H_Body({ onDone }: { onDone: () => void }) {
+function ImportTeamFromD4H_Body() {
     const organization = useOrganization();
     const router = useRouter();
 
@@ -106,13 +106,13 @@ function ImportTeamFromD4H_Body({ onDone }: { onDone: () => void }) {
                 }
             },
             onSuccess({ created }) {
-                onDone();
-
+                // The navigation is the whole close (no `onDone()`, whose param clear would race
+                // it). Creating imports nobody, so the new team opens on its sync preview.
                 router.push(
-                    route("/orgs/[slug]/admin/teams/[team_id]", {
+                    `${route("/orgs/[slug]/admin/teams/[team_id]", {
                         slug: organization.slug,
                         team_id: created.id,
-                    }),
+                    })}?action=d4h-sync`,
                 );
             },
         }),

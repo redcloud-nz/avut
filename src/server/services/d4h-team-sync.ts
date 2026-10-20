@@ -972,11 +972,14 @@ const ORG_FIELD_KEYS = {
 /**
  * Each part's write repeats its `before` values in its `where`, so a field edited between the
  * check and the write makes that part's update match nothing: it then writes and logs nothing,
- * and reports its fields as changed. Both parts share one transaction.
+ * and reports its fields as changed. The team part's `where` also names the plan's D4H team, so a
+ * team relinked mid-run doesn't take the old D4H team's metadata. Both parts share one
+ * transaction.
  */
 async function executeMetadata(
     ctx: OrgServiceContext,
     teamId: string,
+    d4hTeamId: number,
     item: D4HSyncMetadataItem,
 ): Promise<ItemResult> {
     const [teamRow, orgRow] = await Promise.all([
@@ -1002,7 +1005,7 @@ async function executeMetadata(
                   const lostFields: string[] = [];
                   if (teamWrites) {
                       const { count } = await tx.team_D4H.updateMany({
-                          where: { teamId, ...team.writeBefore },
+                          where: { teamId, d4hTeamId, ...team.writeBefore },
                           data: team.write,
                       });
                       if (count > 0) {
@@ -1053,7 +1056,7 @@ async function executeMetadata(
     return skippedFields.length > 0 ? { result: "applied", skippedFields } : applied;
 }
 
-function executeItem(ctx: OrgServiceContext, teamId: string, item: D4HSyncItem) {
+function executeItem(ctx: OrgServiceContext, teamId: string, d4hTeamId: number, item: D4HSyncItem) {
     switch (item.kind) {
         case "add":
             return executeAdd(ctx, teamId, item);
@@ -1066,7 +1069,7 @@ function executeItem(ctx: OrgServiceContext, teamId: string, item: D4HSyncItem) 
         case "archive":
             return executeArchive(ctx, teamId, item);
         case "metadata":
-            return executeMetadata(ctx, teamId, item);
+            return executeMetadata(ctx, teamId, d4hTeamId, item);
     }
 }
 
@@ -1151,7 +1154,7 @@ export async function executeD4HSyncPlan(
         for (const item of items) {
             const result: ItemResult = skip.has(item.itemId)
                 ? { result: "skipped-by-user" }
-                : await executeItem(ctxBatch, teamId, item);
+                : await executeItem(ctxBatch, teamId, payload.d4hTeamId, item);
             outcomes.push({ itemId: item.itemId, ...result });
         }
 
@@ -1237,7 +1240,7 @@ export async function executeD4HSyncPlan(
 }
 
 //
-// Creating a persisted plan, and the link flow's immediate sync.
+// Creating a persisted plan.
 // See docs/plans/2026-10-19-d4h-sync-plans.md, "Router, flows and UI".
 //
 
@@ -1370,37 +1373,4 @@ export async function createD4HSyncPlan(
     const plan = buildD4HSyncPlan(await fetchD4HSyncPlanInput(ctx, args));
     const row = await BatchUpdatePlans.create(ctx, { ...target, payload: plan });
     return { status: "ready", planId: BatchUpdatePlanId.schema.parse(row.id), plan };
-}
-
-export type SyncImmediatelyResult =
-    | { status: "in-progress" }
-    | { status: "synced"; plan: D4HSyncPlan; outcomes: D4HSyncItemOutcome[] };
-
-/**
- * Plan and execute straight away with nothing skipped: the first sync of a link or a
- * create-from-D4H, in the caller's `LogBatch`. Returns the executed plan, whose `skipped` the link
- * toast reads, with each item's outcome.
- *
- * Returns `in-progress`, syncing nothing, while another sync of the team is running (an unlink and
- * relink while an old run is still executing): the caller's link has already committed by then, so
- * it reports the link and asks for a sync later rather than failing.
- */
-export async function syncImmediately(
-    ctx: OrgServiceContext,
-    args: { teamD4H: TeamD4HRecord; token: D4HAccessToken_ServerOnly; batchId: string },
-): Promise<SyncImmediatelyResult> {
-    const created = await createD4HSyncPlan(ctx, { teamD4H: args.teamD4H, token: args.token });
-    if (created.status === "in-progress") return created;
-    try {
-        const { outcomes } = await executeD4HSyncPlan(ctx, {
-            planId: created.planId,
-            skipItemIds: [],
-            openBatch: async () => args.batchId,
-        });
-        return { status: "synced", plan: created.plan, outcomes };
-    } catch (e) {
-        // Another sync claimed the team between creating this plan and claiming it.
-        if (e instanceof BatchUpdatePlans.PlanAlreadyRunningError) return { status: "in-progress" };
-        throw e;
-    }
 }

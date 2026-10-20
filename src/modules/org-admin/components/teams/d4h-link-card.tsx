@@ -138,6 +138,9 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
                 team={team}
                 open={action === "d4h-link"}
                 onClose={() => void setAction(null, { history: "replace" })}
+                // The link imports nobody: the sync preview takes over, in place of the link
+                // dialog's history entry, so Back closes it rather than reopening the link dialog.
+                onLinked={() => void setAction("d4h-sync", { history: "replace" })}
             />
             <SyncDialog
                 team={team}
@@ -210,10 +213,12 @@ function LinkDialog({
     team,
     open,
     onClose,
+    onLinked,
 }: {
     team: TeamData;
     open: boolean;
     onClose: () => void;
+    onLinked: () => void;
 }) {
     return (
         <Dialog open={open} onOpenChange={(o) => (o ? undefined : onClose())}>
@@ -221,22 +226,22 @@ function LinkDialog({
                 <DialogHeader>
                     <DialogTitle>Link {team.name} to D4H</DialogTitle>
                     <DialogDescription>
-                        Choose a D4H team visible to your personal access token. Its members will be
-                        imported and kept in sync on demand. Syncing always uses the token of
-                        whoever runs it.
+                        Choose a D4H team visible to your personal access token. Next you&apos;ll
+                        preview its members before any are imported, and after that sync on demand.
+                        Syncing always uses the token of whoever runs it.
                     </DialogDescription>
                 </DialogHeader>
                 {/* Mounted only while open, so the D4H team list loads (and its errors, such as no
                     personal token, show) only once the dialog opens. */}
                 <DialogBoundary>
-                    <LinkDialog_Body team={team} onClose={onClose} />
+                    <LinkDialog_Body team={team} onLinked={onLinked} />
                 </DialogBoundary>
             </DialogContent>
         </Dialog>
     );
 }
 
-function LinkDialog_Body({ team, onClose }: { team: TeamData; onClose: () => void }) {
+function LinkDialog_Body({ team, onLinked }: { team: TeamData; onLinked: () => void }) {
     const organization = useOrganization();
     const [d4hTeamId, setD4hTeamId] = useState<number | null>(null);
 
@@ -248,23 +253,9 @@ function LinkDialog_Body({ team, onClose }: { team: TeamData; onClose: () => voi
         trpc.teams.linkTeamToD4H.mutationOptions({
             meta: { effects: teamsEffects.linkTeamToD4H },
             onError: (error) => toast.error(error.message),
-            onSuccess: (result) => {
-                if (result.status === "in-progress") {
-                    toast.success("Linked to D4H; a sync is already running — sync again shortly");
-                } else {
-                    // Count what the sync did, not what it planned: an add can be skipped as
-                    // changed at execute time.
-                    const adds = new Set(
-                        result.plan.items.filter((i) => i.kind === "add").map((i) => i.itemId),
-                    );
-                    const imported = result.outcomes.filter(
-                        (o) => o.result === "applied" && adds.has(o.itemId),
-                    ).length;
-                    toast.success(
-                        `Linked to D4H — ${imported} member(s) imported${describeSkipped(result.plan)}`,
-                    );
-                }
-                onClose();
+            onSuccess: () => {
+                toast.success("Linked to D4H");
+                onLinked();
             },
         }),
     );
@@ -294,7 +285,7 @@ function LinkDialog_Body({ team, onClose }: { team: TeamData; onClose: () => voi
                 <MutationButton
                     status={mutation.status}
                     disabled={d4hTeamId == null}
-                    text={{ idle: "Link & sync", pending: "Linking…", success: "Linked" }}
+                    text={{ idle: "Link", pending: "Linking…", success: "Linked" }}
                     onClick={() =>
                         d4hTeamId != null &&
                         mutation.mutate({
@@ -529,25 +520,6 @@ function SyncDialog({
 
 /** How often the sync dialog creates a plan again while another sync of the team runs. */
 const POLL_INTERVAL_MS = 3_000;
-
-/** How the link toast names each reason a D4H member wasn't imported. */
-const SKIP_REASON_LABELS: Record<D4HSyncSkipReason, string> = {
-    "missing-email": "no email",
-    "person-in-rubbish-bin": "person in the Rubbish bin",
-    "duplicate-email": "email shared by several D4H members",
-    "membership-in-rubbish-bin": "membership in the Rubbish bin",
-    "linked-to-another-member": "person linked to another D4H member",
-};
-
-/** The link toast's skipped suffix, e.g. `, 3 skipped (2 no email, 1 person in the Rubbish bin)`. */
-function describeSkipped(plan: D4HSyncPlan): string {
-    if (plan.skipped.length === 0) return "";
-    const parts = (Object.keys(SKIP_REASON_LABELS) as D4HSyncSkipReason[]).flatMap((reason) => {
-        const count = plan.skipped.filter((s) => s.reason === reason).length;
-        return count === 0 ? [] : [`${count} ${SKIP_REASON_LABELS[reason]}`];
-    });
-    return `, ${plan.skipped.length} skipped (${parts.join(", ")})`;
-}
 
 /** The sync dialog's item groups, in the order shown (the execution order). */
 const ITEM_GROUP_TITLES: Record<D4HSyncItem["kind"], string> = {
