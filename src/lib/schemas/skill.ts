@@ -33,8 +33,8 @@ const skillSchema = z.object({
     properties: propertiesSchema,
     sequence: z.number().int().nonnegative(),
     frequency: z
-        .number({ error: "Enter a number of months." })
-        .int("Enter a whole number of months.")
+        .number({ error: "Enter a number of months" })
+        .int("Enter a whole number of months")
         .nonnegative()
         .default(12),
     defaultInclude: z.boolean().default(true),

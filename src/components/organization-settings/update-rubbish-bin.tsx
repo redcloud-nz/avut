@@ -32,6 +32,7 @@ import {
     InputGroupInput,
     InputGroupText,
 } from "@/components/ui/input-group";
+import { numberInputProps } from "@/lib/number-input";
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
     OrganizationSettings,
@@ -41,9 +42,8 @@ import {
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
 
 /**
- * The settings schema's bounds, with messages a person can act on — the shared schema's default
- * for a cleared input is Zod's "expected number, received NaN", and `.int()` would otherwise only
- * ever see whole numbers.
+ * The settings schema's bounds, with messages that name the unit ("…days") rather than the
+ * generic ones from `@/lib/zod-error-map`.
  */
 const retentionFormSchema = z.object({
     retentionDays: z
@@ -141,16 +141,7 @@ export function OrganizationSettings_UpdateRubbishBin_Dialog({
                                             <InputGroupInput
                                                 id="rubbish-bin-retention-days"
                                                 type="number"
-                                                // A cleared input holds NaN; show it as empty
-                                                // rather than passing NaN to the DOM.
-                                                value={Number.isNaN(field.value) ? "" : field.value}
-                                                onChange={(ev) =>
-                                                    field.onChange(
-                                                        ev.currentTarget.value === ""
-                                                            ? NaN
-                                                            : Number(ev.currentTarget.value),
-                                                    )
-                                                }
+                                                {...numberInputProps(field)}
                                                 aria-invalid={fieldState.invalid}
                                             />
                                             <InputGroupAddon align="inline-end">
