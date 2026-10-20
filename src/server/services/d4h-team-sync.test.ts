@@ -1688,6 +1688,42 @@ describe("executeD4HSyncPlan", () => {
             expect(plan.status).toBe("Pending");
         });
 
+        it("fails before any item runs when the team is unlinked between the guards and the claim", async () => {
+            const teamId = await seedTeam();
+            const planId = await seedPlan(teamId, [addItem(91, "unlinked-mid-claim@x.com")]);
+
+            // An unlink lands as the claim commits: after the guards read the link, before the
+            // executor's post-claim check.
+            const originalUpdateMany = db.batchUpdatePlan.updateMany.bind(
+                db.batchUpdatePlan,
+            ) as unknown as (args: { data: { status?: string } }) => Promise<unknown>;
+            const claimSpy = vi.spyOn(db.batchUpdatePlan, "updateMany").mockImplementation(((args: {
+                data: { status?: string };
+            }) =>
+                (async () => {
+                    const result = await originalUpdateMany(args);
+                    if (args.data.status === "Executing") {
+                        await db.team_D4H.delete({ where: { teamId } });
+                    }
+                    return result;
+                })()) as never);
+            const openBatch = vi.fn(async () => "unused");
+            try {
+                await expect(
+                    executeD4HSyncPlan(makeCtx(), { planId, skipItemIds: [], openBatch }),
+                ).rejects.toThrow(/link changed before this sync could start/);
+            } finally {
+                claimSpy.mockRestore();
+            }
+
+            expect(openBatch).not.toHaveBeenCalled();
+            const plan = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
+            expect(plan).toMatchObject({ status: "Failed", outcomes: [], logBatchId: null });
+            expect(
+                await db.person.findFirst({ where: { email: "unlinked-mid-claim@x.com" } }),
+            ).toBeNull();
+        });
+
         it("fails, marking nothing synced, when the team is relinked while items run", async () => {
             const teamId = await seedTeam();
             const personId = await seedPerson("relinked-mid-run@x.com");

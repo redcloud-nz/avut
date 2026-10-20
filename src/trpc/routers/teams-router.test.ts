@@ -429,6 +429,24 @@ describe("teamsRouter D4H sync plans", () => {
         ).rejects.toMatchObject({ code: "CONFLICT" });
     });
 
+    it("a refused unlink has still superseded the pending plans, so none can start after it", async () => {
+        const { db, T, caller, createPlan } = await seed();
+        const { planId: running } = await createPlan();
+        const { planId: pending } = await createPlan();
+        await db.batchUpdatePlan.update({
+            where: { id: running },
+            data: { status: "Executing", executionStartedAt: new Date() },
+        });
+
+        await expect(
+            caller.unlinkTeamFromD4H({ organizationId: T.org, teamId: T.team }),
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+
+        expect(await db.team_D4H.findUnique({ where: { teamId: T.team } })).not.toBeNull();
+        const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: pending } });
+        expect(row.status).toBe("Superseded");
+    });
+
     it.each([
         ["stale", { executionStartedAt: new Date(Date.now() - EXECUTION_STALE_MS - 1000) }],
         ["finished", { status: "Completed" as const }],

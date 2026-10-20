@@ -1087,9 +1087,9 @@ function executeItem(ctx: OrgServiceContext, teamId: string, d4hTeamId: number, 
  * On success the plan is `Completed`, and `Team_D4H.lastSyncedAt` (and `Organization_D4H`'s, for
  * an org-bearing team, unless it's already later) is set to the plan's `createdAt`, the time of
  * the snapshot. When the metadata item wrote no fields, a Team entry records the sync, so the
- * batch is never empty. If an item throws, or the team's link to the plan's D4H team is gone by
- * the end, the plan is `Failed` with the outcomes so far, `lastSyncedAt` is left alone, and the
- * error is rethrown.
+ * batch is never empty. If an item throws, or the team's link to the plan's D4H team is gone
+ * straight after the claim (before any item runs or a batch opens) or by the end, the plan is
+ * `Failed` with the outcomes so far, `lastSyncedAt` is left alone, and the error is rethrown.
  *
  * @throws NotFoundError if the plan does not exist within the organization.
  * @throws PlanAlreadyRunningError if another sync of the team is running.
@@ -1144,6 +1144,19 @@ export async function executeD4HSyncPlan(
     let batchId: string | null = null;
 
     try {
+        // An unlink may have deleted the link between the guards and the claim (it refuses only
+        // while a run is already `Executing`). Check again now this plan is claimed, before any
+        // item writes D4H-managed rows, and before a batch is opened.
+        const claimedLink = await ctx.prisma.team_D4H.findUnique({
+            where: { teamId },
+            select: { d4hTeamId: true },
+        });
+        if (claimedLink?.d4hTeamId !== stored.data.d4hTeamId) {
+            throw new ConflictError(
+                "The team's D4H link changed before this sync could start. Refresh the preview and try again.",
+            );
+        }
+
         batchId = await args.openBatch({ id: teamId, name: team.name });
         const ctxBatch = withBatch(ctx, batchId);
         const payload = D4HSyncPlan.schema.parse(row.payload);

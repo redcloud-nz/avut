@@ -718,10 +718,14 @@ export const teamsRouter = createTrpcRouter({
     /**
      * Unlink a team from D4H. `TeamMembership_D4H` rows cascade away; the
      * `TeamMembership` rows stay (they become manually-managed). In org-less mode
-     * this also removes the org-level link. Supersedes the team's pending D4H sync plans, so a
-     * preview left open can't be applied afterwards. Refused while a sync of the team is running,
-     * so a run can't go on writing to a link that's gone. See docs/specs/2026-09-10-d4h-linking.md
-     * §6.3.
+     * this also removes the org-level link. See docs/specs/2026-09-10-d4h-linking.md §6.3.
+     *
+     * Supersedes the team's pending D4H sync plans first, so a preview left open can't be claimed
+     * once the running-sync check has looked, then refuses while a sync of the team is running.
+     * Without row locks this narrows the race with a sync rather than closing it: a plan created
+     * and claimed in the milliseconds between that check and the delete could still start, and
+     * the executor's own re-check of the link after claiming catches all but a delete landing
+     * while its items are already running.
      * @throws ConflictError if a sync of the team is running.
      */
     unlinkTeamFromD4H: organizationProcedure({ team: ["update"] })
@@ -743,6 +747,10 @@ export const teamsRouter = createTrpcRouter({
                 targetType: "Team",
                 targetId: teamId,
             };
+            // Supersede before checking: a plan still `Pending` after the check could otherwise
+            // be claimed between the check and the delete. Superseding is harmless if the unlink
+            // is then refused; the dialog creates a fresh plan on its next open.
+            await BatchUpdatePlans.supersedePending(ctx, syncTarget);
             if (await BatchUpdatePlans.findExecuting(ctx, syncTarget, new Date())) {
                 throw new ConflictError(
                     "A sync of this team is running. Try again once it finishes.",
@@ -756,6 +764,7 @@ export const teamsRouter = createTrpcRouter({
 
             await ctx.prisma.$transaction([
                 ctx.prisma.team_D4H.delete({ where: { teamId } }),
+                // Again, for a plan created since the first supersede.
                 BatchUpdatePlans.supersedePending(ctx, syncTarget),
                 ...(orgLessMode
                     ? [ctx.prisma.organization_D4H.delete({ where: { organizationId } })]
