@@ -268,7 +268,9 @@ The sync dialog changes: rows can be skipped, there's a result summary after App
 
 ## Parked
 
-(none yet)
+- #427 Team page: `Date.now()` during prerender warning (on `integration` already)
+- #428 D4H sync result: show field labels for skipped metadata fields
+- #429 Tests: prisma-mock's array `$transaction` doesn't roll back
 
 ## Review notes — fixed in fix(d4h): address the D4H sync plans review notes
 
