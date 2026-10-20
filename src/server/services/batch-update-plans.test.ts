@@ -157,7 +157,7 @@ describe("batch-update-plans", () => {
             const id = await seedPlan(target, { status: "Superseded" });
 
             await expect(BatchUpdatePlans.claim(makeCtx(), id, NOW)).rejects.toThrow(
-                new ConflictError("A sync of this team is already running"),
+                new BatchUpdatePlans.PlanAlreadyRunningError(),
             );
         });
 
@@ -166,7 +166,7 @@ describe("batch-update-plans", () => {
             await BatchUpdatePlans.claim(makeCtx(), id, NOW);
 
             await expect(BatchUpdatePlans.claim(makeCtx(), id, NOW)).rejects.toThrow(
-                new ConflictError("A sync of this team is already running"),
+                new BatchUpdatePlans.PlanAlreadyRunningError(),
             );
         });
 
@@ -199,7 +199,7 @@ describe("batch-update-plans", () => {
 
             // `claimRow` succeeds (the running plan doesn't stop it); `checkContention` backs off.
             await expect(BatchUpdatePlans.claim(makeCtx(), id, NOW)).rejects.toThrow(
-                new ConflictError("A sync of this team is already running"),
+                new BatchUpdatePlans.PlanAlreadyRunningError(),
             );
             expect(await statusOf(id)).toBe("Superseded");
             expect(await statusOf(sibling)).toBe("Pending");
@@ -216,7 +216,7 @@ describe("batch-update-plans", () => {
 
             // A checks first and sees B executing, so A backs off; B then sees no rival.
             await expect(BatchUpdatePlans.checkContention(ctx, rowA, NOW)).rejects.toThrow(
-                new ConflictError("A sync of this team is already running"),
+                new BatchUpdatePlans.PlanAlreadyRunningError(),
             );
             await expect(BatchUpdatePlans.checkContention(ctx, rowB, NOW)).resolves.toBeUndefined();
 
@@ -300,11 +300,16 @@ describe("batch-update-plans", () => {
                 executionStartedAt: minutesAgo(1),
             });
 
-            const updated = await BatchUpdatePlans.finish(makeCtx(), id, {
-                status: "Completed",
-                outcomes: [{ itemId: "add:1", result: "applied" }],
-                logBatchId: "batch-1",
-            });
+            const updated = await BatchUpdatePlans.finish(
+                makeCtx(),
+                id,
+                {
+                    status: "Completed",
+                    outcomes: [{ itemId: "add:1", result: "applied" }],
+                    logBatchId: "batch-1",
+                },
+                NOW,
+            );
 
             expect(updated).toBe(true);
             const plan = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id } });
@@ -312,17 +317,19 @@ describe("batch-update-plans", () => {
                 status: "Completed",
                 outcomes: [{ itemId: "add:1", result: "applied" }],
                 logBatchId: "batch-1",
+                completedAt: NOW,
             });
-            expect(plan.completedAt).not.toBeNull();
         });
 
         it("is a no-op once cleanup has marked the plan failed", async () => {
             const id = await seedPlan(newTarget(), { status: "Failed" });
 
-            const updated = await BatchUpdatePlans.finish(makeCtx(), id, {
-                status: "Completed",
-                outcomes: [],
-            });
+            const updated = await BatchUpdatePlans.finish(
+                makeCtx(),
+                id,
+                { status: "Completed", outcomes: [] },
+                NOW,
+            );
 
             expect(updated).toBe(false);
             expect(await statusOf(id)).toBe("Failed");
@@ -336,7 +343,12 @@ describe("batch-update-plans", () => {
             });
 
             expect(
-                await BatchUpdatePlans.finish(makeCtx(), id, { status: "Completed", outcomes: [] }),
+                await BatchUpdatePlans.finish(
+                    makeCtx(),
+                    id,
+                    { status: "Completed", outcomes: [] },
+                    NOW,
+                ),
             ).toBe(false);
             expect(await statusOf(id)).toBe("Executing");
         });

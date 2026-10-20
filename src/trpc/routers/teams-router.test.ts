@@ -350,14 +350,16 @@ describe("teamsRouter D4H sync plans", () => {
         expect(row.status).toBe("Pending");
     });
 
-    it("gives CONFLICT executing the same plan twice", async () => {
-        const { T, caller, createPlan } = await seed();
+    it("gives CONFLICT executing the same plan twice, opening no batch for the refused run", async () => {
+        const { db, T, caller, createPlan } = await seed();
         const { planId } = await createPlan();
 
         await caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] });
+        const batches = await db.logBatch.count();
         await expect(
             caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] }),
         ).rejects.toMatchObject({ code: "CONFLICT" });
+        expect(await db.logBatch.count()).toBe(batches);
     });
 
     it("gives CONFLICT executing a plan whose team was archived since, and writes nothing", async () => {
@@ -464,17 +466,46 @@ describe("teamsRouter link and create from D4H", () => {
         expect(batch.operationKey).toBe("d4h-team-link");
     }
 
-    it("linkTeamToD4H imports the D4H members and returns the plan's counts", async () => {
+    it("linkTeamToD4H imports the D4H members and returns the outcomes", async () => {
         const { db, T, caller } = await seed();
 
-        const { plan } = await caller.linkTeamToD4H({
+        const result = await caller.linkTeamToD4H({
             organizationId: T.org,
             teamId: T.team,
             d4hTeamId: 4242,
         });
 
-        expect(plan.counts).toMatchObject({ additions: 1, skipped: 0 });
+        if (result.status !== "synced") throw new Error("expected a sync");
+        expect(result.plan.counts).toMatchObject({ additions: 1, skipped: 0 });
+        expect(result.outcomes).toContainEqual({ itemId: "add:501", result: "applied" });
         await expectGraceImported(db, T.team);
+    });
+
+    it("linkTeamToD4H links and reports in-progress, not CONFLICT, while an old sync still runs", async () => {
+        const { db, T, caller } = await seed();
+        // A run from before an unlink, still executing.
+        await db.batchUpdatePlan.create({
+            data: {
+                id: BatchUpdatePlanId.create(),
+                organizationId: T.org,
+                kind: "d4h-team-sync",
+                targetType: "Team",
+                targetId: T.team,
+                status: "Executing",
+                executionStartedAt: new Date(),
+                payload: {},
+            },
+        });
+
+        const result = await caller.linkTeamToD4H({
+            organizationId: T.org,
+            teamId: T.team,
+            d4hTeamId: 4242,
+        });
+
+        expect(result).toEqual({ status: "in-progress" });
+        expect(await db.team_D4H.findUnique({ where: { teamId: T.team } })).not.toBeNull();
+        expect(await db.person.findFirst({ where: { email: "grace@example.com" } })).toBeNull();
     });
 
     it("createTeamFromD4H imports the D4H members", async () => {

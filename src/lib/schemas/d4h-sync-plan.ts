@@ -210,18 +210,46 @@ export type D4HSyncItem = z.infer<typeof d4hSyncItemSchema>;
 export type D4HSyncItemDraft = z.input<typeof d4hSyncItemSchema>;
 export type D4HSyncSkipReason = z.infer<typeof d4hSyncSkipReasonSchema>;
 
+/**
+ * Why the executor found a `skipped-changed` item no longer applied:
+ * - `already-linked`: another membership on the team is already linked to the D4H member.
+ * - `person-in-rubbish-bin`: the person with the email is in the Rubbish bin.
+ * - `membership-in-rubbish-bin`: the team membership is in the Rubbish bin.
+ * - `linked-to-another-member`: the person's membership is linked to a different D4H member.
+ * - `membership-missing`: the team membership no longer exists.
+ * - `d4h-member-changed`: the membership is now linked to a different D4H member than planned.
+ * - `details-changed`: the stored D4H details no longer equal the plan's `before`.
+ * - `not-archived` / `not-active`: the membership's status moved under the plan.
+ * - `fields-changed`: every metadata field the plan changes was edited under it.
+ */
+const d4hSyncChangedReasonSchema = z.enum([
+    "already-linked",
+    "person-in-rubbish-bin",
+    "membership-in-rubbish-bin",
+    "linked-to-another-member",
+    "membership-missing",
+    "d4h-member-changed",
+    "details-changed",
+    "not-archived",
+    "not-active",
+    "fields-changed",
+]);
+
+export type D4HSyncChangedReason = z.infer<typeof d4hSyncChangedReasonSchema>;
+
 /** The outcome of executing one plan item, stored in the plan row's `outcomes`. */
 const d4hSyncItemOutcomeSchema = z.object({
     itemId: z.string(),
     result: z.enum(["applied", "skipped-by-user", "skipped-changed"]),
-    /** Why a `skipped-changed` item no longer applied, e.g. `already-linked`. */
-    reason: z.string().optional(),
+    /** Why a `skipped-changed` item no longer applied. */
+    reason: d4hSyncChangedReasonSchema.optional(),
     /** Metadata fields left alone because they changed under the plan. */
     skippedFields: z.array(z.string()).optional(),
 });
 
 export const D4HSyncItemOutcome = {
     schema: d4hSyncItemOutcomeSchema,
+    reasonSchema: d4hSyncChangedReasonSchema,
 } as const;
 
 export type D4HSyncItemOutcome = z.infer<typeof d4hSyncItemOutcomeSchema>;

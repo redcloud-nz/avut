@@ -18,6 +18,7 @@ import {
     D4HSyncItemOutcome,
     D4HSyncPlan,
     D4HSyncSkipReason,
+    type D4HSyncChangedReason,
 } from "@/lib/schemas/d4h-sync-plan";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { PersonId } from "@/lib/schemas/person";
@@ -133,13 +134,15 @@ function flatMetadata(
  * this order, the first match winning:
  *
  * 1. blank email → skipped `missing-email`
- * 2. email shared with another D4H member → skipped `duplicate-email` (#144)
- * 3. email of a `Deleted` person → skipped `person-in-rubbish-bin` (#183)
- * 4. the person's membership on this team is `Deleted` → skipped `membership-in-rubbish-bin`
- * 5. the person's membership is linked to a D4H member who is gone → `relink`
- * 6. the person's membership is linked to another D4H member who is still in D4H → skipped
+ * 2. a `Deleted` membership on this team is linked to the member's `d4hMemberId` → skipped
+ *    `membership-in-rubbish-bin` (as an add it would fail `already-linked` on every sync)
+ * 3. email shared with another D4H member → skipped `duplicate-email` (#144)
+ * 4. email of a `Deleted` person → skipped `person-in-rubbish-bin` (#183)
+ * 5. the person's membership on this team is `Deleted` → skipped `membership-in-rubbish-bin`
+ * 6. the person's membership is linked to a D4H member who is gone → `relink`
+ * 7. the person's membership is linked to another D4H member who is still in D4H → skipped
  *    `linked-to-another-member`
- * 7. otherwise → `add`
+ * 8. otherwise → `add`
  *
  * An `Active` linked membership whose member is gone, and that isn't relinked, is archived.
  */
@@ -148,6 +151,11 @@ export function buildD4HSyncPlan(input: BuildD4HSyncPlanInput): D4HSyncPlan {
         m.d4h !== null && m.status !== "Deleted" ? [{ ...m, d4h: m.d4h, status: m.status }] : [],
     );
     const linkedByMemberId = new Map(linked.map((m) => [m.d4h.d4hMemberId, m]));
+    const binnedMemberIds = new Set(
+        input.teamMemberships.flatMap((m) =>
+            m.d4h !== null && m.status === "Deleted" ? [m.d4h.d4hMemberId] : [],
+        ),
+    );
     // A person has at most one membership per team, so an email picks at most one.
     const membershipByEmail = new Map(
         input.teamMemberships.map((m) => [normaliseD4HEmail(m.personEmail), m]),
@@ -207,6 +215,10 @@ export function buildD4HSyncPlan(input: BuildD4HSyncPlanInput): D4HSyncPlan {
         const email = normaliseD4HEmail(member.email.value);
         if (!email) {
             skip(member, "missing-email");
+            continue;
+        }
+        if (binnedMemberIds.has(member.id)) {
+            skip(member, "membership-in-rubbish-bin");
             continue;
         }
         if ((emailCounts.get(email) ?? 0) > 1) {
@@ -521,6 +533,9 @@ export async function syncOrganizationD4HCache(ctx: OrgServiceContext): Promise<
 
 export const D4H_TEAM_SYNC_KIND = "d4h-team-sync";
 
+/** `PlanAlreadyRunningError`'s message, phrased for a team. */
+const ALREADY_SYNCING = "A sync of this team is already running.";
+
 type AddItem = Extract<D4HSyncItem, { kind: "add" }>;
 type UpdateItem = Extract<D4HSyncItem, { kind: "update" }>;
 type ReactivateItem = Extract<D4HSyncItem, { kind: "reactivate" }>;
@@ -541,11 +556,39 @@ const EXECUTION_ORDER: readonly D4HSyncItem["kind"][] = [
 type ItemResult = Omit<D4HSyncItemOutcome, "itemId">;
 
 const applied: ItemResult = { result: "applied" };
-const changed = (reason: string): ItemResult => ({ result: "skipped-changed", reason });
+const changed = (reason: D4HSyncChangedReason): ItemResult => ({
+    result: "skipped-changed",
+    reason,
+});
 
-function isUniqueViolation(e: unknown): boolean {
-    return e instanceof Object && "code" in e && e.code === "P2002";
+function hasPrismaCode(e: unknown, code: string): boolean {
+    return e instanceof Object && "code" in e && e.code === code;
 }
+
+const isUniqueViolation = (e: unknown) => hasPrismaCode(e, "P2002");
+
+/**
+ * Run an item's write, whose `where` repeats the precondition the item just checked, so a change
+ * between the check and the write makes the update match nothing (P2025) rather than overwrite
+ * it. The write's `logEvent` shares its transaction and rolls back with it. On P2025, the
+ * precondition is checked again for the reason, falling back to `fallback`.
+ */
+async function writeUnlessChanged(
+    write: () => Promise<unknown>,
+    recheck: () => Promise<ItemResult | null>,
+    fallback: D4HSyncChangedReason,
+): Promise<ItemResult> {
+    try {
+        await write();
+        return applied;
+    } catch (e) {
+        if (!hasPrismaCode(e, "P2025")) throw e;
+        return (await recheck()) ?? changed(fallback);
+    }
+}
+
+/** The result of checking an item's precondition: the membership to write, or why not to. */
+type Checked<M> = { refused: ItemResult } | { membership: M };
 
 function sameSnapshot(a: D4HMembershipSnapshot, b: D4HMembershipSnapshot): boolean {
     return (
@@ -562,15 +605,11 @@ async function isLinkedOnTeam(
     teamId: string,
     d4hMemberId: number,
 ): Promise<boolean> {
-    const rows = await ctx.prisma.teamMembership_D4H.findMany({
-        where: { d4hMemberId },
-        include: { teamMembership: { select: { teamId: true, organizationId: true } } },
+    const row = await ctx.prisma.teamMembership_D4H.findFirst({
+        where: { d4hMemberId, teamMembership: { teamId, organizationId: ctx.organizationId } },
+        select: { teamMembershipId: true },
     });
-    return rows.some(
-        (r) =>
-            r.teamMembership.teamId === teamId &&
-            r.teamMembership.organizationId === ctx.organizationId,
-    );
+    return row !== null;
 }
 
 /** A membership of this team with its D4H link, or null if it no longer exists. */
@@ -580,6 +619,10 @@ function findTeamMembership(ctx: OrgServiceContext, teamId: string, teamMembersh
         select: { id: true, status: true, d4h: true },
     });
 }
+
+type TeamMembershipRow = NonNullable<Awaited<ReturnType<typeof findTeamMembership>>>;
+/** A membership that passed a precondition requiring its D4H link. */
+type LinkedMembership = TeamMembershipRow & { d4h: NonNullable<TeamMembershipRow["d4h"]> };
 
 async function executeAdd(
     ctx: OrgServiceContext,
@@ -602,39 +645,47 @@ async function executeAdd(
     }
     const personId = person.id;
 
-    /** Take over the person's existing membership on this team, if it's a live manual one. */
-    const takeOver = async (existing: {
-        id: string;
-        status: string;
-        d4h: { d4hMemberId: number } | null;
-    }): Promise<ItemResult> => {
-        if (existing.status === "Deleted") return changed("membership-in-rubbish-bin");
-        if (existing.d4h) return changed("linked-to-another-member");
-        await ctx.prisma.$transaction([
-            ctx.prisma.teamMembership.update({
-                where: { id: existing.id },
-                data: {
-                    status: "Active",
-                    d4h: { create: { d4hMemberId: item.d4hMemberId, ...item.incoming } },
-                },
-            }),
-            ctx.logEvent({
-                action: "Update",
-                objectType: "TeamMembership",
-                objectId: existing.id,
-                description: "Adopted a manual membership as D4H-managed.",
-                changes: diffObject({ status: existing.status }, { status: "Active" }),
-                refs: personTeamRefs(personId, teamId),
-            }),
-        ]);
-        return applied;
-    };
-
     const membershipOfPerson = () =>
         ctx.prisma.teamMembership.findUnique({
             where: { teamId_personId: { teamId, personId } },
             select: { id: true, status: true, d4h: { select: { d4hMemberId: true } } },
         });
+
+    type Existing = NonNullable<Awaited<ReturnType<typeof membershipOfPerson>>>;
+    const refuseTakeOver = (existing: Existing | null): ItemResult | null => {
+        if (!existing) return changed("membership-missing");
+        if (existing.status === "Deleted") return changed("membership-in-rubbish-bin");
+        if (existing.d4h) return changed("linked-to-another-member");
+        return null;
+    };
+
+    /** Take over the person's existing membership on this team, if it's a live manual one. */
+    const takeOver = async (existing: Existing): Promise<ItemResult> => {
+        const refused = refuseTakeOver(existing);
+        if (refused) return refused;
+        return writeUnlessChanged(
+            () =>
+                ctx.prisma.$transaction([
+                    ctx.prisma.teamMembership.update({
+                        where: { id: existing.id, status: { not: "Deleted" }, d4h: { is: null } },
+                        data: {
+                            status: "Active",
+                            d4h: { create: { d4hMemberId: item.d4hMemberId, ...item.incoming } },
+                        },
+                    }),
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "TeamMembership",
+                        objectId: existing.id,
+                        description: "Adopted a manual membership as D4H-managed.",
+                        changes: diffObject({ status: existing.status }, { status: "Active" }),
+                        refs: personTeamRefs(personId, teamId),
+                    }),
+                ]),
+            async () => refuseTakeOver(await membershipOfPerson()),
+            "membership-missing",
+        );
+    };
 
     const existing = await membershipOfPerson();
     if (existing) return takeOver(existing);
@@ -676,40 +727,63 @@ async function executeRelink(
     teamId: string,
     item: RelinkItem,
 ): Promise<ItemResult> {
-    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
-    if (!membership) return changed("membership-missing");
-    if (membership.status === "Deleted") return changed("membership-in-rubbish-bin");
-    if (membership.d4h?.d4hMemberId !== item.previousD4hMemberId) {
-        return changed("d4h-member-changed");
-    }
-    if (await isLinkedOnTeam(ctx, teamId, item.d4hMemberId)) return changed("already-linked");
+    const check = async (): Promise<Checked<LinkedMembership>> => {
+        const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+        if (!membership) return { refused: changed("membership-missing") };
+        if (membership.status === "Deleted") {
+            return { refused: changed("membership-in-rubbish-bin") };
+        }
+        if (membership.d4h?.d4hMemberId !== item.previousD4hMemberId) {
+            return { refused: changed("d4h-member-changed") };
+        }
+        if (await isLinkedOnTeam(ctx, teamId, item.d4hMemberId)) {
+            return { refused: changed("already-linked") };
+        }
+        return { membership: { ...membership, d4h: membership.d4h } };
+    };
+    const checked = await check();
+    if ("refused" in checked) return checked.refused;
+    const { membership } = checked;
 
     const reactivates = membership.status === "Archived";
-    await ctx.prisma.$transaction([
-        ctx.prisma.teamMembership.update({
-            where: { id: membership.id },
-            data: {
-                ...(reactivates ? { status: "Active" as const } : {}),
-                d4h: { update: { d4hMemberId: item.d4hMemberId, ...item.incoming } },
-            },
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "TeamMembership",
-            objectId: membership.id,
-            description: "Re-linked to a new D4H member with the same email.",
-            changes: [
-                ...diffObject(
-                    { d4hMemberId: item.previousD4hMemberId },
-                    { d4hMemberId: item.d4hMemberId },
-                ),
-                ...(reactivates ? diffObject({ status: "Archived" }, { status: "Active" }) : []),
-                ...diffObject(snapshotOf(membership.d4h), item.incoming),
-            ],
-            refs: personTeamRefs(item.personId, teamId),
-        }),
-    ]);
-    return applied;
+    return writeUnlessChanged(
+        () =>
+            ctx.prisma.$transaction([
+                ctx.prisma.teamMembership.update({
+                    where: {
+                        id: membership.id,
+                        status: { not: "Deleted" },
+                        d4h: { is: { d4hMemberId: item.previousD4hMemberId } },
+                    },
+                    data: {
+                        ...(reactivates ? { status: "Active" as const } : {}),
+                        d4h: { update: { d4hMemberId: item.d4hMemberId, ...item.incoming } },
+                    },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "TeamMembership",
+                    objectId: membership.id,
+                    description: "Re-linked to a new D4H member with the same email.",
+                    changes: [
+                        ...diffObject(
+                            { d4hMemberId: item.previousD4hMemberId },
+                            { d4hMemberId: item.d4hMemberId },
+                        ),
+                        ...(reactivates
+                            ? diffObject({ status: "Archived" }, { status: "Active" })
+                            : []),
+                        ...diffObject(snapshotOf(membership.d4h), item.incoming),
+                    ],
+                    refs: personTeamRefs(item.personId, teamId),
+                }),
+            ]),
+        async () => {
+            const rechecked = await check();
+            return "refused" in rechecked ? rechecked.refused : null;
+        },
+        "d4h-member-changed",
+    );
 }
 
 async function executeUpdate(
@@ -717,26 +791,49 @@ async function executeUpdate(
     teamId: string,
     item: UpdateItem,
 ): Promise<ItemResult> {
-    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
-    if (!membership) return changed("membership-missing");
-    if (membership.status === "Deleted") return changed("membership-in-rubbish-bin");
-    if (membership.d4h?.d4hMemberId !== item.d4hMemberId) return changed("d4h-member-changed");
-    if (!sameSnapshot(membership.d4h, item.before)) return changed("details-changed");
+    const check = async (): Promise<Checked<LinkedMembership>> => {
+        const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+        if (!membership) return { refused: changed("membership-missing") };
+        if (membership.status === "Deleted") {
+            return { refused: changed("membership-in-rubbish-bin") };
+        }
+        if (membership.d4h?.d4hMemberId !== item.d4hMemberId) {
+            return { refused: changed("d4h-member-changed") };
+        }
+        if (!sameSnapshot(membership.d4h, item.before)) {
+            return { refused: changed("details-changed") };
+        }
+        return { membership: { ...membership, d4h: membership.d4h } };
+    };
+    const checked = await check();
+    if ("refused" in checked) return checked.refused;
+    const { membership } = checked;
 
-    await ctx.prisma.$transaction([
-        ctx.prisma.teamMembership_D4H.update({
-            where: { teamMembershipId: membership.id },
-            data: item.incoming,
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "TeamMembership",
-            objectId: membership.id,
-            changes: item.changes,
-            refs: personTeamRefs(item.personId, teamId),
-        }),
-    ]);
-    return applied;
+    return writeUnlessChanged(
+        () =>
+            ctx.prisma.$transaction([
+                ctx.prisma.teamMembership.update({
+                    where: {
+                        id: membership.id,
+                        status: { not: "Deleted" },
+                        d4h: { is: { d4hMemberId: item.d4hMemberId, ...item.before } },
+                    },
+                    data: { d4h: { update: item.incoming } },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "TeamMembership",
+                    objectId: membership.id,
+                    changes: item.changes,
+                    refs: personTeamRefs(item.personId, teamId),
+                }),
+            ]),
+        async () => {
+            const rechecked = await check();
+            return "refused" in rechecked ? rechecked.refused : null;
+        },
+        "details-changed",
+    );
 }
 
 async function executeReactivate(
@@ -744,29 +841,48 @@ async function executeReactivate(
     teamId: string,
     item: ReactivateItem,
 ): Promise<ItemResult> {
-    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
-    if (!membership) return changed("membership-missing");
-    if (membership.status !== "Archived") return changed("not-archived");
-    if (membership.d4h?.d4hMemberId !== item.d4hMemberId) return changed("d4h-member-changed");
+    const check = async (): Promise<Checked<LinkedMembership>> => {
+        const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+        if (!membership) return { refused: changed("membership-missing") };
+        if (membership.status !== "Archived") return { refused: changed("not-archived") };
+        if (membership.d4h?.d4hMemberId !== item.d4hMemberId) {
+            return { refused: changed("d4h-member-changed") };
+        }
+        return { membership: { ...membership, d4h: membership.d4h } };
+    };
+    const checked = await check();
+    if ("refused" in checked) return checked.refused;
+    const { membership } = checked;
 
-    await ctx.prisma.$transaction([
-        ctx.prisma.teamMembership.update({
-            where: { id: membership.id },
-            data: { status: "Active", d4h: { update: item.incoming } },
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "TeamMembership",
-            objectId: membership.id,
-            description: "Reactivated — member is back in the linked D4H team.",
-            changes: [
-                ...diffObject({ status: "Archived" }, { status: "Active" }),
-                ...diffObject(snapshotOf(membership.d4h), item.incoming),
-            ],
-            refs: personTeamRefs(item.personId, teamId),
-        }),
-    ]);
-    return applied;
+    return writeUnlessChanged(
+        () =>
+            ctx.prisma.$transaction([
+                ctx.prisma.teamMembership.update({
+                    where: {
+                        id: membership.id,
+                        status: "Archived",
+                        d4h: { is: { d4hMemberId: item.d4hMemberId } },
+                    },
+                    data: { status: "Active", d4h: { update: item.incoming } },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "TeamMembership",
+                    objectId: membership.id,
+                    description: "Reactivated — member is back in the linked D4H team.",
+                    changes: [
+                        ...diffObject({ status: "Archived" }, { status: "Active" }),
+                        ...diffObject(snapshotOf(membership.d4h), item.incoming),
+                    ],
+                    refs: personTeamRefs(item.personId, teamId),
+                }),
+            ]),
+        async () => {
+            const rechecked = await check();
+            return "refused" in rechecked ? rechecked.refused : null;
+        },
+        "not-archived",
+    );
 }
 
 async function executeArchive(
@@ -774,26 +890,39 @@ async function executeArchive(
     teamId: string,
     item: ArchiveItem,
 ): Promise<ItemResult> {
-    const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
-    if (!membership) return changed("membership-missing");
-    if (membership.status !== "Active") return changed("not-active");
-    if (membership.d4h?.d4hMemberId !== item.d4hMemberId) return changed("d4h-member-changed");
+    const check = async (): Promise<ItemResult | null> => {
+        const membership = await findTeamMembership(ctx, teamId, item.teamMembershipId);
+        if (!membership) return changed("membership-missing");
+        if (membership.status !== "Active") return changed("not-active");
+        if (membership.d4h?.d4hMemberId !== item.d4hMemberId) return changed("d4h-member-changed");
+        return null;
+    };
+    const refused = await check();
+    if (refused) return refused;
 
-    await ctx.prisma.$transaction([
-        ctx.prisma.teamMembership.update({
-            where: { id: membership.id },
-            data: { status: "Archived" },
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "TeamMembership",
-            objectId: membership.id,
-            description: "Archived — member is no longer in the linked D4H team.",
-            changes: diffObject({ status: "Active" }, { status: "Archived" }),
-            refs: personTeamRefs(item.personId, teamId),
-        }),
-    ]);
-    return applied;
+    return writeUnlessChanged(
+        () =>
+            ctx.prisma.$transaction([
+                ctx.prisma.teamMembership.update({
+                    where: {
+                        id: item.teamMembershipId,
+                        status: "Active",
+                        d4h: { is: { d4hMemberId: item.d4hMemberId } },
+                    },
+                    data: { status: "Archived" },
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "TeamMembership",
+                    objectId: item.teamMembershipId,
+                    description: "Archived — member is no longer in the linked D4H team.",
+                    changes: diffObject({ status: "Active" }, { status: "Archived" }),
+                    refs: personTeamRefs(item.personId, teamId),
+                }),
+            ]),
+        check,
+        "not-active",
+    );
 }
 
 type FieldValue = string | number | null;
@@ -916,26 +1045,36 @@ function executeItem(ctx: OrgServiceContext, teamId: string, item: D4HSyncItem) 
  * fetch. Each item checks its precondition at execute time and records an outcome (`applied`,
  * `skipped-by-user`, or `skipped-changed` with a reason) rather than failing the plan. Items run in
  * the order add, relink, update, reactivate, archive, metadata, each committing its write together
- * with its `logEvent`, joined to `batchId`.
+ * with its `logEvent`, joined to the run's `LogBatch`.
+ *
+ * The batch comes from `openBatch`, called only once the guards have passed and the plan is
+ * claimed, so a refused execute leaves no empty batch behind. It's given the team, for the batch's
+ * description.
  *
  * On success the plan is `Completed`, and `Team_D4H.lastSyncedAt` (and `Organization_D4H`'s, for
- * an org-bearing team) is set to the plan's `createdAt`, the time of the snapshot. If an item
- * throws, the plan is `Failed` with the outcomes so far, `lastSyncedAt` is left alone, and the
+ * an org-bearing team) is set to the plan's `createdAt`, the time of the snapshot. When the
+ * metadata item wrote no fields, a Team entry records the sync, so the batch is never empty. If an
+ * item throws, the plan is `Failed` with the outcomes so far, `lastSyncedAt` is left alone, and the
  * error is rethrown.
  *
  * @throws NotFoundError if the plan does not exist within the organization.
+ * @throws PlanAlreadyRunningError if another sync of the team is running.
  * @throws ConflictError if the plan isn't a D4H team sync, its team is no longer active or no
  *   longer linked to the plan's D4H team, or the plan can't be claimed (already run, superseded,
- *   expired, or another sync of the team is running).
+ *   or expired).
  */
 export async function executeD4HSyncPlan(
     ctx: OrgServiceContext,
-    args: { planId: BatchUpdatePlanId; skipItemIds: readonly string[]; batchId: string },
+    args: {
+        planId: BatchUpdatePlanId;
+        skipItemIds: readonly string[];
+        openBatch: (team: { id: TeamId; name: string }) => Promise<string>;
+    },
 ): Promise<{
     plan: { id: BatchUpdatePlanId; teamId: TeamId; payload: D4HSyncPlan };
     outcomes: D4HSyncItemOutcome[];
 }> {
-    const { planId, batchId } = args;
+    const { planId } = args;
     const row = await BatchUpdatePlans.requireById(ctx, planId);
 
     // Guards, before the payload is parsed or the plan claimed.
@@ -957,13 +1096,22 @@ export async function executeD4HSyncPlan(
     }
     const teamId = TeamId.schema.parse(team.id);
 
-    await BatchUpdatePlans.claim(ctx, planId, new Date());
+    try {
+        await BatchUpdatePlans.claim(ctx, planId, new Date());
+    } catch (e) {
+        if (e instanceof BatchUpdatePlans.PlanAlreadyRunningError) {
+            throw new BatchUpdatePlans.PlanAlreadyRunningError(ALREADY_SYNCING);
+        }
+        throw e;
+    }
 
-    const ctxBatch = withBatch(ctx, batchId);
     const skip = new Set(args.skipItemIds);
     const outcomes: D4HSyncItemOutcome[] = [];
+    let batchId: string | null = null;
 
     try {
+        batchId = await args.openBatch({ id: teamId, name: team.name });
+        const ctxBatch = withBatch(ctx, batchId);
         const payload = D4HSyncPlan.schema.parse(row.payload);
         const items = EXECUTION_ORDER.flatMap((kind) =>
             payload.items.filter((item) => item.kind === kind),
@@ -976,33 +1124,57 @@ export async function executeD4HSyncPlan(
             outcomes.push({ itemId: item.itemId, ...result });
         }
 
-        // Bookkeeping, not audited: AVUT reflects D4H as of the plan's snapshot.
-        await ctx.prisma.team_D4H.update({
-            where: { teamId },
-            data: { lastSyncedAt: row.createdAt },
-        });
-        const orgBearing = payload.items.some(
-            (item) => item.kind === "metadata" && item.organization !== null,
-        );
-        if (orgBearing) {
-            await ctx.prisma.organization_D4H.updateMany({
-                where: { organizationId: ctx.organizationId },
+        // AVUT reflects D4H as of the plan's snapshot. `lastSyncedAt` is bookkeeping, not
+        // audited, but a sync whose metadata item wrote nothing still gets an entry in its batch.
+        const metadataItem = payload.items.find((item) => item.kind === "metadata");
+        const metadataWrote =
+            metadataItem !== undefined &&
+            metadataItem.changes.length > 0 &&
+            outcomes.some((o) => o.itemId === metadataItem.itemId && o.result === "applied");
+        await ctx.prisma.$transaction([
+            ctx.prisma.team_D4H.update({
+                where: { teamId },
                 data: { lastSyncedAt: row.createdAt },
-            });
-        }
+            }),
+            ...(metadataItem?.organization
+                ? [
+                      ctx.prisma.organization_D4H.updateMany({
+                          where: { organizationId: ctx.organizationId },
+                          data: { lastSyncedAt: row.createdAt },
+                      }),
+                  ]
+                : []),
+            ...(metadataWrote
+                ? []
+                : [
+                      ctxBatch.logEvent({
+                          action: "Update",
+                          objectType: "Team",
+                          objectId: teamId,
+                          description: "Synced with linked D4H team — no metadata changes.",
+                      }),
+                  ]),
+        ]);
 
-        await BatchUpdatePlans.finish(ctx, planId, {
-            status: "Completed",
-            outcomes,
-            logBatchId: batchId,
-        });
+        await BatchUpdatePlans.finish(
+            ctx,
+            planId,
+            { status: "Completed", outcomes, logBatchId: batchId },
+            new Date(),
+        );
         return { plan: { id: planId, teamId, payload }, outcomes };
     } catch (e) {
-        await BatchUpdatePlans.finish(ctx, planId, {
-            status: "Failed",
-            outcomes,
-            logBatchId: batchId,
-        });
+        try {
+            await BatchUpdatePlans.finish(
+                ctx,
+                planId,
+                { status: "Failed", outcomes, logBatchId: batchId },
+                new Date(),
+            );
+        } catch (finishError) {
+            // The original error is the one worth reporting; cleanup marks the plan `Failed` later.
+            console.error("Couldn't mark the D4H sync plan Failed:", finishError);
+        }
         throw e;
     }
 }
@@ -1143,25 +1315,35 @@ export async function createD4HSyncPlan(
     return { status: "ready", planId: BatchUpdatePlanId.schema.parse(row.id), plan };
 }
 
+export type SyncImmediatelyResult =
+    | { status: "in-progress" }
+    | { status: "synced"; plan: D4HSyncPlan; outcomes: D4HSyncItemOutcome[] };
+
 /**
  * Plan and execute straight away with nothing skipped: the first sync of a link or a
- * create-from-D4H, in the caller's `LogBatch`. Returns the executed plan, whose `counts` and
- * `skipped` the link toast reads, with each item's outcome.
+ * create-from-D4H, in the caller's `LogBatch`. Returns the executed plan, whose `skipped` the link
+ * toast reads, with each item's outcome.
  *
- * @throws ConflictError if another sync of the team is already running.
+ * Returns `in-progress`, syncing nothing, while another sync of the team is running (an unlink and
+ * relink while an old run is still executing): the caller's link has already committed by then, so
+ * it reports the link and asks for a sync later rather than failing.
  */
 export async function syncImmediately(
     ctx: OrgServiceContext,
     args: { teamD4H: TeamD4HRecord; token: D4HAccessToken_ServerOnly; batchId: string },
-): Promise<{ plan: D4HSyncPlan; outcomes: D4HSyncItemOutcome[] }> {
+): Promise<SyncImmediatelyResult> {
     const created = await createD4HSyncPlan(ctx, { teamD4H: args.teamD4H, token: args.token });
-    if (created.status === "in-progress") {
-        throw new ConflictError("A sync of this team is already running.");
+    if (created.status === "in-progress") return created;
+    try {
+        const { outcomes } = await executeD4HSyncPlan(ctx, {
+            planId: created.planId,
+            skipItemIds: [],
+            openBatch: async () => args.batchId,
+        });
+        return { status: "synced", plan: created.plan, outcomes };
+    } catch (e) {
+        // Another sync claimed the team between creating this plan and claiming it.
+        if (e instanceof BatchUpdatePlans.PlanAlreadyRunningError) return { status: "in-progress" };
+        throw e;
     }
-    const { outcomes } = await executeD4HSyncPlan(ctx, {
-        planId: created.planId,
-        skipItemIds: [],
-        batchId: args.batchId,
-    });
-    return { plan: created.plan, outcomes };
 }

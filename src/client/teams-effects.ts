@@ -31,8 +31,6 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
 ];
 
 export const teamsEffects = createEffects<"teams">()({
-    executeD4HTeamSyncPlan: (vars, { plan }) =>
-        teamCaches({ organizationId: vars.organizationId, teamId: plan.teamId }),
     archiveTeam: (vars, { updated }) => [
         write(
             trpc.teams.getTeam.queryKey({
@@ -76,6 +74,8 @@ export const teamsEffects = createEffects<"teams">()({
     ],
     linkTeamToD4H: (vars) => teamCaches(vars),
     unlinkTeamFromD4H: (vars) => teamCaches(vars),
+    executeD4HTeamSyncPlan: (vars, { plan }) =>
+        teamCaches({ organizationId: vars.organizationId, teamId: plan.teamId }),
     syncOrganizationD4H: (vars) => [
         invalidate(
             trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId }),

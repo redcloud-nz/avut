@@ -5,6 +5,7 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { diffObject } from "@/lib/diff";
 import { ConflictError } from "@/lib/errors";
 import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
@@ -202,6 +203,22 @@ describe("buildD4HSyncPlan — skip rules", () => {
         expect(plan.skipped.map((s) => [s.d4hMemberId, s.reason])).toEqual([
             [1, "membership-in-rubbish-bin"],
             [2, "membership-in-rubbish-bin"],
+        ]);
+        expect(plan.items.map((i) => i.kind)).toEqual(["metadata"]);
+    });
+
+    it("skips a member whose id is linked to a binned membership, even if its email moved on", () => {
+        const plan = buildD4HSyncPlan(
+            input({
+                // The member's email in D4H now belongs to nobody on the team.
+                d4hMembers: [member({ id: 7, email: email("changed@x.com") })],
+                teamMemberships: [
+                    tm({ email: "old@x.com", status: "Deleted", d4h: { d4hMemberId: 7 } }),
+                ],
+            }),
+        );
+        expect(plan.skipped).toEqual([
+            { d4hMemberId: 7, name: "Member 7", reason: "membership-in-rubbish-bin" },
         ]);
         expect(plan.items.map((i) => i.kind)).toEqual(["metadata"]);
     });
@@ -467,6 +484,18 @@ describe("buildD4HSyncPlan — metadata, ids & order", () => {
 // executeD4HSyncPlan — the per-item executor.
 //
 
+describe("D4HSyncItemOutcome", () => {
+    it("accepts only the reasons the executor produces", () => {
+        const outcome = { itemId: "add:1", result: "skipped-changed" };
+        expect(
+            D4HSyncItemOutcome.schema.safeParse({ ...outcome, reason: "already-linked" }).success,
+        ).toBe(true);
+        expect(
+            D4HSyncItemOutcome.schema.safeParse({ ...outcome, reason: "gremlins" }).success,
+        ).toBe(false);
+    });
+});
+
 describe("executeD4HSyncPlan", () => {
     const T = {
         org: OrganizationId.create(),
@@ -618,9 +647,28 @@ describe("executeD4HSyncPlan", () => {
         const result = await executeD4HSyncPlan(makeCtx(organizationId), {
             planId,
             skipItemIds,
-            batchId,
+            openBatch: async () => batchId,
         });
         return { ...result, batchId };
+    }
+
+    /**
+     * Run `change` straight after the executor's next precondition read of a membership, as if
+     * someone edited it between the check and the write. Restore the returned spy afterwards.
+     */
+    function changeAfterCheck(
+        change: () => Promise<unknown>,
+        read: "findFirst" | "findUnique" = "findFirst",
+    ) {
+        const original = db.teamMembership[read].bind(db.teamMembership) as (
+            args: unknown,
+        ) => Promise<unknown>;
+        return vi.spyOn(db.teamMembership, read).mockImplementationOnce(((args: unknown) =>
+            (async () => {
+                const row = await original(args);
+                await change();
+                return row;
+            })()) as never);
     }
 
     const outcomeOf = (result: { outcomes: D4HSyncItemOutcome[] }, itemId: string) =>
@@ -748,6 +796,33 @@ describe("executeD4HSyncPlan", () => {
             });
             expect(membership).toMatchObject({ status: "Deleted", d4h: null });
         });
+
+        it("doesn't take over a manual membership binned after the check", async () => {
+            const teamId = await seedTeam();
+            const personId = await seedPerson("late-bin@x.com");
+            const membershipId = await seedMembership(teamId, personId, { status: "Archived" });
+            const planId = await seedPlan(teamId, [addItem(7, "late-bin@x.com")]);
+
+            const spy = changeAfterCheck(
+                () =>
+                    db.teamMembership.update({
+                        where: { id: membershipId },
+                        data: { status: "Deleted" },
+                    }),
+                "findUnique",
+            );
+            const result = await execute(planId).finally(() => spy.mockRestore());
+
+            expect(outcomeOf(result, "add:7")).toMatchObject({
+                result: "skipped-changed",
+                reason: "membership-in-rubbish-bin",
+            });
+            const membership = await db.teamMembership.findUniqueOrThrow({
+                where: { id: membershipId },
+                include: { d4h: true },
+            });
+            expect(membership).toMatchObject({ status: "Deleted", d4h: null });
+        });
     });
 
     describe("relink", () => {
@@ -827,6 +902,51 @@ describe("executeD4HSyncPlan", () => {
                 where: { teamMembershipId: membershipId },
             });
             expect(d4h.d4hMemberId).toBe(10);
+        });
+
+        it("skips when the membership is in the Rubbish bin", async () => {
+            const teamId = await seedTeam();
+            const personId = await seedPerson("re4@x.com");
+            const membershipId = await seedMembership(teamId, personId, {
+                status: "Deleted",
+                d4h: { d4hMemberId: 10 },
+            });
+            const planId = await seedPlan(teamId, [relinkItem(membershipId, personId)]);
+
+            const result = await execute(planId);
+
+            expect(outcomeOf(result, `relink:${membershipId}`)).toMatchObject({
+                result: "skipped-changed",
+                reason: "membership-in-rubbish-bin",
+            });
+        });
+
+        it("skips, writing nothing, when the membership is binned after the check", async () => {
+            const teamId = await seedTeam();
+            const personId = await seedPerson("re5@x.com");
+            const membershipId = await seedMembership(teamId, personId, {
+                status: "Archived",
+                d4h: { d4hMemberId: 10 },
+            });
+            const planId = await seedPlan(teamId, [relinkItem(membershipId, personId)]);
+
+            const spy = changeAfterCheck(() =>
+                db.teamMembership.update({
+                    where: { id: membershipId },
+                    data: { status: "Deleted" },
+                }),
+            );
+            const result = await execute(planId).finally(() => spy.mockRestore());
+
+            expect(outcomeOf(result, `relink:${membershipId}`)).toMatchObject({
+                result: "skipped-changed",
+                reason: "membership-in-rubbish-bin",
+            });
+            const membership = await db.teamMembership.findUniqueOrThrow({
+                where: { id: membershipId },
+                include: { d4h: true },
+            });
+            expect(membership).toMatchObject({ status: "Deleted", d4h: { d4hMemberId: 10 } });
         });
     });
 
@@ -919,6 +1039,32 @@ describe("executeD4HSyncPlan", () => {
                 result: "skipped-changed",
                 reason: "membership-in-rubbish-bin",
             });
+        });
+
+        it("skips, writing nothing, when the details are edited after the check", async () => {
+            const teamId = await seedTeam();
+            const personId = await seedPerson("u5@x.com");
+            const membershipId = await seedMembership(teamId, personId, {
+                d4h: { d4hMemberId: 24, d4hPosition: "Old" },
+            });
+            const planId = await seedPlan(teamId, [updateItem(membershipId, personId, 24)]);
+
+            const spy = changeAfterCheck(() =>
+                db.teamMembership_D4H.update({
+                    where: { teamMembershipId: membershipId },
+                    data: { d4hPosition: "Edited" },
+                }),
+            );
+            const result = await execute(planId).finally(() => spy.mockRestore());
+
+            expect(outcomeOf(result, `update:${membershipId}`)).toMatchObject({
+                result: "skipped-changed",
+                reason: "details-changed",
+            });
+            const d4h = await db.teamMembership_D4H.findUniqueOrThrow({
+                where: { teamMembershipId: membershipId },
+            });
+            expect(d4h.d4hPosition).toBe("Edited");
         });
     });
 
@@ -1016,6 +1162,96 @@ describe("executeD4HSyncPlan", () => {
                 result: "skipped-changed",
                 reason: "not-active",
             });
+        });
+
+        it("skips a reactivation or archival once the membership is linked to another member", async () => {
+            const teamId = await seedTeam();
+            const reactivateId = await seedMembership(teamId, await seedPerson("r3@x.com"), {
+                status: "Archived",
+                d4h: { d4hMemberId: 31 },
+            });
+            const archiveId = await seedMembership(teamId, await seedPerson("a3@x.com"), {
+                d4h: { d4hMemberId: 41 },
+            });
+            const planId = await seedPlan(teamId, [
+                reactivateItem(reactivateId, PersonId.create()),
+                archiveItem(archiveId, PersonId.create()),
+            ]);
+
+            const result = await execute(planId);
+
+            for (const itemId of [`reactivate:${reactivateId}`, `archive:${archiveId}`]) {
+                expect(outcomeOf(result, itemId)).toMatchObject({
+                    result: "skipped-changed",
+                    reason: "d4h-member-changed",
+                });
+            }
+        });
+
+        it("skips an archival whose membership no longer exists", async () => {
+            const teamId = await seedTeam();
+            const goneId = TeamMembershipId.create();
+            const planId = await seedPlan(teamId, [archiveItem(goneId, PersonId.create())]);
+
+            const result = await execute(planId);
+
+            expect(outcomeOf(result, `archive:${goneId}`)).toMatchObject({
+                result: "skipped-changed",
+                reason: "membership-missing",
+            });
+        });
+
+        it("skips, writing nothing, when the membership is binned after the check", async () => {
+            const teamId = await seedTeam();
+            const personId = await seedPerson("a4@x.com");
+            const membershipId = await seedMembership(teamId, personId, {
+                d4h: { d4hMemberId: 40 },
+            });
+            const planId = await seedPlan(teamId, [archiveItem(membershipId, personId)]);
+
+            const spy = changeAfterCheck(() =>
+                db.teamMembership.update({
+                    where: { id: membershipId },
+                    data: { status: "Deleted" },
+                }),
+            );
+            const result = await execute(planId).finally(() => spy.mockRestore());
+
+            expect(outcomeOf(result, `archive:${membershipId}`)).toMatchObject({
+                result: "skipped-changed",
+                reason: "not-active",
+            });
+            const membership = await db.teamMembership.findUniqueOrThrow({
+                where: { id: membershipId },
+            });
+            expect(membership.status).toBe("Deleted");
+        });
+
+        it("doesn't restore a membership binned between the reactivation's check and its write", async () => {
+            const teamId = await seedTeam();
+            const personId = await seedPerson("r4@x.com");
+            const membershipId = await seedMembership(teamId, personId, {
+                status: "Archived",
+                d4h: { d4hMemberId: 30 },
+            });
+            const planId = await seedPlan(teamId, [reactivateItem(membershipId, personId)]);
+
+            const spy = changeAfterCheck(() =>
+                db.teamMembership.update({
+                    where: { id: membershipId },
+                    data: { status: "Deleted" },
+                }),
+            );
+            const result = await execute(planId).finally(() => spy.mockRestore());
+
+            expect(outcomeOf(result, `reactivate:${membershipId}`)).toMatchObject({
+                result: "skipped-changed",
+                reason: "not-archived",
+            });
+            const membership = await db.teamMembership.findUniqueOrThrow({
+                where: { id: membershipId },
+            });
+            expect(membership.status).toBe("Deleted");
         });
     });
 
@@ -1186,7 +1422,61 @@ describe("executeD4HSyncPlan", () => {
                 where: { id: membershipId },
             });
             expect(membership.status).toBe("Active");
-            expect(await db.logEntry.count({ where: { batchId: result.batchId } })).toBe(0);
+            // Only the entry recording a sync whose metadata wrote nothing.
+            const logged = await db.logEntry.findMany({ where: { batchId: result.batchId } });
+            expect(logged.map((e) => [e.objectType, e.objectId, e.description])).toEqual([
+                ["Team", teamId, "Synced with linked D4H team — no metadata changes."],
+            ]);
+        });
+
+        it("records no extra Team entry when the metadata item wrote fields", async () => {
+            const teamId = await seedTeam();
+            const planId = await seedPlan(teamId, [
+                {
+                    ...quietMetadata(),
+                    team: { before: quietTeam, incoming: { ...quietTeam, d4hTeamName: "B" } },
+                    changes: diffObject({ d4hTeamName: "A" }, { d4hTeamName: "B" }),
+                },
+            ]);
+
+            const result = await execute(planId);
+
+            const logged = await db.logEntry.findMany({ where: { batchId: result.batchId } });
+            expect(logged.map((e) => e.description)).toEqual(["Refreshed D4H team metadata."]);
+        });
+
+        it("opens its batch only once the plan is claimed, with the team's name", async () => {
+            const teamId = await seedTeam();
+            const planId = await seedPlan(teamId, []);
+            await execute(planId);
+
+            const openBatch = vi.fn(async () => "unused");
+            await expect(
+                executeD4HSyncPlan(makeCtx(), { planId, skipItemIds: [], openBatch }),
+            ).rejects.toBeInstanceOf(ConflictError);
+            expect(openBatch).not.toHaveBeenCalled();
+
+            const fresh = await seedPlan(teamId, []);
+            const batchId = await newBatchId();
+            const opened = vi.fn(async () => batchId);
+            await executeD4HSyncPlan(makeCtx(), {
+                planId: fresh,
+                skipItemIds: [],
+                openBatch: opened,
+            });
+            expect(opened).toHaveBeenCalledWith({ id: teamId, name: `Team ${teamId}` });
+        });
+
+        it("says a sync of this team is running when another plan for it executes", async () => {
+            const teamId = await seedTeam();
+            const running = await seedPlan(teamId, []);
+            await BatchUpdatePlans.claim(makeCtx(), running, new Date());
+            const planId = await seedPlan(teamId, []);
+
+            const refused = execute(planId);
+
+            await expect(refused).rejects.toBeInstanceOf(BatchUpdatePlans.PlanAlreadyRunningError);
+            await expect(refused).rejects.toThrow("A sync of this team is already running.");
         });
 
         it("refuses a second execute of the same plan", async () => {
@@ -1258,6 +1548,34 @@ describe("executeD4HSyncPlan", () => {
             const teamD4H = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
             expect(teamD4H.lastSyncedAt).toBeNull();
         });
+
+        it("rethrows the original error even if marking the plan failed throws too", async () => {
+            const teamId = await seedTeam();
+            const planId = await seedPlan(teamId, []);
+
+            // The completion write fails, then so does marking the plan Failed.
+            const txSpy = vi
+                .spyOn(db, "$transaction")
+                .mockImplementationOnce((() => Promise.reject(new Error("item boom"))) as never);
+            const originalUpdateMany = db.batchUpdatePlan.updateMany.bind(
+                db.batchUpdatePlan,
+            ) as unknown as (args: { data: { status?: string } }) => Promise<unknown>;
+            const finishSpy = vi
+                .spyOn(db.batchUpdatePlan, "updateMany")
+                .mockImplementation(((args: { data: { status?: string } }) =>
+                    args.data.status === "Failed"
+                        ? Promise.reject(new Error("finish boom"))
+                        : originalUpdateMany(args)) as never);
+            const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+            try {
+                await expect(execute(planId)).rejects.toThrow("item boom");
+                expect(consoleSpy).toHaveBeenCalled();
+            } finally {
+                txSpy.mockRestore();
+                finishSpy.mockRestore();
+                consoleSpy.mockRestore();
+            }
+        });
     });
 
     describe("createD4HSyncPlan and syncImmediately", () => {
@@ -1326,6 +1644,7 @@ describe("executeD4HSyncPlan", () => {
                 batchId,
             });
 
+            if (result.status !== "synced") throw new Error("expected a sync");
             expect(result.plan.counts.additions).toBe(1);
             expect(result.outcomes).toContainEqual({ itemId: "add:902", result: "applied" });
             const person = await db.person.findFirstOrThrow({ where: { email: "imm@x.com" } });
@@ -1340,18 +1659,20 @@ describe("executeD4HSyncPlan", () => {
             expect(plan).toMatchObject({ status: "Completed", logBatchId: batchId });
         });
 
-        it("syncImmediately refuses while another sync of the team runs", async () => {
+        it("syncImmediately returns in-progress, syncing nothing, while another sync of the team runs", async () => {
             const teamId = await seedTeam();
             const running = await seedPlan(teamId, []);
             await BatchUpdatePlans.claim(makeCtx(), running, new Date());
+            d4hApi.members = [member({ id: 903, email: { value: "late@x.com", verified: true } })];
 
-            await expect(
-                syncImmediately(makeCtx(), {
-                    teamD4H: await teamD4HOf(teamId),
-                    token,
-                    batchId: await newBatchId(),
-                }),
-            ).rejects.toBeInstanceOf(ConflictError);
+            const result = await syncImmediately(makeCtx(), {
+                teamD4H: await teamD4HOf(teamId),
+                token,
+                batchId: await newBatchId(),
+            });
+
+            expect(result).toEqual({ status: "in-progress" });
+            expect(await db.person.findFirst({ where: { email: "late@x.com" } })).toBeNull();
         });
     });
 });

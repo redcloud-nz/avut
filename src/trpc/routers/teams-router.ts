@@ -225,6 +225,8 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
+            // A team created just now has no other sync running, so this never returns
+            // `in-progress`.
             await D4HTeamSync.syncImmediately(ctx, {
                 teamD4H: team.d4h!,
                 token: resolved.token,
@@ -361,27 +363,23 @@ export const teamsRouter = createTrpcRouter({
                 outcomes: z.array(D4HSyncItemOutcome.schema),
             }),
         )
-        .mutation(async ({ ctx, input: { organizationId, planId, skipItemIds } }) => {
-            const plan = await BatchUpdatePlans.requireById(ctx, planId);
-            const team = await ctx.prisma.team.findFirst({
-                where: { id: plan.targetId, organizationId },
-                select: { name: true },
-            });
-
-            const batch = await createLogBatch(
-                {
-                    operationKey: "d4h-team-sync",
-                    userId: ctx.userId,
-                    actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                    description: `Synchronised team "${team?.name ?? plan.targetId}" from its linked D4H team`,
-                },
-                ctx.prisma,
-            );
-
+        .mutation(async ({ ctx, input: { planId, skipItemIds } }) => {
             return D4HTeamSync.executeD4HSyncPlan(ctx, {
                 planId,
                 skipItemIds,
-                batchId: batch.id,
+                // Opened only once the plan is claimed, so a refused execute leaves no batch.
+                openBatch: async (team) => {
+                    const batch = await createLogBatch(
+                        {
+                            operationKey: "d4h-team-sync",
+                            userId: ctx.userId,
+                            actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
+                            description: `Synchronised team "${team.name}" from its linked D4H team`,
+                        },
+                        ctx.prisma,
+                    );
+                    return batch.id;
+                },
             });
         }),
 
@@ -491,10 +489,22 @@ export const teamsRouter = createTrpcRouter({
     /**
      * Link an existing AVUT team to a D4H team, creating (or reusing) the org-level
      * D4H link and running the first membership sync. See docs/specs/2026-09-10-d4h-linking.md §6.1.
+     * Returns `in-progress` instead of the sync's result when another sync of the team was still
+     * running (an unlink and relink within the stale window): the link stands, and the user syncs
+     * again shortly.
      */
     linkTeamToD4H: organizationProcedure({ team: ["update"] })
         .input(z.object({ teamId: TeamId.schema, d4hTeamId: z.number() }))
-        .output(z.object({ plan: D4HSyncPlan.schema }))
+        .output(
+            z.discriminatedUnion("status", [
+                z.object({ status: z.literal("in-progress") }),
+                z.object({
+                    status: z.literal("synced"),
+                    plan: D4HSyncPlan.schema,
+                    outcomes: z.array(D4HSyncItemOutcome.schema),
+                }),
+            ]),
+        )
         .mutation(async ({ ctx, input: { organizationId, teamId, d4hTeamId } }) => {
             const team = await ctx.prisma.team.findUnique({
                 where: { id: teamId, organizationId },
@@ -576,12 +586,11 @@ export const teamsRouter = createTrpcRouter({
                 }),
             ]);
 
-            const { plan } = await D4HTeamSync.syncImmediately(ctx, {
+            return D4HTeamSync.syncImmediately(ctx, {
                 teamD4H,
                 token: resolved.token,
                 batchId: batch.id,
             });
-            return { plan };
         }),
 
     /**

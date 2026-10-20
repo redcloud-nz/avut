@@ -32,7 +32,18 @@ export const PLAN_TTL_MS = 24 * 60 * 60 * 1000;
  */
 export const EXECUTION_STALE_MS = 10 * 60 * 1000;
 
-const ALREADY_RUNNING = "A sync of this team is already running";
+/**
+ * Thrown when a plan can't be claimed because another plan with the same lock key is executing.
+ * The default message is kind-agnostic; a kind's executor can rethrow one with a message naming
+ * its target (e.g. "A sync of this team is already running."). It's a `ConflictError`, so it maps
+ * to `CONFLICT` either way.
+ */
+export class PlanAlreadyRunningError extends ConflictError {
+    constructor(message = "Another run of this operation is already in progress.") {
+        super(message);
+        this.name = "PlanAlreadyRunningError";
+    }
+}
 
 /** A plan's lock key. Every lifecycle query filters on all three fields. */
 export interface PlanTarget {
@@ -57,7 +68,7 @@ const ago = (now: Date, ms: number) => new Date(now.getTime() - ms);
 /** Persist a new `Pending` plan, created by the calling user. */
 export async function create(
     ctx: PlanContext,
-    input: PlanTarget & { payload: unknown },
+    input: PlanTarget & { payload: Prisma.InputJsonValue },
 ): Promise<BatchUpdatePlanRecord> {
     return ctx.prisma.batchUpdatePlan.create({
         data: {
@@ -67,8 +78,7 @@ export async function create(
             targetType: input.targetType,
             targetId: input.targetId,
             status: "Pending",
-            // The caller's schema has already shaped the payload as JSON.
-            payload: input.payload as Prisma.InputJsonValue,
+            payload: input.payload,
             createdById: ctx.userId,
         },
     });
@@ -108,8 +118,9 @@ export async function findExecuting(
  * Step 1 of `claim`: move this plan from `Pending` to `Executing`, if it's still claimable.
  * Returns the claimed row.
  * @throws NotFoundError if the plan does not exist within the organization.
- * @throws ConflictError if the plan isn't claimable: a plan for the same target is already
- *   running, or this one has already run, been superseded, or expired.
+ * @throws PlanAlreadyRunningError if a plan with the same lock key is already running.
+ * @throws ConflictError if the plan isn't claimable: it has already run, been superseded, or
+ *   expired.
  */
 export async function claimRow(
     ctx: Pick<OrgServiceContext, "prisma" | "organizationId">,
@@ -130,7 +141,7 @@ export async function claimRow(
     if (count > 0) return plan;
 
     // "Already running" comes first, so a retry of a plan that backed off reads correctly.
-    if (await findExecuting(ctx, plan, now)) throw new ConflictError(ALREADY_RUNNING);
+    if (await findExecuting(ctx, plan, now)) throw new PlanAlreadyRunningError();
 
     switch (plan.status) {
         case "Pending":
@@ -147,7 +158,7 @@ export async function claimRow(
 /**
  * Step 2 of `claim`, run after `claimRow` has committed: if any other plan with the same lock key
  * is executing (and not stale), back off by setting this plan to `Superseded`.
- * @throws ConflictError if another plan for the same target is already running.
+ * @throws PlanAlreadyRunningError if another plan for the same target is already running.
  */
 export async function checkContention(
     ctx: Pick<OrgServiceContext, "prisma" | "organizationId">,
@@ -169,7 +180,7 @@ export async function checkContention(
         where: { id: plan.id, organizationId: ctx.organizationId, status: "Executing" },
         data: { status: "Superseded" },
     });
-    throw new ConflictError(ALREADY_RUNNING);
+    throw new PlanAlreadyRunningError();
 }
 
 /**
@@ -178,7 +189,8 @@ export async function checkContention(
  * supersede the target's other `Pending` plans. Of two simultaneous claims, at least the later
  * one sees the other; at worst both back off. Returns the claimed (`Executing`) row.
  * @throws NotFoundError if the plan does not exist within the organization.
- * @throws ConflictError if the plan can't be claimed.
+ * @throws PlanAlreadyRunningError if a plan with the same lock key is already running.
+ * @throws ConflictError if the plan can't be claimed for another reason.
  */
 export async function claim(
     ctx: Pick<OrgServiceContext, "prisma" | "organizationId">,
@@ -213,16 +225,20 @@ export function supersedePending(
 export async function finish(
     ctx: Pick<OrgServiceContext, "prisma" | "organizationId">,
     planId: BatchUpdatePlanId,
-    result: { status: "Completed" | "Failed"; outcomes: unknown; logBatchId?: string | null },
+    result: {
+        status: "Completed" | "Failed";
+        outcomes: Prisma.InputJsonValue;
+        logBatchId?: string | null;
+    },
+    now: Date,
 ): Promise<boolean> {
     const { count } = await ctx.prisma.batchUpdatePlan.updateMany({
         where: { id: planId, organizationId: ctx.organizationId, status: "Executing" },
         data: {
             status: result.status,
-            // The caller's schema has already shaped the outcomes as JSON.
-            outcomes: result.outcomes as Prisma.InputJsonValue,
+            outcomes: result.outcomes,
             logBatchId: result.logBatchId ?? null,
-            completedAt: new Date(),
+            completedAt: now,
         },
     });
     return count > 0;
@@ -231,14 +247,15 @@ export async function finish(
 export interface CleanupResult {
     /** Stale `Executing` plans marked `Failed`. */
     failed: number;
-    /** Plans older than `PLAN_TTL_MS` deleted. */
+    /** Plans older than `PLAN_TTL_MS` deleted, including any just counted in `failed`. */
     deleted: number;
 }
 
 /**
  * The daily cleanup, across every organization: mark stale executions `Failed`, then delete every
  * plan older than `PLAN_TTL_MS` that isn't `Executing`. Completed plans aren't kept; the
- * `LogBatch` records what happened.
+ * `LogBatch` records what happened. A plan that is both stale and expired is marked `Failed` and
+ * then deleted, so it counts in both `failed` and `deleted`.
  */
 export async function runCleanup(prisma: PrismaClient, now: Date): Promise<CleanupResult> {
     const failed = await prisma.batchUpdatePlan.updateMany({

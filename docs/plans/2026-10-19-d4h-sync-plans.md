@@ -270,7 +270,7 @@ The sync dialog changes: rows can be skipped, there's a result summary after App
 
 (none yet)
 
-## Review notes
+## Review notes — fixed in fix(d4h): address the D4H sync plans review notes
 
 - (Task 2) `batch-update-plans.ts` `ALREADY_RUNNING` says "A sync of this team is already running" in a kind-agnostic service. Make it generic ("Another run of this operation is already in progress") and let the D4H executor/router rephrase it for teams.
 - (Task 2) `finish` stamps `completedAt: new Date()`; take an injected `now` like every other lifecycle function, and assert the exact time in tests.

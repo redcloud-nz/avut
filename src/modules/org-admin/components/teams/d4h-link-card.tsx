@@ -34,6 +34,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
+import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import {
     Select,
     SelectContent,
@@ -46,6 +47,7 @@ import { getD4HServer } from "@/lib/d4h-servers";
 import {
     D4HSyncPlan,
     isD4HSyncPlanEmpty,
+    type D4HSyncChangedReason,
     type D4HSyncItem,
     type D4HSyncItemOutcome,
     type D4HSyncSkipReason,
@@ -246,10 +248,22 @@ function LinkDialog_Body({ team, onClose }: { team: TeamData; onClose: () => voi
         trpc.teams.linkTeamToD4H.mutationOptions({
             meta: { effects: teamsEffects.linkTeamToD4H },
             onError: (error) => toast.error(error.message),
-            onSuccess: ({ plan }) => {
-                toast.success(
-                    `Linked to D4H — ${plan.counts.additions} member(s) imported${describeSkipped(plan)}`,
-                );
+            onSuccess: (result) => {
+                if (result.status === "in-progress") {
+                    toast.success("Linked to D4H; a sync is already running — sync again shortly");
+                } else {
+                    // Count what the sync did, not what it planned: an add can be skipped as
+                    // changed at execute time.
+                    const adds = new Set(
+                        result.plan.items.filter((i) => i.kind === "add").map((i) => i.itemId),
+                    );
+                    const imported = result.outcomes.filter(
+                        (o) => o.result === "applied" && adds.has(o.itemId),
+                    ).length;
+                    toast.success(
+                        `Linked to D4H — ${imported} member(s) imported${describeSkipped(result.plan)}`,
+                    );
+                }
                 onClose();
             },
         }),
@@ -333,9 +347,22 @@ function SyncDialog({
                 ).length;
                 toast.success(`Synced with D4H: ${applied} change(s) applied`);
             },
+            onSettled: () => {
+                // A run that settles after a close has had its toast; drop its result so a
+                // reopen doesn't flash the previous result view before the open effect resets it.
+                if (!openRef.current) execute.reset();
+            },
         }),
     );
     const applying = execute.isPending;
+
+    // An unmount while open (e.g. navigating away) leaves no dialog to show the result in.
+    useEffect(
+        () => () => {
+            openRef.current = false;
+        },
+        [],
+    );
 
     // Items the user unticked, for the plan they were unticked on. A new plan starts all ticked.
     const [unticked, setUnticked] = useState<{ planId: string | null; itemIds: string[] }>({
@@ -420,7 +447,9 @@ function SyncDialog({
                     <DialogDescription>
                         {execute.isSuccess
                             ? "The sync is complete."
-                            : "Review the changes, untick any you don't want, then apply them."}
+                            : ready && selectableItems(ready.plan).length > 0
+                              ? "Review the changes, untick any you don't want, then apply them."
+                              : "Compares this team with its linked D4H team."}
                     </DialogDescription>
                 </DialogHeader>
                 {execute.isSuccess ? (
@@ -540,11 +569,8 @@ const SKIPPED_GROUP_TITLES: Record<D4HSyncSkipReason, string> = {
     "linked-to-another-member": "Skipped (person already linked to another D4H member)",
 };
 
-/**
- * Why an item the user left ticked wasn't applied: the `reason` of a `skipped-changed` outcome.
- * Keyed by the strings the executor in `src/server/services/d4h-team-sync.ts` returns.
- */
-const OUTCOME_REASON_LABELS: Record<string, string> = {
+/** Why an item the user left ticked wasn't applied: the `reason` of a `skipped-changed` outcome. */
+const OUTCOME_REASON_LABELS: Record<D4HSyncChangedReason, string> = {
     "already-linked": "the D4H member is already linked to a membership on this team",
     "person-in-rubbish-bin": "the person is in the Rubbish bin",
     "membership-in-rubbish-bin": "the team membership is in the Rubbish bin",
@@ -595,27 +621,31 @@ function SyncPlanView({
                 const rows = items.filter((i) => i.kind === kind);
                 if (rows.length === 0) return null;
                 return (
-                    <div key={kind}>
-                        <p className="font-medium">
+                    <FieldSet key={kind} className="gap-1">
+                        <FieldLegend variant="label" className="mb-0">
                             {ITEM_GROUP_TITLES[kind]} ({rows.length})
-                        </p>
-                        <ul className="mt-1 space-y-1">
-                            {rows.map((item) => (
-                                <li key={item.itemId}>
-                                    <label className="flex items-center gap-2">
+                        </FieldLegend>
+                        <FieldGroup data-slot="checkbox-group" className="gap-1">
+                            {rows.map((item) => {
+                                const id = `d4h-sync-item-${item.itemId}`;
+                                return (
+                                    <Field orientation="horizontal" key={item.itemId}>
                                         <Checkbox
+                                            id={id}
                                             checked={!skipItemIds.includes(item.itemId)}
                                             onCheckedChange={(checked) =>
                                                 onTickedChange(item.itemId, checked === true)
                                             }
                                             disabled={disabled}
                                         />
-                                        {itemLabel(item)}
-                                    </label>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                                        <FieldLabel htmlFor={id} className="font-normal">
+                                            {itemLabel(item)}
+                                        </FieldLabel>
+                                    </Field>
+                                );
+                            })}
+                        </FieldGroup>
+                    </FieldSet>
                 );
             })}
             {(Object.keys(SKIPPED_GROUP_TITLES) as D4HSyncSkipReason[]).map((reason) => (
@@ -650,11 +680,13 @@ function SyncResultView({
                 ? ITEM_GROUP_TITLES.metadata
                 : `${ITEM_GROUP_TITLES[item.kind]} ${item.personName}`;
         if (o.result === "skipped-changed") {
-            const reason = o.reason ? (OUTCOME_REASON_LABELS[o.reason] ?? o.reason) : "it changed";
+            const reason = o.reason ? OUTCOME_REASON_LABELS[o.reason] : "it changed";
             return [`${name}: ${reason}`];
         }
         if (o.result === "applied" && o.skippedFields?.length) {
-            return [`${name}: left ${o.skippedFields.join(", ")} alone, edited since the preview`];
+            return [
+                `${name}: ${o.skippedFields.join(", ")} not changed (edited in AVUT since the preview)`,
+            ];
         }
         return [];
     });
