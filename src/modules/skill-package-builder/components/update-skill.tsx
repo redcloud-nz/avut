@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useOrganization } from "@/hooks/use-organization";
+import { numberInputProps } from "@/lib/number-input";
 import { ModifiableSkill, Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
@@ -231,10 +232,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                                                 type="number"
                                                 min={1}
                                                 max={48}
-                                                value={field.value}
-                                                onChange={(ev) =>
-                                                    field.onChange(parseInt(ev.currentTarget.value))
-                                                }
+                                                {...numberInputProps(field)}
                                             />
                                             <InputGroupAddon align="inline-end">
                                                 <InputGroupText>months</InputGroupText>

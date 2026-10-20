@@ -21,6 +21,10 @@ import { Permissions } from "@/lib/permissions";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
+
+// The same validation messages as the client, for procedure input errors.
+import "@/lib/zod-error-map";
+
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
 import { recordLogEntry, resolveActor } from "@/server/log-entry";

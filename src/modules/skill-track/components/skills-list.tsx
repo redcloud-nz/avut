@@ -19,6 +19,9 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
+import { SkillLink } from "@/components/entity-links/skill-link";
+import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
 import { Show } from "@/components/show";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
@@ -27,6 +30,7 @@ import { route } from "@/lib/routes";
 import { Skill } from "@/lib/schemas/skill";
 import { SkillGroup } from "@/lib/schemas/skill-group";
 import { SkillPackage } from "@/lib/schemas/skill-package";
+import { formatFrequency } from "@/modules/skill-track/lib/format-frequency";
 import { trpc } from "@/trpc/client";
 
 type SkillRow = Skill & { group: SkillGroup | undefined; skillPackage: SkillPackage };
@@ -87,15 +91,17 @@ export function SkillTrack_SkillsList() {
                     header: "Skill",
                     // The reports and the package's catalogue page leave archived skills out, so
                     // say why a row here is missing from them.
-                    cell: (ctx) =>
-                        isArchived(ctx.row.original) ? (
+                    cell: (ctx) => {
+                        const link = <SkillLink skill={ctx.row.original} />;
+                        return isArchived(ctx.row.original) ? (
                             <span className="flex items-center gap-2">
-                                {ctx.getValue()}
+                                {link}
                                 <Badge variant="outline">Archived</Badge>
                             </span>
                         ) : (
-                            ctx.getValue()
-                        ),
+                            link
+                        );
+                    },
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
@@ -103,6 +109,10 @@ export function SkillTrack_SkillsList() {
                 col.accessor((row) => row.group?.name ?? "", {
                     id: "group",
                     header: "Group",
+                    cell: (ctx) => {
+                        const group = ctx.row.original.group;
+                        return group ? <SkillGroupLink group={group} /> : null;
+                    },
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
@@ -111,14 +121,7 @@ export function SkillTrack_SkillsList() {
                     id: "package",
                     header: "Package",
                     cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/skill-track/catalogue/[package_id]", {
-                                slug: organization.slug,
-                                package_id: ctx.row.original.skillPackageId,
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
+                        <SkillPackageLink skillPackage={ctx.row.original.skillPackage} />
                     ),
                     enableSorting: true,
                     enableGlobalFilter: true,
@@ -128,12 +131,7 @@ export function SkillTrack_SkillsList() {
                 }),
                 col.accessor("frequency", {
                     header: "Frequency",
-                    cell: (ctx) => {
-                        const months = ctx.getValue();
-                        return months > 0
-                            ? `${months} ${months === 1 ? "month" : "months"}`
-                            : "None";
-                    },
+                    cell: (ctx) => formatFrequency(ctx.getValue()),
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
@@ -154,7 +152,7 @@ export function SkillTrack_SkillsList() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [organization.slug, packageOptions],
+        [packageOptions],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
