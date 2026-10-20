@@ -83,6 +83,7 @@ Quick reference for picking the right primitive in `src/components/ui/` without 
 ## Notable families
 
 - **`field.tsx` + `field-value.tsx`** — `field.tsx` is the edit-mode form field shell (label, description, error); `field-value.tsx` is the read-only display counterpart. Pick based on whether the surrounding page is editable or view-only.
+- **Form type scale (`input.tsx`, `textarea.tsx`, `select.tsx`, `searchable-select.tsx`, `input-group.tsx`, `command.tsx`, `field-value.tsx`, `field.tsx`, `label.tsx`)** — text-entry controls (`Input`, `Textarea`, `CommandInput`) are `text-base md:text-sm`: 16px below `md`, because iOS zooms in on focus below 16px, and 14px from `md` up. Select triggers, input-group addon text and read-only `FieldValue`s use the same pair so they match the inputs beside them. Labels, descriptions and errors stay a fixed `text-sm`. A new form control follows the same pair.
 - **`item.tsx` + `empty.tsx` + `notification.tsx`** — share the same structural convention (Group/Media/Content/Title/Description/Actions/Header/Footer). `item.tsx` is the generic list-row version, `empty.tsx` is for empty states, `notification.tsx` is a notification-specific variant.
 - **`input-group.tsx` + `password-input.tsx` + `command.tsx`** — `input-group.tsx` is the base composite; `password-input.tsx` and `command.tsx`'s `CommandInput` both build on top of it.
 - **`searchable-select.tsx`** — built from `command.tsx` + `popover.tsx` together.

@@ -96,7 +96,7 @@ export function SearchableSelect({
                         "dark:bg-input/30 dark:hover:bg-input/50",
                         "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
                         "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
-                        "flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none",
+                        "flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border bg-transparent py-2 pr-2 pl-2.5 text-base whitespace-nowrap md:text-sm transition-colors outline-none select-none",
                         "disabled:cursor-not-allowed disabled:opacity-50",
                         className,
                     )}
