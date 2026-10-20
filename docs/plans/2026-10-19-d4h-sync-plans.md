@@ -254,9 +254,28 @@ Every task's commit passes `npm run check` (whole-project tsc). The new D4H code
     - Update the help card's sync paragraph to match.
   - **Done when:** `npm run check` passes, and at the visual checkpoint the dialog previews, skips an item, applies, and shows results on a D4H-linked test team. An Apply in a second tab of the same plan, or of an older one, gets the conflict message.
 
+### Review group 5: preview the first sync (added at ship, 2026-10-20)
+
+- [ ] **10. Link and create-from-D4H open the sync preview instead of importing straight away** `visual`
+  - **Why:** asked by the user at ship time. The first import should go through the same review-and-skip dialog as any other sync. This matters most for linking an existing team, where manual memberships are taken over.
+  - **Files:** `src/trpc/routers/teams-router.ts`, `src/trpc/routers/teams-router.test.ts`, `src/server/services/d4h-team-sync.ts`, `src/server/services/d4h-team-sync.test.ts`, `src/client/teams-effects.ts`, `src/modules/org-admin/components/teams/d4h-link-card.tsx`, `src/modules/org-admin/components/teams/import-team-from-d4h.tsx`, `docs/specs/2026-09-10-d4h-linking.md`, `content/help/admin/teams.mdx`.
+  - **Do:**
+    - **`linkTeamToD4H`:** creates the org and team links (with its `d4h-team-link` LogBatch entries) and no longer syncs. Output: `{ updated: TeamData }` or similar, with no plan.
+    - **`createTeamFromD4H`:** creates the team and its link, with no sync.
+    - **Delete `syncImmediately`** and its tests, since nothing calls it. The first sync runs through `createD4HTeamSyncPlan` and `executeD4HTeamSyncPlan` and gets its own `d4h-team-sync` LogBatch.
+    - **Link dialog:** on success, close it and open the sync dialog (`?action=d4h-sync`, following `docs/patterns/mutation-dialog.md`), so the user sees the preview straight away. Replace the "imported" toast with a short "Linked to D4H" toast, or drop the toast.
+    - **Create-from-D4H:** on success, navigate to the new team's page with `?action=d4h-sync`, using `route()`.
+    - **Spec:** update §6.2, §6.4 and the "first membership pull" wording. Linking no longer syncs; the first sync is previewed.
+    - **Help card:** update the link paragraph.
+  - **Done when:**
+    - Router tests: link and create import nobody, create the links, and write the link log entries.
+    - Removed `syncImmediately` tests are gone.
+    - `npm run check -- --all` passes.
+    - Visual check: linking a team opens the preview with the D4H members as additions.
+
 ## Docs impact
 
-The sync dialog changes: rows can be skipped, there's a result summary after Apply, an in-progress notice, and new "Re-link" and skipped groups. The `content/docs/` guide page covering D4H team linking and syncing needs its sync section and its sync-dialog screenshot redone.
+The sync dialog changes: rows can be skipped, there's a result summary after Apply, an in-progress notice, and new "Re-link" and skipped groups. Linking a team, or creating one from D4H, no longer imports straight away: it opens the sync preview. The `content/docs/` guide page covering D4H team linking and syncing needs its link and sync sections, and its sync-dialog screenshot, redone.
 
 ## Out of scope
 
