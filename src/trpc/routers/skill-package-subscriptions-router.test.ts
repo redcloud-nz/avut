@@ -264,7 +264,7 @@ describe("skillPackageSubscriptions.getPackage", () => {
     });
 });
 
-describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", () => {
+describe("skillPackageSubscriptionsRouter shows a Deleted package to its subscribers as withdrawn", () => {
     const T = {
         org: OrganizationId.create(),
         publisherOrg: OrganizationId.create(),
@@ -328,15 +328,28 @@ describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", ()
         );
     }
 
-    it("getPackage throws NOT_FOUND", async () => {
+    it("getPackage returns it to a subscriber", async () => {
+        const result = await makeCaller().getPackage({
+            organizationId: T.org,
+            skillPackageId: T.deletedPkg,
+        });
+
+        expect(result.status).toBe("Deleted");
+        expect(result.subscription).not.toBeNull();
+    });
+
+    it("getPackage throws NOT_FOUND to a non-subscriber", async () => {
         await expect(
-            makeCaller().getPackage({ organizationId: T.org, skillPackageId: T.deletedPkg }),
+            makeCaller().getPackage({
+                organizationId: T.org,
+                skillPackageId: T.unsubscribedDeletedPkg,
+            }),
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    it("listPackages leaves it out", async () => {
+    it("listPackages shows a subscriber its Deleted package, but not a non-subscriber", async () => {
         const ids = (await makeCaller().listPackages({ organizationId: T.org })).map((p) => p.id);
-        expect(ids).toEqual([T.livePkg]);
+        expect(ids.sort()).toEqual([T.livePkg, T.deletedPkg].sort());
     });
 
     it("listSubscribedPackages and listAssessableSkills leave it out", async () => {
@@ -356,6 +369,17 @@ describe("skillPackageSubscriptionsRouter catalogue hides a Deleted package", ()
                 skillPackageId: T.unsubscribedDeletedPkg,
             }),
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    // Last: it removes the subscription the tests above read.
+    it("unsubscribeFromPackage lets a subscriber leave it", async () => {
+        await makeCaller().unsubscribeFromPackage({
+            organizationId: T.org,
+            skillPackageId: T.deletedPkg,
+        });
+
+        const ids = (await makeCaller().listPackages({ organizationId: T.org })).map((p) => p.id);
+        expect(ids).toEqual([T.livePkg]);
     });
 });
 
@@ -688,10 +712,14 @@ describe("skillPackageSubscriptions.getSkill", () => {
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    it("throws NOT_FOUND for a skill in a Deleted package the org still subscribes to", async () => {
-        await expect(
-            makeCaller().getSkill({ organizationId: T.org, skillId: T.deletedPkgSkill }),
-        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    it("returns a skill in a Deleted package the org still subscribes to", async () => {
+        const result = await makeCaller().getSkill({
+            organizationId: T.org,
+            skillId: T.deletedPkgSkill,
+        });
+
+        expect(result.skillPackage.status).toBe("Deleted");
+        expect(result.subscribed).toBe(true);
     });
 
     it("returns an Archived skill", async () => {
@@ -920,14 +948,15 @@ describe("skillPackageSubscriptions.getGroup", () => {
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    it("throws NOT_FOUND for a group in a Deleted package the org still subscribes to", async () => {
-        await expect(
-            makeCaller().getGroup({
-                organizationId: T.org,
-                skillPackageId: T.deletedPkg,
-                skillGroupId: T.deletedPkgGroup,
-            }),
-        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    it("returns a group in a Deleted package the org still subscribes to", async () => {
+        const result = await makeCaller().getGroup({
+            organizationId: T.org,
+            skillPackageId: T.deletedPkg,
+            skillGroupId: T.deletedPkgGroup,
+        });
+
+        expect(result.skillPackage.status).toBe("Deleted");
+        expect(result.subscribed).toBe(true);
     });
 
     it("returns an Archived group", async () => {

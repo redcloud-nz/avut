@@ -43,7 +43,7 @@ export function SkillTrack_SkillGroup_Content({
         }),
     );
 
-    // Only a subscriber can see a group in a withdrawn (unpublished or archived) package.
+    // Only a subscriber can see a group in a withdrawn (unpublished, archived or deleted) package.
     const withdrawn = !SkillPackage.isAvailable(group.skillPackage);
 
     const packageHref = route("/orgs/[slug]/skill-track/catalogue/[package_id]", {

@@ -48,8 +48,8 @@ export function SkillTrack_CataloguePackage_Content({
         }),
     );
 
-    // Only a subscriber can see a withdrawn (unpublished or archived) package: it can leave it,
-    // but not subscribe again.
+    // Only a subscriber can see a withdrawn (unpublished, archived or deleted) package: it can
+    // leave it, but not subscribe again.
     const withdrawn = !SkillPackage.isAvailable(skillPackage);
 
     // The subscribe/unsubscribe dialogs are host-driven: their own success

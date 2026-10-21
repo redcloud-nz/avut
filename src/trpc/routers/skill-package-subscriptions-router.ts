@@ -51,15 +51,13 @@ const catalogueGroupSchema = SkillGroup.schema
 
 /**
  * Prisma `where` for the packages an organization's catalogue shows: every available package
- * (see `SkillPackage.isAvailable`), plus any withdrawn (unpublished or Archived, but not Deleted)
- * package the organization still subscribes to, so it can find the package and unsubscribe.
+ * (see `SkillPackage.isAvailable`), plus any withdrawn (unpublished, Archived, or Deleted into its
+ * author's Rubbish bin) package the organization still subscribes to, so it can find the package
+ * and unsubscribe.
  */
 function catalogueSkillPackageWhere(organizationId: string) {
     return {
-        OR: [
-            availableSkillPackageWhere,
-            { status: { not: "Deleted" }, subscriptions: { some: { organizationId } } },
-        ],
+        OR: [availableSkillPackageWhere, { subscriptions: { some: { organizationId } } }],
     } satisfies Prisma.SkillPackageWhereInput;
 }
 
@@ -70,15 +68,16 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
     /**
      * Get a single skill group by ID, with its skills, its package, and whether this organization
      * subscribes to that package. A group is visible when its package is in the catalogue (see
-     * `catalogueSkillPackageWhere`): every available package, plus a withdrawn (unpublished or
-     * Archived) package this organization still subscribes to. An Archived group is returned.
+     * `catalogueSkillPackageWhere`): every available package, plus a withdrawn (unpublished,
+     * Archived or Deleted) package this organization still subscribes to. An Archived group is
+     * returned.
      * @param skillPackageId The ID of the package the group must belong to.
      * @param skillGroupId The ID of the skill group to retrieve.
      * @returns The skill group, plus `skillPackage`, `subscribed`, and `skills` (its non-Deleted
      *   skills, Archived included, in `sequence` order).
      * @throws TRPCError(NOT_FOUND) if the group doesn't exist, is Deleted, or belongs to a
-     *   different package, or its package is Deleted, or withdrawn and this organization doesn't
-     *   subscribe to it.
+     *   different package, or its package is withdrawn and this organization doesn't subscribe to
+     *   it.
      */
     getGroup: organizationProcedure({ skillPackageSubscription: ["view"] })
         .input(
@@ -127,13 +126,13 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
     /**
      * Get a single catalogue skill package by ID, including this organization's subscription
      * status and package-level counts. The catalogue holds every available package, plus any
-     * withdrawn (unpublished or Archived) package this organization still subscribes to, so a
-     * subscriber can open it and unsubscribe.
+     * withdrawn (unpublished, Archived or Deleted) package this organization still subscribes to,
+     * so a subscriber can open it and unsubscribe.
      * @param skillPackageId The ID of the skill package to retrieve.
      * @returns The skill package with organization, subscription, skillCount, subscriptionCount,
      *   and its active groups (each with its active skills) for the catalogue contents view.
-     * @throws TRPCError(NOT_FOUND) if the package doesn't exist, is Deleted, or is withdrawn and
-     *   this organization doesn't subscribe to it.
+     * @throws TRPCError(NOT_FOUND) if the package doesn't exist, or is withdrawn and this
+     *   organization doesn't subscribe to it.
      *
      * Note: unlike the builder's `getPackage`, this response is NOT flat — a cache effect that
      * writes a mutation response wholesale into this query key would drop `groups`. Spread `old`.
@@ -240,13 +239,14 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
     /**
      * Get a single skill by ID, with its group, its package, and whether this organization
      * subscribes to that package. A skill is visible when its package is in the catalogue (see
-     * `catalogueSkillPackageWhere`): every available package, plus a withdrawn (unpublished or
-     * Archived) package this organization still subscribes to. An Archived skill is returned.
+     * `catalogueSkillPackageWhere`): every available package, plus a withdrawn (unpublished,
+     * Archived or Deleted) package this organization still subscribes to. An Archived skill is
+     * returned.
      * @param skillId The ID of the skill to retrieve.
      * @returns The skill, plus `group` (its skill group; the key is `group`, as in the Skills
      *   list's rows, not Prisma's `skillGroup`), `skillPackage`, and `subscribed`.
      * @throws TRPCError(NOT_FOUND) if the skill doesn't exist, or it or its group is Deleted, or
-     *   its package is Deleted, or withdrawn and this organization doesn't subscribe to it.
+     *   its package is withdrawn and this organization doesn't subscribe to it.
      */
     getSkill: organizationProcedure({ skillPackageSubscription: ["view"] })
         .input(z.object({ skillId: SkillId.schema }))
@@ -338,8 +338,8 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
 
     /**
      * List the catalogue: every available package (see `SkillPackage.isAvailable`), plus any
-     * withdrawn (unpublished or Archived) package this organization still subscribes to, so it can
-     * find the package and unsubscribe.
+     * withdrawn (unpublished, Archived or Deleted) package this organization still subscribes to,
+     * so it can find the package and unsubscribe.
      * @returns An array of skill packages including subscription status for the organization.
      */
     listPackages: organizationProcedure({

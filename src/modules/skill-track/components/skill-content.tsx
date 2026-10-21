@@ -42,7 +42,7 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
         }),
     );
 
-    // Only a subscriber can see a skill in a withdrawn (unpublished or archived) package.
+    // Only a subscriber can see a skill in a withdrawn (unpublished, archived or deleted) package.
     const withdrawn = !SkillPackage.isAvailable(skill.skillPackage);
 
     // As in the Skills list: a skill counts as archived when it, or its group, is.
