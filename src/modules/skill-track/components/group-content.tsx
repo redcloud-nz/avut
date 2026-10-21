@@ -9,7 +9,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { SkillLink } from "@/components/entity-links/skill-link";
 import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +23,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillTrack_SkillList } from "@/modules/skill-track/components/skill-list";
 import { trpc } from "@/trpc/client";
 
 export function SkillTrack_SkillGroup_Content({
@@ -138,50 +138,10 @@ export function SkillTrack_SkillGroup_Content({
                                     </DataList>
                                 </CardContent>
                             </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Skills</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    {group.skills.length === 0 ? (
-                                        <p className="text-muted-foreground text-sm">
-                                            No skills in this group.
-                                        </p>
-                                    ) : (
-                                        <ul className="divide-y rounded-md border">
-                                            {group.skills.map((skill) => (
-                                                <li key={skill.id} className="px-3 py-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-medium">
-                                                            <SkillLink skill={skill} />
-                                                        </span>
-                                                        {skill.status !== "Active" && (
-                                                            <Badge variant="outline">
-                                                                Archived
-                                                            </Badge>
-                                                        )}
-                                                        {skill.defaultRequired && (
-                                                            <Badge variant="secondary">
-                                                                Required
-                                                            </Badge>
-                                                        )}
-                                                        {!skill.defaultInclude && (
-                                                            <Badge variant="outline">
-                                                                Not included by default
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                    {skill.description && (
-                                                        <p className="text-muted-foreground mt-0.5 text-sm">
-                                                            {skill.description}
-                                                        </p>
-                                                    )}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </CardContent>
-                            </Card>
+                            <section className="space-y-3 pt-4">
+                                <h2 className="text-lg font-semibold tracking-tight">Skills</h2>
+                                <SkillTrack_SkillList skills={group.skills} />
+                            </section>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
