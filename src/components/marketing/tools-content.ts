@@ -129,7 +129,7 @@ export const TOOLS_CONTENT: readonly ToolSection[] = [
         description:
             "Run skill checks and assessment sessions against a catalogue of skill packages, then see who's current with reports sliced by person, skill or team.",
         tools: [
-            { name: "Catalogue", description: "The skill packages your org assesses against." },
+            { name: "Packages", description: "The skill packages your org assesses against." },
             { name: "Sessions", description: "Scheduled assessment sessions with a recorder." },
             { name: "Checks", description: "Individual skill check records, pass or fail." },
             {

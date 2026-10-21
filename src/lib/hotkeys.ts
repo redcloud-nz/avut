@@ -15,6 +15,7 @@ export type ActionVerb =
     | "recover"
     | "publish"
     | "unpublish"
+    | "unsubscribe"
     | "move"
     | "export"
     | "import"

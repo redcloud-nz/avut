@@ -46,7 +46,7 @@ export function SkillTrack_SkillGroup_Content({
     // Only a subscriber can see a group in a withdrawn (unpublished, archived or deleted) package.
     const withdrawn = !SkillPackage.isAvailable(group.skillPackage);
 
-    const packageHref = route("/orgs/[slug]/skill-track/catalogue/[package_id]", {
+    const packageHref = route("/orgs/[slug]/skill-track/packages/[package_id]", {
         slug: organization.slug,
         package_id: group.skillPackageId,
     });
@@ -60,15 +60,15 @@ export function SkillTrack_SkillGroup_Content({
                         href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
                     },
                     {
-                        label: "Catalogue",
-                        href: route("/orgs/[slug]/skill-track/catalogue", {
+                        label: "Packages",
+                        href: route("/orgs/[slug]/skill-track/packages", {
                             slug: organization.slug,
                         }),
                     },
                     { label: group.skillPackage.name, href: packageHref },
                     group.name,
                 ]}
-                actions={<HelpButton id="skill-track/catalogue" />}
+                actions={<HelpButton id="skill-track/packages" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

@@ -20,7 +20,7 @@ export function SkillGroupLink({ group }: SkillGroupLinkProps) {
 
     return (
         <EntityLink
-            href={route("/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]", {
+            href={route("/orgs/[slug]/skill-track/packages/[package_id]/groups/[group_id]", {
                 slug: organization.slug,
                 package_id: group.skillPackageId,
                 group_id: group.id,

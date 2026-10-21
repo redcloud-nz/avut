@@ -74,10 +74,10 @@ export function SkillPackageBuilder_UnpublishPackage_Dialog({
                 <DialogHeader>
                     <DialogTitle>Unpublish package</DialogTitle>
                     <DialogDescription>
-                        Unpublish package <ObjectName>{skillPackage.name}</ObjectName>. It leaves
-                        the catalogue, and organisations subscribed to it lose its skills from their
-                        sessions and reports until you publish it again. Their recorded checks are
-                        kept.
+                        Unpublish package <ObjectName>{skillPackage.name}</ObjectName>. No other
+                        organisation can subscribe to it, and those subscribed to it lose its skills
+                        from their sessions and reports until you publish it again. Their recorded
+                        checks are kept.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>

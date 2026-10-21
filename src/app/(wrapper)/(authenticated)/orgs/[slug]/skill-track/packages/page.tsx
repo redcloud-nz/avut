@@ -2,23 +2,23 @@
  *  Copyright (c) 2025 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Paths: /orgs/[slug]/skill-track/catalogue
+ * Paths: /orgs/[slug]/skill-track/packages
  */
 
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
-import { SkillTrack_CataloguePackages_List } from "@/modules/skill-track/components/catalogue-packages-list";
+import { SkillTrack_Packages_List } from "@/modules/skill-track/components/packages-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata = {
-    title: `Catalogue ${TITLE_SEPARATOR} Skill Track`,
+    title: `Packages ${TITLE_SEPARATOR} Skill Track`,
 };
 
-export default async function SkillTrack_Catalogue_Page(
-    props: PageProps<"/orgs/[slug]/skill-track/catalogue">,
+export default async function SkillTrack_Packages_Page(
+    props: PageProps<"/orgs/[slug]/skill-track/packages">,
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
@@ -39,14 +39,14 @@ export default async function SkillTrack_Catalogue_Page(
                             href: route("/orgs/[slug]/skill-track", { slug }),
                         },
                         {
-                            label: "Catalogue",
-                            href: route("/orgs/[slug]/skill-track/catalogue", { slug }),
+                            label: "Packages",
+                            href: route("/orgs/[slug]/skill-track/packages", { slug }),
                         },
                     ]}
-                    actions={<HelpButton id="skill-track/catalogue" />}
+                    actions={<HelpButton id="skill-track/packages" />}
                 />
                 <Std.ScrollContainer>
-                    <SkillTrack_CataloguePackages_List />
+                    <SkillTrack_Packages_List />
                 </Std.ScrollContainer>
             </>
         </HydrateClient>

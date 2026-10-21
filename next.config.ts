@@ -116,6 +116,12 @@ const nextConfig: NextConfig = {
                 destination: "/orgs/:slug/admin/organization-settings",
                 permanent: true,
             },
+            // Skill Track's Catalogue was renamed Packages (#420).
+            {
+                source: "/orgs/:slug/skill-track/catalogue/:path*",
+                destination: "/orgs/:slug/skill-track/packages/:path*",
+                permanent: true,
+            },
         ];
     },
     cacheComponents: true,

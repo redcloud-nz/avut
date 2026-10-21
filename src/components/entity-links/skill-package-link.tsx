@@ -15,13 +15,13 @@ export type SkillPackageLinkProps = {
     skillPackage: SkillPackageRef;
 };
 
-/** Links to the package's Skill Track catalogue page, which subscribers and non-subscribers can both open. */
+/** Links to the package's page in Skill Track's Packages, which subscribers and non-subscribers can both open. */
 export function SkillPackageLink({ skillPackage }: SkillPackageLinkProps) {
     const organization = useOrganization();
 
     return (
         <EntityLink
-            href={route("/orgs/[slug]/skill-track/catalogue/[package_id]", {
+            href={route("/orgs/[slug]/skill-track/packages/[package_id]", {
                 slug: organization.slug,
                 package_id: skillPackage.id,
             })}

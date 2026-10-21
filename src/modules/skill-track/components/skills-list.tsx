@@ -52,7 +52,7 @@ export function SkillTrack_SkillsList() {
         }),
     );
 
-    // Join each skill to its group and package, in catalogue order: package, then the author's
+    // Join each skill to its group and package, in package order: package, then the author's
     // group and skill order within it.
     const rows = useMemo(() => {
         const packages = new Map(assessable.skillPackages.map((pkg) => [pkg.id, pkg]));
@@ -88,7 +88,7 @@ export function SkillTrack_SkillsList() {
             Kaga.defineColumns<SkillRow>((col) => [
                 col.accessor("name", {
                     header: "Skill",
-                    // The reports and the package's catalogue page leave archived skills out, so
+                    // The reports and the package's page leave archived skills out, so
                     // say why a row here is missing from them.
                     cell: (ctx) => {
                         const link = <SkillLink skill={ctx.row.original} />;
@@ -178,13 +178,13 @@ export function SkillTrack_SkillsList() {
                             <PocketKnifeIcon className="size-12 text-muted-foreground" />
                         </EmptyMedia>
                         <EmptyDescription>
-                            No skills yet. Subscribe to a package in the{" "}
+                            No skills yet.{" "}
                             <Link
-                                href={route("/orgs/[slug]/skill-track/catalogue", {
+                                href={route("/orgs/[slug]/skill-track/packages", {
                                     slug: organization.slug,
                                 })}
                             >
-                                Catalogue
+                                Subscribe to a package
                             </Link>{" "}
                             to add its skills.
                         </EmptyDescription>
