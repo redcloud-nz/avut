@@ -77,8 +77,8 @@ export function SkillPackageBuilder_DeleteSkill_Dialog({
                     <AlertDialogDescription>
                         Confirm deletion of skill <ObjectName>{skill.name}</ObjectName> from{" "}
                         <ObjectName>{skill.skillPackage.name}</ObjectName> {" > "}
-                        <ObjectName>{skill.skillGroup.name}</ObjectName>. This action cannot be
-                        undone.
+                        <ObjectName>{skill.skillGroup.name}</ObjectName>. It moves to the Rubbish
+                        bin.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

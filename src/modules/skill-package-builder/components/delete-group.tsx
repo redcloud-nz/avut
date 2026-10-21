@@ -70,8 +70,9 @@ export function SkillPackageBuilder_DeleteSkillGroup_Dialog({
                     <AlertDialogTitle>Delete Skill Group</AlertDialogTitle>
                     <AlertDialogDescription>
                         Confirm deletion of skill group <ObjectName>{skillGroup.name}</ObjectName>{" "}
-                        from package <ObjectName>{skillGroup.skillPackage.name}</ObjectName>. This
-                        action cannot be undone.
+                        from package <ObjectName>{skillGroup.skillPackage.name}</ObjectName>. It
+                        moves to the Rubbish bin, and its skills leave subscribers&apos; sessions
+                        and reports until you recover it.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
