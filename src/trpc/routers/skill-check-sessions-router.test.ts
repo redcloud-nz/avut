@@ -1239,8 +1239,9 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
     //   draftSession    → Draft, the lock doesn't apply
     //   approvedSession → Include, every guarded procedure refuses with CONFLICT
     //   toApprove       → Draft, with one check, approved by the "approves a Draft session" test
-    //   racedSession    → Draft, no checks (for the lost-race tests); the approveSession one can
-    //                     leave it approved, as prisma-mock runs the rest of a failed transaction
+    //   racedSession    → Draft, no checks (for approveSession's lost-race test), which can leave
+    //                     it approved, as prisma-mock runs the rest of a failed transaction
+    //   racedConfig     → Draft, no checks (for the guarded procedures' lost-race tests)
     //   racedUpdate     → Draft, no checks (for updateSession's lost-race tests)
     //   person          → an eligible assessor (skills-assessor), also used as an assessee
     //   skill           → in pkg, which the org subscribes to
@@ -1256,6 +1257,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
         toApprove: SkillCheckSessionId.create(),
         toApproveCheck: SkillCheckId.create(),
         racedSession: SkillCheckSessionId.create(),
+        racedConfig: SkillCheckSessionId.create(),
         racedUpdate: SkillCheckSessionId.create(),
     };
     const SESSION_DATE = new Date("2026-03-14T00:00:00.000Z");
@@ -1322,6 +1324,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
             { id: T.toApprove, sessionNumber: 3, status: "Draft" },
             { id: T.racedSession, sessionNumber: 4, status: "Draft" },
             { id: T.racedUpdate, sessionNumber: 5, status: "Draft" },
+            { id: T.racedConfig, sessionNumber: 6, status: "Draft" },
         ] as const;
         for (const { id, sessionNumber, status } of sessions) {
             await db.skillCheckSession.create({
@@ -1401,6 +1404,12 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
             });
 
             it("reports a session approved after the pre-check (P2025) as CONFLICT", async () => {
+                // Still Draft, so the up-front check passes and it's the lock that refuses.
+                const session = await db.skillCheckSession.findUnique({
+                    where: { id: T.racedConfig },
+                });
+                expect(session?.status).toBe("Draft");
+
                 // prisma-mock can't interleave a concurrent approval, so fake the lost race's
                 // error on the transaction's first statement, the session-row lock.
                 const spy = vi
@@ -1409,11 +1418,11 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                         Object.assign(new Error("Record to update not found."), { code: "P2025" }),
                     );
                 try {
-                    await expect(call(T.racedSession)).rejects.toMatchObject({
+                    await expect(call(T.racedConfig)).rejects.toMatchObject({
                         code: "CONFLICT",
                     });
                     expect(spy.mock.calls[0][0]).toMatchObject({
-                        where: { id: T.racedSession, status: { not: "Include" } },
+                        where: { id: T.racedConfig, status: { not: "Include" } },
                     });
                 } finally {
                     spy.mockRestore();
