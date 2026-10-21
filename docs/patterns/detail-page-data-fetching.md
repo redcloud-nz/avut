@@ -221,8 +221,8 @@ export const teamsEffects = createEffects<"teams">()({
 
 If a detail page's title doesn't need the entity's name (a static title is fine), skip
 `generateMetadata`'s extra `fetchQuery` — see the "static/generic title" convention
-used by list-style pages (e.g. `skill-track/catalogue/page.tsx`:
-`` `Catalogue ${TITLE_SEPARATOR} Skill Track` ``). In that case the page body's
+used by list-style pages (e.g. `skill-track/packages/page.tsx`:
+`` `Packages ${TITLE_SEPARATOR} Skill Track` ``). In that case the page body's
 `prefetch` calls are the only server-side data touch needed.
 
 ## Pages that host `?action=` dialogs

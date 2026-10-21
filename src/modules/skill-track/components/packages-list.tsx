@@ -58,7 +58,7 @@ export function SkillTrack_Packages_List() {
             <PackagesSection title="Available">
                 {available.length === 0 ? (
                     <EmptyMessage>
-                        {subscribed.length === 0
+                        {!subscribed.some((pkg) => SkillPackage.isAvailable(pkg))
                             ? "No packages are published yet."
                             : "Subscribed to every published package."}
                     </EmptyMessage>
