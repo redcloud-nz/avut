@@ -10,7 +10,10 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { Feature_SettingsCard } from "./feature-settings-card";
 
-/** The email integration: Enable/Disable only, since it has no settings of its own. */
+/**
+ * The email integration: Enable/Disable only, since it has no settings of its own. Deliberately
+ * not rendered by `OrganizationSettingsForm` until something reads `integrations.email`.
+ */
 export function EmailIntegration_SettingsCard({
     organizationId,
     settings,

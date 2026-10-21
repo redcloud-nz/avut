@@ -44,14 +44,15 @@ const DISABLE_CONSEQUENCES: Record<"module" | "integration", string> = {
 /**
  * The card for a module or integration on the organization-settings page.
  *
- * Disabled, the body is an `Empty` saying so, with an Enable button for editors — enabling is
- * harmless, so it saves straight away. Enabled, the body is `children` (its own settings, if it
- * has any) and the header carries a Disable button, which confirms first since turning it off
- * affects everyone in the organisation.
+ * An h3 heading row carries the title and, for editors, Enable or Disable; the description sits
+ * below it in an info `Alert`. Disabled, the heading gets a "Disabled" badge and Enable saves
+ * straight away, since enabling is harmless. Enabled, `children` (its own settings, if it has
+ * any) render in a `Card`, and Disable confirms first since turning it off affects everyone in
+ * the organisation.
  *
  * The card owns the `?action=disable-<key>` param rather than the dialog (Recipe C in
- * `docs/patterns/mutation-dialog.md`): a successful disable swaps the header the trigger lives
- * in, and the close has to come from something that stays mounted.
+ * `docs/patterns/mutation-dialog.md`): a successful disable swaps the Disable trigger for Enable,
+ * and the close has to come from something that stays mounted.
  */
 export function Feature_SettingsCard({
     organizationId,

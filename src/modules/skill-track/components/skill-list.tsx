@@ -8,13 +8,14 @@ import { SkillLink } from "@/components/entity-links/skill-link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SkillRef } from "@/lib/schemas/skill";
+import { RecordStatus } from "@/lib/validation";
 
 type SkillListSkill = SkillRef & {
     description: string;
     defaultInclude: boolean;
     defaultRequired: boolean;
     /** Left out where only active skills are listed. */
-    status?: string;
+    status?: RecordStatus;
 };
 
 /**
