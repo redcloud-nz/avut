@@ -42,12 +42,11 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
         }),
     );
 
-    // Only a subscriber can see a skill in a withdrawn (unpublished or archived) package.
+    // Only a subscriber can see a skill in a withdrawn (unpublished, archived or deleted) package.
     const withdrawn = !SkillPackage.isAvailable(skill.skillPackage);
 
-    // As in the Skills list: a skill counts as archived when it, or its (not Deleted) group, is.
-    const archived =
-        skill.status !== "Active" || (skill.group !== null && skill.group.status !== "Active");
+    // As in the Skills list: a skill counts as archived when it, or its group, is.
+    const archived = skill.status !== "Active" || skill.group.status !== "Active";
 
     // The coverage report covers only Active skills in available packages the organization
     // subscribes to; for anything else it would show "Unknown Skill".
@@ -81,9 +80,9 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                     </Saratoga.Header>
                     {withdrawn && (
                         <p className="text-muted-foreground text-sm">
-                            Its author has withdrawn this skill&apos;s package. Its skills are out
-                            of your sessions and reports until it&apos;s published again. Checks
-                            already recorded are kept.
+                            {skill.skillPackage.status === "Deleted"
+                                ? "Its author has deleted this skill's package. Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                : "Its author has withdrawn this skill's package. Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
                         </p>
                     )}
                     <Saratoga.Columns>
@@ -117,11 +116,7 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                         <DataItem inline>
                                             <DataItemTitle>Group</DataItemTitle>
                                             <DataItemValue>
-                                                {skill.group ? (
-                                                    <SkillGroupLink group={skill.group} />
-                                                ) : (
-                                                    "—"
-                                                )}
+                                                <SkillGroupLink group={skill.group} />
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>

@@ -119,23 +119,26 @@ describe("skill-checks", () => {
         //   unpublished  → unpublished, Active, subscribed  → not assessable
         //   archived     → published, Archived, subscribed  → not assessable
         //   unsubscribed → published, Active, not subscribed → not assessable
+        //   inDeletedGroup → published, Active, subscribed, but its group Deleted → not assessable
         const B = {
             org: OrganizationId.create(),
             available: SkillId.create(),
             unpublished: SkillId.create(),
             archived: SkillId.create(),
             unsubscribed: SkillId.create(),
+            inDeletedGroup: SkillId.create(),
         };
 
         beforeAll(async () => {
             await db.organization.create({
                 data: { id: B.org, name: B.org, slug: B.org, createdAt: new Date() },
             });
-            for (const [skillId, published, status, subscribed] of [
-                [B.available, true, "Active", true],
-                [B.unpublished, false, "Active", true],
-                [B.archived, true, "Archived", true],
-                [B.unsubscribed, true, "Active", false],
+            for (const [skillId, published, status, subscribed, groupStatus] of [
+                [B.available, true, "Active", true, "Active"],
+                [B.unpublished, false, "Active", true, "Active"],
+                [B.archived, true, "Archived", true, "Active"],
+                [B.unsubscribed, true, "Active", false, "Active"],
+                [B.inDeletedGroup, true, "Active", true, "Deleted"],
             ] as const) {
                 const skillPackageId = SkillPackageId.create();
                 const skillGroupId = SkillGroupId.create();
@@ -157,6 +160,7 @@ describe("skill-checks", () => {
                         name: skillGroupId,
                         description: "",
                         properties: {},
+                        status: groupStatus,
                     },
                 });
                 await db.skill.create({
@@ -205,6 +209,12 @@ describe("skill-checks", () => {
             expect(error).toBeInstanceOf(ValidationError);
             expect((error as Error).message).toContain(`Skill(id=${skillId})`);
             expect((error as Error).message).not.toContain(B.available);
+        });
+
+        it("rejects an Active skill whose group is Deleted", async () => {
+            await expect(assertAssessableSkills(ctxB(), [B.inDeletedGroup])).rejects.toThrow(
+                ValidationError,
+            );
         });
     });
 

@@ -48,8 +48,8 @@ export function SkillTrack_CataloguePackage_Content({
         }),
     );
 
-    // Only a subscriber can see a withdrawn (unpublished or archived) package: it can leave it,
-    // but not subscribe again.
+    // Only a subscriber can see a withdrawn (unpublished, archived or deleted) package: it can
+    // leave it, but not subscribe again.
     const withdrawn = !SkillPackage.isAvailable(skillPackage);
 
     // The subscribe/unsubscribe dialogs are host-driven: their own success
@@ -111,9 +111,9 @@ export function SkillTrack_CataloguePackage_Content({
                     </Saratoga.Header>
                     {withdrawn && (
                         <p className="text-muted-foreground text-sm">
-                            Its author has withdrawn this package. Its skills are out of your
-                            sessions and reports until it&apos;s published again. Checks already
-                            recorded are kept.
+                            {skillPackage.status === "Deleted"
+                                ? "Its author has deleted this package. Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                : "Its author has withdrawn this package. Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
                         </p>
                     )}
                     <Saratoga.Columns>

@@ -912,7 +912,10 @@ async function setGroupActive(
  * existing record unchanged, if the group is already `Deleted`.
  *
  * Always soft — nothing physically removes the row, and the group's skills are left untouched
- * (no cascade on soft-delete), matching how archive already behaves.
+ * (no cascade on soft-delete), matching how archive already behaves. Subscriber reads hide a
+ * skill in a Deleted group instead (`listAssessableSkills`, `getSkill`, `assertAssessableSkills`),
+ * as they hide a Deleted package's contents, so recovering the group brings back exactly the
+ * skills it had.
  * @throws NotFoundError if the group does not exist in the organization.
  */
 export async function deleteGroup(
@@ -1097,7 +1100,8 @@ async function setPackageActive(
  * untouched (no cascade on soft-delete), matching how archive already behaves.
  *
  * A published package is also unpublished, so other organizations lose it from the catalogue
- * now rather than when the Rubbish bin purges it. Recovering it leaves it unpublished.
+ * now rather than when the Rubbish bin purges it; a subscriber still sees it, withdrawn, so it
+ * can unsubscribe (see `catalogueSkillPackageWhere`). Recovering it leaves it unpublished.
  * @throws NotFoundError if the package does not exist in the organization.
  */
 export async function deletePackage(

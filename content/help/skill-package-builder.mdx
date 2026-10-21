@@ -12,7 +12,9 @@ for any organisation to use from its Skill Track catalogue. You need the
 package already here is updated in place, anything the file leaves out is
 archived, and the result is always unpublished. Open a package to add its
 groups and skills. A skill's **Revalidation Frequency** is in months and
-decides when a pass expires in reports; 0 means it never expires.
+decides when a pass expires in reports; 0 means it never expires. Deleting a
+group takes its skills out of subscribers' sessions and reports with it, until
+you recover the group from the Rubbish bin.
 
 The package's menu (⋮) has:
 
@@ -25,7 +27,8 @@ The package's menu (⋮) has:
 - **Archive** and **Restore**. Archiving also unpublishes, so it withdraws the
   skills the same way. Restoring doesn't publish again: do that yourself.
 - **Delete**, which unpublishes the package and moves it to the Rubbish bin.
-  Subscribers lose its skills straight away.
+  Subscribers lose its skills straight away, but still see it as withdrawn, so
+  they can unsubscribe.
 - **Export .json**, to copy it to another organisation or AVUT instance.
 
 Packages aren't versioned: a change to a published package reaches every
