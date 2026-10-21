@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { OrganizationId } from "@/lib/schemas/organization";
 import {
     OrganizationSettings,
@@ -34,9 +34,6 @@ export function RubbishBin_SettingsCard({
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Rubbish Bin</CardTitle>
-            </CardHeader>
             <CardContent>
                 <SettingRow
                     title="Keep deleted records for"

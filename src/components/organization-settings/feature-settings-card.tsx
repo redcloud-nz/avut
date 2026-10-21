@@ -8,15 +8,10 @@
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, type ReactNode } from "react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button, MutationButton } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     Dialog,
     DialogCloseButton,
@@ -26,7 +21,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
@@ -50,14 +44,15 @@ const DISABLE_CONSEQUENCES: Record<"module" | "integration", string> = {
 /**
  * The card for a module or integration on the organization-settings page.
  *
- * Disabled, the body is an `Empty` saying so, with an Enable button for editors — enabling is
- * harmless, so it saves straight away. Enabled, the body is `children` (its own settings, if it
- * has any) and the header carries a Disable button, which confirms first since turning it off
- * affects everyone in the organisation.
+ * An h3 heading row carries the title and, for editors, Enable or Disable; the description sits
+ * below it in an info `Alert`. Disabled, the heading gets a "Disabled" badge and Enable saves
+ * straight away, since enabling is harmless. Enabled, `children` (its own settings, if it has
+ * any) render in a `Card`, and Disable confirms first since turning it off affects everyone in
+ * the organisation.
  *
  * The card owns the `?action=disable-<key>` param rather than the dialog (Recipe C in
- * `docs/patterns/mutation-dialog.md`): a successful disable swaps the header the trigger lives
- * in, and the close has to come from something that stays mounted.
+ * `docs/patterns/mutation-dialog.md`): a successful disable swaps the Disable trigger for Enable,
+ * and the close has to come from something that stays mounted.
  */
 export function Feature_SettingsCard({
     organizationId,
@@ -110,44 +105,40 @@ export function Feature_SettingsCard({
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                {description && <CardDescription>{description}</CardDescription>}
-                {canEdit && enabled && (
-                    <CardAction>
+        <section className="space-y-3">
+            <div className="flex items-center gap-4">
+                <h3 className="flex min-w-0 flex-1 items-center gap-2 text-base font-semibold">
+                    {title}
+                    {!enabled && <Badge variant="outline">Disabled</Badge>}
+                </h3>
+                {canEdit &&
+                    (enabled ? (
                         <Button variant="outline" onClick={() => handleDisableOpenChange(true)}>
                             Disable
                         </Button>
-                    </CardAction>
-                )}
-            </CardHeader>
-            {enabled ? (
-                children && <CardContent>{children}</CardContent>
-            ) : (
-                <CardContent>
-                    <Empty className="border border-dashed">
-                        <EmptyHeader>
-                            <EmptyDescription>
-                                This {kind} is not enabled for your organisation.
-                            </EmptyDescription>
-                        </EmptyHeader>
-                        {canEdit && (
-                            <EmptyContent>
-                                <MutationButton
-                                    type="button"
-                                    status={enableMutation.status}
-                                    text={{
-                                        idle: "Enable",
-                                        pending: "Enabling...",
-                                        success: "Enabled",
-                                    }}
-                                    onClick={() => setEnabled(enableMutation, true)}
-                                />
-                            </EmptyContent>
-                        )}
-                    </Empty>
-                </CardContent>
+                    ) : (
+                        <MutationButton
+                            type="button"
+                            status={enableMutation.status}
+                            text={{
+                                idle: "Enable",
+                                pending: "Enabling...",
+                                success: "Enabled",
+                            }}
+                            onClick={() => setEnabled(enableMutation, true)}
+                        />
+                    ))}
+            </div>
+            {description && (
+                // A static note, not an announcement: override Alert's role="alert".
+                <Alert variant="default" role="note" className="px-3 py-2.5">
+                    <AlertDescription className="text-sm/relaxed">{description}</AlertDescription>
+                </Alert>
+            )}
+            {enabled && children && (
+                <Card>
+                    <CardContent>{children}</CardContent>
+                </Card>
             )}
 
             {canEdit && (
@@ -175,6 +166,6 @@ export function Feature_SettingsCard({
                     </DialogContent>
                 </Dialog>
             )}
-        </Card>
+        </section>
     );
 }

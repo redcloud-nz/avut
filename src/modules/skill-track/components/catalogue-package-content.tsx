@@ -12,7 +12,6 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
-import { SkillLink } from "@/components/entity-links/skill-link";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillTrack_SkillList } from "@/modules/skill-track/components/skill-list";
 import { SkillTrack_SubscribeToPackage_Dialog } from "@/modules/skill-track/components/subscribe-package";
 import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/modules/skill-track/components/unsubscribe-package";
 import { trpc, type RouterOutput } from "@/trpc/client";
@@ -157,26 +157,24 @@ export function SkillTrack_CataloguePackage_Content({
                                     </DataList>
                                 </CardContent>
                             </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Contents</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    {skillPackage.groups.length === 0 ? (
-                                        <p className="text-muted-foreground text-sm">
-                                            This package has no groups or skills yet.
-                                        </p>
-                                    ) : (
-                                        skillPackage.groups.map((group) => (
+                            <section className="space-y-4 pt-4">
+                                <h2 className="text-lg font-semibold tracking-tight">Contents</h2>
+                                {skillPackage.groups.length === 0 ? (
+                                    <p className="text-muted-foreground text-sm">
+                                        This package has no groups or skills yet.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-8">
+                                        {skillPackage.groups.map((group) => (
                                             <PackageGroup
                                                 key={group.id}
                                                 group={group}
                                                 skillPackageId={skillPackage.id}
                                             />
-                                        ))
-                                    )}
-                                </CardContent>
-                            </Card>
+                                        ))}
+                                    </div>
+                                )}
+                            </section>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
@@ -236,42 +234,21 @@ function PackageGroup({
     skillPackageId: SkillPackageId;
 }) {
     return (
-        <div>
-            <div className="flex items-center gap-2">
-                <h3 className="font-medium">
-                    <SkillGroupLink group={{ ...group, skillPackageId }} />
-                </h3>
-                {!group.defaultInclude && <Badge variant="outline">Not included by default</Badge>}
+        <div className="space-y-3">
+            <div>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-base font-semibold">
+                        <SkillGroupLink group={{ ...group, skillPackageId }} />
+                    </h3>
+                    {!group.defaultInclude && (
+                        <Badge variant="outline">Not included by default</Badge>
+                    )}
+                </div>
+                {group.description && (
+                    <p className="text-muted-foreground mt-0.5 text-sm">{group.description}</p>
+                )}
             </div>
-            {group.description && (
-                <p className="text-muted-foreground mt-0.5 text-sm">{group.description}</p>
-            )}
-            {group.skills.length === 0 ? (
-                <p className="text-muted-foreground mt-2 text-sm">No skills in this group.</p>
-            ) : (
-                <ul className="mt-2 divide-y rounded-md border">
-                    {group.skills.map((skill) => (
-                        <li key={skill.id} className="px-3 py-2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">
-                                    <SkillLink skill={skill} />
-                                </span>
-                                {skill.defaultRequired && (
-                                    <Badge variant="secondary">Required</Badge>
-                                )}
-                                {!skill.defaultInclude && (
-                                    <Badge variant="outline">Not included by default</Badge>
-                                )}
-                            </div>
-                            {skill.description && (
-                                <p className="text-muted-foreground mt-0.5 text-sm">
-                                    {skill.description}
-                                </p>
-                            )}
-                        </li>
-                    ))}
-                </ul>
-            )}
+            <SkillTrack_SkillList skills={group.skills} />
         </div>
     );
 }

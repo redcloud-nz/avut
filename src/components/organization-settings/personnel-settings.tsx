@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
@@ -38,9 +38,6 @@ export function Personnel_SettingsCard({
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Personnel</CardTitle>
-            </CardHeader>
             <CardContent>
                 <SettingRow
                     title="Link on invitation accept"
