@@ -475,7 +475,7 @@ describe("teamsRouter D4H sync plans", () => {
     );
 });
 
-describe("teamsRouter link and create from D4H", () => {
+describe("teamsRouter link to D4H", () => {
     async function seed() {
         const db = createMockPrisma();
         const T = {

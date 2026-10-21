@@ -400,6 +400,14 @@ describe("SkillPackages.prepareImport", () => {
         );
     });
 
+    it("rejects a skill group ID owned by a different organization", async () => {
+        await createOtherPackage(T.orgB);
+        const env = envelope();
+        env.package.groups[0]!.id = T.otherGroup;
+
+        await expect(SkillPackages.prepareImport(db, env, T.orgA)).rejects.toThrow(ConflictError);
+    });
+
     it("reports unchanged rows on an identical re-import", async () => {
         await apply(envelope(), T.orgA);
         const { plan } = await SkillPackages.prepareImport(db, envelope(), T.orgA);

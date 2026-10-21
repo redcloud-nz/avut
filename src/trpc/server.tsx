@@ -72,7 +72,7 @@ export function prefetch<TQueryFnData, TError, TData, TQueryKey extends QueryKey
     queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
 ) {
     const queryClient = getServerQueryClient();
-    void connection().then(() => queryClient.prefetchQuery(queryOptions));
+    void afterConnection(() => queryClient.prefetchQuery(queryOptions));
 }
 
 /**
@@ -89,7 +89,20 @@ export function prefetchInfinite<
     TPageParam,
 >(queryOptions: FetchInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryKey, TPageParam>) {
     const queryClient = getServerQueryClient();
-    void connection().then(() => queryClient.prefetchInfiniteQuery(queryOptions));
+    void afterConnection(() => queryClient.prefetchInfiniteQuery(queryOptions));
+}
+
+/**
+ * Run `start` once the render is request-time, swallowing any failure so a prefetch never throws.
+ * `connection()` rejects when its render is abandoned, and throws inside `after()` or `"use cache"`.
+ */
+async function afterConnection(start: () => Promise<void>) {
+    try {
+        await connection();
+    } catch {
+        return;
+    }
+    await start();
 }
 
 /**

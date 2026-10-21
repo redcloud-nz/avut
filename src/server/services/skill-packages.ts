@@ -127,7 +127,7 @@ export function groupLogRefs(group: Pick<SkillGroup, "skillPackageId">): LogEntr
  * The refs a `Skill` move entry carries (#342): the old group as `from` and the new one as `to`,
  * so the move shows on both groups' History pages. The package is `context` when it is unchanged,
  * otherwise the old package is `from` and the new one `to`. Used by `moveSkill` and by an import
- * that changes a skill's group.
+ * that changes a skill's group or brings it back from another package.
  */
 export function skillMoveLogRefs({
     from,
@@ -297,12 +297,12 @@ function pick<K extends string>(obj: object, keys: readonly K[]): Record<string,
  *   the package that the file omits.
  * - Package ID owned by a different organization → `CONFLICT`.
  * - A skill ID that lives in another of the organization's packages → moved back, and logged as
- *   a move. One owned by a different organization → `CONFLICT`.
+ *   a move. A skill or group ID owned by a different organization → `CONFLICT`.
  *
  * An imported package always lands `published: false` / `status: Active`.
  *
  * @throws ValidationError if the envelope repeats a group or skill ID.
- * @throws ConflictError if the package ID, or a skill ID, belongs to another organization.
+ * @throws ConflictError if the package ID, or a group or skill ID, belongs to another organization.
  */
 export async function prepareImport(
     prisma: SkillPackagePrisma,
@@ -354,6 +354,25 @@ export async function prepareImport(
     }
     const currentSkillOf = (id: string) => existingSkills.get(id) ?? otherPackageSkills.get(id);
 
+    // A group ID owned by another organisation is refused too, or the upsert would re-parent it.
+    const otherPackageGroupIds = incoming.groups
+        .map((g) => g.id)
+        .filter((id) => !existingGroups.has(id));
+    if (otherPackageGroupIds.length > 0) {
+        const foreignGroup = await prisma.skillGroup.findFirst({
+            where: {
+                id: { in: otherPackageGroupIds },
+                skillPackage: { organizationId: { not: targetOrganizationId } },
+            },
+            select: { id: true },
+        });
+        if (foreignGroup) {
+            throw new ConflictError(
+                `Skill group ${foreignGroup.id} already exists under a different organisation. A skill group ID belongs to exactly one organisation per instance.`,
+            );
+        }
+    }
+
     const fileGroupIds = new Set<string>();
     const fileSkillIds = new Set<string>();
     const groupNodes: ImportPlanNode[] = [];
@@ -390,7 +409,7 @@ export async function prepareImport(
                       pick(skill, SKILL_COMPARE_KEYS),
                   )
                 : diffObject({}, pick(skill, SKILL_COMPARE_KEYS));
-            // A move to another group reads "Group: X → Y", like `moveSkill`'s entry (#342).
+            // A move back from another package reads "Package: X → Y".
             if (currentSkill && currentSkill.skillPackageId !== incoming.id) {
                 skillDiff.push({
                     type: "obj_mod",
@@ -399,6 +418,7 @@ export async function prepareImport(
                     curr: incoming.id,
                 });
             }
+            // A move to another group reads "Group: X → Y", like `moveSkill`'s entry (#342).
             if (currentSkill && groupChanged) {
                 skillDiff.push({
                     type: "obj_mod",
