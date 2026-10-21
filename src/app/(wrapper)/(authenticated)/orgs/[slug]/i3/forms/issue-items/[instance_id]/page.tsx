@@ -377,6 +377,7 @@ function I3_Issue_ItemsSection({
                                         type="button"
                                         variant="ghost"
                                         size="icon"
+                                        aria-label="Edit item"
                                         onClick={() => setTargetIndex(index)}
                                     >
                                         <ObjectIcons.Edit />
@@ -385,6 +386,7 @@ function I3_Issue_ItemsSection({
                                         type="button"
                                         variant="ghost"
                                         size="icon"
+                                        aria-label="Remove item"
                                         onClick={() => {
                                             removeItem(index);
                                             onChange();

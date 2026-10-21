@@ -102,7 +102,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Update session">
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>

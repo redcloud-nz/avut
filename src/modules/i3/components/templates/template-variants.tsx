@@ -109,6 +109,7 @@ export function I3Module_Template_Variants_List({ template }: { template: I3Temp
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                aria-label={`Update ${variant.name}`}
                                                 onClick={() =>
                                                     openVariantAction("update-variant", variant.id)
                                                 }
@@ -118,6 +119,7 @@ export function I3Module_Template_Variants_List({ template }: { template: I3Temp
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                aria-label={`Delete ${variant.name}`}
                                                 onClick={() =>
                                                     openVariantAction("delete-variant", variant.id)
                                                 }

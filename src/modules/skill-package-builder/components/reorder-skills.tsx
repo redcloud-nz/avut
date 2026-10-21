@@ -240,7 +240,13 @@ function SortableSkill({
             )}
             data-dragging={isDragging}
         >
-            <Button variant="ghost" size="icon" className="cursor-move" ref={handleRef}>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="cursor-move"
+                aria-label={`Drag to reorder ${skill.name}`}
+                ref={handleRef}
+            >
                 <GripVerticalIcon />
             </Button>
 
@@ -250,6 +256,7 @@ function SortableSkill({
                 <Button
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Move ${skill.name} up`}
                     disabled={index === 0}
                     onClick={() => onSwap(index, index - 1)}
                 >
@@ -258,6 +265,7 @@ function SortableSkill({
                 <Button
                     variant="ghost"
                     size="icon-sm"
+                    aria-label={`Move ${skill.name} down`}
                     disabled={isLast}
                     onClick={() => onSwap(index, index + 1)}
                 >

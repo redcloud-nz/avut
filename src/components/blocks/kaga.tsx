@@ -370,14 +370,14 @@ function KagaTablePagination<TData extends RowData>({
                         onClick={() => table.previousPage()}
                     >
                         <ChevronLeftIcon className="size-4" />{" "}
-                        <span className="hidden sm:block">Previous</span>
+                        <span className="sr-only sm:not-sr-only">Previous</span>
                     </Button>
                     <Button
                         variant="outline"
                         disabled={!table.getCanNextPage()}
                         onClick={() => table.nextPage()}
                     >
-                        <span className="hidden sm:block">Next</span>{" "}
+                        <span className="sr-only sm:not-sr-only">Next</span>{" "}
                         <ChevronRightIcon className="size-4" />
                     </Button>
                 </div>

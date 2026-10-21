@@ -219,7 +219,7 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                                         }
                                     >
                                         <ObjectIcons.Create />{" "}
-                                        <span className="hidden md:inline">New Member</span>
+                                        <span className="sr-only md:not-sr-only">New Member</span>
                                     </Button>
                                 </Protect>
                             )}

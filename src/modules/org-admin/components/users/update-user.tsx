@@ -97,7 +97,7 @@ export function AdminModule_UpdateUser_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Update user roles">
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>

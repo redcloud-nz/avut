@@ -100,7 +100,8 @@ export function AdminModule_CreateInvitation_Dialog() {
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <ObjectIcons.Create /> <span className="hidden md:inline">New Invitation</span>
+                    <ObjectIcons.Create />{" "}
+                    <span className="sr-only md:not-sr-only">New Invitation</span>
                 </Button>
             </DialogTrigger>
             <DialogContent size="lg">

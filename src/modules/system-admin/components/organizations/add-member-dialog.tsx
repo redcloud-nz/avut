@@ -89,7 +89,7 @@ export function SystemAdmin_AddMember_Dialog({
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">Add Member</span>
+                    <CreateNewIcon /> <span className="sr-only md:not-sr-only">Add Member</span>
                 </Button>
             </DialogTrigger>
             <DialogContent size="lg">

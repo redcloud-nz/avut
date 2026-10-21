@@ -105,7 +105,12 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                                         <ObjectIcons.History />
                                     </Link>
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={handleRefresh}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label="Refresh"
+                                    onClick={handleRefresh}
+                                >
                                     <RefreshCwIcon />
                                 </Button>
                             </Protect>

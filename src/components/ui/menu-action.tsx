@@ -142,7 +142,7 @@ export function EntityActionMenu({
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Actions">
                     <DropdownMenuTriggerIcon />
                 </Button>
             </DropdownMenuTrigger>

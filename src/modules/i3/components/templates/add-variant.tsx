@@ -140,7 +140,7 @@ export function I3Module_Template_AddVariant_Dialog({ template }: { template: I3
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Add variant">
                     <ObjectIcons.Create />
                 </Button>
             </DialogTrigger>

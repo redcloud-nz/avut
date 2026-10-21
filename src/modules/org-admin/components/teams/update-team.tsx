@@ -80,7 +80,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     return (
         <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Update team">
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>

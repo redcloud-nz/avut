@@ -118,7 +118,7 @@ export function AdminModule_CreatePerson_Dialog() {
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button variant="outline">
-                    <CreateNewIcon /> <span className="hidden md:inline">New Person</span>
+                    <CreateNewIcon /> <span className="sr-only md:not-sr-only">New Person</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>

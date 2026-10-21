@@ -121,7 +121,7 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                         <Saratoga.Actions>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
+                                    <Button variant="ghost" size="icon" aria-label="Actions">
                                         <DropdownMenuTriggerIcon />
                                     </Button>
                                 </DropdownMenuTrigger>

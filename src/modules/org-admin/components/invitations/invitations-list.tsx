@@ -215,7 +215,7 @@ function InvitationActions({ invitation }: { invitation: OrganizationInvitationD
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label={`Actions for ${invitation.email}`}>
                     <DropdownMenuTriggerIcon />
                 </Button>
             </DropdownMenuTrigger>

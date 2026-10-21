@@ -56,7 +56,12 @@ export default async function AdminModule_Organization_Page(
                                     <CardTitle>{organization.name}</CardTitle>
                                     <CardAction>
                                         <Protect permissions={{ organization: ["update"] }}>
-                                            <Button variant="ghost" size="icon" asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label="Update organisation"
+                                                asChild
+                                            >
                                                 <Link
                                                     href={route(
                                                         "/orgs/[slug]/admin/organization/--update",
