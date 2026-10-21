@@ -53,7 +53,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/packages", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Skill Packages</ItemTitle>
+                                        <ItemTitle>Packages</ItemTitle>
                                         <ItemDescription>
                                             Browse and subscribe to skill packages.
                                         </ItemDescription>
@@ -83,7 +83,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/checks", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Skill Checks</ItemTitle>
+                                        <ItemTitle>Checks</ItemTitle>
                                         <ItemDescription>
                                             View recent skill checks and their results.
                                         </ItemDescription>
@@ -98,7 +98,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/sessions", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Skill Check Sessions</ItemTitle>
+                                        <ItemTitle>Sessions</ItemTitle>
                                         <ItemDescription>
                                             View and manage skill check sessions.
                                         </ItemDescription>
