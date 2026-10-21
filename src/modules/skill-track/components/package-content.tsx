@@ -12,6 +12,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
+import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ import {
     DataItemValue,
     DataList,
 } from "@/components/ui/data-item";
+import { EntityActionMenu } from "@/components/ui/menu-action";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
@@ -55,6 +58,8 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
         parseAsStringLiteral(["subscribe", "unsubscribe"] as const),
     );
 
+    const canSubscribe = useHasPermission({ skillPackageSubscription: ["subscribe"] });
+
     return (
         <>
             <Std.Navbar
@@ -81,17 +86,8 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                             {withdrawn && skillPackage.subscription && (
                                 <Badge variant="outline">Subscribed · Withdrawn</Badge>
                             )}
-                            <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
-                                {skillPackage.subscription ? (
-                                    <Button
-                                        variant="destructive"
-                                        onClick={() =>
-                                            void setAction("unsubscribe", { history: "push" })
-                                        }
-                                    >
-                                        Unsubscribe
-                                    </Button>
-                                ) : withdrawn ? null : (
+                            {!skillPackage.subscription && !withdrawn && (
+                                <Protect permissions={{ skillPackageSubscription: ["subscribe"] }}>
                                     <Button
                                         variant="outline"
                                         onClick={() =>
@@ -100,8 +96,25 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                                     >
                                         Subscribe
                                     </Button>
-                                )}
-                            </Protect>
+                                </Protect>
+                            )}
+                            {skillPackage.subscription && (
+                                <EntityActionMenu
+                                    category="Packages"
+                                    width="w-44"
+                                    actions={[
+                                        {
+                                            verb: "unsubscribe",
+                                            label: "Unsubscribe",
+                                            icon: <ObjectIcons.Unsubscribe />,
+                                            onSelect: () =>
+                                                void setAction("unsubscribe", { history: "push" }),
+                                            disabled: !canSubscribe,
+                                            destructive: true,
+                                        },
+                                    ]}
+                                />
+                            )}
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     {withdrawn && (
