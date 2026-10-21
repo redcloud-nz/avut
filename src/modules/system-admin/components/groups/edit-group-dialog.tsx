@@ -82,7 +82,7 @@ export function SystemAdmin_EditGroup_Dialog({
     const handleSubmit = form.handleSubmit(
         (formData) =>
             mutation.mutate({ groupId: group.id, name: formData.name, slug: formData.slug }),
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     return (

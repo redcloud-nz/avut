@@ -111,7 +111,7 @@ export function OrganizationSettings_UpdateRubbishBin_Dialog({
                 update: { slice: "rubbishBin", patch: { retentionDays } },
             });
         },
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     return (

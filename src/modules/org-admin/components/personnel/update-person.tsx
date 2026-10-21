@@ -99,7 +99,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
                                     update: formData,
                                 }),
                             (errors) => {
-                                console.error("Form validation errors:", errors);
+                                console.warn("Form validation errors:", errors);
                             },
                         )}
                     >

@@ -231,7 +231,7 @@ function PickPerson_Body({ team, onDone }: { team: TeamData; onDone: () => void 
             });
         },
         (errors) => {
-            console.error("Form validation errors:", errors);
+            console.warn("Form validation errors:", errors);
         },
     );
 

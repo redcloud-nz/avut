@@ -136,7 +136,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
             });
         },
         (errors) => {
-            console.error("Form validation errors:", errors);
+            console.warn("Form validation errors:", errors);
         },
     );
 

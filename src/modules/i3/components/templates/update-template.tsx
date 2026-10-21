@@ -139,7 +139,7 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
                 update: formData,
             }),
         (errors) => {
-            console.error("Form validation errors:", errors);
+            console.warn("Form validation errors:", errors);
         },
     );
 

@@ -232,7 +232,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
         personId: person.id,
         update: formData,
       }),
-    (errors) => console.error("Form validation errors:", errors),
+    (errors) => console.warn("Form validation errors:", errors),
   );
 
   return (
@@ -264,6 +264,8 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
 - **`form.handleSubmit(onValid, onInvalid)`** — always pass the second argument.
   A submit that silently does nothing because a field is invalid is hard to
   diagnose from a bug report; logging `onInvalid` surfaces it in the console.
+  Log it with `console.warn`, not `console.error`: an invalid submit is the form
+  working, and the Next.js dev overlay counts every `console.error` as an Issue.
 - **On success**, close by clearing the param via `handleDialogOpenChange(false)`
   — _unless_ success also navigates (create), in which case see the next rule.
 - Cancel is the visually primary (first) button — the safe default to reach for.

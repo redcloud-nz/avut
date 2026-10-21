@@ -132,7 +132,7 @@ function CreateTemplate_Body() {
             });
         },
         (fieldErrors) => {
-            console.error("Form validation errors:", fieldErrors);
+            console.warn("Form validation errors:", fieldErrors);
         },
     );
 

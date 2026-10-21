@@ -207,7 +207,7 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                                 });
                             },
                             (errors) => {
-                                console.error("Form validation errors:", errors);
+                                console.warn("Form validation errors:", errors);
                             },
                         )}
                     >

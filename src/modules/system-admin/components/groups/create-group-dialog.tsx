@@ -90,7 +90,7 @@ export function SystemAdmin_CreateGroup_Dialog() {
 
     const handleSubmit = form.handleSubmit(
         (formData) => mutation.mutate({ name: formData.name, slug: formData.slug }),
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     function handleOpenChange(open: boolean) {

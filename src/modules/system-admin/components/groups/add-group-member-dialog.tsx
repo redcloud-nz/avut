@@ -134,7 +134,7 @@ function AddGroupMember_Body({
 
     const handleSubmit = form.handleSubmit(
         (formData) => mutation.mutate({ groupId, ...formData }),
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     return (

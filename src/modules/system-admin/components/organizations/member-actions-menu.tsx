@@ -233,7 +233,7 @@ export function SystemAdmin_MemberActionsMenu({
                                         userId: member.userId,
                                         roles: invitationRoles(values),
                                     }),
-                                (errors) => console.error("Form validation errors:", errors),
+                                (errors) => console.warn("Form validation errors:", errors),
                             )}
                         />
                     </DialogFooter>

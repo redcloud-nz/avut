@@ -128,7 +128,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                                 });
                             },
                             (errors) => {
-                                console.error("Form validation errors:", errors);
+                                console.warn("Form validation errors:", errors);
                             },
                         )}
                     >
