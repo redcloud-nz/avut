@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -17,11 +17,18 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillPackage } from "@/lib/schemas/skill-package";
-import { trpc } from "@/trpc/client";
+import { trpc, type RouterOutput } from "@/trpc/client";
 
+type PackageRow = RouterOutput["skillPackageSubscriptions"]["listPackages"][number];
+
+/**
+ * The packages this organisation subscribes to, then the published ones it doesn't. Only the
+ * second list is searchable: an organisation subscribes to a handful of packages at most.
+ */
 export function SkillTrack_Packages_List() {
     const organization = useOrganization();
 
@@ -31,9 +38,58 @@ export function SkillTrack_Packages_List() {
         }),
     );
 
+    // `listPackages` only returns a withdrawn package to a subscriber, so every withdrawn row
+    // lands in Subscribed.
+    const subscribed = useMemo(() => packages.filter((pkg) => pkg.subscription), [packages]);
+    const available = useMemo(() => packages.filter((pkg) => !pkg.subscription), [packages]);
+
+    return (
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Packages</Saratoga.Title>
+            </Saratoga.Header>
+            <PackagesSection title="Subscribed">
+                {subscribed.length === 0 ? (
+                    <EmptyMessage>Not subscribed to any packages yet.</EmptyMessage>
+                ) : (
+                    <PackagesTable packages={subscribed} subscribed />
+                )}
+            </PackagesSection>
+            <PackagesSection title="Available">
+                {available.length === 0 ? (
+                    <EmptyMessage>
+                        {subscribed.length === 0
+                            ? "No packages are published yet."
+                            : "Subscribed to every published package."}
+                    </EmptyMessage>
+                ) : (
+                    <PackagesTable packages={available} subscribed={false} />
+                )}
+            </PackagesSection>
+        </Saratoga.Root>
+    );
+}
+
+function PackagesSection({ title, children }: { title: string; children: ReactNode }) {
+    return (
+        <section className="space-y-2">
+            <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+            {children}
+        </section>
+    );
+}
+
+function EmptyMessage({ children }: { children: ReactNode }) {
+    return <p className="text-muted-foreground text-sm">{children}</p>;
+}
+
+/** Subscribed packages get a Status column for the Withdrawn badge; available ones get search. */
+function PackagesTable({ packages, subscribed }: { packages: PackageRow[]; subscribed: boolean }) {
+    const organization = useOrganization();
+
     const columns = useMemo(
         () =>
-            Kaga.defineColumns<(typeof packages)[0]>((columnHelper) => [
+            Kaga.defineColumns<PackageRow>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: "Package Name",
                     cell: (ctx) => (
@@ -71,21 +127,21 @@ export function SkillTrack_Packages_List() {
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
-                columnHelper.accessor("subscription", {
-                    id: "status",
-                    header: "Status",
-                    cell: (ctx) =>
-                        ctx.getValue()
-                            ? SkillPackage.isAvailable(ctx.row.original)
-                                ? "Subscribed"
-                                : "Subscribed · Withdrawn"
-                            : "",
-                    enableSorting: false,
-                    enableGlobalFilter: false,
-                    enableColumnFilter: false,
-                }),
+                subscribed
+                    ? columnHelper.display({
+                          id: "status",
+                          header: "Status",
+                          cell: (ctx) =>
+                              SkillPackage.isAvailable(ctx.row.original) ? null : (
+                                  <Badge variant="outline">Withdrawn</Badge>
+                              ),
+                          enableSorting: false,
+                          enableGlobalFilter: false,
+                          enableColumnFilter: false,
+                      })
+                    : null,
             ]),
-        [organization.slug],
+        [organization.slug, subscribed],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -102,14 +158,9 @@ export function SkillTrack_Packages_List() {
     });
 
     return (
-        <Saratoga.Root>
-            <Saratoga.Header>
-                <Saratoga.Title>Packages</Saratoga.Title>
-            </Saratoga.Header>
-            <div>
-                <Kaga.TableToolbar table={table} />
-                <Kaga.Table table={table} />
-            </div>
-        </Saratoga.Root>
+        <div>
+            {!subscribed && <Kaga.TableToolbar table={table} />}
+            <Kaga.Table table={table} />
+        </div>
     );
 }
