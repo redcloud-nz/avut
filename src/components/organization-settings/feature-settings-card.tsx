@@ -8,15 +8,10 @@
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, type ReactNode } from "react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button, MutationButton } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     Dialog,
     DialogCloseButton,
@@ -26,7 +21,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
@@ -110,44 +104,40 @@ export function Feature_SettingsCard({
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                {description && <CardDescription>{description}</CardDescription>}
-                {canEdit && enabled && (
-                    <CardAction>
+        <section className="space-y-3">
+            <div className="flex items-center gap-4">
+                <h3 className="flex min-w-0 flex-1 items-center gap-2 text-base font-semibold">
+                    {title}
+                    {!enabled && <Badge variant="outline">Disabled</Badge>}
+                </h3>
+                {canEdit &&
+                    (enabled ? (
                         <Button variant="outline" onClick={() => handleDisableOpenChange(true)}>
                             Disable
                         </Button>
-                    </CardAction>
-                )}
-            </CardHeader>
-            {enabled ? (
-                children && <CardContent>{children}</CardContent>
-            ) : (
-                <CardContent>
-                    <Empty className="border border-dashed">
-                        <EmptyHeader>
-                            <EmptyDescription>
-                                This {kind} is not enabled for your organisation.
-                            </EmptyDescription>
-                        </EmptyHeader>
-                        {canEdit && (
-                            <EmptyContent>
-                                <MutationButton
-                                    type="button"
-                                    status={enableMutation.status}
-                                    text={{
-                                        idle: "Enable",
-                                        pending: "Enabling...",
-                                        success: "Enabled",
-                                    }}
-                                    onClick={() => setEnabled(enableMutation, true)}
-                                />
-                            </EmptyContent>
-                        )}
-                    </Empty>
-                </CardContent>
+                    ) : (
+                        <MutationButton
+                            type="button"
+                            status={enableMutation.status}
+                            text={{
+                                idle: "Enable",
+                                pending: "Enabling...",
+                                success: "Enabled",
+                            }}
+                            onClick={() => setEnabled(enableMutation, true)}
+                        />
+                    ))}
+            </div>
+            {description && (
+                // A static note, not an announcement: override Alert's role="alert".
+                <Alert variant="default" role="note" className="px-3 py-2.5">
+                    <AlertDescription className="text-sm/relaxed">{description}</AlertDescription>
+                </Alert>
+            )}
+            {enabled && children && (
+                <Card>
+                    <CardContent>{children}</CardContent>
+                </Card>
             )}
 
             {canEdit && (
@@ -175,6 +165,6 @@ export function Feature_SettingsCard({
                     </DialogContent>
                 </Dialog>
             )}
-        </Card>
+        </section>
     );
 }

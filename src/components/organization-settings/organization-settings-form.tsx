@@ -10,7 +10,6 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { D4HIntegration_SettingsCard } from "./d4h-integration-settings";
-import { EmailIntegration_SettingsCard } from "./email-integration-settings";
 import { Feature_SettingsCard } from "./feature-settings-card";
 import { General_SettingsCard } from "./general-settings";
 import { Personnel_SettingsCard } from "./personnel-settings";
@@ -47,7 +46,7 @@ export function OrganizationSettingsForm({
     return (
         <>
             <div id="general" className="space-y-4 scroll-mt-4">
-                <h3 className="text-lg font-semibold tracking-tight">General</h3>
+                <h2 className="text-lg font-semibold tracking-tight">General</h2>
                 <General_SettingsCard
                     organizationId={organizationId}
                     settings={settings}
@@ -55,8 +54,8 @@ export function OrganizationSettingsForm({
                 />
             </div>
 
-            <div id="personnel" className="space-y-4 pt-6 scroll-mt-4">
-                <h3 className="text-lg font-semibold tracking-tight">Personnel</h3>
+            <div id="personnel" className="space-y-4 pt-12 scroll-mt-4">
+                <h2 className="text-lg font-semibold tracking-tight">Personnel</h2>
                 <Personnel_SettingsCard
                     organizationId={organizationId}
                     settings={settings}
@@ -64,8 +63,8 @@ export function OrganizationSettingsForm({
                 />
             </div>
 
-            <div id="rubbish-bin" className="space-y-4 pt-6 scroll-mt-4">
-                <h3 className="text-lg font-semibold tracking-tight">Rubbish Bin</h3>
+            <div id="rubbish-bin" className="space-y-4 pt-12 scroll-mt-4">
+                <h2 className="text-lg font-semibold tracking-tight">Rubbish Bin</h2>
                 <RubbishBin_SettingsCard
                     organizationId={organizationId}
                     settings={settings}
@@ -73,75 +72,72 @@ export function OrganizationSettingsForm({
                 />
             </div>
 
-            <div id="integrations" className="space-y-4 pt-6 scroll-mt-4">
-                <h3 className="text-lg font-semibold tracking-tight">Integrations</h3>
+            <div id="integrations" className="space-y-4 pt-12 scroll-mt-4">
+                <h2 className="text-lg font-semibold tracking-tight">Integrations</h2>
                 <D4HIntegration_SettingsCard
-                    organizationId={organizationId}
-                    settings={settings}
-                    canEdit={canEdit}
-                />
-                <EmailIntegration_SettingsCard
                     organizationId={organizationId}
                     settings={settings}
                     canEdit={canEdit}
                 />
             </div>
 
-            <div id="modules" className="space-y-4 pt-6 scroll-mt-4">
-                <h3 className="text-lg font-semibold tracking-tight">Modules</h3>
-                <div id="module-d4h-views" className="scroll-mt-4">
-                    <Feature_SettingsCard
-                        organizationId={organizationId}
-                        canEdit={canEdit}
-                        slice="modules.d4h-views"
-                        enabled={settings.modules["d4h-views"].enabled}
-                        kind="module"
-                        title="D4H Views Module"
-                    />
-                </div>
-                {moduleFlags.i3 !== false && (
-                    <div id="module-i3" className="scroll-mt-4">
+            <div id="modules" className="space-y-4 pt-12 scroll-mt-4">
+                <h2 className="text-lg font-semibold tracking-tight">Modules</h2>
+                <div className="space-y-10">
+                    <div id="module-d4h-views" className="scroll-mt-4">
                         <Feature_SettingsCard
                             organizationId={organizationId}
                             canEdit={canEdit}
-                            slice="modules.i3"
-                            enabled={settings.modules.i3.enabled}
+                            slice="modules.d4h-views"
+                            enabled={settings.modules["d4h-views"].enabled}
                             kind="module"
-                            title="I3 Module"
-                            description="The I3 module provides tools to manage individually issued items (I3s) within your organisation."
+                            title="D4H Views Module"
                         />
                     </div>
-                )}
-                {moduleFlags.notes !== false && (
-                    <div id="module-notes" className="scroll-mt-4">
+                    {moduleFlags.i3 !== false && (
+                        <div id="module-i3" className="scroll-mt-4">
+                            <Feature_SettingsCard
+                                organizationId={organizationId}
+                                canEdit={canEdit}
+                                slice="modules.i3"
+                                enabled={settings.modules.i3.enabled}
+                                kind="module"
+                                title="I3 Module"
+                                description="The I3 module provides tools to manage individually issued items (I3s) within your organisation."
+                            />
+                        </div>
+                    )}
+                    {moduleFlags.notes !== false && (
+                        <div id="module-notes" className="scroll-mt-4">
+                            <Feature_SettingsCard
+                                organizationId={organizationId}
+                                canEdit={canEdit}
+                                slice="modules.notes"
+                                enabled={settings.modules.notes.enabled}
+                                kind="module"
+                                title="Notes Module"
+                                description="The Notes module gives your organisation a shared place for markdown notes."
+                            />
+                        </div>
+                    )}
+                    <div id="module-skill-package-builder" className="scroll-mt-4">
                         <Feature_SettingsCard
                             organizationId={organizationId}
                             canEdit={canEdit}
-                            slice="modules.notes"
-                            enabled={settings.modules.notes.enabled}
+                            slice="modules.skill-package-builder"
+                            enabled={settings.modules["skill-package-builder"].enabled}
                             kind="module"
-                            title="Notes Module"
-                            description="The Notes module gives your organisation a shared place for markdown notes."
+                            title="Skill Package Builder Module"
+                            description="The Skill Package Builder module allows you to create and manage skill packages that can then be used by the Skills Module."
                         />
                     </div>
-                )}
-                <div id="module-skill-package-builder" className="scroll-mt-4">
-                    <Feature_SettingsCard
-                        organizationId={organizationId}
-                        canEdit={canEdit}
-                        slice="modules.skill-package-builder"
-                        enabled={settings.modules["skill-package-builder"].enabled}
-                        kind="module"
-                        title="Skill Package Builder Module"
-                        description="The Skill Package Builder module allows you to create and manage skill packages that can then be used by the Skills Module."
-                    />
-                </div>
-                <div id="module-skill-track" className="scroll-mt-4">
-                    <SkillTrackModule_SettingsCard
-                        organizationId={organizationId}
-                        settings={settings}
-                        canEdit={canEdit}
-                    />
+                    <div id="module-skill-track" className="scroll-mt-4">
+                        <SkillTrackModule_SettingsCard
+                            organizationId={organizationId}
+                            settings={settings}
+                            canEdit={canEdit}
+                        />
+                    </div>
                 </div>
             </div>
         </>

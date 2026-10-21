@@ -97,7 +97,7 @@ describe("Feature_SettingsCard", () => {
     it("shows a viewer no Enable button", () => {
         renderCard({ canEdit: false, enabled: false });
 
-        expect(screen.getByText("This module is not enabled for your organisation.")).toBeVisible();
+        expect(screen.getByText("Disabled")).toBeVisible();
         expect(screen.queryByRole("button", { name: "Enable" })).not.toBeInTheDocument();
     });
 
