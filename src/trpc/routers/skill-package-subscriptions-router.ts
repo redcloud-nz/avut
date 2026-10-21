@@ -243,17 +243,16 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
      * `catalogueSkillPackageWhere`): every available package, plus a withdrawn (unpublished or
      * Archived) package this organization still subscribes to. An Archived skill is returned.
      * @param skillId The ID of the skill to retrieve.
-     * @returns The skill, plus `group` (its skill group, or null when that group is Deleted; the
-     *   key is `group`, as in the Skills list's rows, not Prisma's `skillGroup`), `skillPackage`,
-     *   and `subscribed`.
-     * @throws TRPCError(NOT_FOUND) if the skill doesn't exist or is Deleted, or its package is
-     *   Deleted, or withdrawn and this organization doesn't subscribe to it.
+     * @returns The skill, plus `group` (its skill group; the key is `group`, as in the Skills
+     *   list's rows, not Prisma's `skillGroup`), `skillPackage`, and `subscribed`.
+     * @throws TRPCError(NOT_FOUND) if the skill doesn't exist, or it or its group is Deleted, or
+     *   its package is Deleted, or withdrawn and this organization doesn't subscribe to it.
      */
     getSkill: organizationProcedure({ skillPackageSubscription: ["view"] })
         .input(z.object({ skillId: SkillId.schema }))
         .output(
             Skill.schema.extend({
-                group: SkillGroup.schema.nullable(),
+                group: SkillGroup.schema,
                 skillPackage: SkillPackage.schema,
                 subscribed: z.boolean(),
             }),
@@ -263,6 +262,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
                 where: {
                     id: skillId,
                     status: { not: "Deleted" },
+                    skillGroup: { status: { not: "Deleted" } },
                     skillPackage: catalogueSkillPackageWhere(organizationId),
                 },
                 include: {
@@ -284,10 +284,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
 
             return {
                 ...Skill.fromRecord(skill),
-                group:
-                    skill.skillGroup.status === "Deleted"
-                        ? null
-                        : SkillGroup.fromRecord(skill.skillGroup),
+                group: SkillGroup.fromRecord(skill.skillGroup),
                 skillPackage: SkillPackage.fromRecord(skill.skillPackage),
                 subscribed: skill.skillPackage.subscriptions.length > 0,
             };
@@ -296,6 +293,7 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
     /**
      * List the skills that are assessable for this organization based on their current skill package subscriptions.
      * Only available packages count (see `SkillPackage.isAvailable`): a withdrawn package's skills are left out.
+     * So is a skill in a Deleted group: deleting a group hides its skills without changing their own status.
      */
     listAssessableSkills: organizationProcedure({ skillPackageSubscription: ["view"] })
         .output(
@@ -314,7 +312,12 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
                 include: {
                     skillPackage: {
                         include: {
-                            skills: { where: { status: { not: "Deleted" } } },
+                            skills: {
+                                where: {
+                                    status: { not: "Deleted" },
+                                    skillGroup: { status: { not: "Deleted" } },
+                                },
+                            },
                             groups: { where: { status: { not: "Deleted" } } },
                         },
                     },
@@ -383,9 +386,12 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
                     _count: {
                         select: {
                             subscriptions: true,
+                            // Counted as getPackage counts its contents: Active skills in
+                            // Active groups.
                             skills: {
                                 where: {
                                     status: "Active",
+                                    skillGroup: { status: "Active" },
                                 },
                             },
                         },

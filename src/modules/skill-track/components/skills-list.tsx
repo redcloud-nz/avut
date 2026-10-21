@@ -33,10 +33,10 @@ import { SkillPackage } from "@/lib/schemas/skill-package";
 import { formatFrequency } from "@/modules/skill-track/lib/format-frequency";
 import { trpc } from "@/trpc/client";
 
-type SkillRow = Skill & { group: SkillGroup | undefined; skillPackage: SkillPackage };
+type SkillRow = Skill & { group: SkillGroup; skillPackage: SkillPackage };
 
 function isArchived(row: SkillRow) {
-    return row.status !== "Active" || (row.group !== undefined && row.group.status !== "Active");
+    return row.status !== "Active" || row.group.status !== "Active";
 }
 
 /**
@@ -61,15 +61,14 @@ export function SkillTrack_SkillsList() {
         return assessable.skills
             .flatMap((skill): SkillRow[] => {
                 const skillPackage = packages.get(skill.skillPackageId);
-                return skillPackage
-                    ? [{ ...skill, group: groups.get(skill.skillGroupId), skillPackage }]
-                    : [];
+                const group = groups.get(skill.skillGroupId);
+                return skillPackage && group ? [{ ...skill, group, skillPackage }] : [];
             })
             .sort(
                 (a, b) =>
                     a.skillPackage.name.localeCompare(b.skillPackage.name) ||
                     a.skillPackageId.localeCompare(b.skillPackageId) ||
-                    (a.group?.sequence ?? 0) - (b.group?.sequence ?? 0) ||
+                    a.group.sequence - b.group.sequence ||
                     a.sequence - b.sequence,
             );
     }, [assessable]);
@@ -106,13 +105,10 @@ export function SkillTrack_SkillsList() {
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
-                col.accessor((row) => row.group?.name ?? "", {
+                col.accessor((row) => row.group.name, {
                     id: "group",
                     header: "Group",
-                    cell: (ctx) => {
-                        const group = ctx.row.original.group;
-                        return group ? <SkillGroupLink group={group} /> : null;
-                    },
+                    cell: (ctx) => <SkillGroupLink group={ctx.row.original.group} />,
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,

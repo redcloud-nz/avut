@@ -703,14 +703,20 @@ describe("skillPackageSubscriptions.getSkill", () => {
         expect(result.status).toBe("Archived");
     });
 
-    it("returns a skill in a Deleted group with group: null", async () => {
-        const result = await makeCaller().getSkill({
+    it("throws NOT_FOUND for an Active skill in a Deleted group", async () => {
+        await expect(
+            makeCaller().getSkill({ organizationId: T.org, skillId: T.skillInDeletedGroup }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("listAssessableSkills leaves out an Active skill in a Deleted group, and the group", async () => {
+        const { skillGroups, skills } = await makeCaller().listAssessableSkills({
             organizationId: T.org,
-            skillId: T.skillInDeletedGroup,
         });
 
-        expect(result.id).toBe(T.skillInDeletedGroup);
-        expect(result.group).toBeNull();
+        expect(skills.map((s) => s.id)).toContain(T.liveSkill);
+        expect(skills.map((s) => s.id)).not.toContain(T.skillInDeletedGroup);
+        expect(skillGroups.map((g) => g.id)).not.toContain(T.deletedGroup);
     });
 
     it("throws NOT_FOUND for a Deleted skill", async () => {

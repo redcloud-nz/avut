@@ -463,8 +463,8 @@ export async function assertAssessablePersonnel(
 
 /**
  * Check that every id is a skill the organization can assess, as `listAssessableSkills` lists
- * them: not `Deleted`, from an available package (`availableSkillPackageWhere`) the organization
- * subscribes to.
+ * them: neither it nor its group `Deleted`, from an available package
+ * (`availableSkillPackageWhere`) the organization subscribes to.
  * @throws ValidationError naming any id that isn't.
  */
 export async function assertAssessableSkills(
@@ -477,6 +477,7 @@ export async function assertAssessableSkills(
         where: {
             id: { in: skillIds },
             status: { not: "Deleted" },
+            skillGroup: { status: { not: "Deleted" } },
             skillPackage: {
                 ...availableSkillPackageWhere,
                 subscriptions: { some: { organizationId: ctx.organizationId } },

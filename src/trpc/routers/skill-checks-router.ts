@@ -296,7 +296,8 @@ export const skillChecksRouter = createTrpcRouter({
 
             const personnelIds = new Set(personnel.map((p) => p.id));
 
-            // Step 2: Resolve skill scope — active skills from available subscribed packages
+            // Step 2: Resolve skill scope — active skills, outside a Deleted group, from available
+            // subscribed packages
             const subscriptions = await ctx.prisma.skillPackageSubscription.findMany({
                 where: { organizationId: ctx.organizationId },
                 include: {
@@ -319,10 +320,12 @@ export const skillChecksRouter = createTrpcRouter({
 
                 packageMap.set(pkg.id, SkillPackage.fromRecord(pkg));
                 for (const group of pkg.groups) {
+                    if (group.status === "Deleted") continue;
                     groupMap.set(group.id, SkillGroup.fromRecord(group));
                 }
                 for (const skill of pkg.skills) {
-                    if (skill.status !== "Active") continue;
+                    // Deleting a group hides its skills without changing their own status.
+                    if (skill.status !== "Active" || !groupMap.has(skill.skillGroupId)) continue;
                     skillMap.set(skill.id, Skill.fromRecord(skill));
                 }
             }
