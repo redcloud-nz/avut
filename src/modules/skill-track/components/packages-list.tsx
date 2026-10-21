@@ -72,7 +72,7 @@ export function SkillTrack_Packages_List() {
 
 function PackagesSection({ title, children }: { title: string; children: ReactNode }) {
     return (
-        <section className="space-y-2">
+        <section className="space-y-2 not-first-of-type:pt-6">
             <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
             {children}
         </section>
@@ -83,9 +83,12 @@ function EmptyMessage({ children }: { children: ReactNode }) {
     return <p className="text-muted-foreground text-sm">{children}</p>;
 }
 
-/** Subscribed packages get a Status column for the Withdrawn badge; available ones get search. */
+/** Subscribed packages can get a Status column for the Withdrawn badge; available ones get search. */
 function PackagesTable({ packages, subscribed }: { packages: PackageRow[]; subscribed: boolean }) {
     const organization = useOrganization();
+
+    // The Status column only carries the Withdrawn badge, so leave it out when nothing has one.
+    const showStatus = subscribed && packages.some((pkg) => !SkillPackage.isAvailable(pkg));
 
     const columns = useMemo(
         () =>
@@ -120,14 +123,17 @@ function PackagesTable({ packages, subscribed }: { packages: PackageRow[]; subsc
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
-                columnHelper.accessor("subscriptionCount", {
-                    header: "Subscriptions",
-                    cell: (ctx) => ctx.getValue() + "",
-                    enableSorting: true,
-                    enableGlobalFilter: false,
-                    enableColumnFilter: false,
-                }),
+                // How popular a package is only matters when choosing one to subscribe to.
                 subscribed
+                    ? null
+                    : columnHelper.accessor("subscriptionCount", {
+                          header: "Subscriptions",
+                          cell: (ctx) => ctx.getValue() + "",
+                          enableSorting: true,
+                          enableGlobalFilter: false,
+                          enableColumnFilter: false,
+                      }),
+                showStatus
                     ? columnHelper.display({
                           id: "status",
                           header: "Status",
@@ -141,7 +147,7 @@ function PackagesTable({ packages, subscribed }: { packages: PackageRow[]; subsc
                       })
                     : null,
             ]),
-        [organization.slug, subscribed],
+        [organization.slug, subscribed, showStatus],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
