@@ -38,7 +38,7 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
     const router = useRouter();
 
     // Once unsubscribed, a withdrawn package is no longer visible to this organisation
-    // (`getPackage` returns NOT_FOUND), so leave its page for the catalogue list.
+    // (`getPackage` returns NOT_FOUND), so leave its page for the packages list.
     const leavesPage = !SkillPackage.isAvailable(skillPackage);
 
     const mutation = useMutation(
@@ -60,7 +60,7 @@ export function SkillTrack_UnsubscribeFromPackage_Dialog({
                 if (leavesPage) {
                     // The navigation is the whole close: don't also clear the dialog param.
                     router.push(
-                        route("/orgs/[slug]/skill-track/catalogue", { slug: organization.slug }),
+                        route("/orgs/[slug]/skill-track/packages", { slug: organization.slug }),
                     );
                 } else {
                     props.onOpenChange?.(false);

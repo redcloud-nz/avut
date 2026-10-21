@@ -60,7 +60,7 @@ function Organization_Dashboard_SkillPackageAndSkillStats() {
                 label="Skill Packages"
                 value={assessable.skillPackages.length}
                 icon={PackageIcon}
-                href={route("/orgs/[slug]/skill-track/catalogue", { slug })}
+                href={route("/orgs/[slug]/skill-track/packages", { slug })}
             />
             <StatCard
                 label="Skills"

@@ -23,8 +23,8 @@ export function SkillTrack_Sidebar_Menu() {
                 />
             </Protect>
             <NavSubItem
-                label="Catalogue"
-                href={route("/orgs/[slug]/skill-track/catalogue", { slug: organization.slug })}
+                label="Packages"
+                href={route("/orgs/[slug]/skill-track/packages", { slug: organization.slug })}
             />
             <NavSubItem
                 label="Skills"

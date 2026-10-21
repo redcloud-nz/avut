@@ -20,7 +20,7 @@ type SkillListSkill = SkillRef & {
 
 /**
  * A card of flat skill rows — name (linked), its default flags as badges, and its description —
- * shared by the catalogue package's Contents and a group's Skills.
+ * shared by a package page's Contents and a group's Skills.
  */
 export function SkillTrack_SkillList({ skills }: { skills: SkillListSkill[] }) {
     if (skills.length === 0) {

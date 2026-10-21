@@ -72,8 +72,9 @@ export function SkillPackageBuilder_ArchivePackage_Dialog({
                     <DialogTitle>Archive package</DialogTitle>
                     <DialogDescription>
                         Archive package <ObjectName>{skillPackage.name}</ObjectName>. Archiving also
-                        unpublishes it: it leaves the catalogue, and subscribers lose its skills
-                        from their sessions and reports. Restoring it doesn&apos;t publish it again.
+                        unpublishes it: no other organisation can subscribe to it, and subscribers
+                        lose its skills from their sessions and reports. Restoring it doesn&apos;t
+                        publish it again.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>

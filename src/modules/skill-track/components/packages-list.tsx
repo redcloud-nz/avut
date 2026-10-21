@@ -22,7 +22,7 @@ import { route } from "@/lib/routes";
 import { SkillPackage } from "@/lib/schemas/skill-package";
 import { trpc } from "@/trpc/client";
 
-export function SkillTrack_CataloguePackages_List() {
+export function SkillTrack_Packages_List() {
     const organization = useOrganization();
 
     const { data: packages } = useSuspenseQuery(
@@ -38,7 +38,7 @@ export function SkillTrack_CataloguePackages_List() {
                     header: "Package Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/orgs/[slug]/skill-track/catalogue/[package_id]", {
+                            href={route("/orgs/[slug]/skill-track/packages/[package_id]", {
                                 slug: organization.slug,
                                 package_id: ctx.row.original.id,
                             })}
@@ -104,7 +104,7 @@ export function SkillTrack_CataloguePackages_List() {
     return (
         <Saratoga.Root>
             <Saratoga.Header>
-                <Saratoga.Title>Catalogue</Saratoga.Title>
+                <Saratoga.Title>Packages</Saratoga.Title>
             </Saratoga.Header>
             <div>
                 <Kaga.TableToolbar table={table} />

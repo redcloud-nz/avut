@@ -51,9 +51,9 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                         </Protect>
                         <Protect permissions={{ skillPackageSubscription: ["view"] }}>
                             <Item asChild>
-                                <Link href={route("/orgs/[slug]/skill-track/catalogue", { slug })}>
+                                <Link href={route("/orgs/[slug]/skill-track/packages", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Skill Catalogue</ItemTitle>
+                                        <ItemTitle>Skill Packages</ItemTitle>
                                         <ItemDescription>
                                             Browse and subscribe to skill packages.
                                         </ItemDescription>

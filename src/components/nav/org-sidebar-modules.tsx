@@ -52,7 +52,7 @@ const MODULE_SIDEBAR: Partial<Record<OrganizationModuleId, ReactNode>> = {
 
 export function OrgSidebar_Modules() {
     const organization = useOrganization();
-    // Skill Track's entries are each `<Protect>`-gated already (Catalogue, Checks/Reports,
+    // Skill Track's entries are each `<Protect>`-gated already (Packages, Checks/Reports,
     // Sessions); this hides the module itself from a caller who can't reach any of them. Most
     // roles hold `skillPackageSubscription: ["view"]`, but the I3 roles and `skills-author` don't,
     // so a member holding only those doesn't see Skill Track.

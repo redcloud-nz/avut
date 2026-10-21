@@ -31,14 +31,9 @@ import { SkillTrack_SubscribeToPackage_Dialog } from "@/modules/skill-track/comp
 import { SkillTrack_UnsubscribeFromPackage_Dialog } from "@/modules/skill-track/components/unsubscribe-package";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
-type CataloguePackageGroup =
-    RouterOutput["skillPackageSubscriptions"]["getPackage"]["groups"][number];
+type PackageGroupData = RouterOutput["skillPackageSubscriptions"]["getPackage"]["groups"][number];
 
-export function SkillTrack_CataloguePackage_Content({
-    skillPackageId,
-}: {
-    skillPackageId: SkillPackageId;
-}) {
+export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId: SkillPackageId }) {
     const organization = useOrganization();
 
     const { data: skillPackage } = useSuspenseQuery(
@@ -69,14 +64,14 @@ export function SkillTrack_CataloguePackage_Content({
                         href: route("/orgs/[slug]/skill-track", { slug: organization.slug }),
                     },
                     {
-                        label: "Catalogue",
-                        href: route("/orgs/[slug]/skill-track/catalogue", {
+                        label: "Packages",
+                        href: route("/orgs/[slug]/skill-track/packages", {
                             slug: organization.slug,
                         }),
                     },
                     skillPackage.name,
                 ]}
-                actions={<HelpButton id="skill-track/catalogue" />}
+                actions={<HelpButton id="skill-track/packages" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -230,7 +225,7 @@ function PackageGroup({
     group,
     skillPackageId,
 }: {
-    group: CataloguePackageGroup;
+    group: PackageGroupData;
     skillPackageId: SkillPackageId;
 }) {
     return (

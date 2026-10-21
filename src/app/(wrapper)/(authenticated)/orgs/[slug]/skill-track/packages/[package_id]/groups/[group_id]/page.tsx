@@ -2,7 +2,7 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]
+ * Path: /orgs/[slug]/skill-track/packages/[package_id]/groups/[group_id]
  */
 
 import { Metadata } from "next";
@@ -14,7 +14,7 @@ import { SkillTrack_SkillGroup_Content } from "@/modules/skill-track/components/
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-type Props = PageProps<"/orgs/[slug]/skill-track/catalogue/[package_id]/groups/[group_id]">;
+type Props = PageProps<"/orgs/[slug]/skill-track/packages/[package_id]/groups/[group_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, package_id, group_id } = await props.params;
