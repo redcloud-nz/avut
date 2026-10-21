@@ -13,6 +13,8 @@ import { ConflictError, NotFoundError, PreconditionError, ValidationError } from
 import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import {
+    D4H_ORG_FIELD_DISPLAY_KEYS,
+    D4H_TEAM_FIELD_DISPLAY_KEYS,
     D4HSyncItem,
     D4HSyncItemDraft,
     D4HSyncItemOutcome,
@@ -955,20 +957,6 @@ function gateFields<T extends Record<string, FieldValue>>(
     return { write, writeBefore, writeKeys, skippedFields };
 }
 
-/** Each cache field, mapped to its key in the metadata item's flat display diff. */
-const TEAM_FIELD_KEYS = {
-    d4hTeamName: "d4hTeamName",
-    d4hOrganisationId: "d4hOrganisationId",
-    d4hTimezone: "d4hTimezone",
-} as const;
-const ORG_FIELD_KEYS = {
-    d4hOrganisationName: "orgName",
-    d4hTimezone: "orgTimezone",
-    d4hCurrency: "orgCurrency",
-    d4hReportingStartDay: "orgReportingStartDay",
-    d4hReportingStartMonth: "orgReportingStartMonth",
-} as const;
-
 /**
  * Each part's write repeats its `before` values in its `where`, so a field edited between the
  * check and the write makes that part's update match nothing: it then writes and logs nothing,
@@ -991,9 +979,19 @@ async function executeMetadata(
             : null,
     ]);
 
-    const team = gateFields(TEAM_FIELD_KEYS, item.team.before, item.team.incoming, teamRow);
+    const team = gateFields(
+        D4H_TEAM_FIELD_DISPLAY_KEYS,
+        item.team.before,
+        item.team.incoming,
+        teamRow,
+    );
     const org = item.organization
-        ? gateFields(ORG_FIELD_KEYS, item.organization.before, item.organization.incoming, orgRow)
+        ? gateFields(
+              D4H_ORG_FIELD_DISPLAY_KEYS,
+              item.organization.before,
+              item.organization.incoming,
+              orgRow,
+          )
         : null;
     const teamWrites = team.writeKeys.length > 0;
     const orgWrites = org !== null && org.writeKeys.length > 0;

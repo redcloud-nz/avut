@@ -50,6 +50,7 @@ import {
     type D4HSyncChangedReason,
     type D4HSyncItem,
     type D4HSyncItemOutcome,
+    type D4HSyncMetadataFieldKey,
     type D4HSyncSkipReason,
 } from "@/lib/schemas/d4h-sync-plan";
 import { TeamData } from "@/lib/schemas/team";
@@ -555,6 +556,22 @@ const OUTCOME_REASON_LABELS: Record<D4HSyncChangedReason, string> = {
     "fields-changed": "every changed field was edited since the preview",
 };
 
+/** The metadata fields an outcome's `skippedFields` names, as the result view shows them. */
+const METADATA_FIELD_LABELS: Record<D4HSyncMetadataFieldKey, string> = {
+    d4hTeamName: "D4H team name",
+    d4hOrganisationId: "D4H organisation",
+    d4hTimezone: "team timezone",
+    orgName: "organisation name",
+    orgTimezone: "organisation timezone",
+    orgCurrency: "currency",
+    orgReportingStartDay: "reporting year start day",
+    orgReportingStartMonth: "reporting year start month",
+};
+
+function metadataFieldLabel(key: string): string {
+    return METADATA_FIELD_LABELS[key as D4HSyncMetadataFieldKey] ?? key;
+}
+
 /** The rows an item shows as, in the preview and the results. */
 function itemLabel(item: D4HSyncItem): string {
     switch (item.kind) {
@@ -657,7 +674,7 @@ function SyncResultView({
         }
         if (o.result === "applied" && o.skippedFields?.length) {
             return [
-                `${name}: ${o.skippedFields.join(", ")} not changed (edited in AVUT since the preview)`,
+                `${name}: ${o.skippedFields.map(metadataFieldLabel).join(", ")} not changed (edited in AVUT since the preview)`,
             ];
         }
         return [];
