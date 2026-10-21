@@ -111,9 +111,9 @@ export function SkillTrack_CataloguePackage_Content({
                     </Saratoga.Header>
                     {withdrawn && (
                         <p className="text-muted-foreground text-sm">
-                            Its author has withdrawn this package. Its skills are out of your
-                            sessions and reports until it&apos;s published again. Checks already
-                            recorded are kept.
+                            {skillPackage.status === "Deleted"
+                                ? "Its author has deleted this package. Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                : "Its author has withdrawn this package. Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
                         </p>
                     )}
                     <Saratoga.Columns>

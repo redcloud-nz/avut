@@ -1100,7 +1100,8 @@ async function setPackageActive(
  * untouched (no cascade on soft-delete), matching how archive already behaves.
  *
  * A published package is also unpublished, so other organizations lose it from the catalogue
- * now rather than when the Rubbish bin purges it. Recovering it leaves it unpublished.
+ * now rather than when the Rubbish bin purges it; a subscriber still sees it, withdrawn, so it
+ * can unsubscribe (see `catalogueSkillPackageWhere`). Recovering it leaves it unpublished.
  * @throws NotFoundError if the package does not exist in the organization.
  */
 export async function deletePackage(

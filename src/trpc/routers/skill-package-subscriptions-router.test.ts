@@ -273,6 +273,8 @@ describe("skillPackageSubscriptionsRouter shows a Deleted package to its subscri
         // Deleted before deletePackage unpublished on delete, so still `published: true`.
         deletedPkg: SkillPackageId.create(),
         unsubscribedDeletedPkg: SkillPackageId.create(),
+        // Deleted and subscribed, for the unsubscribe test alone.
+        leftDeletedPkg: SkillPackageId.create(),
     };
 
     const db = createMockPrisma();
@@ -290,6 +292,7 @@ describe("skillPackageSubscriptionsRouter shows a Deleted package to its subscri
             [T.livePkg, "Active"],
             [T.deletedPkg, "Deleted"],
             [T.unsubscribedDeletedPkg, "Deleted"],
+            [T.leftDeletedPkg, "Deleted"],
         ] as const) {
             await db.skillPackage.create({
                 data: {
@@ -304,7 +307,7 @@ describe("skillPackageSubscriptionsRouter shows a Deleted package to its subscri
                 },
             });
         }
-        for (const skillPackageId of [T.livePkg, T.deletedPkg]) {
+        for (const skillPackageId of [T.livePkg, T.deletedPkg, T.leftDeletedPkg]) {
             await db.skillPackageSubscription.create({
                 data: {
                     id: SkillPackageSubscriptionId.create(),
@@ -349,7 +352,9 @@ describe("skillPackageSubscriptionsRouter shows a Deleted package to its subscri
 
     it("listPackages shows a subscriber its Deleted package, but not a non-subscriber", async () => {
         const ids = (await makeCaller().listPackages({ organizationId: T.org })).map((p) => p.id);
-        expect(ids.sort()).toEqual([T.livePkg, T.deletedPkg].sort());
+        expect(ids).toContain(T.livePkg);
+        expect(ids).toContain(T.deletedPkg);
+        expect(ids).not.toContain(T.unsubscribedDeletedPkg);
     });
 
     it("listSubscribedPackages and listAssessableSkills leave it out", async () => {
@@ -371,15 +376,14 @@ describe("skillPackageSubscriptionsRouter shows a Deleted package to its subscri
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
-    // Last: it removes the subscription the tests above read.
     it("unsubscribeFromPackage lets a subscriber leave it", async () => {
         await makeCaller().unsubscribeFromPackage({
             organizationId: T.org,
-            skillPackageId: T.deletedPkg,
+            skillPackageId: T.leftDeletedPkg,
         });
 
         const ids = (await makeCaller().listPackages({ organizationId: T.org })).map((p) => p.id);
-        expect(ids).toEqual([T.livePkg]);
+        expect(ids).not.toContain(T.leftDeletedPkg);
     });
 });
 

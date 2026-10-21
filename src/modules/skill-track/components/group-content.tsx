@@ -80,9 +80,9 @@ export function SkillTrack_SkillGroup_Content({
                     </Saratoga.Header>
                     {withdrawn && (
                         <p className="text-muted-foreground text-sm">
-                            Its author has withdrawn this group&apos;s package. Its skills are out
-                            of your sessions and reports until it&apos;s published again. Checks
-                            already recorded are kept.
+                            {group.skillPackage.status === "Deleted"
+                                ? "Its author has deleted this group's package. Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                : "Its author has withdrawn this group's package. Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
                         </p>
                     )}
                     <Saratoga.Columns>
