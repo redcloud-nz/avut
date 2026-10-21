@@ -42,6 +42,27 @@ const orgFieldsSchema = z.object({
     d4hReportingStartMonth: z.number(),
 });
 
+/** Each `Team_D4H` cache field, mapped to its key in the metadata item's flat display diff. */
+export const D4H_TEAM_FIELD_DISPLAY_KEYS = {
+    d4hTeamName: "d4hTeamName",
+    d4hOrganisationId: "d4hOrganisationId",
+    d4hTimezone: "d4hTimezone",
+} as const satisfies Record<keyof z.infer<typeof teamFieldsSchema>, string>;
+
+/** Each `Organization_D4H` cache field, mapped to its display key: the same, prefixed `org`. */
+export const D4H_ORG_FIELD_DISPLAY_KEYS = {
+    d4hOrganisationName: "orgName",
+    d4hTimezone: "orgTimezone",
+    d4hCurrency: "orgCurrency",
+    d4hReportingStartDay: "orgReportingStartDay",
+    d4hReportingStartMonth: "orgReportingStartMonth",
+} as const satisfies Record<keyof z.infer<typeof orgFieldsSchema>, string>;
+
+/** A metadata field as the plan's display diff and an outcome's `skippedFields` name it. */
+export type D4HSyncMetadataFieldKey =
+    | (typeof D4H_TEAM_FIELD_DISPLAY_KEYS)[keyof typeof D4H_TEAM_FIELD_DISPLAY_KEYS]
+    | (typeof D4H_ORG_FIELD_DISPLAY_KEYS)[keyof typeof D4H_ORG_FIELD_DISPLAY_KEYS];
+
 /** The `Organization_D4H` cache fields as stored in AVUT — null until first cached. */
 const storedOrgFieldsSchema = z.object({
     d4hOrganisationName: z.string().nullable(),

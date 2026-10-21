@@ -58,11 +58,21 @@ export const trpc = createTRPCOptionsProxy({
  * failure surfaces on the client, where `describeError` renders it. When a server component
  * actually needs the value — a page title, a breadcrumb — call
  * `getServerQueryClient().fetchQuery(...)` instead, which awaits and throws.
+ *
+ * Starts the query only once `connection()` has made the render request-time. React Query stamps
+ * a settled query with `Date.now()`, and in dev Next abandons a cold first render pass part-way,
+ * aborting whatever is in flight: a query started during the static stage then fails there, and
+ * Cache Components flags the stamp as an unstable value read while prerendering (#427). Waiting
+ * costs nothing: the procedure couldn't run sooner anyway, as `createTrpcContext` awaits
+ * `getSession()`, which awaits `connection()`. The query still starts before `HydrateClient`'s
+ * own `await connection()` resumes, so it dehydrates as pending and streams to the client as
+ * before.
  */
 export function prefetch<TQueryFnData, TError, TData, TQueryKey extends QueryKey>(
     queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
 ) {
-    void getServerQueryClient().prefetchQuery(queryOptions);
+    const queryClient = getServerQueryClient();
+    void afterConnection(() => queryClient.prefetchQuery(queryOptions));
 }
 
 /**
@@ -78,7 +88,21 @@ export function prefetchInfinite<
     TQueryKey extends QueryKey,
     TPageParam,
 >(queryOptions: FetchInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryKey, TPageParam>) {
-    void getServerQueryClient().prefetchInfiniteQuery(queryOptions);
+    const queryClient = getServerQueryClient();
+    void afterConnection(() => queryClient.prefetchInfiniteQuery(queryOptions));
+}
+
+/**
+ * Run `start` once the render is request-time, swallowing any failure so a prefetch never throws.
+ * `connection()` rejects when its render is abandoned, and throws inside `after()` or `"use cache"`.
+ */
+async function afterConnection(start: () => Promise<void>) {
+    try {
+        await connection();
+    } catch {
+        return;
+    }
+    await start();
 }
 
 /**
@@ -95,6 +119,9 @@ export function prefetchInfinite<
 export async function fetchQuery<TQueryFnData, TError, TData, TQueryKey extends QueryKey>(
     queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
 ): Promise<TData> {
+    // Request-time first, for the reason `prefetch` gives.
+    await connection();
+
     try {
         return await getServerQueryClient().fetchQuery(queryOptions);
     } catch (error) {

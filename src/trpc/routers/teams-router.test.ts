@@ -475,7 +475,7 @@ describe("teamsRouter D4H sync plans", () => {
     );
 });
 
-describe("teamsRouter link and create from D4H", () => {
+describe("teamsRouter link to D4H", () => {
     async function seed() {
         const db = createMockPrisma();
         const T = {
@@ -503,7 +503,6 @@ describe("teamsRouter link and create from D4H", () => {
     async function expectLinkedWithoutImport(
         db: ReturnType<typeof createMockPrisma>,
         teamId: string,
-        action: "Create" | "Update",
     ) {
         const link = await db.team_D4H.findUniqueOrThrow({ where: { teamId } });
         expect(link.d4hTeamId).toBe(4242);
@@ -514,7 +513,7 @@ describe("teamsRouter link and create from D4H", () => {
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: teamId },
         });
-        expect(entries.map((e) => e.action)).toEqual([action]);
+        expect(entries.map((e) => e.action)).toEqual(["Update"]);
         const batch = await db.logBatch.findUniqueOrThrow({ where: { id: entries[0].batchId! } });
         expect(batch.operationKey).toBe("d4h-team-link");
     }
@@ -529,19 +528,7 @@ describe("teamsRouter link and create from D4H", () => {
         });
 
         expect(updated.d4h?.d4hTeamId).toBe(4242);
-        await expectLinkedWithoutImport(db, T.team, "Update");
-    });
-
-    it("createTeamFromD4H creates the linked team and imports nobody", async () => {
-        const { db, T, caller } = await seed();
-
-        const { created } = await caller.createTeamFromD4H({
-            organizationId: T.org,
-            d4hTeamId: 4242,
-        });
-
-        expect(created.d4h?.d4hTeamId).toBe(4242);
-        await expectLinkedWithoutImport(db, created.id, "Create");
+        await expectLinkedWithoutImport(db, T.team);
     });
 });
 
