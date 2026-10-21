@@ -296,11 +296,13 @@ function pick<K extends string>(obj: object, keys: readonly K[]): Record<string,
  *   **archive** (never delete — `SkillCheck.skillId` cascades) any active group/skill under
  *   the package that the file omits.
  * - Package ID owned by a different organization → `CONFLICT`.
+ * - A skill ID that lives in another of the organization's packages → moved back, and logged as
+ *   a move. One owned by a different organization → `CONFLICT`.
  *
  * An imported package always lands `published: false` / `status: Active`.
  *
  * @throws ValidationError if the envelope repeats a group or skill ID.
- * @throws ConflictError if the package ID belongs to another organization.
+ * @throws ConflictError if the package ID, or a skill ID, belongs to another organization.
  */
 export async function prepareImport(
     prisma: SkillPackagePrisma,
@@ -326,6 +328,31 @@ export async function prepareImport(
 
     const existingGroups = new Map((existing?.groups ?? []).map((g) => [g.id, g]));
     const existingSkills = new Map((existing?.skills ?? []).map((s) => [s.id, s]));
+
+    // Skills in the file that now live in another package, e.g. after a cross-package
+    // `moveSkill`. The upsert moves them back, so they're planned and logged as moves, with the
+    // package they leave as `from`. One owned by another organisation is refused, as a package is.
+    const otherPackageSkillIds = incoming.groups
+        .flatMap((g) => g.skills.map((s) => s.id))
+        .filter((id) => !existingSkills.has(id));
+    const otherPackageSkills = new Map(
+        otherPackageSkillIds.length === 0
+            ? []
+            : (
+                  await prisma.skill.findMany({
+                      where: { id: { in: otherPackageSkillIds } },
+                      include: { skillPackage: { select: { organizationId: true } } },
+                  })
+              ).map((s) => [s.id, s]),
+    );
+    for (const skill of otherPackageSkills.values()) {
+        if (skill.skillPackage.organizationId !== targetOrganizationId) {
+            throw new ConflictError(
+                `Skill ${skill.id} already exists under a different organisation. A skill ID belongs to exactly one organisation per instance.`,
+            );
+        }
+    }
+    const currentSkillOf = (id: string) => existingSkills.get(id) ?? otherPackageSkills.get(id);
 
     const fileGroupIds = new Set<string>();
     const fileSkillIds = new Set<string>();
@@ -355,7 +382,7 @@ export async function prepareImport(
 
         for (const skill of group.skills) {
             fileSkillIds.add(skill.id);
-            const currentSkill = existingSkills.get(skill.id);
+            const currentSkill = currentSkillOf(skill.id);
             const groupChanged = currentSkill?.skillGroupId !== group.id;
             const skillDiff = currentSkill
                 ? diffObject(
@@ -364,6 +391,14 @@ export async function prepareImport(
                   )
                 : diffObject({}, pick(skill, SKILL_COMPARE_KEYS));
             // A move to another group reads "Group: X → Y", like `moveSkill`'s entry (#342).
+            if (currentSkill && currentSkill.skillPackageId !== incoming.id) {
+                skillDiff.push({
+                    type: "obj_mod",
+                    path: ["skillPackageId"],
+                    prev: currentSkill.skillPackageId,
+                    curr: incoming.id,
+                });
+            }
             if (currentSkill && groupChanged) {
                 skillDiff.push({
                     type: "obj_mod",
@@ -545,16 +580,17 @@ export async function prepareImport(
         }
         const skill = skillsById.get(node.id as SkillId)!;
         const group = incoming.groups.find((g) => g.skills.some((s) => s.id === skill.id))!;
-        // A skill re-imported into a different group refs its old group as `from` and its new
-        // one as `to`, in place of the group `context` ref, so the move shows on both (#342).
-        const previousGroupId = existingSkills.get(skill.id)?.skillGroupId;
+        // A skill re-imported into a different group, or back from another package, refs where
+        // it was as `from` and where it lands as `to`, so the move shows on both (#342).
+        const previous = currentSkillOf(skill.id);
         const current = { skillPackageId: incoming.id, skillGroupId: group.id };
         const refs =
-            previousGroupId !== undefined && previousGroupId !== group.id
+            previous !== undefined &&
+            (previous.skillGroupId !== group.id || previous.skillPackageId !== incoming.id)
                 ? skillMoveLogRefs({
                       from: {
-                          skillPackageId: incoming.id,
-                          skillGroupId: SkillGroupId.schema.parse(previousGroupId),
+                          skillPackageId: SkillPackageId.schema.parse(previous.skillPackageId),
+                          skillGroupId: SkillGroupId.schema.parse(previous.skillGroupId),
                       },
                       to: current,
                   })

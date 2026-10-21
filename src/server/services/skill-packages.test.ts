@@ -43,6 +43,8 @@ const T = {
     skillSafety: SkillId.create(),
     skillComms: SkillId.create(),
     skillRescue: SkillId.create(),
+    otherPkg: SkillPackageId.create(),
+    otherGroup: SkillGroupId.create(),
 };
 
 function envelope(overrides?: Partial<SkillPackageExport["package"]>): SkillPackageExport {
@@ -296,6 +298,106 @@ describe("SkillPackages.prepareImport", () => {
         expect(
             await refsOf(db, { objectType: "Skill", objectId: T.skillRescue, action: "Archive" }),
         ).toEqual([`context:SkillGroup:${T.groupAdvanced}`, pkg]);
+    });
+
+    /** A second package in `organizationId` with one group, for a skill to have moved into. */
+    async function createOtherPackage(organizationId: OrganizationId) {
+        await db.skillPackage.create({
+            data: {
+                id: T.otherPkg,
+                organizationId,
+                name: "Other Package",
+                description: "",
+                tags: [],
+                properties: {},
+                published: false,
+                status: "Active",
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.otherGroup,
+                skillPackageId: T.otherPkg,
+                name: "Other Group",
+                description: "",
+                tags: [],
+                properties: {},
+                sequence: 1,
+                defaultInclude: true,
+                status: "Active",
+            },
+        });
+    }
+
+    it("plans and logs a skill moving back from another package as a move", async () => {
+        const ctx = createOrganizationMockContext({
+            organizationId: T.orgA,
+            user: { id: UserId.create() },
+            permissions: {},
+            prisma: db,
+        });
+        await apply(envelope(), T.orgA);
+        await createOtherPackage(T.orgA);
+        // As a cross-package `moveSkill` leaves it.
+        await db.skill.update({
+            where: { id: T.skillComms },
+            data: { skillPackageId: T.otherPkg, skillGroupId: T.otherGroup },
+        });
+
+        const { plan, writeItems } = await SkillPackages.prepareImport(db, envelope(), T.orgA);
+        expect(plan.skills.find((s) => s.id === T.skillComms)?.action).toBe("update");
+        for (const item of writeItems) {
+            await db.$transaction([item.write(db), ctx.logEvent(item.log)]);
+        }
+
+        const stored = await db.skill.findUnique({ where: { id: T.skillComms } });
+        expect(stored).toMatchObject({ skillPackageId: T.pkg, skillGroupId: T.groupFoundations });
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillComms, action: "Update" }),
+        ).toEqual([
+            `from:SkillGroup:${T.otherGroup}`,
+            `from:SkillPackage:${T.otherPkg}`,
+            `to:SkillGroup:${T.groupFoundations}`,
+            `to:SkillPackage:${T.pkg}`,
+        ]);
+        const moved = await db.logEntry.findFirst({
+            where: { objectType: "Skill", objectId: T.skillComms, action: "Update" },
+        });
+        expect(moved?.changes).toEqual(
+            expect.arrayContaining([
+                { type: "obj_mod", path: ["skillPackageId"], prev: T.otherPkg, curr: T.pkg },
+                {
+                    type: "obj_mod",
+                    path: ["skillGroupId"],
+                    prev: T.otherGroup,
+                    curr: T.groupFoundations,
+                },
+            ]),
+        );
+    });
+
+    it("rejects a skill ID owned by a different organization", async () => {
+        await createOtherPackage(T.orgB);
+        await db.skill.create({
+            data: {
+                id: T.skillComms,
+                skillPackageId: T.otherPkg,
+                skillGroupId: T.otherGroup,
+                name: "Comms",
+                description: "",
+                tags: [],
+                properties: {},
+                sequence: 1,
+                frequency: 12,
+                defaultInclude: true,
+                defaultRequired: false,
+                status: "Active",
+            },
+        });
+
+        await expect(SkillPackages.prepareImport(db, envelope(), T.orgA)).rejects.toThrow(
+            ConflictError,
+        );
     });
 
     it("reports unchanged rows on an identical re-import", async () => {
