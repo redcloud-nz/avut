@@ -106,7 +106,7 @@ export function AdminModule_CreatePerson_Dialog() {
             });
         },
         (errors) => {
-            console.error("Form validation errors:", errors);
+            console.warn("Form validation errors:", errors);
         },
     );
 

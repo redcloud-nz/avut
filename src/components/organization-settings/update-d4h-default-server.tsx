@@ -99,7 +99,7 @@ export function OrganizationSettings_UpdateD4HDefaultServer_Dialog({
                 update: { slice: "integrations.d4h", patch: { defaultServer } },
             });
         },
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     return (

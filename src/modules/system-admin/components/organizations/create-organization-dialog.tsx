@@ -107,7 +107,7 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                 slug: formData.slug,
                 addSelfAsOwner: formData.addSelfAsOwner,
             }),
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     function handleOpenChange(open: boolean) {

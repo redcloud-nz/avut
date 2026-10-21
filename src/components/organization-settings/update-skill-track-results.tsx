@@ -136,7 +136,7 @@ export function OrganizationSettings_UpdateSkillTrackResults_Dialog({
                 update: { slice: "modules.skill-track", patch: { results: patchResults } },
             });
         },
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     return (

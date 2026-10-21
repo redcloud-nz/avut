@@ -125,7 +125,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                                         resend: false,
                                     }),
                                 (errors) => {
-                                    console.error("Form validation errors:", errors);
+                                    console.warn("Form validation errors:", errors);
                                 },
                             )}
                         >

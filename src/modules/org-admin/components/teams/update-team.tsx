@@ -100,7 +100,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                                     update: formData,
                                 }),
                             (errors) => {
-                                console.error("Form validation errors:", errors);
+                                console.warn("Form validation errors:", errors);
                             },
                         )}
                     >

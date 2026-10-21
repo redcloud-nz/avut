@@ -201,7 +201,7 @@ function InvitePerson_Body({ person, close }: { person: PersonData; close: () =>
                                         personId: person.id,
                                         resend: false,
                                     }),
-                                (errors) => console.error("Form validation errors:", errors),
+                                (errors) => console.warn("Form validation errors:", errors),
                             )}
                         >
                             <FieldGroup>

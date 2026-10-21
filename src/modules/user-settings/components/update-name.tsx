@@ -73,7 +73,7 @@ export function UserSettings_UpdateName_Dialog({ session }: { session: SessionDa
 
     const handleSubmit = form.handleSubmit(
         (formData) => mutation.mutate(formData),
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     return (

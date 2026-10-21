@@ -92,7 +92,7 @@ export function OrganizationSettings_UpdateTimeZone_Dialog({
                 update: { slice: "general", patch: { timeZone } },
             });
         },
-        (errors) => console.error("Form validation errors:", errors),
+        (errors) => console.warn("Form validation errors:", errors),
     );
 
     return (

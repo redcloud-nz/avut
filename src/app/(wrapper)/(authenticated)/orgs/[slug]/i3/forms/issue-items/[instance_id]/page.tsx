@@ -462,7 +462,7 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
             handleOpenChange(false);
         },
         (error) => {
-            console.error("Unable to add item: ", error);
+            console.warn("Unable to add item: ", error);
         },
     );
 
@@ -631,7 +631,7 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
             handleOpenChange(false);
         },
         (error) => {
-            console.error("Unable to update item: ", error);
+            console.warn("Unable to update item: ", error);
         },
     );
 

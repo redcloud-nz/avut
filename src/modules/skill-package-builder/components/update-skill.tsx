@@ -105,7 +105,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
                 update: formData,
             }),
         (errors) => {
-            console.error("Form validation errors:", errors);
+            console.warn("Form validation errors:", errors);
         },
     );
 
