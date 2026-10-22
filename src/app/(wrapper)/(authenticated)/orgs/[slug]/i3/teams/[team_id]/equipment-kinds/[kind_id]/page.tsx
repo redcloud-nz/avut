@@ -241,7 +241,7 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                             <TableBody>
                                 {memberEquipment.map(({ member, items }) =>
                                     items.map((item, index) => (
-                                        <TableRow key={item.id}>
+                                        <TableRow key={item.id} className="hover:bg-transparent">
                                             {index === 0 && (
                                                 <TableCell rowSpan={items.length}>
                                                     {member.name}

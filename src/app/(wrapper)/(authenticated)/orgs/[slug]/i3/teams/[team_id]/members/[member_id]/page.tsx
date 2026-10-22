@@ -274,7 +274,10 @@ export default function I3Module_Team_MemberItems_Page(
                                         {kinds.map(({ kind, items }) => (
                                             <Fragment key={kind.id}>
                                                 {items.map((item, itemIndex) => (
-                                                    <TableRow key={item.id}>
+                                                    <TableRow
+                                                        key={item.id}
+                                                        className="hover:bg-transparent"
+                                                    >
                                                         {itemIndex == 0 ? (
                                                             <>
                                                                 <TableCell
