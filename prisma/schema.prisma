@@ -51,6 +51,8 @@ model User {
   authoredOrganizationNotes OrganizationNote[] @relation("organization_note_to_author")
   notes                     UserNote[]         @relation("user_note_to_user")
   formInstances             FormInstance[]     @relation("form_instance_to_user")
+  requestedD4HTasks         D4HTask[]          @relation("d4h_task_to_requested_by")
+  appliedD4HTasks           D4HTask[]          @relation("d4h_task_to_applied_by")
   logEntries                LogEntry[]         @relation("log_entry_to_user")
   ownedLogEntries           LogEntry[]         @relation("log_entry_to_owner")
   impersonatedLogEntries    LogEntry[]         @relation("log_entry_to_impersonator")
@@ -140,6 +142,7 @@ model Organization {
   i3IssuedItems I3IssuedItem[] @relation("i3_issued_item_to_organization")
   i3Templates   I3Template[]   @relation("i3_template_to_organization")
   formInstances FormInstance[] @relation("form_instance_to_organization")
+  d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
 
   groupMemberships OrganizationGroupMembership[] @relation("organization_group_membership_to_organization")
 
@@ -918,7 +921,8 @@ model FormInstance {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items FormInstanceItem[] @relation("form_instance_item_to_form_instance")
+  items    FormInstanceItem[] @relation("form_instance_item_to_form_instance")
+  d4hTasks D4HTask[]          @relation("d4h_task_to_form_instance")
 
   @@index([formKey, organizationId, userId])
   @@map("form_instances")
@@ -939,4 +943,48 @@ model FormInstanceItem {
 
   @@index([formInstanceId])
   @@map("form_instance_items")
+}
+
+// D4H task queue
+
+/// A change to a D4H record that the D4H API can't make, queued to be applied by hand in D4H.
+/// v1 has one kind, `Retire` on resource type `Equipment`, queued by an I3 Return.
+model D4HTask {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("d4h_task_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  d4hTeamId      Int
+  /// The D4H resource type, e.g. `Equipment`.
+  resourceType   String
+  /// The D4H id of the resource the task applies to.
+  resourceId     Int
+  /// A display label for the resource (e.g. `#1234 Helmet`), so the task list needs no D4H call per task.
+  itemLabel      String
+  /// What to do to the resource, e.g. `Retire`. `payload` holds the kind's details.
+  kind           String
+  payload        Json         @default("{}")
+  /// `Open`, `Done` or `Dismissed`.
+  status         String       @default("Open")
+  /// `Manual` (applied by hand in D4H) or `Api`. v1 only writes `Manual`.
+  applyMethod    String       @default("Manual")
+
+  requestedById String?
+  requestedBy   User?     @relation("d4h_task_to_requested_by", fields: [requestedById], references: [id], onDelete: SetNull)
+  requestedAt   DateTime  @default(now())
+  /// For a `Manual` task this is whoever confirmed (by Check) that the change had been applied in
+  /// D4H, which can't be told apart from whoever made it. Null while open, and on a dismissed task.
+  appliedById   String?
+  appliedBy     User?     @relation("d4h_task_to_applied_by", fields: [appliedById], references: [id], onDelete: SetNull)
+  appliedAt     DateTime?
+
+  /// The form submission (e.g. an I3 Return) that queued the task.
+  formInstanceId String?
+  formInstance   FormInstance? @relation("d4h_task_to_form_instance", fields: [formInstanceId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, d4hTeamId, resourceId])
+  @@map("d4h_tasks")
 }

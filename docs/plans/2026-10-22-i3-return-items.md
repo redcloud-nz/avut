@@ -144,7 +144,7 @@
 
 ### Review group B: D4H task queue
 
-- [ ] **Task 5: `D4HTask` model and migration**
+- [x] **Task 5: `D4HTask` model and migration**
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<timestamp>_d4h_tasks/migration.sql`, `src/lib/schemas/d4h-task.ts` (new), `src/lib/schemas/log-entry.ts`
   - **Do:**
     - First run `npm run db:branch i3-return-items`, stopping the worktree's server and asking the user to stop 3000 and Prisma Studio. Then ask for permission before `npm run prisma migrate dev --name d4h_tasks`.
@@ -352,3 +352,10 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 - Looking up D4H retired-reason ids. The reason is free text in the task.
 
 ## Parked
+
+## Review notes
+
+- (Group A, Task 4) `updateEquipmentItem`: if the post-PATCH re-fetch fails, the D4H change is unlogged and the user sees an error for a write that worked. Log `before` vs `{ ...before, ...update }` over the PATCHable fields when the re-fetch fails.
+- (Group A, Task 2) Make `kind.category` lenient (`.nullable().optional()`), with the UI falling back to no label, so one odd item can't block viewing/editing.
+- (Group A, Task 2) `fetchD4HEquipmentItem`: map a D4H 403 to `ForbiddenError` rather than a plain `Error` (currently a generic 500).
+- (Group A, Task 3) `executeWithOutput` JSDoc: callers must pick fields, never return `output` as-is (it holds the access token). The Return procedure's `.output()` enforces it.

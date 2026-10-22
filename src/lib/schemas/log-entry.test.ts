@@ -84,6 +84,7 @@ describe("objectTypesForModule", () => {
     it("generates the WHERE-IN list for a module feed", () => {
         expect(objectTypesForModule("i3").sort()).toEqual([
             "D4HEquipmentItem",
+            "D4HTask",
             "I3Template",
             "I3TemplateVariant",
         ]);
