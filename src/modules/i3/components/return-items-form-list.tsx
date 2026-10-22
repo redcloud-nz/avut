@@ -55,7 +55,9 @@ export function I3Module_ReturnItems_FormInstanceList() {
 
     const newFormMutation = useMutation(
         newFormInstanceMutation({
-            onMutate(data) {
+            // Navigate only once the draft is saved: the form page fetches it server-side
+            // and 404s if it isn't there yet.
+            onSuccess(_result, data) {
                 router.push(
                     route("/orgs/[slug]/i3/forms/return-items/[instance_id]", {
                         slug: organization.slug,
@@ -142,7 +144,7 @@ export function I3Module_ReturnItems_FormInstanceList() {
                                                 </ItemTitle>
                                                 {/* The relative time can tick over between SSR and hydration. */}
                                                 <ItemDescription suppressHydrationWarning>
-                                                    {itemCount == 0
+                                                    {itemCount === 0
                                                         ? "No items"
                                                         : itemCount === 1
                                                           ? "1 item"

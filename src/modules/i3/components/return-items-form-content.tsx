@@ -6,7 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -27,11 +27,7 @@ import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/comp
 import { SaveStatusIndicator } from "@/components/ui/save-status-indicator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import {
-    I3ReturnedItem,
-    I3ReturnItemsFormData,
-    I3ReturnItemsFormInputData,
-} from "@/forms/i3-return-items/schema";
+import { I3ReturnedItem, I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
@@ -177,10 +173,7 @@ export function I3Module_ReturnItems_FormInstance_Content({
                                                     onChange={(value) => {
                                                         field.onChange(value);
                                                         // The checklist is the chosen person's items.
-                                                        form.setValue(
-                                                            "items",
-                                                            [] as unknown as I3ReturnItemsFormInputData["items"],
-                                                        );
+                                                        form.setValue("items", []);
                                                         handleChange();
                                                     }}
                                                     organizationId={organization.id}
@@ -330,11 +323,22 @@ function I3_Return_ItemChecklist({
     });
 
     const returnedIds = new Set(returnedItemIds);
-    const selectedIds = new Set(value.map((item) => item.itemId));
 
     const items = memberEquipment
         .filter((item) => !returnedIds.has(item.id))
         .sort((a, b) => a.kind.title.localeCompare(b.kind.title) || a.ref.localeCompare(b.ref));
+
+    // A saved tick can point at an item that's no longer listed (returned since, or no longer
+    // theirs). Keep only the ticks the person can see, so hidden items aren't submitted.
+    const displayedIds = new Set(items.map((item) => item.id));
+    const visibleValue = value.filter((v) => displayedIds.has(v.itemId));
+    const hasHiddenTicks = visibleValue.length !== value.length;
+
+    useEffect(() => {
+        if (hasHiddenTicks) onChange(visibleValue);
+    }, [hasHiddenTicks, visibleValue, onChange]);
+
+    const selectedIds = new Set(visibleValue.map((item) => item.itemId));
 
     if (items.length === 0) {
         return <p className="text-sm text-muted-foreground">No items to return.</p>;
@@ -354,14 +358,14 @@ function I3_Return_ItemChecklist({
                                     onChange(
                                         checked === true
                                             ? [
-                                                  ...value,
+                                                  ...visibleValue,
                                                   {
                                                       itemId: item.id,
                                                       ref: item.ref,
                                                       kindTitle: item.kind.title,
                                                   },
                                               ]
-                                            : value.filter((v) => v.itemId !== item.id),
+                                            : visibleValue.filter((v) => v.itemId !== item.id),
                                     );
                                 }}
                             />

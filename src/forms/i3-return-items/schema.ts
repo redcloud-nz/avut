@@ -26,7 +26,9 @@ export const I3ReturnItemsFormData = {
                 name: z.string(),
             })
             .refine((recipient) => recipient.id > 0, "Returned by is required"),
-        items: z.array(I3ReturnedItem.schema).nonempty("At least one item must be returned"),
+        // min(1) rather than nonempty(): same check, but typed as an array, so a draft (or a
+        // change of "Returned by") can hold no items without a cast.
+        items: z.array(I3ReturnedItem.schema).min(1, "At least one item must be returned"),
         comments: z.string(),
     }),
 } as const;
