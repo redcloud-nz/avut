@@ -31,13 +31,17 @@ export const D4HTeamRef = {
 
 export type D4HTeamRef = z.infer<typeof D4HTeamRef.schema>;
 
-/** A team as returned by the team detail endpoint — carries the IANA `timezone`. */
+/**
+ * A team as returned by the team detail endpoint — carries the IANA `timezone`, and the
+ * `subdomain` that D4H web-app links are built on.
+ */
 export const D4HTeamDetail = {
     schema: z.object({
         id: z.number(),
         resourceType: z.literal("Team"),
         title: z.string(),
         timezone: z.string(),
+        subdomain: z.string(),
     }),
 } as const;
 

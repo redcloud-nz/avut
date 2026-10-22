@@ -84,7 +84,7 @@
     - Tests mock `@/server/d4h-api/client` as `src/forms/i3-issue-items/processor.test.ts` does. Cover: allowed, permission false, permission missing, no membership in the team.
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 2: D4H equipment item schemas, fetch/patch helpers and web-app URL**
+- [x] **Task 2: D4H equipment item schemas, fetch/patch helpers and web-app URL**
   - **Files:** `src/lib/schemas/d4h/equipment-item.ts`, `src/lib/schemas/d4h/team.ts`, `src/lib/d4h-servers.ts`, `src/server/d4h-api/equipment.ts` (new), `src/server/d4h-api/equipment.test.ts` (new)
   - **Do:**
     - Add `D4HEquipmentItemDetail` = `D4HEquipmentItem.schema.extend({ isCritical: z.boolean(), isMonitor: z.boolean(), barcode: z.string().nullable(), retiredReason: z.object({ id: z.number().nullable(), resourceType: z.literal("EquipmentRetiredReason") }).nullable().optional() })`, and extend `kind` with `category: { title }` so the page can show the category name. No `location`.

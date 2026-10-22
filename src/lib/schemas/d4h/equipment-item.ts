@@ -56,3 +56,57 @@ export const D4HEquipmentItem = {
 } as const;
 
 export type D4HEquipmentItem = z.infer<typeof D4HEquipmentItem.schema>;
+
+/**
+ * The `status` values D4H's equipment PATCH accepts. A GET can also return `RETIRED`, which only
+ * D4H's web app can set.
+ */
+export const D4HEquipmentStatus = {
+    schema: z.enum(["OPERATIONAL", "UNSERVICEABLE", "LOST", "WISHLIST", "INACTIVE"] as const),
+} as const;
+
+export type D4HEquipmentStatus = z.infer<typeof D4HEquipmentStatus.schema>;
+
+/**
+ * An equipment item as the single-item GET returns it. The response is typed `unknown` in the
+ * generated schema, so the field names come from its `@example` and a live probe (2026-10-22).
+ *
+ * There's deliberately no `location`: it expands to the holding member's full D4H record, which
+ * must never reach the client. `z.object` strips it on parse.
+ */
+export const D4HEquipmentItemDetail = {
+    schema: D4HEquipmentItem.schema.extend({
+        kind: D4HEquipmentItem.schema.shape.kind.extend({
+            category: z.object({ title: z.string() }),
+        }),
+        isCritical: z.boolean(),
+        isMonitor: z.boolean(),
+        barcode: z.string().nullable(),
+        retiredReason: z
+            .object({
+                id: z.number().nullable(),
+                resourceType: z.literal("EquipmentRetiredReason"),
+            })
+            .nullable()
+            .optional(),
+    }),
+} as const;
+
+export type D4HEquipmentItemDetail = z.infer<typeof D4HEquipmentItemDetail.schema>;
+
+/**
+ * The fields AVUT sends in an equipment PATCH. D4H rejects anything else with a 400. Clearing a
+ * barcode sends `""`.
+ */
+export const D4HEquipmentItemUpdate = {
+    schema: z.object({
+        status: D4HEquipmentStatus.schema.optional(),
+        isCritical: z.boolean().optional(),
+        isMonitor: z.boolean().optional(),
+        barcode: z.string().optional(),
+        notes: z.string().optional(),
+        updateNotes: z.string().optional(),
+    }),
+} as const;
+
+export type D4HEquipmentItemUpdate = z.infer<typeof D4HEquipmentItemUpdate.schema>;
