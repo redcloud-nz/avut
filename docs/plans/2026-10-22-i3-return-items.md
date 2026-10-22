@@ -244,7 +244,7 @@
       - notes appended to the existing notes, not replaced
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 9: `i3.submitReturnItemsForm`**
+- [x] **Task 9: `i3.submitReturnItemsForm`**
   - **Files:** `src/trpc/routers/i3-router.ts`, `src/trpc/routers/i3-router.test.ts`, `src/client/i3-effects.ts`
   - **Do:**
     - Add `submitReturnItemsForm: organizationProcedure({ i3Item: ["return"] })` after `submitIssueItemsForm`, with the same shape: save the instance, then `executeWithOutput`, then wrap the first stage error the same way.

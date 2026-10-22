@@ -6,6 +6,8 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { I3IssueItemsFormProcessor } from "@/forms/i3-issue-items/processor";
+import { I3ReturnItemsFormProcessor } from "@/forms/i3-return-items/processor";
+import type { I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { ForbiddenError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
@@ -23,6 +25,11 @@ vi.mock("server-only", () => ({}));
 // submitIssueItemsForm's test drives the router's error handling with canned stage results.
 vi.mock("@/forms/i3-issue-items/processor", () => ({
     I3IssueItemsFormProcessor: { execute: vi.fn() },
+}));
+
+// submitReturnItemsForm's tests check what the router hands the processor and what it returns.
+vi.mock("@/forms/i3-return-items/processor", () => ({
+    I3ReturnItemsFormProcessor: { executeWithOutput: vi.fn() },
 }));
 
 describe("i3Router.getTemplate", () => {
@@ -316,5 +323,72 @@ describe("i3Router.submitIssueItemsForm", () => {
                 },
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN", message });
+    });
+});
+
+describe("i3Router.submitReturnItemsForm", () => {
+    const T = { org: OrganizationId.create(), user: nanoId16() };
+    const db = createMockPrisma();
+
+    const formData: I3ReturnItemsFormData = {
+        recipient: { id: 42, teamId: 7, name: "John Smith" },
+        items: [{ itemId: 1234, ref: "1234", kindTitle: "Helmet" }],
+        comments: "Cracked shell",
+    };
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+    });
+
+    function makeCaller(i3Item: ("issue" | "return")[] = ["return"]) {
+        return i3Router.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], i3Item },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("throws FORBIDDEN without i3Item:return", async () => {
+        await expect(
+            makeCaller(["issue"]).submitReturnItemsForm({
+                organizationId: T.org,
+                formInstanceId: FormInstanceId.create(),
+                formData,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("runs the processor on the saved data and returns only its counts", async () => {
+        const failures = ["#99 Boots: not held by John Smith"];
+        vi.mocked(I3ReturnItemsFormProcessor.executeWithOutput).mockResolvedValue({
+            results: [{ stageName: "ReturnItems", status: "success", duration: 0 }],
+            output: {
+                accessToken: { secret: "do-not-leak" },
+                returned: 1,
+                failures,
+                returnedItems: formData.items,
+            },
+        } as unknown as Awaited<ReturnType<typeof I3ReturnItemsFormProcessor.executeWithOutput>>);
+
+        const formInstanceId = FormInstanceId.create();
+        const result = await makeCaller().submitReturnItemsForm({
+            organizationId: T.org,
+            formInstanceId,
+            formData,
+        });
+
+        expect(result).toEqual({ returned: 1, failures });
+        expect(I3ReturnItemsFormProcessor.executeWithOutput).toHaveBeenCalledWith(
+            formInstanceId,
+            formData,
+            expect.objectContaining({ organizationId: T.org }),
+        );
+
+        const saved = await db.formInstance.findUnique({ where: { id: formInstanceId } });
+        expect(saved).toMatchObject({ formKey: "i3-return", formData });
     });
 });

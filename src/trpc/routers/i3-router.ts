@@ -9,8 +9,10 @@ import { TRPCError } from "@trpc/server";
 
 import { I3IssueItemsFormProcessor } from "@/forms/i3-issue-items/processor";
 import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
+import { I3ReturnItemsFormProcessor } from "@/forms/i3-return-items/processor";
+import { I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { diffObject } from "@/lib/diff";
-import { I3IssueItemsForm } from "@/lib/forms";
+import { I3IssueItemsForm, I3ReturnItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
@@ -294,6 +296,45 @@ export const i3Router = createTrpcRouter({
                     cause: errors[0],
                 });
             }
+        }),
+
+    /**
+     * Submit a Return Items form: save the instance, then run the Return pipeline.
+     *
+     * @returns How many items were returned, and a message for each item that wasn't.
+     */
+    submitReturnItemsForm: organizationProcedure({ i3Item: ["return"] })
+        .input(
+            z.object({
+                formInstanceId: FormInstanceId.schema,
+                formData: I3ReturnItemsFormData.schema,
+            }),
+        )
+        .output(z.object({ returned: z.number(), failures: z.array(z.string()) }))
+        .mutation(async ({ ctx, input: { formInstanceId, formData } }) => {
+            await Forms.saveInstance(ctx, {
+                formInstanceId,
+                formKey: I3ReturnItemsForm.formKey,
+                formData,
+            });
+
+            const { results, output } = await I3ReturnItemsFormProcessor.executeWithOutput(
+                formInstanceId,
+                formData,
+                ctx,
+            );
+            const errors = results.flatMap((r) => (r.status === "error" ? [r.error] : []));
+
+            if (errors.length > 0) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: errors[0].message,
+                    cause: errors[0],
+                });
+            }
+
+            // Pick the fields: `output` also holds the D4H access token.
+            return { returned: output.returned ?? 0, failures: output.failures ?? [] };
         }),
 
     /**
