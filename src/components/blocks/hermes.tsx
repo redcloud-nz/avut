@@ -49,8 +49,8 @@ function HermesList({ children, className, ...props }: ComponentProps<"nav">) {
             className={cn(
                 "flex-1 bg-navbar max-md:group-data-[selected=true]/hermes:hidden md:flex-none md:w-80 md:border-r",
                 paneScroll,
-                // One-edge gutter, so row borders and fills reach the pane's left edge.
-                "[scrollbar-gutter:stable]",
+                // No reserved gutter, so row borders and fills run edge to edge; a classic
+                // scrollbar narrows the rows only once the list actually overflows.
                 className,
             )}
             {...props}
