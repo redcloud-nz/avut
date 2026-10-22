@@ -45,7 +45,7 @@ export default function I3IssueItemsNotificationEmail({
     emailTarget = {
         email: "your-email@example.com",
     },
-    savedToD4H = { reason: "insufficient permissions" },
+    savedToD4H = true,
     formData = {
         recipient: {
             id: 42,

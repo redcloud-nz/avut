@@ -104,7 +104,7 @@
       - PATCH sends only the provided keys.
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 3: Issue refuses up front**
+- [x] **Task 3: Issue refuses up front**
   - **Files:** `src/forms/i3-issue-items/processor.ts`, `src/forms/i3-issue-items/processor.test.ts`, `src/emails/i3-issue-items-notification.tsx`, `src/server/form-processor.ts`, `src/server/form-processor.test.ts`, `src/trpc/routers/i3-router.test.ts`
   - **Do:**
     - Replace the `CheckPermissions` stage with a call to `requireD4HTeamPermission(accessToken, recipient.teamId, "Equipment", "CREATE")`, placed straight after `CheckD4HAccessToken` (before `ProcessItems`).

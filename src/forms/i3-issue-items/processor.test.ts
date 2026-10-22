@@ -5,6 +5,7 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ForbiddenError } from "@/lib/errors";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -178,14 +179,19 @@ describe("I3IssueItemsFormProcessor", () => {
         });
     });
 
-    it("makes no POST without Equipment.CREATE on the recipient team", async () => {
+    it("refuses up front without Equipment.CREATE on the recipient team", async () => {
         vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(false) as never);
 
         const results = await execute(2);
 
+        const last = results.at(-1);
+        expect(last).toMatchObject({ stageName: "CheckPermissions", status: "error" });
+        expect(last?.status === "error" && last.error).toBeInstanceOf(ForbiddenError);
+        expect(last?.status === "error" && last.error.message).toBe(
+            "You need D4H's Equipment CREATE permission on Team to do this.",
+        );
         expect(POST).not.toHaveBeenCalled();
-        expect(results.find((r) => r.stageName === "CreateEquipmentInD4H")?.status).toBe("skipped");
-        expect(emailedSavedToD4H()).toEqual({ reason: "insufficient permissions" });
+        expect(sendEmail).not.toHaveBeenCalled();
     });
 
     it("stops at CheckD4HAccessToken when the integration is disabled", async () => {

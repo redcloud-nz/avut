@@ -5,7 +5,10 @@
 
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+import { I3IssueItemsFormProcessor } from "@/forms/i3-issue-items/processor";
+import { ForbiddenError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -16,6 +19,11 @@ import { i3Router } from "./i3-router";
 // i3-router reaches @/server/auth (via forms-router) at import time; the procedures under test
 // only touch ctx.prisma, so stubbing server-only is enough to load the module under jsdom.
 vi.mock("server-only", () => ({}));
+
+// submitIssueItemsForm's test drives the router's error handling with canned stage results.
+vi.mock("@/forms/i3-issue-items/processor", () => ({
+    I3IssueItemsFormProcessor: { execute: vi.fn() },
+}));
 
 describe("i3Router.getTemplate", () => {
     const T = {
@@ -254,5 +262,59 @@ describe("i3Router.listTemplates", () => {
 
         expect(ids).toContain(T.active);
         expect(ids).not.toContain(T.deleted);
+    });
+});
+
+describe("i3Router.submitIssueItemsForm", () => {
+    const T = { org: OrganizationId.create(), user: nanoId16(), template: I3TemplateId.create() };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+    });
+
+    function makeCaller() {
+        return i3Router.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], i3Item: ["issue"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    // The router wraps the first stage error as the `cause` of an INTERNAL_SERVER_ERROR, and
+    // `mapDomainErrors` unwraps a domain cause, so the client sees FORBIDDEN, not a 500.
+    it("surfaces a stage ForbiddenError as FORBIDDEN with its message", async () => {
+        const message = "You need D4H's Equipment CREATE permission on Team to do this.";
+        vi.mocked(I3IssueItemsFormProcessor.execute).mockResolvedValue([
+            { stageName: "CheckD4HAccessToken", status: "success", duration: 0 },
+            {
+                stageName: "CheckPermissions",
+                status: "error",
+                error: new ForbiddenError(message),
+                duration: 0,
+            },
+        ]);
+
+        await expect(
+            makeCaller().submitIssueItemsForm({
+                organizationId: T.org,
+                formInstanceId: FormInstanceId.create(),
+                formData: {
+                    recipient: { id: 42, teamId: 7, name: "John Smith" },
+                    items: [
+                        {
+                            template: { id: T.template, name: "Helmet" },
+                            variant: null,
+                            serialNumber: null,
+                        },
+                    ],
+                    comments: "",
+                },
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN", message });
     });
 });

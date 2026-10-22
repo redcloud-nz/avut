@@ -17,6 +17,7 @@ import prisma from "./prisma";
  * This pipeline can be used to implement complex form processing logic in a modular and maintainable way, with clear visibility into the execution of each stage through the use of the AVUTLogger.
  * @param FormData The shape of the form data being processed by this pipeline.
  * @param Context An optional custom context object that can be passed through each stage of the pipeline, allowing for shared state and dependencies to be accessed by each stage function.
+ * @param Output The output accumulated across the stages, as the builder infers it; `executeWithOutput` returns it.
  *
  * @example
  * ```ts
@@ -49,7 +50,11 @@ import prisma from "./prisma";
  *  .build();
  * ```
  */
-export class FormProcessingPipeline<FormData, CustomContext extends object = {}> {
+export class FormProcessingPipeline<
+    FormData,
+    CustomContext extends object = {},
+    Output extends object = {},
+> {
     readonly pipelineName: string;
     private options: FormPipelineOptions;
     private stages: Array<FormProcessingPipelineStage<FormData, CustomContext, any, any>>;
@@ -84,6 +89,27 @@ export class FormProcessingPipeline<FormData, CustomContext extends object = {}>
     }
 
     /**
+     * Execute all stages like `execute`, and also return the output accumulated from the stages that ran.
+     * The output is `Partial` because a stage that errors ends the pipeline, so later stages' output is missing.
+     * @param formInstanceId The unique identifier for this instance of form processing, used for logging and tracking purposes.
+     * @param formData The data submitted with the form that will be processed by the pipeline stages.
+     * @param context The custom context object that will be passed to each stage of the pipeline.
+     * @returns The per-stage results, as `execute` returns them, and the accumulated stage output.
+     */
+    async executeWithOutput(
+        formInstanceId: FormInstanceId,
+        formData: FormData,
+        context: CustomContext,
+    ): Promise<{ results: FormProcessingPipelineStageResult[]; output: Partial<Output> }> {
+        const state = { output: {} };
+        const results: FormProcessingPipelineStageResult[] = [];
+        for await (const stageResult of this.runStages(formInstanceId, formData, context, state)) {
+            results.push(stageResult);
+        }
+        return { results, output: state.output as Partial<Output> };
+    }
+
+    /**
      * Execute the pipeline stages sequentially as an async generator, yielding results for each stage as they complete.
      * This allows for real-time processing and feedback on the execution of each stage, which can be useful for long-running pipelines or for providing progress updates to users.
      * @param formInstanceId The unique identifier for this instance of form processing, used for logging and tracking purposes.
@@ -95,7 +121,20 @@ export class FormProcessingPipeline<FormData, CustomContext extends object = {}>
         formData: FormData,
         context: CustomContext,
     ): AsyncGenerator<FormProcessingPipelineStageResult> {
-        let accumulatedOutput: any = {};
+        yield* this.runStages(formInstanceId, formData, context, { output: {} });
+    }
+
+    /**
+     * The stage loop behind `executeStages` and `executeWithOutput`. Keeps the accumulated output
+     * on `state.output` as it goes, so a caller that wants it can read it once the generator ends.
+     */
+    private async *runStages(
+        formInstanceId: FormInstanceId,
+        formData: FormData,
+        context: CustomContext,
+        state: { output: object },
+    ): AsyncGenerator<FormProcessingPipelineStageResult> {
+        let accumulatedOutput: any = state.output;
 
         for (const stage of this.stages) {
             const logger = AVUTLogger.getConsoleLogger(`${this.pipelineName} - ${stage.stageName}`);
@@ -120,6 +159,7 @@ export class FormProcessingPipeline<FormData, CustomContext extends object = {}>
             try {
                 const stageOutput = await stage.stageFn(stageContext, accumulatedOutput);
                 accumulatedOutput = { ...accumulatedOutput, ...(stageOutput ?? {}) };
+                state.output = accumulatedOutput;
             } catch (err) {
                 const duration = Date.now() - startTime;
                 const error = err instanceof Error ? err : new Error(String(err));
@@ -242,8 +282,12 @@ class FormProcessingPipelineBuilder<FormData, CustomContext extends object, Outp
      * Finalize the form processing pipeline and return an instance of FormProcessingPipeline that can be executed with form data and context. This method should be called after all desired stages have been added to the pipeline using the stage() method.
      * @returns An instance of FormProcessingPipeline that can be executed with form data and context.
      */
-    build(): FormProcessingPipeline<FormData, CustomContext> {
-        return new FormProcessingPipeline(this.pipelineName, this.options, this.stages);
+    build(): FormProcessingPipeline<FormData, CustomContext, Output> {
+        return new FormProcessingPipeline<FormData, CustomContext, Output>(
+            this.pipelineName,
+            this.options,
+            this.stages,
+        );
     }
 
     /**
