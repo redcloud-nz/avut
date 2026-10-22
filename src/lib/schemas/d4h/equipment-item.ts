@@ -63,7 +63,23 @@ export type D4HEquipmentItem = z.infer<typeof D4HEquipmentItem.schema>;
  */
 export const D4HEquipmentStatus = {
     schema: z.enum(["OPERATIONAL", "UNSERVICEABLE", "LOST", "WISHLIST", "INACTIVE"] as const),
+
+    /**
+     * The label D4H's web app shows for a status (`INACTIVE` is "Non Operational"). Takes any
+     * string, since a GET can return `RETIRED` or a value AVUT doesn't know, which falls back to
+     * the raw value.
+     */
+    label: (status: string): string => STATUS_LABELS[status] ?? status,
 } as const;
+
+const STATUS_LABELS: Record<string, string> = {
+    OPERATIONAL: "Operational",
+    UNSERVICEABLE: "Unserviceable",
+    LOST: "Lost",
+    WISHLIST: "Wishlist",
+    INACTIVE: "Non Operational",
+    RETIRED: "Retired",
+};
 
 export type D4HEquipmentStatus = z.infer<typeof D4HEquipmentStatus.schema>;
 

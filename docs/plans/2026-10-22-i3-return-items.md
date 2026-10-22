@@ -259,7 +259,7 @@
 
 ### Review group D: item page and browse pages (visual checkpoint at the end)
 
-- [ ] **Task 10: equipment item detail page** `visual`
+- [x] **Task 10: equipment item detail page** `visual`
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/i3/teams/[team_id]/equipment-items/[item_id]/page.tsx` (new), `src/modules/i3/components/equipment-item/equipment-item-content.tsx` (new), `src/modules/i3/components/equipment-item/item-tasks-card.tsx` (new), `src/modules/i3/components/returned-badge.tsx` (new)
   - **Do:**
     - Follow `docs/patterns/detail-page-data-fetching.md`: `page.tsx` with `generateMetadata` (title `Item #<ref>`) and a prefetch, then a client content component with `Saratoga.Columns`.
@@ -308,7 +308,7 @@
   - **Do:**
     - Move `UserNameFieldValue` and the debounced-save/delete scaffolding (the `useDebouncer` auto-save and `SaveStatusIndicator` wiring) into `form-shared.tsx`, parameterised by `formKey`.
     - The Issue page uses them, and uses `I3IssueItemsForm.formKey` instead of the literal `"i3-issue"`.
-    - Move the Issue submit's hand-written `invalidateQueries` in `onSuccess` onto `i3Effects.submitIssueItemsForm` (with `meta.navigates`), per `src/trpc/mutation-effector.tsx`.
+    - Move the Issue submit's hand-written `invalidateQueries` in `onSuccess` onto `i3Effects.submitIssueItemsForm` (the call site passes `meta: { effects, navigates: true }`, since `navigates` is a call-site flag, not part of an effects entry), per `src/trpc/mutation-effector.tsx`.
     - No behaviour change.
   - **Done when:** the Issue page works as before (drafts autosave, submit returns to the list), and `npm run check` is clean.
 
@@ -325,7 +325,7 @@
       - a checklist of that person's items from `listMemberEquipment`, excluding those in `listReturnedItemIds`, with ref, kind and serial
       - comments
       - "Received by", showing the current user
-      - Submit, calling `trpc.i3.submitReturnItemsForm`
+      - Submit, calling `trpc.i3.submitReturnItemsForm` with `meta: { effects: i3Effects.submitReturnItemsForm, navigates: true }`
     - When the chosen person's team lacks `Equipment.UPDATE` (`hasD4HTeamPermission` on `listAccessibleTeams`), show an inline alert and disable Submit.
     - After submit, show a toast that names the number of items returned and any failures, then go back to the list.
   - **Done when:** returning one item on the user's team makes it INACTIVE with the note in D4H and queues a retire task, and `npm run check` is clean.
@@ -362,3 +362,8 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 - (Group B, Task 6) `markApplied`/`dismiss`: the Open guard races (read then update). Add `status: "Open"` to the update `where` and map P2025 (or `updateMany` count 0) to `ConflictError`.
 - (Group B, Task 7) `checkTask`: throw `ConflictError` before any D4H call when the task is no longer Open (stale list in another tab).
 - (Group B, Task 7) `teamId`/`itemId` inputs: `z.number().int()`. Also align `src/lib/schemas/d4h-task.ts`'s copyright header with the other new files.
+- (Group C, Task 8) Build the task `itemLabel`, log descriptions and email lines from the fetched `before.ref`/`before.kind.title`, not the client's form data (keep the client label only for "not found").
+- (Group C, Task 8) Narrow the recipient-items query to the submitted ids (`id: [...]` alongside `member_id`) instead of `size: 10000`.
+- (Group C, Task 8) `NotifyAdmin`: catch and log a `sendEmail` failure, so a Return that already changed D4H and queued tasks isn't reported as failed (and its draft isn't left un-Processed).
+- (Group C, Task 8) Re-returning an INACTIVE item with no open task: skip the PATCH if the notes already end with this Return's line, and only queue the task. Otherwise just correct the plan wording.
+- (Group C, Task 8) Shorten D4H PATCH failure lines for the toast/email ("D4H rejected the update (400)"), keeping the full body in `ctx.logger.error`.
