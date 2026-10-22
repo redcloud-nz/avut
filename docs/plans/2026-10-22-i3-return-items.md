@@ -214,7 +214,7 @@
 
 ### Review group C: Return data layer
 
-- [ ] **Task 8: Return form schema, processor and email**
+- [x] **Task 8: Return form schema, processor and email**
   - **Files:** `src/lib/forms.ts`, `src/forms/i3-return-items/schema.ts` (new), `src/forms/i3-return-items/processor.ts` (new), `src/forms/i3-return-items/processor.test.ts` (new), `src/emails/i3-return-items-notification.tsx` (new)
   - **Do:**
     - Add `I3ReturnItemsForm = { formKey: "i3-return", ... }` to `forms`.
@@ -359,3 +359,6 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 - (Group A, Task 2) Make `kind.category` lenient (`.nullable().optional()`), with the UI falling back to no label, so one odd item can't block viewing/editing.
 - (Group A, Task 2) `fetchD4HEquipmentItem`: map a D4H 403 to `ForbiddenError` rather than a plain `Error` (currently a generic 500).
 - (Group A, Task 3) `executeWithOutput` JSDoc: callers must pick fields, never return `output` as-is (it holds the access token). The Return procedure's `.output()` enforces it.
+- (Group B, Task 6) `markApplied`/`dismiss`: the Open guard races (read then update). Add `status: "Open"` to the update `where` and map P2025 (or `updateMany` count 0) to `ConflictError`.
+- (Group B, Task 7) `checkTask`: throw `ConflictError` before any D4H call when the task is no longer Open (stale list in another tab).
+- (Group B, Task 7) `teamId`/`itemId` inputs: `z.number().int()`. Also align `src/lib/schemas/d4h-task.ts`'s copyright header with the other new files.
