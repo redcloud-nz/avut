@@ -77,6 +77,16 @@ describe("SkillTrack_RecordCheckDialog", () => {
         expect(screen.getByRole("dialog", { name: "Alice" })).toHaveAccessibleDescription("CPR");
     });
 
+    it("opens with focus on the dialog, and Tab moves to the first result", async () => {
+        const user = userEvent.setup();
+        renderDialog();
+
+        expect(screen.getByRole("dialog", { name: "Alice" })).toHaveFocus();
+
+        await user.tab();
+        expect(screen.getByRole("button", { name: "Not Yet" })).toHaveFocus();
+    });
+
     it("renders only the enabled results", () => {
         renderDialog();
 

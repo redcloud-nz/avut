@@ -51,6 +51,7 @@ import {
     TableCell,
     TableHeadCell,
     TableHeader,
+    TablePanel,
     TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -66,10 +67,7 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
     const isEmpty = table.getRowCount() == 0;
 
     return (
-        <div
-            data-slot="kaga-table-surface"
-            className="mt-2 overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10"
-        >
+        <TablePanel className="mt-2">
             <Table>
                 <TableHeader>
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -105,7 +103,7 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
                     )}
                 </TableBody>
             </Table>
-        </div>
+        </TablePanel>
     );
 }
 

@@ -13,7 +13,14 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { Table, TableBody, TableHeadCell, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    Table,
+    TableBody,
+    TableHeadCell,
+    TableHeader,
+    TablePanel,
+    TableRow,
+} from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
@@ -85,52 +92,58 @@ export default function I3Module_Team_EquipmentKindsList_Page(
                     <Saratoga.Header>
                         <Saratoga.Title>Equipment Types issued to {team.title}</Saratoga.Title>
                     </Saratoga.Header>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHeadCell></TableHeadCell>
-                                <TableHeadCell>Kind</TableHeadCell>
-                                <TableHeadCell className="text-center">Issued Count</TableHeadCell>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {usedCategories.map((category) => (
-                                <Fragment key={category.id}>
-                                    <TableRow>
-                                        <TableHeadCell colSpan={2}>{category.title}</TableHeadCell>
-                                    </TableRow>
-                                    {usedKinds
-                                        .filter((kind) => kind.category.id === category.id)
-                                        .map((kind) => (
-                                            <TableRow key={kind.id}>
-                                                <TableHeadCell />
-                                                <TableHeadCell>
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/i3/teams/[team_id]/equipment-kinds/[kind_id]",
-                                                            {
-                                                                slug: organization.slug,
-                                                                team_id,
-                                                                kind_id: String(kind.id),
-                                                            },
-                                                        )}
-                                                    >
-                                                        {kind.title}
-                                                    </Link>
-                                                </TableHeadCell>
-                                                <TableHeadCell className="text-center">
-                                                    {
-                                                        memberEquipment.filter(
-                                                            (eq) => eq.kind.id === kind.id,
-                                                        ).length
-                                                    }
-                                                </TableHeadCell>
-                                            </TableRow>
-                                        ))}
-                                </Fragment>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    <TablePanel>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHeadCell></TableHeadCell>
+                                    <TableHeadCell>Kind</TableHeadCell>
+                                    <TableHeadCell className="text-center">
+                                        Issued Count
+                                    </TableHeadCell>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {usedCategories.map((category) => (
+                                    <Fragment key={category.id}>
+                                        <TableRow className="bg-table-group hover:bg-table-group">
+                                            <TableHeadCell colSpan={3}>
+                                                {category.title}
+                                            </TableHeadCell>
+                                        </TableRow>
+                                        {usedKinds
+                                            .filter((kind) => kind.category.id === category.id)
+                                            .map((kind) => (
+                                                <TableRow key={kind.id}>
+                                                    <TableHeadCell />
+                                                    <TableHeadCell>
+                                                        <Link
+                                                            href={route(
+                                                                "/orgs/[slug]/i3/teams/[team_id]/equipment-kinds/[kind_id]",
+                                                                {
+                                                                    slug: organization.slug,
+                                                                    team_id,
+                                                                    kind_id: String(kind.id),
+                                                                },
+                                                            )}
+                                                        >
+                                                            {kind.title}
+                                                        </Link>
+                                                    </TableHeadCell>
+                                                    <TableHeadCell className="text-center">
+                                                        {
+                                                            memberEquipment.filter(
+                                                                (eq) => eq.kind.id === kind.id,
+                                                            ).length
+                                                        }
+                                                    </TableHeadCell>
+                                                </TableRow>
+                                            ))}
+                                    </Fragment>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TablePanel>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>

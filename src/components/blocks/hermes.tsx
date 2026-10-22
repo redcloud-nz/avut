@@ -12,6 +12,9 @@
  * At `md` and up both panes show side by side. Below `md` only the active one does: the list
  * when nothing is selected, the detail when a record is.
  *
+ * The list is a navigation surface, like the sidebar, so it sits on `bg-navbar` (white in light
+ * mode). The detail pane stays on the page tint.
+ *
  * Switching records crossfades the detail pane: `Hermes.Detail` wraps its children in a
  * `ViewTransition` keyed on the selected segment (see `HermesDetailTransition`). Two limits follow:
  *
@@ -36,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { HermesDetailTransition, HermesRoot } from "./hermes-root";
 
 const paneScroll =
-    "overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)] [scrollbar-gutter:stable_both-edges]";
+    "overflow-y-auto [scrollbar-color:var(--scrollbar-thumb)_var(--scrollbar-track)]";
 
 function HermesList({ children, className, ...props }: ComponentProps<"nav">) {
     return (
@@ -44,8 +47,10 @@ function HermesList({ children, className, ...props }: ComponentProps<"nav">) {
             data-component="HermesList"
             data-slot="list"
             className={cn(
-                "flex-1 max-md:group-data-[selected=true]/hermes:hidden md:flex-none md:w-80 md:border-r",
+                "flex-1 bg-navbar max-md:group-data-[selected=true]/hermes:hidden md:flex-none md:w-80 md:border-r",
                 paneScroll,
+                // No reserved gutter, so row borders and fills run edge to edge; a classic
+                // scrollbar narrows the rows only once the list actually overflows.
                 className,
             )}
             {...props}
@@ -71,6 +76,7 @@ function HermesDetail({ children, className, ...props }: ComponentProps<"main">)
             className={cn(
                 "relative min-w-0 flex-1 p-4 max-md:group-data-[selected=false]/hermes:hidden",
                 paneScroll,
+                "[scrollbar-gutter:stable_both-edges]",
                 className,
             )}
             {...props}

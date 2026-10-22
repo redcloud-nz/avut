@@ -256,7 +256,7 @@ function ObjectHistoryEntryItem({
     return (
         <li className="@container">
             <Collapsible>
-                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-muted/50 sm:px-2">
+                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-accent sm:px-2">
                     {summary}
                     <ChevronDownIcon
                         className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"

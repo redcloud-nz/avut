@@ -28,6 +28,7 @@ import {
     TableCell,
     TableHeadCell,
     TableHeader,
+    TablePanel,
     TableRow,
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
@@ -199,90 +200,92 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                             </DropdownMenu>
                         </Saratoga.Actions>
                     </Saratoga.Header>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHeadCell>Member</TableHeadCell>
-                                <TableHeadCell>Ref</TableHeadCell>
-                                {showColumns.brand && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Brand
-                                    </TableHeadCell>
+                    <TablePanel>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHeadCell>Member</TableHeadCell>
+                                    <TableHeadCell>Ref</TableHeadCell>
+                                    {showColumns.brand && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Brand
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.model && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Model
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.notes && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Notes
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.serial && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Serial Number
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.expiry && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Expiry Date
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.status && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Status
+                                        </TableHeadCell>
+                                    )}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {memberEquipment.map(({ member, items }) =>
+                                    items.map((item, index) => (
+                                        <TableRow key={item.id} className="hover:bg-transparent">
+                                            {index === 0 && (
+                                                <TableCell rowSpan={items.length}>
+                                                    {member.name}
+                                                </TableCell>
+                                            )}
+                                            <TableCell>{item.ref}</TableCell>
+                                            {showColumns.brand && (
+                                                <TableCell className="hidden lg:table-cell">
+                                                    {item.brand?.title}
+                                                </TableCell>
+                                            )}
+                                            {showColumns.model && (
+                                                <TableCell className="hidden lg:table-cell">
+                                                    {item.model?.title}
+                                                </TableCell>
+                                            )}
+                                            {showColumns.notes && (
+                                                <TableCell className="hidden lg:table-cell">
+                                                    {item.notes}
+                                                </TableCell>
+                                            )}
+                                            {showColumns.serial && (
+                                                <TableCell className="hidden lg:table-cell">
+                                                    {item.serial}
+                                                </TableCell>
+                                            )}
+                                            {showColumns.expiry && (
+                                                <TableCell className="hidden lg:table-cell">
+                                                    {item.dateExpires
+                                                        ? formatDate(item.dateExpires)
+                                                        : ""}
+                                                </TableCell>
+                                            )}
+                                            {showColumns.status && (
+                                                <TableCell className="hidden lg:table-cell">
+                                                    {item.status}
+                                                </TableCell>
+                                            )}
+                                        </TableRow>
+                                    )),
                                 )}
-                                {showColumns.model && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Model
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.notes && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Notes
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.serial && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Serial Number
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.expiry && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Expiry Date
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.status && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Status
-                                    </TableHeadCell>
-                                )}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {memberEquipment.map(({ member, items }) =>
-                                items.map((item, index) => (
-                                    <TableRow key={item.id}>
-                                        {index === 0 && (
-                                            <TableCell rowSpan={items.length}>
-                                                {member.name}
-                                            </TableCell>
-                                        )}
-                                        <TableCell>{item.ref}</TableCell>
-                                        {showColumns.brand && (
-                                            <TableCell className="hidden lg:table-cell">
-                                                {item.brand?.title}
-                                            </TableCell>
-                                        )}
-                                        {showColumns.model && (
-                                            <TableCell className="hidden lg:table-cell">
-                                                {item.model?.title}
-                                            </TableCell>
-                                        )}
-                                        {showColumns.notes && (
-                                            <TableCell className="hidden lg:table-cell">
-                                                {item.notes}
-                                            </TableCell>
-                                        )}
-                                        {showColumns.serial && (
-                                            <TableCell className="hidden lg:table-cell">
-                                                {item.serial}
-                                            </TableCell>
-                                        )}
-                                        {showColumns.expiry && (
-                                            <TableCell className="hidden lg:table-cell">
-                                                {item.dateExpires
-                                                    ? formatDate(item.dateExpires)
-                                                    : ""}
-                                            </TableCell>
-                                        )}
-                                        {showColumns.status && (
-                                            <TableCell className="hidden lg:table-cell">
-                                                {item.status}
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                )),
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableBody>
+                        </Table>
+                    </TablePanel>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
