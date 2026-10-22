@@ -2,31 +2,32 @@
  *  Copyright (c) 2026 A.V.U.T. Project.
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *
- * Path: /i3/[slug]/forms/return-items
+ * Path: /orgs/[slug]/i3/forms/return-items
  */
 
-"use client";
+import { I3ReturnItemsForm } from "@/lib/forms";
+import { I3Module_ReturnItems_FormInstanceList } from "@/modules/i3/components/return-items-form-list";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-import { Std } from "@/components/blocks/std";
-import { UnderConstruction } from "@/components/under-construction";
-import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
+export default async function I3Module_Return_FormInstanceList_Page(
+    props: PageProps<"/orgs/[slug]/i3/forms/return-items">,
+) {
+    const { slug } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
+    const organization = await getOrganizationBySlug(slug);
 
-export default function I3_Return_Page() {
-    const organization = useOrganization();
+    prefetch(
+        trpc.forms.listDraftFormInstances.queryOptions({
+            organizationId: organization.id,
+            formKey: I3ReturnItemsForm.formKey,
+        }),
+    );
 
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
-                    { label: "Forms" },
-                    { label: "Return Items" },
-                ]}
-            />
-            <Std.ScrollContainer>
-                <UnderConstruction />
-            </Std.ScrollContainer>
-        </>
+        <HydrateClient>
+            <I3Module_ReturnItems_FormInstanceList />
+        </HydrateClient>
     );
 }

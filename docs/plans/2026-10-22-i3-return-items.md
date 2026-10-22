@@ -313,7 +313,7 @@
     - No behaviour change.
   - **Done when:** the Issue page works as before (drafts autosave, submit returns to the list), and `npm run check` is clean.
 
-- [ ] **Task 15: Return Items form pages** `visual`
+- [x] **Task 15: Return Items form pages** `visual`
   - **Files:**
     - `src/app/(wrapper)/(authenticated)/orgs/[slug]/i3/forms/return-items/page.tsx` (replace the stub)
     - `src/app/(wrapper)/(authenticated)/orgs/[slug]/i3/forms/return-items/[instance_id]/page.tsx` (new)
