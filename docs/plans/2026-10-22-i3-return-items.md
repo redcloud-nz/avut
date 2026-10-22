@@ -189,7 +189,7 @@
     - Tests use prisma-mock and cover each function, including both guards.
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 7: `d4hTasks` router**
+- [x] **Task 7: `d4hTasks` router**
   - **Files:** `src/trpc/routers/d4h-tasks-router.ts` (new), `src/trpc/routers/d4h-tasks-router.test.ts` (new), `src/trpc/routers/_app.ts`, `src/client/d4h-tasks-effects.ts` (new)
   - **Do:** every procedure uses `organizationProcedure({ i3Item: ["update"] })`, except `listReturnedItemIds`.
     - `listReturnedItemIds({ teamId })`, gated on `organizationProcedure({ i3Item: ["view"] })`, returns the `resourceId`s of that team's open Retire tasks for the Returned badge. It needs no D4H call and no token. Add the backing `Service.listOpenRetireItemIds(ctx, { d4hTeamId })` to Task 6's service.
