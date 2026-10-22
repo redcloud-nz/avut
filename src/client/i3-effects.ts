@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { I3ReturnItemsForm } from "@/lib/forms";
+import { I3IssueItemsForm, I3ReturnItemsForm } from "@/lib/forms";
 import { trpc } from "@/trpc/client";
 import { createEffects, invalidate, write } from "@/trpc/mutation-effector";
 
@@ -30,6 +30,15 @@ export const i3Effects = createEffects<"i3">()({
         ),
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+    ],
+    // The Issue page navigates back to its list on success, so its call site sets `meta.navigates`.
+    submitIssueItemsForm: ({ organizationId }) => [
+        invalidate(
+            trpc.forms.listDraftFormInstances.queryFilter({
+                organizationId,
+                formKey: I3IssueItemsForm.formKey,
+            }),
+        ),
     ],
     // The Return page navigates back to its list on success, so its call site sets `meta.navigates`.
     submitReturnItemsForm: ({ organizationId }) => [

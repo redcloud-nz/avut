@@ -13,19 +13,13 @@ import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "rea
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 
-import { useSession } from "@/client/auth-queries";
-import {
-    deleteDraftFormInstanceMutation,
-    saveDraftFormInstanceMutation,
-} from "@/client/form-queries";
+import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { ObjectIcons } from "@/components/icons";
-import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
@@ -57,7 +51,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
     I3IssuedItem,
@@ -73,6 +66,7 @@ import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { useDraftFormAutosave, UserNameFieldValue } from "@/modules/i3/components/form-shared";
 import { trpc } from "@/trpc/client";
 
 export default function I3Module_Issue_FormInstance_Page(
@@ -88,7 +82,7 @@ export default function I3Module_Issue_FormInstance_Page(
     const { data: instances } = useSuspenseQuery(
         trpc.forms.listDraftFormInstances.queryOptions({
             organizationId: organization.id,
-            formKey: "i3-issue",
+            formKey: I3IssueItemsForm.formKey,
         }),
     );
 
@@ -100,59 +94,34 @@ export default function I3Module_Issue_FormInstance_Page(
         values: instance.formData as I3IssueItemsFormData,
     });
 
-    const saveMutation = useMutation(saveDraftFormInstanceMutation());
-    const deleteMutation = useMutation(deleteDraftFormInstanceMutation());
+    const {
+        saveStatus,
+        handleChange: saveDraft,
+        handleDelete,
+    } = useDraftFormAutosave({
+        formKey: I3IssueItemsForm.formKey,
+        instanceId,
+        organizationId: organization.id,
+        onDeleting: () => router.push(route("/orgs/[slug]/i3/forms/issue-items", { slug })),
+    });
+
+    function handleChange() {
+        saveDraft(form.getValues());
+    }
 
     const submitMutation = useMutation(
         trpc.i3.submitIssueItemsForm.mutationOptions({
+            meta: { effects: i3Effects.submitIssueItemsForm, navigates: true },
             onError(error) {
                 toast.error(`Form processing failed: ${error.message}`);
             },
-            onSuccess(_data, _variables, _result, context) {
+            onSuccess() {
                 toast.success("Form processed successfully.");
 
                 router.push(route("/orgs/[slug]/i3/forms/issue-items", { slug }));
-
-                context.client.invalidateQueries(
-                    trpc.forms.listDraftFormInstances.queryOptions({
-                        organizationId: organization.id,
-                        formKey: "i3-issue",
-                    }),
-                );
             },
         }),
     );
-
-    const debouncer = useDebouncer(
-        (formData: I3IssueItemsFormInputData) => {
-            saveMutation.mutate({
-                formInstanceId: instanceId,
-                organizationId: organization.id,
-                formKey: "i3-issue",
-                formData,
-            });
-        },
-        { wait: 2000 },
-    );
-
-    function handleDelete() {
-        router.push(route("/orgs/[slug]/i3/forms/issue-items", { slug }));
-        deleteMutation.mutate({
-            formInstanceId: instanceId,
-            organizationId: organization.id,
-            formKey: I3IssueItemsForm.formKey,
-        });
-    }
-
-    function handleChange() {
-        // Reset the mutation state
-        if (saveMutation.status == "success") {
-            saveMutation.reset();
-        }
-
-        // Trigger the debounced mutation to save form data
-        debouncer.maybeExecute(form.getValues());
-    }
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
@@ -191,7 +160,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                 Use this form to record items being issued to an individual.
                             </CardDescription>
                             <CardAction>
-                                <SaveStatusIndicator status={saveMutation.status} />
+                                <SaveStatusIndicator status={saveStatus} />
                             </CardAction>
                         </CardHeader>
                         <CardContent>
@@ -286,22 +255,6 @@ export default function I3Module_Issue_FormInstance_Page(
             </Std.ScrollContainer>
         </>
     );
-}
-
-function UserNameFieldValue() {
-    const { data, error, isPending } = useSession();
-
-    if (isPending) {
-        return <Skeleton className="min-w-1/2 h-8" />;
-    } else if (error) {
-        return (
-            <Alert variant="warning" className="min-w-1/2">
-                <AlertTitle>Unable to load user information.</AlertTitle>
-            </Alert>
-        );
-    } else if (data) {
-        return <div>{data.user.name}</div>;
-    }
 }
 
 /**

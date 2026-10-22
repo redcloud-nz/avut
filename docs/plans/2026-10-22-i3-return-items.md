@@ -304,7 +304,7 @@
     - Run `npx next typegen`.
   - **Done when:** the page lists a queued task, Check closes it once it's retired in D4H, and `npm run check` is clean.
 
-- [ ] **Task 14: extract shared form pieces from the Issue page** `mechanical`
+- [x] **Task 14: extract shared form pieces from the Issue page** `mechanical`
   - **Files:** `src/modules/i3/components/form-shared.tsx` (new), `src/app/(wrapper)/(authenticated)/orgs/[slug]/i3/forms/issue-items/[instance_id]/page.tsx`, `src/client/i3-effects.ts`
   - **Do:**
     - Move `UserNameFieldValue` and the debounced-save/delete scaffolding (the `useDebouncer` auto-save and `SaveStatusIndicator` wiring) into `form-shared.tsx`, parameterised by `formKey`.
