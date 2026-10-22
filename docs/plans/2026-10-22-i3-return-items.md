@@ -331,7 +331,7 @@
     - After submit, show a toast that names the number of items returned and any failures, then go back to the list.
   - **Done when:** returning one item on the user's team makes it INACTIVE with the note in D4H and queues a retire task, and `npm run check` is clean.
 
-- [ ] **Task 16: Issue form permission alert, and help card** `visual` `mechanical`
+- [x] **Task 16: Issue form permission alert, and help card** `visual` `mechanical`
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/i3/forms/issue-items/[instance_id]/page.tsx`, `content/help/i3.mdx` (plus any new card `content/README.md` calls for)
   - **Do:**
     - On the Issue page, use the same inline alert and disabled Submit as Return, but for `Equipment.CREATE`.

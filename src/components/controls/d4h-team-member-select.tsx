@@ -74,7 +74,7 @@ export function D4HTeamMemberSelect({
     return (
         <Select value={value.id == 0 ? "" : value.id + ""} onValueChange={handleChange}>
             <SelectTrigger {...slotProps.trigger}>
-                <SelectValue {...slotProps.value} placeholder="Select a recipient" />
+                <SelectValue placeholder="Select a recipient" {...slotProps.value} />
             </SelectTrigger>
             <SelectContent {...slotProps.content}>
                 {teams

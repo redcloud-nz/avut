@@ -189,6 +189,9 @@ export function I3Module_ReturnItems_FormInstance_Content({
                                                             id: "recipient",
                                                             "aria-invalid": fieldState.invalid,
                                                         },
+                                                        value: {
+                                                            placeholder: "Select a person",
+                                                        },
                                                     }}
                                                 />
                                                 {fieldState.error && (

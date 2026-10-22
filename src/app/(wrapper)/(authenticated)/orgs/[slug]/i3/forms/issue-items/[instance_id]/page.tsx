@@ -13,13 +13,14 @@ import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "rea
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
 
 import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
 import { ObjectIcons } from "@/components/icons";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
@@ -60,6 +61,7 @@ import {
 } from "@/forms/i3-issue-items/schema";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
+import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
 import { I3IssueItemsForm } from "@/lib/forms";
 import { route } from "@/lib/routes";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
@@ -79,12 +81,15 @@ export default function I3Module_Issue_FormInstance_Page(
     const organization = useOrganization();
     const router = useRouter();
 
-    const { data: instances } = useSuspenseQuery(
-        trpc.forms.listDraftFormInstances.queryOptions({
-            organizationId: organization.id,
-            formKey: I3IssueItemsForm.formKey,
-        }),
-    );
+    const [{ data: instances }, { data: accessibleTeams }] = useSuspenseQueries({
+        queries: [
+            trpc.forms.listDraftFormInstances.queryOptions({
+                organizationId: organization.id,
+                formKey: I3IssueItemsForm.formKey,
+            }),
+            trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }),
+        ],
+    });
 
     const instance = instances.find((inst) => inst.id === instanceId);
     if (!instance) throw new Error(`FormInstance(${instanceId}) not found`);
@@ -93,6 +98,13 @@ export default function I3Module_Issue_FormInstance_Page(
         resolver: zodResolver(I3IssueItemsFormData.schema),
         values: instance.formData as I3IssueItemsFormData,
     });
+
+    const recipient = useWatch({ control: form.control, name: "recipient" });
+
+    const recipientTeam = accessibleTeams.find((team) => team.id === recipient.teamId);
+    const lacksCreatePermission =
+        recipient.id > 0 &&
+        !hasD4HTeamPermission(recipientTeam?.permissions, "Equipment", "CREATE");
 
     const {
         saveStatus,
@@ -202,6 +214,19 @@ export default function I3Module_Issue_FormInstance_Page(
                                         )}
                                     />
 
+                                    {lacksCreatePermission && (
+                                        <Alert variant="warning">
+                                            <AlertTitle>
+                                                Can&apos;t issue items to this team
+                                            </AlertTitle>
+                                            <AlertDescription>
+                                                Your D4H account doesn&apos;t have permission to
+                                                create equipment in{" "}
+                                                {recipientTeam?.title ?? "this person's team"}.
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+
                                     <FieldSeparator />
 
                                     <I3_Issue_ItemsSection
@@ -233,6 +258,7 @@ export default function I3Module_Issue_FormInstance_Page(
                                         <MutationButton
                                             type="submit"
                                             status={submitMutation.status}
+                                            disabled={lacksCreatePermission}
                                             text={{
                                                 idle: "Submit",
                                                 pending: "Submitting",
