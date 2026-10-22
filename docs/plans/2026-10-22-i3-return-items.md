@@ -272,7 +272,7 @@
     - Run `npx next typegen`.
   - **Done when:** the page renders for a real item on the user's team, and `npm run check` is clean.
 
-- [ ] **Task 11: edit item dialog** `visual`
+- [x] **Task 11: edit item dialog** `visual`
   - **Files:** `src/modules/i3/components/equipment-item/update-equipment-item.tsx` (new), `src/modules/i3/components/equipment-item/equipment-item-content.tsx`
   - **Do:**
     - Follow `docs/patterns/mutation-dialog.md` (`?action=update` through nuqs, a controlled `…_Dialog`).

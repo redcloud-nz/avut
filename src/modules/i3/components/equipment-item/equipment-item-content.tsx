@@ -23,6 +23,7 @@ import {
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
+import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { trpc } from "@/trpc/client";
@@ -30,6 +31,7 @@ import { trpc } from "@/trpc/client";
 import { I3Module_ReturnedBadge } from "../returned-badge";
 
 import { I3Module_ItemTasks_Card } from "./item-tasks-card";
+import { I3Module_UpdateEquipmentItem_Dialog } from "./update-equipment-item";
 
 /**
  * A D4H equipment item, read live from D4H with the viewer's token.
@@ -70,6 +72,7 @@ export function I3Module_EquipmentItem_Content({
     if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
 
     const isReturned = returnedItemIds.includes(item.id);
+    const canUpdateInD4H = hasD4HTeamPermission(team.permissions, "Equipment", "UPDATE");
 
     const dates = [
         { label: "Purchased", value: item.datePurchased },
@@ -102,6 +105,22 @@ export function I3Module_EquipmentItem_Content({
                             #{item.ref} {item.kind.title}
                         </Saratoga.Title>
                         <Saratoga.Actions>
+                            <Protect
+                                permissions={{ i3Item: ["update"] }}
+                                render={(hasPermission) => (
+                                    <I3Module_UpdateEquipmentItem_Dialog
+                                        teamId={teamId}
+                                        item={item}
+                                        disabledReason={
+                                            !hasPermission
+                                                ? "Editing items needs the I3 Editor or I3 Admin role."
+                                                : !canUpdateInD4H
+                                                  ? `Your D4H account doesn't have the Equipment Update permission on ${team.title}.`
+                                                  : null
+                                        }
+                                    />
+                                )}
+                            />
                             <Button asChild variant="outline">
                                 <a href={d4hUrl} target="_blank" rel="noreferrer">
                                     <ExternalLinkIcon />
