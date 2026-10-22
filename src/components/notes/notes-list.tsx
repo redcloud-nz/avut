@@ -117,8 +117,8 @@ export function NotesList({
                                 href={hrefFor(note.id)}
                                 aria-current={note.id === selectedId ? "page" : undefined}
                                 className={cn(
-                                    "relative flex flex-col gap-0.5 border-b py-3 pr-8 pl-4 hover:bg-muted/50",
-                                    "aria-[current=page]:bg-muted",
+                                    "relative flex flex-col gap-0.5 border-b py-3 pr-8 pl-4 hover:bg-accent",
+                                    "aria-[current=page]:bg-selected aria-[current=page]:text-selected-foreground",
                                 )}
                             >
                                 <NoteRowPendingHint />
