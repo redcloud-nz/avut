@@ -23,7 +23,7 @@ The tinted shell (#381) put pages on a `--page` tint with white cards, and settl
 
 ### Review group 1: shared surfaces (Tasks 1–4), then visual checkpoint A
 
-- [ ] **Task 1: `TablePanel` in `ui/table.tsx`, used by Kaga** · `visual` · `mechanical`
+- [x] **Task 1: `TablePanel` in `ui/table.tsx`, used by Kaga** · `visual` · `mechanical` — feat(ui): add TablePanel and use it for the Kaga table surface
   - **Files:** `src/components/ui/table.tsx`, `src/components/blocks/kaga.tsx`, `src/components/ui/README.md`
   - **Do:** Add `TablePanel({ className, ...props }: React.ComponentProps<"div">)` to `table.tsx`. It renders `<div data-slot="table-panel" className={cn("overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10", className)} />` and is exported alongside the other table parts. In `KagaTable`, replace the hand-rolled `kaga-table-surface` div with `<TablePanel className="mt-2">`. First grep for `kaga-table-surface`: if anything (CSS, tests, docs) selects it, keep it as `data-slot` on the `TablePanel`. Otherwise use `table-panel`. Update the `table.tsx` row in `src/components/ui/README.md` to list `TablePanel` and say what it's for ("the card panel a table sits in on the page tint"), and add `TablePanel` to the "Controls vs cards" note as the card surface for tables.
   - **Done when:** Kaga tables look identical (same rounded white panel with a ring), `npm run check` passes, and the README lists `TablePanel`.
