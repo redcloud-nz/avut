@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { Fragment, use, useState } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -33,6 +34,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
+import { I3Module_ReturnedBadge } from "@/modules/i3/components/returned-badge";
 import { trpc } from "@/trpc/client";
 
 export default function I3Module_Team_MemberItems_Page(
@@ -51,6 +53,7 @@ export default function I3Module_Team_MemberItems_Page(
         { data: kinds },
         { data: members },
         { data: memberEquipment },
+        { data: returnedItemIds },
     ] = useSuspenseQueries({
         queries: [
             trpc.d4hApi.listAccessibleTeams.queryOptions({
@@ -70,8 +73,14 @@ export default function I3Module_Team_MemberItems_Page(
                 memberId,
                 teamId,
             }),
+            trpc.d4hTasks.listReturnedItemIds.queryOptions({
+                organizationId: organization.id,
+                teamId,
+            }),
         ],
     });
+
+    const returnedIds = new Set(returnedItemIds);
 
     const team = teams.find((t) => t.id === teamId);
     if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
@@ -276,7 +285,26 @@ export default function I3Module_Team_MemberItems_Page(
                                                             </TableCell>
                                                         </>
                                                     ) : null}
-                                                    <TableCell>#{item.ref}</TableCell>
+                                                    <TableCell>
+                                                        <Link
+                                                            href={route(
+                                                                "/orgs/[slug]/i3/teams/[team_id]/equipment-items/[item_id]",
+                                                                {
+                                                                    slug: organization.slug,
+                                                                    team_id,
+                                                                    item_id: String(item.id),
+                                                                },
+                                                            )}
+                                                        >
+                                                            #{item.ref}
+                                                        </Link>
+                                                        {returnedIds.has(item.id) && (
+                                                            <>
+                                                                {" "}
+                                                                <I3Module_ReturnedBadge />
+                                                            </>
+                                                        )}
+                                                    </TableCell>
                                                     {showColumns.brand && (
                                                         <TableCell className="hidden lg:table-cell">
                                                             {item.brand?.title}

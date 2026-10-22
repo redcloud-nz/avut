@@ -45,13 +45,15 @@ export default function I3Module_Team_EquipmentKindsList_Page(
         });
 
     const memberEquipmentQueries = useSuspenseQueries({
-        queries: members.map((member) =>
-            trpc.d4hApi.listMemberEquipment.queryOptions({
-                organizationId: organization.id,
-                teamId,
-                memberId: member.id,
-            }),
-        ),
+        queries: members
+            .filter((member) => member.owner.id === teamId)
+            .map((member) =>
+                trpc.d4hApi.listMemberEquipment.queryOptions({
+                    organizationId: organization.id,
+                    teamId,
+                    memberId: member.id,
+                }),
+            ),
     });
 
     const team = teams.find((t) => t.id === teamId);

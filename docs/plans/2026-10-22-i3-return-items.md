@@ -282,7 +282,7 @@
     - Check the gating against `docs/patterns/protect-permission-gating.md`.
   - **Done when:** editing updates D4H, the page shows the change, and `npm run check` is clean.
 
-- [ ] **Task 12: browse pages link to items, show Returned, filter by team** `visual` `mechanical`
+- [x] **Task 12: browse pages link to items, show Returned, filter by team** `visual` `mechanical`
   - **Files:** the `i3/teams/[team_id]/` pages `equipment-kinds/page.tsx`, `equipment-kinds/[kind_id]/page.tsx` and `members/[member_id]/page.tsx`
   - **Do:**
     - Link each item's ref cell to the item page with `route("/orgs/[slug]/i3/teams/[team_id]/equipment-items/[item_id]", ...)`.
