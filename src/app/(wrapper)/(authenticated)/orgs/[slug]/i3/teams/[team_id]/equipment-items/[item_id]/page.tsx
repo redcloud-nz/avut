@@ -64,8 +64,18 @@ export default async function I3Module_EquipmentItem_Page(props: Props) {
         }),
     );
     prefetch(trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }));
+    prefetch(trpc.d4hApi.listEquipmentCategories.queryOptions({ organizationId: organization.id }));
     prefetch(
         trpc.d4hTasks.listReturnedItemIds.queryOptions({ organizationId: organization.id, teamId }),
+    );
+    // The tasks card renders only for `i3Item: ["update"]`; for anyone else this prefetch fails
+    // quietly and the card never asks for it.
+    prefetch(
+        trpc.d4hTasks.listItemTasks.queryOptions({
+            organizationId: organization.id,
+            teamId,
+            itemId,
+        }),
     );
 
     return (

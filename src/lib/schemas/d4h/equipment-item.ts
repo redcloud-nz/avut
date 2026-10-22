@@ -92,9 +92,6 @@ export type D4HEquipmentStatus = z.infer<typeof D4HEquipmentStatus.schema>;
  */
 export const D4HEquipmentItemDetail = {
     schema: D4HEquipmentItem.schema.extend({
-        kind: D4HEquipmentItem.schema.shape.kind.extend({
-            category: z.object({ title: z.string() }),
-        }),
         isCritical: z.boolean(),
         isMonitor: z.boolean(),
         barcode: z.string().nullable(),

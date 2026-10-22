@@ -78,7 +78,6 @@ describe("fetchD4HEquipmentItem", () => {
 
         expect(item).not.toBeNull();
         expect(item).not.toHaveProperty("location");
-        expect(item?.kind.category.title).toBe("PPE");
         expect(fetchMock.mock.calls[0][0].url).toBe(
             "https://api.team-manager.ap.d4h.com/v3/team/7/equipment/1234",
         );

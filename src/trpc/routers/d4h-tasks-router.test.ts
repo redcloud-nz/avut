@@ -87,7 +87,7 @@ function item(itemId: number, status: string): D4HEquipmentItemDetail {
         serial: null,
         owner: { resourceType: "Team", id: RETIRE_TEAM },
         category: { resourceType: "EquipmentCategory", id: 3 },
-        kind: { resourceType: "EquipmentKind", id: 8, title: "Helmet", category: { title: "PPE" } },
+        kind: { resourceType: "EquipmentKind", id: 8, title: "Helmet" },
         brand: { resourceType: "EquipmentBrand", id: null },
         model: null,
         notes: "",

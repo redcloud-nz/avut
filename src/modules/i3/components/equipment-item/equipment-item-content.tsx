@@ -53,6 +53,7 @@ export function I3Module_EquipmentItem_Content({
         },
         { data: teams },
         { data: returnedItemIds },
+        { data: categories },
     ] = useSuspenseQueries({
         queries: [
             trpc.d4hApi.getEquipmentItem.queryOptions({
@@ -65,6 +66,9 @@ export function I3Module_EquipmentItem_Content({
                 organizationId: organization.id,
                 teamId,
             }),
+            // The single-item GET doesn't reliably expand the kind's category, so the name
+            // comes from the category list (the member page does the same).
+            trpc.d4hApi.listEquipmentCategories.queryOptions({ organizationId: organization.id }),
         ],
     });
 
@@ -149,7 +153,8 @@ export function I3Module_EquipmentItem_Content({
                                         <DataItem inline>
                                             <DataItemTitle>Category</DataItemTitle>
                                             <DataItemValue>
-                                                {item.kind.category.title}
+                                                {categories.find((c) => c.id === item.category.id)
+                                                    ?.title ?? "—"}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>

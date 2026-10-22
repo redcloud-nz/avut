@@ -65,7 +65,7 @@ function item(overrides: Partial<D4HEquipmentItemDetail> = {}): D4HEquipmentItem
         serial: null,
         owner: { resourceType: "Team", id: TEAM_ID },
         category: { resourceType: "EquipmentCategory", id: 3 },
-        kind: { resourceType: "EquipmentKind", id: 8, title: "Helmet", category: { title: "PPE" } },
+        kind: { resourceType: "EquipmentKind", id: 8, title: "Helmet" },
         brand: { resourceType: "EquipmentBrand", id: null },
         model: null,
         notes: "",
