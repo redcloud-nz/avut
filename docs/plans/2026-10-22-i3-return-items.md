@@ -175,7 +175,7 @@
     - Add `D4HTask` to `logObjectTypeValues` and `moduleByObjectType` (`"i3"`).
   - **Done when:** `migrate dev` has applied to `avut_i3-return-items`, `npx prisma validate` passes, and `npm run check` is clean.
 
-- [ ] **Task 6: `d4h-tasks` service**
+- [x] **Task 6: `d4h-tasks` service**
   - **Files:** `src/server/services/d4h-tasks.ts` (new), `src/server/services/d4h-tasks.test.ts` (new), `src/lib/operations.ts`
   - **Do:** follow `src/server/services/CLAUDE.md` and `i3-templates.ts`. It takes `OrgServiceContext`, throws domain errors, and pairs each write with `ctx.logEvent` in `$transaction`.
     - `createRetireTask(ctx, { d4hTeamId, itemId, itemLabel, reason, formInstanceId? })` logs `Create`.

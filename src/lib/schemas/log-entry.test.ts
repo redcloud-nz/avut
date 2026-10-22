@@ -108,6 +108,7 @@ describe("Operations", () => {
             "d4h-team-import",
             "d4h-team-link",
             "d4h-team-sync",
+            "i3-return-items",
             "invitation-accept",
             "invitation-reject",
             "organization-leave",
