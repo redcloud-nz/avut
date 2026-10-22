@@ -20,6 +20,7 @@ import {
     TableCell,
     TableHeadCell,
     TableHeader,
+    TablePanel,
     TableRow,
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
@@ -92,39 +93,43 @@ export default function I3Module_MembersList_Page(
                     <p className="text-sm text-muted-foreground">
                         Select a team member to view their issued items.
                     </p>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHeadCell>Name</TableHeadCell>
-                                <TableHeadCell className="text-center">Issued Items</TableHeadCell>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredMembers.map((member, index) => (
-                                <TableRow key={member.id}>
-                                    <TableCell>
-                                        <Link
-                                            href={route(
-                                                "/orgs/[slug]/i3/teams/[team_id]/members/[member_id]",
-                                                {
-                                                    slug: organization.slug,
-                                                    team_id,
-                                                    member_id: String(member.id),
-                                                },
-                                            )}
-                                        >
-                                            {member.name}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        {memberEquipmentQueries[index].data?.length ?? (
-                                            <Spinner className="size-3 inline-block" />
-                                        )}
-                                    </TableCell>
+                    <TablePanel>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHeadCell>Name</TableHeadCell>
+                                    <TableHeadCell className="text-center">
+                                        Issued Items
+                                    </TableHeadCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredMembers.map((member, index) => (
+                                    <TableRow key={member.id}>
+                                        <TableCell>
+                                            <Link
+                                                href={route(
+                                                    "/orgs/[slug]/i3/teams/[team_id]/members/[member_id]",
+                                                    {
+                                                        slug: organization.slug,
+                                                        team_id,
+                                                        member_id: String(member.id),
+                                                    },
+                                                )}
+                                            >
+                                                {member.name}
+                                            </Link>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            {memberEquipmentQueries[index].data?.length ?? (
+                                                <Spinner className="size-3 inline-block" />
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TablePanel>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>

@@ -28,6 +28,7 @@ import {
     TableCell,
     TableHeadCell,
     TableHeader,
+    TablePanel,
     TableRow,
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
@@ -216,107 +217,116 @@ export default function I3Module_Team_MemberItems_Page(
                             </DropdownMenu>
                         </Saratoga.Actions>
                     </Saratoga.Header>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHeadCell></TableHeadCell>
-                                <TableHeadCell>Kind</TableHeadCell>
-                                <TableHeadCell>Ref</TableHeadCell>
-                                {showColumns.brand && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Brand
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.model && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Model
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.notes && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Notes
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.serial && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Serial Number
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.expiry && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Expiry Date
-                                    </TableHeadCell>
-                                )}
-                                {showColumns.status && (
-                                    <TableHeadCell className="hidden lg:table-cell">
-                                        Status
-                                    </TableHeadCell>
-                                )}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {categoriesWithKindsAndItems.map(({ category, kinds }) => (
-                                <Fragment key={category.id}>
-                                    <TableRow>
-                                        <TableCell colSpan={2} className="font-semibold">
-                                            {category.title}
-                                        </TableCell>
-                                    </TableRow>
-                                    {kinds.map(({ kind, items }) => (
-                                        <Fragment key={kind.id}>
-                                            {items.map((item, itemIndex) => (
-                                                <TableRow key={item.id}>
-                                                    {itemIndex == 0 ? (
-                                                        <>
-                                                            <TableCell
-                                                                rowSpan={items.length}
-                                                            ></TableCell>
-                                                            <TableCell rowSpan={items.length}>
-                                                                {item.kind.title}
+                    <TablePanel>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHeadCell></TableHeadCell>
+                                    <TableHeadCell>Kind</TableHeadCell>
+                                    <TableHeadCell>Ref</TableHeadCell>
+                                    {showColumns.brand && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Brand
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.model && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Model
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.notes && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Notes
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.serial && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Serial Number
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.expiry && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Expiry Date
+                                        </TableHeadCell>
+                                    )}
+                                    {showColumns.status && (
+                                        <TableHeadCell className="hidden lg:table-cell">
+                                            Status
+                                        </TableHeadCell>
+                                    )}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {categoriesWithKindsAndItems.map(({ category, kinds }) => (
+                                    <Fragment key={category.id}>
+                                        <TableRow className="bg-table-group hover:bg-table-group">
+                                            <TableCell
+                                                colSpan={
+                                                    3 +
+                                                    Object.values(showColumns).filter(Boolean)
+                                                        .length
+                                                }
+                                                className="font-semibold"
+                                            >
+                                                {category.title}
+                                            </TableCell>
+                                        </TableRow>
+                                        {kinds.map(({ kind, items }) => (
+                                            <Fragment key={kind.id}>
+                                                {items.map((item, itemIndex) => (
+                                                    <TableRow key={item.id}>
+                                                        {itemIndex == 0 ? (
+                                                            <>
+                                                                <TableCell
+                                                                    rowSpan={items.length}
+                                                                ></TableCell>
+                                                                <TableCell rowSpan={items.length}>
+                                                                    {item.kind.title}
+                                                                </TableCell>
+                                                            </>
+                                                        ) : null}
+                                                        <TableCell>#{item.ref}</TableCell>
+                                                        {showColumns.brand && (
+                                                            <TableCell className="hidden lg:table-cell">
+                                                                {item.brand?.title}
                                                             </TableCell>
-                                                        </>
-                                                    ) : null}
-                                                    <TableCell>#{item.ref}</TableCell>
-                                                    {showColumns.brand && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.brand?.title}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.model && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.model?.title}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.notes && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.notes}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.serial && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.serial}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.expiry && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.dateExpires
-                                                                ? formatDate(item.dateExpires)
-                                                                : ""}
-                                                        </TableCell>
-                                                    )}
-                                                    {showColumns.status && (
-                                                        <TableCell className="hidden lg:table-cell">
-                                                            {item.status}
-                                                        </TableCell>
-                                                    )}
-                                                </TableRow>
-                                            ))}
-                                        </Fragment>
-                                    ))}
-                                </Fragment>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                                        )}
+                                                        {showColumns.model && (
+                                                            <TableCell className="hidden lg:table-cell">
+                                                                {item.model?.title}
+                                                            </TableCell>
+                                                        )}
+                                                        {showColumns.notes && (
+                                                            <TableCell className="hidden lg:table-cell">
+                                                                {item.notes}
+                                                            </TableCell>
+                                                        )}
+                                                        {showColumns.serial && (
+                                                            <TableCell className="hidden lg:table-cell">
+                                                                {item.serial}
+                                                            </TableCell>
+                                                        )}
+                                                        {showColumns.expiry && (
+                                                            <TableCell className="hidden lg:table-cell">
+                                                                {item.dateExpires
+                                                                    ? formatDate(item.dateExpires)
+                                                                    : ""}
+                                                            </TableCell>
+                                                        )}
+                                                        {showColumns.status && (
+                                                            <TableCell className="hidden lg:table-cell">
+                                                                {item.status}
+                                                            </TableCell>
+                                                        )}
+                                                    </TableRow>
+                                                ))}
+                                            </Fragment>
+                                        ))}
+                                    </Fragment>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TablePanel>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
