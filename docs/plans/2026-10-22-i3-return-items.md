@@ -73,7 +73,7 @@
 
 ### Review group A: D4H foundations and Issue
 
-- [ ] **Task 1: `i3Item: ["update"]` and `requireD4HTeamPermission`**
+- [x] **Task 1: `i3Item: ["update"]` and `requireD4HTeamPermission`**
   - **Files:** `src/lib/permissions.ts`, `src/server/d4h-permissions.ts` (new), `src/server/d4h-permissions.test.ts` (new), `src/lib/d4h-permissions.ts` (new), `src/lib/d4h-permissions.test.ts` (new)
   - **Do:**
     - Add `"update"` to `i3Item` in the statement, and to `i3-editor` and `i3-admin`.
