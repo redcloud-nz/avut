@@ -77,6 +77,7 @@ export function I3Module_EquipmentItem_Content({
 
     const isReturned = returnedItemIds.includes(item.id);
     const canUpdateInD4H = hasD4HTeamPermission(team.permissions, "Equipment", "UPDATE");
+    const canRetireInD4H = hasD4HTeamPermission(team.permissions, "Equipment", "RETIRE");
 
     const dates = [
         { label: "Purchased", value: item.datePurchased },
@@ -211,7 +212,11 @@ export function I3Module_EquipmentItem_Content({
                         <Saratoga.Column slot="secondary">
                             <Protect permissions={{ i3Item: ["update"] }}>
                                 <Suspense fallback={<CardLoadingFallback />}>
-                                    <I3Module_ItemTasks_Card teamId={teamId} itemId={itemId} />
+                                    <I3Module_ItemTasks_Card
+                                        teamId={teamId}
+                                        itemId={itemId}
+                                        canRetireInD4H={canRetireInD4H}
+                                    />
                                 </Suspense>
                             </Protect>
                         </Saratoga.Column>

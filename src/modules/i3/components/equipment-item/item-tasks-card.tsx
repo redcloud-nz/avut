@@ -27,9 +27,38 @@ import { trpc } from "@/trpc/client";
 
 /**
  * The open D4H tasks on one equipment item, each with Check (has it been applied in D4H yet?) and
- * Dismiss. Empty when the viewer lacks D4H's Equipment RETIRE permission on the item's team.
+ * Dismiss. `listItemTasks` returns nothing to a viewer without D4H's Equipment RETIRE permission
+ * on the item's team, so for them the card says why instead of claiming there are no tasks.
  */
-export function I3Module_ItemTasks_Card({ teamId, itemId }: { teamId: number; itemId: number }) {
+export function I3Module_ItemTasks_Card({
+    teamId,
+    itemId,
+    canRetireInD4H,
+}: {
+    teamId: number;
+    itemId: number;
+    canRetireInD4H: boolean;
+}) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>D4H Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {canRetireInD4H ? (
+                    <ItemTaskList teamId={teamId} itemId={itemId} />
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        You need D4H&apos;s Equipment Retire permission to see this item&apos;s
+                        tasks.
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function ItemTaskList({ teamId, itemId }: { teamId: number; itemId: number }) {
     const organization = useOrganization();
 
     const { data: tasks } = useSuspenseQuery(
@@ -40,23 +69,16 @@ export function I3Module_ItemTasks_Card({ teamId, itemId }: { teamId: number; it
         }),
     );
 
+    if (tasks.length === 0) {
+        return <p className="text-sm text-muted-foreground">No open D4H tasks</p>;
+    }
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>D4H Tasks</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {tasks.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No open D4H tasks</p>
-                ) : (
-                    <ItemGroup>
-                        {tasks.map((task) => (
-                            <ItemTaskRow key={task.id} task={task} />
-                        ))}
-                    </ItemGroup>
-                )}
-            </CardContent>
-        </Card>
+        <ItemGroup>
+            {tasks.map((task) => (
+                <ItemTaskRow key={task.id} task={task} />
+            ))}
+        </ItemGroup>
     );
 }
 

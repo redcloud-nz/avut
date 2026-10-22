@@ -140,9 +140,10 @@ export const d4hTasksRouter = createTrpcRouter({
 
     /**
      * The D4H ids of a team's equipment items that have an open Retire task, for the "Returned"
-     * badge. Reads AVUT's own records only, so it needs no D4H token.
+     * badge. Reads AVUT's own records only, so it needs no D4H token. Gated like the D4H equipment
+     * it annotates, since it exposes only item ids.
      */
-    listReturnedItemIds: organizationProcedure({ i3Item: ["view"] })
+    listReturnedItemIds: organizationProcedure({ d4hEquipment: ["view"] })
         .input(z.object({ teamId: z.number() }))
         .output(z.array(z.number()))
         .query(async ({ ctx, input: { teamId } }) => {

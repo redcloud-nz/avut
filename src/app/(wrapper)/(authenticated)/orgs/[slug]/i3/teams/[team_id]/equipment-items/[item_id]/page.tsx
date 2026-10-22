@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 
 import { TRPCError } from "@trpc/server";
 
+import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3Module_EquipmentItem_Content } from "@/modules/i3/components/equipment-item/equipment-item-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
@@ -39,11 +40,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
                 itemId,
             }),
         );
-        return { title: `Item #${item.ref}` };
+        return { title: `Item #${item.ref} ${TITLE_SEPARATOR} I3` };
     } catch (error) {
         // No D4H token: keep a usable title, and let the page's error boundary explain.
         if (error instanceof TRPCError && error.code === "PRECONDITION_FAILED") {
-            return { title: `Item #${item_id}` };
+            return { title: `Item #${item_id} ${TITLE_SEPARATOR} I3` };
         }
         throw error;
     }

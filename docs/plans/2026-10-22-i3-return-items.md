@@ -67,6 +67,7 @@
   - `INACTIVE` keeps D4H's label "Non Operational", so an item taken out of service for repair isn't mistaken for a return.
   - An item that went INACTIVE without its task being queued (a partial failure) can be returned again, which only re-queues the task.
   - The browse pages get each team's returned item ids from `d4hTasks.listReturnedItemIds({ teamId })` (Task 7), one query per page.
+    - `listReturnedItemIds` is gated on `d4hEquipment: ["view"]`, the same permission as the equipment data it annotates, so owner/admin/member see the badge without any `i3Item` action. It exposes only item ids.
 - **Kind-page team filter (side fix, in-branch).** `equipment-kinds/page.tsx` and `equipment-kinds/[kind_id]/page.tsx` fan out `listMemberEquipment` over members of every accessible team. Filter to `member.owner.id === teamId`, as `members/page.tsx` does.
 
 ## Tasks
@@ -192,7 +193,7 @@
 - [x] **Task 7: `d4hTasks` router**
   - **Files:** `src/trpc/routers/d4h-tasks-router.ts` (new), `src/trpc/routers/d4h-tasks-router.test.ts` (new), `src/trpc/routers/_app.ts`, `src/client/d4h-tasks-effects.ts` (new)
   - **Do:** every procedure uses `organizationProcedure({ i3Item: ["update"] })`, except `listReturnedItemIds`.
-    - `listReturnedItemIds({ teamId })`, gated on `organizationProcedure({ i3Item: ["view"] })`, returns the `resourceId`s of that team's open Retire tasks for the Returned badge. It needs no D4H call and no token. Add the backing `Service.listOpenRetireItemIds(ctx, { d4hTeamId })` to Task 6's service.
+    - `listReturnedItemIds({ teamId })`, gated on `organizationProcedure({ d4hEquipment: ["view"] })` (the browse and item pages need only that, and it exposes nothing beyond item ids), returns the `resourceId`s of that team's open Retire tasks for the Returned badge. It needs no D4H call and no token. Add the backing `Service.listOpenRetireItemIds(ctx, { d4hTeamId })` to Task 6's service.
     - `listOpenTasks` reads the token's teams with `fetchD4HWhoamiCached` and keeps the team ids where `hasD4HTeamPermission(..., "Equipment", "RETIRE")`. It returns `Service.listOpen`, with each task's `d4hUrl` (Task 2) and team title.
     - `listItemTasks({ teamId, itemId })` returns `Service.listForItem`, or an empty list when the viewer lacks `Equipment.RETIRE` on `teamId` (cached whoami).
     - `checkTask({ taskId })`:

@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { use, useState } from "react";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
@@ -47,28 +47,26 @@ export default function I3Module_Team_EquipmentKindItems_Page(
     const organization = useOrganization();
     const { formatDate } = usePreferences();
 
-    const [{ data: teams }, { data: kinds }, { data: members }] = useSuspenseQueries({
-        queries: [
-            trpc.d4hApi.listAccessibleTeams.queryOptions({
-                organizationId: organization.id,
-            }),
-            trpc.d4hApi.listEquipmentKinds.queryOptions({
-                organizationId: organization.id,
-            }),
-            trpc.d4hApi.listMembers.queryOptions({
-                organizationId: organization.id,
-            }),
-        ],
-    });
+    const [{ data: teams }, { data: kinds }, { data: members }, { data: returnedItemIds }] =
+        useSuspenseQueries({
+            queries: [
+                trpc.d4hApi.listAccessibleTeams.queryOptions({
+                    organizationId: organization.id,
+                }),
+                trpc.d4hApi.listEquipmentKinds.queryOptions({
+                    organizationId: organization.id,
+                }),
+                trpc.d4hApi.listMembers.queryOptions({
+                    organizationId: organization.id,
+                }),
+                trpc.d4hTasks.listReturnedItemIds.queryOptions({
+                    organizationId: organization.id,
+                    teamId,
+                }),
+            ],
+        });
 
     const teamMembers = members.filter((member) => member.owner.id === teamId);
-
-    const { data: returnedItemIds } = useSuspenseQuery(
-        trpc.d4hTasks.listReturnedItemIds.queryOptions({
-            organizationId: organization.id,
-            teamId,
-        }),
-    );
     const returnedIds = new Set(returnedItemIds);
 
     const memberEquipment = useSuspenseQueries({

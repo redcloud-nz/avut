@@ -12,7 +12,24 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
  */
 export const d4hTasksEffects = createEffects<"d4hTasks">()({
-    checkTask: (vars) => invalidateTaskLists(vars.organizationId),
+    checkTask: (vars, data) => [
+        ...invalidateTaskLists(vars.organizationId),
+        // An applied task means D4H retired the item, so its D4H status changed too.
+        ...(data.result === "applied"
+            ? [
+                  invalidate(
+                      trpc.d4hApi.getEquipmentItem.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.d4hApi.listMemberEquipment.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+              ]
+            : []),
+    ],
     dismissTask: (vars) => invalidateTaskLists(vars.organizationId),
 });
 

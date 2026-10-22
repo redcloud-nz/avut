@@ -165,6 +165,7 @@ describe("d4hTasksRouter", () => {
 
     const viewer = () => makeCaller({ i3Item: ["view"] });
     const editor = () => makeCaller({ i3Item: ["view", "update"] });
+    const equipmentViewer = () => makeCaller({ d4hEquipment: ["view"] });
 
     it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
         vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
@@ -243,7 +244,7 @@ describe("d4hTasksRouter", () => {
                 new NotConfiguredError("No personal D4H access token."),
             );
 
-            const itemIds = await viewer().listReturnedItemIds({
+            const itemIds = await equipmentViewer().listReturnedItemIds({
                 organizationId: T.org,
                 teamId: OTHER_TEAM,
             });
