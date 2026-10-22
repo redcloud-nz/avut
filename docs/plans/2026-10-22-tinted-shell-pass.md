@@ -73,4 +73,5 @@ Visual only, with no behaviour change. Screenshots that may now look slightly di
 ## Parked
 
 - Remaining `hover:bg-muted` outside this branch's screens: `ui/badge.tsx` (`outline` link hover, `ghost`) and `docs/docs-search.tsx` (result rows). Both should take the `bg-accent` hover.
+- Session "When" picker: four modes. The modes are Start date only; Start date + time; Start date + End date; and Start date + Start time over End date + End time. Today "Add time" clears an end date, because a timed session can't span days. `SessionFormState` keeps `days` for all-day sessions only, `sessionInstants` lets a timed end wrap only to the next day, and `sessionFormState` turns a stored timed session of 24h or more back into an all-day one. All three, `use-format-session-when.ts` and their tests would change (`src/lib/session-timing.ts`, `skill-track/components/session-when-picker.tsx`). Raised at checkpoint B, where the tiles also went to two equal columns.
 - Bare `Table`s on the page tint outside i3: `orgs/[slug]/admin/d4h-access-tokens/[token_id]/equipment-items/page.tsx` and `…/members/page.tsx`. Once `TablePanel` exists they can use it.

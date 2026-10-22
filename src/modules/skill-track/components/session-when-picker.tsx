@@ -64,7 +64,7 @@ function laterTime(time: string, quarters: number): string {
 
 /** A tile: a bordered box holding an icon, a small label and the value. It's the trigger of its control. */
 const TILE_CLASS = cn(
-    "flex min-w-40 items-center gap-2.5 rounded-lg border border-input bg-transparent py-1.5 pr-2 pl-2.5 text-left text-sm whitespace-nowrap transition-colors outline-none",
+    "flex w-full min-w-0 items-center gap-2.5 rounded-lg border border-input bg-transparent py-1.5 pr-2 pl-2.5 text-left text-sm whitespace-nowrap transition-colors outline-none",
     "hover:bg-accent aria-expanded:bg-accent",
     "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
     "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
@@ -87,9 +87,9 @@ function TileBody({
     return (
         <>
             <Icon className="text-muted-foreground size-4 shrink-0" />
-            <span className="flex flex-1 flex-col">
+            <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-muted-foreground text-xs">{label}</span>
-                <span>{children}</span>
+                <span className="truncate">{children}</span>
             </span>
         </>
     );
@@ -292,7 +292,8 @@ export function SkillTrack_SessionWhenPicker({
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
+            {/* Two equal columns: each tile takes exactly half the width, wrapping onto a second row. */}
+            <div className="grid grid-cols-2 gap-2">
                 <Popover open={openCalendar === "start"} onOpenChange={calendarOpenChange("start")}>
                     {/* No aria-label: the visible label and date name the button, so the date is announced. */}
                     <PopoverTrigger
