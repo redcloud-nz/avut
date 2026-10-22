@@ -82,7 +82,11 @@ describe("moduleIdForObjectType", () => {
 
 describe("objectTypesForModule", () => {
     it("generates the WHERE-IN list for a module feed", () => {
-        expect(objectTypesForModule("i3").sort()).toEqual(["I3Template", "I3TemplateVariant"]);
+        expect(objectTypesForModule("i3").sort()).toEqual([
+            "D4HEquipmentItem",
+            "I3Template",
+            "I3TemplateVariant",
+        ]);
     });
 
     it("attributes organization groups to the system-admin module", () => {

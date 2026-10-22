@@ -115,7 +115,7 @@
     - Add an `i3-router.test.ts` case pinning that a stage `ForbiddenError` reaches the client as `FORBIDDEN` with its message, through the existing wrap (see Decisions). Mock the processor module.
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 4: `d4hApi.getEquipmentItem` and `d4hApi.updateEquipmentItem`**
+- [x] **Task 4: `d4hApi.getEquipmentItem` and `d4hApi.updateEquipmentItem`**
   - **Files:** `src/trpc/routers/d4h-api-router.ts`, `src/trpc/routers/d4h-api-router.test.ts` (new), `src/lib/schemas/log-entry.ts`, `src/client/d4h-api-effects.ts` (new, `createEffects<"d4hApi">()`)
   - **Do:**
     - `getEquipmentItem: organizationProcedure({ d4hEquipment: ["view"] })`, input `{ teamId: z.number(), itemId: z.number() }`.

@@ -6,17 +6,24 @@
 import * as R from "remeda";
 import * as z from "zod";
 
+import { d4hEquipmentItemUrl } from "@/lib/d4h-servers";
 import {
     buildD4HToday,
     D4HTodayActivityInput,
     d4hTodayTeamGroupSchema,
     zonedTodayRange,
 } from "@/lib/d4h-today";
+import { diffObject } from "@/lib/diff";
+import { NotFoundError } from "@/lib/errors";
 import { D4HTeamPermissions } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
 import { D4HEquipmentCategory } from "@/lib/schemas/d4h/equipment-category";
-import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
+import {
+    D4HEquipmentItem,
+    D4HEquipmentItemDetail,
+    D4HEquipmentItemUpdate,
+} from "@/lib/schemas/d4h/equipment-item";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
 import { D4HMember } from "@/lib/schemas/d4h/member";
@@ -30,10 +37,41 @@ import {
     getD4HFetchClient,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
+import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 
+/** The item fields D4H's equipment PATCH can change, compared for the audit log. */
+const PATCHABLE_ITEM_FIELDS = ["status", "isCritical", "isMonitor", "barcode", "notes"] as const;
+
 export const d4hApiRouter = createTrpcRouter({
+    /**
+     * One equipment item, fetched live from D4H, with the URL of its edit page in D4H's web app.
+     * An item owned by a team other than `teamId` is treated as not found.
+     */
+    getEquipmentItem: organizationProcedure({ d4hEquipment: ["view"] })
+        .input(z.object({ teamId: z.number(), itemId: z.number() }))
+        .output(z.object({ item: D4HEquipmentItemDetail.schema, d4hUrl: z.string() }))
+        .query(async ({ ctx, input: { teamId, itemId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+
+            const item = await fetchD4HEquipmentItem(accessToken, teamId, itemId);
+            if (!item || item.owner.id !== teamId) {
+                throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
+            }
+
+            const { subdomain } = await fetchD4HTeamDetailCached(
+                toD4HCredentialRef(accessToken),
+                teamId,
+            );
+
+            return {
+                item,
+                d4hUrl: d4hEquipmentItemUrl(accessToken.serverCode, subdomain, itemId),
+            };
+        }),
+
     /**
      * List the teams that the current user has access to in the D4H system for the organization. This is used to populate the team selector in the UI.
      */
@@ -551,5 +589,54 @@ export const d4hApiRouter = createTrpcRouter({
             );
 
             return buildD4HToday(teams);
+        }),
+
+    /**
+     * Update an equipment item in D4H. Needs D4H's own Equipment UPDATE permission on the team as
+     * well as AVUT's `i3Item: ["update"]`. Returns the item as D4H holds it after the update.
+     *
+     * The D4H write can't join a Prisma transaction, so the log entry is written after it
+     * succeeds (the non-Prisma exception in `docs/patterns/transactional-writes.md`).
+     */
+    updateEquipmentItem: organizationProcedure({ i3Item: ["update"] })
+        .input(
+            D4HEquipmentItemUpdate.schema
+                .extend({ teamId: z.number(), itemId: z.number() })
+                .refine(
+                    ({ teamId: _teamId, itemId: _itemId, ...update }) =>
+                        Object.values(update).some((value) => value !== undefined),
+                    { error: "At least one field must be updated." },
+                ),
+        )
+        .output(D4HEquipmentItemDetail.schema)
+        .mutation(async ({ ctx, input }) => {
+            const { teamId, itemId, organizationId: _organizationId, ...update } = input;
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+
+            await requireD4HTeamPermission(accessToken, teamId, "Equipment", "UPDATE");
+
+            const before = await fetchD4HEquipmentItem(accessToken, teamId, itemId);
+            if (!before || before.owner.id !== teamId) {
+                throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
+            }
+
+            await patchD4HEquipmentItem(accessToken, teamId, itemId, update);
+
+            const after = await fetchD4HEquipmentItem(accessToken, teamId, itemId);
+            if (!after) {
+                throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
+            }
+
+            await ctx.logEvent({
+                action: "Update",
+                objectType: "D4HEquipmentItem",
+                objectId: String(itemId),
+                changes: diffObject(
+                    R.pick(before, PATCHABLE_ITEM_FIELDS),
+                    R.pick(after, PATCHABLE_ITEM_FIELDS),
+                ),
+            });
+
+            return after;
         }),
 });
