@@ -56,11 +56,14 @@ export async function createRetireTask(
     return D4HTask.fromRecord(created);
 }
 
-/** The open tasks on the given D4H teams, oldest first. */
+/**
+ * The open tasks on the given D4H teams, oldest first, each with its requester's name (null once
+ * the requester's account has been purged).
+ */
 export async function listOpen(
     ctx: OrgServiceContext,
     args: { d4hTeamIds: number[] },
-): Promise<D4HTask[]> {
+): Promise<{ task: D4HTask; requestedByName: string | null }[]> {
     if (args.d4hTeamIds.length === 0) return [];
 
     const records = await ctx.prisma.d4HTask.findMany({
@@ -69,10 +72,14 @@ export async function listOpen(
             status: "Open",
             d4hTeamId: { in: args.d4hTeamIds },
         },
+        include: { requestedBy: { select: { name: true } } },
         orderBy: { requestedAt: "asc" },
     });
 
-    return records.map(D4HTask.fromRecord);
+    return records.map(({ requestedBy, ...record }) => ({
+        task: D4HTask.fromRecord(record),
+        requestedByName: requestedBy?.name ?? null,
+    }));
 }
 
 /** The open tasks on one D4H equipment item, oldest first. */

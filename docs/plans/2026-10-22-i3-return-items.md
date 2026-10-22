@@ -293,7 +293,7 @@
 
 ### Review group E: tasks page and forms (visual checkpoint at the end)
 
-- [ ] **Task 13: D4H tasks page and sidebar entry** `visual`
+- [x] **Task 13: D4H tasks page and sidebar entry** `visual`
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/i3/d4h-tasks/page.tsx` (new), `src/modules/i3/components/d4h-tasks-list.tsx` (new), `src/modules/i3/components/sidebar-menu.tsx`
   - **Do:**
     - A list page (Saratoga) of `listOpenTasks`, grouped by team. Each row shows the item label linked to the item page, the kind and reason ("Retire — Returned To Cache"), who requested it and when, Open in D4H, Check and Dismiss.
@@ -353,6 +353,9 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 - Looking up D4H retired-reason ids. The reason is free text in the task.
 
 ## Parked
+
+- The existing I3 browse pages (`i3/teams/[team_id]/**/page.tsx`) are `"use client"` pages whose `useSuspenseQuery` calls run unauthenticated during server rendering ("Switched to client rendering … User is not authenticated" in the console). This predates the branch. Fix by giving them the `page.tsx` + content split with prefetches, per `docs/patterns/detail-page-data-fetching.md`.
+- The browse pages' Status column shows raw D4H codes (`OPERATIONAL`); use `D4HEquipmentStatus.label` as the item page does.
 
 ## Review notes
 

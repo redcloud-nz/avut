@@ -4,12 +4,8 @@
  */
 "use client";
 
-import { toast } from "sonner";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-
-import { d4hTasksEffects } from "@/client/d4h-tasks-effects";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Item,
@@ -22,8 +18,9 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { D4HTask } from "@/lib/schemas/d4h-task";
-import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { trpc } from "@/trpc/client";
+
+import { I3Module_D4HTaskActions } from "../d4h-task-actions";
 
 /**
  * The open D4H tasks on one equipment item, each with Check (has it been applied in D4H yet?) and
@@ -83,42 +80,7 @@ function ItemTaskList({ teamId, itemId }: { teamId: number; itemId: number }) {
 }
 
 function ItemTaskRow({ task }: { task: D4HTask }) {
-    const organization = useOrganization();
     const { formatDate } = usePreferences();
-
-    const checkMutation = useMutation(
-        trpc.d4hTasks.checkTask.mutationOptions({
-            meta: { effects: d4hTasksEffects.checkTask },
-            onError: (error) => toast.error(`Check failed: ${error.message}`),
-            onSuccess: (result) => {
-                switch (result.result) {
-                    case "applied":
-                        toast.success(`${task.itemLabel} is retired in D4H. Task done.`);
-                        break;
-                    case "pending":
-                        toast.info(
-                            `${task.itemLabel} is not retired yet (D4H status: ${D4HEquipmentStatus.label(result.status)}).`,
-                        );
-                        break;
-                    case "missing":
-                        toast.warning(
-                            `${task.itemLabel} no longer exists in D4H. Dismiss the task instead.`,
-                        );
-                        break;
-                }
-            },
-        }),
-    );
-
-    const dismissMutation = useMutation(
-        trpc.d4hTasks.dismissTask.mutationOptions({
-            meta: { effects: d4hTasksEffects.dismissTask },
-            onError: (error) => toast.error(`Dismiss failed: ${error.message}`),
-            onSuccess: () => toast.success(`Task on ${task.itemLabel} dismissed.`),
-        }),
-    );
-
-    const isPending = checkMutation.isPending || dismissMutation.isPending;
 
     return (
         <Item variant="outline" size="sm">
@@ -129,26 +91,7 @@ function ItemTaskRow({ task }: { task: D4HTask }) {
                 <ItemDescription>Requested {formatDate(task.requestedAt)}</ItemDescription>
             </ItemContent>
             <ItemActions>
-                <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isPending}
-                    onClick={() =>
-                        checkMutation.mutate({ organizationId: organization.id, taskId: task.id })
-                    }
-                >
-                    Check
-                </Button>
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={isPending}
-                    onClick={() =>
-                        dismissMutation.mutate({ organizationId: organization.id, taskId: task.id })
-                    }
-                >
-                    Dismiss
-                </Button>
+                <I3Module_D4HTaskActions task={task} />
             </ItemActions>
         </Item>
     );

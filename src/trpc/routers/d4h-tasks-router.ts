@@ -96,6 +96,8 @@ export const d4hTasksRouter = createTrpcRouter({
             z.array(
                 z.object({
                     task: D4HTask.schema,
+                    /** Null once the requester's account has been purged. */
+                    requestedByName: z.string().nullable(),
                     d4hUrl: z.string(),
                     teamTitle: z.string(),
                 }),
@@ -112,9 +114,9 @@ export const d4hTasksRouter = createTrpcRouter({
                     .map((m) => [m.owner.id, m.owner.title]),
             );
 
-            const tasks = await D4HTasks.listOpen(ctx, { d4hTeamIds: [...teamTitles.keys()] });
+            const rows = await D4HTasks.listOpen(ctx, { d4hTeamIds: [...teamTitles.keys()] });
 
-            const teamIds = [...new Set(tasks.map((task) => task.d4hTeamId))];
+            const teamIds = [...new Set(rows.map(({ task }) => task.d4hTeamId))];
             const subdomains = new Map(
                 await Promise.all(
                     teamIds.map(
@@ -127,8 +129,9 @@ export const d4hTasksRouter = createTrpcRouter({
                 ),
             );
 
-            return tasks.map((task) => ({
+            return rows.map(({ task, requestedByName }) => ({
                 task,
+                requestedByName,
                 d4hUrl: d4hEquipmentItemUrl(
                     accessToken.serverCode,
                     subdomains.get(task.d4hTeamId)!,

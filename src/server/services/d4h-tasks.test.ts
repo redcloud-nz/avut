@@ -105,15 +105,16 @@ describe("d4h-tasks", () => {
         });
 
         it("listOpen returns open tasks on the given teams, oldest first", async () => {
-            const tasks = await listOpen(ctx(), { d4hTeamIds: [L.teamA, L.teamB] });
+            const rows = await listOpen(ctx(), { d4hTeamIds: [L.teamA, L.teamB] });
 
-            expect(tasks.map((task) => task.id)).toEqual([ids.first, ids.second, ids.third]);
+            expect(rows.map((row) => row.task.id)).toEqual([ids.first, ids.second, ids.third]);
+            expect(rows[0].requestedByName).toBe(T.user);
         });
 
         it("listOpen filters by team", async () => {
-            const tasks = await listOpen(ctx(), { d4hTeamIds: [L.teamB] });
+            const rows = await listOpen(ctx(), { d4hTeamIds: [L.teamB] });
 
-            expect(tasks.map((task) => task.id)).toEqual([ids.second]);
+            expect(rows.map((row) => row.task.id)).toEqual([ids.second]);
         });
 
         it("listOpen returns nothing for no teams", async () => {
