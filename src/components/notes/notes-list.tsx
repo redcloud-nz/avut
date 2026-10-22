@@ -86,7 +86,7 @@ export function NotesList({
 
     return (
         <div className="flex flex-col">
-            <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background p-2">
+            <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-navbar p-2">
                 <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
                     <SelectTrigger size="sm" aria-label="Sort notes" className="flex-1">
                         <SelectValue />
