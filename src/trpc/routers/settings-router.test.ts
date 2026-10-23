@@ -165,6 +165,12 @@ describe("settings organization settings", () => {
     });
 
     it("leaves the rest of a slice alone when the patch names one field", async () => {
+        // D4H I3 requires D4H.
+        await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.seededOrg,
+            update: { slice: "modules.d4h", patch: { enabled: true } },
+        });
+
         await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
             update: { slice: "modules.d4h-i3", patch: { enabled: true, storage: "AVUT" } },
