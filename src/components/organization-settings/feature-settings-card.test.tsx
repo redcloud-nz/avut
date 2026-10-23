@@ -129,6 +129,77 @@ describe("Feature_SettingsCard", () => {
         expect(screen.queryByRole("button", { name: "Enable" })).not.toBeInTheDocument();
     });
 
+    describe("a module that requires another (D4H I3 requires D4H)", () => {
+        function renderI3({ enabled, d4hOn }: { enabled: boolean; d4hOn: boolean }) {
+            return render(
+                <NuqsTestingAdapter>
+                    <Feature_SettingsCard
+                        organizationId={ORG_ID}
+                        canEdit
+                        slice="modules.d4h-i3"
+                        enabled={enabled}
+                        isModuleEnabled={(id) => (id === "d4h" ? d4hOn : enabled)}
+                        kind="module"
+                        title="D4H I3 Module"
+                    />
+                </NuqsTestingAdapter>,
+            );
+        }
+
+        it("holds Enable off and says why while the required module is off", () => {
+            renderI3({ enabled: false, d4hOn: false });
+
+            expect(screen.getByRole("button", { name: "Enable" })).toBeDisabled();
+            expect(screen.getByText("Turn on D4H to use D4H I3.")).toBeVisible();
+        });
+
+        it("allows Enable once the required module is on", () => {
+            renderI3({ enabled: false, d4hOn: true });
+
+            expect(screen.getByRole("button", { name: "Enable" })).toBeEnabled();
+            expect(screen.queryByText(/Turn on D4H/)).not.toBeInTheDocument();
+        });
+
+        it("marks a module left on as inactive, and keeps Disable", () => {
+            renderI3({ enabled: true, d4hOn: false });
+
+            expect(screen.getByText("Inactive until D4H is turned on.")).toBeVisible();
+            expect(screen.getByRole("button", { name: "Disable" })).toBeEnabled();
+        });
+    });
+
+    describe("a module that others require (D4H)", () => {
+        function renderD4H(i3On: boolean) {
+            return render(
+                <NuqsTestingAdapter searchParams="?action=disable-modules-d4h">
+                    <Feature_SettingsCard
+                        organizationId={ORG_ID}
+                        canEdit
+                        slice="modules.d4h"
+                        enabled
+                        isModuleEnabled={(id) => id === "d4h" || (id === "d4h-i3" && i3On)}
+                        kind="module"
+                        title="D4H Module"
+                    />
+                </NuqsTestingAdapter>,
+            );
+        }
+
+        it("warns in the disable dialog that an enabled dependent goes off too", () => {
+            renderD4H(true);
+
+            expect(screen.getByRole("dialog")).toHaveTextContent(
+                "D4H I3 will be turned off too, and won't come back on by itself.",
+            );
+        });
+
+        it("leaves the warning out when no dependent is on", () => {
+            renderD4H(false);
+
+            expect(screen.getByRole("dialog")).not.toHaveTextContent("turned off too");
+        });
+    });
+
     it("shows a viewer no Disable button and no dialog, even with the action param set", () => {
         renderCard({ canEdit: false, enabled: true, search: "?action=disable-modules-notes" });
 

@@ -66,7 +66,7 @@ Renames the two D4H-facing modules: their ids, URL segments, settings keys, fold
 
 ### Review group B: URLs, folders and names (visual)
 
-- [ ] **Task 3: Settings card shows the dependency** · `visual`
+- [x] **Task 3: Settings card shows the dependency** · `visual` (feat(settings): show the D4H I3 dependency on D4H in the module cards (#452))
   - **Files:** `src/components/organization-settings/organization-settings-form.tsx`, `src/components/organization-settings/feature-settings-card.tsx`, the D4H I3 route layout (`NotEnabledError` message).
   - **Do:** `Feature_SettingsCard` shows **Enable** when a module is off and **Disable** (with a confirm dialog) when it's on. Read the dependency from the registry's `requires`, not a hardcoded `d4h`.
     - **Dependent off, required off:** **Enable** is disabled, with a short muted line: "Turn on D4H to use D4H I3."

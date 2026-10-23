@@ -13,7 +13,9 @@ export default function I3_Layout(props: LayoutProps<"/orgs/[slug]/i3">) {
     const organization = useOrganization();
 
     if (!organization.isModuleEnabled("d4h-i3")) {
-        throw new NotEnabledError("The I3 module is not enabled for this organization.");
+        throw new NotEnabledError(
+            "The D4H I3 module is not enabled for this organization. It needs the D4H module turned on too.",
+        );
     }
 
     return props.children;

@@ -5,7 +5,7 @@
 "use client";
 
 import type { SaratogaContentsItem } from "@/components/blocks/saratoga-contents";
-import type { ModuleFlagState } from "@/lib/module-flags";
+import { enabledInSettings, type ModuleFlagState } from "@/lib/module-flags";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
@@ -43,6 +43,9 @@ export function OrganizationSettingsForm({
      */
     canEdit: boolean;
 }) {
+    // For the module cards' `requires` rule (D4H I3 needs D4H): the settings, not module flags.
+    const isModuleEnabled = enabledInSettings(settings);
+
     return (
         <>
             <div id="general" className="space-y-4 scroll-mt-4">
@@ -90,6 +93,7 @@ export function OrganizationSettingsForm({
                             canEdit={canEdit}
                             slice="modules.d4h"
                             enabled={settings.modules.d4h.enabled}
+                            isModuleEnabled={isModuleEnabled}
                             kind="module"
                             title="D4H Module"
                         />
@@ -101,6 +105,7 @@ export function OrganizationSettingsForm({
                                 canEdit={canEdit}
                                 slice="modules.d4h-i3"
                                 enabled={settings.modules["d4h-i3"].enabled}
+                                isModuleEnabled={isModuleEnabled}
                                 kind="module"
                                 title="D4H I3 Module"
                                 description="The D4H I3 module provides tools to manage individually issued items (I3s) within your organisation."
