@@ -82,7 +82,15 @@ export function SkillTrack_RecordCheckDialog({
 }: RecordCheckDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent mobile="sheet">
+            <DialogContent
+                mobile="sheet"
+                onOpenAutoFocus={(e) => {
+                    // Focus the dialog itself rather than its first result option, so it opens
+                    // with no focus ring on a result. Tab still moves to the first option.
+                    e.preventDefault();
+                    (e.currentTarget as HTMLElement | null)?.focus();
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>{personName}</DialogTitle>
                     <DialogDescription>

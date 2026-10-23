@@ -16,6 +16,20 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     );
 }
 
+/** The card panel a table sits in on the page tint. */
+function TablePanel({ className, ...props }: React.ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="table-panel"
+            className={cn(
+                "overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10",
+                className,
+            )}
+            {...props}
+        />
+    );
+}
+
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
     return (
         <thead data-slot="table-header" className={cn("[&_tr]:border-b", className)} {...props} />
@@ -100,4 +114,5 @@ export {
     TableRow,
     TableCell,
     TableCaption,
+    TablePanel,
 };

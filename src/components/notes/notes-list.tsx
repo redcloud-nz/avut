@@ -86,7 +86,7 @@ export function NotesList({
 
     return (
         <div className="flex flex-col">
-            <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background p-2">
+            <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-navbar p-2">
                 <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
                     <SelectTrigger size="sm" aria-label="Sort notes" className="flex-1">
                         <SelectValue />
@@ -117,8 +117,8 @@ export function NotesList({
                                 href={hrefFor(note.id)}
                                 aria-current={note.id === selectedId ? "page" : undefined}
                                 className={cn(
-                                    "relative flex flex-col gap-0.5 border-b py-3 pr-8 pl-4 hover:bg-muted/50",
-                                    "aria-[current=page]:bg-muted",
+                                    "relative flex flex-col gap-0.5 border-b py-3 pr-8 pl-4 hover:bg-accent",
+                                    "aria-[current=page]:bg-selected aria-[current=page]:text-selected-foreground",
                                 )}
                             >
                                 <NoteRowPendingHint />
