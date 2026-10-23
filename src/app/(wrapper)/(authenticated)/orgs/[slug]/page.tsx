@@ -6,7 +6,7 @@
  */
 
 import { Organization_Dashboard_Content } from "@/components/organization/dashboard-content";
-import { isModuleUsable } from "@/lib/module-flags";
+import { enabledInSettings, isModuleUsable } from "@/lib/module-flags";
 import { hasAnyRoleWithPermissions, Permissions } from "@/lib/permissions";
 import { resolveModuleFlags } from "@/server/module-flags";
 import { requireOrganization } from "@/server/organization-access";
@@ -33,13 +33,7 @@ export default async function Organization_Index_Page(props: PageProps<"/orgs/[s
     if (can({ invitation: ["view"] }))
         prefetch(trpc.invitations.listInvitations.queryOptions({ organizationId }));
 
-    if (
-        isModuleUsable(
-            moduleFlags,
-            "skill-track",
-            settings.modules["skill-track"]?.enabled === true,
-        )
-    ) {
+    if (isModuleUsable(moduleFlags, "skill-track", enabledInSettings(settings))) {
         if (can({ skillPackageSubscription: ["view"] }))
             prefetch(
                 trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({

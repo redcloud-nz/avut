@@ -272,7 +272,7 @@ The app has three real scope roots, each with its own sidebar and module set: **
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
 - Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules
 - Only org modules with an `href` appear in the org nav switcher and dashboard (`orgModules`), which is why `forms` is absent from those
-- The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `i3`. It's retained only because it's a settings-gated key
+- The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `d4h-i3`. It's retained only because it's a settings-gated key
 
 <!-- BEGIN:nextjs-agent-rules -->
 

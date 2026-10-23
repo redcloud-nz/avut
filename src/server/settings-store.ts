@@ -75,6 +75,10 @@ export interface SettingsStore<TSettings, TReadPrisma, TWritePrisma> {
  * @param settings The scope's schema helpers (`OrganizationSettings`, `UserSettings`, …).
  * @param model Picks the delegate off the injected client — `"organizationConfig"`/`"userConfig"`.
  * @param scopeField That model's scope column — `"organizationId"`/`"userId"`.
+ * @param normalize Applies the scope's cross-field rules to a validated write: handed the settings
+ *     as they stand and as they're about to become, it returns the settings to store, or throws to
+ *     refuse the write. Runs before the diff, so anything it changes is written and audited with
+ *     the rest.
  */
 export function createSettingsStore<
     TSettings,
@@ -84,10 +88,12 @@ export function createSettingsStore<
     settings: settingsSchema,
     model,
     scopeField,
+    normalize,
 }: {
     settings: SettingsSchemaLike<TSettings>;
     model: "organizationConfig" | "userConfig";
     scopeField: "organizationId" | "userId";
+    normalize?: (existing: TSettings, next: TSettings) => TSettings;
 }): SettingsStore<TSettings, TReadPrisma, TWritePrisma> {
     const delegateOf = (prisma: object) =>
         (prisma as Record<string, unknown>)[model] as SettingsConfigDelegate;
@@ -112,7 +118,8 @@ export function createSettingsStore<
         const existing = await read(prisma, scopeId);
 
         // Validate before writing — the settings may have come straight off the wire.
-        const parsed = settingsSchema.schema.parse(produce(existing));
+        const validated = settingsSchema.schema.parse(produce(existing));
+        const parsed = normalize ? normalize(existing, validated) : validated;
 
         const flattenedExisting = settingsSchema.flatten(existing);
         const flattenedNext = settingsSchema.flatten(parsed);

@@ -26,7 +26,7 @@ describe("OrgSettings.write", () => {
             ...defaults,
             modules: {
                 ...defaults.modules,
-                i3: { ...defaults.modules.i3, enabled: true },
+                notes: { ...defaults.modules.notes, enabled: true },
             },
         };
 
@@ -40,7 +40,7 @@ describe("OrgSettings.write", () => {
         expect(recorded).toEqual([
             {
                 type: "obj_mod",
-                path: ["modules", "i3", "enabled"],
+                path: ["modules", "notes", "enabled"],
                 prev: false,
                 curr: true,
             },
@@ -56,19 +56,19 @@ describe("OrgSettings.write", () => {
         });
 
         const defaults = OrganizationSettings.default();
-        const withI3 = (enabled: boolean): OrganizationSettings => ({
+        const withNotes = (enabled: boolean): OrganizationSettings => ({
             ...defaults,
-            modules: { ...defaults.modules, i3: { ...defaults.modules.i3, enabled } },
+            modules: { ...defaults.modules, notes: { ...defaults.modules.notes, enabled } },
         });
 
-        await OrgSettings.write(db, orgId, withI3(true));
+        await OrgSettings.write(db, orgId, withNotes(true));
         expect(
             (await db.organizationConfig.findMany({ where: { organizationId: orgId } })).map(
                 (r) => r.key,
             ),
-        ).toEqual(["modules.i3.enabled"]);
+        ).toEqual(["modules.notes.enabled"]);
 
-        const reverted = await OrgSettings.write(db, orgId, withI3(false));
+        const reverted = await OrgSettings.write(db, orgId, withNotes(false));
 
         expect(await db.organizationConfig.findMany({ where: { organizationId: orgId } })).toEqual(
             [],
@@ -85,9 +85,12 @@ describe("OrgSettings.write", () => {
         });
 
         const defaults = OrganizationSettings.default();
-        const settings = (i3: boolean, personnel: boolean): OrganizationSettings => ({
+        const settings = (notes: boolean, personnel: boolean): OrganizationSettings => ({
             ...defaults,
-            modules: { ...defaults.modules, i3: { ...defaults.modules.i3, enabled: i3 } },
+            modules: {
+                ...defaults.modules,
+                notes: { ...defaults.modules.notes, enabled: notes },
+            },
             personnel: { ...defaults.personnel, autoLinkOnPersonCreate: personnel },
         });
 

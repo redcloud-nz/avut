@@ -21,6 +21,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Modules,
+    modulesRequiring,
+    requiredModuleOf,
+    type OrganizationModuleId,
+} from "@/lib/modules";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
@@ -29,8 +35,8 @@ import { useOrganizationSettingsMutation } from "./use-organization-settings-mut
 export type FeatureSliceId =
     | "integrations.d4h"
     | "integrations.email"
-    | "modules.d4h-views"
-    | "modules.i3"
+    | "modules.d4h"
+    | "modules.d4h-i3"
     | "modules.notes"
     | "modules.skill-package-builder"
     | "modules.skill-track";
@@ -50,6 +56,11 @@ const DISABLE_CONSEQUENCES: Record<"module" | "integration", string> = {
  * any) render in a `Card`, and Disable confirms first since turning it off affects everyone in
  * the organisation.
  *
+ * For a module, `isModuleEnabled` (the org's settings as a lookup) lets the card show the
+ * registry's `requires` rule: Enable is held off while the required module is off, a dependent
+ * left on says it's inactive, and disabling a required module warns that its dependents go off
+ * too (the server writes that through).
+ *
  * The card owns the `?action=disable-<key>` param rather than the dialog (Recipe C in
  * `docs/patterns/mutation-dialog.md`): a successful disable swaps the Disable trigger for Enable,
  * and the close has to come from something that stays mounted.
@@ -63,6 +74,7 @@ export function Feature_SettingsCard({
     title,
     description,
     children,
+    isModuleEnabled,
 }: {
     organizationId: OrganizationId;
     canEdit: boolean;
@@ -74,9 +86,34 @@ export function Feature_SettingsCard({
     description?: ReactNode;
     /** Its settings, shown only while it's enabled. */
     children?: ReactNode;
+    /**
+     * Whether the org has a module switched on in its settings. A module card needs it only when
+     * the module requires another, or another requires it.
+     */
+    isModuleEnabled?: (moduleId: OrganizationModuleId) => boolean;
 }) {
-    // `modules.notes` → `disable-notes`, `integrations.d4h` → `disable-d4h`.
-    const disableAction = `disable-${slice.slice(slice.indexOf(".") + 1)}`;
+    const moduleId =
+        kind === "module" ? (slice.slice("modules.".length) as OrganizationModuleId) : undefined;
+    const required = moduleId ? requiredModuleOf(moduleId) : undefined;
+    const requiredOff =
+        moduleId !== undefined &&
+        required !== undefined &&
+        isModuleEnabled !== undefined &&
+        !isModuleEnabled(required);
+    // Enable is held off below while the required module is off; an org left with this module on
+    // keeps Disable, and the module stays inactive until the required one is back.
+    const requiredOffNote = requiredOff
+        ? enabled
+            ? `Inactive until ${Modules[required].label} is turned on.`
+            : `Turn on ${Modules[required].label} to use ${Modules[moduleId].label}.`
+        : undefined;
+    const dependentsOn =
+        moduleId && isModuleEnabled ? modulesRequiring(moduleId).filter(isModuleEnabled) : [];
+
+    // The whole slice, so cards on the same page never share a key: `modules.notes` →
+    // `disable-modules-notes`, and `integrations.d4h` → `disable-integrations-d4h` stays apart
+    // from `modules.d4h` → `disable-modules-d4h`.
+    const disableAction = `disable-${slice.replaceAll(".", "-")}`;
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral([disableAction]));
     const disableOpen = canEdit && enabled && action === disableAction;
@@ -125,10 +162,12 @@ export function Feature_SettingsCard({
                                 pending: "Enabling...",
                                 success: "Enabled",
                             }}
+                            disabled={requiredOff}
                             onClick={() => setEnabled(enableMutation, true)}
                         />
                     ))}
             </div>
+            {requiredOffNote && <p className="text-sm text-muted-foreground">{requiredOffNote}</p>}
             {description && (
                 // A static note, not an announcement: override Alert's role="alert".
                 <Alert variant="default" role="note" className="px-3 py-2.5">
@@ -148,7 +187,11 @@ export function Feature_SettingsCard({
                     <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                         <DialogHeader>
                             <DialogTitle>Disable the {title}?</DialogTitle>
-                            <DialogDescription>{DISABLE_CONSEQUENCES[kind]}</DialogDescription>
+                            <DialogDescription>
+                                {DISABLE_CONSEQUENCES[kind]}
+                                {dependentsOn.length > 0 &&
+                                    ` ${formatList(dependentsOn.map((id) => Modules[id].label))} will be turned off too, and won't come back on by itself.`}
+                            </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
                             <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
@@ -168,4 +211,8 @@ export function Feature_SettingsCard({
             )}
         </section>
     );
+}
+
+function formatList(items: string[]): string {
+    return new Intl.ListFormat("en", { type: "conjunction" }).format(items);
 }

@@ -5,7 +5,7 @@
 "use client";
 
 import type { SaratogaContentsItem } from "@/components/blocks/saratoga-contents";
-import type { ModuleFlagState } from "@/lib/module-flags";
+import { enabledInSettings, type ModuleFlagState } from "@/lib/module-flags";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
@@ -43,6 +43,9 @@ export function OrganizationSettingsForm({
      */
     canEdit: boolean;
 }) {
+    // For the module cards' `requires` rule (D4H I3 needs D4H): the settings, not module flags.
+    const isModuleEnabled = enabledInSettings(settings);
+
     return (
         <>
             <div id="general" className="space-y-4 scroll-mt-4">
@@ -84,26 +87,28 @@ export function OrganizationSettingsForm({
             <div id="modules" className="space-y-4 pt-12 scroll-mt-4">
                 <h2 className="text-lg font-semibold tracking-tight">Modules</h2>
                 <div className="space-y-10">
-                    <div id="module-d4h-views" className="scroll-mt-4">
+                    <div id="module-d4h" className="scroll-mt-4">
                         <Feature_SettingsCard
                             organizationId={organizationId}
                             canEdit={canEdit}
-                            slice="modules.d4h-views"
-                            enabled={settings.modules["d4h-views"].enabled}
+                            slice="modules.d4h"
+                            enabled={settings.modules.d4h.enabled}
+                            isModuleEnabled={isModuleEnabled}
                             kind="module"
-                            title="D4H Views Module"
+                            title="D4H Module"
                         />
                     </div>
-                    {moduleFlags.i3 !== false && (
-                        <div id="module-i3" className="scroll-mt-4">
+                    {moduleFlags["d4h-i3"] !== false && (
+                        <div id="module-d4h-i3" className="scroll-mt-4">
                             <Feature_SettingsCard
                                 organizationId={organizationId}
                                 canEdit={canEdit}
-                                slice="modules.i3"
-                                enabled={settings.modules.i3.enabled}
+                                slice="modules.d4h-i3"
+                                enabled={settings.modules["d4h-i3"].enabled}
+                                isModuleEnabled={isModuleEnabled}
                                 kind="module"
-                                title="I3 Module"
-                                description="The I3 module provides tools to manage individually issued items (I3s) within your organisation."
+                                title="D4H I3 Module"
+                                description="The D4H I3 module provides tools to manage individually issued items (I3s) within your organisation."
                             />
                         </div>
                     )}
@@ -147,7 +152,7 @@ export function OrganizationSettingsForm({
 /**
  * Matches the section (and, for "Modules", per-module card) `id`s above — passed to
  * `Saratoga.Contents` by the page. Takes `moduleFlags` so the "Modules" children stay in sync
- * with which cards the form itself actually renders (`i3` and `notes`, gated the same way above).
+ * with which cards the form itself actually renders (`d4h-i3` and `notes`, gated the same way above).
  */
 export function getOrganizationSettingsFormSections(
     moduleFlags: ModuleFlagState,
@@ -161,8 +166,10 @@ export function getOrganizationSettingsFormSections(
             id: "modules",
             label: "Modules",
             children: [
-                { id: "module-d4h-views", label: "D4H Views" },
-                ...(moduleFlags.i3 !== false ? [{ id: "module-i3", label: "I3" }] : []),
+                { id: "module-d4h", label: "D4H" },
+                ...(moduleFlags["d4h-i3"] !== false
+                    ? [{ id: "module-d4h-i3", label: "D4H I3" }]
+                    : []),
                 ...(moduleFlags.notes !== false ? [{ id: "module-notes", label: "Notes" }] : []),
                 { id: "module-skill-package-builder", label: "Skill Package Builder" },
                 { id: "module-skill-track", label: "Skill Track" },

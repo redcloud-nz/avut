@@ -91,7 +91,7 @@ export const TrashableEntities = {
         objectType: "I3Template",
         permission: "i3Template",
         href: (slug, id) =>
-            route("/orgs/[slug]/i3/templates/[template_id]", { slug, template_id: id }),
+            route("/orgs/[slug]/d4h-i3/templates/[template_id]", { slug, template_id: id }),
     },
     skillPackage: {
         id: "skillPackage",

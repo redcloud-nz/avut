@@ -63,14 +63,14 @@ describe("visibleGlossaryEntries", () => {
     });
 
     it("keeps an entry with no modules", () => {
-        const result = visibleGlossaryEntries([entry("plain")], new Set(["i3"]));
+        const result = visibleGlossaryEntries([entry("plain")], new Set(["d4h-i3"]));
         expect(result.map((e) => e.slug)).toEqual(["plain"]);
     });
 
     it("drops an entry whose only module is hidden", () => {
         const result = visibleGlossaryEntries(
-            [entry("plain"), entry("i3-only", { modules: ["i3"] })],
-            new Set(["i3"]),
+            [entry("plain"), entry("i3-only", { modules: ["d4h-i3"] })],
+            new Set(["d4h-i3"]),
         );
         expect(result.map((e) => e.slug)).toEqual(["plain"]);
     });
@@ -89,9 +89,9 @@ describe("visibleGlossaryEntries", () => {
             [
                 entry("d4h", { relatedTerms: ["ppe-template", "person"] }),
                 entry("person"),
-                entry("ppe-template", { modules: ["i3"] }),
+                entry("ppe-template", { modules: ["d4h-i3"] }),
             ],
-            new Set(["i3"]),
+            new Set(["d4h-i3"]),
         );
         expect(result.find((e) => e.slug === "d4h")?.relatedTerms).toEqual(["person"]);
     });

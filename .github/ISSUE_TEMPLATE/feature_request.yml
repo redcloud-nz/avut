@@ -31,7 +31,7 @@ body:
     id: module
     attributes:
       label: Related module
-      description: Which module does this relate to, if any (e.g. skill-track, i3, admin, d4h-views)?
+      description: Which module does this relate to, if any (e.g. skill-track, d4h-i3, admin, d4h)?
     validations:
       required: false
 

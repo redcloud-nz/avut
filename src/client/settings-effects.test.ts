@@ -55,7 +55,7 @@ describe("settingsEffects.updateOrganizationSettingsSlice", () => {
 
     it("leaves other slices as cached", () => {
         const cached = OrganizationSettings.default();
-        cached.modules.i3.enabled = true;
+        cached.modules["d4h-i3"].enabled = true;
         const response = OrganizationSettings.default();
         response.modules.notes.enabled = true;
 
@@ -66,7 +66,47 @@ describe("settingsEffects.updateOrganizationSettingsSlice", () => {
         const result = applyWrite(effects, cached) as OrganizationSettings;
 
         expect(result.modules.notes.enabled).toBe(true);
-        expect(result.modules.i3.enabled).toBe(true);
+        expect(result.modules["d4h-i3"].enabled).toBe(true);
+    });
+
+    it("takes `enabled` of modules that require the patched module from the response", () => {
+        // D4H I3 requires D4H, so saving D4H off turns D4H I3 off on the server too.
+        const cached = OrganizationSettings.default();
+        cached.modules.d4h.enabled = true;
+        cached.modules["d4h-i3"].enabled = true;
+        cached.modules.notes.enabled = true;
+        const response = OrganizationSettings.default();
+
+        const effects = settingsEffects.updateOrganizationSettingsSlice(
+            { organizationId, update: { slice: "modules.d4h", patch: { enabled: false } } },
+            response,
+        );
+        const result = applyWrite(effects, cached) as OrganizationSettings;
+
+        expect(result.modules.d4h.enabled).toBe(false);
+        expect(result.modules["d4h-i3"].enabled).toBe(false);
+        // Only `enabled` of the dependent, and nothing of unrelated modules.
+        expect(result.modules["d4h-i3"].storage).toBe(cached.modules["d4h-i3"].storage);
+        expect(result.modules.notes.enabled).toBe(true);
+    });
+
+    it("leaves dependents as cached when the patch doesn't turn the module off", () => {
+        // Enable D4H, then quickly enable D4H I3. D4H's response predates the second save, so it
+        // still says D4H I3 is off.
+        const cached = OrganizationSettings.default();
+        cached.modules.d4h.enabled = true;
+        cached.modules["d4h-i3"].enabled = true;
+        const staleD4H = OrganizationSettings.default();
+        staleD4H.modules.d4h.enabled = true;
+
+        const effects = settingsEffects.updateOrganizationSettingsSlice(
+            { organizationId, update: { slice: "modules.d4h", patch: { enabled: true } } },
+            staleD4H,
+        );
+        const result = applyWrite(effects, cached) as OrganizationSettings;
+
+        expect(result.modules.d4h.enabled).toBe(true);
+        expect(result.modules["d4h-i3"].enabled).toBe(true);
     });
 
     it("writes the whole response when nothing is cached", () => {
