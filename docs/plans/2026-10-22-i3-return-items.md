@@ -374,7 +374,7 @@ Decided with the user 2026-10-23:
     - **Effects.** Add `i3Effects.returnItem`, which invalidates `d4hTasks.listItemTasks`, `listReturnedItemIds`, `listOpenTasks` and `d4hApi.listMemberEquipment`.
   - **Done when:** the tests pass and `npm run check` is clean.
 
-- [ ] **Task 18: item page layout (actions menu, Edit on the card, holder, tasks summary)** `visual`
+- [x] **Task 18: item page layout (actions menu, Edit on the card, holder, tasks summary)** `visual`
   - **Files:** `src/modules/i3/components/equipment-item/equipment-item-content.tsx`, `src/modules/i3/components/equipment-item/equipment-item-menu.tsx` (new), `src/modules/i3/components/equipment-item/item-tasks-card.tsx`, `src/modules/i3/components/equipment-item/update-equipment-item.tsx`
   - **Do:** follow the I3 template page (`templates/template-content.tsx` and `template-menu.tsx`).
     - **Page header.** Replace the Edit and Open in D4H buttons with an `I3Module_EquipmentItem_Menu` dropdown (`DropdownMenuTriggerIcon`, "Actions" label). It holds:

@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ExternalLinkIcon } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -12,9 +12,9 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import {
     Card,
+    CardAction,
     CardContent,
     CardHeader,
     CardLoadingFallback,
@@ -30,8 +30,12 @@ import { trpc } from "@/trpc/client";
 
 import { I3Module_ReturnedBadge } from "../returned-badge";
 
+import { I3Module_EquipmentItem_Menu } from "./equipment-item-menu";
 import { I3Module_ItemTasks_Card } from "./item-tasks-card";
-import { I3Module_UpdateEquipmentItem_Dialog } from "./update-equipment-item";
+import {
+    I3Module_UpdateEquipmentItem_Dialog,
+    updateEquipmentItemDisabledReason,
+} from "./update-equipment-item";
 
 /**
  * A D4H equipment item, read live from D4H with the viewer's token.
@@ -49,7 +53,7 @@ export function I3Module_EquipmentItem_Content({
 
     const [
         {
-            data: { item, d4hUrl },
+            data: { item, d4hUrl, holder },
         },
         { data: teams },
         { data: returnedItemIds },
@@ -110,28 +114,13 @@ export function I3Module_EquipmentItem_Content({
                             #{item.ref} {item.kind.title}
                         </Saratoga.Title>
                         <Saratoga.Actions>
-                            <Protect
-                                permissions={{ i3Item: ["update"] }}
-                                render={(hasPermission) => (
-                                    <I3Module_UpdateEquipmentItem_Dialog
-                                        teamId={teamId}
-                                        item={item}
-                                        disabledReason={
-                                            !hasPermission
-                                                ? "Editing items needs the I3 Editor or I3 Admin role."
-                                                : !canUpdateInD4H
-                                                  ? `Your D4H account doesn't have the Equipment Update permission on ${team.title}.`
-                                                  : null
-                                        }
-                                    />
-                                )}
+                            <I3Module_EquipmentItem_Menu
+                                d4hUrl={d4hUrl}
+                                teamTitle={team.title}
+                                canUpdateInD4H={canUpdateInD4H}
+                                hasMemberHolder={holder !== null}
+                                isReturned={isReturned}
                             />
-                            <Button asChild variant="outline">
-                                <a href={d4hUrl} target="_blank" rel="noreferrer">
-                                    <ExternalLinkIcon />
-                                    Open in D4H
-                                </a>
-                            </Button>
                         </Saratoga.Actions>
                     </Saratoga.Header>
 
@@ -140,6 +129,24 @@ export function I3Module_EquipmentItem_Content({
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Item Information</CardTitle>
+                                    <CardAction>
+                                        <Protect
+                                            permissions={{ i3Item: ["update"] }}
+                                            render={(hasPermission) => (
+                                                <I3Module_UpdateEquipmentItem_Dialog
+                                                    teamId={teamId}
+                                                    item={item}
+                                                    disabledReason={updateEquipmentItemDisabledReason(
+                                                        {
+                                                            hasPermission,
+                                                            canUpdateInD4H,
+                                                            teamTitle: team.title,
+                                                        },
+                                                    )}
+                                                />
+                                            )}
+                                        />
+                                    </CardAction>
                                 </CardHeader>
                                 <CardContent>
                                     <DataList>
@@ -175,6 +182,28 @@ export function I3Module_EquipmentItem_Content({
                                             <DataItemValue className="flex flex-wrap items-center gap-2">
                                                 {D4HEquipmentStatus.label(item.status)}
                                                 {isReturned && <I3Module_ReturnedBadge />}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Issued To</DataItemTitle>
+                                            <DataItemValue>
+                                                {holder ? (
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/i3/teams/[team_id]/members/[member_id]",
+                                                            {
+                                                                slug,
+                                                                team_id: String(teamId),
+                                                                member_id: String(holder.id),
+                                                            },
+                                                        )}
+                                                        className="hover:underline"
+                                                    >
+                                                        {holder.name}
+                                                    </Link>
+                                                ) : (
+                                                    (item.location?.resourceType ?? "—")
+                                                )}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
@@ -215,6 +244,7 @@ export function I3Module_EquipmentItem_Content({
                                     <I3Module_ItemTasks_Card
                                         teamId={teamId}
                                         itemId={itemId}
+                                        itemLabel={`#${item.ref} ${item.kind.title}`}
                                         canRetireInD4H={canRetireInD4H}
                                     />
                                 </Suspense>

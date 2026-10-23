@@ -71,6 +71,27 @@ function formValues(item: D4HEquipmentItemDetail): FormData {
 }
 
 /**
+ * Why the viewer can't edit an item on `teamTitle`, or `null` when they can: editing needs an I3
+ * role holding `i3Item: ["update"]` (`hasPermission`) and D4H's Equipment UPDATE permission on the
+ * item's team.
+ */
+export function updateEquipmentItemDisabledReason({
+    hasPermission,
+    canUpdateInD4H,
+    teamTitle,
+}: {
+    hasPermission: boolean;
+    canUpdateInD4H: boolean;
+    teamTitle: string;
+}): string | null {
+    if (!hasPermission) return "Editing items needs the I3 Editor or I3 Admin role.";
+    if (!canUpdateInD4H) {
+        return `Your D4H account doesn't have the Equipment Update permission on ${teamTitle}.`;
+    }
+    return null;
+}
+
+/**
  * Edit the fields of a D4H equipment item that D4H's PATCH accepts. Opened by `?action=update`.
  *
  * With a `disabledReason`, the trigger is disabled with the reason in a tooltip, and the param
@@ -155,9 +176,13 @@ export function I3Module_UpdateEquipmentItem_Dialog({
     );
 
     const trigger = (
-        <Button variant="outline" disabled={disabledReason !== null}>
+        <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Edit item"
+            disabled={disabledReason !== null}
+        >
             <ObjectIcons.Edit />
-            Edit
         </Button>
     );
 
