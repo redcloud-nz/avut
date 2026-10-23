@@ -31,7 +31,7 @@ export interface ToolSection {
     tools?: { name: string; description: string }[];
 }
 
-/** Display order for the /tools page — matches the homepage's module grid, D4H Tools alongside D4H Views. */
+/** Display order for the /tools page — matches the homepage's module grid, D4H Tools alongside D4H. */
 export const TOOLS_CONTENT: readonly ToolSection[] = [
     {
         id: "admin",

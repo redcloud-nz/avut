@@ -80,9 +80,9 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         slug: "ppe-template",
         term: "PPE template",
         shortDefinition:
-            "A standard set of items an I3 issue is built from, with optional size/config variants.",
+            "A standard set of items a D4H I3 issue is built from, with optional size/config variants.",
         longDefinition:
-            "Describes a standard set of items — for example, a personal protective equipment (PPE) kit — that I3 issues are built from. A template can have variants for different sizes or configurations, and can be linked to D4H equipment so issued items stay in step with the D4H inventory.",
+            "Describes a standard set of items — for example, a personal protective equipment (PPE) kit — that D4H I3 issues are built from. A template can have variants for different sizes or configurations, and can be linked to D4H equipment so issued items stay in step with the D4H inventory.",
         modules: ["d4h-i3"],
         relatedTerms: ["d4h"],
     },
@@ -165,7 +165,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
-            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the read-only D4H Views, I3's equipment issuing, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
+            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the read-only D4H views, D4H I3's equipment issuing, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
         relatedTerms: ["ppe-template"],
     },
 ] as const;

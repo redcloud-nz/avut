@@ -56,7 +56,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
     },
     {
         q: "Do I need D4H?",
-        a: "For D4H Views and I3, yes — both read your D4H data, so they need a connected D4H account. Admin, Skill Track, Notes and the Skill Package Builder don't.",
+        a: "For D4H and D4H I3, yes — both read your D4H data, so they need a connected D4H account. Admin, Skill Track, Notes and the Skill Package Builder don't.",
     },
     {
         q: "Where does our data live?",
@@ -220,8 +220,8 @@ export default function HomePage() {
                         <p className="text-sm leading-relaxed text-muted-foreground">
                             Add a read-only access token and AVUT reads your members, equipment and
                             activities straight from D4H, so nothing gets re-typed and nothing gets
-                            written back. D4H Views and I3 both build on that connection; Admin,
-                            Skill Track, Notes and the Skill Package Builder stand on their own.
+                            written back. D4H and D4H I3 both build on that connection; Admin, Skill
+                            Track, Notes and the Skill Package Builder stand on their own.
                         </p>
                     </div>
                     <div className="flex flex-col gap-3">

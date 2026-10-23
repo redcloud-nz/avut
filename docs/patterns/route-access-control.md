@@ -59,7 +59,7 @@ Client Component pages (`"use client"`) can't hold a server check at all. They f
 When it reads data outside tRPC. Put the check next to the read, with the permission the matching procedure requires. Current cases:
 
 - The D4H access token pages under `admin/d4h-access-tokens/[token_id]/` that call `getD4HFetchClient` (`whoami`, `organisation`, `members`, `equipment-{categories,kinds,items,locations}`) read D4H with the organization's credential: `requireOrganizationWith(slug, { organization: ["update"] })`. The token list, create, detail and history pages read through tRPC and have no check of their own.
-- `d4h-views/{teams,personnel}`, `i3/{members,equipment-kinds}` and `d4h-today` read D4H with the viewer's own personal token: `requireOrganization(slug)`. The token bounds what they can see to what the viewer's own D4H account can see.
+- `d4h/{teams,personnel}`, `d4h-i3/{members,equipment-kinds}` and `d4h-today` read D4H with the viewer's own personal token: `requireOrganization(slug)`. The token bounds what they can see to what the viewer's own D4H account can see.
 
 ---
 

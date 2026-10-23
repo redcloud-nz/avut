@@ -28,7 +28,7 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
         <>
             <Std.Navbar
                 breadcrumbs={[{ href: route("/orgs/[slug]/d4h-i3", { slug }), label: "D4H I3" }]}
-                actions={<HelpButton id="i3" />}
+                actions={<HelpButton id="d4h-i3" />}
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H I3">
@@ -91,7 +91,7 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
                                     <ItemContent>
                                         <ItemTitle>Templates</ItemTitle>
                                         <ItemDescription>
-                                            View and manage I3 templates
+                                            View and manage D4H I3 templates
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

@@ -9,7 +9,7 @@ import { NavSubItem } from "@/components/nav/nav-section";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
-/** Nested pages for the D4H Views module's `NavCollapsible` section — not a standalone sidebar group. */
+/** Nested pages for the D4H module's `NavCollapsible` section — not a standalone sidebar group. */
 export function D4H_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
