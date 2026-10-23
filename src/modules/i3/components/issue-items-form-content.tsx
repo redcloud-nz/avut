@@ -115,7 +115,7 @@ export function I3Module_IssueItems_FormInstance_Content({
         formKey: I3IssueItemsForm.formKey,
         instanceId,
         organizationId: organization.id,
-        onDeleting: () => router.push(route("/orgs/[slug]/i3/forms/issue-items", { slug })),
+        onDeleting: () => router.push(route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug })),
     });
 
     function handleChange() {
@@ -131,7 +131,7 @@ export function I3Module_IssueItems_FormInstance_Content({
             onSuccess() {
                 toast.success("Form processed successfully.");
 
-                router.push(route("/orgs/[slug]/i3/forms/issue-items", { slug }));
+                router.push(route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug }));
             },
         }),
     );
@@ -153,11 +153,11 @@ export function I3Module_IssueItems_FormInstance_Content({
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
+                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
                     { label: "Forms" },
                     {
                         label: "Issue Items",
-                        href: route("/orgs/[slug]/i3/forms/issue-items", { slug }),
+                        href: route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug }),
                     },
                     { label: form.getValues().recipient.name || "No Recipient" },
                 ]}

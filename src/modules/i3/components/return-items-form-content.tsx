@@ -54,7 +54,7 @@ export function I3Module_ReturnItems_FormInstance_Content({
     const organization = useOrganization();
     const router = useRouter();
 
-    const listHref = route("/orgs/[slug]/i3/forms/return-items", { slug: organization.slug });
+    const listHref = route("/orgs/[slug]/d4h-i3/forms/return-items", { slug: organization.slug });
 
     const [{ data: instances }, { data: accessibleTeams }] = useSuspenseQueries({
         queries: [
@@ -133,7 +133,10 @@ export function I3Module_ReturnItems_FormInstance_Content({
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
+                    {
+                        label: "D4H I3",
+                        href: route("/orgs/[slug]/d4h-i3", { slug: organization.slug }),
+                    },
                     { label: "Forms" },
                     { label: "Return Items", href: listHref },
                     { label: recipient.name || "No one selected" },

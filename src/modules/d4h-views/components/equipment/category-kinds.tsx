@@ -49,7 +49,7 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
                     cell: (ctx) => (
                         <Link
                             href={route(
-                                "/orgs/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
+                                "/orgs/[slug]/d4h/equipment/categories/[category_id]/kinds/[kind_id]",
                                 {
                                     slug: organization.slug,
                                     category_id: String(categoryId),
@@ -69,7 +69,7 @@ export function D4HViewsModule_EquipmentCategory_Kinds_List({
                     cell: (ctx) => (
                         <Link
                             href={route(
-                                "/orgs/[slug]/d4h-views/equipment/categories/[category_id]/kinds/[kind_id]",
+                                "/orgs/[slug]/d4h/equipment/categories/[category_id]/kinds/[kind_id]",
                                 {
                                     slug: organization.slug,
                                     category_id: String(categoryId),

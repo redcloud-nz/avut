@@ -38,8 +38,8 @@ export function I3Module_Template_Content({ templateId }: { templateId: I3Templa
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
-                    { label: "Templates", href: route("/orgs/[slug]/i3/templates", { slug }) },
+                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
+                    { label: "Templates", href: route("/orgs/[slug]/d4h-i3/templates", { slug }) },
                     template.name,
                 ]}
             />

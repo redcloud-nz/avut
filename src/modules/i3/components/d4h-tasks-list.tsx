@@ -60,7 +60,7 @@ export function I3Module_D4HTasks_List() {
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
+                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
                     { label: "D4H Tasks" },
                 ]}
             />
@@ -111,11 +111,14 @@ function TaskRow({ row: { task, requestedByName, d4hUrl } }: { row: OpenTaskRow 
                 <ItemTitle>
                     <Link
                         className="hover:underline"
-                        href={route("/orgs/[slug]/i3/teams/[team_id]/equipment-items/[item_id]", {
-                            slug,
-                            team_id: String(task.d4hTeamId),
-                            item_id: String(task.resourceId),
-                        })}
+                        href={route(
+                            "/orgs/[slug]/d4h-i3/teams/[team_id]/equipment-items/[item_id]",
+                            {
+                                slug,
+                                team_id: String(task.d4hTeamId),
+                                item_id: String(task.resourceId),
+                            },
+                        )}
                     >
                         {task.itemLabel}
                     </Link>

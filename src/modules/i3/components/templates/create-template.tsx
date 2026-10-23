@@ -113,7 +113,7 @@ function CreateTemplate_Body() {
             },
             onSuccess({ created }) {
                 router.push(
-                    route("/orgs/[slug]/i3/templates/[template_id]", {
+                    route("/orgs/[slug]/d4h-i3/templates/[template_id]", {
                         slug: organization.slug,
                         template_id: created.id,
                     }),

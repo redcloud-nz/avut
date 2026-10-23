@@ -39,7 +39,7 @@ export function I3Module_TemplateList() {
                     header: "Name",
                     cell: (ctx) => (
                         <Link
-                            href={route("/orgs/[slug]/i3/templates/[template_id]", {
+                            href={route("/orgs/[slug]/d4h-i3/templates/[template_id]", {
                                 slug: organization.slug,
                                 template_id: ctx.row.original.id,
                             })}

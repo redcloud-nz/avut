@@ -16,11 +16,8 @@ export function D4HViews_Sidebar_Menu() {
 
     return (
         <>
-            <NavSubItem
-                label="Equipment"
-                href={route("/orgs/[slug]/d4h-views/equipment", { slug })}
-            />
-            <NavSubItem label="Members" href={route("/orgs/[slug]/d4h-views/members", { slug })} />
+            <NavSubItem label="Equipment" href={route("/orgs/[slug]/d4h/equipment", { slug })} />
+            <NavSubItem label="Members" href={route("/orgs/[slug]/d4h/members", { slug })} />
         </>
     );
 }

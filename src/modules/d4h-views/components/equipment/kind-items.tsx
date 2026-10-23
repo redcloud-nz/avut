@@ -45,7 +45,7 @@ export function D4HViewsModule_EquipmentKind_Items_List({ kindId }: { kindId: nu
                     header: "Ref",
                     cell: (ctx) => (
                         <Link
-                            href={route("/orgs/[slug]/d4h-views/equipment/items/[item_id]", {
+                            href={route("/orgs/[slug]/d4h/equipment/items/[item_id]", {
                                 slug: organization.slug,
                                 item_id: String(ctx.row.original.id),
                             })}

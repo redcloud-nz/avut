@@ -52,7 +52,7 @@ export function I3Module_DeleteTemplate_Dialog({
                 logger.info(`Template "${template.name}" deleted.`);
                 toast.success(`Template "${template.name}" deleted.`);
 
-                router.push(route("/orgs/[slug]/i3/templates", { slug: organization.slug }));
+                router.push(route("/orgs/[slug]/d4h-i3/templates", { slug: organization.slug }));
             },
         }),
     );

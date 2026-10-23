@@ -100,10 +100,10 @@ export function I3Module_EquipmentItem_Content({
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug }) },
+                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
                     {
                         label: team.title,
-                        href: route("/orgs/[slug]/i3/teams/[team_id]", {
+                        href: route("/orgs/[slug]/d4h-i3/teams/[team_id]", {
                             slug,
                             team_id: String(teamId),
                         }),
@@ -216,7 +216,7 @@ export function I3Module_EquipmentItem_Content({
                                                 {holder?.name ? (
                                                     <Link
                                                         href={route(
-                                                            "/orgs/[slug]/i3/teams/[team_id]/members/[member_id]",
+                                                            "/orgs/[slug]/d4h-i3/teams/[team_id]/members/[member_id]",
                                                             {
                                                                 slug,
                                                                 team_id: String(teamId),

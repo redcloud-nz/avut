@@ -79,7 +79,7 @@ Renames the two D4H-facing modules: their ids, URL segments, settings keys, fold
     - The blocked-but-on state shows its line and can still be disabled.
     - `npm run check` passes.
 
-- [ ] **Task 4: Move the routes to `/d4h` and `/d4h-i3`** · `visual` · `mechanical`
+- [x] **Task 4: Move the routes to `/d4h` and `/d4h-i3`** · `visual` · `mechanical` (feat(routes): move D4H and D4H I3 to /d4h and /d4h-i3 (#452))
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-views/**` → `…/d4h/**`, `…/i3/**` → `…/d4h-i3/**` (`git mv`), `src/lib/modules.ts` (`segment`, `href`), `src/lib/trash-registry.ts`, and every `route("/orgs/[slug]/d4h-views…")` / `route("/orgs/[slug]/i3…")` and literal path in `src/` (`grep -rnE '/orgs/\[slug\]/(d4h-views|i3)\b' src`), including emails' links.
   - **Do:** `git mv` both route trees and set `segment`/`href` in the registry. Update every route string, `PageProps`/`LayoutProps` generic, and `Path:` header comment (fix the few headers that already name the wrong path while you're there). Breadcrumb labels "D4H Views" become "D4H" and "I3" becomes "D4H I3", read from `Modules[...].label` where the page already imports `Modules`. Index titles become "D4H" / "D4H I3", with "D4H Views Module - Equipment" becoming "D4H - Equipment". `NotEnabledError` messages name the new labels. Run `npx next typegen` after the move.
   - **Done when:** `grep -rnE '/orgs/\[slug\]/(d4h-views|i3)\b|"/(d4h-views|i3)/' src` finds nothing. `npm run check` passes, and every page under both trees renders.

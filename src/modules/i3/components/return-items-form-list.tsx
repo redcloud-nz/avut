@@ -59,7 +59,7 @@ export function I3Module_ReturnItems_FormInstanceList() {
             // and 404s if it isn't there yet.
             onSuccess(_result, data) {
                 router.push(
-                    route("/orgs/[slug]/i3/forms/return-items/[instance_id]", {
+                    route("/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]", {
                         slug: organization.slug,
                         instance_id: data.formInstanceId,
                     }),
@@ -86,7 +86,10 @@ export function I3Module_ReturnItems_FormInstanceList() {
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "I3", href: route("/orgs/[slug]/i3", { slug: organization.slug }) },
+                    {
+                        label: "D4H I3",
+                        href: route("/orgs/[slug]/d4h-i3", { slug: organization.slug }),
+                    },
                     { label: "Forms" },
                     { label: "Return Items" },
                 ]}
@@ -130,7 +133,7 @@ export function I3Module_ReturnItems_FormInstanceList() {
                                     <Item key={instance.id} variant="outline" asChild>
                                         <Link
                                             href={route(
-                                                "/orgs/[slug]/i3/forms/return-items/[instance_id]",
+                                                "/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]",
                                                 {
                                                     slug: organization.slug,
                                                     instance_id: instance.id,
