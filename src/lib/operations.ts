@@ -21,6 +21,7 @@ export const Operations = {
     "d4h-team-import": { label: "D4H team import" },
     "d4h-team-link": { label: "D4H team link" },
     "d4h-team-sync": { label: "D4H team sync" },
+    "i3-return-items": { label: "I3 Return items" },
     "invitation-accept": { label: "Invitation accepted" },
     "invitation-reject": { label: "Invitation rejected" },
     "organization-leave": { label: "Left organisation" },

@@ -17,6 +17,8 @@ interface D4HServerInfo {
     code: D4HServerCode;
     apiUrl: string;
     tokensUrl?: string;
+    /** Host of the region's D4H web app, which team URLs prefix with the team's subdomain. */
+    teamManagerHost: string;
     name: string;
 }
 
@@ -25,18 +27,21 @@ export const D4HServerList: D4HServerInfo[] = [
         code: "ap",
         apiUrl: "https://api.team-manager.ap.d4h.com",
         tokensUrl: "https://myaccount.ap.d4h.com/tokens",
+        teamManagerHost: "team-manager.ap.d4h.com",
         name: "Asia Pacific",
     },
     {
         code: "eu",
         apiUrl: "https://api.team-manager.eu.d4h.com",
         tokensUrl: "https://myaccount.eu.d4h.com/tokens",
+        teamManagerHost: "team-manager.eu.d4h.com",
         name: "Europe",
     },
     {
         code: "us",
         apiUrl: "https://api.team-manager.us.d4h.com",
         tokensUrl: "https://myaccount.us.d4h.com/tokens",
+        teamManagerHost: "team-manager.us.d4h.com",
         name: "United States",
     },
 ];
@@ -53,4 +58,30 @@ export function getD4HServer(code: D4HServerCode): D4HServerInfo {
     }
 
     return D4HServerList.find((server) => server.code === code)!;
+}
+
+/**
+ * The D4H web-app URL for editing an equipment item, e.g.
+ * `https://my-team.team-manager.ap.d4h.com/team/equipment/edit/1234`.
+ */
+export function d4hEquipmentItemUrl(
+    serverCode: D4HServerCode,
+    subdomain: string,
+    itemId: number,
+): string {
+    const { teamManagerHost } = getD4HServer(serverCode);
+    return `https://${subdomain}.${teamManagerHost}/team/equipment/edit/${itemId}`;
+}
+
+/**
+ * The D4H web-app URL for viewing an equipment item, e.g.
+ * `https://my-team.team-manager.ap.d4h.com/team/equipment/view/1234`.
+ */
+export function d4hEquipmentItemViewUrl(
+    serverCode: D4HServerCode,
+    subdomain: string,
+    itemId: number,
+): string {
+    const { teamManagerHost } = getD4HServer(serverCode);
+    return `https://${subdomain}.${teamManagerHost}/team/equipment/view/${itemId}`;
 }

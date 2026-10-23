@@ -1,0 +1,270 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { ForbiddenError, ValidationError } from "@/lib/errors";
+import { FormInstanceId } from "@/lib/schemas/form-instance";
+import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
+import { fetchD4HWhoami } from "@/server/d4h-api/client";
+import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import { sendEmail } from "@/server/email";
+import { createMockPrisma } from "@/test/create-prisma-mock";
+import { createOrganizationMockContext } from "@/test/trpc-helpers";
+
+import { I3ReturnItemsFormProcessor } from "./processor";
+import { I3ReturnItemsFormData } from "./schema";
+
+const TEAM_ID = 7;
+const MEMBER_ID = 42;
+
+/** The resolved token `getConfiguredD4HAccessToken` hands back. */
+const accessToken = { id: "token-1", serverCode: "ap", token: "secret" };
+
+/** A whoami for a member of the recipient team, with or without `Equipment.UPDATE`. */
+function whoami(canUpdate: boolean) {
+    return {
+        account: { id: 1, resourceType: "Account" },
+        members: [
+            {
+                id: 11,
+                resourceType: "Member",
+                hasAccess: true,
+                name: "Receiver",
+                owner: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
+                permissions: { Equipment: { UPDATE: canUpdate } },
+            },
+        ],
+    };
+}
+
+/** A single-item GET result (as `fetchD4HEquipmentItem` returns it, already parsed). */
+function item(id: number, overrides: Record<string, unknown> = {}) {
+    return {
+        id,
+        ref: String(id),
+        status: "OPERATIONAL",
+        serial: null,
+        owner: { resourceType: "Team", id: TEAM_ID },
+        category: { resourceType: "EquipmentCategory", id: 3 },
+        kind: { resourceType: "EquipmentKind", id: 8, title: "Helmet", category: { title: "PPE" } },
+        brand: { resourceType: "EquipmentBrand", id: null },
+        model: null,
+        notes: "",
+        parents: [],
+        dateExpires: null,
+        dateFirstUse: null,
+        dateManufactured: null,
+        datePurchased: null,
+        dateRetired: null,
+        dateWarranty: null,
+        isCritical: false,
+        isMonitor: false,
+        barcode: null,
+        retiredReason: null,
+        ...overrides,
+    };
+}
+
+// `vi.hoisted` because the client mock's factory below refers to it.
+const GET = vi.hoisted(() => vi.fn());
+
+// The pipeline marks the form instance processed through the real Prisma client once every
+// stage has run; stub it so nothing reaches a database.
+const formInstanceUpdate = vi.hoisted(() => vi.fn(async () => ({})));
+vi.mock("@/server/prisma", () => ({
+    default: { formInstance: { update: formInstanceUpdate } },
+}));
+
+vi.mock("@/server/d4h-access-token", () => ({
+    getConfiguredD4HAccessToken: vi.fn(async () => accessToken),
+    toD4HCredentialRef: vi.fn(() => ({ credentialId: "token-1" })),
+}));
+
+vi.mock("@/server/d4h-api/client", () => ({
+    fetchD4HWhoami: vi.fn(),
+    getD4HFetchClient: vi.fn(() => ({ GET })),
+}));
+
+// `patchD4HEquipmentItem` is mocked only so the tests can assert a Return never calls it.
+vi.mock("@/server/d4h-api/equipment", () => ({
+    fetchD4HEquipmentItem: vi.fn(),
+    patchD4HEquipmentItem: vi.fn(async () => {}),
+}));
+
+vi.mock("@/server/email", () => ({
+    NoReplyEmailAddress: "no-reply@example.test",
+    sendEmail: vi.fn(async () => {}),
+}));
+
+describe("I3ReturnItemsFormProcessor", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+    };
+
+    let db: ReturnType<typeof createMockPrisma>;
+    let formInstanceId: FormInstanceId;
+
+    beforeEach(async () => {
+        // A fresh database per test: each asserts on the tasks and batches it alone created.
+        db = createMockPrisma();
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: T.user, name: "Receiver", email: "receiver@example.com" },
+        });
+        formInstanceId = FormInstanceId.create();
+        await db.formInstance.create({
+            data: { id: formInstanceId, formKey: "i3-return", organizationId: T.org },
+        });
+
+        vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true) as never);
+        vi.mocked(fetchD4HEquipmentItem).mockImplementation(
+            async (_token, _teamId, itemId) => item(itemId) as never,
+        );
+        GET.mockReset();
+        GET.mockResolvedValue({
+            data: { results: [{ id: 1 }, { id: 2 }, { id: 3 }], page: 0, pageSize: 3 },
+            response: new Response(null, { status: 200 }),
+        });
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: T.org,
+            user: { id: T.user, name: "Receiver", email: "receiver@example.com" },
+            prisma: db,
+        });
+    }
+
+    function formData(itemIds: number[], comments = ""): I3ReturnItemsFormData {
+        return I3ReturnItemsFormData.schema.parse({
+            recipient: { id: MEMBER_ID, teamId: TEAM_ID, name: "John Smith" },
+            items: itemIds.map((itemId) => ({ itemId, ref: String(itemId), kindTitle: "Helmet" })),
+            comments,
+        });
+    }
+
+    function execute(itemIds: number[], comments?: string) {
+        return I3ReturnItemsFormProcessor.executeWithOutput(
+            formInstanceId,
+            formData(itemIds, comments),
+            ctx(),
+        );
+    }
+
+    /** The props the notification email was rendered with. */
+    function emailProps() {
+        expect(sendEmail).toHaveBeenCalledOnce();
+        const { react } = vi.mocked(sendEmail).mock.calls[0][0];
+        return (
+            react as {
+                props: {
+                    returnedItems: { itemId: number; ref: string; kindTitle: string }[];
+                    failures: string[];
+                };
+            }
+        ).props;
+    }
+
+    const NOTE = "Returned via AVUT, received by Receiver. Strap frayed.";
+
+    it("queues a retire task with a note for each item, writes nothing to D4H, and emails", async () => {
+        const { results, output } = await execute([1, 2], "Strap frayed.");
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(output).toMatchObject({ returned: 2, failures: [] });
+
+        // The recipient's current items are read with a member_id filter.
+        expect(GET).toHaveBeenCalledWith("/v3/{context}/{contextId}/equipment", {
+            params: {
+                path: { context: "team", contextId: TEAM_ID },
+                query: expect.objectContaining({
+                    id: [1, 2],
+                    only_current: true,
+                    member_id: MEMBER_ID,
+                }),
+            },
+        });
+
+        expect(patchD4HEquipmentItem).not.toHaveBeenCalled();
+
+        const tasks = await db.d4HTask.findMany({ orderBy: { resourceId: "asc" } });
+        expect(tasks).toMatchObject([
+            {
+                d4hTeamId: TEAM_ID,
+                resourceId: 1,
+                itemLabel: "#1 Helmet",
+                kind: "Retire",
+                status: "Open",
+                payload: { reason: "Returned To Cache", note: NOTE },
+                formInstanceId,
+            },
+            { resourceId: 2, itemLabel: "#2 Helmet", payload: { note: NOTE } },
+        ]);
+
+        // One batch, holding only the two task creates.
+        const batches = await db.logBatch.findMany();
+        expect(batches).toHaveLength(1);
+        expect(batches[0]).toMatchObject({ operationKey: "i3-return-items", userId: T.user });
+        const entries = await db.logEntry.findMany();
+        expect(entries).toHaveLength(2);
+        expect(entries.every((entry) => entry.batchId === batches[0].id)).toBe(true);
+        expect(entries.every((e) => e.objectType === "D4HTask" && e.action === "Create")).toBe(
+            true,
+        );
+
+        const props = emailProps();
+        expect(props.returnedItems.map((i) => i.itemId)).toEqual([1, 2]);
+        expect(props.failures).toEqual([]);
+    });
+
+    it("refuses up front without Equipment.UPDATE on the recipient team", async () => {
+        vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(false) as never);
+
+        const { results } = await execute([1]);
+
+        const last = results.at(-1);
+        expect(last).toMatchObject({ stageName: "CheckPermissions", status: "error" });
+        expect(last?.status === "error" && last.error).toBeInstanceOf(ForbiddenError);
+        expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
+        expect(await db.d4HTask.findMany()).toEqual([]);
+        expect(sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("fails the ReturnItems stage, listing the failures, when no item could be returned", async () => {
+        vi.mocked(fetchD4HEquipmentItem).mockImplementation(
+            async (_token, _teamId, itemId) => item(itemId, { status: "RETIRED" }) as never,
+        );
+        formInstanceUpdate.mockClear();
+
+        const { results } = await execute([1, 2]);
+
+        const last = results.at(-1);
+        expect(last).toMatchObject({ stageName: "ReturnItems", status: "error" });
+        const error = last?.status === "error" ? last.error : undefined;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error?.message).toContain("#1 Helmet: already retired");
+        expect(error?.message).toContain("#2 Helmet: already retired");
+
+        // The draft isn't marked Processed, and no email goes out.
+        expect(formInstanceUpdate).not.toHaveBeenCalled();
+        expect(await db.d4HTask.findMany()).toEqual([]);
+        expect(sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("still succeeds, with the tasks queued, when the notification email fails", async () => {
+        vi.mocked(sendEmail).mockRejectedValueOnce(new Error("Resend is down"));
+
+        const { results, output } = await execute([1]);
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(output).toMatchObject({ returned: 1, failures: [] });
+        expect((await db.d4HTask.findMany()).map((t) => t.resourceId)).toEqual([1]);
+    });
+});

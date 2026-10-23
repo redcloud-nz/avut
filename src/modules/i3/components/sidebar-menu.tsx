@@ -41,6 +41,9 @@ export function I3_Sidebar_Menu() {
                     href={route("/orgs/[slug]/i3/forms/return-items", { slug })}
                 />
             </Protect>
+            <Protect permissions={{ i3Item: ["update"] }}>
+                <NavSubItem label="D4H Tasks" href={route("/orgs/[slug]/i3/d4h-tasks", { slug })} />
+            </Protect>
             <Protect permissions={{ i3Template: ["view"] }}>
                 <NavSubItem label="Templates" href={route("/orgs/[slug]/i3/templates", { slug })} />
             </Protect>

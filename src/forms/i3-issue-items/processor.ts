@@ -9,7 +9,8 @@ import { createElement } from "react";
 
 import I3IssueItemsNotificationEmail from "@/emails/i3-issue-items-notification";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
-import { fetchD4HWhoami, getD4HFetchClient } from "@/server/d4h-api/client";
+import { getD4HFetchClient } from "@/server/d4h-api/client";
+import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
 import { AuthenticatedOrganizationContext } from "@/trpc/init";
@@ -30,6 +31,19 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             return { accessToken };
+        },
+    })
+    .stage({
+        stageName: "CheckPermissions",
+        stageFn: async (ctx, { accessToken }) => {
+            // Refuse up front, before anything is written, when the user can't create equipment
+            // in D4H for the recipient team. Throws a ForbiddenError naming the team.
+            await requireD4HTeamPermission(
+                accessToken,
+                ctx.formData.recipient.teamId,
+                "Equipment",
+                "CREATE",
+            );
         },
     })
     .stage({
@@ -79,27 +93,9 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
         },
     })
     .stage({
-        stageName: "CheckPermissions",
-        stageFn: async (ctx, { accessToken }) => {
-            // Check if the user has permission to create equipment in D4H for the recipient team, which is required to save issued items to D4H.
-            // Uncached: an authorization decision must not rest on a whoami that may be hours old.
-            const whoami = await fetchD4HWhoami(accessToken);
-
-            const userMembershipInRecipientTeam = whoami.members.find(
-                (m) => m.owner.id === ctx.formData.recipient.teamId,
-            );
-
-            const canCreateEquipment =
-                userMembershipInRecipientTeam?.permissions?.Equipment?.CREATE === true;
-
-            return { canCreateEquipment };
-        },
-    })
-    .conditionalStage({
         stageName: "CreateEquipmentInD4H",
-        test: (ctx, { canCreateEquipment }) => canCreateEquipment === true,
         stageFn: async (ctx, { accessToken, items }) => {
-            // User has permission to create equipment in D4H for the recipient team, so create equipment records for each issued item in D4H.
+            // Create an equipment record in D4H for each issued item.
 
             const fetchClient = getD4HFetchClient(accessToken);
 
@@ -170,7 +166,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
                     },
                     emailTarget: { email: "delivered+i3-notify@resend.dev" },
                     formData: ctx.formData,
-                    savedToD4H: savedToD4H ?? { reason: "insufficient permissions" },
+                    savedToD4H,
                 }),
             });
         },

@@ -9,11 +9,19 @@ import { TRPCError } from "@trpc/server";
 
 import { I3IssueItemsFormProcessor } from "@/forms/i3-issue-items/processor";
 import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
+import { I3ReturnItemsFormProcessor } from "@/forms/i3-return-items/processor";
+import { returnItems } from "@/forms/i3-return-items/return-items";
+import { I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { diffObject } from "@/lib/diff";
-import { I3IssueItemsForm } from "@/lib/forms";
+import { NotFoundError, ValidationError } from "@/lib/errors";
+import { I3IssueItemsForm, I3ReturnItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
+import { getD4HTeamMembers } from "@/server/d4h-api/client";
+import { fetchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import * as Forms from "@/server/services/forms";
 import * as I3Templates from "@/server/services/i3-templates";
 
@@ -264,6 +272,52 @@ export const i3Router = createTrpcRouter({
         }),
 
     /**
+     * Return one equipment item from the person it's issued to (the item page's quick Return).
+     * Does what the Return form does for one item (the checks, a retire task noting who received
+     * it, the audit log) but sends no email and keeps no form instance.
+     *
+     * Needs D4H's own Equipment UPDATE permission on the team as well as `i3Item: ["return"]`.
+     *
+     * @returns How many items were returned (0 or 1), and a message when the item wasn't.
+     */
+    returnItem: organizationProcedure({ i3Item: ["return"] })
+        .input(
+            z.object({ teamId: z.number().int(), itemId: z.number().int(), comments: z.string() }),
+        )
+        .output(z.object({ returned: z.number(), failures: z.array(z.string()) }))
+        .mutation(async ({ ctx, input: { teamId, itemId, comments } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+
+            await requireD4HTeamPermission(accessToken, teamId, "Equipment", "UPDATE");
+
+            const item = await fetchD4HEquipmentItem(accessToken, teamId, itemId);
+            if (!item || item.owner.id !== teamId) {
+                throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
+            }
+            if (item.location?.resourceType !== "Member") {
+                throw new ValidationError("This item isn't issued to a person.");
+            }
+
+            const memberId = item.location.id;
+            // The name is only for the batch description and failure lines: don't fail the
+            // return when the member list can't be fetched.
+            const members = await getD4HTeamMembers(toD4HCredentialRef(accessToken), teamId).catch(
+                () => [],
+            );
+            const memberName =
+                members.find((member) => member.id === memberId)?.name ?? `Member #${memberId}`;
+
+            const { returned, failures } = await returnItems(ctx, {
+                accessToken,
+                recipient: { id: memberId, teamId, name: memberName },
+                items: [{ itemId, ref: item.ref, kindTitle: item.kind.title }],
+                comments,
+            });
+
+            return { returned, failures };
+        }),
+
+    /**
      * Submit an I3 Issue Items form.
      */
     submitIssueItemsForm: organizationProcedure({ i3Item: ["issue"] })
@@ -294,6 +348,45 @@ export const i3Router = createTrpcRouter({
                     cause: errors[0],
                 });
             }
+        }),
+
+    /**
+     * Submit a Return Items form: save the instance, then run the Return pipeline.
+     *
+     * @returns How many items were returned, and a message for each item that wasn't.
+     */
+    submitReturnItemsForm: organizationProcedure({ i3Item: ["return"] })
+        .input(
+            z.object({
+                formInstanceId: FormInstanceId.schema,
+                formData: I3ReturnItemsFormData.schema,
+            }),
+        )
+        .output(z.object({ returned: z.number(), failures: z.array(z.string()) }))
+        .mutation(async ({ ctx, input: { formInstanceId, formData } }) => {
+            await Forms.saveInstance(ctx, {
+                formInstanceId,
+                formKey: I3ReturnItemsForm.formKey,
+                formData,
+            });
+
+            const { results, output } = await I3ReturnItemsFormProcessor.executeWithOutput(
+                formInstanceId,
+                formData,
+                ctx,
+            );
+            const errors = results.flatMap((r) => (r.status === "error" ? [r.error] : []));
+
+            if (errors.length > 0) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: errors[0].message,
+                    cause: errors[0],
+                });
+            }
+
+            // Pick the fields: `output` also holds the D4H access token.
+            return { returned: output.returned ?? 0, failures: output.failures ?? [] };
         }),
 
     /**

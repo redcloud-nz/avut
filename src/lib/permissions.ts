@@ -10,7 +10,7 @@ import * as z from "zod";
 const statement = {
     ...defaultStatements,
     d4hEquipment: ["view"],
-    i3Item: ["view", "issue", "inspect", "return"],
+    i3Item: ["view", "issue", "inspect", "return", "update"],
     i3Template: ["view", "create", "update", "delete"],
     invitation: ["view", "create", "update", "cancel"],
     member: ["view", "create", "update", "delete", "owner"],
@@ -74,7 +74,7 @@ export const Roles = {
     }),
     "i3-editor": ac.newRole({
         d4hEquipment: ["view"],
-        i3Item: ["view", "issue", "inspect", "return"],
+        i3Item: ["view", "issue", "inspect", "return", "update"],
         i3Template: ["view"],
         // Paired with `person: ["view"]` — the user↔person link procedures require both.
         member: ["view"],
@@ -86,7 +86,7 @@ export const Roles = {
     // creation, editing and deletion (incl. trash/restore/purge).
     "i3-admin": ac.newRole({
         d4hEquipment: ["view"],
-        i3Item: ["view", "issue", "inspect", "return"],
+        i3Item: ["view", "issue", "inspect", "return", "update"],
         i3Template: ["view", "create", "update", "delete"],
         member: ["view"],
         organization: ["view"],

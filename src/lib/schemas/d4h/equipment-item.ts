@@ -56,3 +56,74 @@ export const D4HEquipmentItem = {
 } as const;
 
 export type D4HEquipmentItem = z.infer<typeof D4HEquipmentItem.schema>;
+
+/**
+ * The `status` values D4H's equipment PATCH accepts. A GET can also return `RETIRED`, which only
+ * D4H's web app can set.
+ */
+export const D4HEquipmentStatus = {
+    schema: z.enum(["OPERATIONAL", "UNSERVICEABLE", "LOST", "WISHLIST", "INACTIVE"] as const),
+
+    /**
+     * The label D4H's web app shows for a status (`INACTIVE` is "Non Operational"). Takes any
+     * string, since a GET can return `RETIRED` or a value AVUT doesn't know, which falls back to
+     * the raw value.
+     */
+    label: (status: string): string => STATUS_LABELS[status] ?? status,
+} as const;
+
+const STATUS_LABELS: Record<string, string> = {
+    OPERATIONAL: "Operational",
+    UNSERVICEABLE: "Unserviceable",
+    LOST: "Lost",
+    WISHLIST: "Wishlist",
+    INACTIVE: "Non Operational",
+    RETIRED: "Retired",
+};
+
+export type D4HEquipmentStatus = z.infer<typeof D4HEquipmentStatus.schema>;
+
+/**
+ * An equipment item as the single-item GET returns it. The response is typed `unknown` in the
+ * generated schema, so the field names come from its `@example` and a live probe (2026-10-22).
+ *
+ * `location` keeps only `resourceType` and `id`. D4H expands it to the holding member's full
+ * record (address, phones, emergency contacts, iCal secret), which must never reach the client;
+ * `z.object` strips every other key on parse. Never widen it: resolve a holder's name from the
+ * team's member list instead.
+ */
+export const D4HEquipmentItemDetail = {
+    schema: D4HEquipmentItem.schema.extend({
+        isCritical: z.boolean(),
+        isMonitor: z.boolean(),
+        barcode: z.string().nullable(),
+        retiredReason: z
+            .object({
+                id: z.number().nullable(),
+                resourceType: z.literal("EquipmentRetiredReason"),
+            })
+            .nullable()
+            .optional(),
+        /** Who or where holds the item (`Member` for a person). Only the type and id survive. */
+        location: z.object({ resourceType: z.string(), id: z.number() }).nullable().optional(),
+    }),
+} as const;
+
+export type D4HEquipmentItemDetail = z.infer<typeof D4HEquipmentItemDetail.schema>;
+
+/**
+ * The fields AVUT sends in an equipment PATCH. D4H rejects anything else with a 400. Clearing a
+ * barcode sends `""`.
+ */
+export const D4HEquipmentItemUpdate = {
+    schema: z.object({
+        status: D4HEquipmentStatus.schema.optional(),
+        isCritical: z.boolean().optional(),
+        isMonitor: z.boolean().optional(),
+        barcode: z.string().optional(),
+        notes: z.string().optional(),
+        updateNotes: z.string().optional(),
+    }),
+} as const;
+
+export type D4HEquipmentItemUpdate = z.infer<typeof D4HEquipmentItemUpdate.schema>;

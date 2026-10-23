@@ -82,7 +82,12 @@ describe("moduleIdForObjectType", () => {
 
 describe("objectTypesForModule", () => {
     it("generates the WHERE-IN list for a module feed", () => {
-        expect(objectTypesForModule("i3").sort()).toEqual(["I3Template", "I3TemplateVariant"]);
+        expect(objectTypesForModule("i3").sort()).toEqual([
+            "D4HEquipmentItem",
+            "D4HTask",
+            "I3Template",
+            "I3TemplateVariant",
+        ]);
     });
 
     it("attributes organization groups to the system-admin module", () => {
@@ -103,6 +108,7 @@ describe("Operations", () => {
             "d4h-team-import",
             "d4h-team-link",
             "d4h-team-sync",
+            "i3-return-items",
             "invitation-accept",
             "invitation-reject",
             "organization-leave",

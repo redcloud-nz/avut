@@ -6,6 +6,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { use, useState } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -34,6 +35,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
+import { I3Module_ReturnedBadge } from "@/modules/i3/components/returned-badge";
 import { trpc } from "@/trpc/client";
 
 export default function I3Module_Team_EquipmentKindItems_Page(
@@ -46,22 +48,30 @@ export default function I3Module_Team_EquipmentKindItems_Page(
     const organization = useOrganization();
     const { formatDate } = usePreferences();
 
-    const [{ data: teams }, { data: kinds }, { data: members }] = useSuspenseQueries({
-        queries: [
-            trpc.d4hApi.listAccessibleTeams.queryOptions({
-                organizationId: organization.id,
-            }),
-            trpc.d4hApi.listEquipmentKinds.queryOptions({
-                organizationId: organization.id,
-            }),
-            trpc.d4hApi.listMembers.queryOptions({
-                organizationId: organization.id,
-            }),
-        ],
-    });
+    const [{ data: teams }, { data: kinds }, { data: members }, { data: returnedItemIds }] =
+        useSuspenseQueries({
+            queries: [
+                trpc.d4hApi.listAccessibleTeams.queryOptions({
+                    organizationId: organization.id,
+                }),
+                trpc.d4hApi.listEquipmentKinds.queryOptions({
+                    organizationId: organization.id,
+                }),
+                trpc.d4hApi.listMembers.queryOptions({
+                    organizationId: organization.id,
+                }),
+                trpc.d4hTasks.listReturnedItemIds.queryOptions({
+                    organizationId: organization.id,
+                    teamId,
+                }),
+            ],
+        });
+
+    const teamMembers = members.filter((member) => member.owner.id === teamId);
+    const returnedIds = new Set(returnedItemIds);
 
     const memberEquipment = useSuspenseQueries({
-        queries: members.map((member) =>
+        queries: teamMembers.map((member) =>
             trpc.d4hApi.listMemberEquipment.queryOptions({
                 organizationId: organization.id,
                 teamId,
@@ -71,7 +81,7 @@ export default function I3Module_Team_EquipmentKindItems_Page(
         combine: (results) =>
             results
                 .map((q, index) => ({
-                    member: members[index],
+                    member: teamMembers[index],
                     items: (q.data ?? []).filter((item) => item.kind.id === kindId),
                 }))
                 .sort((a, b) => a.member.name.localeCompare(b.member.name)),
@@ -247,7 +257,26 @@ export default function I3Module_Team_EquipmentKindItems_Page(
                                                     {member.name}
                                                 </TableCell>
                                             )}
-                                            <TableCell>{item.ref}</TableCell>
+                                            <TableCell>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/i3/teams/[team_id]/equipment-items/[item_id]",
+                                                        {
+                                                            slug: organization.slug,
+                                                            team_id,
+                                                            item_id: String(item.id),
+                                                        },
+                                                    )}
+                                                >
+                                                    {item.ref}
+                                                </Link>
+                                                {returnedIds.has(item.id) && (
+                                                    <>
+                                                        {" "}
+                                                        <I3Module_ReturnedBadge />
+                                                    </>
+                                                )}
+                                            </TableCell>
                                             {showColumns.brand && (
                                                 <TableCell className="hidden lg:table-cell">
                                                     {item.brand?.title}
