@@ -37,7 +37,7 @@ export function D4HI3Module_EquipmentItem_Menu({
         parseAsStringLiteral(["update", "return"] as const),
     );
 
-    const canUpdate = useHasPermission({ i3Item: ["update"] });
+    const canUpdate = useHasPermission({ d4hEquipment: ["update"] });
     const canReturn = useHasPermission({ i3Item: ["return"] });
 
     const actions: MenuActionProps[] = [

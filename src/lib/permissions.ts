@@ -9,8 +9,11 @@ import * as z from "zod";
 
 const statement = {
     ...defaultStatements,
-    d4hEquipment: ["view"],
-    i3Item: ["view", "issue", "inspect", "return", "update"],
+    // `update` edits an equipment item in D4H.
+    d4hEquipment: ["view", "update"],
+    // `apply` checks or dismisses a queued D4H task.
+    d4hTask: ["view", "apply"],
+    i3Item: ["view", "issue", "inspect", "return"],
     i3Template: ["view", "create", "update", "delete"],
     invitation: ["view", "create", "update", "cancel"],
     member: ["view", "create", "update", "delete", "owner"],
@@ -39,7 +42,8 @@ export const Roles = {
     // itself.
     owner: ac.newRole({
         ...memberAc.statements,
-        d4hEquipment: ["view"],
+        d4hEquipment: ["view", "update"],
+        d4hTask: ["view", "apply"],
         member: ["view", "create", "update", "delete", "owner"],
         invitation: ["view", "create", "update", "cancel"],
         organization: ["view", "update", "delete"],
@@ -53,7 +57,8 @@ export const Roles = {
     // or grant/revoke ownership.
     admin: ac.newRole({
         ...memberAc.statements,
-        d4hEquipment: ["view"],
+        d4hEquipment: ["view", "update"],
+        d4hTask: ["view", "apply"],
         member: ["view", "create", "update", "delete"],
         invitation: ["view", "create", "update", "cancel"],
         organization: ["view", "update"],
@@ -73,8 +78,9 @@ export const Roles = {
         team: ["view"],
     }),
     "i3-editor": ac.newRole({
-        d4hEquipment: ["view"],
-        i3Item: ["view", "issue", "inspect", "return", "update"],
+        d4hEquipment: ["view", "update"],
+        d4hTask: ["view", "apply"],
+        i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view"],
         // Paired with `person: ["view"]` — the user↔person link procedures require both.
         member: ["view"],
@@ -85,8 +91,9 @@ export const Roles = {
     // The I3 module's admin role: everything `i3-editor` can do, plus managing I3 templates —
     // creation, editing and deletion (incl. trash/restore/purge).
     "i3-admin": ac.newRole({
-        d4hEquipment: ["view"],
-        i3Item: ["view", "issue", "inspect", "return", "update"],
+        d4hEquipment: ["view", "update"],
+        d4hTask: ["view", "apply"],
+        i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view", "create", "update", "delete"],
         member: ["view"],
         organization: ["view"],

@@ -27,7 +27,7 @@ export const d4hTasksRouter = createTrpcRouter({
      * @returns `missing` when D4H no longer has the item (suggest Dismiss), `applied` when the item
      *   is retired (the task is now `Done`), or `pending` with the item's current D4H status.
      */
-    checkTask: organizationProcedure({ i3Item: ["update"] })
+    checkTask: organizationProcedure({ d4hTask: ["apply"] })
         .input(z.object({ taskId: D4HTaskId.schema }))
         .output(
             z.discriminatedUnion("result", [
@@ -61,7 +61,7 @@ export const d4hTasksRouter = createTrpcRouter({
     /**
      * Close a task without applying it, e.g. for an item already handled or deleted in D4H.
      */
-    dismissTask: organizationProcedure({ i3Item: ["update"] })
+    dismissTask: organizationProcedure({ d4hTask: ["apply"] })
         .input(z.object({ taskId: D4HTaskId.schema }))
         .output(z.object({ dismissed: D4HTask.schema }))
         .mutation(async ({ ctx, input: { taskId } }) => {
@@ -77,7 +77,7 @@ export const d4hTasksRouter = createTrpcRouter({
      * The open tasks on one D4H equipment item, or none when the viewer lacks D4H's Equipment
      * RETIRE permission on its team.
      */
-    listItemTasks: organizationProcedure({ i3Item: ["update"] })
+    listItemTasks: organizationProcedure({ d4hTask: ["view"] })
         .input(z.object({ teamId: z.number().int(), itemId: z.number().int() }))
         .output(z.array(D4HTask.schema))
         .query(async ({ ctx, input: { teamId, itemId } }) => {
@@ -94,7 +94,7 @@ export const d4hTasksRouter = createTrpcRouter({
      * The open tasks on every D4H team where the viewer holds D4H's Equipment RETIRE permission,
      * oldest first, each with its item's D4H web-app URL and its team's title.
      */
-    listOpenTasks: organizationProcedure({ i3Item: ["update"] })
+    listOpenTasks: organizationProcedure({ d4hTask: ["view"] })
         .output(
             z.array(
                 z.object({

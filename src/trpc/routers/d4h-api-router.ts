@@ -615,12 +615,12 @@ export const d4hApiRouter = createTrpcRouter({
 
     /**
      * Update an equipment item in D4H. Needs D4H's own Equipment UPDATE permission on the team as
-     * well as AVUT's `i3Item: ["update"]`. Returns the item as D4H holds it after the update.
+     * well as AVUT's `d4hEquipment: ["update"]`. Returns the item as D4H holds it after the update.
      *
      * The D4H write can't join a Prisma transaction, so the log entry is written after it
      * succeeds (the non-Prisma exception in `docs/patterns/transactional-writes.md`).
      */
-    updateEquipmentItem: organizationProcedure({ i3Item: ["update"] })
+    updateEquipmentItem: organizationProcedure({ d4hEquipment: ["update"] })
         .input(
             D4HEquipmentItemUpdate.schema.extend({ teamId: z.number(), itemId: z.number() }).refine(
                 // `updateNotes` only annotates a change, so it doesn't count as one.

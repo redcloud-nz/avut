@@ -148,7 +148,7 @@ describe("d4hApiRouter equipment items", () => {
     }
 
     const viewer = () => makeCaller({ d4hEquipment: ["view"] });
-    const editor = () => makeCaller({ i3Item: ["update"] });
+    const editor = () => makeCaller({ d4hEquipment: ["update"] });
 
     describe("getEquipmentItem", () => {
         it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
@@ -281,7 +281,7 @@ describe("d4hApiRouter equipment items", () => {
             ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
         });
 
-        it("throws FORBIDDEN without i3Item update", async () => {
+        it("throws FORBIDDEN without d4hEquipment update", async () => {
             await expect(
                 viewer().updateEquipmentItem({
                     organizationId: T.org,
