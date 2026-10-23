@@ -411,9 +411,10 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 
 ## Parked
 
-- The existing I3 browse pages (`i3/teams/[team_id]/**/page.tsx`) are `"use client"` pages whose `useSuspenseQuery` calls run unauthenticated during server rendering ("Switched to client rendering … User is not authenticated" in the console). This predates the branch. Fix by giving them the `page.tsx` + content split with prefetches, per `docs/patterns/detail-page-data-fetching.md`.
-- `D4HTeamMemberSelect` (Issue "Recipient", Return "Returned by") lists members from every accessible team with no team label, so the same name appears several times (e.g. three "Jan Wright"s). Group or label options by team.
-- The browse pages' Status column shows raw D4H codes (`OPERATIONAL`); use `D4HEquipmentStatus.label` as the item page does.
+- The existing I3 browse pages (`i3/teams/[team_id]/**/page.tsx`) are `"use client"` pages whose `useSuspenseQuery` calls run unauthenticated during server rendering ("Switched to client rendering … User is not authenticated" in the console). This predates the branch. Fix by giving them the `page.tsx` + content split with prefetches, per `docs/patterns/detail-page-data-fetching.md`. Filed as #447.
+- `D4HTeamMemberSelect` (Issue "Recipient", Return "Returned by") lists members from every accessible team with no team label, so the same name appears several times (e.g. three "Jan Wright"s). Group or label options by team. Filed as #449.
+- The browse pages' Status column shows raw D4H codes (`OPERATIONAL`); use `D4HEquipmentStatus.label` as the item page does. Filed as #448.
+- The change a Return queues (retire with "Returned To Cache") is fixed; some teams only remove an item from the person. Make it an organization setting. Filed as #450.
 
 ## Review notes
 
