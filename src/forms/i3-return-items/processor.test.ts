@@ -182,8 +182,7 @@ describe("I3ReturnItemsFormProcessor", () => {
             .props;
     }
 
-    const NOTE =
-        "Returned by John Smith via AVUT on 23 Oct 2026, received by Receiver. Strap frayed.";
+    const NOTE = "Returned via AVUT, received by Receiver. Strap frayed.";
 
     it("marks each item INACTIVE with a note, queues a retire task and emails", async () => {
         const { results, output } = await execute([1, 2], "Strap frayed.");
@@ -202,7 +201,6 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(patchD4HEquipmentItem).toHaveBeenCalledTimes(2);
         expect(patchD4HEquipmentItem).toHaveBeenCalledWith(accessToken, TEAM_ID, 1, {
             status: "INACTIVE",
-            notes: NOTE,
             updateNotes: NOTE,
         });
 
@@ -236,17 +234,16 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(props.failures).toEqual([]);
     });
 
-    it("appends the note to the item's existing notes", async () => {
+    it("leaves the item's notes alone and omits empty comments", async () => {
         vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
             item(1, { notes: "Bought 2024.\nInspected 2025." }) as never,
         );
 
-        await execute([1], "Strap frayed.");
+        await execute([1], "   ");
 
         expect(patchD4HEquipmentItem).toHaveBeenCalledWith(accessToken, TEAM_ID, 1, {
             status: "INACTIVE",
-            notes: `Bought 2024.\nInspected 2025.\n${NOTE}`,
-            updateNotes: NOTE,
+            updateNotes: "Returned via AVUT, received by Receiver.",
         });
     });
 

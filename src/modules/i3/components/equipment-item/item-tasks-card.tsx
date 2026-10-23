@@ -7,20 +7,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemGroup,
-    ItemTitle,
-} from "@/components/ui/item";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { D4HTask } from "@/lib/schemas/d4h-task";
 import { trpc } from "@/trpc/client";
 
 import { I3Module_D4HTaskActions } from "../d4h-task-actions";
+import { I3Module_D4HTaskChanges } from "../d4h-task-changes";
 
 /**
  * The open D4H tasks on one equipment item, each with Check (has it been applied in D4H yet?) and
@@ -85,10 +79,10 @@ function ItemTaskRow({ task }: { task: D4HTask }) {
     return (
         <Item variant="outline" size="sm">
             <ItemContent>
-                <ItemTitle>
-                    {task.kind} — {task.payload.reason}
-                </ItemTitle>
-                <ItemDescription>Requested {formatDate(task.requestedAt)}</ItemDescription>
+                <I3Module_D4HTaskChanges task={task} />
+                <ItemDescription className="text-xs">
+                    Requested {formatDate(task.requestedAt)}
+                </ItemDescription>
             </ItemContent>
             <ItemActions>
                 <I3Module_D4HTaskActions task={task} />

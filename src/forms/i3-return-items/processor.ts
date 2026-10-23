@@ -5,21 +5,14 @@
 
 import "server-only";
 
-import { format } from "date-fns";
 import { createElement } from "react";
 import * as z from "zod";
-
-import { TZDate } from "@date-fns/tz";
 
 import I3ReturnItemsNotificationEmail from "@/emails/i3-return-items-notification";
 import { diffObject } from "@/lib/diff";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
-import {
-    fetchD4HTeamDetailCached,
-    getD4HFetchClient,
-    type D4HListResponse,
-} from "@/server/d4h-api/client";
+import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
+import { getD4HFetchClient, type D4HListResponse } from "@/server/d4h-api/client";
 import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
@@ -74,14 +67,12 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
             const { recipient, comments } = ctx.formData;
             const teamId = recipient.teamId;
 
-            const [heldItemIds, team] = await Promise.all([
-                fetchMemberCurrentItemIds(accessToken, teamId, recipient.id),
-                fetchD4HTeamDetailCached(toD4HCredentialRef(accessToken), teamId),
-            ]);
+            const heldItemIds = await fetchMemberCurrentItemIds(accessToken, teamId, recipient.id);
 
-            const date = format(new TZDate(new Date(), team.timezone), "d MMM yyyy");
-            const noteLine =
-                `Returned by ${recipient.name} via AVUT on ${date}, received by ${ctx.auth.user.name}.` +
+            // Goes on the status change's history entry only, never the item's notes: D4H's
+            // history already records when it happened and who held the item.
+            const updateNote =
+                `Returned via AVUT, received by ${ctx.auth.user.name}.` +
                 (comments.trim() ? ` ${comments.trim()}` : "");
 
             // The batch opens on the first successful PATCH, so a Return where every item fails
@@ -134,11 +125,9 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
 
                     // D4H writes can't join a Prisma transaction: PATCH first, then write the
                     // log and the task once it has succeeded.
-                    const notes = before.notes ? `${before.notes}\n${noteLine}` : noteLine;
                     await patchD4HEquipmentItem(accessToken, teamId, item.itemId, {
                         status: "INACTIVE",
-                        notes,
-                        updateNotes: noteLine,
+                        updateNotes: updateNote,
                     });
 
                     const logCtx = await openBatch();
@@ -147,10 +136,7 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
                             action: "Update",
                             objectType: "D4HEquipmentItem",
                             objectId: String(item.itemId),
-                            changes: diffObject(
-                                { status: before.status, notes: before.notes },
-                                { status: "INACTIVE", notes },
-                            ),
+                            changes: diffObject({ status: before.status }, { status: "INACTIVE" }),
                             description: `Returned ${label} from ${recipient.name}.`,
                         });
                         await D4HTasks.createRetireTask(logCtx, {

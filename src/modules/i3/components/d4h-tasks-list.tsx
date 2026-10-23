@@ -28,6 +28,7 @@ import { D4HTask } from "@/lib/schemas/d4h-task";
 import { trpc } from "@/trpc/client";
 
 import { I3Module_D4HTaskActions } from "./d4h-task-actions";
+import { I3Module_D4HTaskChanges } from "./d4h-task-changes";
 
 type OpenTaskRow = {
     task: D4HTask;
@@ -77,7 +78,8 @@ export function I3Module_D4HTasks_List() {
                             <EmptyHeader>
                                 <EmptyTitle>No open D4H tasks</EmptyTitle>
                                 <EmptyDescription>
-                                    Tasks appear here when a return queues a change for D4H.
+                                    Tasks appear here when AVUT queues a change it can&apos;t make
+                                    through the D4H API.
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -118,9 +120,8 @@ function TaskRow({ row: { task, requestedByName, d4hUrl } }: { row: OpenTaskRow 
                         {task.itemLabel}
                     </Link>
                 </ItemTitle>
-                <ItemDescription>
-                    {task.kind} — {task.payload.reason}
-                    <br />
+                <I3Module_D4HTaskChanges task={task} />
+                <ItemDescription className="text-xs">
                     Requested by {requestedByName ?? "a deleted user"},{" "}
                     {formatDate(task.requestedAt)}
                 </ItemDescription>

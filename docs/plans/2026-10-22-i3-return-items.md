@@ -22,10 +22,10 @@
   - The forms surface the same message on submit.
   - Tasks 4 and 7 test the no-token case.
 - **The I3 item page is separate from `d4h-views/equipment/items/[item_id]`.** That page is a read-only TanStack DB view in another module. I3's page does a live GET, edits, and shows tasks. Don't consolidate them in this branch.
-- **Return** = for each item: GET it, then PATCH `status: "INACTIVE"`, `notes` = existing notes plus a new line, and `updateNotes`. Then queue a retire task.
+- **Return** = for each item: GET it, then PATCH `status: "INACTIVE"` and `updateNotes`. Then queue a retire task.
   - The processor checks the submitted item ids against the "Returned by" member's current items (a `member_id`-filtered equipment list, as `listMemberEquipment` uses), because `location` is stripped from the item schema.
-  - The notes line is `Returned by <recipient name> via AVUT on <date, team timezone>, received by <submitter name>.`, followed by ` <comments>` when there are comments.
-  - `updateNotes` gets the same text.
+  - `updateNotes` is `Returned via AVUT, received by <submitter name>.`, followed by ` <comments>` when there are comments. It lands on the status change's history entry.
+  - The item's `notes` aren't touched (decided with the user 2026-10-23). D4H's history already records when the item changed and who held it, so a notes line would only duplicate it.
   - The retire task's payload is `{ reason: "Returned To Cache" }`. It's text shown to whoever applies it. AVUT doesn't look up D4H's retired-reason ids.
 - **D4H task queue.** A new `D4HTask` table holds changes the API can't make, to be applied by hand in D4H.
   - v1 has one kind, `Retire`, on resource type `Equipment`.
@@ -355,6 +355,7 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 ## Parked
 
 - The existing I3 browse pages (`i3/teams/[team_id]/**/page.tsx`) are `"use client"` pages whose `useSuspenseQuery` calls run unauthenticated during server rendering ("Switched to client rendering … User is not authenticated" in the console). This predates the branch. Fix by giving them the `page.tsx` + content split with prefetches, per `docs/patterns/detail-page-data-fetching.md`.
+- `D4HTeamMemberSelect` (Issue "Recipient", Return "Returned by") lists members from every accessible team with no team label, so the same name appears several times (e.g. three "Jan Wright"s). Group or label options by team.
 - The browse pages' Status column shows raw D4H codes (`OPERATIONAL`); use `D4HEquipmentStatus.label` as the item page does.
 
 ## Review notes
@@ -369,5 +370,5 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 - (Group C, Task 8) Build the task `itemLabel`, log descriptions and email lines from the fetched `before.ref`/`before.kind.title`, not the client's form data (keep the client label only for "not found").
 - (Group C, Task 8) Narrow the recipient-items query to the submitted ids (`id: [...]` alongside `member_id`) instead of `size: 10000`.
 - (Group C, Task 8) `NotifyAdmin`: catch and log a `sendEmail` failure, so a Return that already changed D4H and queued tasks isn't reported as failed (and its draft isn't left un-Processed).
-- (Group C, Task 8) Re-returning an INACTIVE item with no open task: skip the PATCH if the notes already end with this Return's line, and only queue the task. Otherwise just correct the plan wording.
+- (Group C, Task 8) Resolved 2026-10-23: Return no longer writes `notes`, so re-returning an item no longer duplicates a notes line. Remove the now-unused team-detail mock and fake timers from `processor.test.ts`.
 - (Group C, Task 8) Shorten D4H PATCH failure lines for the toast/email ("D4H rejected the update (400)"), keeping the full body in `ctx.logger.error`.
