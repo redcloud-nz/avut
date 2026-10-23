@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, RefObject, useEffect, useRef, useState } from "react";
 
 import { useHotkey } from "@tanstack/react-hotkeys";
 
@@ -94,6 +94,9 @@ export interface EntityActionMenuProps {
     before?: ReactNode;
     /** Extra groups rendered below the Actions group (e.g. a D4H section). */
     after?: ReactNode;
+    /** Ref on the trigger button, which stays mounted after the menu closes, so a dialog opened
+     *  from a menu item can return focus to it (`useReturnFocus`). */
+    triggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
 /**
@@ -112,6 +115,7 @@ export function EntityActionMenu({
     width = "w-50",
     before,
     after,
+    triggerRef,
 }: EntityActionMenuProps) {
     useMenuActionHotkeys(actions, category);
 
@@ -142,7 +146,7 @@ export function EntityActionMenu({
     return (
         <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Actions">
+                <Button ref={triggerRef} variant="ghost" size="icon" aria-label="Actions">
                     <DropdownMenuTriggerIcon />
                 </Button>
             </DropdownMenuTrigger>

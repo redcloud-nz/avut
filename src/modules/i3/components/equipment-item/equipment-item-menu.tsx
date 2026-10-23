@@ -4,43 +4,26 @@
  */
 "use client";
 
-import { ExternalLinkIcon, PackageCheckIcon } from "lucide-react";
+import { PackageCheckIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import type { RefObject } from "react";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-import { updateEquipmentItemDisabledReason } from "./update-equipment-item";
+import { ObjectIcons } from "@/components/icons";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { useHasPermission } from "@/hooks/use-has-permission";
 
 /**
- * The item page's Actions menu: Edit (`?action=update`), Return (`?action=return`) and Open in D4H.
- *
- * A disabled item shows why under its label, since a disabled menu item takes no hover for a
- * tooltip.
+ * The item page's Actions menu: Edit (`?action=update`, Alt+E) and Return (`?action=return`).
  *
  * `triggerRef` lands on the menu's own button, which stays mounted after the menu closes, so the
  * dialogs its items open can return focus there.
  */
 export function I3Module_EquipmentItem_Menu({
-    d4hUrl,
-    teamTitle,
     canUpdateInD4H,
     hasMemberHolder,
     isReturned,
     triggerRef,
 }: {
-    /** D4H's view page for the item. */
-    d4hUrl: string;
-    teamTitle: string;
     /** The viewer's D4H account has Equipment UPDATE on the item's team. */
     canUpdateInD4H: boolean;
     /** The item is issued to a D4H member, so there's someone to return it from. */
@@ -54,75 +37,25 @@ export function I3Module_EquipmentItem_Menu({
         parseAsStringLiteral(["update", "return"] as const),
     );
 
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button ref={triggerRef} variant="ghost" size="icon" aria-label="Actions">
-                    <DropdownMenuTriggerIcon />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <Protect
-                    permissions={{ i3Item: ["update"] }}
-                    render={(hasPermission) => {
-                        const disabledReason = updateEquipmentItemDisabledReason({
-                            hasPermission,
-                            canUpdateInD4H,
-                            teamTitle,
-                        });
-                        return (
-                            <DropdownMenuItem
-                                disabled={disabledReason !== null}
-                                onClick={() => setAction("update", { history: "push" })}
-                            >
-                                <ObjectIcons.Edit />
-                                <MenuItemText label="Edit" disabledReason={disabledReason} />
-                            </DropdownMenuItem>
-                        );
-                    }}
-                />
-                <Protect
-                    permissions={{ i3Item: ["return"] }}
-                    render={(hasPermission) => {
-                        const disabledReason = !hasPermission
-                            ? "Returning items needs the I3 Editor or I3 Admin role."
-                            : !canUpdateInD4H
-                              ? `Your D4H account doesn't have the Equipment Update permission on ${teamTitle}.`
-                              : isReturned
-                                ? "This item has already been returned."
-                                : !hasMemberHolder
-                                  ? "This item isn't issued to a person."
-                                  : null;
-                        return (
-                            <DropdownMenuItem
-                                disabled={disabledReason !== null}
-                                onClick={() => setAction("return", { history: "push" })}
-                            >
-                                <PackageCheckIcon />
-                                <MenuItemText label="Return" disabledReason={disabledReason} />
-                            </DropdownMenuItem>
-                        );
-                    }}
-                />
-                <DropdownMenuItem asChild>
-                    <a href={d4hUrl} target="_blank" rel="noreferrer">
-                        <ExternalLinkIcon />
-                        Open in D4H
-                    </a>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-}
+    const canUpdate = useHasPermission({ i3Item: ["update"] });
+    const canReturn = useHasPermission({ i3Item: ["return"] });
 
-function MenuItemText({ label, disabledReason }: { label: string; disabledReason: string | null }) {
-    if (disabledReason === null) return label;
+    const actions: MenuActionProps[] = [
+        {
+            verb: "update",
+            label: "Edit",
+            icon: <ObjectIcons.Edit />,
+            onSelect: () => setAction("update", { history: "push" }),
+            disabled: !canUpdate || !canUpdateInD4H,
+        },
+        {
+            verb: "return",
+            label: "Return",
+            icon: <PackageCheckIcon />,
+            onSelect: () => setAction("return", { history: "push" }),
+            disabled: !canReturn || !canUpdateInD4H || isReturned || !hasMemberHolder,
+        },
+    ];
 
-    return (
-        <span className="flex flex-col">
-            {label}
-            <span className="max-w-56 text-xs text-muted-foreground">{disabledReason}</span>
-        </span>
-    );
+    return <EntityActionMenu actions={actions} category="Equipment" triggerRef={triggerRef} />;
 }

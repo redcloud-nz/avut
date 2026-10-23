@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useRef } from "react";
 
@@ -12,6 +13,7 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardAction,
@@ -116,9 +118,13 @@ export function I3Module_EquipmentItem_Content({
                             #{item.ref} {item.kind.title}
                         </Saratoga.Title>
                         <Saratoga.Actions>
+                            <Button asChild variant="outline" size="sm">
+                                <a href={d4hUrl} target="_blank" rel="noreferrer">
+                                    <ExternalLinkIcon />
+                                    Open in D4H
+                                </a>
+                            </Button>
                             <I3Module_EquipmentItem_Menu
-                                d4hUrl={d4hUrl}
-                                teamTitle={team.title}
                                 canUpdateInD4H={canUpdateInD4H}
                                 hasMemberHolder={holder !== null}
                                 isReturned={isReturned}
