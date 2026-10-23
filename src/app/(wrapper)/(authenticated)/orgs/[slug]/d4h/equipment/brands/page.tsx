@@ -26,7 +26,7 @@ import { Std } from "@/components/blocks/std";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
-export default function D4HViewsModule_EquipmentBrands_Page() {
+export default function D4HModule_EquipmentBrands_Page() {
     const organization = useOrganization();
 
     const { data: brands } = useLiveSuspenseQuery((q) => {

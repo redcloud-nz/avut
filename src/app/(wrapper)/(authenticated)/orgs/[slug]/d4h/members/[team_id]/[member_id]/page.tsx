@@ -30,7 +30,7 @@ import { route } from "@/lib/routes";
 import { D4HEquipmentItem } from "@/lib/schemas/d4h/equipment-item";
 import { trpc } from "@/trpc/client";
 
-export default function D4HViewsModule_Member_Page(
+export default function D4HModule_Member_Page(
     props: PageProps<"/orgs/[slug]/d4h/members/[team_id]/[member_id]">,
 ) {
     const { team_id, member_id } = use(props.params);

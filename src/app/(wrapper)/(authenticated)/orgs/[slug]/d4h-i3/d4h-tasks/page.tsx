@@ -8,14 +8,14 @@
 import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { I3Module_D4HTasks_List } from "@/modules/i3/components/d4h-tasks-list";
+import { D4HI3Module_D4HTasks_List } from "@/modules/d4h-i3/components/d4h-tasks-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export const metadata: Metadata = { title: `D4H Tasks ${TITLE_SEPARATOR} D4H I3` };
 
-export default async function I3Module_D4HTasks_Page(
+export default async function D4HI3Module_D4HTasks_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/d4h-tasks">,
 ) {
     const { slug } = await props.params;
@@ -26,7 +26,7 @@ export default async function I3Module_D4HTasks_Page(
 
     return (
         <HydrateClient>
-            <I3Module_D4HTasks_List />
+            <D4HI3Module_D4HTasks_List />
         </HydrateClient>
     );
 }

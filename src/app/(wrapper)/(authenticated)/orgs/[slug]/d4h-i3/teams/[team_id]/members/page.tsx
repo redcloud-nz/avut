@@ -27,7 +27,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
-export default function I3Module_MembersList_Page(
+export default function D4HI3Module_MembersList_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/teams/[team_id]/members">,
 ) {
     const { team_id } = use(props.params);

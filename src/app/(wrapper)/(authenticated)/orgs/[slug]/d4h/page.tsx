@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/item";
 import { route } from "@/lib/routes";
 
-export default async function D4HViews_Index_Page(props: PageProps<`/orgs/[slug]/d4h`>) {
+export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`>) {
     const { slug } = await props.params;
 
     return (

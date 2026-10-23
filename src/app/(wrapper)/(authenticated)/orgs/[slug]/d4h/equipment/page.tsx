@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/item";
 import { route } from "@/lib/routes";
 
-export default async function D4HViewsModule_Equipment_Page(
+export default async function D4HModule_Equipment_Page(
     props: PageProps<`/orgs/[slug]/d4h/equipment`>,
 ) {
     const { slug } = await props.params;

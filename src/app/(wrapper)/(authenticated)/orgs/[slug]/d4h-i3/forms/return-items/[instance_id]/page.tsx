@@ -10,12 +10,12 @@ import { notFound } from "next/navigation";
 import { I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { I3ReturnItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
-import { I3Module_ReturnItems_FormInstance_Content } from "@/modules/i3/components/return-items-form-content";
+import { D4HI3Module_ReturnItems_FormInstance_Content } from "@/modules/d4h-i3/components/return-items-form-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export default async function I3Module_Return_FormInstance_Page(
+export default async function D4HI3Module_Return_FormInstance_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]">,
 ) {
     const { slug, instance_id } = await props.params;
@@ -59,7 +59,7 @@ export default async function I3Module_Return_FormInstance_Page(
 
     return (
         <HydrateClient>
-            <I3Module_ReturnItems_FormInstance_Content instanceId={instanceId} />
+            <D4HI3Module_ReturnItems_FormInstance_Content instanceId={instanceId} />
         </HydrateClient>
     );
 }

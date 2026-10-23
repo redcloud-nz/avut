@@ -5,6 +5,6 @@
  * Path: /orgs/[slug]/d4h-i3/inspect
  */
 
-export default async function I3_Inspect_Page() {
+export default async function D4HI3_Inspect_Page() {
     return <div>TODO</div>;
 }

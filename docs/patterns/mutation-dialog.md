@@ -422,7 +422,7 @@ recurring shapes have fixed rules:
     <Card>
       {/* row buttons: onClick={() => openVariantAction("update-variant", variant.id)} */}
       {activeVariant && (
-        <I3Module_UpdateVariant_Dialog
+        <D4HI3Module_UpdateVariant_Dialog
           template={template}
           variant={activeVariant}
           open={action === "update-variant"}

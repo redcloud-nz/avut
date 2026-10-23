@@ -13,6 +13,6 @@ import { PageLoadingSpinner } from "@/components/ui/loading";
  * page-to-page navigation beneath it instead of leaving the previous page inert with no
  * feedback while the next one's data resolves. See issue #212.
  */
-export default function I3_LoadingPage() {
+export default function D4HI3_LoadingPage() {
     return <PageLoadingSpinner />;
 }

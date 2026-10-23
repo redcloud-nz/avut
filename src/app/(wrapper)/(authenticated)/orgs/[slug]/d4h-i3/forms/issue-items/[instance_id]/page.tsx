@@ -9,12 +9,12 @@ import { notFound } from "next/navigation";
 
 import { I3IssueItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
-import { I3Module_IssueItems_FormInstance_Content } from "@/modules/i3/components/issue-items-form-content";
+import { D4HI3Module_IssueItems_FormInstance_Content } from "@/modules/d4h-i3/components/issue-items-form-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export default async function I3Module_Issue_FormInstance_Page(
+export default async function D4HI3Module_Issue_FormInstance_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/forms/issue-items/[instance_id]">,
 ) {
     const { slug, instance_id } = await props.params;
@@ -42,7 +42,7 @@ export default async function I3Module_Issue_FormInstance_Page(
 
     return (
         <HydrateClient>
-            <I3Module_IssueItems_FormInstance_Content instanceId={instanceId} />
+            <D4HI3Module_IssueItems_FormInstance_Content instanceId={instanceId} />
         </HydrateClient>
     );
 }

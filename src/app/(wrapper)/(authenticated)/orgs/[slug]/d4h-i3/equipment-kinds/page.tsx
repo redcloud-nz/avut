@@ -19,7 +19,7 @@ import { getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { requireOrganization } from "@/server/organization-access";
 
-export default async function I3Module_EquipmentKindsList_SelectTeam_Page(
+export default async function D4HI3Module_EquipmentKindsList_SelectTeam_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/equipment-kinds">,
 ) {
     const { slug } = await props.params;

@@ -10,7 +10,7 @@
 import { useOrganization } from "@/hooks/use-organization";
 import { NotEnabledError } from "@/lib/errors";
 
-export default function D4HViews_Layout(props: LayoutProps<"/orgs/[slug]/d4h">) {
+export default function D4H_Layout(props: LayoutProps<"/orgs/[slug]/d4h">) {
     const organization = useOrganization();
 
     if (!organization.isModuleEnabled("d4h")) {

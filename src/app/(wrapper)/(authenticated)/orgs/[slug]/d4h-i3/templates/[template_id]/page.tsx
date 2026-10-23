@@ -9,7 +9,7 @@ import { Metadata } from "next";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
-import { I3Module_Template_Content } from "@/modules/i3/components/templates/template-content";
+import { D4HI3Module_Template_Content } from "@/modules/d4h-i3/components/templates/template-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -31,7 +31,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 // A server page, so the `?action=` dialogs on this page don't remount it: a client page that read
 // its params with `use(props.params)` re-suspended and flashed the page spinner (#76).
-export default async function I3Module_Template_Page(props: Props) {
+export default async function D4HI3Module_Template_Page(props: Props) {
     const { slug, template_id } = await props.params;
     if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
@@ -42,7 +42,7 @@ export default async function I3Module_Template_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <I3Module_Template_Content templateId={templateId} />
+            <D4HI3Module_Template_Content templateId={templateId} />
         </HydrateClient>
     );
 }

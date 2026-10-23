@@ -31,7 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
-export default function D4HViewsModule_EquipmentItem_Page(
+export default function D4HModule_EquipmentItem_Page(
     props: PageProps<"/orgs/[slug]/d4h/equipment/items/[item_id]">,
 ) {
     const { item_id } = use(props.params);

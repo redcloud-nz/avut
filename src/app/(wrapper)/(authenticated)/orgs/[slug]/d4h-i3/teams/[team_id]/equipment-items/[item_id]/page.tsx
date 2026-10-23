@@ -11,7 +11,7 @@ import { notFound } from "next/navigation";
 import { TRPCError } from "@trpc/server";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { I3Module_EquipmentItem_Content } from "@/modules/i3/components/equipment-item/equipment-item-content";
+import { D4HI3Module_EquipmentItem_Content } from "@/modules/d4h-i3/components/equipment-item/equipment-item-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -50,7 +50,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     }
 }
 
-export default async function I3Module_EquipmentItem_Page(props: Props) {
+export default async function D4HI3Module_EquipmentItem_Page(props: Props) {
     const { slug, team_id, item_id } = await props.params;
     if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
@@ -81,7 +81,7 @@ export default async function I3Module_EquipmentItem_Page(props: Props) {
 
     return (
         <HydrateClient>
-            <I3Module_EquipmentItem_Content teamId={teamId} itemId={itemId} />
+            <D4HI3Module_EquipmentItem_Content teamId={teamId} itemId={itemId} />
         </HydrateClient>
     );
 }

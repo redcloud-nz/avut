@@ -17,9 +17,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { D4HViewsModule_EquipmentCategory_Kinds_List } from "@/modules/d4h-views/components/equipment/category-kinds";
+import { D4HModule_EquipmentCategory_Kinds_List } from "@/modules/d4h/components/equipment/category-kinds";
 
-export default function D4HViewsModule_EquipmentCategory_Page(
+export default function D4HModule_EquipmentCategory_Page(
     props: PageProps<"/orgs/[slug]/d4h/equipment/categories/[category_id]">,
 ) {
     const { category_id } = use(props.params);
@@ -92,7 +92,7 @@ export default function D4HViewsModule_EquipmentCategory_Page(
                             </DataList>
                         </CardContent>
                     </Card>
-                    <D4HViewsModule_EquipmentCategory_Kinds_List categoryId={category.id} />
+                    <D4HModule_EquipmentCategory_Kinds_List categoryId={category.id} />
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>

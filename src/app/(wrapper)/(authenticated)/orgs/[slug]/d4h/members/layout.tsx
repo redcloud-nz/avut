@@ -10,6 +10,6 @@ import { ClientOnly } from "@/components/client-only";
 import { PageLoadingSpinner } from "@/components/ui/loading";
 
 /** These pages read TanStack DB collections, which only work in the browser. */
-export default function D4HViews_Members_Layout(props: LayoutProps<"/orgs/[slug]/d4h/members">) {
+export default function D4H_Members_Layout(props: LayoutProps<"/orgs/[slug]/d4h/members">) {
     return <ClientOnly fallback={<PageLoadingSpinner />}>{props.children}</ClientOnly>;
 }

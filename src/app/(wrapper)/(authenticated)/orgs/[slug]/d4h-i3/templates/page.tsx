@@ -9,8 +9,8 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { route } from "@/lib/routes";
-import { I3Module_CreateTemplate_Dialog } from "@/modules/i3/components/templates/create-template";
-import { I3Module_TemplateList } from "@/modules/i3/components/templates/templates-list";
+import { D4HI3Module_CreateTemplate_Dialog } from "@/modules/d4h-i3/components/templates/create-template";
+import { D4HI3Module_TemplateList } from "@/modules/d4h-i3/components/templates/templates-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -19,7 +19,7 @@ export const metadata = {
     title: "I3 Templates",
 };
 
-export default async function I3Module_TemplateList_Page(
+export default async function D4HI3Module_TemplateList_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/templates">,
 ) {
     const { slug } = await props.params;
@@ -42,11 +42,11 @@ export default async function I3Module_TemplateList_Page(
                         <Saratoga.Title>I3 Templates</Saratoga.Title>
                         <Saratoga.Actions>
                             <Protect permissions={{ i3Template: ["create"] }}>
-                                <I3Module_CreateTemplate_Dialog />
+                                <D4HI3Module_CreateTemplate_Dialog />
                             </Protect>
                         </Saratoga.Actions>
                     </Saratoga.Header>
-                    <I3Module_TemplateList />
+                    <D4HI3Module_TemplateList />
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </HydrateClient>

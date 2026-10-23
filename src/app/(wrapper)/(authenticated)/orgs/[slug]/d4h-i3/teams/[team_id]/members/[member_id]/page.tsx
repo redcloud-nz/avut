@@ -35,10 +35,10 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
-import { I3Module_ReturnedBadge } from "@/modules/i3/components/returned-badge";
+import { D4HI3Module_ReturnedBadge } from "@/modules/d4h-i3/components/returned-badge";
 import { trpc } from "@/trpc/client";
 
-export default function I3Module_Team_MemberItems_Page(
+export default function D4HI3Module_Team_MemberItems_Page(
     props: PageProps<"/orgs/[slug]/d4h-i3/teams/[team_id]/members/[member_id]">,
 ) {
     const { member_id, team_id } = use(props.params);
@@ -316,7 +316,7 @@ export default function I3Module_Team_MemberItems_Page(
                                                             {returnedIds.has(item.id) && (
                                                                 <>
                                                                     {" "}
-                                                                    <I3Module_ReturnedBadge />
+                                                                    <D4HI3Module_ReturnedBadge />
                                                                 </>
                                                             )}
                                                         </TableCell>

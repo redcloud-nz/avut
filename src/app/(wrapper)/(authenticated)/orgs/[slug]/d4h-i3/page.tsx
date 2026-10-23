@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/item";
 import { route } from "@/lib/routes";
 
-export default async function I3_Index_Page(props: PageProps<`/orgs/[slug]/d4h-i3`>) {
+export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4h-i3`>) {
     const { slug } = await props.params;
 
     return (
