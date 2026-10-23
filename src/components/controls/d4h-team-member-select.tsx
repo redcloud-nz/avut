@@ -88,7 +88,7 @@ export function D4HTeamMemberSelect({
         <Select value={value.id == 0 ? "" : value.id + ""} onValueChange={handleChange}>
             <SelectTrigger {...slotProps.trigger}>
                 <SelectValue placeholder="Select a recipient" {...slotProps.value}>
-                    {value.name}
+                    {members.find((member) => member.id === value.id)?.name ?? value.name}
                     {selectedTeam && groups.length > 1 && (
                         <span className="text-muted-foreground">{selectedTeam.title}</span>
                     )}
@@ -104,7 +104,11 @@ export function D4HTeamMemberSelect({
                                 {team.title}
                             </SelectLabel>
                             {teamMembers.map((member) => (
-                                <SelectItem key={member.id} value={member.id + ""}>
+                                <SelectItem
+                                    key={member.id}
+                                    value={member.id + ""}
+                                    className="scroll-mt-8"
+                                >
                                     {member.name}
                                 </SelectItem>
                             ))}
