@@ -3,7 +3,13 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import type { OrganizationModuleId } from "@/lib/modules";
+import {
+    Modules,
+    requiredModuleOf,
+    type OrganizationModuleDef,
+    type OrganizationModuleId,
+} from "@/lib/modules";
+import type { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 /**
  * Environment-level availability of every org-scoped module, keyed by id.
@@ -22,14 +28,36 @@ export const FLAGGED_MODULE_IDS = [
 ] as const satisfies readonly OrganizationModuleId[];
 
 /**
- * Whether an org-scoped module is usable: its Vercel flag isn't off for this deployment, and
- * the organization has it on (or it's `alwaysOn`). The one rule `OrganizationClient.isModuleEnabled`
- * and the system-admin screens, which sit outside any one organization, both apply.
+ * Whether the organization has `moduleId` switched on in its settings, as a lookup for
+ * {@link isModuleUsable}. Modules without a settings entry (`org-admin`) read as off here;
+ * `isModuleUsable` handles `alwaysOn` itself.
+ */
+export function enabledInSettings(
+    settings: OrganizationSettings,
+): (moduleId: OrganizationModuleId) => boolean {
+    return (moduleId) =>
+        settings.modules[moduleId as keyof OrganizationSettings["modules"]]?.enabled === true;
+}
+
+/**
+ * Whether an org-scoped module is usable: its Vercel flag isn't off for this deployment, the
+ * organization has it on (or it's `alwaysOn`), and the module it `requires`, if any, is usable
+ * too. The one rule `OrganizationClient.isModuleEnabled`, the server pages and the system-admin
+ * screens, which sit outside any one organization, all apply.
+ *
+ * @param isEnabled Whether the organization has a module switched on in its settings. Takes a
+ *     lookup rather than a boolean because the rule also reads the required module's setting.
  */
 export function isModuleUsable(
     moduleFlags: ModuleFlagState,
     moduleId: OrganizationModuleId,
-    enabledForOrganization: boolean,
+    isEnabled: (moduleId: OrganizationModuleId) => boolean,
 ): boolean {
-    return moduleFlags[moduleId] !== false && enabledForOrganization;
+    if (moduleFlags[moduleId] === false) return false;
+
+    const moduleDef: OrganizationModuleDef = Modules[moduleId];
+    if (moduleDef.alwaysOn !== true && !isEnabled(moduleId)) return false;
+
+    const required = requiredModuleOf(moduleId);
+    return required === undefined || isModuleUsable(moduleFlags, required, isEnabled);
 }

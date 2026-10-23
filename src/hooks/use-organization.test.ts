@@ -46,18 +46,24 @@ describe("OrganizationClient.isModuleEnabled", () => {
     it("requires both the flag and the org setting for a flag-gated module", () => {
         expect(makeClient({}).isModuleEnabled("d4h-i3")).toBe(false); // setting defaults off
 
-        expect(makeClient({ enabled: { "d4h-i3": true } }).isModuleEnabled("d4h-i3")).toBe(true);
+        expect(
+            makeClient({ enabled: { d4h: true, "d4h-i3": true } }).isModuleEnabled("d4h-i3"),
+        ).toBe(true);
 
         expect(
             makeClient({
                 moduleFlags: { "d4h-i3": false },
-                enabled: { "d4h-i3": true },
+                enabled: { d4h: true, "d4h-i3": true },
             }).isModuleEnabled("d4h-i3"),
         ).toBe(false);
 
         expect(makeClient({ moduleFlags: { "d4h-i3": false } }).isModuleEnabled("d4h-i3")).toBe(
             false,
         );
+    });
+
+    it("keeps D4H I3 off while the D4H module it requires is off", () => {
+        expect(makeClient({ enabled: { "d4h-i3": true } }).isModuleEnabled("d4h-i3")).toBe(false);
     });
 
     it("treats a module without a flag as governed by its setting alone", () => {

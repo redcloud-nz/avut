@@ -69,7 +69,9 @@ export function SystemAdmin_Organization_Content({
     // Which specialty roles are offered follows the organization's enabled modules and the
     // modules' Vercel flags, as it does for the organization's own admins.
     const moduleGatedRoles = OrganizationRole.moduleGatedOptions((id) =>
-        isModuleUsable(moduleFlags, id, organization.enabledModules.includes(id)),
+        isModuleUsable(moduleFlags, id, (moduleId) =>
+            organization.enabledModules.includes(moduleId),
+        ),
     );
     const ownerCount = organization.members.filter((m) => hasOwnerRole(m.role)).length;
 

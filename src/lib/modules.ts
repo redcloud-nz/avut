@@ -67,6 +67,12 @@ export interface OrganizationModuleDef extends BaseModuleDef {
     scope: "organization";
     /** Builds the org-scoped href. Present only for modules that have a page. */
     href?: (slug: string) => Route;
+    /**
+     * Another org module this one depends on. The module is usable only while that one is, and
+     * the settings write path keeps the pair consistent: turning the required module off turns
+     * this one off too, and turning this one on while the required module is off is refused.
+     */
+    requires?: OrganizationModuleId;
 }
 
 export interface UserModuleDef extends BaseModuleDef {
@@ -123,6 +129,7 @@ export const Modules = {
         icon: ShirtIcon,
         segment: "i3",
         scope: "organization",
+        requires: "d4h",
         href: (slug) => route("/orgs/[slug]/i3", { slug }),
     },
     notes: {
@@ -180,6 +187,23 @@ export const Modules = {
 
 /** All modules in display order. */
 export const moduleList: readonly ModuleDef[] = Object.values(Modules);
+
+/**
+ * The module `moduleId` requires, if any. Read through an `OrganizationModuleDef`-typed lookup
+ * because most registry entries have no `requires` property under `satisfies`.
+ */
+export function requiredModuleOf(moduleId: OrganizationModuleId): OrganizationModuleId | undefined {
+    const moduleDef: OrganizationModuleDef = Modules[moduleId];
+    return moduleDef.requires;
+}
+
+/** The org modules whose `requires` is `moduleId`, in display order. */
+export function modulesRequiring(moduleId: OrganizationModuleId): OrganizationModuleId[] {
+    return moduleList
+        .filter((m): m is OrganizationModuleDef => m.scope === "organization")
+        .filter((m) => m.requires === moduleId)
+        .map((m) => m.id);
+}
 
 /** Settings-gated module ids (org-scoped modules except always-on `org-admin`). */
 export const configurableModuleIds = moduleList

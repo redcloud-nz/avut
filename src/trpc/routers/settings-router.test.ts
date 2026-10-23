@@ -145,6 +145,12 @@ describe("settings organization settings", () => {
     });
 
     it("updates an existing config row on a fully materialised organization", async () => {
+        // D4H I3 requires D4H.
+        await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.seededOrg,
+            update: { slice: "modules.d4h", patch: { enabled: true } },
+        });
+
         const result = await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
             update: { slice: "modules.d4h-i3", patch: { enabled: true, storage: "AVUT" } },
@@ -269,6 +275,105 @@ describe("settings organization settings", () => {
                 update: { slice: "personnel", patch: { autoLinkOnPersonCreate: true } },
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("settings module requirements", () => {
+    const T = {
+        siteAdmin: UserId.create(),
+        org: OrganizationId.create(),
+        // D4H off and D4H I3 stored on — an org left as it was by the D4H rename.
+        heldOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: T.siteAdmin,
+                name: "Site Admin",
+                email: `${T.siteAdmin}@x.test`,
+                emailVerified: true,
+                createdAt: new Date(),
+            },
+        });
+        for (const [id, slug] of [
+            [T.org, "requirements"],
+            [T.heldOrg, "held"],
+        ] as const) {
+            await db.organization.create({
+                data: { id, name: slug, slug, createdAt: new Date() },
+            });
+        }
+        await db.organizationConfig.create({
+            data: { organizationId: T.heldOrg, key: "modules.d4h-i3.enabled", value: true },
+        });
+    });
+
+    const caller = () =>
+        settingsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.siteAdmin, role: "admin" },
+                prisma: db,
+            }),
+        );
+
+    const update = (
+        organizationId: OrganizationId,
+        slice: "modules.d4h" | "modules.d4h-i3" | "modules.notes",
+        enabled: boolean,
+    ) =>
+        caller().updateOrganizationSettingsSlice({
+            organizationId,
+            update: { slice, patch: { enabled } },
+        });
+
+    it("refuses to turn D4H I3 on while D4H is off", async () => {
+        await expect(update(T.org, "modules.d4h-i3", true)).rejects.toMatchObject({
+            code: "CONFLICT",
+            message: expect.stringContaining("Turn on D4H first"),
+        });
+
+        const rows = await db.organizationConfig.findMany({ where: { organizationId: T.org } });
+        expect(rows).toEqual([]);
+    });
+
+    it("turns D4H I3 off with D4H, in the same audit entry", async () => {
+        await update(T.org, "modules.d4h", true);
+        await update(T.org, "modules.d4h-i3", true);
+
+        const settings = await update(T.org, "modules.d4h", false);
+
+        expect(settings.modules.d4h.enabled).toBe(false);
+        expect(settings.modules["d4h-i3"].enabled).toBe(false);
+
+        const rows = await db.organizationConfig.findMany({ where: { organizationId: T.org } });
+        expect(rows).toEqual([]);
+
+        const entries = await db.logEntry.findMany({
+            where: { organizationId: T.org, objectType: "OrganizationSettings" },
+        });
+        expect(entries.at(-1)?.description).toBe("Updated modules.d4h settings");
+        expect(entries.at(-1)?.changes).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ path: ["modules", "d4h", "enabled"], curr: false }),
+                expect.objectContaining({ path: ["modules", "d4h-i3", "enabled"], curr: false }),
+            ]),
+        );
+    });
+
+    it("leaves an unrelated slice alone", async () => {
+        const settings = await update(T.heldOrg, "modules.notes", true);
+
+        expect(settings.modules.notes.enabled).toBe(true);
+        // Already on before the write with D4H off: held off by `isModuleUsable`, not rewritten.
+        expect(settings.modules["d4h-i3"].enabled).toBe(true);
+    });
+
+    it("still lets a held-off D4H I3 be turned off", async () => {
+        const settings = await update(T.heldOrg, "modules.d4h-i3", false);
+
+        expect(settings.modules["d4h-i3"].enabled).toBe(false);
     });
 });
 

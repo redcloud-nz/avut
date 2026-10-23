@@ -51,7 +51,7 @@ Renames the two D4H-facing modules: their ids, URL segments, settings keys, fold
     - Leave every internal name listed in Decisions alone.
   - **Done when:** `grep -rnE '"d4h-views"|\bi3:|"i3"' src` finds only the kept names (roles, router, forms, flag key, `i3Template`), plus the `segment`/`href`/route strings Task 4 moves. The two disable dialogs open separately. `npm run check -- --all` passes (it runs `help-cards.test.ts` and `glossary.test.ts`, which a content-only change doesn't trigger), and the migration SQL reads correctly. (The orchestrator applies it to the branch DB, checks with a read-only query that no `modules.i3.` or `modules.d4h-views.` keys remain, and restarts the dev server, since `getOrganizationSettings` is `"use cache"`.)
 
-- [ ] **Task 2: D4H I3 requires D4H**
+- [x] **Task 2: D4H I3 requires D4H** (feat(modules): make D4H I3 require D4H (#452))
   - **Files:** `src/lib/modules.ts`, `src/lib/module-flags.ts` (+ test if there is one, else new), `src/hooks/use-organization.tsx` (+ test), `src/server/module-flags.ts` (+ test), `src/app/(wrapper)/(authenticated)/orgs/[slug]/page.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/notes/[note_id]/page.tsx` and `…/history/page.tsx`, `src/modules/system-admin/components/organizations/organization-content.tsx`, `src/server/services/organization-settings.ts` and/or `src/server/settings-store.ts`, `src/trpc/routers/settings-router.ts` (+ test), `src/client/settings-effects.ts` (+ test).
   - **Do:**
     - Add `requires?: OrganizationModuleId` to `OrganizationModuleDef`, and set `requires: "d4h"` on `d4h-i3`. Read it through an `OrganizationModuleDef`-typed lookup, because with `satisfies` most `Modules[id]` union members have no `requires` property.
@@ -110,3 +110,7 @@ D4H Views and I3 are renamed to D4H and D4H I3, and D4H I3 now needs D4H. Move a
 ## Parked
 
 (none yet)
+
+## Review notes
+
+- **Task 2:** `src/client/settings-effects.ts` (`mergeOrganizationSlice`) merges dependents' `enabled` from the response on every save to a module slice. That reopens the out-of-order race `mergePatchedFields` closes: enable D4H, then quickly enable D4H I3, and a late D4H response overwrites D4H I3 back to off in the cache. Merge dependents only when the patch sets `enabled: false` (pass `update.patch` through), and add a test for it.

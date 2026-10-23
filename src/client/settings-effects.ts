@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { modulesRequiring, type OrganizationModuleId } from "@/lib/modules";
 import {
     OrganizationSettings,
     OrganizationSettingsSlices,
@@ -49,6 +50,29 @@ function mergePatchedFields<T extends object>(
 }
 
 /**
+ * `cached` with the patched fields of `updated` merged in, as {@link mergePatchedFields}, plus
+ * `enabled` of every module that `requires` the patched module. Turning a module off on the
+ * server also turns its dependents off (`enforceModuleRequirements`), so that's the one field
+ * outside the patch a module save is authoritative for.
+ */
+function mergeOrganizationSlice(
+    cached: OrganizationSettings,
+    updated: OrganizationSettings,
+    path: string[],
+    fields: string[],
+): OrganizationSettings {
+    let merged = mergePatchedFields(cached, updated, path, fields);
+
+    if (path[0] === "modules" && path.length === 2) {
+        for (const dependent of modulesRequiring(path[1] as OrganizationModuleId)) {
+            merged = mergePatchedFields(merged, updated, ["modules", dependent], ["enabled"]);
+        }
+    }
+
+    return merged;
+}
+
+/**
  * Cache effects for `settings` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
@@ -57,7 +81,7 @@ export const settingsEffects = createEffects<"settings">()({
     updateOrganizationSettingsSlice: ({ organizationId, update }, updated) => [
         write(trpc.settings.getOrganizationSettings.queryKey({ organizationId }), (cached) =>
             cached
-                ? mergePatchedFields<OrganizationSettings>(
+                ? mergeOrganizationSlice(
                       cached,
                       updated,
                       OrganizationSettingsSlices.pathOf(update.slice),
