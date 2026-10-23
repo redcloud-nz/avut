@@ -5,6 +5,7 @@
 
 import "server-only";
 
+import { ForbiddenError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import {
     D4HEquipmentItemDetail,
@@ -15,7 +16,7 @@ import { getD4HFetchClient } from "./client";
 
 /**
  * Fetch one equipment item, uncached. Returns `null` when D4H answers 404 (the item was deleted,
- * or never existed), and throws on any other failure.
+ * or never existed), throws `ForbiddenError` on a 403, and throws on any other failure.
  *
  * The parsed item has no `location`: see `D4HEquipmentItemDetail`.
  */
@@ -30,6 +31,11 @@ export async function fetchD4HEquipmentItem(
     );
 
     if (response.status === 404) return null;
+    if (response.status === 403) {
+        throw new ForbiddenError(
+            `D4H refused access to equipment item ${itemId} in team ${d4hTeamId}.`,
+        );
+    }
     // `error` is undefined for a non-ok response with an empty body, so check the response.
     if (!response.ok) {
         throw new Error(

@@ -8,6 +8,7 @@ import "server-only";
 import { diffObject } from "@/lib/diff";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { D4HTask, D4HTaskId, type D4HRetireTaskPayload } from "@/lib/schemas/d4h-task";
+import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -168,19 +169,21 @@ export async function markApplied(ctx: OrgServiceContext, taskId: D4HTaskId): Pr
     const existing = await requireOpen(ctx, taskId);
     const appliedAt = new Date();
 
-    const [updated] = await ctx.prisma.$transaction([
-        ctx.prisma.d4HTask.update({
-            where: { id: taskId, organizationId: ctx.organizationId },
-            data: { status: "Done", appliedById: ctx.userId, appliedAt },
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "D4HTask",
-            objectId: taskId,
-            changes: diffObject({ status: existing.status }, { status: "Done" }),
-            description: `Confirmed D4H task applied for ${existing.itemLabel}.`,
-        }),
-    ]);
+    const [updated] = await ctx.prisma
+        .$transaction([
+            ctx.prisma.d4HTask.update({
+                where: { id: taskId, organizationId: ctx.organizationId, status: "Open" },
+                data: { status: "Done", appliedById: ctx.userId, appliedAt },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "D4HTask",
+                objectId: taskId,
+                changes: diffObject({ status: existing.status }, { status: "Done" }),
+                description: `Confirmed D4H task applied for ${existing.itemLabel}.`,
+            }),
+        ])
+        .catch(rethrowLostRace(taskId));
 
     return D4HTask.fromRecord(updated);
 }
@@ -194,24 +197,47 @@ export async function markApplied(ctx: OrgServiceContext, taskId: D4HTaskId): Pr
 export async function dismiss(ctx: OrgServiceContext, taskId: D4HTaskId): Promise<D4HTask> {
     const existing = await requireOpen(ctx, taskId);
 
-    const [updated] = await ctx.prisma.$transaction([
-        ctx.prisma.d4HTask.update({
-            where: { id: taskId, organizationId: ctx.organizationId },
-            data: { status: "Dismissed" },
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "D4HTask",
-            objectId: taskId,
-            changes: diffObject({ status: existing.status }, { status: "Dismissed" }),
-            description: `Dismissed D4H task for ${existing.itemLabel}.`,
-        }),
-    ]);
+    const [updated] = await ctx.prisma
+        .$transaction([
+            ctx.prisma.d4HTask.update({
+                where: { id: taskId, organizationId: ctx.organizationId, status: "Open" },
+                data: { status: "Dismissed" },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "D4HTask",
+                objectId: taskId,
+                changes: diffObject({ status: existing.status }, { status: "Dismissed" }),
+                description: `Dismissed D4H task for ${existing.itemLabel}.`,
+            }),
+        ])
+        .catch(rethrowLostRace(taskId));
 
     return D4HTask.fromRecord(updated);
 }
 
-async function requireOpen(ctx: OrgServiceContext, taskId: D4HTaskId): Promise<D4HTask> {
+/**
+ * A `.catch` handler for a write guarded by `status: "Open"`: the task was Open at `requireOpen`
+ * but closed (e.g. from another tab) before the write, so Prisma raises `P2025`. Report it as the
+ * `ConflictError` the pre-check would have given, not a 500.
+ */
+function rethrowLostRace(taskId: D4HTaskId) {
+    return (error: unknown): never => {
+        if (isPrismaRecordNotFound(error)) {
+            throw new ConflictError(
+                `D4HTask(id=${taskId}) is no longer Open; only an Open task can be changed.`,
+            );
+        }
+        throw error;
+    };
+}
+
+/**
+ * Fetch a D4H task by ID and ensure it is still `Open`.
+ * @throws NotFoundError if the task is not found in the organization.
+ * @throws ConflictError if the task is not `Open`.
+ */
+export async function requireOpen(ctx: OrgServiceContext, taskId: D4HTaskId): Promise<D4HTask> {
     const existing = await requireById(ctx, taskId);
 
     if (existing.status !== "Open") {

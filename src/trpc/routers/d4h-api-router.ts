@@ -622,10 +622,15 @@ export const d4hApiRouter = createTrpcRouter({
 
             await patchD4HEquipmentItem(accessToken, teamId, itemId, update);
 
-            const after = await fetchD4HEquipmentItem(accessToken, teamId, itemId);
-            if (!after) {
-                throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
-            }
+            // The PATCH has landed by now, so a failed re-fetch mustn't leave it unlogged or
+            // report it as failed: fall back to the item as the PATCH should have left it.
+            const after = await fetchD4HEquipmentItem(accessToken, teamId, itemId).catch(
+                (err: unknown) => {
+                    console.error(`Failed to re-fetch D4H equipment item ${itemId}:`, err);
+                    return null;
+                },
+            );
+            const result = after ?? { ...before, ...R.pick(update, PATCHABLE_ITEM_FIELDS) };
 
             await ctx.logEvent({
                 action: "Update",
@@ -633,10 +638,10 @@ export const d4hApiRouter = createTrpcRouter({
                 objectId: String(itemId),
                 changes: diffObject(
                     R.pick(before, PATCHABLE_ITEM_FIELDS),
-                    R.pick(after, PATCHABLE_ITEM_FIELDS),
+                    R.pick(result, PATCHABLE_ITEM_FIELDS),
                 ),
             });
 
-            return after;
+            return result;
         }),
 });

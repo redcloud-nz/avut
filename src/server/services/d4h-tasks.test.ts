@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { D4HTaskId } from "@/lib/schemas/d4h-task";
@@ -200,6 +200,68 @@ describe("d4h-tasks", () => {
             const dismissed = await retire(T.teamC, 6);
             await dismiss(ctx(), dismissed.id);
             await expect(markApplied(ctx(), dismissed.id)).rejects.toThrow(ConflictError);
+        });
+    });
+
+    describe("a write that loses the race to close the task", () => {
+        /**
+         * prisma-mock can't interleave two writes, so fake the loser: the up-front read sees the
+         * task Open, and the `status: "Open"`-guarded update matches no row (P2025).
+         */
+        function fakeLostRace() {
+            const findUnique = db.d4HTask.findUnique.bind(db.d4HTask);
+            const findSpy = vi
+                .spyOn(db.d4HTask, "findUnique")
+                .mockImplementationOnce((async (args: Parameters<typeof findUnique>[0]) => ({
+                    ...(await findUnique(args)),
+                    status: "Open",
+                })) as unknown as typeof findUnique);
+            const updateSpy = vi
+                .spyOn(db.d4HTask, "update")
+                .mockRejectedValueOnce(
+                    Object.assign(new Error("Record to update not found."), { code: "P2025" }),
+                );
+            return () => {
+                findSpy.mockRestore();
+                updateSpy.mockRestore();
+            };
+        }
+
+        it("guards the update on status Open", async () => {
+            const task = await retire(T.teamC, 20);
+            const updateSpy = vi.spyOn(db.d4HTask, "update");
+            try {
+                await markApplied(ctx(), task.id);
+                expect(updateSpy.mock.calls[0][0].where).toMatchObject({ status: "Open" });
+            } finally {
+                updateSpy.mockRestore();
+            }
+        });
+
+        it("markApplied reports it as ConflictError", async () => {
+            const task = await retire(T.teamC, 21);
+            await dismiss(ctx(), task.id);
+
+            const restore = fakeLostRace();
+            try {
+                await expect(markApplied(ctx(), task.id)).rejects.toThrow(ConflictError);
+            } finally {
+                restore();
+            }
+            expect((await requireById(ctx(), task.id)).status).toBe("Dismissed");
+        });
+
+        it("dismiss reports it as ConflictError", async () => {
+            const task = await retire(T.teamC, 22);
+            await markApplied(ctx(), task.id);
+
+            const restore = fakeLostRace();
+            try {
+                await expect(dismiss(ctx(), task.id)).rejects.toThrow(ConflictError);
+            } finally {
+                restore();
+            }
+            expect((await requireById(ctx(), task.id)).status).toBe("Done");
         });
     });
 

@@ -91,6 +91,10 @@ export class FormProcessingPipeline<
     /**
      * Execute all stages like `execute`, and also return the output accumulated from the stages that ran.
      * The output is `Partial` because a stage that errors ends the pipeline, so later stages' output is missing.
+     *
+     * The output holds everything every stage returned, which can include secrets such as the D4H
+     * access token. A caller that sends it to the client must pick the fields it needs, never
+     * return `output` as-is (give the procedure an `.output()` schema to enforce it).
      * @param formInstanceId The unique identifier for this instance of form processing, used for logging and tracking purposes.
      * @param formData The data submitted with the form that will be processed by the pipeline stages.
      * @param context The custom context object that will be passed to each stage of the pipeline.

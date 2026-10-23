@@ -5,6 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ForbiddenError } from "@/lib/errors";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 
@@ -90,6 +91,15 @@ describe("fetchD4HEquipmentItem", () => {
         );
 
         await expect(fetchD4HEquipmentItem(token, 7, 1234)).resolves.toBeNull();
+    });
+
+    it("throws ForbiddenError on a 403", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ message: "Forbidden" }, { status: 403 })),
+        );
+
+        await expect(fetchD4HEquipmentItem(token, 7, 1234)).rejects.toThrow(ForbiddenError);
     });
 
     it("throws on any other failure", async () => {

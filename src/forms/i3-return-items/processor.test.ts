@@ -184,7 +184,11 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(GET).toHaveBeenCalledWith("/v3/{context}/{contextId}/equipment", {
             params: {
                 path: { context: "team", contextId: TEAM_ID },
-                query: expect.objectContaining({ only_current: true, member_id: MEMBER_ID }),
+                query: expect.objectContaining({
+                    id: [1, 2],
+                    only_current: true,
+                    member_id: MEMBER_ID,
+                }),
             },
         });
 
@@ -302,6 +306,16 @@ describe("I3ReturnItemsFormProcessor", () => {
 
         expect(output).toMatchObject({ returned: 1, failures: ["#1 Helmet: D4H said 500"] });
         expect((await db.d4HTask.findMany()).map((t) => t.resourceId)).toEqual([2]);
+    });
+
+    it("still succeeds, with the tasks queued, when the notification email fails", async () => {
+        vi.mocked(sendEmail).mockRejectedValueOnce(new Error("Resend is down"));
+
+        const { results, output } = await execute([1]);
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(output).toMatchObject({ returned: 1, failures: [] });
+        expect((await db.d4HTask.findMany()).map((t) => t.resourceId)).toEqual([1]);
     });
 
     it("opens no log batch when every item fails", async () => {

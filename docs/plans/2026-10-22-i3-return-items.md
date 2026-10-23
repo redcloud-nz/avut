@@ -363,15 +363,15 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 
 ## Review notes
 
-- (Group A, Task 4) `updateEquipmentItem`: if the post-PATCH re-fetch fails, the D4H change is unlogged and the user sees an error for a write that worked. Log `before` vs `{ ...before, ...update }` over the PATCHable fields when the re-fetch fails.
-- (Group A, Task 2) Make `kind.category` lenient (`.nullable().optional()`), with the UI falling back to no label, so one odd item can't block viewing/editing.
-- (Group A, Task 2) `fetchD4HEquipmentItem`: map a D4H 403 to `ForbiddenError` rather than a plain `Error` (currently a generic 500).
-- (Group A, Task 3) `executeWithOutput` JSDoc: callers must pick fields, never return `output` as-is (it holds the access token). The Return procedure's `.output()` enforces it.
-- (Group B, Task 6) `markApplied`/`dismiss`: the Open guard races (read then update). Add `status: "Open"` to the update `where` and map P2025 (or `updateMany` count 0) to `ConflictError`.
-- (Group B, Task 7) `checkTask`: throw `ConflictError` before any D4H call when the task is no longer Open (stale list in another tab).
-- (Group B, Task 7) `teamId`/`itemId` inputs: `z.number().int()`. Also align `src/lib/schemas/d4h-task.ts`'s copyright header with the other new files.
+- (Group A, Task 4) Resolved 2026-10-23: a failed re-fetch is logged to the console and the change is logged and returned as `{ ...before, ...update }` over the PATCHable fields. Was: `updateEquipmentItem`: if the post-PATCH re-fetch fails, the D4H change is unlogged and the user sees an error for a write that worked. Log `before` vs `{ ...before, ...update }` over the PATCHable fields when the re-fetch fails.
+- (Group A, Task 2) Resolved 2026-10-23 (4469317f): `kind.category` is gone from the detail schema; the item page reads the category name from `listEquipmentCategories`. Was: Make `kind.category` lenient (`.nullable().optional()`), with the UI falling back to no label, so one odd item can't block viewing/editing.
+- (Group A, Task 2) Resolved 2026-10-23: `fetchD4HEquipmentItem`: map a D4H 403 to `ForbiddenError` rather than a plain `Error` (currently a generic 500).
+- (Group A, Task 3) Resolved 2026-10-23: `executeWithOutput` JSDoc: callers must pick fields, never return `output` as-is (it holds the access token). The Return procedure's `.output()` enforces it.
+- (Group B, Task 6) Resolved 2026-10-23: `markApplied`/`dismiss`: the Open guard races (read then update). Add `status: "Open"` to the update `where` and map P2025 (or `updateMany` count 0) to `ConflictError`.
+- (Group B, Task 7) Resolved 2026-10-23: `checkTask`: throw `ConflictError` before any D4H call when the task is no longer Open (stale list in another tab).
+- (Group B, Task 7) Resolved 2026-10-23: `teamId`/`itemId` inputs: `z.number().int()`. Also align `src/lib/schemas/d4h-task.ts`'s copyright header with the other new files.
 - (Group C, Task 8) Resolved 2026-10-23: the task `itemLabel`, failure lines and email lines come from the fetched `before.ref`/`before.kind.title`; the client label is kept only for "not found".
-- (Group C, Task 8) Narrow the recipient-items query to the submitted ids (`id: [...]` alongside `member_id`) instead of `size: 10000`.
-- (Group C, Task 8) `NotifyAdmin`: catch and log a `sendEmail` failure, so a Return that already changed D4H and queued tasks isn't reported as failed (and its draft isn't left un-Processed).
+- (Group C, Task 8) Resolved 2026-10-23: Narrow the recipient-items query to the submitted ids (`id: [...]` alongside `member_id`) instead of `size: 10000`.
+- (Group C, Task 8) Resolved 2026-10-23 (Return only; Issue left as is): `NotifyAdmin`: catch and log a `sendEmail` failure, so a Return that already changed D4H and queued tasks isn't reported as failed (and its draft isn't left un-Processed).
 - (Group C, Task 8) Resolved 2026-10-23: Return no longer writes `notes`, so re-returning an item no longer duplicates a notes line. The now-unused team-detail mock and fake timers are gone from `processor.test.ts`.
 - (Group C, Task 8) Resolved 2026-10-23: Return no longer PATCHes, so there are no D4H PATCH failure lines to shorten.

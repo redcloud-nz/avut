@@ -39,7 +39,9 @@ export const d4hTasksRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { taskId } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
-            const task = await D4HTasks.requireById(ctx, taskId);
+            // A stale list (e.g. in another tab) can offer a task that's already closed: refuse
+            // before any D4H call.
+            const task = await D4HTasks.requireOpen(ctx, taskId);
             await requireD4HTeamPermission(accessToken, task.d4hTeamId, "Equipment", "RETIRE");
 
             const item = await fetchD4HEquipmentItem(accessToken, task.d4hTeamId, task.resourceId);
@@ -75,7 +77,7 @@ export const d4hTasksRouter = createTrpcRouter({
      * RETIRE permission on its team.
      */
     listItemTasks: organizationProcedure({ i3Item: ["update"] })
-        .input(z.object({ teamId: z.number(), itemId: z.number() }))
+        .input(z.object({ teamId: z.number().int(), itemId: z.number().int() }))
         .output(z.array(D4HTask.schema))
         .query(async ({ ctx, input: { teamId, itemId } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
@@ -147,7 +149,7 @@ export const d4hTasksRouter = createTrpcRouter({
      * it annotates, since it exposes only item ids.
      */
     listReturnedItemIds: organizationProcedure({ d4hEquipment: ["view"] })
-        .input(z.object({ teamId: z.number() }))
+        .input(z.object({ teamId: z.number().int() }))
         .output(z.array(z.number()))
         .query(async ({ ctx, input: { teamId } }) => {
             return D4HTasks.listOpenRetireItemIds(ctx, { d4hTeamId: teamId });

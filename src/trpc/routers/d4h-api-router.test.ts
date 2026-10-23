@@ -301,5 +301,33 @@ describe("d4hApiRouter equipment items", () => {
                 ]),
             );
         });
+
+        it("logs and returns the expected item when the re-fetch after the PATCH fails", async () => {
+            const itemId = ITEM_ID + 1;
+            vi.spyOn(console, "error").mockImplementationOnce(() => {});
+            vi.mocked(fetchD4HEquipmentItem)
+                .mockResolvedValueOnce(item())
+                .mockRejectedValueOnce(new Error("D4H said 500"));
+
+            const updated = await editor().updateEquipmentItem({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+                itemId,
+                status: "INACTIVE",
+            });
+
+            expect(updated.status).toBe("INACTIVE");
+            const entries = await db.logEntry.findMany({
+                where: { objectType: "D4HEquipmentItem", objectId: String(itemId) },
+            });
+            expect(entries).toHaveLength(1);
+            expect(entries[0].changes).toEqual([
+                expect.objectContaining({
+                    path: ["status"],
+                    prev: "OPERATIONAL",
+                    curr: "INACTIVE",
+                }),
+            ]);
+        });
     });
 });

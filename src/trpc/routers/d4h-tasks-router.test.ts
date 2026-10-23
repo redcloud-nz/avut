@@ -141,6 +141,8 @@ describe("d4hTasksRouter", () => {
         ids.missing = await retire(RETIRE_TEAM, 401);
         ids.dismissed = await retire(RETIRE_TEAM, 501);
         ids.otherTeam = await retire(OTHER_TEAM, 601);
+        ids.closed = await retire(RETIRE_TEAM, 701);
+        await db.d4HTask.update({ where: { id: ids.closed }, data: { status: "Dismissed" } });
     });
 
     beforeEach(() => {
@@ -293,6 +295,15 @@ describe("d4hTasksRouter", () => {
                 code: "FORBIDDEN",
                 message: "You need D4H's Equipment RETIRE permission on Other Team to do this.",
             });
+            expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
+        });
+
+        it("throws CONFLICT for a task that's no longer Open, before any D4H call", async () => {
+            await expect(
+                editor().checkTask({ organizationId: T.org, taskId: ids.closed }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+            expect(fetchD4HWhoami).not.toHaveBeenCalled();
+            expect(fetchD4HWhoamiCached).not.toHaveBeenCalled();
             expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
         });
     });

@@ -68,7 +68,12 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
             const { recipient, comments } = ctx.formData;
             const teamId = recipient.teamId;
 
-            const heldItemIds = await fetchMemberCurrentItemIds(accessToken, teamId, recipient.id);
+            const heldItemIds = await fetchMemberCurrentItemIds(
+                accessToken,
+                teamId,
+                recipient.id,
+                ctx.formData.items.map((item) => item.itemId),
+            );
 
             // Carried on each retire task for whoever applies it. A Return makes no D4H write,
             // so the task is the only place who received the item and the comments are kept.
@@ -149,37 +154,49 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
     .stage({
         stageName: "NotifyAdmin",
         stageFn: async (ctx, { returnedItems, failures }) => {
-            await sendEmail({
-                from: NoReplyEmailAddress,
-                to: "delivered+i3-notify@resend.dev",
-                subject: "Items Returned by " + ctx.formData.recipient.name,
-                react: createElement(I3ReturnItemsNotificationEmail, {
-                    receiver: { name: ctx.auth.user.name },
-                    emailTarget: { email: "delivered+i3-notify@resend.dev" },
-                    formData: ctx.formData,
-                    returnedItems,
-                    failures,
-                }),
-            });
+            // The tasks are already queued, so a failed email mustn't report the Return as
+            // failed (or leave its draft un-Processed). Log it and carry on.
+            try {
+                await sendEmail({
+                    from: NoReplyEmailAddress,
+                    to: "delivered+i3-notify@resend.dev",
+                    subject: "Items Returned by " + ctx.formData.recipient.name,
+                    react: createElement(I3ReturnItemsNotificationEmail, {
+                        receiver: { name: ctx.auth.user.name },
+                        emailTarget: { email: "delivered+i3-notify@resend.dev" },
+                        formData: ctx.formData,
+                        returnedItems,
+                        failures,
+                    }),
+                });
+            } catch (err) {
+                ctx.logger.error("Failed to send the Return Items notification email", err);
+            }
         },
     })
     .build();
 
 /**
- * The ids of the items a member currently holds. Read from a `member_id`-filtered list because
- * the item schema strips `location` (see `D4HEquipmentItemDetail`).
+ * Which of the given items a member currently holds. Read from a `member_id`-filtered list, narrowed
+ * to those ids, because the item schema strips `location` (see `D4HEquipmentItemDetail`).
  */
 async function fetchMemberCurrentItemIds(
     accessToken: D4HAccessToken_ServerOnly,
     teamId: number,
     memberId: number,
+    itemIds: number[],
 ): Promise<Set<number>> {
     const { data, error, response } = await getD4HFetchClient(accessToken).GET(
         "/v3/{context}/{contextId}/equipment",
         {
             params: {
                 path: { context: "team", contextId: teamId },
-                query: { size: 10000, only_current: true, member_id: memberId },
+                query: {
+                    id: itemIds,
+                    size: itemIds.length,
+                    only_current: true,
+                    member_id: memberId,
+                },
             },
         },
     );
