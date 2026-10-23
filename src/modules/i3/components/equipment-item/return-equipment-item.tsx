@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, type RefObject } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -42,24 +42,29 @@ const FormSchema = z.object({ comments: z.string() });
  * no email and no draft. The param doesn't open the dialog unless `canReturn` (the viewer may
  * return the item, it's issued to a member, and it isn't already Returned), so a hand-typed URL
  * does nothing.
+ *
+ * Its opener is a menu item, gone by the time the dialog closes, so pass `returnFocusRef` (the
+ * menu's button) for focus to land on instead.
  */
 export function I3Module_ReturnEquipmentItem_Dialog({
     teamId,
     itemId,
     itemLabel,
-    holderName,
+    holder,
     canReturn,
+    returnFocusRef,
 }: {
     teamId: number;
     itemId: number;
     /** `#<ref> <kind title>`. */
     itemLabel: string;
-    /** The member the item is issued to. */
-    holderName: string;
+    /** The member the item is issued to; `name` is `null` when they aren't in the member list. */
+    holder: { id: number; name: string | null };
     canReturn: boolean;
+    returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
     const organization = useOrganization();
-    const returnFocus = useReturnFocus();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["return"] as const));
     const dialogOpen = action === "return" && canReturn;
@@ -127,7 +132,7 @@ export function I3Module_ReturnEquipmentItem_Dialog({
                         <FieldGroup>
                             <Field>
                                 <FieldLabel>Returned by</FieldLabel>
-                                <div>{holderName}</div>
+                                <div>{holder.name ?? `Member #${holder.id}`}</div>
                             </Field>
                             <Field>
                                 <FieldLabel>Received by</FieldLabel>

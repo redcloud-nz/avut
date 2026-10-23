@@ -6,6 +6,7 @@
 
 import { ExternalLinkIcon, PackageCheckIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import type { RefObject } from "react";
 
 import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -25,6 +26,9 @@ import { updateEquipmentItemDisabledReason } from "./update-equipment-item";
  *
  * A disabled item shows why under its label, since a disabled menu item takes no hover for a
  * tooltip.
+ *
+ * `triggerRef` lands on the menu's own button, which stays mounted after the menu closes, so the
+ * dialogs its items open can return focus there.
  */
 export function I3Module_EquipmentItem_Menu({
     d4hUrl,
@@ -32,6 +36,7 @@ export function I3Module_EquipmentItem_Menu({
     canUpdateInD4H,
     hasMemberHolder,
     isReturned,
+    triggerRef,
 }: {
     /** D4H's view page for the item. */
     d4hUrl: string;
@@ -42,6 +47,7 @@ export function I3Module_EquipmentItem_Menu({
     hasMemberHolder: boolean;
     /** The item already has an open retire task. */
     isReturned: boolean;
+    triggerRef?: RefObject<HTMLButtonElement | null>;
 }) {
     const [, setAction] = useQueryState(
         "action",
@@ -51,7 +57,7 @@ export function I3Module_EquipmentItem_Menu({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Actions">
+                <Button ref={triggerRef} variant="ghost" size="icon" aria-label="Actions">
                     <DropdownMenuTriggerIcon />
                 </Button>
             </DropdownMenuTrigger>

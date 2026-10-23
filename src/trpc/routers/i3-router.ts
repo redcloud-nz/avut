@@ -299,7 +299,11 @@ export const i3Router = createTrpcRouter({
             }
 
             const memberId = item.location.id;
-            const members = await getD4HTeamMembers(toD4HCredentialRef(accessToken), teamId);
+            // The name is only for the batch description and failure lines: don't fail the
+            // return when the member list can't be fetched.
+            const members = await getD4HTeamMembers(toD4HCredentialRef(accessToken), teamId).catch(
+                () => [],
+            );
             const memberName =
                 members.find((member) => member.id === memberId)?.name ?? `Member #${memberId}`;
 

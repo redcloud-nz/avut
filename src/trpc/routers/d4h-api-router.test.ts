@@ -193,6 +193,36 @@ describe("d4hApiRouter equipment items", () => {
             expect(result.item.location).toEqual({ resourceType: "Member", id: 42 });
         });
 
+        it("leaves the name null for a holder outside the member list", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
+                item({ location: { resourceType: "Member", id: 77 } }),
+            );
+
+            const result = await viewer().getEquipmentItem({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+                itemId: ITEM_ID,
+            });
+
+            expect(result.holder).toEqual({ id: 77, name: null });
+        });
+
+        it("still returns the item when the member list can't be fetched", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
+                item({ location: { resourceType: "Member", id: 42 } }),
+            );
+            vi.mocked(getD4HTeamMembers).mockRejectedValueOnce(new Error("D4H is down"));
+
+            const result = await viewer().getEquipmentItem({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+                itemId: ITEM_ID,
+            });
+
+            expect(result.item.id).toBe(ITEM_ID);
+            expect(result.holder).toEqual({ id: 42, name: null });
+        });
+
         it("returns no holder for a non-member location", async () => {
             vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
                 item({ location: { resourceType: "EquipmentLocation", id: 5 } }),

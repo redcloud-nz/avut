@@ -53,7 +53,9 @@ export const d4hApiRouter = createTrpcRouter({
      * `teamId` is treated as not found.
      *
      * The holder's name comes from the team's (cached) member list, never from the item's
-     * `location`, which keeps only the holder's type and id.
+     * `location`, which keeps only the holder's type and id. It's `null` when the holder isn't in
+     * that list (e.g. a retired member), or when the list can't be fetched: the page shouldn't
+     * fail over a display name.
      */
     getEquipmentItem: organizationProcedure({ d4hEquipment: ["view"] })
         .input(z.object({ teamId: z.number(), itemId: z.number() }))
@@ -61,7 +63,7 @@ export const d4hApiRouter = createTrpcRouter({
             z.object({
                 item: D4HEquipmentItemDetail.schema,
                 d4hUrl: z.string(),
-                holder: z.object({ id: z.number(), name: z.string() }).nullable(),
+                holder: z.object({ id: z.number(), name: z.string().nullable() }).nullable(),
             }),
         )
         .query(async ({ ctx, input: { teamId, itemId } }) => {
@@ -76,7 +78,7 @@ export const d4hApiRouter = createTrpcRouter({
             const holderId = item.location?.resourceType === "Member" ? item.location.id : null;
             const [{ subdomain }, members] = await Promise.all([
                 fetchD4HTeamDetailCached(credentialRef, teamId),
-                holderId == null ? [] : getD4HTeamMembers(credentialRef, teamId),
+                holderId == null ? [] : getD4HTeamMembers(credentialRef, teamId).catch(() => []),
             ]);
 
             return {
@@ -87,11 +89,7 @@ export const d4hApiRouter = createTrpcRouter({
                         ? null
                         : {
                               id: holderId,
-                              // A member outside the operational/non-operational list (e.g.
-                              // retired) still holds the item; show their id.
-                              name:
-                                  members.find((member) => member.id === holderId)?.name ??
-                                  `Member #${holderId}`,
+                              name: members.find((member) => member.id === holderId)?.name ?? null,
                           },
             };
         }),

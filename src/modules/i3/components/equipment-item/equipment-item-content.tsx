@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
@@ -51,6 +51,7 @@ export function I3Module_EquipmentItem_Content({
     const organization = useOrganization();
     const slug = organization.slug;
     const { formatDate } = usePreferences();
+    const menuTriggerRef = useRef<HTMLButtonElement>(null);
 
     const [
         {
@@ -121,6 +122,7 @@ export function I3Module_EquipmentItem_Content({
                                 canUpdateInD4H={canUpdateInD4H}
                                 hasMemberHolder={holder !== null}
                                 isReturned={isReturned}
+                                triggerRef={menuTriggerRef}
                             />
                             {holder && (
                                 <Protect
@@ -130,10 +132,11 @@ export function I3Module_EquipmentItem_Content({
                                             teamId={teamId}
                                             itemId={item.id}
                                             itemLabel={`#${item.ref} ${item.kind.title}`}
-                                            holderName={holder.name}
+                                            holder={holder}
                                             canReturn={
                                                 hasPermission && canUpdateInD4H && !isReturned
                                             }
+                                            returnFocusRef={menuTriggerRef}
                                         />
                                     )}
                                 />
@@ -204,7 +207,7 @@ export function I3Module_EquipmentItem_Content({
                                         <DataItem inline>
                                             <DataItemTitle>Issued To</DataItemTitle>
                                             <DataItemValue>
-                                                {holder ? (
+                                                {holder?.name ? (
                                                     <Link
                                                         href={route(
                                                             "/orgs/[slug]/i3/teams/[team_id]/members/[member_id]",
@@ -218,6 +221,10 @@ export function I3Module_EquipmentItem_Content({
                                                     >
                                                         {holder.name}
                                                     </Link>
+                                                ) : holder ? (
+                                                    // Not in the team's member list (e.g. a
+                                                    // retired member), so no member page.
+                                                    `Member #${holder.id}`
                                                 ) : (
                                                     (item.location?.resourceType ?? "—")
                                                 )}

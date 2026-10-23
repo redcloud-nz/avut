@@ -18,7 +18,7 @@ import { getD4HFetchClient } from "./client";
  * Fetch one equipment item, uncached. Returns `null` when D4H answers 404 (the item was deleted,
  * or never existed), throws `ForbiddenError` on a 403, and throws on any other failure.
  *
- * The parsed item has no `location`: see `D4HEquipmentItemDetail`.
+ * `location` keeps only the holder's type and id: see `D4HEquipmentItemDetail`.
  */
 export async function fetchD4HEquipmentItem(
     token: D4HAccessToken_ServerOnly,
