@@ -69,13 +69,41 @@ describe("Feature_SettingsCard", () => {
     });
 
     it("opens the disable dialog from ?action=disable-<key> while enabled", () => {
-        renderCard({ canEdit: true, enabled: true, search: "?action=disable-notes" });
+        renderCard({ canEdit: true, enabled: true, search: "?action=disable-modules-notes" });
 
         expect(screen.getByRole("dialog", { name: "Disable the Notes?" })).toBeInTheDocument();
     });
 
+    it("keeps the D4H integration's and D4H module's disable dialogs apart", () => {
+        render(
+            <NuqsTestingAdapter searchParams="?action=disable-modules-d4h">
+                <Feature_SettingsCard
+                    organizationId={ORG_ID}
+                    canEdit
+                    slice="integrations.d4h"
+                    enabled
+                    kind="integration"
+                    title="D4H Integration"
+                />
+                <Feature_SettingsCard
+                    organizationId={ORG_ID}
+                    canEdit
+                    slice="modules.d4h"
+                    enabled
+                    kind="module"
+                    title="D4H Module"
+                />
+            </NuqsTestingAdapter>,
+        );
+
+        expect(screen.getByRole("dialog", { name: "Disable the D4H Module?" })).toBeInTheDocument();
+        expect(
+            screen.queryByRole("dialog", { name: "Disable the D4H Integration?" }),
+        ).not.toBeInTheDocument();
+    });
+
     it("ignores ?action=disable-<key> while already disabled", () => {
-        renderCard({ canEdit: true, enabled: false, search: "?action=disable-notes" });
+        renderCard({ canEdit: true, enabled: false, search: "?action=disable-modules-notes" });
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
@@ -102,7 +130,7 @@ describe("Feature_SettingsCard", () => {
     });
 
     it("shows a viewer no Disable button and no dialog, even with the action param set", () => {
-        renderCard({ canEdit: false, enabled: true, search: "?action=disable-notes" });
+        renderCard({ canEdit: false, enabled: true, search: "?action=disable-modules-notes" });
 
         expect(screen.queryByRole("button", { name: "Disable" })).not.toBeInTheDocument();
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

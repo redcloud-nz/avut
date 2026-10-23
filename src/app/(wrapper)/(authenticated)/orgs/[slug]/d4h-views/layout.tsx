@@ -13,7 +13,7 @@ import { NotEnabledError } from "@/lib/errors";
 export default function D4HViews_Layout(props: LayoutProps<"/orgs/[slug]/d4h-views">) {
     const organization = useOrganization();
 
-    if (!organization.isModuleEnabled("d4h-views")) {
+    if (!organization.isModuleEnabled("d4h")) {
         throw new NotEnabledError("The D4H Views module is not enabled for this organization.");
     }
 

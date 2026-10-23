@@ -63,9 +63,9 @@ describe("moduleIdForObjectType", () => {
         expect(moduleIdForObjectType("SkillCheckSession")).toBe("skill-track");
     });
 
-    it("attributes i3 templates to i3", () => {
-        expect(moduleIdForObjectType("I3Template")).toBe("i3");
-        expect(moduleIdForObjectType("I3TemplateVariant")).toBe("i3");
+    it("attributes i3 templates to d4h-i3", () => {
+        expect(moduleIdForObjectType("I3Template")).toBe("d4h-i3");
+        expect(moduleIdForObjectType("I3TemplateVariant")).toBe("d4h-i3");
     });
 
     it("attributes organization notes to notes", () => {
@@ -82,7 +82,7 @@ describe("moduleIdForObjectType", () => {
 
 describe("objectTypesForModule", () => {
     it("generates the WHERE-IN list for a module feed", () => {
-        expect(objectTypesForModule("i3").sort()).toEqual([
+        expect(objectTypesForModule("d4h-i3").sort()).toEqual([
             "D4HEquipmentItem",
             "D4HTask",
             "I3Template",

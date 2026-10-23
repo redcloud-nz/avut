@@ -116,13 +116,13 @@ const organizationSettingsSchema = z.object({
             .default(RUBBISH_BIN_DEFAULT_RETENTION_DAYS),
     }),
     modules: z.object({
-        "d4h-views": z.object({
+        d4h: z.object({
             enabled: z.boolean().default(false),
         }),
         forms: z.object({
             enabled: z.boolean().default(false),
         }),
-        i3: z.object({
+        "d4h-i3": z.object({
             enabled: z.boolean().default(false),
             storage: z.enum(["AVUT", "D4H"]).default("D4H"),
         }),
@@ -157,9 +157,9 @@ export const OrganizationSettingsSlices = defineSettingsSlices(organizationSetti
     "integrations.email",
     "personnel",
     "rubbishBin",
-    "modules.d4h-views",
+    "modules.d4h",
     "modules.forms",
-    "modules.i3",
+    "modules.d4h-i3",
     "modules.notes",
     "modules.skill-track",
     "modules.skill-package-builder",

@@ -18,7 +18,7 @@ type Props = PageProps<"/orgs/[slug]/i3/templates/[template_id]">;
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, template_id } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "i3"))) return {};
+    if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return {};
     const organization = await getOrganizationBySlug(slug);
 
     const templateId = I3TemplateId.schema.parse(template_id);
@@ -33,7 +33,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 // its params with `use(props.params)` re-suspended and flashed the page spinner (#76).
 export default async function I3Module_Template_Page(props: Props) {
     const { slug, template_id } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
+    if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
     const templateId = I3TemplateId.schema.parse(template_id);

@@ -26,7 +26,7 @@ describe("OrgSettings.write", () => {
             ...defaults,
             modules: {
                 ...defaults.modules,
-                i3: { ...defaults.modules.i3, enabled: true },
+                "d4h-i3": { ...defaults.modules["d4h-i3"], enabled: true },
             },
         };
 
@@ -40,7 +40,7 @@ describe("OrgSettings.write", () => {
         expect(recorded).toEqual([
             {
                 type: "obj_mod",
-                path: ["modules", "i3", "enabled"],
+                path: ["modules", "d4h-i3", "enabled"],
                 prev: false,
                 curr: true,
             },
@@ -58,7 +58,7 @@ describe("OrgSettings.write", () => {
         const defaults = OrganizationSettings.default();
         const withI3 = (enabled: boolean): OrganizationSettings => ({
             ...defaults,
-            modules: { ...defaults.modules, i3: { ...defaults.modules.i3, enabled } },
+            modules: { ...defaults.modules, "d4h-i3": { ...defaults.modules["d4h-i3"], enabled } },
         });
 
         await OrgSettings.write(db, orgId, withI3(true));
@@ -66,7 +66,7 @@ describe("OrgSettings.write", () => {
             (await db.organizationConfig.findMany({ where: { organizationId: orgId } })).map(
                 (r) => r.key,
             ),
-        ).toEqual(["modules.i3.enabled"]);
+        ).toEqual(["modules.d4h-i3.enabled"]);
 
         const reverted = await OrgSettings.write(db, orgId, withI3(false));
 
@@ -87,7 +87,10 @@ describe("OrgSettings.write", () => {
         const defaults = OrganizationSettings.default();
         const settings = (i3: boolean, personnel: boolean): OrganizationSettings => ({
             ...defaults,
-            modules: { ...defaults.modules, i3: { ...defaults.modules.i3, enabled: i3 } },
+            modules: {
+                ...defaults.modules,
+                "d4h-i3": { ...defaults.modules["d4h-i3"], enabled: i3 },
+            },
             personnel: { ...defaults.personnel, autoLinkOnPersonCreate: personnel },
         });
 

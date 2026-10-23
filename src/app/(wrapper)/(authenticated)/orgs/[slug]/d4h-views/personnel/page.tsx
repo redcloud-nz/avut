@@ -21,7 +21,7 @@ export default async function D4HViewsModules_Personnel_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/personnel`>,
 ) {
     const { slug } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "d4h-views"))) return null;
+    if (!(await isOrganizationModuleUsable(slug, "d4h"))) return null;
     const { organization, session } = await requireOrganization(slug);
 
     const accessToken = await getConfiguredD4HAccessToken(

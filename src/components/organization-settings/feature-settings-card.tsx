@@ -29,8 +29,8 @@ import { useOrganizationSettingsMutation } from "./use-organization-settings-mut
 export type FeatureSliceId =
     | "integrations.d4h"
     | "integrations.email"
-    | "modules.d4h-views"
-    | "modules.i3"
+    | "modules.d4h"
+    | "modules.d4h-i3"
     | "modules.notes"
     | "modules.skill-package-builder"
     | "modules.skill-track";
@@ -75,8 +75,10 @@ export function Feature_SettingsCard({
     /** Its settings, shown only while it's enabled. */
     children?: ReactNode;
 }) {
-    // `modules.notes` → `disable-notes`, `integrations.d4h` → `disable-d4h`.
-    const disableAction = `disable-${slice.slice(slice.indexOf(".") + 1)}`;
+    // The whole slice, so cards on the same page never share a key: `modules.notes` →
+    // `disable-modules-notes`, and `integrations.d4h` → `disable-integrations-d4h` stays apart
+    // from `modules.d4h` → `disable-modules-d4h`.
+    const disableAction = `disable-${slice.replaceAll(".", "-")}`;
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral([disableAction]));
     const disableOpen = canEdit && enabled && action === disableAction;

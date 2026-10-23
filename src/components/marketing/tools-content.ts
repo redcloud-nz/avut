@@ -60,9 +60,9 @@ export const TOOLS_CONTENT: readonly ToolSection[] = [
         ],
     },
     {
-        id: "d4h-views",
-        label: Modules["d4h-views"].label,
-        icon: Modules["d4h-views"].icon,
+        id: "d4h",
+        label: Modules.d4h.label,
+        icon: Modules.d4h.icon,
         status: "in-development",
         description:
             "Read-only views of the D4H data your org already maintains — members, teams and equipment — without re-typing anything or writing back.",
@@ -97,9 +97,9 @@ export const TOOLS_CONTENT: readonly ToolSection[] = [
         ],
     },
     {
-        id: "i3",
-        label: Modules.i3.label,
-        icon: Modules.i3.icon,
+        id: "d4h-i3",
+        label: Modules["d4h-i3"].label,
+        icon: Modules["d4h-i3"].icon,
         status: "in-development",
         description:
             "Issue, inspect and return equipment and PPE against templates defined per item type, backed by your D4H equipment records.",

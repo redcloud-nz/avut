@@ -27,7 +27,7 @@ function parseIds(team_id: string, item_id: string) {
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, team_id, item_id } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "i3"))) return {};
+    if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return {};
     const organization = await getOrganizationBySlug(slug);
 
     const { teamId, itemId } = parseIds(team_id, item_id);
@@ -52,7 +52,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function I3Module_EquipmentItem_Page(props: Props) {
     const { slug, team_id, item_id } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
+    if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
     const { teamId, itemId } = parseIds(team_id, item_id);

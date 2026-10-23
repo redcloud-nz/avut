@@ -25,9 +25,10 @@ import { hasActiveSession } from "@/server/session";
  */
 const MODULE_COPY = {
     "org-admin": "Users, teams, personnel and invitations for your organisation.",
-    "d4h-views": "Read-only views of the D4H data you already maintain.",
+    d4h: "Read-only views of the D4H data you already maintain.",
     forms: "",
-    i3: "Issue, inspect and return equipment and PPE, with templates per item type. Runs on your D4H equipment records.",
+    "d4h-i3":
+        "Issue, inspect and return equipment and PPE, with templates per item type. Runs on your D4H equipment records.",
     notes: "Rich-text notes that live with the org instead of in someone's inbox.",
     "skill-track": "Skill checks, assessment sessions, a catalogue and reports on who's current.",
     "skill-package-builder":
@@ -35,7 +36,7 @@ const MODULE_COPY = {
 } satisfies Record<(typeof orgModules)[number]["id"], string>;
 
 /** Module ids that only work with a connected D4H account. */
-const NEEDS_D4H = new Set(["d4h-views", "i3"]);
+const NEEDS_D4H = new Set(["d4h", "d4h-i3"]);
 
 /**
  * Hero product screenshot — the "Assess by Person" recording view from the

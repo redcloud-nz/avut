@@ -19,7 +19,7 @@ export default async function I3Module_Return_FormInstance_Page(
     props: PageProps<"/orgs/[slug]/i3/forms/return-items/[instance_id]">,
 ) {
     const { slug, instance_id } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
+    if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
     const parsedId = FormInstanceId.schema.safeParse(instance_id);

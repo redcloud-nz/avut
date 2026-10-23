@@ -21,7 +21,7 @@ export default async function D4HViewsModule_Teams_Page(
     props: PageProps<`/orgs/[slug]/d4h-views/teams`>,
 ) {
     const { slug } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "d4h-views"))) return null;
+    if (!(await isOrganizationModuleUsable(slug, "d4h"))) return null;
     const { organization, session } = await requireOrganization(slug);
 
     const accessToken = await getConfiguredD4HAccessToken(

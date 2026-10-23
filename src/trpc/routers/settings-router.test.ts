@@ -138,22 +138,22 @@ describe("settings organization settings", () => {
     it("lets an in-org admin write through the same procedure", async () => {
         const result = await asOrgAdmin().updateOrganizationSettingsSlice({
             organizationId: T.bareOrg,
-            update: { slice: "modules.d4h-views", patch: { enabled: true } },
+            update: { slice: "modules.d4h", patch: { enabled: true } },
         });
 
-        expect(result.modules["d4h-views"].enabled).toBe(true);
+        expect(result.modules.d4h.enabled).toBe(true);
     });
 
     it("updates an existing config row on a fully materialised organization", async () => {
         const result = await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            update: { slice: "modules.i3", patch: { enabled: true, storage: "AVUT" } },
+            update: { slice: "modules.d4h-i3", patch: { enabled: true, storage: "AVUT" } },
         });
 
-        expect(result.modules.i3).toEqual({ enabled: true, storage: "AVUT" });
+        expect(result.modules["d4h-i3"]).toEqual({ enabled: true, storage: "AVUT" });
 
         const row = await db.organizationConfig.findFirst({
-            where: { organizationId: T.seededOrg, key: "modules.i3.storage" },
+            where: { organizationId: T.seededOrg, key: "modules.d4h-i3.storage" },
         });
         expect(row?.value).toBe("AVUT");
     });
@@ -161,22 +161,22 @@ describe("settings organization settings", () => {
     it("leaves the rest of a slice alone when the patch names one field", async () => {
         await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            update: { slice: "modules.i3", patch: { enabled: true, storage: "AVUT" } },
+            update: { slice: "modules.d4h-i3", patch: { enabled: true, storage: "AVUT" } },
         });
 
         const settings = await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            update: { slice: "modules.i3", patch: { storage: "D4H" } },
+            update: { slice: "modules.d4h-i3", patch: { storage: "D4H" } },
         });
 
         // `enabled` is absent from the second patch, so it keeps the value the first one set —
         // even though "D4H" is the default for `storage` and so deletes that row.
-        expect(settings.modules.i3).toEqual({ enabled: true, storage: "D4H" });
+        expect(settings.modules["d4h-i3"]).toEqual({ enabled: true, storage: "D4H" });
 
         const rows = await db.organizationConfig.findMany({
-            where: { organizationId: T.seededOrg, key: { startsWith: "modules.i3" } },
+            where: { organizationId: T.seededOrg, key: { startsWith: "modules.d4h-i3" } },
         });
-        expect(rows.map((r) => r.key)).toEqual(["modules.i3.enabled"]);
+        expect(rows.map((r) => r.key)).toEqual(["modules.d4h-i3.enabled"]);
     });
 
     it("does not clobber a concurrent edit to another slice", async () => {

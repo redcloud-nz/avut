@@ -83,7 +83,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
             "A standard set of items an I3 issue is built from, with optional size/config variants.",
         longDefinition:
             "Describes a standard set of items — for example, a personal protective equipment (PPE) kit — that I3 issues are built from. A template can have variants for different sizes or configurations, and can be linked to D4H equipment so issued items stay in step with the D4H inventory.",
-        modules: ["i3"],
+        modules: ["d4h-i3"],
         relatedTerms: ["d4h"],
     },
     {

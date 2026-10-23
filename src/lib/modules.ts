@@ -28,9 +28,9 @@ import type { UserSettings } from "@/lib/schemas/user-settings";
  */
 export type OrganizationModuleId =
     | "org-admin"
-    | "d4h-views"
+    | "d4h"
     | "forms"
-    | "i3"
+    | "d4h-i3"
     | "notes"
     | "skill-track"
     | "skill-package-builder";
@@ -102,9 +102,9 @@ export const Modules = {
         scope: "organization",
         href: (slug) => route("/orgs/[slug]/admin", { slug }),
     },
-    "d4h-views": {
-        id: "d4h-views",
-        label: "D4H Views",
+    d4h: {
+        id: "d4h",
+        label: "D4H",
         icon: CableIcon,
         segment: "d4h-views",
         scope: "organization",
@@ -117,9 +117,9 @@ export const Modules = {
         segment: "forms",
         scope: "organization",
     },
-    i3: {
-        id: "i3",
-        label: "I3",
+    "d4h-i3": {
+        id: "d4h-i3",
+        label: "D4H I3",
         icon: ShirtIcon,
         segment: "i3",
         scope: "organization",

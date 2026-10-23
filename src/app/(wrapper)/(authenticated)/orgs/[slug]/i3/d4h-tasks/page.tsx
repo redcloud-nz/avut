@@ -19,7 +19,7 @@ export default async function I3Module_D4HTasks_Page(
     props: PageProps<"/orgs/[slug]/i3/d4h-tasks">,
 ) {
     const { slug } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
+    if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
     const organization = await getOrganizationBySlug(slug);
 
     prefetch(trpc.d4hTasks.listOpenTasks.queryOptions({ organizationId: organization.id }));

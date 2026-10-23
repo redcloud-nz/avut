@@ -21,7 +21,7 @@ import { requireOrganization } from "./organization-access";
 
 /** Flag evaluators, keyed by module id. Modules absent here are always available. */
 const MODULE_FLAG_EVALUATORS: Partial<Record<OrganizationModuleId, () => Promise<boolean>>> = {
-    i3: i3ModuleFlag,
+    "d4h-i3": i3ModuleFlag,
     notes: notesModuleFlag,
 };
 

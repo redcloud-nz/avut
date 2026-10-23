@@ -23,7 +23,7 @@ export default async function I3Module_MembersList_SelectTeam_Page(
     props: PageProps<"/orgs/[slug]/i3/members">,
 ) {
     const { slug } = await props.params;
-    if (!(await isOrganizationModuleUsable(slug, "i3"))) return null;
+    if (!(await isOrganizationModuleUsable(slug, "d4h-i3"))) return null;
 
     const { organization, session } = await requireOrganization(slug);
 

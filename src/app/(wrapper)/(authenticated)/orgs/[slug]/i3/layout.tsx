@@ -12,7 +12,7 @@ import { NotEnabledError } from "@/lib/errors";
 export default function I3_Layout(props: LayoutProps<"/orgs/[slug]/i3">) {
     const organization = useOrganization();
 
-    if (!organization.isModuleEnabled("i3")) {
+    if (!organization.isModuleEnabled("d4h-i3")) {
         throw new NotEnabledError("The I3 module is not enabled for this organization.");
     }
 

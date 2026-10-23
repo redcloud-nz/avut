@@ -45,8 +45,8 @@ import { SkillTrack_Sidebar_Menu } from "@/modules/skill-track/components/sideba
  */
 const MODULE_SIDEBAR: Partial<Record<OrganizationModuleId, ReactNode>> = {
     "org-admin": <Admin_Sidebar_Menu />,
-    "d4h-views": <D4HViews_Sidebar_Menu />,
-    i3: <I3_Sidebar_Menu />,
+    d4h: <D4HViews_Sidebar_Menu />,
+    "d4h-i3": <I3_Sidebar_Menu />,
     "skill-track": <SkillTrack_Sidebar_Menu />,
 };
 

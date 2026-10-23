@@ -55,7 +55,7 @@ describe("settingsEffects.updateOrganizationSettingsSlice", () => {
 
     it("leaves other slices as cached", () => {
         const cached = OrganizationSettings.default();
-        cached.modules.i3.enabled = true;
+        cached.modules["d4h-i3"].enabled = true;
         const response = OrganizationSettings.default();
         response.modules.notes.enabled = true;
 
@@ -66,7 +66,7 @@ describe("settingsEffects.updateOrganizationSettingsSlice", () => {
         const result = applyWrite(effects, cached) as OrganizationSettings;
 
         expect(result.modules.notes.enabled).toBe(true);
-        expect(result.modules.i3.enabled).toBe(true);
+        expect(result.modules["d4h-i3"].enabled).toBe(true);
     });
 
     it("writes the whole response when nothing is cached", () => {
