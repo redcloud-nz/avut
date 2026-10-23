@@ -12,7 +12,6 @@ import { UserId } from "@/lib/schemas/user";
 import { fetchD4HWhoami } from "@/server/d4h-api/client";
 import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
 import { sendEmail } from "@/server/email";
-import { createRetireTask } from "@/server/services/d4h-tasks";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
@@ -224,33 +223,6 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(props.failures).toEqual([]);
     });
 
-    it("labels the task and email from D4H's item, not the submitted form data", async () => {
-        vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
-            item(1, {
-                ref: "A-1",
-                kind: { resourceType: "EquipmentKind", id: 9, title: "Radio" },
-            }) as never,
-        );
-
-        await execute([1]);
-
-        const [task] = await db.d4HTask.findMany();
-        expect(task.itemLabel).toBe("#A-1 Radio");
-        expect(emailProps().returnedItems).toMatchObject([
-            { itemId: 1, ref: "A-1", kindTitle: "Radio" },
-        ]);
-    });
-
-    it("omits blank comments from the note", async () => {
-        await execute([1], "   ");
-
-        const [task] = await db.d4HTask.findMany();
-        expect(task.payload).toEqual({
-            reason: "Returned To Cache",
-            note: "Returned via AVUT, received by Receiver.",
-        });
-    });
-
     it("refuses up front without Equipment.UPDATE on the recipient team", async () => {
         vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(false) as never);
 
@@ -264,50 +236,6 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(sendEmail).not.toHaveBeenCalled();
     });
 
-    it("skips missing, unheld, retired and already-queued items, and returns the rest", async () => {
-        // Item 3 already has an open retire task from an earlier Return.
-        await createRetireTask(ctx(), {
-            d4hTeamId: TEAM_ID,
-            itemId: 3,
-            itemLabel: "#3 Helmet",
-            reason: "Returned To Cache",
-        });
-        vi.mocked(fetchD4HEquipmentItem).mockImplementation(async (_token, _teamId, itemId) => {
-            if (itemId === 4) return null; // deleted in D4H
-            if (itemId === 5) return item(5, { owner: { resourceType: "Team", id: 99 } }) as never;
-            if (itemId === 2) return item(2, { status: "RETIRED" }) as never;
-            return item(itemId) as never;
-        });
-        GET.mockResolvedValue({
-            data: { results: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 5 }], page: 0, pageSize: 4 },
-            response: new Response(null, { status: 200 }),
-        });
-
-        // Item 6 isn't among the recipient's current items.
-        const { output } = await execute([4, 1, 6, 2, 3, 5]);
-
-        expect(output.returned).toBe(1);
-        expect(output.failures).toEqual([
-            "#4 Helmet: not found in D4H",
-            "#6 Helmet: not held by John Smith",
-            "#2 Helmet: already retired",
-            "#3 Helmet: already has an open retire task",
-            "#5 Helmet: not found in D4H",
-        ]);
-        const open = await db.d4HTask.findMany({ where: { formInstanceId } });
-        expect(open.map((t) => t.resourceId)).toEqual([1]);
-        expect(emailProps().failures).toHaveLength(5);
-    });
-
-    it("keeps going past an item whose GET throws", async () => {
-        vi.mocked(fetchD4HEquipmentItem).mockRejectedValueOnce(new Error("D4H said 500"));
-
-        const { output } = await execute([1, 2]);
-
-        expect(output).toMatchObject({ returned: 1, failures: ["#1 Helmet: D4H said 500"] });
-        expect((await db.d4HTask.findMany()).map((t) => t.resourceId)).toEqual([2]);
-    });
-
     it("still succeeds, with the tasks queued, when the notification email fails", async () => {
         vi.mocked(sendEmail).mockRejectedValueOnce(new Error("Resend is down"));
 
@@ -316,18 +244,5 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(results.every((r) => r.status === "success")).toBe(true);
         expect(output).toMatchObject({ returned: 1, failures: [] });
         expect((await db.d4HTask.findMany()).map((t) => t.resourceId)).toEqual([1]);
-    });
-
-    it("opens no log batch when every item fails", async () => {
-        vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(null);
-
-        const { results, output } = await execute([1, 2]);
-
-        expect(results.every((r) => r.status === "success")).toBe(true);
-        expect(output).toMatchObject({ returned: 0 });
-        expect(output.failures).toHaveLength(2);
-        expect(await db.logBatch.findMany()).toEqual([]);
-        expect(await db.d4HTask.findMany()).toEqual([]);
-        expect(emailProps().returnedItems).toEqual([]);
     });
 });

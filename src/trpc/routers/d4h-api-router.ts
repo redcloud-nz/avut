@@ -6,7 +6,7 @@
 import * as R from "remeda";
 import * as z from "zod";
 
-import { d4hEquipmentItemUrl } from "@/lib/d4h-servers";
+import { d4hEquipmentItemViewUrl } from "@/lib/d4h-servers";
 import {
     buildD4HToday,
     D4HTodayActivityInput,
@@ -35,6 +35,7 @@ import {
     fetchD4HTeamDetailCached,
     fetchD4HWhoamiCached,
     getD4HFetchClient,
+    getD4HTeamMembers,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
 import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
@@ -47,28 +48,51 @@ const PATCHABLE_ITEM_FIELDS = ["status", "isCritical", "isMonitor", "barcode", "
 
 export const d4hApiRouter = createTrpcRouter({
     /**
-     * One equipment item, fetched live from D4H, with the URL of its edit page in D4H's web app.
-     * An item owned by a team other than `teamId` is treated as not found.
+     * One equipment item, fetched live from D4H, with the URL of its view page in D4H's web app
+     * and, when it's issued to a person, who holds it. An item owned by a team other than
+     * `teamId` is treated as not found.
+     *
+     * The holder's name comes from the team's (cached) member list, never from the item's
+     * `location`, which keeps only the holder's type and id.
      */
     getEquipmentItem: organizationProcedure({ d4hEquipment: ["view"] })
         .input(z.object({ teamId: z.number(), itemId: z.number() }))
-        .output(z.object({ item: D4HEquipmentItemDetail.schema, d4hUrl: z.string() }))
+        .output(
+            z.object({
+                item: D4HEquipmentItemDetail.schema,
+                d4hUrl: z.string(),
+                holder: z.object({ id: z.number(), name: z.string() }).nullable(),
+            }),
+        )
         .query(async ({ ctx, input: { teamId, itemId } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const credentialRef = toD4HCredentialRef(accessToken);
 
             const item = await fetchD4HEquipmentItem(accessToken, teamId, itemId);
             if (!item || item.owner.id !== teamId) {
                 throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
             }
 
-            const { subdomain } = await fetchD4HTeamDetailCached(
-                toD4HCredentialRef(accessToken),
-                teamId,
-            );
+            const holderId = item.location?.resourceType === "Member" ? item.location.id : null;
+            const [{ subdomain }, members] = await Promise.all([
+                fetchD4HTeamDetailCached(credentialRef, teamId),
+                holderId == null ? [] : getD4HTeamMembers(credentialRef, teamId),
+            ]);
 
             return {
                 item,
-                d4hUrl: d4hEquipmentItemUrl(accessToken.serverCode, subdomain, itemId),
+                d4hUrl: d4hEquipmentItemViewUrl(accessToken.serverCode, subdomain, itemId),
+                holder:
+                    holderId == null
+                        ? null
+                        : {
+                              id: holderId,
+                              // A member outside the operational/non-operational list (e.g.
+                              // retired) still holds the item; show their id.
+                              name:
+                                  members.find((member) => member.id === holderId)?.name ??
+                                  `Member #${holderId}`,
+                          },
             };
         }),
 

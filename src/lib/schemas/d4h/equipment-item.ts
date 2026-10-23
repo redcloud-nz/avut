@@ -87,8 +87,10 @@ export type D4HEquipmentStatus = z.infer<typeof D4HEquipmentStatus.schema>;
  * An equipment item as the single-item GET returns it. The response is typed `unknown` in the
  * generated schema, so the field names come from its `@example` and a live probe (2026-10-22).
  *
- * There's deliberately no `location`: it expands to the holding member's full D4H record, which
- * must never reach the client. `z.object` strips it on parse.
+ * `location` keeps only `resourceType` and `id`. D4H expands it to the holding member's full
+ * record (address, phones, emergency contacts, iCal secret), which must never reach the client;
+ * `z.object` strips every other key on parse. Never widen it: resolve a holder's name from the
+ * team's member list instead.
  */
 export const D4HEquipmentItemDetail = {
     schema: D4HEquipmentItem.schema.extend({
@@ -102,6 +104,8 @@ export const D4HEquipmentItemDetail = {
             })
             .nullable()
             .optional(),
+        /** Who or where holds the item (`Member` for a person). Only the type and id survive. */
+        location: z.object({ resourceType: z.string(), id: z.number() }).nullable().optional(),
     }),
 } as const;
 

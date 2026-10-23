@@ -72,3 +72,16 @@ export function d4hEquipmentItemUrl(
     const { teamManagerHost } = getD4HServer(serverCode);
     return `https://${subdomain}.${teamManagerHost}/team/equipment/edit/${itemId}`;
 }
+
+/**
+ * The D4H web-app URL for viewing an equipment item, e.g.
+ * `https://my-team.team-manager.ap.d4h.com/team/equipment/view/1234`.
+ */
+export function d4hEquipmentItemViewUrl(
+    serverCode: D4HServerCode,
+    subdomain: string,
+    itemId: number,
+): string {
+    const { teamManagerHost } = getD4HServer(serverCode);
+    return `https://${subdomain}.${teamManagerHost}/team/equipment/view/${itemId}`;
+}

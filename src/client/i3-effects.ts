@@ -31,6 +31,12 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
+    returnItem: ({ organizationId }) => [
+        invalidate(trpc.d4hTasks.listItemTasks.queryFilter({ organizationId })),
+        invalidate(trpc.d4hTasks.listReturnedItemIds.queryFilter({ organizationId })),
+        invalidate(trpc.d4hTasks.listOpenTasks.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.listMemberEquipment.queryFilter({ organizationId })),
+    ],
     // The Issue page navigates back to its list on success, so its call site sets `meta.navigates`.
     submitIssueItemsForm: ({ organizationId }) => [
         invalidate(

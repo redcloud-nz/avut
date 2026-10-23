@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { I3IssueItemsFormProcessor } from "@/forms/i3-issue-items/processor";
 import { I3ReturnItemsFormProcessor } from "@/forms/i3-return-items/processor";
@@ -13,8 +13,13 @@ import { nanoId16 } from "@/lib/id";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { UserId } from "@/lib/schemas/user";
+import { fetchD4HWhoami } from "@/server/d4h-api/client";
+import { fetchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import { sendEmail } from "@/server/email";
+import { createRetireTask } from "@/server/services/d4h-tasks";
 import { createMockPrisma } from "@/test/create-prisma-mock";
-import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
+import { createAuthenticatedMockContext, createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import { i3Router } from "./i3-router";
 
@@ -30,6 +35,34 @@ vi.mock("@/forms/i3-issue-items/processor", () => ({
 // submitReturnItemsForm's tests check what the router hands the processor and what it returns.
 vi.mock("@/forms/i3-return-items/processor", () => ({
     I3ReturnItemsFormProcessor: { executeWithOutput: vi.fn() },
+}));
+
+// returnItem's tests run the real `returnItems` against canned D4H responses.
+const GET = vi.hoisted(() => vi.fn());
+
+vi.mock("@/server/d4h-access-token", () => ({
+    getConfiguredD4HAccessToken: vi.fn(async () => ({
+        id: "token-1",
+        serverCode: "ap",
+        token: "secret",
+    })),
+    toD4HCredentialRef: vi.fn(() => ({ credentialId: "token-1" })),
+}));
+
+vi.mock("@/server/d4h-api/client", () => ({
+    fetchD4HWhoami: vi.fn(),
+    getD4HFetchClient: vi.fn(() => ({ GET })),
+    getD4HTeamMembers: vi.fn(async () => [{ id: 42, name: "John Smith" }]),
+}));
+
+vi.mock("@/server/d4h-api/equipment", () => ({
+    fetchD4HEquipmentItem: vi.fn(),
+}));
+
+// Mocked only so the returnItem tests can assert it never sends.
+vi.mock("@/server/email", () => ({
+    NoReplyEmailAddress: "no-reply@example.test",
+    sendEmail: vi.fn(async () => {}),
 }));
 
 describe("i3Router.getTemplate", () => {
@@ -390,5 +423,175 @@ describe("i3Router.submitReturnItemsForm", () => {
 
         const saved = await db.formInstance.findUnique({ where: { id: formInstanceId } });
         expect(saved).toMatchObject({ formKey: "i3-return", formData });
+    });
+});
+
+describe("i3Router.returnItem", () => {
+    const TEAM_ID = 7;
+    const ITEM_ID = 1234;
+    const T = { org: OrganizationId.create(), user: UserId.create() };
+
+    let db: ReturnType<typeof createMockPrisma>;
+
+    /** A whoami for a member of `TEAM_ID`, with or without `Equipment.UPDATE`. */
+    function whoami(canUpdate: boolean) {
+        return {
+            account: { id: 1, resourceType: "Account" },
+            members: [
+                {
+                    id: 11,
+                    resourceType: "Member",
+                    hasAccess: true,
+                    name: "Receiver",
+                    owner: { id: TEAM_ID, resourceType: "Team", title: "Rescue Team" },
+                    permissions: { Equipment: { UPDATE: canUpdate } },
+                },
+            ],
+        } as never;
+    }
+
+    /** The item as `fetchD4HEquipmentItem` returns it, held by member 42 unless overridden. */
+    function item(overrides: Record<string, unknown> = {}) {
+        return {
+            id: ITEM_ID,
+            ref: "001234",
+            status: "OPERATIONAL",
+            serial: null,
+            owner: { resourceType: "Team", id: TEAM_ID },
+            category: { resourceType: "EquipmentCategory", id: 3 },
+            kind: { resourceType: "EquipmentKind", id: 8, title: "Helmet" },
+            brand: { resourceType: "EquipmentBrand", id: null },
+            model: null,
+            notes: "",
+            parents: [],
+            dateExpires: null,
+            dateFirstUse: null,
+            dateManufactured: null,
+            datePurchased: null,
+            dateRetired: null,
+            dateWarranty: null,
+            isCritical: false,
+            isMonitor: false,
+            barcode: null,
+            retiredReason: null,
+            location: { resourceType: "Member", id: 42 },
+            ...overrides,
+        } as never;
+    }
+
+    beforeEach(async () => {
+        // A fresh database per test: each asserts on the tasks it alone created.
+        db = createMockPrisma();
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: T.user, name: "Receiver", email: "receiver@example.com" },
+        });
+
+        vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true));
+        vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(item());
+        GET.mockReset();
+        GET.mockResolvedValue({
+            data: { results: [{ id: ITEM_ID }], page: 0, pageSize: 1 },
+            response: new Response(null, { status: 200 }),
+        });
+    });
+
+    function makeCaller(i3Item: ("issue" | "return")[] = ["return"]) {
+        return i3Router.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user, name: "Receiver", email: "receiver@example.com" },
+                permissions: { organization: ["view"], i3Item },
+                prisma: db,
+            }),
+        );
+    }
+
+    const input = (comments = "") => ({
+        organizationId: T.org,
+        teamId: TEAM_ID,
+        itemId: ITEM_ID,
+        comments,
+    });
+
+    it("queues a retire task with the note, and sends no email", async () => {
+        const result = await makeCaller().returnItem(input("Strap frayed."));
+
+        expect(result).toEqual({ returned: 1, failures: [] });
+        expect(await db.d4HTask.findMany()).toMatchObject([
+            {
+                d4hTeamId: TEAM_ID,
+                resourceId: ITEM_ID,
+                itemLabel: "#001234 Helmet",
+                status: "Open",
+                payload: {
+                    reason: "Returned To Cache",
+                    note: "Returned via AVUT, received by Receiver. Strap frayed.",
+                },
+                formInstanceId: null,
+            },
+        ]);
+        expect(await db.logBatch.findMany()).toMatchObject([
+            { operationKey: "i3-return-items", description: "Returned items from John Smith" },
+        ]);
+        expect(sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("throws FORBIDDEN without i3Item:return", async () => {
+        await expect(makeCaller(["issue"]).returnItem(input())).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+    });
+
+    it("throws FORBIDDEN without D4H's Equipment UPDATE on the team", async () => {
+        vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(false));
+
+        await expect(makeCaller().returnItem(input())).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+        expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
+        expect(await db.d4HTask.findMany()).toEqual([]);
+    });
+
+    it("throws NOT_FOUND for an item owned by another team", async () => {
+        vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
+            item({ owner: { resourceType: "Team", id: 99 } }),
+        );
+
+        await expect(makeCaller().returnItem(input())).rejects.toMatchObject({
+            code: "NOT_FOUND",
+        });
+    });
+
+    it("refuses an item that isn't issued to a person", async () => {
+        vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
+            item({ location: { resourceType: "EquipmentLocation", id: 5 } }),
+        );
+
+        await expect(makeCaller().returnItem(input())).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: "This item isn't issued to a person.",
+        });
+        expect(await db.d4HTask.findMany()).toEqual([]);
+    });
+
+    it("reports an item that already has an open retire task as a failure", async () => {
+        await createRetireTask(
+            createOrganizationMockContext({
+                organizationId: T.org,
+                user: { id: T.user },
+                prisma: db,
+            }),
+            { d4hTeamId: TEAM_ID, itemId: ITEM_ID, itemLabel: "#001234 Helmet", reason: "Lost" },
+        );
+
+        const result = await makeCaller().returnItem(input());
+
+        expect(result).toEqual({
+            returned: 0,
+            failures: ["#001234 Helmet: already has an open retire task"],
+        });
+        expect(await db.d4HTask.findMany()).toHaveLength(1);
     });
 });

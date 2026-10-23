@@ -10,12 +10,18 @@ import { TRPCError } from "@trpc/server";
 import { I3IssueItemsFormProcessor } from "@/forms/i3-issue-items/processor";
 import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 import { I3ReturnItemsFormProcessor } from "@/forms/i3-return-items/processor";
+import { returnItems } from "@/forms/i3-return-items/return-items";
 import { I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { diffObject } from "@/lib/diff";
+import { NotFoundError, ValidationError } from "@/lib/errors";
 import { I3IssueItemsForm, I3ReturnItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import { getConfiguredD4HAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
+import { getD4HTeamMembers } from "@/server/d4h-api/client";
+import { fetchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import * as Forms from "@/server/services/forms";
 import * as I3Templates from "@/server/services/i3-templates";
 
@@ -263,6 +269,48 @@ export const i3Router = createTrpcRouter({
         .output(z.object({ updated: I3Template.schema }))
         .mutation(async ({ ctx, input: { templateId } }) => {
             return { updated: await I3Templates.recover(ctx, templateId) };
+        }),
+
+    /**
+     * Return one equipment item from the person it's issued to (the item page's quick Return).
+     * Does what the Return form does for one item (the checks, a retire task noting who received
+     * it, the audit log) but sends no email and keeps no form instance.
+     *
+     * Needs D4H's own Equipment UPDATE permission on the team as well as `i3Item: ["return"]`.
+     *
+     * @returns How many items were returned (0 or 1), and a message when the item wasn't.
+     */
+    returnItem: organizationProcedure({ i3Item: ["return"] })
+        .input(
+            z.object({ teamId: z.number().int(), itemId: z.number().int(), comments: z.string() }),
+        )
+        .output(z.object({ returned: z.number(), failures: z.array(z.string()) }))
+        .mutation(async ({ ctx, input: { teamId, itemId, comments } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+
+            await requireD4HTeamPermission(accessToken, teamId, "Equipment", "UPDATE");
+
+            const item = await fetchD4HEquipmentItem(accessToken, teamId, itemId);
+            if (!item || item.owner.id !== teamId) {
+                throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
+            }
+            if (item.location?.resourceType !== "Member") {
+                throw new ValidationError("This item isn't issued to a person.");
+            }
+
+            const memberId = item.location.id;
+            const members = await getD4HTeamMembers(toD4HCredentialRef(accessToken), teamId);
+            const memberName =
+                members.find((member) => member.id === memberId)?.name ?? `Member #${memberId}`;
+
+            const { returned, failures } = await returnItems(ctx, {
+                accessToken,
+                recipient: { id: memberId, teamId, name: memberName },
+                items: [{ itemId, ref: item.ref, kindTitle: item.kind.title }],
+                comments,
+            });
+
+            return { returned, failures };
         }),
 
     /**

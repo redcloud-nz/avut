@@ -57,12 +57,34 @@ const itemFixture = {
     isMonitor: true,
     barcode: null,
     retiredReason: null,
+    // D4H expands a holding member to their full record. Only `resourceType` and `id` may survive.
     location: {
         resourceType: "Member",
         id: 99,
         name: "Jane Doe",
-        address: "1 Secret Street",
+        ref: "JD",
+        position: "Team Leader",
+        status: "OPERATIONAL",
+        owner: { resourceType: "Team", id: 7 },
+        email: { value: "jane@example.com", verified: true },
         mobilephone: "+64 21 000 0000",
+        homephone: "+64 9 000 0000",
+        workphone: null,
+        address: {
+            street: "1 Secret Street",
+            town: "Auckland",
+            region: "Auckland",
+            postcode: "1010",
+            country: "NZ",
+        },
+        location: { type: "Point", coordinates: [174.76, -36.85] },
+        emergencyContacts: [
+            { name: "John Doe", relation: "Partner", primaryPhone: "+64 21 111 1111" },
+        ],
+        icalSecret: "ical-secret-value",
+        notes: "Allergic to bees",
+        customFieldValues: [{ customField: { id: 5 }, value: "O+" }],
+        startsAt: "2020-01-01T00:00:00Z",
     },
 };
 
@@ -71,14 +93,16 @@ describe("fetchD4HEquipmentItem", () => {
         vi.unstubAllGlobals();
     });
 
-    it("parses the item and strips its location", async () => {
+    it("parses the item and strips its location down to the holder's type and id", async () => {
         const fetchMock = vi.fn(async (_request: Request) => Response.json(itemFixture));
         vi.stubGlobal("fetch", fetchMock);
 
         const item = await fetchD4HEquipmentItem(token, 7, 1234);
 
         expect(item).not.toBeNull();
-        expect(item).not.toHaveProperty("location");
+        // Exactly these keys: none of the member record's PII survives the parse.
+        expect(item!.location).toStrictEqual({ resourceType: "Member", id: 99 });
+        expect(JSON.stringify(item)).not.toMatch(/Secret Street|jane@example|ical-secret|John Doe/);
         expect(fetchMock.mock.calls[0][0].url).toBe(
             "https://api.team-manager.ap.d4h.com/v3/team/7/equipment/1234",
         );

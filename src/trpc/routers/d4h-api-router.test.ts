@@ -10,7 +10,7 @@ import { nanoId16 } from "@/lib/id";
 import type { D4HEquipmentItemDetail } from "@/lib/schemas/d4h/equipment-item";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
-import { fetchD4HWhoami } from "@/server/d4h-api/client";
+import { fetchD4HWhoami, getD4HTeamMembers } from "@/server/d4h-api/client";
 import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -49,6 +49,19 @@ vi.mock("@/server/d4h-api/client", () => ({
     })),
     // `requireD4HTeamPermission` reads the uncached whoami; it runs for real against this.
     fetchD4HWhoami: vi.fn(),
+    getD4HTeamMembers: vi.fn(async () => [
+        {
+            id: 42,
+            resourceType: "Member",
+            email: { value: "john@example.com", verified: true },
+            name: "John Smith",
+            owner: { id: 7, resourceType: "Team" },
+            position: null,
+            ref: null,
+            role: { id: null, resourceType: "Role" },
+            status: "OPERATIONAL",
+        },
+    ]),
 }));
 
 vi.mock("@/server/d4h-api/equipment", () => ({
@@ -56,7 +69,7 @@ vi.mock("@/server/d4h-api/equipment", () => ({
     patchD4HEquipmentItem: vi.fn(),
 }));
 
-/** An item as `fetchD4HEquipmentItem` returns it (already parsed, so no `location`). */
+/** An item as `fetchD4HEquipmentItem` returns it (already parsed, so `location` is type and id only). */
 function item(overrides: Partial<D4HEquipmentItemDetail> = {}): D4HEquipmentItemDetail {
     return {
         id: ITEM_ID,
@@ -148,7 +161,7 @@ describe("d4hApiRouter equipment items", () => {
             ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
         });
 
-        it("returns the item and its D4H web-app URL", async () => {
+        it("returns the item and its D4H web-app view URL", async () => {
             vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(item());
 
             const result = await viewer().getEquipmentItem({
@@ -159,8 +172,40 @@ describe("d4hApiRouter equipment items", () => {
 
             expect(result.item.id).toBe(ITEM_ID);
             expect(result.d4hUrl).toBe(
-                `https://rescue.team-manager.ap.d4h.com/team/equipment/edit/${ITEM_ID}`,
+                `https://rescue.team-manager.ap.d4h.com/team/equipment/view/${ITEM_ID}`,
             );
+            expect(result.holder).toBeNull();
+            expect(getD4HTeamMembers).not.toHaveBeenCalled();
+        });
+
+        it("names a member holder from the team's member list", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
+                item({ location: { resourceType: "Member", id: 42 } }),
+            );
+
+            const result = await viewer().getEquipmentItem({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+                itemId: ITEM_ID,
+            });
+
+            expect(result.holder).toEqual({ id: 42, name: "John Smith" });
+            expect(result.item.location).toEqual({ resourceType: "Member", id: 42 });
+        });
+
+        it("returns no holder for a non-member location", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
+                item({ location: { resourceType: "EquipmentLocation", id: 5 } }),
+            );
+
+            const result = await viewer().getEquipmentItem({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+                itemId: ITEM_ID,
+            });
+
+            expect(result.holder).toBeNull();
+            expect(result.item.location).toEqual({ resourceType: "EquipmentLocation", id: 5 });
         });
 
         it("throws NOT_FOUND when D4H has no such item", async () => {

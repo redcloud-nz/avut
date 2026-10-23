@@ -342,6 +342,60 @@
     - Add a card and a `<HelpButton>` only where `content/README.md` says a screen needs its own card.
   - **Done when:** the alert shows for a team without CREATE, and `npm run check` is clean.
 
+### Review group F: item page refinements (user feedback 2026-10-23; visual checkpoint at the end)
+
+Decided with the user 2026-10-23:
+
+- The item page's "Open in D4H" goes to D4H's **view** page, `https://{subdomain}.team-manager.{region}.d4h.com/team/equipment/view/{itemId}`. Tasks keep linking to the **edit** page, where the change is made.
+- No Delete action. D4H's DELETE is irreversible, so deleting stays a D4H-only action.
+- A Return from the item page is a quick dialog. It has the same result as the Return form (the checks, the retire task with its note, and the audit log) but sends **no email** and keeps no draft.
+- The item page shows who the item is issued to.
+
+- [x] **Task 17: holder, view URL and single-item return (data layer)**
+  - **Files:** `src/lib/schemas/d4h/equipment-item.ts`, `src/lib/d4h-servers.ts`, `src/trpc/routers/d4h-api-router.ts` (+ test), `src/forms/i3-return-items/processor.ts`, `src/forms/i3-return-items/return-items.ts` (new) (+ test), `src/trpc/routers/i3-router.ts` (+ test), `src/client/i3-effects.ts`
+  - **Do:**
+    - **Holder.** Add `location` to `D4HEquipmentItemDetail` as `z.object({ resourceType: z.string(), id: z.number() }).nullable().optional()`.
+      - Because `z.object` strips unknown keys, only the id and type survive. The member record's PII (address, phones, emergency contacts, iCal secret) never does.
+      - Replace the "no `location`" comment with this rule.
+      - Update the test so that a `location` holding a full member record parses down to exactly `{ resourceType, id }`.
+      - `getEquipmentItem` also returns `holder: { id, name } | null` for a `Member` location, with the name resolved server-side from the team's members (`getD4HTeamMembers`, cached). A non-member location returns `null`, and the page shows its type only.
+    - **View URL.** Add `d4hEquipmentItemViewUrl(serverCode, subdomain, itemId)` next to the edit one. `getEquipmentItem`'s `d4hUrl` becomes the view URL. `d4hTasks` keeps the edit URL.
+    - **Shared return core.** Move the per-item loop out of the Return processor's `ReturnItems` stage into `returnItems(ctx, { accessToken, recipient, items, comments, formInstanceId? }) → { returned, failures, returnedItems }` in `src/forms/i3-return-items/return-items.ts`. That covers the held-ids check, the skip rules, the lazy LogBatch and `createRetireTask` with its note.
+      - The processor calls it, and its behaviour and tests are unchanged.
+      - Move the per-item tests that belong to the core into `return-items.test.ts`.
+    - **`i3.returnItem`.** Add it as `organizationProcedure({ i3Item: ["return"] })`, input `{ teamId, itemId, comments }`.
+      1. Check the token, then `requireD4HTeamPermission(..., "UPDATE")`.
+      2. GET the item. It's `NotFoundError` if the item is null or belongs to another team.
+      3. The holder must be a `Member`. Otherwise throw `ValidationError("This item isn't issued to a person.")`.
+      4. Resolve the member's name, then call `returnItems` with that single item and no `formInstanceId`.
+      - No email.
+      - Output `{ returned, failures }`.
+      - Tests: success queues a task with the note and sends no email; FORBIDDEN without `i3Item: ["return"]` or without D4H UPDATE; a non-member holder; an item that already has an open retire task (reported as a failure).
+    - **Effects.** Add `i3Effects.returnItem`, which invalidates `d4hTasks.listItemTasks`, `listReturnedItemIds`, `listOpenTasks` and `d4hApi.listMemberEquipment`.
+  - **Done when:** the tests pass and `npm run check` is clean.
+
+- [ ] **Task 18: item page layout (actions menu, Edit on the card, holder, tasks summary)** `visual`
+  - **Files:** `src/modules/i3/components/equipment-item/equipment-item-content.tsx`, `src/modules/i3/components/equipment-item/equipment-item-menu.tsx` (new), `src/modules/i3/components/equipment-item/item-tasks-card.tsx`, `src/modules/i3/components/equipment-item/update-equipment-item.tsx`
+  - **Do:** follow the I3 template page (`templates/template-content.tsx` and `template-menu.tsx`).
+    - **Page header.** Replace the Edit and Open in D4H buttons with an `I3Module_EquipmentItem_Menu` dropdown (`DropdownMenuTriggerIcon`, "Actions" label). It holds:
+      - **Edit**, which opens `?action=update`, gated as today (I3 role plus D4H UPDATE, disabled with the reason).
+      - **Return**, which opens `?action=return` (Task 19). It's gated on `i3Item: ["return"]` plus D4H UPDATE, and disabled when the item has no member holder or is already Returned.
+      - **Open in D4H**, an external link to the view URL.
+      - Gate the items per `docs/patterns/protect-permission-gating.md` (menu items).
+    - **Edit on the card.** The Item Information card gets the Edit dialog's trigger in a `CardAction`, as the template page does.
+    - **Holder.** Add an "Issued to" row: the member's name linked to the I3 member page, "—" for none, or the location type for a non-member.
+    - **Tasks summary.** The secondary-column tasks card becomes a compact summary: "1 pending D4H task" / "N pending D4H tasks" / "No pending D4H tasks". Clicking a non-zero summary opens a dialog listing each task with `I3Module_D4HTaskChanges`, its requested line, and Check/Dismiss. Keep the RETIRE-permission message for viewers without it.
+  - **Done when:** the page fits in the sidebar at `md`, the menu works, and `npm run check` is clean.
+
+- [ ] **Task 19: quick Return dialog** `visual`
+  - **Files:** `src/modules/i3/components/equipment-item/return-equipment-item.tsx` (new), `src/modules/i3/components/equipment-item/equipment-item-content.tsx`
+  - **Do:**
+    - A controlled `…_Dialog` on `?action=return`, per `docs/patterns/mutation-dialog.md`.
+    - It shows the holder ("Returned by <name>") and "Received by <you>", plus an optional Comments textarea and a Submit button.
+    - Submit calls `i3.returnItem` with `meta: { effects: i3Effects.returnItem }`.
+    - On success, show a toast ("Returned. A retire task is queued.") and close. On a reported failure, show a warning toast with the failure line.
+  - **Done when:** returning the TESTING boots from the item page queues a task, the Returned badge and the tasks summary update without a reload, no email is sent, and `npm run check` is clean.
+
 ## Docs impact
 
 I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sections in `content/docs/i3`, Issue's new permission refusal, and new screenshots of the Return form, tasks list and item page.
