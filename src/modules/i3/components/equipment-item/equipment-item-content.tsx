@@ -32,6 +32,7 @@ import { I3Module_ReturnedBadge } from "../returned-badge";
 
 import { I3Module_EquipmentItem_Menu } from "./equipment-item-menu";
 import { I3Module_ItemTasks_Card } from "./item-tasks-card";
+import { I3Module_ReturnEquipmentItem_Dialog } from "./return-equipment-item";
 import {
     I3Module_UpdateEquipmentItem_Dialog,
     updateEquipmentItemDisabledReason,
@@ -121,6 +122,22 @@ export function I3Module_EquipmentItem_Content({
                                 hasMemberHolder={holder !== null}
                                 isReturned={isReturned}
                             />
+                            {holder && (
+                                <Protect
+                                    permissions={{ i3Item: ["return"] }}
+                                    render={(hasPermission) => (
+                                        <I3Module_ReturnEquipmentItem_Dialog
+                                            teamId={teamId}
+                                            itemId={item.id}
+                                            itemLabel={`#${item.ref} ${item.kind.title}`}
+                                            holderName={holder.name}
+                                            canReturn={
+                                                hasPermission && canUpdateInD4H && !isReturned
+                                            }
+                                        />
+                                    )}
+                                />
+                            )}
                         </Saratoga.Actions>
                     </Saratoga.Header>
 

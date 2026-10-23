@@ -387,7 +387,7 @@ Decided with the user 2026-10-23:
     - **Tasks summary.** The secondary-column tasks card becomes a compact summary: "1 pending D4H task" / "N pending D4H tasks" / "No pending D4H tasks". Clicking a non-zero summary opens a dialog listing each task with `I3Module_D4HTaskChanges`, its requested line, and Check/Dismiss. Keep the RETIRE-permission message for viewers without it.
   - **Done when:** the page fits in the sidebar at `md`, the menu works, and `npm run check` is clean.
 
-- [ ] **Task 19: quick Return dialog** `visual`
+- [x] **Task 19: quick Return dialog** `visual`
   - **Files:** `src/modules/i3/components/equipment-item/return-equipment-item.tsx` (new), `src/modules/i3/components/equipment-item/equipment-item-content.tsx`
   - **Do:**
     - A controlled `…_Dialog` on `?action=return`, per `docs/patterns/mutation-dialog.md`.
