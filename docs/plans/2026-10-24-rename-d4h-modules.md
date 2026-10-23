@@ -109,7 +109,7 @@ D4H Views and I3 are renamed to D4H and D4H I3, and D4H I3 now needs D4H. Move a
 
 ## Parked
 
-(none yet)
+- **D4H Tasks page logs a 401 on load.** Filed as #459. Loading `/orgs/[slug]/d4h-i3/d4h-tasks` (from PR #451, only moved here) logs `UNAUTHORIZED on query procedure at d4hTasks.listOpenTasks` from a cookieless `GET /trpc/d4hTasks.listOpenTasks` during SSR, even though the page `prefetch`es that query. The page still renders 200. Looks like the client `queryFn` firing during the server render (the `@/trpc/client` gotcha in AGENTS.md → Data Fetching). Check against `docs/patterns/detail-page-data-fetching.md`.
 
 ## Review notes
 
