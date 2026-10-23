@@ -8,6 +8,7 @@ import "server-only";
 import { createElement } from "react";
 
 import I3ReturnItemsNotificationEmail from "@/emails/i3-return-items-notification";
+import { ValidationError } from "@/lib/errors";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
@@ -23,6 +24,9 @@ import { I3ReturnItemsFormData } from "./schema";
  *
  * The checks and the tasks are `returnItems`, shared with the item page's quick Return; this
  * pipeline adds the up-front permission check and the notification email.
+ *
+ * When no item could be returned, the `ReturnItems` stage throws a `ValidationError` listing the
+ * failures, so the draft stays a Draft and no email goes out.
  *
  * The `ReturnItems` stage's `returned` and `failures` are what the caller reports back; the rest
  * of the output (the access token included) stays on the server.
@@ -58,13 +62,21 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
         stageFn: async (ctx, { accessToken }) => {
             const { recipient, items, comments } = ctx.formData;
 
-            return returnItems(ctx, {
+            const result = await returnItems(ctx, {
                 accessToken,
                 recipient,
                 items,
                 comments,
                 formInstanceId: ctx.formInstanceId,
             });
+
+            // Nothing was returned: fail the pipeline so the draft stays a Draft (to fix and
+            // resubmit) and the form reports why, rather than "succeeding" with zero items.
+            if (result.returned === 0 && result.failures.length > 0) {
+                throw new ValidationError(`No items were returned. ${result.failures.join("; ")}`);
+            }
+
+            return result;
         },
     })
     .stage({

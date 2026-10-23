@@ -622,13 +622,12 @@ export const d4hApiRouter = createTrpcRouter({
      */
     updateEquipmentItem: organizationProcedure({ i3Item: ["update"] })
         .input(
-            D4HEquipmentItemUpdate.schema
-                .extend({ teamId: z.number(), itemId: z.number() })
-                .refine(
-                    ({ teamId: _teamId, itemId: _itemId, ...update }) =>
-                        Object.values(update).some((value) => value !== undefined),
-                    { error: "At least one field must be updated." },
-                ),
+            D4HEquipmentItemUpdate.schema.extend({ teamId: z.number(), itemId: z.number() }).refine(
+                // `updateNotes` only annotates a change, so it doesn't count as one.
+                ({ teamId: _teamId, itemId: _itemId, updateNotes: _updateNotes, ...update }) =>
+                    Object.values(update).some((value) => value !== undefined),
+                { error: "At least one field must be updated." },
+            ),
         )
         .output(D4HEquipmentItemDetail.schema)
         .mutation(async ({ ctx, input }) => {

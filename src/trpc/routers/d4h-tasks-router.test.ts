@@ -288,6 +288,19 @@ describe("d4hTasksRouter", () => {
             expect(task?.status).toBe("Open");
         });
 
+        it("reports an item owned by another team as missing, even when it's retired", async () => {
+            vi.mocked(fetchD4HEquipmentItem).mockResolvedValue({
+                ...item(401, "RETIRED"),
+                owner: { resourceType: "Team", id: OTHER_TEAM },
+            });
+
+            const result = await editor().checkTask({ organizationId: T.org, taskId: ids.missing });
+
+            expect(result).toEqual({ result: "missing" });
+            const task = await db.d4HTask.findUnique({ where: { id: ids.missing } });
+            expect(task?.status).toBe("Open");
+        });
+
         it("throws FORBIDDEN without D4H's Equipment RETIRE, and fetches nothing", async () => {
             await expect(
                 editor().checkTask({ organizationId: T.org, taskId: ids.otherTeam }),

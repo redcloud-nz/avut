@@ -5,7 +5,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ForbiddenError } from "@/lib/errors";
+import { ForbiddenError, ValidationError } from "@/lib/errors";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
@@ -74,8 +74,9 @@ const GET = vi.hoisted(() => vi.fn());
 
 // The pipeline marks the form instance processed through the real Prisma client once every
 // stage has run; stub it so nothing reaches a database.
+const formInstanceUpdate = vi.hoisted(() => vi.fn(async () => ({})));
 vi.mock("@/server/prisma", () => ({
-    default: { formInstance: { update: vi.fn(async () => ({})) } },
+    default: { formInstance: { update: formInstanceUpdate } },
 }));
 
 vi.mock("@/server/d4h-access-token", () => ({
@@ -232,6 +233,27 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(last).toMatchObject({ stageName: "CheckPermissions", status: "error" });
         expect(last?.status === "error" && last.error).toBeInstanceOf(ForbiddenError);
         expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
+        expect(await db.d4HTask.findMany()).toEqual([]);
+        expect(sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("fails the ReturnItems stage, listing the failures, when no item could be returned", async () => {
+        vi.mocked(fetchD4HEquipmentItem).mockImplementation(
+            async (_token, _teamId, itemId) => item(itemId, { status: "RETIRED" }) as never,
+        );
+        formInstanceUpdate.mockClear();
+
+        const { results } = await execute([1, 2]);
+
+        const last = results.at(-1);
+        expect(last).toMatchObject({ stageName: "ReturnItems", status: "error" });
+        const error = last?.status === "error" ? last.error : undefined;
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(error?.message).toContain("#1 Helmet: already retired");
+        expect(error?.message).toContain("#2 Helmet: already retired");
+
+        // The draft isn't marked Processed, and no email goes out.
+        expect(formInstanceUpdate).not.toHaveBeenCalled();
         expect(await db.d4HTask.findMany()).toEqual([]);
         expect(sendEmail).not.toHaveBeenCalled();
     });

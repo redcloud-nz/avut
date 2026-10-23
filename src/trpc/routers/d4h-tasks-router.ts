@@ -45,7 +45,8 @@ export const d4hTasksRouter = createTrpcRouter({
             await requireD4HTeamPermission(accessToken, task.d4hTeamId, "Equipment", "RETIRE");
 
             const item = await fetchD4HEquipmentItem(accessToken, task.d4hTeamId, task.resourceId);
-            if (!item) return { result: "missing" as const };
+            // An item another team owns (a stale or mistyped id) is as good as missing here.
+            if (!item || item.owner.id !== task.d4hTeamId) return { result: "missing" as const };
 
             if (item.status === "RETIRED") {
                 return {

@@ -322,6 +322,18 @@ describe("d4hApiRouter equipment items", () => {
             expect(patchD4HEquipmentItem).not.toHaveBeenCalled();
         });
 
+        it("rejects an update that sets only updateNotes", async () => {
+            await expect(
+                editor().updateEquipmentItem({
+                    organizationId: T.org,
+                    teamId: TEAM_ID,
+                    itemId: ITEM_ID,
+                    updateNotes: "Just a note.",
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            expect(patchD4HEquipmentItem).not.toHaveBeenCalled();
+        });
+
         it("throws NOT_FOUND for an item owned by another team, and patches nothing", async () => {
             vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
                 item({ owner: { resourceType: "Team", id: 99 } }),
