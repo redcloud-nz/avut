@@ -69,7 +69,7 @@ export default async function D4HI3Module_EquipmentItem_Page(props: Props) {
     prefetch(
         trpc.d4hTasks.listReturnedItemIds.queryOptions({ organizationId: organization.id, teamId }),
     );
-    // The tasks card renders only for `i3Item: ["update"]`; for anyone else this prefetch fails
+    // The tasks card renders only for `d4hTask: ["view"]`; for anyone else this prefetch fails
     // quietly and the card never asks for it.
     prefetch(
         trpc.d4hTasks.listItemTasks.queryOptions({

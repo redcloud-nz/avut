@@ -18,7 +18,7 @@ import { trpc } from "@/trpc/client";
 
 /**
  * Check (has the task been applied in D4H yet?) and Dismiss buttons for one open D4H task, each
- * reporting its result with a toast. Both are disabled without `i3Item: ["update"]`, which
+ * reporting its result with a toast. Both are disabled without `d4hTask: ["apply"]`, which
  * `checkTask` and `dismissTask` require.
  */
 export function D4HI3Module_D4HTaskActions({ task }: { task: D4HTask }) {
@@ -61,7 +61,7 @@ export function D4HI3Module_D4HTaskActions({ task }: { task: D4HTask }) {
     return (
         <>
             <Protect
-                permissions={{ i3Item: ["update"] }}
+                permissions={{ d4hTask: ["apply"] }}
                 render={(hasPermission) => (
                     <Button
                         size="sm"
@@ -79,7 +79,7 @@ export function D4HI3Module_D4HTaskActions({ task }: { task: D4HTask }) {
                 )}
             />
             <Protect
-                permissions={{ i3Item: ["update"] }}
+                permissions={{ d4hTask: ["apply"] }}
                 render={(hasPermission) => (
                     <Button
                         size="sm"

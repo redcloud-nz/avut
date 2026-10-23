@@ -71,9 +71,9 @@ function formValues(item: D4HEquipmentItemDetail): FormData {
 }
 
 /**
- * Why the viewer can't edit an item on `teamTitle`, or `null` when they can: editing needs an I3
- * role holding `i3Item: ["update"]` (`hasPermission`) and D4H's Equipment UPDATE permission on the
- * item's team.
+ * Why the viewer can't edit an item on `teamTitle`, or `null` when they can: editing needs a role
+ * holding `d4hEquipment: ["update"]` (`hasPermission`) and D4H's Equipment UPDATE permission on
+ * the item's team.
  */
 export function updateEquipmentItemDisabledReason({
     hasPermission,

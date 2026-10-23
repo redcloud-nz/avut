@@ -165,8 +165,8 @@ describe("d4hTasksRouter", () => {
         );
     }
 
-    const viewer = () => makeCaller({ i3Item: ["view"] });
-    const editor = () => makeCaller({ i3Item: ["view", "update"] });
+    const viewer = () => makeCaller({ d4hTask: ["view"] });
+    const editor = () => makeCaller({ d4hTask: ["view", "apply"] });
     const equipmentViewer = () => makeCaller({ d4hEquipment: ["view"] });
 
     it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
@@ -182,10 +182,20 @@ describe("d4hTasksRouter", () => {
         ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     });
 
-    it("throws FORBIDDEN without i3Item update", async () => {
-        await expect(viewer().listOpenTasks({ organizationId: T.org })).rejects.toMatchObject({
-            code: "FORBIDDEN",
-        });
+    it("throws FORBIDDEN listing tasks without d4hTask view", async () => {
+        await expect(
+            equipmentViewer().listOpenTasks({ organizationId: T.org }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+        await expect(
+            equipmentViewer().listItemTasks({
+                organizationId: T.org,
+                teamId: RETIRE_TEAM,
+                itemId: 101,
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("throws FORBIDDEN checking or dismissing without d4hTask apply", async () => {
         await expect(
             viewer().checkTask({ organizationId: T.org, taskId: ids.pending }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });

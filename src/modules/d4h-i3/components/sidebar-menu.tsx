@@ -44,7 +44,7 @@ export function D4HI3_Sidebar_Menu() {
                     href={route("/orgs/[slug]/d4h-i3/forms/return-items", { slug })}
                 />
             </Protect>
-            <Protect permissions={{ i3Item: ["update"] }}>
+            <Protect permissions={{ d4hTask: ["view"] }}>
                 <NavSubItem
                     label="D4H Tasks"
                     href={route("/orgs/[slug]/d4h-i3/d4h-tasks", { slug })}

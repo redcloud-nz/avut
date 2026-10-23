@@ -157,7 +157,7 @@ export function D4HI3Module_EquipmentItem_Content({
                                     <CardTitle>Item Information</CardTitle>
                                     <CardAction>
                                         <Protect
-                                            permissions={{ i3Item: ["update"] }}
+                                            permissions={{ d4hEquipment: ["update"] }}
                                             render={(hasPermission) => (
                                                 <D4HI3Module_UpdateEquipmentItem_Dialog
                                                     teamId={teamId}
@@ -269,7 +269,7 @@ export function D4HI3Module_EquipmentItem_Content({
                             </Card>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
-                            <Protect permissions={{ i3Item: ["update"] }}>
+                            <Protect permissions={{ d4hTask: ["view"] }}>
                                 <Suspense fallback={<CardLoadingFallback />}>
                                     <D4HI3Module_ItemTasks_Card
                                         teamId={teamId}
