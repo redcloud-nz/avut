@@ -22,11 +22,14 @@
   - The forms surface the same message on submit.
   - Tasks 4 and 7 test the no-token case.
 - **The I3 item page is separate from `d4h-views/equipment/items/[item_id]`.** That page is a read-only TanStack DB view in another module. I3's page does a live GET, edits, and shows tasks. Don't consolidate them in this branch.
-- **Return** = for each item: GET it, then PATCH `status: "INACTIVE"` and `updateNotes`. Then queue a retire task.
-  - The processor checks the submitted item ids against the "Returned by" member's current items (a `member_id`-filtered equipment list, as `listMemberEquipment` uses), because `location` is stripped from the item schema.
-  - `updateNotes` is `Returned via AVUT, received by <submitter name>.`, followed by ` <comments>` when there are comments. It lands on the status change's history entry.
-  - The item's `notes` aren't touched (decided with the user 2026-10-23). D4H's history already records when the item changed and who held it, so a notes line would only duplicate it.
-  - The retire task's payload is `{ reason: "Returned To Cache" }`. It's text shown to whoever applies it. AVUT doesn't look up D4H's retired-reason ids.
+- **Return** = for each item: GET it and check it, then queue a retire task. **A Return makes no write to D4H** (decided with the user 2026-10-23, replacing the earlier PATCH to `INACTIVE` with `updateNotes`).
+  - Why: teams differ in what they do with a returned item. Some retire it; some only take it off the person. So the whole D4H change is the queued task, applied by hand. The submit permission stays D4H `Equipment.UPDATE`.
+  - The processor checks the submitted item ids against the "Returned by" member's current items (a `member_id`-filtered equipment list, as `listMemberEquipment` uses), because `location` is stripped from the item schema. It skips an item that's missing, on another team, not held, already `RETIRED`, or already has an open retire task.
+  - The retire task's payload is `{ reason: "Returned To Cache", note }`. `reason` is text shown to whoever applies it; AVUT doesn't look up D4H's retired-reason ids.
+  - `note` is `Returned via AVUT, received by <submitter name>.`, followed by ` <comments>` when the comments aren't blank. It's the only place those are kept, and the task UI shows it under the changes. The payload is a JSON column, so this needed no migration.
+  - The task's `itemLabel` and the email lines come from the fetched item (`#<ref> <kind title>`), not the client's form data. Only a "not found" failure uses the client's label.
+  - The item's `notes` aren't touched.
+  - Nothing is logged against `D4HEquipmentItem` (nothing changed in D4H). Each task's `Create` entry, in the Return's batch, is the record.
 - **D4H task queue.** A new `D4HTask` table holds changes the API can't make, to be applied by hand in D4H.
   - v1 has one kind, `Retire`, on resource type `Equipment`.
   - Status is `Open`, `Done` or `Dismissed`. `applyMethod` is `Manual` or `Api`; v1 only writes `Manual`.
@@ -52,7 +55,7 @@
   - D4H item edits log `Update` on a new `D4HEquipmentItem` object type (objectId = the D4H item id as a string), with `changes: diffObject(before, after)` (`src/lib/diff.ts`) over the PATCHable fields.
   - A Return opens a `LogBatch` with a new `i3-return-items` operation, using `createLogBatch({ operationKey, userId, actorLabel: formatActorLabel(...), description }, ctx.prisma)` as `teams-router.ts` does.
     - It's bound once with `withBatch(ctx, batch.id)`, and that context is what the item log and `D4HTasks.createRetireTask` receive.
-    - The batch opens lazily, on the first successful PATCH, so a Return where every item fails leaves no orphan batch.
+    - The batch opens lazily, on the first task queued, so a Return where every item fails leaves no orphan batch.
   - D4H writes can't join a Prisma `$transaction`. The D4H call happens first, and the log/task rows are written with a plain `await` after it succeeds. That's the documented non-Prisma exception in `docs/patterns/transactional-writes.md`.
 - **Form pipeline output.** `FormProcessingPipeline.execute` returns only stage results and throws away the accumulated output.
   - Add `executeWithOutput`, which returns `{ results, output }`. `execute` keeps its signature, so Issue is unchanged.
@@ -65,7 +68,7 @@
 - **Returned badge** (decided with the user 2026-10-23, revising the earlier "INACTIVE = Returned"):
   - An item shows "Returned" while it has an **open Retire task**, in the browse pages and on the item page. It isn't hidden.
   - `INACTIVE` keeps D4H's label "Non Operational", so an item taken out of service for repair isn't mistaken for a return.
-  - An item that went INACTIVE without its task being queued (a partial failure) can be returned again, which only re-queues the task.
+  - Since a Return makes no D4H write, nothing keys off `INACTIVE`: an item whose task failed to queue is simply still held and can be returned again.
   - The browse pages get each team's returned item ids from `d4hTasks.listReturnedItemIds({ teamId })` (Task 7), one query per page.
     - `listReturnedItemIds` is gated on `d4hEquipment: ["view"]`, the same permission as the equipment data it annotates, so owner/admin/member see the badge without any `i3Item` action. It exposes only item ids.
 - **Kind-page team filter (side fix, in-branch).** `equipment-kinds/page.tsx` and `equipment-kinds/[kind_id]/page.tsx` fan out `listMemberEquipment` over members of every accessible team. Filter to `member.owner.id === teamId`, as `members/page.tsx` does.
@@ -329,7 +332,7 @@
       - Submit, calling `trpc.i3.submitReturnItemsForm` with `meta: { effects: i3Effects.submitReturnItemsForm, navigates: true }`
     - When the chosen person's team lacks `Equipment.UPDATE` (`hasD4HTeamPermission` on `listAccessibleTeams`), show an inline alert and disable Submit.
     - After submit, show a toast that names the number of items returned and any failures, then go back to the list.
-  - **Done when:** returning one item on the user's team makes it INACTIVE with the note in D4H and queues a retire task, and `npm run check` is clean.
+  - **Done when:** returning one item on the user's team queues a retire task carrying the note (and changes nothing in D4H), and `npm run check` is clean.
 
 - [x] **Task 16: Issue form permission alert, and help card** `visual` `mechanical`
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/i3/forms/issue-items/[instance_id]/page.tsx`, `content/help/i3.mdx` (plus any new card `content/README.md` calls for)
@@ -367,8 +370,8 @@ I3 guide: new Return Items, D4H tasks and item page (view/edit/Open in D4H) sect
 - (Group B, Task 6) `markApplied`/`dismiss`: the Open guard races (read then update). Add `status: "Open"` to the update `where` and map P2025 (or `updateMany` count 0) to `ConflictError`.
 - (Group B, Task 7) `checkTask`: throw `ConflictError` before any D4H call when the task is no longer Open (stale list in another tab).
 - (Group B, Task 7) `teamId`/`itemId` inputs: `z.number().int()`. Also align `src/lib/schemas/d4h-task.ts`'s copyright header with the other new files.
-- (Group C, Task 8) Build the task `itemLabel`, log descriptions and email lines from the fetched `before.ref`/`before.kind.title`, not the client's form data (keep the client label only for "not found").
+- (Group C, Task 8) Resolved 2026-10-23: the task `itemLabel`, failure lines and email lines come from the fetched `before.ref`/`before.kind.title`; the client label is kept only for "not found".
 - (Group C, Task 8) Narrow the recipient-items query to the submitted ids (`id: [...]` alongside `member_id`) instead of `size: 10000`.
 - (Group C, Task 8) `NotifyAdmin`: catch and log a `sendEmail` failure, so a Return that already changed D4H and queued tasks isn't reported as failed (and its draft isn't left un-Processed).
-- (Group C, Task 8) Resolved 2026-10-23: Return no longer writes `notes`, so re-returning an item no longer duplicates a notes line. Remove the now-unused team-detail mock and fake timers from `processor.test.ts`.
-- (Group C, Task 8) Shorten D4H PATCH failure lines for the toast/email ("D4H rejected the update (400)"), keeping the full body in `ctx.logger.error`.
+- (Group C, Task 8) Resolved 2026-10-23: Return no longer writes `notes`, so re-returning an item no longer duplicates a notes line. The now-unused team-detail mock and fake timers are gone from `processor.test.ts`.
+- (Group C, Task 8) Resolved 2026-10-23: Return no longer PATCHes, so there are no D4H PATCH failure lines to shorten.

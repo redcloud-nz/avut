@@ -65,6 +65,21 @@ describe("d4h-tasks", () => {
     }
 
     describe("createRetireTask", () => {
+        it("stores the note in the payload when given", async () => {
+            const task = await createRetireTask(ctx(), {
+                d4hTeamId: T.teamA,
+                itemId: 2,
+                itemLabel: "#2 Helmet",
+                reason: "Returned To Cache",
+                note: "Returned via AVUT, received by Receiver.",
+            });
+
+            expect(task.payload).toEqual({
+                reason: "Returned To Cache",
+                note: "Returned via AVUT, received by Receiver.",
+            });
+        });
+
         it("creates an open, manual Retire task and logs Create", async () => {
             const task = await retire(T.teamA, 1);
 

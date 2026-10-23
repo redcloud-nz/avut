@@ -22,17 +22,27 @@ function d4hTaskChanges(task: D4HTask): D4HTaskChange[] {
 
 /**
  * A task's changes as a bulleted list of "Set <field> to <value>", with the field and value
- * set apart from the instruction text.
+ * set apart from the instruction text, followed by the task's note (e.g. who received a returned
+ * item) when it has one.
  */
 export function I3Module_D4HTaskChanges({ task }: { task: D4HTask }) {
     return (
-        <ul className="list-disc space-y-0.5 pl-5 text-sm">
-            {d4hTaskChanges(task).map(({ field, value }) => (
-                <li key={field}>
-                    Set <span className="font-semibold">{field}</span> to{" "}
-                    <span className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{value}</span>
-                </li>
-            ))}
-        </ul>
+        <div className="space-y-1">
+            <ul className="list-disc space-y-0.5 pl-5 text-sm">
+                {d4hTaskChanges(task).map(({ field, value }) => (
+                    <li key={field}>
+                        Set <span className="font-semibold">{field}</span> to{" "}
+                        <span className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+                            {value}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+            {task.payload.note ? (
+                <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold">Note:</span> {task.payload.note}
+                </p>
+            ) : null}
+        </div>
     );
 }

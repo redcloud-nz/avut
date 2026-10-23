@@ -22,11 +22,15 @@ export async function createRetireTask(
         itemId: number;
         itemLabel: string;
         reason: D4HRetireTaskPayload["reason"];
+        note?: D4HRetireTaskPayload["note"];
         formInstanceId?: string;
     },
 ): Promise<D4HTask> {
     const id = D4HTaskId.create();
-    const payload: D4HRetireTaskPayload = { reason: args.reason };
+    const payload: D4HRetireTaskPayload = {
+        reason: args.reason,
+        ...(args.note ? { note: args.note } : {}),
+    };
 
     const [created] = await ctx.prisma.$transaction([
         ctx.prisma.d4HTask.create({

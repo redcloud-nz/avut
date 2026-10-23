@@ -54,6 +54,11 @@ export type D4HTaskResourceType = z.infer<typeof D4HTaskResourceType.schema>;
 const retirePayloadSchema = z.object({
     /** Shown to whoever applies the task; AVUT doesn't look up D4H's retired-reason ids. */
     reason: z.string().min(1),
+    /**
+     * Context for whoever applies the task, e.g. who received a returned item and the Return's
+     * comments. A Return makes no D4H write of its own, so this is the only place they're kept.
+     */
+    note: z.string().min(1).optional(),
 });
 
 /** A task's `kind` paired with the `payload` that kind carries. */

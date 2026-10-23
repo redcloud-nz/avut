@@ -32,7 +32,7 @@ interface I3ReturnItemsNotificationEmailProps {
         email: string;
     };
     formData: I3ReturnItemsFormData;
-    /** The items marked Non Operational in D4H, each with a retire task queued. */
+    /** The items with a retire task queued, labelled as D4H has them. */
     returnedItems: I3ReturnedItem[];
     /** One line per item that couldn't be returned, naming the item and why. */
     failures: string[];
@@ -92,8 +92,8 @@ export default function I3ReturnItemsNotificationEmail({
                                     </Row>
                                 ))}
                                 <Text className="text-[14px] text-black leading-6">
-                                    These items are now Non Operational in D4H, and each has a
-                                    retire task waiting to be applied in D4H.
+                                    Each of these items has a retire task waiting to be applied in
+                                    D4H.
                                 </Text>
                             </Section>
                         )}

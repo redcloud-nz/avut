@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ForbiddenError } from "@/lib/errors";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
@@ -86,16 +86,10 @@ vi.mock("@/server/d4h-access-token", () => ({
 
 vi.mock("@/server/d4h-api/client", () => ({
     fetchD4HWhoami: vi.fn(),
-    fetchD4HTeamDetailCached: vi.fn(async () => ({
-        id: TEAM_ID,
-        resourceType: "Team",
-        title: "Rescue Team",
-        timezone: "Pacific/Auckland",
-        subdomain: "rescue",
-    })),
     getD4HFetchClient: vi.fn(() => ({ GET })),
 }));
 
+// `patchD4HEquipmentItem` is mocked only so the tests can assert a Return never calls it.
 vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
     patchD4HEquipmentItem: vi.fn(async () => {}),
@@ -114,16 +108,6 @@ describe("I3ReturnItemsFormProcessor", () => {
 
     let db: ReturnType<typeof createMockPrisma>;
     let formInstanceId: FormInstanceId;
-
-    beforeAll(() => {
-        // 20:00 UTC on 22 Oct is 23 Oct in Auckland: the note's date is in the team's timezone.
-        vi.useFakeTimers({ toFake: ["Date"] });
-        vi.setSystemTime(new Date("2026-10-22T20:00:00Z"));
-    });
-
-    afterAll(() => {
-        vi.useRealTimers();
-    });
 
     beforeEach(async () => {
         // A fresh database per test: each asserts on the tasks and batches it alone created.
@@ -178,13 +162,19 @@ describe("I3ReturnItemsFormProcessor", () => {
     function emailProps() {
         expect(sendEmail).toHaveBeenCalledOnce();
         const { react } = vi.mocked(sendEmail).mock.calls[0][0];
-        return (react as { props: { returnedItems: { itemId: number }[]; failures: string[] } })
-            .props;
+        return (
+            react as {
+                props: {
+                    returnedItems: { itemId: number; ref: string; kindTitle: string }[];
+                    failures: string[];
+                };
+            }
+        ).props;
     }
 
     const NOTE = "Returned via AVUT, received by Receiver. Strap frayed.";
 
-    it("marks each item INACTIVE with a note, queues a retire task and emails", async () => {
+    it("queues a retire task with a note for each item, writes nothing to D4H, and emails", async () => {
         const { results, output } = await execute([1, 2], "Strap frayed.");
 
         expect(results.every((r) => r.status === "success")).toBe(true);
@@ -198,11 +188,7 @@ describe("I3ReturnItemsFormProcessor", () => {
             },
         });
 
-        expect(patchD4HEquipmentItem).toHaveBeenCalledTimes(2);
-        expect(patchD4HEquipmentItem).toHaveBeenCalledWith(accessToken, TEAM_ID, 1, {
-            status: "INACTIVE",
-            updateNotes: NOTE,
-        });
+        expect(patchD4HEquipmentItem).not.toHaveBeenCalled();
 
         const tasks = await db.d4HTask.findMany({ orderBy: { resourceId: "asc" } });
         expect(tasks).toMatchObject([
@@ -212,38 +198,52 @@ describe("I3ReturnItemsFormProcessor", () => {
                 itemLabel: "#1 Helmet",
                 kind: "Retire",
                 status: "Open",
-                payload: { reason: "Returned To Cache" },
+                payload: { reason: "Returned To Cache", note: NOTE },
                 formInstanceId,
             },
-            { resourceId: 2, itemLabel: "#2 Helmet" },
+            { resourceId: 2, itemLabel: "#2 Helmet", payload: { note: NOTE } },
         ]);
 
-        // One batch, holding both item updates and both task creates.
+        // One batch, holding only the two task creates.
         const batches = await db.logBatch.findMany();
         expect(batches).toHaveLength(1);
         expect(batches[0]).toMatchObject({ operationKey: "i3-return-items", userId: T.user });
         const entries = await db.logEntry.findMany();
-        expect(entries).toHaveLength(4);
+        expect(entries).toHaveLength(2);
         expect(entries.every((entry) => entry.batchId === batches[0].id)).toBe(true);
-        expect(
-            entries.filter((e) => e.objectType === "D4HEquipmentItem").map((e) => e.objectId),
-        ).toEqual(["1", "2"]);
+        expect(entries.every((e) => e.objectType === "D4HTask" && e.action === "Create")).toBe(
+            true,
+        );
 
         const props = emailProps();
         expect(props.returnedItems.map((i) => i.itemId)).toEqual([1, 2]);
         expect(props.failures).toEqual([]);
     });
 
-    it("leaves the item's notes alone and omits empty comments", async () => {
+    it("labels the task and email from D4H's item, not the submitted form data", async () => {
         vi.mocked(fetchD4HEquipmentItem).mockResolvedValue(
-            item(1, { notes: "Bought 2024.\nInspected 2025." }) as never,
+            item(1, {
+                ref: "A-1",
+                kind: { resourceType: "EquipmentKind", id: 9, title: "Radio" },
+            }) as never,
         );
 
+        await execute([1]);
+
+        const [task] = await db.d4HTask.findMany();
+        expect(task.itemLabel).toBe("#A-1 Radio");
+        expect(emailProps().returnedItems).toMatchObject([
+            { itemId: 1, ref: "A-1", kindTitle: "Radio" },
+        ]);
+    });
+
+    it("omits blank comments from the note", async () => {
         await execute([1], "   ");
 
-        expect(patchD4HEquipmentItem).toHaveBeenCalledWith(accessToken, TEAM_ID, 1, {
-            status: "INACTIVE",
-            updateNotes: "Returned via AVUT, received by Receiver.",
+        const [task] = await db.d4HTask.findMany();
+        expect(task.payload).toEqual({
+            reason: "Returned To Cache",
+            note: "Returned via AVUT, received by Receiver.",
         });
     });
 
@@ -256,7 +256,7 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(last).toMatchObject({ stageName: "CheckPermissions", status: "error" });
         expect(last?.status === "error" && last.error).toBeInstanceOf(ForbiddenError);
         expect(fetchD4HEquipmentItem).not.toHaveBeenCalled();
-        expect(patchD4HEquipmentItem).not.toHaveBeenCalled();
+        expect(await db.d4HTask.findMany()).toEqual([]);
         expect(sendEmail).not.toHaveBeenCalled();
     });
 
@@ -290,22 +290,17 @@ describe("I3ReturnItemsFormProcessor", () => {
             "#3 Helmet: already has an open retire task",
             "#5 Helmet: not found in D4H",
         ]);
-        expect(patchD4HEquipmentItem).toHaveBeenCalledOnce();
-        expect(patchD4HEquipmentItem).toHaveBeenCalledWith(
-            accessToken,
-            TEAM_ID,
-            1,
-            expect.anything(),
-        );
+        const open = await db.d4HTask.findMany({ where: { formInstanceId } });
+        expect(open.map((t) => t.resourceId)).toEqual([1]);
         expect(emailProps().failures).toHaveLength(5);
     });
 
-    it("keeps going past a PATCH that throws", async () => {
-        vi.mocked(patchD4HEquipmentItem).mockRejectedValueOnce(new Error("D4H said 400"));
+    it("keeps going past an item whose GET throws", async () => {
+        vi.mocked(fetchD4HEquipmentItem).mockRejectedValueOnce(new Error("D4H said 500"));
 
         const { output } = await execute([1, 2]);
 
-        expect(output).toMatchObject({ returned: 1, failures: ["#1 Helmet: D4H said 400"] });
+        expect(output).toMatchObject({ returned: 1, failures: ["#1 Helmet: D4H said 500"] });
         expect((await db.d4HTask.findMany()).map((t) => t.resourceId)).toEqual([2]);
     });
 
@@ -317,7 +312,6 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(results.every((r) => r.status === "success")).toBe(true);
         expect(output).toMatchObject({ returned: 0 });
         expect(output.failures).toHaveLength(2);
-        expect(patchD4HEquipmentItem).not.toHaveBeenCalled();
         expect(await db.logBatch.findMany()).toEqual([]);
         expect(await db.d4HTask.findMany()).toEqual([]);
         expect(emailProps().returnedItems).toEqual([]);

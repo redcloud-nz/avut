@@ -9,11 +9,10 @@ import { createElement } from "react";
 import * as z from "zod";
 
 import I3ReturnItemsNotificationEmail from "@/emails/i3-return-items-notification";
-import { diffObject } from "@/lib/diff";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient, type D4HListResponse } from "@/server/d4h-api/client";
-import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import { fetchD4HEquipmentItem } from "@/server/d4h-api/equipment";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
@@ -28,9 +27,11 @@ import { I3ReturnedItem, I3ReturnItemsFormData } from "./schema";
 const RETIRE_REASON = "Returned To Cache";
 
 /**
- * Process the submission of the I3 Return Items form: for each item, mark it Non Operational
- * (`INACTIVE`) in D4H with a note saying who returned it, queue a task to retire it by hand in
- * D4H (the API can't), and notify the admin.
+ * Process the submission of the I3 Return Items form: for each item, queue a task to retire it by
+ * hand in D4H, noting who received it, and notify the admin.
+ *
+ * A Return makes no write to D4H itself. Teams differ in what they do with a returned item (some
+ * retire it, some only take it off the person), so the whole D4H change is the queued task.
  *
  * The `ReturnItems` stage's `returned` and `failures` are what the caller reports back; the rest
  * of the output (the access token included) stays on the server.
@@ -69,14 +70,14 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
 
             const heldItemIds = await fetchMemberCurrentItemIds(accessToken, teamId, recipient.id);
 
-            // Goes on the status change's history entry only, never the item's notes: D4H's
-            // history already records when it happened and who held the item.
-            const updateNote =
+            // Carried on each retire task for whoever applies it. A Return makes no D4H write,
+            // so the task is the only place who received the item and the comments are kept.
+            const note =
                 `Returned via AVUT, received by ${ctx.auth.user.name}.` +
                 (comments.trim() ? ` ${comments.trim()}` : "");
 
-            // The batch opens on the first successful PATCH, so a Return where every item fails
-            // leaves no empty batch behind.
+            // The batch opens on the first task queued, so a Return where every item fails leaves
+            // no empty batch behind.
             let batchCtx: OrgServiceContext | null = null;
             async function openBatch(): Promise<OrgServiceContext> {
                 if (batchCtx) return batchCtx;
@@ -93,18 +94,20 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
                 return batchCtx;
             }
 
-            // Keep going past a failed item: the ones already changed in D4H can't be rolled
-            // back, so return as many as possible and report the rest.
+            // Keep going past a failed item: return as many as possible and report the rest.
             const returnedItems: I3ReturnedItem[] = [];
             const failures: string[] = [];
             for (const item of ctx.formData.items) {
-                const label = itemLabel(item);
+                // The client's label stands in only until the item is fetched; from then on the
+                // label comes from D4H.
+                let label = `#${item.ref} ${item.kindTitle}`;
                 try {
                     const before = await fetchD4HEquipmentItem(accessToken, teamId, item.itemId);
                     if (before == null || before.owner.id !== teamId) {
                         failures.push(`${label}: not found in D4H`);
                         continue;
                     }
+                    label = `#${before.ref} ${before.kind.title}`;
                     if (!heldItemIds.has(item.itemId)) {
                         failures.push(`${label}: not held by ${recipient.name}`);
                         continue;
@@ -123,39 +126,17 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
                         continue;
                     }
 
-                    // D4H writes can't join a Prisma transaction: PATCH first, then write the
-                    // log and the task once it has succeeded.
-                    await patchD4HEquipmentItem(accessToken, teamId, item.itemId, {
-                        status: "INACTIVE",
-                        updateNotes: updateNote,
+                    // The task's Create log entry is the record of the return.
+                    await D4HTasks.createRetireTask(await openBatch(), {
+                        d4hTeamId: teamId,
+                        itemId: item.itemId,
+                        itemLabel: label,
+                        reason: RETIRE_REASON,
+                        note,
+                        formInstanceId: ctx.formInstanceId,
                     });
 
-                    const logCtx = await openBatch();
-                    try {
-                        await logCtx.logEvent({
-                            action: "Update",
-                            objectType: "D4HEquipmentItem",
-                            objectId: String(item.itemId),
-                            changes: diffObject({ status: before.status }, { status: "INACTIVE" }),
-                            description: `Returned ${label} from ${recipient.name}.`,
-                        });
-                        await D4HTasks.createRetireTask(logCtx, {
-                            d4hTeamId: teamId,
-                            itemId: item.itemId,
-                            itemLabel: label,
-                            reason: RETIRE_REASON,
-                            formInstanceId: ctx.formInstanceId,
-                        });
-                    } catch (err) {
-                        // The D4H change stands; returning the item again re-queues the task.
-                        ctx.logger.error(`Failed to record the return of ${label}`, err);
-                        failures.push(
-                            `${label}: marked Non Operational in D4H, but its retire task wasn't queued`,
-                        );
-                        continue;
-                    }
-
-                    returnedItems.push(item);
+                    returnedItems.push({ ...item, ref: before.ref, kindTitle: before.kind.title });
                 } catch (err) {
                     ctx.logger.error(`Failed to return ${label}`, err);
                     failures.push(`${label}: ${err instanceof Error ? err.message : String(err)}`);
@@ -183,11 +164,6 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
         },
     })
     .build();
-
-/** `#<ref> <kind>`, as the retire task and the failure lines label an item. */
-function itemLabel(item: I3ReturnedItem): string {
-    return `#${item.ref} ${item.kindTitle}`;
-}
 
 /**
  * The ids of the items a member currently holds. Read from a `member_id`-filtered list because
