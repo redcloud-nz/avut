@@ -45,7 +45,7 @@ const organizationRoles = {
     admin: {
         displayName: "Admin",
         description:
-            "Everything a Member can do, plus full access to organisation settings, users and roster management. Can manage users and roles.",
+            "Everything a Member can do, plus full access to organisation settings, users and roster management. Can manage users and roles, edit D4H equipment items and work the D4H task queue.",
         isAdminAssignable: true,
     },
     member: {
