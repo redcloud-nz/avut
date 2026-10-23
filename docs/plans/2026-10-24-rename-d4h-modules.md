@@ -113,4 +113,5 @@ D4H Views and I3 are renamed to D4H and D4H I3, and D4H I3 now needs D4H. Move a
 
 ## Review notes
 
-- **Task 2:** `src/client/settings-effects.ts` (`mergeOrganizationSlice`) merges dependents' `enabled` from the response on every save to a module slice. That reopens the out-of-order race `mergePatchedFields` closes: enable D4H, then quickly enable D4H I3, and a late D4H response overwrites D4H I3 back to off in the cache. Merge dependents only when the patch sets `enabled: false` (pass `update.patch` through), and add a test for it.
+- **Task 2:** `src/client/settings-effects.ts` (`mergeOrganizationSlice`) merges dependents' `enabled` from the response on every save to a module slice. That reopens the out-of-order race `mergePatchedFields` closes: enable D4H, then quickly enable D4H I3, and a late D4H response overwrites D4H I3 back to off in the cache. Merge dependents only when the patch sets `enabled: false` (pass `update.patch` through), and add a test for it. — fixed
+- **Task 5:** `src/modules/d4h-i3/components/sidebar-menu.tsx:13` JSDoc still says "the I3 module's"; make it "the D4H I3 module's". — fixed

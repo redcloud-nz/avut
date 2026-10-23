@@ -50,20 +50,21 @@ function mergePatchedFields<T extends object>(
 }
 
 /**
- * `cached` with the patched fields of `updated` merged in, as {@link mergePatchedFields}, plus
- * `enabled` of every module that `requires` the patched module. Turning a module off on the
- * server also turns its dependents off (`enforceModuleRequirements`), so that's the one field
- * outside the patch a module save is authoritative for.
+ * `cached` with the patched fields of `updated` merged in, as {@link mergePatchedFields}. A save
+ * that turns a module off also takes `enabled` of every module that `requires` it: turning a module
+ * off on the server also turns its dependents off (`enforceModuleRequirements`), so that's the one
+ * field outside the patch such a save is authoritative for. Any other save leaves dependents as
+ * cached, or a late response could put back a dependent that a newer save had just turned on.
  */
 function mergeOrganizationSlice(
     cached: OrganizationSettings,
     updated: OrganizationSettings,
     path: string[],
-    fields: string[],
+    patch: Record<string, unknown>,
 ): OrganizationSettings {
-    let merged = mergePatchedFields(cached, updated, path, fields);
+    let merged = mergePatchedFields(cached, updated, path, Object.keys(patch));
 
-    if (path[0] === "modules" && path.length === 2) {
+    if (path[0] === "modules" && path.length === 2 && patch.enabled === false) {
         for (const dependent of modulesRequiring(path[1] as OrganizationModuleId)) {
             merged = mergePatchedFields(merged, updated, ["modules", dependent], ["enabled"]);
         }
@@ -85,7 +86,7 @@ export const settingsEffects = createEffects<"settings">()({
                       cached,
                       updated,
                       OrganizationSettingsSlices.pathOf(update.slice),
-                      Object.keys(update.patch),
+                      update.patch,
                   )
                 : updated,
         ),

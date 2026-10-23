@@ -90,6 +90,25 @@ describe("settingsEffects.updateOrganizationSettingsSlice", () => {
         expect(result.modules.notes.enabled).toBe(true);
     });
 
+    it("leaves dependents as cached when the patch doesn't turn the module off", () => {
+        // Enable D4H, then quickly enable D4H I3. D4H's response predates the second save, so it
+        // still says D4H I3 is off.
+        const cached = OrganizationSettings.default();
+        cached.modules.d4h.enabled = true;
+        cached.modules["d4h-i3"].enabled = true;
+        const staleD4H = OrganizationSettings.default();
+        staleD4H.modules.d4h.enabled = true;
+
+        const effects = settingsEffects.updateOrganizationSettingsSlice(
+            { organizationId, update: { slice: "modules.d4h", patch: { enabled: true } } },
+            staleD4H,
+        );
+        const result = applyWrite(effects, cached) as OrganizationSettings;
+
+        expect(result.modules.d4h.enabled).toBe(true);
+        expect(result.modules["d4h-i3"].enabled).toBe(true);
+    });
+
     it("writes the whole response when nothing is cached", () => {
         const response = OrganizationSettings.default();
 

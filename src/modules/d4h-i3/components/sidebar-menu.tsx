@@ -10,7 +10,7 @@ import { Protect } from "@/components/protect";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
-/** Nested pages for the I3 module's `NavCollapsible` section — not a standalone sidebar group. */
+/** Nested pages for the D4H I3 module's `NavCollapsible` section — not a standalone sidebar group. */
 export function D4HI3_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
