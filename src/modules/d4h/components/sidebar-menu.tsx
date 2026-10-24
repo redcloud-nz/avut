@@ -17,6 +17,7 @@ export function D4H_Sidebar_Menu() {
 
     return (
         <>
+            <NavSubItem label="Teams" href={route("/orgs/[slug]/d4h/teams", { slug })} />
             <NavSubItem label="Equipment" href={route("/orgs/[slug]/d4h/equipment", { slug })} />
             <NavSubItem label="Members" href={route("/orgs/[slug]/d4h/members", { slug })} />
             <Protect permissions={{ d4hTask: ["view"] }}>

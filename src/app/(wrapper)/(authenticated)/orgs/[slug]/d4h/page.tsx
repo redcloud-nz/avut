@@ -30,6 +30,17 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                 <Std.IndexPage title="D4H">
                     <ItemGroup>
                         <Item asChild>
+                            <Link href={route("/orgs/[slug]/d4h/teams", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Teams</ItemTitle>
+                                    <ItemDescription>View your D4H teams.</ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
                             <Link href={route("/orgs/[slug]/d4h/equipment", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Equipment</ItemTitle>

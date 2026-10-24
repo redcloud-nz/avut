@@ -102,7 +102,13 @@ export function D4HModule_EquipmentItem_Content({
                 breadcrumbs={[
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
-                    team.title,
+                    {
+                        label: team.title,
+                        href: route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
+                            slug,
+                            d4h_team_id: String(teamId),
+                        }),
+                    },
                     { label: `Item #${item.ref}` },
                 ]}
             />

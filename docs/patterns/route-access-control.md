@@ -59,14 +59,13 @@ Client Component pages (`"use client"`) can't hold a server check at all. They f
 When it reads data outside tRPC. Put the check next to the read, with the permission the matching procedure requires. Current cases:
 
 - The D4H access token pages under `admin/d4h-access-tokens/[token_id]/` that call `getD4HFetchClient` (`whoami`, `organisation`, `members`, `equipment-{categories,kinds,items,locations}`) read D4H with the organization's credential: `requireOrganizationWith(slug, { organization: ["update"] })`. The token list, create, detail and history pages read through tRPC and have no check of their own.
-- `d4h/{teams,personnel}`, `d4h-i3/{members,equipment-kinds}` and `d4h-today` read D4H with the viewer's own personal token: `requireOrganization(slug)`. The token bounds what they can see to what the viewer's own D4H account can see.
+- `d4h-today` looks up the viewer's own personal D4H token to decide what to show: `requireOrganization(slug)`. Its D4H data comes through `d4hApi.myActivitiesToday`. The D4H browser pages under `d4h/` read only through `d4hApi` and have no check of their own.
 
 ---
 
 ## Known and accepted
 
 - **Org name by slug.** `getOrganizationBySlug` in `orgs/[slug]/layout.tsx`'s `generateMetadata` can put an org's name in the tab title for any signed-in user who knows its slug.
-- **D4H view pages check membership only,** while the `d4hApi` procedures serving similar data also require `d4hEquipment:view`. The personal token limits them, as above.
 - **`system/admin` pages repeat `requireSystemAdmin()`** in each page and its `generateMetadata`, although they read only through `systemAdminProcedure`, and the `generateMetadata` call goes against the rule above. It's redundant under this rule, and left in place. Don't copy it into new org-scoped pages.
 
 ---

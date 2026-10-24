@@ -5,8 +5,10 @@
 
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -17,27 +19,41 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { D4HTeamRef } from "@/lib/schemas/d4h/team";
+import { Std } from "@/components/blocks/std";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { trpc } from "@/trpc/client";
 
-export type D4HModule_Teams_Row = Pick<D4HTeamRef, "id" | "title">;
+/** The D4H teams the viewer's personal token can reach, each linking to its team index. */
+export function D4HModule_Teams_List() {
+    const organization = useOrganization();
+    const { slug } = organization;
 
-interface D4HModule_Teams_ListProps {
-    teams: D4HModule_Teams_Row[];
-}
+    const { data: teams } = useSuspenseQuery(
+        trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }),
+    );
 
-export function D4HModule_Teams_List({ teams }: D4HModule_Teams_ListProps) {
     const columns = useMemo(
         () =>
-            Kaga.defineColumns<D4HModule_Teams_Row>((columnHelper) => [
+            Kaga.defineColumns<(typeof teams)[number]>((columnHelper) => [
                 columnHelper.accessor("title", {
                     header: "Name",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => (
+                        <Link
+                            href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
+                                slug,
+                                d4h_team_id: String(ctx.row.original.id),
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
+                    ),
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [slug],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -48,18 +64,32 @@ export function D4HModule_Teams_List({ teams }: D4HModule_Teams_ListProps) {
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        initialState: {
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
+            sorting: [{ id: "title", desc: false }],
+        },
     });
 
     return (
-        <Saratoga.Root>
-            <Saratoga.Header>
-                <Saratoga.Title>Teams</Saratoga.Title>
-            </Saratoga.Header>
-            <div>
-                <Kaga.TableToolbar table={table} />
-                <Kaga.Table table={table} />
-                <Kaga.TablePagination table={table} />
-            </div>
-        </Saratoga.Root>
+        <>
+            <Std.Navbar
+                breadcrumbs={[
+                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+                    { label: "Teams" },
+                ]}
+            />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Teams</Saratoga.Title>
+                    </Saratoga.Header>
+                    <div>
+                        <Kaga.TableToolbar table={table} />
+                        <Kaga.Table table={table} />
+                        <Kaga.TablePagination table={table} />
+                    </div>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </>
     );
 }

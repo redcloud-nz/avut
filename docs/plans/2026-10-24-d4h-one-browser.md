@@ -152,36 +152,39 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
 
 ### Review group 3: teams and members (`visual`)
 
-- [ ] **6. Teams, team index, picker** `visual`
+- [x] **6. Teams, team index, picker, members list** `visual` — feat(d4h): team index, team picker and per-team members list (#453)
   - **Files:**
     - **Rewrite:** `d4h/teams/page.tsx` (server prefetch of `listAccessibleTeams`), `src/modules/d4h/components/teams/d4h-teams-list.tsx` (via `useSuspenseQuery`; names link to the team index)
     - **New:**
       - `d4h/teams/[d4h_team_id]/page.tsx` and `src/modules/d4h/components/teams/{team-content,team-picker-dialog}.tsx`
       - `src/modules/d4h/components/members/select-team.tsx`
+      - `d4h/teams/[d4h_team_id]/members/page.tsx` and `src/modules/d4h/components/members/team-members-list.tsx` (moved from Task 7: the landing, picker and team index all link here)
     - **Replace:** `d4h/members/page.tsx` with a server page
     - **Delete:** `d4h/members/layout.tsx`, `d4h/members/[team_id]/[member_id]/page.tsx`, `d4h/personnel/page.tsx`, `src/modules/d4h/components/personnel/personnel-list.tsx`, `src/client/collections/d4h-members.ts`
     - **Edit:** `src/modules/d4h/components/sidebar-menu.tsx` (Members → the landing; add Teams), `d4h/page.tsx` (add Teams; Members link stays valid), `docs/patterns/route-access-control.md` (line ~62 and its "Known and accepted" note: only `d4h-today` still reads D4H outside tRPC), the item content (link the team breadcrumb)
   - **Do:**
     - **`D4HModule_TeamPickerDialog`:** uses task 2's shell to list `listAccessibleTeams` sorted by title in a searchable `Command`. Choosing a team does `router.push(section(teamId))`, with `section` a caller-supplied route builder.
-    - **Team index:** a header with the team title and Change team, a short details card, and an `ItemGroup` link to Members. An id not in `listAccessibleTeams` throws `NotFoundError`.
+    - **Team index:** a header with the team title and Change team, a short details card, and an `ItemGroup` link to Members. An id not in `listAccessibleTeams` calls `notFound()`.
     - **`/d4h/members` landing:** the server page prefetches `listAccessibleTeams`, and the client component:
       - redirects (`router.replace`) to the only team when there's one
       - shows `Empty` for none, or when there's no token (via the error boundary)
       - otherwise shows a short prompt with the picker forced open
+    - **Members list** (Kaga table; prefetch `listTeamMembers` and `listAccessibleTeams`): Name (unlinked until Task 7 builds the member page), Ref, Position, Status (`formatD4HMemberStatus`), with Change team in the header. Breadcrumbs are D4H › Teams › `<team>` › Members.
+    - **Unknown ids:** a client content component that can't find its team (or, in Task 7, its member) calls `notFound()` from `next/navigation`, as `d4h-access-token-content.tsx` does, so the real not-found panel shows.
   - **Done when:**
     - `/d4h/teams` lists teams that link to their index, and the team index renders and 404s an unknown team.
     - `/d4h/members` redirects with one team and opens the picker with several.
+    - The members list renders labelled statuses under a team.
     - Change team keeps the section, and `npm run check` passes.
 
-- [ ] **7. Team members list and member page** `visual`
-  - **Files:** new `d4h/teams/[d4h_team_id]/members/page.tsx` and `…/members/[member_id]/page.tsx`, `src/modules/d4h/components/members/{team-members-list,member-content}.tsx`; the item content (link Issued To)
+- [ ] **7. Member page** `visual`
+  - **Files:** new `d4h/teams/[d4h_team_id]/members/[member_id]/page.tsx`, `src/modules/d4h/components/members/member-content.tsx`; `team-members-list.tsx` (link Name); the item content (link Issued To)
   - **Do:**
-    - **Members list** (Kaga table; prefetch `listTeamMembers` and `listAccessibleTeams`): Name (linked), Ref, Position, Status (`formatD4HMemberStatus`), with Change team in the header. Breadcrumbs are D4H › Teams › `<team>` › Members.
     - **Member page:** the title is the member's name from `listTeamMembers` in `generateMetadata` (generic fallback for no token or not found), with a details card as on today's `d4h/members/[team_id]/[member_id]`.
       - The equipment table comes from `listMemberEquipment` (prefetched): Ref (linked to the item page), Type, Brand, Model, Status (labelled), as a flat sortable Kaga table.
-      - A member id not in the list throws `NotFoundError` from the content component.
+      - A member id not in the list calls `notFound()` from the content component.
     - The item page's Issued To links here when the holder is named.
-  - **Done when:** both pages render under a team, labels are human-readable, links resolve, and `npm run check` passes.
+  - **Done when:** the member page renders under a team, the members list links to it, labels are human-readable, links resolve, and `npm run check` passes.
 
 - [ ] **11. Item page: Parents and Contents** `visual` (added at checkpoint 1: the old D4H item page had them, and Task 4 dropped them)
   - **Files:** `src/server/d4h-api/equipment.ts` (+ test), `src/trpc/routers/d4h-api-router.ts` (+ test), `src/modules/d4h/components/items/equipment-item-content.tsx`, the item `page.tsx`, the cache effects that invalidate `listEquipmentKindItems`
