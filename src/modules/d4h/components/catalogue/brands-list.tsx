@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -19,6 +18,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
@@ -52,16 +52,7 @@ export function D4HModule_Brands_List() {
             Kaga.defineColumns<BrandRow>((columnHelper) => [
                 columnHelper.accessor("title", {
                     header: "Title",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h/brands/[brand_id]", {
-                                slug,
-                                brand_id: String(ctx.row.original.id),
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => <D4HEquipmentBrandLink brand={ctx.row.original} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -81,7 +72,7 @@ export function D4HModule_Brands_List() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [slug],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

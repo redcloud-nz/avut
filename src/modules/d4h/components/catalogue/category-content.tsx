@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useMemo } from "react";
 
@@ -20,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
@@ -53,16 +53,7 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
             Kaga.defineColumns<D4HEquipmentKind>((columnHelper) => [
                 columnHelper.accessor("title", {
                     header: "Title",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h/types/[type_id]", {
-                                slug,
-                                type_id: String(ctx.row.original.id),
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => <D4HEquipmentTypeLink type={ctx.row.original} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -75,7 +66,7 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
                     enableColumnFilter: false,
                 }),
             ]),
-        [slug],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

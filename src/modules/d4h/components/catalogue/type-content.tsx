@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useMemo } from "react";
 
@@ -20,6 +19,12 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
+import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
+import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
+import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
+import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
+import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
@@ -54,20 +59,11 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                 columnHelper.accessor("ref", {
                     header: "Ref",
                     cell: (ctx) => {
-                        const { team, owner, id } = ctx.row.original;
+                        const { team, owner, id, ref } = ctx.row.original;
                         // The item page lives under the owning team. A row that fell back to the
                         // team listing it (owner out of reach) has no page to link to.
-                        if (team.id !== owner.id) return ctx.getValue();
-                        return (
-                            <Link
-                                href={route(
-                                    "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
-                                    { slug, d4h_team_id: String(team.id), item_id: String(id) },
-                                )}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        );
+                        if (team.id !== owner.id) return `#${ref}`;
+                        return <D4HEquipmentItemLink item={{ id, ref, owner }} />;
                     },
                     enableGlobalFilter: true,
                     enableSorting: true,
@@ -75,7 +71,10 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                 }),
                 columnHelper.accessor("team.title", {
                     header: "Team",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { team } = ctx.row.original;
+                        return <D4HTeamLink team={{ ...team, resourceType: "Team" }} />;
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -92,20 +91,10 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                             if (!holder) return "—";
                             // A holder missing from the team's member list (e.g. a retired
                             // member) has no name, and no member page.
-                            if (!holder?.name) return ctx.getValue();
                             return (
-                                <Link
-                                    href={route(
-                                        "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
-                                        {
-                                            slug,
-                                            d4h_team_id: String(team.id),
-                                            member_id: String(holder.id),
-                                        },
-                                    )}
-                                >
-                                    {holder.name}
-                                </Link>
+                                <D4HMemberLink
+                                    member={{ id: holder.id, name: holder.name, owner: team }}
+                                />
                             );
                         },
                         enableGlobalFilter: true,
@@ -116,7 +105,13 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                 columnHelper.accessor((item) => item.brand.title ?? "", {
                     id: "brand",
                     header: "Brand",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { brand } = ctx.row.original;
+                        if (brand.id == null || !brand.title) return ctx.getValue() || "—";
+                        return (
+                            <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -124,7 +119,21 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                 columnHelper.accessor((item) => item.model?.title ?? "", {
                     id: "model",
                     header: "Model",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { brand, model } = ctx.row.original;
+                        if (model?.id == null || !model.title || brand.id == null) {
+                            return ctx.getValue() || "—";
+                        }
+                        return (
+                            <D4HEquipmentModelLink
+                                model={{
+                                    id: model.id,
+                                    title: model.title,
+                                    brand: { id: brand.id },
+                                }}
+                            />
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -144,7 +153,7 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                     },
                 }),
             ]),
-        [slug],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -199,17 +208,7 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                                     <DataItem inline>
                                         <DataItemTitle>Category</DataItemTitle>
                                         <DataItemValue>
-                                            <Link
-                                                href={route(
-                                                    "/orgs/[slug]/d4h/categories/[category_id]",
-                                                    {
-                                                        slug,
-                                                        category_id: String(kind.category.id),
-                                                    },
-                                                )}
-                                            >
-                                                {kind.category.title}
-                                            </Link>
+                                            <D4HEquipmentCategoryLink category={kind.category} />
                                         </DataItemValue>
                                     </DataItem>
                                     <DataItem inline>

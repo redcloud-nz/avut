@@ -52,7 +52,7 @@ Finish the "Kind" → "Type" wording that #453 started (it is left only on the D
 
 ### Review group 2: D4H module (`visual`), then visual checkpoint 1
 
-- [ ] **2. Catalogue pages** `visual` `mechanical`
+- [x] **2. Catalogue pages** `visual` `mechanical` — feat(d4h): link names on the catalogue pages (#455)
   - **Files:** `src/modules/d4h/components/catalogue/{owner,brands-list,brand-content,categories-list,category-content,type-content}.tsx`.
   - **Do:** `D4HModule_Owner` takes `id` and links Team owners (Decisions). Every caller passes `owner` with its `id`. Replace the bare `<Link>`s for brands, categories, types, items and holders with the wrappers. Link the plain cells: on `type-content.tsx`, the Team column (`D4HTeamLink`), Brand (`D4HEquipmentBrandLink` when `brand.id` is set) and Model (`D4HEquipmentModelLink` when `model.id` and `brand.id` are set). Keep `type-content.tsx`'s current rule that an item Ref links only when its team is reachable. Brand page models stay plain, since the link would point at the page they're on.
   - **Done when:** `npm run check` passes. No bare `next/link` `<Link>` is left for an entity name in these files (`grep -n '<Link' src/modules/d4h/components/catalogue`).
@@ -99,3 +99,7 @@ Template screens now say "D4H Type" and names across D4H and D4H I3 link to thei
 - The template picker rework (#454).
 
 ## Parked
+
+## Review notes
+
+- `docs/patterns/entity-link.md`: sort the new wrapper-table rows alphabetically (D4H Equipment Brand … Type, D4H Member, D4H Team), and note in "Adding a new entity type" step 1 that a Ref may carry `title` instead of `name`, as the D4H records do.
