@@ -39,6 +39,9 @@ export default async function D4HI3Module_Template_Page(props: Props) {
     const templateId = I3TemplateId.schema.parse(template_id);
 
     prefetch(trpc.i3.getTemplate.queryOptions({ organizationId: organization.id, templateId }));
+    prefetch(
+        trpc.i3.listTemplateVariants.queryOptions({ organizationId: organization.id, templateId }),
+    );
 
     return (
         <HydrateClient>
