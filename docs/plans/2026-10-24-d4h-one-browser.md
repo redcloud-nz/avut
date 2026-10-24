@@ -97,7 +97,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
 
 ### Review group 2: tasks and item page (`visual`), then visual checkpoint 1
 
-- [ ] **3. D4H Tasks moves to `/d4h/tasks`** `visual`
+- [x] **3. D4H Tasks moves to `/d4h/tasks`** `visual` — feat(d4h): D4H Tasks moves to /d4h/tasks (#453)
   - **Files:**
     - **New:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h/tasks/page.tsx`
     - **Move:** `src/modules/d4h-i3/components/{d4h-tasks-list,d4h-task-actions,d4h-task-changes}.tsx` → `src/modules/d4h/components/tasks/`. Move `src/modules/d4h-i3/components/equipment-item/item-tasks-card.tsx` too, because it imports the task actions and changes and the I3 item content imports it. The I3 item content then imports nothing across modules: render the card from the I3 page's `page.tsx` slot or drop it there until task 4. Pick whichever keeps lint green, and say which.
@@ -237,3 +237,8 @@ D4H browsing (team-scoped Members/Items with a team picker; top-level Categories
 ## Parked
 
 - Skill Track's `person-scope-dialog.tsx` and `skill-scope-dialog.tsx` repeat the picker shell logic (`select-scope`, forceOpen/dismissed, push/replace). Move them onto `PickerDialog` (`src/components/picker-dialog.tsx`). Area: Skill Track reports.
+
+## Review notes
+
+- (Task 1) `listEquipmentKindItems` tags each row with the team whose list returned it, and de-dupes keeping the first. Take the team and the member list to search from `item.owner.id` instead (or keep the row whose listing team equals `owner.id`), so a duplicate listed under a non-owning team first still gets the right Team, Holder and item link. Add a test with the duplicate under the non-owning team first.
+- (Task 1) Add no-token tests (`getConfiguredD4HAccessToken` rejects with `NotConfiguredError` → `PRECONDITION_FAILED`) for `listTeamMembers` and `listEquipmentKindItems`, like `updateEquipmentItem`'s.

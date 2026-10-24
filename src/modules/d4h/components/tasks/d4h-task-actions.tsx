@@ -21,7 +21,7 @@ import { trpc } from "@/trpc/client";
  * reporting its result with a toast. Both are disabled without `d4hTask: ["apply"]`, which
  * `checkTask` and `dismissTask` require.
  */
-export function D4HI3Module_D4HTaskActions({ task }: { task: D4HTask }) {
+export function D4HModule_D4HTaskActions({ task }: { task: D4HTask }) {
     const organization = useOrganization();
 
     const checkMutation = useMutation(

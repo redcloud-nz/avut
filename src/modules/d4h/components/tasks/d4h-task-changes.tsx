@@ -25,7 +25,7 @@ function d4hTaskChanges(task: D4HTask): D4HTaskChange[] {
  * set apart from the instruction text, followed by the task's note (e.g. who received a returned
  * item) when it has one.
  */
-export function D4HI3Module_D4HTaskChanges({ task }: { task: D4HTask }) {
+export function D4HModule_D4HTaskChanges({ task }: { task: D4HTask }) {
     return (
         <div className="space-y-1">
             <ul className="list-disc space-y-0.5 pl-5 text-sm">

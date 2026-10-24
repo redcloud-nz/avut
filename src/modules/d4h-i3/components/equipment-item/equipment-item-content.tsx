@@ -6,7 +6,7 @@
 
 import { ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
-import { Suspense, useRef } from "react";
+import { useRef } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
@@ -14,14 +14,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardLoadingFallback,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
@@ -33,7 +26,6 @@ import { trpc } from "@/trpc/client";
 import { D4HI3Module_ReturnedBadge } from "../returned-badge";
 
 import { D4HI3Module_EquipmentItem_Menu } from "./equipment-item-menu";
-import { D4HI3Module_ItemTasks_Card } from "./item-tasks-card";
 import { D4HI3Module_ReturnEquipmentItem_Dialog } from "./return-equipment-item";
 import {
     D4HI3Module_UpdateEquipmentItem_Dialog,
@@ -85,7 +77,6 @@ export function D4HI3Module_EquipmentItem_Content({
 
     const isReturned = returnedItemIds.includes(item.id);
     const canUpdateInD4H = hasD4HTeamPermission(team.permissions, "Equipment", "UPDATE");
-    const canRetireInD4H = hasD4HTeamPermission(team.permissions, "Equipment", "RETIRE");
 
     const dates = [
         { label: "Purchased", value: item.datePurchased },
@@ -267,18 +258,6 @@ export function D4HI3Module_EquipmentItem_Content({
                                     </DataList>
                                 </CardContent>
                             </Card>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Protect permissions={{ d4hTask: ["view"] }}>
-                                <Suspense fallback={<CardLoadingFallback />}>
-                                    <D4HI3Module_ItemTasks_Card
-                                        teamId={teamId}
-                                        itemId={itemId}
-                                        itemLabel={`#${item.ref} ${item.kind.title}`}
-                                        canRetireInD4H={canRetireInD4H}
-                                    />
-                                </Suspense>
-                            </Protect>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

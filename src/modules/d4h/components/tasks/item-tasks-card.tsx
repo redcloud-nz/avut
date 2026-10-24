@@ -25,8 +25,8 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { D4HTask } from "@/lib/schemas/d4h-task";
 import { trpc } from "@/trpc/client";
 
-import { D4HI3Module_D4HTaskActions } from "../d4h-task-actions";
-import { D4HI3Module_D4HTaskChanges } from "../d4h-task-changes";
+import { D4HModule_D4HTaskActions } from "./d4h-task-actions";
+import { D4HModule_D4HTaskChanges } from "./d4h-task-changes";
 
 /**
  * A summary of the open D4H tasks on one equipment item ("2 pending D4H tasks"). Clicking a
@@ -36,7 +36,7 @@ import { D4HI3Module_D4HTaskChanges } from "../d4h-task-changes";
  * `listItemTasks` returns nothing to a viewer without D4H's Equipment RETIRE permission on the
  * item's team, so for them the card says why instead of claiming there are no tasks.
  */
-export function D4HI3Module_ItemTasks_Card({
+export function D4HModule_ItemTasks_Card({
     teamId,
     itemId,
     itemLabel,
@@ -139,13 +139,13 @@ function ItemTaskRow({ task }: { task: D4HTask }) {
     return (
         <Item variant="outline" size="sm">
             <ItemContent>
-                <D4HI3Module_D4HTaskChanges task={task} />
+                <D4HModule_D4HTaskChanges task={task} />
                 <ItemDescription className="text-xs">
                     Requested {formatDate(task.requestedAt)}
                 </ItemDescription>
             </ItemContent>
             <ItemActions>
-                <D4HI3Module_D4HTaskActions task={task} />
+                <D4HModule_D4HTaskActions task={task} />
             </ItemActions>
         </Item>
     );

@@ -27,8 +27,8 @@ import { route } from "@/lib/routes";
 import { D4HTask } from "@/lib/schemas/d4h-task";
 import { trpc } from "@/trpc/client";
 
-import { D4HI3Module_D4HTaskActions } from "./d4h-task-actions";
-import { D4HI3Module_D4HTaskChanges } from "./d4h-task-changes";
+import { D4HModule_D4HTaskActions } from "./d4h-task-actions";
+import { D4HModule_D4HTaskChanges } from "./d4h-task-changes";
 
 type OpenTaskRow = {
     task: D4HTask;
@@ -41,7 +41,7 @@ type OpenTaskRow = {
  * The open D4H tasks on every team where the viewer holds D4H's Equipment RETIRE permission,
  * grouped by team, each with Open in D4H, Check and Dismiss.
  */
-export function D4HI3Module_D4HTasks_List() {
+export function D4HModule_D4HTasks_List() {
     const organization = useOrganization();
     const { slug } = organization;
 
@@ -60,8 +60,8 @@ export function D4HI3Module_D4HTasks_List() {
         <>
             <Std.Navbar
                 breadcrumbs={[
-                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
-                    { label: "D4H Tasks" },
+                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+                    { label: "Tasks" },
                 ]}
             />
             <Std.ScrollContainer>
@@ -123,7 +123,7 @@ function TaskRow({ row: { task, requestedByName, d4hUrl } }: { row: OpenTaskRow 
                         {task.itemLabel}
                     </Link>
                 </ItemTitle>
-                <D4HI3Module_D4HTaskChanges task={task} />
+                <D4HModule_D4HTaskChanges task={task} />
                 <ItemDescription className="text-xs">
                     Requested by {requestedByName ?? "a deleted user"},{" "}
                     {formatDate(task.requestedAt)}
@@ -136,7 +136,7 @@ function TaskRow({ row: { task, requestedByName, d4hUrl } }: { row: OpenTaskRow 
                         Open in D4H
                     </a>
                 </Button>
-                <D4HI3Module_D4HTaskActions task={task} />
+                <D4HModule_D4HTaskActions task={task} />
             </ItemActions>
         </Item>
     );
