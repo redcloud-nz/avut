@@ -229,8 +229,6 @@ export function D4HI3Module_IssuedType_Content({
                                     {rows.map(({ item }) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
-                                                {/* Only the team's own items are listed, so
-                                                    each item page is under this team. */}
                                                 <D4HEquipmentItemLink item={item} />
                                                 {returnedIds.has(item.id) && (
                                                     <>

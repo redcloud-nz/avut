@@ -19,13 +19,13 @@ directly:
 
 | Entity                 | Wrapper                    | Prop                                                            |
 | ---------------------- | -------------------------- | --------------------------------------------------------------- |
-| D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }` |
-| D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                              |
 | D4H Equipment Brand    | `D4HEquipmentBrandLink`    | `brand: D4HEquipmentBrandRef`                                   |
 | D4H Equipment Category | `D4HEquipmentCategoryLink` | `category: D4HEquipmentCategoryRef`                             |
 | D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                   |
 | D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef`                                   |
 | D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef`                                     |
+| D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }` |
+| D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                              |
 | I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                       |
 | Organisation Group     | `OrganizationGroupLink`    | `group: OrganizationGroupRef`                                   |
 | Person                 | `PersonLink`               | `person: PersonRef & Partial<Pick<PersonData, "email">>`        |
@@ -99,7 +99,8 @@ use the `Ref` schema.
 
 1. Add `<Entity>Ref` to `src/lib/schemas/<entity>.ts` if it doesn't already exist — `{id, name}`
    for anything with a single-id detail route, or the full identifying key (as
-   `TeamMembershipRef` does) when it doesn't.
+   `TeamMembershipRef` does) when it doesn't. A Ref may carry `title` instead of `name` when
+   the record itself does, as the D4H records do.
 2. Add `src/components/entity-links/<entity>-link.tsx`, following an existing wrapper as a
    template: resolve the route with `route()`, pass `title`/`type` to `EntityLink`, and put
    any enrichment field in `children`.

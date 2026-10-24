@@ -398,83 +398,97 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
         trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }),
     );
 
-    const columns = useMemo(
-        () =>
-            Kaga.defineColumns<D4HEquipmentListItem>((columnHelper) => [
-                columnHelper.accessor("ref", {
-                    header: "Ref",
-                    // A contained item can belong to another team. Its page lives under that team,
-                    // so link there, and not at all when that team is out of reach.
-                    cell: (ctx) => {
-                        const item = ctx.row.original;
-                        if (!teams.some((t) => t.id === item.owner.id))
-                            return <D4HItemRef value={item.ref} />;
-                        return <D4HEquipmentItemLink item={item} />;
-                    },
-                    enableGlobalFilter: true,
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                }),
-                columnHelper.accessor("kind.title", {
-                    header: "Type",
-                    cell: (ctx) => <D4HEquipmentTypeLink type={ctx.row.original.kind} />,
-                    enableGlobalFilter: true,
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                }),
-                columnHelper.accessor((row) => row.brand.title ?? "", {
-                    id: "brand",
-                    header: "Brand",
-                    cell: (ctx) => {
-                        const { brand } = ctx.row.original;
-                        if (brand.id == null || !brand.title) return ctx.getValue() || "—";
-                        return (
-                            <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />
-                        );
-                    },
-                    enableGlobalFilter: true,
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                }),
-                columnHelper.accessor((row) => row.model?.title ?? "", {
-                    id: "model",
-                    header: "Model",
-                    cell: (ctx) => {
-                        const { brand, model } = ctx.row.original;
-                        if (model?.id == null || !model.title || brand.id == null) {
-                            return ctx.getValue() || "—";
-                        }
-                        return (
-                            <D4HEquipmentModelLink
-                                model={{
-                                    id: model.id,
-                                    title: model.title,
-                                    brand: { id: brand.id },
-                                }}
-                            />
-                        );
-                    },
-                    enableGlobalFilter: true,
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                }),
-                columnHelper.accessor("status", {
-                    header: "D4H Status",
-                    cell: (ctx) => D4HEquipmentStatus.label(ctx.getValue()),
-                    filterFn: Kaga.filterFns.oneOf,
-                    enableColumnFilter: true,
-                    enableSorting: false,
-                    enableGlobalFilter: false,
-                    meta: {
-                        // `listEquipmentItemContents` asks for current items only, so no wishlist.
-                        columnOptions: D4HEquipmentStatus.schema.options
-                            .filter((value) => value !== "WISHLIST")
-                            .map((value) => ({ value, label: D4HEquipmentStatus.label(value) })),
-                    },
-                }),
-            ]),
-        [teams],
-    );
+    const columns = useMemo(() => {
+        // Catalogue and item pages live under the owning team, so a row whose team is out of
+        // reach renders plain text throughout.
+        const reachableTeamIds = new Set(teams.map((t) => t.id));
+        const isReachable = (item: { owner: { id: number } }) =>
+            reachableTeamIds.has(item.owner.id);
+
+        return Kaga.defineColumns<D4HEquipmentListItem>((columnHelper) => [
+            columnHelper.accessor("ref", {
+                header: "Ref",
+                // A contained item can belong to another team. Its page lives under that team,
+                // so link there, and not at all when that team is out of reach.
+                cell: (ctx) => {
+                    const item = ctx.row.original;
+                    if (!isReachable(item)) return <D4HItemRef value={item.ref} />;
+                    return <D4HEquipmentItemLink item={item} />;
+                },
+                enableGlobalFilter: true,
+                enableSorting: true,
+                enableColumnFilter: false,
+            }),
+            columnHelper.accessor("kind.title", {
+                header: "Type",
+                cell: (ctx) => {
+                    const item = ctx.row.original;
+                    if (!isReachable(item)) return item.kind.title;
+                    return <D4HEquipmentTypeLink type={item.kind} />;
+                },
+                enableGlobalFilter: true,
+                enableSorting: true,
+                enableColumnFilter: false,
+            }),
+            columnHelper.accessor((row) => row.brand.title ?? "", {
+                id: "brand",
+                header: "Brand",
+                cell: (ctx) => {
+                    const item = ctx.row.original;
+                    const { brand } = item;
+                    if (brand.id == null || !brand.title || !isReachable(item)) {
+                        return ctx.getValue() || "—";
+                    }
+                    return <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />;
+                },
+                enableGlobalFilter: true,
+                enableSorting: true,
+                enableColumnFilter: false,
+            }),
+            columnHelper.accessor((row) => row.model?.title ?? "", {
+                id: "model",
+                header: "Model",
+                cell: (ctx) => {
+                    const item = ctx.row.original;
+                    const { brand, model } = item;
+                    if (
+                        model?.id == null ||
+                        !model.title ||
+                        brand.id == null ||
+                        !isReachable(item)
+                    ) {
+                        return ctx.getValue() || "—";
+                    }
+                    return (
+                        <D4HEquipmentModelLink
+                            model={{
+                                id: model.id,
+                                title: model.title,
+                                brand: { id: brand.id },
+                            }}
+                        />
+                    );
+                },
+                enableGlobalFilter: true,
+                enableSorting: true,
+                enableColumnFilter: false,
+            }),
+            columnHelper.accessor("status", {
+                header: "D4H Status",
+                cell: (ctx) => D4HEquipmentStatus.label(ctx.getValue()),
+                filterFn: Kaga.filterFns.oneOf,
+                enableColumnFilter: true,
+                enableSorting: false,
+                enableGlobalFilter: false,
+                meta: {
+                    // `listEquipmentItemContents` asks for current items only, so no wishlist.
+                    columnOptions: D4HEquipmentStatus.schema.options
+                        .filter((value) => value !== "WISHLIST")
+                        .map((value) => ({ value, label: D4HEquipmentStatus.label(value) })),
+                },
+            }),
+        ]);
+    }, [teams]);
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
