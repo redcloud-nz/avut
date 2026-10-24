@@ -53,17 +53,22 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
             Kaga.defineColumns<(typeof items)[number]>((columnHelper) => [
                 columnHelper.accessor("ref", {
                     header: "Ref",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
-                                slug,
-                                d4h_team_id: String(ctx.row.original.team.id),
-                                item_id: String(ctx.row.original.id),
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => {
+                        const { team, owner, id } = ctx.row.original;
+                        // The item page lives under the owning team. A row that fell back to the
+                        // team listing it (owner out of reach) has no page to link to.
+                        if (team.id !== owner.id) return ctx.getValue();
+                        return (
+                            <Link
+                                href={route(
+                                    "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
+                                    { slug, d4h_team_id: String(team.id), item_id: String(id) },
+                                )}
+                            >
+                                {ctx.getValue()}
+                            </Link>
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,

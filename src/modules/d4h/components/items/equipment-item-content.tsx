@@ -383,22 +383,35 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
         }),
     );
 
+    const { data: teams } = useSuspenseQuery(
+        trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }),
+    );
+
     const columns = useMemo(
         () =>
             Kaga.defineColumns<D4HEquipmentListItem>((columnHelper) => [
                 columnHelper.accessor("ref", {
                     header: "Ref",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
-                                slug,
-                                d4h_team_id: String(teamId),
-                                item_id: String(ctx.row.original.id),
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    // A contained item can belong to another team. Its page lives under that team,
+                    // so link there, and not at all when that team is out of reach.
+                    cell: (ctx) => {
+                        const ownerId = ctx.row.original.owner.id;
+                        if (!teams.some((t) => t.id === ownerId)) return ctx.getValue();
+                        return (
+                            <Link
+                                href={route(
+                                    "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
+                                    {
+                                        slug,
+                                        d4h_team_id: String(ownerId),
+                                        item_id: String(ctx.row.original.id),
+                                    },
+                                )}
+                            >
+                                {ctx.getValue()}
+                            </Link>
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -441,7 +454,7 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                     },
                 }),
             ]),
-        [slug, teamId],
+        [slug, teams],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

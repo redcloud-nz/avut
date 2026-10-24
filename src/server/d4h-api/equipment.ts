@@ -47,92 +47,71 @@ export async function fetchD4HEquipmentItem(
 }
 
 /**
- * Fetch the current items stored directly in one equipment item, uncached. Throws on any failure.
+ * One team's current equipment list, narrowed by `query`, uncached. Throws on any failure, naming
+ * `what` in the error.
  *
  * `location` keeps only the holder's type and id: see `D4HEquipmentListItem`.
  */
-export async function fetchD4HEquipmentItemContents(
+async function fetchD4HTeamEquipmentList(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    query: { parent_id?: number; kind_id?: number[] },
+    what: string,
+): Promise<D4HEquipmentListItem[]> {
+    const { data, error, response } = await getD4HFetchClient(token).GET(
+        "/v3/{context}/{contextId}/equipment",
+        {
+            params: {
+                path: { context: "team", contextId: d4hTeamId },
+                query: { ...query, only_current: true, size: 10000 },
+            },
+        },
+    );
+
+    // `error` is undefined for a non-ok response with an empty body, so check the response.
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch ${what} in team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+            { cause: error },
+        );
+    }
+    return (data as D4HListResponse).results.map((raw) => D4HEquipmentListItem.schema.parse(raw));
+}
+
+/** The current items stored directly in one equipment item: see {@link fetchD4HTeamEquipmentList}. */
+export function fetchD4HEquipmentItemContents(
     token: D4HAccessToken_ServerOnly,
     d4hTeamId: number,
     parentId: number,
 ): Promise<D4HEquipmentListItem[]> {
-    const { data, error, response } = await getD4HFetchClient(token).GET(
-        "/v3/{context}/{contextId}/equipment",
-        {
-            params: {
-                path: { context: "team", contextId: d4hTeamId },
-                query: { parent_id: parentId, only_current: true, size: 10000 },
-            },
-        },
+    return fetchD4HTeamEquipmentList(
+        token,
+        d4hTeamId,
+        { parent_id: parentId },
+        `the contents of D4H equipment item ${parentId}`,
     );
-
-    // `error` is undefined for a non-ok response with an empty body, so check the response.
-    if (!response.ok) {
-        throw new Error(
-            `Failed to fetch the contents of D4H equipment item ${parentId} in team ${d4hTeamId}: ${response.status} ${response.statusText}`,
-            { cause: error },
-        );
-    }
-    return (data as D4HListResponse).results.map((raw) => D4HEquipmentListItem.schema.parse(raw));
 }
 
-/**
- * Fetch one team's current items of one equipment kind, uncached. Throws on any failure.
- *
- * `location` keeps only the holder's type and id: see `D4HEquipmentListItem`.
- */
-export async function fetchD4HEquipmentItemsByKind(
+/** One team's current items of one equipment kind: see {@link fetchD4HTeamEquipmentList}. */
+export function fetchD4HEquipmentItemsByKind(
     token: D4HAccessToken_ServerOnly,
     d4hTeamId: number,
     kindId: number,
 ): Promise<D4HEquipmentListItem[]> {
-    const { data, error, response } = await getD4HFetchClient(token).GET(
-        "/v3/{context}/{contextId}/equipment",
-        {
-            params: {
-                path: { context: "team", contextId: d4hTeamId },
-                query: { kind_id: [kindId], only_current: true, size: 10000 },
-            },
-        },
+    return fetchD4HTeamEquipmentList(
+        token,
+        d4hTeamId,
+        { kind_id: [kindId] },
+        `D4H equipment items of kind ${kindId}`,
     );
-
-    // `error` is undefined for a non-ok response with an empty body, so check the response.
-    if (!response.ok) {
-        throw new Error(
-            `Failed to fetch D4H equipment items of kind ${kindId} in team ${d4hTeamId}: ${response.status} ${response.statusText}`,
-            { cause: error },
-        );
-    }
-    return (data as D4HListResponse).results.map((raw) => D4HEquipmentListItem.schema.parse(raw));
 }
 
-/**
- * Fetch every current item in one team, uncached, in a single request. Throws on any failure.
- *
- * `location` keeps only the holder's type and id: see `D4HEquipmentListItem`.
- */
-export async function fetchD4HTeamEquipmentItems(
+/** Every current item in one team, in a single request: see {@link fetchD4HTeamEquipmentList}. */
+export function fetchD4HTeamEquipmentItems(
     token: D4HAccessToken_ServerOnly,
     d4hTeamId: number,
 ): Promise<D4HEquipmentListItem[]> {
-    const { data, error, response } = await getD4HFetchClient(token).GET(
-        "/v3/{context}/{contextId}/equipment",
-        {
-            params: {
-                path: { context: "team", contextId: d4hTeamId },
-                query: { only_current: true, size: 10000 },
-            },
-        },
-    );
-
-    // `error` is undefined for a non-ok response with an empty body, so check the response.
-    if (!response.ok) {
-        throw new Error(
-            `Failed to fetch D4H equipment items in team ${d4hTeamId}: ${response.status} ${response.statusText}`,
-            { cause: error },
-        );
-    }
-    return (data as D4HListResponse).results.map((raw) => D4HEquipmentListItem.schema.parse(raw));
+    return fetchD4HTeamEquipmentList(token, d4hTeamId, {}, "D4H equipment items");
 }
 
 /**
