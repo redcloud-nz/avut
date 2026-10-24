@@ -43,6 +43,7 @@ import {
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
+    fetchD4HTeamEquipmentItems,
     patchD4HEquipmentItem,
 } from "@/server/d4h-api/equipment";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
@@ -525,6 +526,52 @@ export const d4hApiRouter = createTrpcRouter({
                 const item = D4HEquipmentItem.schema.parse(raw);
                 return item;
             });
+        }),
+
+    /**
+     * One D4H team's current items that are issued to a person, each with who holds it, from a
+     * single equipment-list request. A team the token can't reach is not found.
+     *
+     * Only items the team owns are kept, since the item page they link to treats any other as not
+     * found. Holder names come from the team's (cached) member list, never from the item's
+     * `location`, which keeps only the holder's type and id. A name is `null` when the holder
+     * isn't in that list (e.g. a retired member) or the list can't be fetched.
+     */
+    listTeamIssuedEquipment: organizationProcedure({ d4hEquipment: ["view"] })
+        .input(z.object({ teamId: z.number() }))
+        .output(
+            z.array(
+                D4HEquipmentListItem.schema.extend({
+                    holder: z.object({ id: z.number(), name: z.string().nullable() }),
+                }),
+            ),
+        )
+        .query(async ({ ctx, input: { teamId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const credentialRef = toD4HCredentialRef(accessToken);
+
+            const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
+            if (!d4HTeams.some((team) => team.id === teamId)) {
+                throw new NotFoundError(`D4H team ${teamId} not found.`);
+            }
+
+            const items = await fetchD4HTeamEquipmentItems(accessToken, teamId);
+            const issued = items.flatMap((item) =>
+                item.owner.id === teamId && item.location?.resourceType === "Member"
+                    ? [{ item, holderId: item.location.id }]
+                    : [],
+            );
+            if (issued.length === 0) return [];
+
+            const members = await getD4HTeamMembers(credentialRef, teamId).catch(() => []);
+
+            return issued.map(({ item, holderId }) => ({
+                ...item,
+                holder: {
+                    id: holderId,
+                    name: members.find((member) => member.id === holderId)?.name ?? null,
+                },
+            }));
         }),
 
     /**

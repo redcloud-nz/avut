@@ -13,6 +13,7 @@ import {
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
+    fetchD4HTeamEquipmentItems,
     patchD4HEquipmentItem,
 } from "./equipment";
 
@@ -210,6 +211,42 @@ describe("fetchD4HEquipmentItemsByKind", () => {
         );
 
         await expect(fetchD4HEquipmentItemsByKind(token, 7, 8)).rejects.toThrow(/500/);
+    });
+});
+
+describe("fetchD4HTeamEquipmentItems", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("lists the team's current items in one request, stripping each location to the holder's type and id", async () => {
+        const fetchMock = vi.fn(async (_request: Request) =>
+            Response.json({ results: [itemFixture], page: 0, pageSize: 10000, totalSize: 1 }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const items = await fetchD4HTeamEquipmentItems(token, 7);
+
+        expect(items).toHaveLength(1);
+        expect(items[0].location).toStrictEqual({ resourceType: "Member", id: 99 });
+        expect(JSON.stringify(items)).not.toMatch(
+            /Secret Street|jane@example|ical-secret|John Doe/,
+        );
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const url = new URL(fetchMock.mock.calls[0][0].url);
+        expect(url.pathname).toBe("/v3/team/7/equipment");
+        expect(url.searchParams.get("only_current")).toBe("true");
+        expect(url.searchParams.get("size")).toBe("10000");
+    });
+
+    it("throws on failure", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(null, { status: 500 })),
+        );
+
+        await expect(fetchD4HTeamEquipmentItems(token, 7)).rejects.toThrow(/500/);
     });
 });
 

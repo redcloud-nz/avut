@@ -30,6 +30,12 @@ export function D4HI3_Sidebar_Menu() {
                     href={route("/orgs/[slug]/d4h-i3/forms/return-items", { slug })}
                 />
             </Protect>
+            <Protect permissions={{ i3Item: ["view"] }}>
+                <NavSubItem
+                    label="Issued Types"
+                    href={route("/orgs/[slug]/d4h-i3/issued-types", { slug })}
+                />
+            </Protect>
             <Protect permissions={{ i3Template: ["view"] }}>
                 <NavSubItem
                     label="Templates"

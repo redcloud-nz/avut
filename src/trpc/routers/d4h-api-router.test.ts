@@ -18,6 +18,7 @@ import {
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
+    fetchD4HTeamEquipmentItems,
     patchD4HEquipmentItem,
 } from "@/server/d4h-api/equipment";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -84,6 +85,7 @@ vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
     fetchD4HEquipmentItemContents: vi.fn(),
     fetchD4HEquipmentItemsByKind: vi.fn(),
+    fetchD4HTeamEquipmentItems: vi.fn(),
     patchD4HEquipmentItem: vi.fn(),
 }));
 
@@ -167,6 +169,7 @@ describe("d4hApiRouter equipment items", () => {
         vi.mocked(fetchD4HEquipmentItem).mockReset();
         vi.mocked(fetchD4HEquipmentItemContents).mockReset();
         vi.mocked(fetchD4HEquipmentItemsByKind).mockReset();
+        vi.mocked(fetchD4HTeamEquipmentItems).mockReset();
         // Clear only: keep the factory's member list as the default.
         vi.mocked(getD4HTeamMembers).mockClear();
         vi.mocked(patchD4HEquipmentItem).mockReset().mockResolvedValue();
@@ -497,6 +500,102 @@ describe("d4hApiRouter equipment items", () => {
             const [row] = await viewer().listEquipmentKindItems({
                 organizationId: T.org,
                 kindId: 8,
+            });
+
+            expect(row.location).toStrictEqual({ resourceType: "Member", id: 42 });
+            expect(JSON.stringify(row)).not.toMatch(/Secret Street/);
+        });
+    });
+
+    describe("listTeamIssuedEquipment", () => {
+        it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No D4H access token configured."),
+            );
+
+            await expect(
+                viewer().listTeamIssuedEquipment({ organizationId: T.org, teamId: TEAM_ID }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
+        });
+
+        it("throws NOT_FOUND for a team the token can't reach", async () => {
+            await expect(
+                viewer().listTeamIssuedEquipment({ organizationId: T.org, teamId: 999 }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+            expect(fetchD4HTeamEquipmentItems).not.toHaveBeenCalled();
+        });
+
+        it("keeps only the team's member-held items, each with its holder named from the team's list", async () => {
+            vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValue([
+                listItem(1, TEAM_ID, { location: { resourceType: "Member", id: 42 } }),
+                listItem(2, TEAM_ID, { location: { resourceType: "Member", id: 77 } }),
+                listItem(3, TEAM_ID, { location: { resourceType: "EquipmentLocation", id: 5 } }),
+                listItem(4, TEAM_ID, { location: { resourceType: "Equipment", id: 6 } }),
+                listItem(5, TEAM_ID),
+                // Owned by another team: its item page lives there, so it's left out.
+                listItem(6, OTHER_TEAM_ID, { location: { resourceType: "Member", id: 42 } }),
+            ]);
+
+            const result = await viewer().listTeamIssuedEquipment({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+            });
+
+            expect(fetchD4HTeamEquipmentItems).toHaveBeenCalledTimes(1);
+            expect(fetchD4HTeamEquipmentItems).toHaveBeenCalledWith(accessToken, TEAM_ID);
+            expect(result.map((row) => [row.id, row.holder])).toEqual([
+                [1, { id: 42, name: "John Smith" }],
+                [2, { id: 77, name: null }],
+            ]);
+            expect(getD4HTeamMembers).toHaveBeenCalledTimes(1);
+            expect(getD4HTeamMembers).toHaveBeenCalledWith(
+                expect.objectContaining({ credentialId: accessToken.id }),
+                TEAM_ID,
+            );
+        });
+
+        it("skips the member list when nothing is issued", async () => {
+            vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValue([listItem(1, TEAM_ID)]);
+
+            const result = await viewer().listTeamIssuedEquipment({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+            });
+
+            expect(result).toEqual([]);
+            expect(getD4HTeamMembers).not.toHaveBeenCalled();
+        });
+
+        it("leaves holders unnamed when the member list can't be fetched", async () => {
+            vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValue([
+                listItem(1, TEAM_ID, { location: { resourceType: "Member", id: 42 } }),
+            ]);
+            vi.mocked(getD4HTeamMembers).mockRejectedValueOnce(new Error("D4H is down"));
+
+            const result = await viewer().listTeamIssuedEquipment({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+            });
+
+            expect(result.map((row) => row.holder)).toEqual([{ id: 42, name: null }]);
+        });
+
+        it("strips each location to the holder's type and id", async () => {
+            vi.mocked(fetchD4HTeamEquipmentItems).mockResolvedValue([
+                listItem(1, TEAM_ID, {
+                    location: {
+                        resourceType: "Member",
+                        id: 42,
+                        name: "John Smith",
+                        address: { street: "1 Secret Street" },
+                    } as D4HEquipmentListItem["location"],
+                }),
+            ]);
+
+            const [row] = await viewer().listTeamIssuedEquipment({
+                organizationId: T.org,
+                teamId: TEAM_ID,
             });
 
             expect(row.location).toStrictEqual({ resourceType: "Member", id: 42 });

@@ -28,7 +28,7 @@ import { trpc } from "@/trpc/client";
  * (or forced open on arrival). Choosing a team navigates to `section(teamId)`, so a team-scoped
  * page passes a builder for its own route and Change team keeps the viewer in the same section.
  */
-export function D4HModule_TeamPickerDialog({
+export function D4HTeamPickerDialog({
     section,
     forceOpen = false,
     label = "Change team",

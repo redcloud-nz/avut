@@ -20,12 +20,11 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HMember, formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { trpc } from "@/trpc/client";
-
-import { D4HModule_TeamPickerDialog } from "../teams/team-picker-dialog";
 
 /** One D4H team's members, with Change team to see another team's. */
 export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
@@ -135,7 +134,7 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
                         <Saratoga.Title>Members</Saratoga.Title>
                         {teams.length > 1 && (
                             <Saratoga.Actions>
-                                <D4HModule_TeamPickerDialog
+                                <D4HTeamPickerDialog
                                     section={(id) =>
                                         route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
                                             slug,

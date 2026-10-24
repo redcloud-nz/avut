@@ -8,12 +8,11 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-
-import { D4HModule_TeamPickerDialog } from "../teams/team-picker-dialog";
 
 /**
  * The `/d4h/members` landing page for zero or several teams: an empty state, or the team picker.
@@ -48,7 +47,7 @@ export function D4HModule_Members_SelectTeam() {
                         <Saratoga.Title>Members</Saratoga.Title>
                         {teams.length > 1 && (
                             <Saratoga.Actions>
-                                <D4HModule_TeamPickerDialog
+                                <D4HTeamPickerDialog
                                     forceOpen
                                     label="Select a team"
                                     section={membersOf}

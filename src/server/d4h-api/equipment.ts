@@ -107,6 +107,35 @@ export async function fetchD4HEquipmentItemsByKind(
 }
 
 /**
+ * Fetch every current item in one team, uncached, in a single request. Throws on any failure.
+ *
+ * `location` keeps only the holder's type and id: see `D4HEquipmentListItem`.
+ */
+export async function fetchD4HTeamEquipmentItems(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+): Promise<D4HEquipmentListItem[]> {
+    const { data, error, response } = await getD4HFetchClient(token).GET(
+        "/v3/{context}/{contextId}/equipment",
+        {
+            params: {
+                path: { context: "team", contextId: d4hTeamId },
+                query: { only_current: true, size: 10000 },
+            },
+        },
+    );
+
+    // `error` is undefined for a non-ok response with an empty body, so check the response.
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H equipment items in team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+            { cause: error },
+        );
+    }
+    return (data as D4HListResponse).results.map((raw) => D4HEquipmentListItem.schema.parse(raw));
+}
+
+/**
  * The generated PATCH body type omits `notes`, which D4H accepts (live probe, 2026-10-22). This
  * calls the endpoint with an untyped body, isolating the one cast.
  */

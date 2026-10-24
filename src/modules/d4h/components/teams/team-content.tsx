@@ -12,6 +12,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { Protect } from "@/components/protect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -26,8 +27,6 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
-
-import { D4HModule_TeamPickerDialog } from "./team-picker-dialog";
 
 /** A D4H team's index: its details and links to its team-scoped sections. */
 export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
@@ -56,7 +55,7 @@ export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
                         <Saratoga.Title>{team.title}</Saratoga.Title>
                         {teams.length > 1 && (
                             <Saratoga.Actions>
-                                <D4HModule_TeamPickerDialog
+                                <D4HTeamPickerDialog
                                     section={(id) =>
                                         route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
                                             slug,

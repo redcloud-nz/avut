@@ -67,6 +67,22 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
                                 </Link>
                             </Item>
                         </Protect>
+                        <Protect permissions={{ i3Item: ["view"] }}>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/d4h-i3/issued-types", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Issued Types</ItemTitle>
+                                        <ItemDescription>
+                                            See which equipment types are issued to a team&apos;s
+                                            members, and who holds what
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                         <Protect permissions={{ i3Template: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/d4h-i3/templates", { slug })}>

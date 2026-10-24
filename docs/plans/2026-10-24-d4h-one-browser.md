@@ -248,7 +248,7 @@ Added at checkpoint 2. The user's decisions: "Categories" → **Equipment Catego
     - Help card: describe Equipment Categories (each with its types, and a type's items across teams) and Equipment Brands; no separate Types section.
   - **Done when:** no "Types" list remains, the labels read as above, and `npm run check` passes.
 
-- [ ] **13. I3 Issued Types** `visual`
+- [x] **13. I3 Issued Types** `visual` — feat(d4h-i3): add Issued Types per team (#453)
   - **Files:**
     - **Move:** `src/modules/d4h/components/teams/team-picker-dialog.tsx` → `src/components/d4h/team-picker-dialog.tsx` (`D4HTeamPickerDialog`; now used by two modules, so it's shared). Repoint D4H's callers.
     - **New:** `src/server/d4h-api/equipment.ts` helper + test, `src/trpc/routers/d4h-api-router.ts` procedure + test, `d4h-i3/issued-types/page.tsx` (landing), `d4h-i3/teams/[d4h_team_id]/issued-types/page.tsx`, `d4h-i3/teams/[d4h_team_id]/issued-types/[type_id]/page.tsx`, `src/modules/d4h-i3/components/issued-types/*`
