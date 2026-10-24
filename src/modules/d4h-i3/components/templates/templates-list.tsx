@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -17,8 +16,10 @@ import {
 } from "@tanstack/react-table";
 
 import { Kaga } from "@/components/blocks/kaga";
+import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
+import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
+import { I3TemplateLink } from "@/components/entity-links/i3-template-link";
 import { useOrganization } from "@/hooks/use-organization";
-import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 export function D4HI3Module_TemplateList() {
@@ -37,28 +38,33 @@ export function D4HI3Module_TemplateList() {
             Kaga.defineColumns<RowData>((col) => [
                 col.accessor("name", {
                     header: "Name",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h-i3/templates/[template_id]", {
-                                slug: organization.slug,
-                                template_id: ctx.row.original.id,
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => <I3TemplateLink template={ctx.row.original} />,
                     enableColumnFilter: false,
                 }),
                 col.accessor("d4h.categoryTitle", {
                     header: "D4H Category",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { d4h } = ctx.row.original;
+                        if (!d4h) return "—";
+                        return (
+                            <D4HEquipmentCategoryLink
+                                category={{ id: d4h.categoryId, title: d4h.categoryTitle }}
+                            />
+                        );
+                    },
                     enableColumnFilter: false,
                     enableSorting: false,
                     enableGlobalFilter: false,
                 }),
                 col.accessor("d4h.kindTitle", {
                     header: "D4H Type",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { d4h } = ctx.row.original;
+                        if (!d4h) return "—";
+                        return (
+                            <D4HEquipmentTypeLink type={{ id: d4h.kindId, title: d4h.kindTitle }} />
+                        );
+                    },
                     enableColumnFilter: false,
                     enableSorting: false,
                     enableGlobalFilter: false,
@@ -92,7 +98,7 @@ export function D4HI3Module_TemplateList() {
                 //     },
                 // }),
             ]),
-        [organization.slug],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

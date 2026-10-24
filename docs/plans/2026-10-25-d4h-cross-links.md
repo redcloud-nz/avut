@@ -74,7 +74,7 @@ Finish the "Kind" → "Type" wording that #453 started (it is left only on the D
   - **Do:** "D4H Kind" → "D4H Type", "Select a kind" → "Select a type", the help card's "category and kind" → "category and type", and the debug page's two visible strings (Decisions). Keep `id="template-kind"`, `kindId` and all identifiers.
   - **Done when:** `npm run check` passes, and `grep -rn -i -w -E 'kinds?' src/modules/d4h src/modules/d4h-i3 content/help/d4h*.mdx` finds only identifiers, comments and `{{kind.*}}` placeholders.
 
-- [ ] **5. Template links** `visual` `mechanical`
+- [x] **5. Template links** `visual` `mechanical` — feat(d4h-i3): link templates, categories, types, brands and models (#455)
   - **Files:** `src/modules/d4h-i3/components/templates/{templates-list,template-content,template-variants}.tsx`.
   - **Do:** the list's template name uses `I3TemplateLink`. Its D4H Category and D4H Type cells, and the detail page's Category and Type values, use `D4HEquipmentCategoryLink`/`D4HEquipmentTypeLink` built from `d4h.categoryId/categoryTitle` and `d4h.kindId/kindTitle` (plain "—" when `d4h` is null). Variant rows link Brand and Model from `variant.d4h`.
   - **Done when:** `npm run check` passes.
