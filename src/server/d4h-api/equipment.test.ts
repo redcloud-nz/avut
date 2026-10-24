@@ -240,6 +240,28 @@ describe("fetchD4HTeamEquipmentItems", () => {
         expect(url.searchParams.get("size")).toBe("10000");
     });
 
+    it("keeps an item whose location has no id", async () => {
+        const withoutId = { ...itemFixture, id: 1235, location: { resourceType: "Member" } };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    results: [itemFixture, withoutId],
+                    page: 0,
+                    pageSize: 10000,
+                    totalSize: 2,
+                }),
+            ),
+        );
+
+        const items = await fetchD4HTeamEquipmentItems(token, 7);
+
+        expect(items.map((item) => item.location)).toStrictEqual([
+            { resourceType: "Member", id: 99 },
+            { resourceType: "Member" },
+        ]);
+    });
+
     it("throws on failure", async () => {
         vi.stubGlobal(
             "fetch",

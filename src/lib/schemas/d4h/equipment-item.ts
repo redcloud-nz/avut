@@ -88,9 +88,12 @@ export type D4HEquipmentStatus = z.infer<typeof D4HEquipmentStatus.schema>;
  * holding member to their full record (address, phones, emergency contacts, iCal secret), which
  * must never reach the client; `z.object` strips every other key on parse. Never widen it: resolve
  * a holder's name from the team's member list instead.
+ *
+ * Some live items carry a `location` without an `id` (seen in a team-wide list, 2026-10-24), so
+ * `id` is optional: one such item mustn't fail the whole list. Treat it as unheld.
  */
 const D4HEquipmentItemLocation = z
-    .object({ resourceType: z.string(), id: z.number() })
+    .object({ resourceType: z.string(), id: z.number().nullish() })
     .nullable()
     .optional();
 

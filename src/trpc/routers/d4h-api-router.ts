@@ -82,7 +82,8 @@ export const d4hApiRouter = createTrpcRouter({
                 throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
             }
 
-            const holderId = item.location?.resourceType === "Member" ? item.location.id : null;
+            const holderId =
+                item.location?.resourceType === "Member" ? (item.location.id ?? null) : null;
             const [{ subdomain }, members] = await Promise.all([
                 fetchD4HTeamDetailCached(credentialRef, teamId),
                 holderId == null ? [] : getD4HTeamMembers(credentialRef, teamId).catch(() => []),
@@ -328,7 +329,8 @@ export const d4hApiRouter = createTrpcRouter({
             );
 
             return rows.map(({ item, team }) => {
-                const holderId = item.location?.resourceType === "Member" ? item.location.id : null;
+                const holderId =
+                    item.location?.resourceType === "Member" ? (item.location.id ?? null) : null;
                 return {
                     ...item,
                     team: { id: team.id, title: team.title },
@@ -556,7 +558,9 @@ export const d4hApiRouter = createTrpcRouter({
 
             const items = await fetchD4HTeamEquipmentItems(accessToken, teamId);
             const issued = items.flatMap((item) =>
-                item.owner.id === teamId && item.location?.resourceType === "Member"
+                item.owner.id === teamId &&
+                item.location?.resourceType === "Member" &&
+                item.location.id != null
                     ? [{ item, holderId: item.location.id }]
                     : [],
             );

@@ -294,7 +294,7 @@ export const i3Router = createTrpcRouter({
             if (!item || item.owner.id !== teamId) {
                 throw new NotFoundError(`Equipment item ${itemId} not found in team ${teamId}.`);
             }
-            if (item.location?.resourceType !== "Member") {
+            if (item.location?.resourceType !== "Member" || item.location.id == null) {
                 throw new ValidationError("This item isn't issued to a person.");
             }
 
