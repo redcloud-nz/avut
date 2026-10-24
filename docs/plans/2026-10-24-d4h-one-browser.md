@@ -58,7 +58,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - Catalogue, Members and Tasks entries are gated on what their procedures need: `d4hEquipment: ["view"]` and `d4hTask: ["view"]`. Only Skill Track roles lack `d4hEquipment: ["view"]`, and they can't load those pages today.
     - Teams stays ungated, matching `listAccessibleTeams` (`organizationProcedure({})`).
     - The D4H index page uses the same `<Protect>`s.
-  - **D4H I3:** Inspect, Issue, Return, Templates.
+  - **D4H I3:** Issue, Return, Templates. Inspect is hidden from the sidebar and index until its page is built (checkpoint 2).
 - **No redirects** from removed routes (issue: "No redirects").
 
 ## Tasks
@@ -260,3 +260,7 @@ D4H browsing (team-scoped Members/Items with a team picker; top-level Categories
 - (Task 4) The item content throws a plain `Error` for a team not in `listAccessibleTeams`; call `notFound()` like the other D4H content components.
 - (Task 9) `d4hApi.listEquipmentItems` has no callers now that the collections are gone. Delete the procedure and its tests (and any fetch helper only it used).
 - (Task 9) The brand page's models table shows the owner's kind ("Team"/"Organisation") because `D4HEquipmentModel.owner` has no title. Resolve team owners to their title through `listAccessibleTeams` (and the org to its name, as `D4HModule_Owner` does elsewhere) so it reads like the other Owner columns.
+- (Task 6/10) The team index's Members link (`team-content.tsx`) is ungated, though the sidebar and D4H index gate Members on `d4hEquipment: ["view"]`. Wrap it in the same `<Protect>`.
+- (Task 10) `content/help/d4h.mdx`: the Owner column is "the team or organisation each belongs to", not just the team; and Edit also needs the viewer's own D4H account to be able to update equipment in that team.
+- (Task 8) The type page's status filter drops WISHLIST but still offers RETIRED, which `only_current` already excludes. Drop RETIRED too.
+- (Tasks 4, 8; checkpoint 2) When an item isn't held by a member, Issued To (item page) and Holder (type page) show D4H's raw location type ("Equipment", "EquipmentLocation"). Show "—" instead; Parents already says which container it's in.
