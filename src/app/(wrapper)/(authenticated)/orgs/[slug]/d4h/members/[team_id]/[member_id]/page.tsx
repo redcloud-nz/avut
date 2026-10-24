@@ -62,8 +62,9 @@ export default function D4HModule_Member_Page(
                     header: "Ref",
                     cell: (ctx) => (
                         <Link
-                            href={route("/orgs/[slug]/d4h/equipment/items/[item_id]", {
+                            href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
                                 slug: organization.slug,
+                                d4h_team_id: team_id,
                                 item_id: String(ctx.row.original.id),
                             })}
                         >
@@ -104,7 +105,7 @@ export default function D4HModule_Member_Page(
                     },
                 }),
             ]),
-        [organization.slug],
+        [organization.slug, team_id],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

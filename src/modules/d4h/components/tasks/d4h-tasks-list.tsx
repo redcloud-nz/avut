@@ -111,14 +111,11 @@ function TaskRow({ row: { task, requestedByName, d4hUrl } }: { row: OpenTaskRow 
                 <ItemTitle>
                     <Link
                         className="hover:underline"
-                        href={route(
-                            "/orgs/[slug]/d4h-i3/teams/[team_id]/equipment-items/[item_id]",
-                            {
-                                slug,
-                                team_id: String(task.d4hTeamId),
-                                item_id: String(task.resourceId),
-                            },
-                        )}
+                        href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
+                            slug,
+                            d4h_team_id: String(task.d4hTeamId),
+                            item_id: String(task.resourceId),
+                        })}
                     >
                         {task.itemLabel}
                     </Link>

@@ -36,9 +36,12 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.d4hTasks.listReturnedItemIds.queryFilter({ organizationId })),
         invalidate(trpc.d4hTasks.listOpenTasks.queryFilter({ organizationId })),
         invalidate(trpc.d4hApi.listMemberEquipment.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.listEquipmentKindItems.queryFilter({ organizationId })),
     ],
     // The Issue page navigates back to its list on success, so its call site sets `meta.navigates`.
     submitIssueItemsForm: ({ organizationId }) => [
+        // Issuing moves items to their new holders in D4H.
+        invalidate(trpc.d4hApi.listEquipmentKindItems.queryFilter({ organizationId })),
         invalidate(
             trpc.forms.listDraftFormInstances.queryFilter({
                 organizationId,
@@ -49,6 +52,7 @@ export const i3Effects = createEffects<"i3">()({
     // The Return page navigates back to its list on success, so its call site sets `meta.navigates`.
     submitReturnItemsForm: ({ organizationId }) => [
         invalidate(trpc.d4hApi.listMemberEquipment.queryFilter({ organizationId })),
+        invalidate(trpc.d4hApi.listEquipmentKindItems.queryFilter({ organizationId })),
         invalidate(trpc.d4hTasks.listOpenTasks.queryFilter({ organizationId })),
         invalidate(trpc.d4hTasks.listItemTasks.queryFilter({ organizationId })),
         invalidate(trpc.d4hTasks.listReturnedItemIds.queryFilter({ organizationId })),

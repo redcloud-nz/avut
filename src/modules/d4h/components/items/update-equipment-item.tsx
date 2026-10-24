@@ -97,7 +97,7 @@ export function updateEquipmentItemDisabledReason({
  * With a `disabledReason`, the trigger is disabled with the reason in a tooltip, and the param
  * doesn't open the dialog.
  */
-export function D4HI3Module_UpdateEquipmentItem_Dialog({
+export function D4HModule_UpdateEquipmentItem_Dialog({
     teamId,
     item,
     disabledReason,

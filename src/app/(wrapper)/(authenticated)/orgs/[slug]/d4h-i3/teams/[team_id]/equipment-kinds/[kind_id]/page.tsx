@@ -263,10 +263,10 @@ export default function D4HI3Module_Team_EquipmentKindItems_Page(
                                             <TableCell>
                                                 <Link
                                                     href={route(
-                                                        "/orgs/[slug]/d4h-i3/teams/[team_id]/equipment-items/[item_id]",
+                                                        "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
                                                         {
                                                             slug: organization.slug,
-                                                            team_id,
+                                                            d4h_team_id: team_id,
                                                             item_id: String(item.id),
                                                         },
                                                     )}

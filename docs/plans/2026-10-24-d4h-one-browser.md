@@ -109,7 +109,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - The list's item link keeps pointing at the I3 item route for now, and task 4 repoints it.
   - **Done when:** `/d4h/tasks` lists open tasks grouped by team, Check and Dismiss work, `src/modules/d4h/**` imports nothing from `src/modules/d4h-i3/**` and vice versa, and `npm run check` passes.
 
-- [ ] **4. D4H item page with I3 slots** `visual`
+- [x] **4. D4H item page with I3 slots** `visual` — feat(d4h): D4H item page with I3 Return and returned badge as slots (#453)
   - **Files:**
     - **New:**
       - `d4h/teams/[d4h_team_id]/items/[item_id]/page.tsx`
@@ -242,3 +242,4 @@ D4H browsing (team-scoped Members/Items with a team picker; top-level Categories
 
 - (Task 1) `listEquipmentKindItems` tags each row with the team whose list returned it, and de-dupes keeping the first. Take the team and the member list to search from `item.owner.id` instead (or keep the row whose listing team equals `owner.id`), so a duplicate listed under a non-owning team first still gets the right Team, Holder and item link. Add a test with the duplicate under the non-owning team first.
 - (Task 1) Add no-token tests (`getConfiguredD4HAccessToken` rejects with `NotConfiguredError` → `PRECONDITION_FAILED`) for `listTeamMembers` and `listEquipmentKindItems`, like `updateEquipmentItem`'s.
+- (Task 4) `i3Effects.submitIssueItemsForm` doesn't invalidate `listMemberEquipment`, though issuing changes who holds what; Task 7's member page reads it. Add the invalidation.
