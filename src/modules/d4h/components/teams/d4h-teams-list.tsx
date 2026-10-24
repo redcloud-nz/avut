@@ -5,7 +5,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -20,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
@@ -38,22 +38,13 @@ export function D4HModule_Teams_List() {
             Kaga.defineColumns<(typeof teams)[number]>((columnHelper) => [
                 columnHelper.accessor("title", {
                     header: "Name",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
-                                slug,
-                                d4h_team_id: String(ctx.row.original.id),
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => <D4HTeamLink team={ctx.row.original} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
                 }),
             ]),
-        [slug],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

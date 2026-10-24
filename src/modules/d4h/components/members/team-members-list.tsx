@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useMemo } from "react";
 
@@ -21,6 +20,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
+import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HMember, formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
@@ -48,20 +48,7 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
             Kaga.defineColumns<D4HMember>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: "Name",
-                    cell: (ctx) => (
-                        <Link
-                            href={route(
-                                "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
-                                {
-                                    slug,
-                                    d4h_team_id: String(teamId),
-                                    member_id: String(ctx.row.original.id),
-                                },
-                            )}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    cell: (ctx) => <D4HMemberLink member={ctx.row.original} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -95,7 +82,7 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
                     },
                 }),
             ]),
-        [slug, teamId],
+        [],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

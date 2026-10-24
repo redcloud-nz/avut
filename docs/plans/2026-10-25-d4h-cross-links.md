@@ -57,7 +57,7 @@ Finish the "Kind" → "Type" wording that #453 started (it is left only on the D
   - **Do:** `D4HModule_Owner` takes `id` and links Team owners (Decisions). Every caller passes `owner` with its `id`. Replace the bare `<Link>`s for brands, categories, types, items and holders with the wrappers. Link the plain cells: on `type-content.tsx`, the Team column (`D4HTeamLink`), Brand (`D4HEquipmentBrandLink` when `brand.id` is set) and Model (`D4HEquipmentModelLink` when `model.id` and `brand.id` are set). Keep `type-content.tsx`'s current rule that an item Ref links only when its team is reachable. Brand page models stay plain, since the link would point at the page they're on.
   - **Done when:** `npm run check` passes. No bare `next/link` `<Link>` is left for an entity name in these files (`grep -n '<Link' src/modules/d4h/components/catalogue`).
 
-- [ ] **3. Items, members, teams and tasks** `visual`
+- [x] **3. Items, members, teams and tasks** `visual` — feat(d4h): link names on the item, member, team and task pages (#455)
   - **Files:** `src/modules/d4h/components/items/equipment-item-content.tsx`, `src/modules/d4h/components/members/{member-content,team-members-list}.tsx`, `src/modules/d4h/components/teams/d4h-teams-list.tsx`, `src/modules/d4h/components/tasks/d4h-tasks-list.tsx`.
   - **Do:**
     - **Item page:** Type, Category, Brand and Model in the details become wrapper links (brand/model only with ids). Issued To uses `D4HMemberLink` (the `Member #id` fallback stays plain, inside the wrapper). Add a **Team** row with `D4HTeamLink`. Parents use `D4HEquipmentItemLink` with the page team (Decisions); Contents keep their reachability guard, and the Contents table links its Type, Brand and Model cells.

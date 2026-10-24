@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useMemo } from "react";
 
@@ -20,6 +19,11 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
+import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
+import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
+import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
+import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
@@ -69,24 +73,20 @@ export function D4HModule_Member_Content({
             Kaga.defineColumns<D4HEquipmentItem>((columnHelper) => [
                 columnHelper.accessor("ref", {
                     header: "Ref",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
-                                slug,
-                                d4h_team_id: String(teamId),
-                                item_id: String(ctx.row.original.id),
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
+                    // An item held by this member can belong to another team. Its page lives under
+                    // that team, so link there, and not at all when that team is out of reach.
+                    cell: (ctx) => {
+                        const item = ctx.row.original;
+                        if (!teams.some((t) => t.id === item.owner.id)) return `#${item.ref}`;
+                        return <D4HEquipmentItemLink item={item} />;
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
                 }),
                 columnHelper.accessor("kind.title", {
                     header: "Type",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => <D4HEquipmentTypeLink type={ctx.row.original.kind} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -94,7 +94,13 @@ export function D4HModule_Member_Content({
                 columnHelper.accessor((item) => item.brand.title ?? "", {
                     id: "brand",
                     header: "Brand",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { brand } = ctx.row.original;
+                        if (brand.id == null || !brand.title) return ctx.getValue() || "—";
+                        return (
+                            <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -102,7 +108,21 @@ export function D4HModule_Member_Content({
                 columnHelper.accessor((item) => item.model?.title ?? "", {
                     id: "model",
                     header: "Model",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { brand, model } = ctx.row.original;
+                        if (model?.id == null || !model.title || brand.id == null) {
+                            return ctx.getValue() || "—";
+                        }
+                        return (
+                            <D4HEquipmentModelLink
+                                model={{
+                                    id: model.id,
+                                    title: model.title,
+                                    brand: { id: brand.id },
+                                }}
+                            />
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -122,7 +142,7 @@ export function D4HModule_Member_Content({
                     },
                 }),
             ]),
-        [slug, teamId],
+        [teams],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -200,7 +220,9 @@ export function D4HModule_Member_Content({
                                     )}
                                     <DataItem inline>
                                         <DataItemTitle>Team</DataItemTitle>
-                                        <DataItemValue>{team.title}</DataItemValue>
+                                        <DataItemValue>
+                                            <D4HTeamLink team={team} />
+                                        </DataItemValue>
                                     </DataItem>
                                     <DataItem inline>
                                         <DataItemTitle>D4H Status</DataItemTitle>

@@ -5,7 +5,6 @@
 "use client";
 
 import { CornerDownRightIcon, ExternalLinkIcon } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, useMemo, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -22,6 +21,13 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
+import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
+import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
+import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
+import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
+import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
+import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
@@ -178,24 +184,22 @@ export function D4HModule_EquipmentItem_Content({
                                             <DataItemValue>#{item.ref}</DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
+                                            <DataItemTitle>Team</DataItemTitle>
+                                            <DataItemValue>
+                                                <D4HTeamLink team={team} />
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
                                             <DataItemTitle>Type</DataItemTitle>
-                                            <DataItemValue>{item.kind.title}</DataItemValue>
+                                            <DataItemValue>
+                                                <D4HEquipmentTypeLink type={item.kind} />
+                                            </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Category</DataItemTitle>
                                             <DataItemValue>
                                                 {category ? (
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/d4h/categories/[category_id]",
-                                                            {
-                                                                slug,
-                                                                category_id: String(category.id),
-                                                            },
-                                                        )}
-                                                    >
-                                                        {category.title}
-                                                    </Link>
+                                                    <D4HEquipmentCategoryLink category={category} />
                                                 ) : (
                                                     "—"
                                                 )}
@@ -203,11 +207,36 @@ export function D4HModule_EquipmentItem_Content({
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Brand</DataItemTitle>
-                                            <DataItemValue>{item.brand.title}</DataItemValue>
+                                            <DataItemValue>
+                                                {item.brand.id != null && item.brand.title ? (
+                                                    <D4HEquipmentBrandLink
+                                                        brand={{
+                                                            id: item.brand.id,
+                                                            title: item.brand.title,
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    item.brand.title || "—"
+                                                )}
+                                            </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Model</DataItemTitle>
-                                            <DataItemValue>{item.model?.title}</DataItemValue>
+                                            <DataItemValue>
+                                                {item.model?.id != null &&
+                                                item.model.title &&
+                                                item.brand.id != null ? (
+                                                    <D4HEquipmentModelLink
+                                                        model={{
+                                                            id: item.model.id,
+                                                            title: item.model.title,
+                                                            brand: { id: item.brand.id },
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    item.model?.title || "—"
+                                                )}
+                                            </DataItemValue>
                                         </DataItem>
                                         {item.parents.length > 0 && (
                                             <DataItem>
@@ -235,25 +264,14 @@ export function D4HModule_EquipmentItem_Content({
                                             <DataItemTitle>Issued To</DataItemTitle>
                                             <DataItemValue>
                                                 {holder ? (
-                                                    holder.name ? (
-                                                        <Link
-                                                            href={route(
-                                                                "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
-                                                                {
-                                                                    slug,
-                                                                    d4h_team_id: String(teamId),
-                                                                    member_id: String(holder.id),
-                                                                },
-                                                            )}
-                                                        >
-                                                            {holder.name}
-                                                        </Link>
-                                                    ) : (
-                                                        // A holder missing from the team's member
-                                                        // list (e.g. a retired member) has no
-                                                        // name, and no member page.
-                                                        `Member #${holder.id}`
-                                                    )
+                                                    // The name comes from this team's member list,
+                                                    // so the member page is under this team.
+                                                    <D4HMemberLink
+                                                        member={{
+                                                            ...holder,
+                                                            owner: { id: teamId },
+                                                        }}
+                                                    />
                                                 ) : (
                                                     // Not held by a member: Parents already says
                                                     // which container it's in.
@@ -326,8 +344,6 @@ function ParentsTree({
     parents: { id: number; ref: string }[];
     teamId: number;
 }) {
-    const { slug } = useOrganization();
-
     return (
         <ul className="flex flex-col gap-1">
             {parents.map((parent, index) => (
@@ -339,15 +355,8 @@ function ParentsTree({
                     {index > 0 && (
                         <CornerDownRightIcon className="size-4 text-muted-foreground" aria-hidden />
                     )}
-                    <Link
-                        href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
-                            slug,
-                            d4h_team_id: String(teamId),
-                            item_id: String(parent.id),
-                        })}
-                    >
-                        #{parent.ref}
-                    </Link>
+                    {/* A parent carries no owner, so it's taken to be in this item's team. */}
+                    <D4HEquipmentItemLink item={{ ...parent, owner: { id: teamId } }} />
                 </li>
             ))}
         </ul>
@@ -373,7 +382,6 @@ function ItemContentsBoundary({ children }: { children: ReactNode }) {
 /** The current items stored in this one, as a table. Renders nothing when there are none. */
 function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
     const organization = useOrganization();
-    const { slug } = organization;
 
     const { data: contents } = useSuspenseQuery(
         trpc.d4hApi.listEquipmentItemContents.queryOptions({
@@ -395,22 +403,9 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                     // A contained item can belong to another team. Its page lives under that team,
                     // so link there, and not at all when that team is out of reach.
                     cell: (ctx) => {
-                        const ownerId = ctx.row.original.owner.id;
-                        if (!teams.some((t) => t.id === ownerId)) return ctx.getValue();
-                        return (
-                            <Link
-                                href={route(
-                                    "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
-                                    {
-                                        slug,
-                                        d4h_team_id: String(ownerId),
-                                        item_id: String(ctx.row.original.id),
-                                    },
-                                )}
-                            >
-                                {ctx.getValue()}
-                            </Link>
-                        );
+                        const item = ctx.row.original;
+                        if (!teams.some((t) => t.id === item.owner.id)) return `#${item.ref}`;
+                        return <D4HEquipmentItemLink item={item} />;
                     },
                     enableGlobalFilter: true,
                     enableSorting: true,
@@ -418,7 +413,7 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                 }),
                 columnHelper.accessor("kind.title", {
                     header: "Type",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => <D4HEquipmentTypeLink type={ctx.row.original.kind} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -426,7 +421,13 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                 columnHelper.accessor((row) => row.brand.title ?? "", {
                     id: "brand",
                     header: "Brand",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { brand } = ctx.row.original;
+                        if (brand.id == null || !brand.title) return ctx.getValue() || "—";
+                        return (
+                            <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -434,7 +435,21 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                 columnHelper.accessor((row) => row.model?.title ?? "", {
                     id: "model",
                     header: "Model",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => {
+                        const { brand, model } = ctx.row.original;
+                        if (model?.id == null || !model.title || brand.id == null) {
+                            return ctx.getValue() || "—";
+                        }
+                        return (
+                            <D4HEquipmentModelLink
+                                model={{
+                                    id: model.id,
+                                    title: model.title,
+                                    brand: { id: brand.id },
+                                }}
+                            />
+                        );
+                    },
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -454,7 +469,7 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                     },
                 }),
             ]),
-        [slug, teams],
+        [teams],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
