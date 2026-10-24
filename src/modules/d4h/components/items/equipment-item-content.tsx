@@ -4,12 +4,20 @@
  */
 "use client";
 
-import { ExternalLinkIcon } from "lucide-react";
+import { CornerDownRightIcon, ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useMemo, type ReactNode } from "react";
 
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import {
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
 
+import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { Protect } from "@/components/protect";
@@ -27,7 +35,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
 import { route } from "@/lib/routes";
-import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
+import { D4HEquipmentListItem, D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { trpc } from "@/trpc/client";
 
 import { D4HModule_ItemTasks_Card } from "../tasks/item-tasks-card";
@@ -183,6 +191,17 @@ export function D4HModule_EquipmentItem_Content({
                                             <DataItemTitle>Model</DataItemTitle>
                                             <DataItemValue>{item.model?.title}</DataItemValue>
                                         </DataItem>
+                                        {item.parents.length > 0 && (
+                                            <DataItem>
+                                                <DataItemTitle>Parents</DataItemTitle>
+                                                <DataItemValue>
+                                                    <ParentsTree
+                                                        parents={item.parents}
+                                                        teamId={teamId}
+                                                    />
+                                                </DataItemValue>
+                                            </DataItem>
+                                        )}
                                         <DataItem inline>
                                             <DataItemTitle>Serial Number</DataItemTitle>
                                             <DataItemValue>{item.serial}</DataItemValue>
@@ -253,6 +272,7 @@ export function D4HModule_EquipmentItem_Content({
                                     </DataList>
                                 </CardContent>
                             </Card>
+                            <ItemContents teamId={teamId} itemId={itemId} />
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Protect permissions={{ d4hTask: ["view"] }}>
@@ -270,5 +290,144 @@ export function D4HModule_EquipmentItem_Content({
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
+    );
+}
+
+/**
+ * The containers this item is stored in, outermost first, each indented under the one before and
+ * linked to its item page.
+ */
+function ParentsTree({
+    parents,
+    teamId,
+}: {
+    parents: { id: number; ref: string }[];
+    teamId: number;
+}) {
+    const { slug } = useOrganization();
+
+    return (
+        <ul className="flex flex-col gap-1">
+            {parents.map((parent, index) => (
+                <li
+                    key={parent.id}
+                    className="flex items-center gap-1"
+                    style={{ paddingLeft: `${index * 1.5}rem` }}
+                >
+                    {index > 0 && (
+                        <CornerDownRightIcon className="size-4 text-muted-foreground" aria-hidden />
+                    )}
+                    <Link
+                        href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
+                            slug,
+                            d4h_team_id: String(teamId),
+                            item_id: String(parent.id),
+                        })}
+                    >
+                        #{parent.ref}
+                    </Link>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+/** The current items stored in this one, as a table. Renders nothing when there are none. */
+function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
+    const organization = useOrganization();
+    const { slug } = organization;
+
+    const { data: contents } = useSuspenseQuery(
+        trpc.d4hApi.listEquipmentItemContents.queryOptions({
+            organizationId: organization.id,
+            teamId,
+            itemId,
+        }),
+    );
+
+    const columns = useMemo(
+        () =>
+            Kaga.defineColumns<D4HEquipmentListItem>((columnHelper) => [
+                columnHelper.accessor("ref", {
+                    header: "Ref",
+                    cell: (ctx) => (
+                        <Link
+                            href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
+                                slug,
+                                d4h_team_id: String(teamId),
+                                item_id: String(ctx.row.original.id),
+                            })}
+                        >
+                            {ctx.getValue()}
+                        </Link>
+                    ),
+                    enableGlobalFilter: true,
+                    enableSorting: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor("kind.title", {
+                    header: "Type",
+                    cell: (ctx) => ctx.getValue(),
+                    enableGlobalFilter: true,
+                    enableSorting: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor((row) => row.brand.title ?? "", {
+                    id: "brand",
+                    header: "Brand",
+                    cell: (ctx) => ctx.getValue(),
+                    enableGlobalFilter: true,
+                    enableSorting: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor((row) => row.model?.title ?? "", {
+                    id: "model",
+                    header: "Model",
+                    cell: (ctx) => ctx.getValue(),
+                    enableGlobalFilter: true,
+                    enableSorting: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor("status", {
+                    header: "Status",
+                    cell: (ctx) => D4HEquipmentStatus.label(ctx.getValue()),
+                    filterFn: Kaga.filterFns.oneOf,
+                    enableColumnFilter: true,
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                    meta: {
+                        // `listEquipmentItemContents` asks for current items only, so no wishlist.
+                        columnOptions: D4HEquipmentStatus.schema.options
+                            .filter((value) => value !== "WISHLIST")
+                            .map((value) => ({ value, label: D4HEquipmentStatus.label(value) })),
+                    },
+                }),
+            ]),
+        [slug, teamId],
+    );
+
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
+    const table = useReactTable({
+        data: contents,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        initialState: {
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
+            sorting: [{ id: "ref", desc: false }],
+        },
+    });
+
+    if (contents.length === 0) return null;
+
+    return (
+        <div className="mt-4">
+            <div className="mb-2 text-lg font-semibold">Contents</div>
+            <Kaga.TableToolbar table={table} />
+            <Kaga.Table table={table} />
+            <Kaga.TablePagination table={table} />
+        </div>
     );
 }

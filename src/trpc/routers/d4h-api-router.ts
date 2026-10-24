@@ -41,6 +41,7 @@ import {
 } from "@/server/d4h-api/client";
 import {
     fetchD4HEquipmentItem,
+    fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
     patchD4HEquipmentItem,
 } from "@/server/d4h-api/equipment";
@@ -237,6 +238,24 @@ export const d4hApiRouter = createTrpcRouter({
             return R.uniqueBy(categories, (c) => c.id).sort((a, b) =>
                 a.title.localeCompare(b.title),
             );
+        }),
+
+    /**
+     * The current items stored directly in one equipment item, in one D4H team. A team the token
+     * can't reach is not found.
+     */
+    listEquipmentItemContents: organizationProcedure({ d4hEquipment: ["view"] })
+        .input(z.object({ teamId: z.number(), itemId: z.number() }))
+        .output(z.array(D4HEquipmentListItem.schema))
+        .query(async ({ ctx, input: { teamId, itemId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+
+            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
+            if (!d4HTeams.some((team) => team.id === teamId)) {
+                throw new NotFoundError(`D4H team ${teamId} not found.`);
+            }
+
+            return fetchD4HEquipmentItemContents(accessToken, teamId, itemId);
         }),
 
     /**

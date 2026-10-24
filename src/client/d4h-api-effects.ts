@@ -27,6 +27,11 @@ export const d4hApiEffects = createEffects<"d4hApi">()({
         invalidate(
             trpc.d4hApi.listEquipmentKindItems.queryFilter({ organizationId: vars.organizationId }),
         ),
+        invalidate(
+            trpc.d4hApi.listEquipmentItemContents.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
         // Feeds the D4H equipment collections.
         invalidate(
             trpc.d4hApi.listEquipmentItems.queryFilter({ organizationId: vars.organizationId }),

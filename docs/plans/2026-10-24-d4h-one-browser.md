@@ -186,7 +186,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - The item page's Issued To links here when the holder is named.
   - **Done when:** the member page renders under a team, the members list links to it, labels are human-readable, links resolve, and `npm run check` passes.
 
-- [ ] **11. Item page: Parents and Contents** `visual` (added at checkpoint 1: the old D4H item page had them, and Task 4 dropped them)
+- [x] **11. Item page: Parents and Contents** `visual` — feat(d4h): item page shows its parents and contents (#453) (added at checkpoint 1: the old D4H item page had them, and Task 4 dropped them)
   - **Files:** `src/server/d4h-api/equipment.ts` (+ test), `src/trpc/routers/d4h-api-router.ts` (+ test), `src/modules/d4h/components/items/equipment-item-content.tsx`, the item `page.tsx`, the cache effects that invalidate `listEquipmentKindItems`
   - **Do:**
     - **`listEquipmentItemContents({ teamId, itemId })`** (`d4hEquipment: ["view"]`, alphabetical): the items stored in this one, from D4H's equipment list with `parent_id: itemId`, `only_current: true`, `size: 10000`, for that team only (`NotFoundError` for a team the token can't reach, like `listTeamMembers`). Rows use the narrow `D4HEquipmentListItem` schema. Fetch helper beside `fetchD4HEquipmentItemsByKind`.

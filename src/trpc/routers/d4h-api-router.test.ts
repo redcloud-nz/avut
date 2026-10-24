@@ -16,6 +16,7 @@ import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { fetchD4HWhoami, getD4HTeamMembers } from "@/server/d4h-api/client";
 import {
     fetchD4HEquipmentItem,
+    fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
     patchD4HEquipmentItem,
 } from "@/server/d4h-api/equipment";
@@ -81,6 +82,7 @@ vi.mock("@/server/d4h-api/client", () => ({
 
 vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
+    fetchD4HEquipmentItemContents: vi.fn(),
     fetchD4HEquipmentItemsByKind: vi.fn(),
     patchD4HEquipmentItem: vi.fn(),
 }));
@@ -163,6 +165,7 @@ describe("d4hApiRouter equipment items", () => {
             .mockReset()
             .mockResolvedValue(accessToken as never);
         vi.mocked(fetchD4HEquipmentItem).mockReset();
+        vi.mocked(fetchD4HEquipmentItemContents).mockReset();
         vi.mocked(fetchD4HEquipmentItemsByKind).mockReset();
         // Clear only: keep the factory's member list as the default.
         vi.mocked(getD4HTeamMembers).mockClear();
@@ -298,6 +301,77 @@ describe("d4hApiRouter equipment items", () => {
                     itemId: ITEM_ID,
                 }),
             ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+    });
+
+    describe("listEquipmentItemContents", () => {
+        it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No D4H access token configured."),
+            );
+
+            await expect(
+                viewer().listEquipmentItemContents({
+                    organizationId: T.org,
+                    teamId: TEAM_ID,
+                    itemId: ITEM_ID,
+                }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            expect(fetchD4HEquipmentItemContents).not.toHaveBeenCalled();
+        });
+
+        it("lists the items stored in the item, from its own team", async () => {
+            vi.mocked(fetchD4HEquipmentItemContents).mockResolvedValue([
+                listItem(1, TEAM_ID),
+                listItem(2, TEAM_ID),
+            ]);
+
+            const result = await viewer().listEquipmentItemContents({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+                itemId: ITEM_ID,
+            });
+
+            expect(result.map((row) => row.id)).toEqual([1, 2]);
+            expect(fetchD4HEquipmentItemContents).toHaveBeenCalledTimes(1);
+            expect(fetchD4HEquipmentItemContents).toHaveBeenCalledWith(
+                accessToken,
+                TEAM_ID,
+                ITEM_ID,
+            );
+        });
+
+        it("strips each location to the holder's type and id", async () => {
+            vi.mocked(fetchD4HEquipmentItemContents).mockResolvedValue([
+                listItem(1, TEAM_ID, {
+                    location: {
+                        resourceType: "Member",
+                        id: 42,
+                        name: "John Smith",
+                        address: { street: "1 Secret Street" },
+                    } as D4HEquipmentListItem["location"],
+                }),
+            ]);
+
+            const [row] = await viewer().listEquipmentItemContents({
+                organizationId: T.org,
+                teamId: TEAM_ID,
+                itemId: ITEM_ID,
+            });
+
+            expect(row.location).toStrictEqual({ resourceType: "Member", id: 42 });
+            expect(JSON.stringify(row)).not.toMatch(/Secret Street/);
+        });
+
+        it("throws NOT_FOUND for a team the token can't reach", async () => {
+            await expect(
+                viewer().listEquipmentItemContents({
+                    organizationId: T.org,
+                    teamId: 999,
+                    itemId: ITEM_ID,
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+            expect(fetchD4HEquipmentItemContents).not.toHaveBeenCalled();
         });
     });
 

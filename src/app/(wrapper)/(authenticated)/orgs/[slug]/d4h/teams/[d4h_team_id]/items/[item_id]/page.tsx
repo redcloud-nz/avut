@@ -74,6 +74,13 @@ export default async function D4HModule_EquipmentItem_Page(props: Props) {
             itemId,
         }),
     );
+    prefetch(
+        trpc.d4hApi.listEquipmentItemContents.queryOptions({
+            organizationId: organization.id,
+            teamId,
+            itemId,
+        }),
+    );
     prefetch(trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.d4hApi.listEquipmentCategories.queryOptions({ organizationId: organization.id }));
     // The tasks card renders only for `d4hTask: ["view"]`; for anyone else this prefetch fails

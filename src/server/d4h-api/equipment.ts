@@ -47,6 +47,36 @@ export async function fetchD4HEquipmentItem(
 }
 
 /**
+ * Fetch the current items stored directly in one equipment item, uncached. Throws on any failure.
+ *
+ * `location` keeps only the holder's type and id: see `D4HEquipmentListItem`.
+ */
+export async function fetchD4HEquipmentItemContents(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    parentId: number,
+): Promise<D4HEquipmentListItem[]> {
+    const { data, error, response } = await getD4HFetchClient(token).GET(
+        "/v3/{context}/{contextId}/equipment",
+        {
+            params: {
+                path: { context: "team", contextId: d4hTeamId },
+                query: { parent_id: parentId, only_current: true, size: 10000 },
+            },
+        },
+    );
+
+    // `error` is undefined for a non-ok response with an empty body, so check the response.
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch the contents of D4H equipment item ${parentId} in team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+            { cause: error },
+        );
+    }
+    return (data as D4HListResponse).results.map((raw) => D4HEquipmentListItem.schema.parse(raw));
+}
+
+/**
  * Fetch one team's current items of one equipment kind, uncached. Throws on any failure.
  *
  * `location` keeps only the holder's type and id: see `D4HEquipmentListItem`.
