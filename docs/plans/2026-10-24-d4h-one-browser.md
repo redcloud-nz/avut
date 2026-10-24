@@ -83,7 +83,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
 
     `npm run check` passes.
 
-- [ ] **2. Shared picker dialog shell; Skill Track uses it**
+- [x] **2. Shared picker dialog shell; Skill Track uses it** — refactor(ui): shared PickerDialog shell; Skill Track team scope uses it (#453)
   - **Files:** new `src/components/picker-dialog.tsx`; `src/modules/skill-track/components/reports/team-scope-dialog.tsx`
   - **Do:**
     - Extract the shell from `SkillTrack_TeamScopeDialog`:
@@ -236,4 +236,4 @@ D4H browsing (team-scoped Members/Items with a team picker; top-level Categories
 
 ## Parked
 
-(none yet)
+- Skill Track's `person-scope-dialog.tsx` and `skill-scope-dialog.tsx` repeat the picker shell logic (`select-scope`, forceOpen/dismissed, push/replace). Move them onto `PickerDialog` (`src/components/picker-dialog.tsx`). Area: Skill Track reports.
