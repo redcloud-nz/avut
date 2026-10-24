@@ -313,21 +313,22 @@ export const d4hApiRouter = createTrpcRouter({
                     .filter(({ item }) => item.location?.resourceType === "Member")
                     .map(({ team }) => team.id),
             );
-            const membersByTeam = new Map(
+            const nameByIdByTeam = new Map(
                 await Promise.all(
-                    holderTeamIds.map(
-                        async (teamId) =>
-                            [
-                                teamId,
-                                await getD4HTeamMembers(credentialRef, teamId).catch(() => []),
-                            ] as const,
-                    ),
+                    holderTeamIds.map(async (teamId) => {
+                        const members = await getD4HTeamMembers(credentialRef, teamId).catch(
+                            () => [],
+                        );
+                        return [
+                            teamId,
+                            new Map(members.map((member) => [member.id, member.name])),
+                        ] as const;
+                    }),
                 ),
             );
 
             return rows.map(({ item, team }) => {
                 const holderId = item.location?.resourceType === "Member" ? item.location.id : null;
-                const members = membersByTeam.get(team.id) ?? [];
                 return {
                     ...item,
                     team: { id: team.id, title: team.title },
@@ -336,9 +337,7 @@ export const d4hApiRouter = createTrpcRouter({
                             ? null
                             : {
                                   id: holderId,
-                                  name:
-                                      members.find((member) => member.id === holderId)?.name ??
-                                      null,
+                                  name: nameByIdByTeam.get(team.id)?.get(holderId) ?? null,
                               },
                 };
             });
@@ -564,13 +563,11 @@ export const d4hApiRouter = createTrpcRouter({
             if (issued.length === 0) return [];
 
             const members = await getD4HTeamMembers(credentialRef, teamId).catch(() => []);
+            const nameById = new Map(members.map((member) => [member.id, member.name]));
 
             return issued.map(({ item, holderId }) => ({
                 ...item,
-                holder: {
-                    id: holderId,
-                    name: members.find((member) => member.id === holderId)?.name ?? null,
-                },
+                holder: { id: holderId, name: nameById.get(holderId) ?? null },
             }));
         }),
 
