@@ -9,7 +9,11 @@ import { ForbiddenError } from "@/lib/errors";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 
-import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "./equipment";
+import {
+    fetchD4HEquipmentItem,
+    fetchD4HEquipmentItemsByKind,
+    patchD4HEquipmentItem,
+} from "./equipment";
 
 vi.mock("next/cache", () => ({ cacheLife: vi.fn(), cacheTag: vi.fn(), revalidateTag: vi.fn() }));
 
@@ -133,6 +137,42 @@ describe("fetchD4HEquipmentItem", () => {
         );
 
         await expect(fetchD4HEquipmentItem(token, 7, 1234)).rejects.toThrow(/500/);
+    });
+});
+
+describe("fetchD4HEquipmentItemsByKind", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("lists the kind's current items, stripping each location to the holder's type and id", async () => {
+        const fetchMock = vi.fn(async (_request: Request) =>
+            Response.json({ results: [itemFixture], page: 0, pageSize: 10000, totalSize: 1 }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const items = await fetchD4HEquipmentItemsByKind(token, 7, 8);
+
+        expect(items).toHaveLength(1);
+        expect(items[0].location).toStrictEqual({ resourceType: "Member", id: 99 });
+        expect(JSON.stringify(items)).not.toMatch(
+            /Secret Street|jane@example|ical-secret|John Doe/,
+        );
+
+        const url = new URL(fetchMock.mock.calls[0][0].url);
+        expect(url.pathname).toBe("/v3/team/7/equipment");
+        expect(url.searchParams.getAll("kind_id")).toEqual(["8"]);
+        expect(url.searchParams.get("only_current")).toBe("true");
+        expect(url.searchParams.get("size")).toBe("10000");
+    });
+
+    it("throws on failure", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(null, { status: 500 })),
+        );
+
+        await expect(fetchD4HEquipmentItemsByKind(token, 7, 8)).rejects.toThrow(/500/);
     });
 });
 

@@ -67,7 +67,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
 
 ### Review group 1: data layer and shared shell
 
-- [ ] **1. Router: `listTeamMembers` and `listEquipmentKindItems`**
+- [x] **1. Router: `listTeamMembers` and `listEquipmentKindItems`** — feat(d4h): listTeamMembers and listEquipmentKindItems procedures (#453)
   - **Files:** `src/server/d4h-api/equipment.ts` (+ `equipment.test.ts`), `src/trpc/routers/d4h-api-router.ts`, `src/trpc/routers/d4h-api-router.test.ts`
   - **Do:**
     - Add `fetchD4HEquipmentItemsByKind(accessToken, teamId, kindId)` in `equipment.ts`, with a narrow-`location` row schema beside `D4HEquipmentItemDetail`.

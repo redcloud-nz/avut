@@ -9,10 +9,11 @@ import { ForbiddenError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import {
     D4HEquipmentItemDetail,
+    D4HEquipmentListItem,
     type D4HEquipmentItemUpdate,
 } from "@/lib/schemas/d4h/equipment-item";
 
-import { getD4HFetchClient } from "./client";
+import { getD4HFetchClient, type D4HListResponse } from "./client";
 
 /**
  * Fetch one equipment item, uncached. Returns `null` when D4H answers 404 (the item was deleted,
@@ -43,6 +44,36 @@ export async function fetchD4HEquipmentItem(
         );
     }
     return D4HEquipmentItemDetail.schema.parse(data);
+}
+
+/**
+ * Fetch one team's current items of one equipment kind, uncached. Throws on any failure.
+ *
+ * `location` keeps only the holder's type and id: see `D4HEquipmentListItem`.
+ */
+export async function fetchD4HEquipmentItemsByKind(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    kindId: number,
+): Promise<D4HEquipmentListItem[]> {
+    const { data, error, response } = await getD4HFetchClient(token).GET(
+        "/v3/{context}/{contextId}/equipment",
+        {
+            params: {
+                path: { context: "team", contextId: d4hTeamId },
+                query: { kind_id: [kindId], only_current: true, size: 10000 },
+            },
+        },
+    );
+
+    // `error` is undefined for a non-ok response with an empty body, so check the response.
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H equipment items of kind ${kindId} in team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+            { cause: error },
+        );
+    }
+    return (data as D4HListResponse).results.map((raw) => D4HEquipmentListItem.schema.parse(raw));
 }
 
 /**

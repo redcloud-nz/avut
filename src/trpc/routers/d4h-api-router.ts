@@ -23,6 +23,7 @@ import {
     D4HEquipmentItem,
     D4HEquipmentItemDetail,
     D4HEquipmentItemUpdate,
+    D4HEquipmentListItem,
 } from "@/lib/schemas/d4h/equipment-item";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
@@ -38,7 +39,11 @@ import {
     getD4HTeamMembers,
     getD4HTokenMetadata,
 } from "@/server/d4h-api/client";
-import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import {
+    fetchD4HEquipmentItem,
+    fetchD4HEquipmentItemsByKind,
+    patchD4HEquipmentItem,
+} from "@/server/d4h-api/equipment";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
@@ -285,6 +290,68 @@ export const d4hApiRouter = createTrpcRouter({
         }),
 
     /**
+     * The current items of one equipment kind, in every D4H team the token reaches, each with
+     * the team it was listed under and, when it's issued to a person, who holds it.
+     *
+     * Holder names come from each team's (cached) member list, never from the item's `location`,
+     * which keeps only the holder's type and id. A team's members are fetched only when one of its
+     * items is held by a member, and a name is `null` when the holder isn't in that list (e.g. a
+     * retired member) or the list can't be fetched.
+     */
+    listEquipmentKindItems: organizationProcedure({ d4hEquipment: ["view"] })
+        .input(z.object({ kindId: z.number() }))
+        .output(
+            z.array(
+                D4HEquipmentListItem.schema.extend({
+                    team: z.object({ id: z.number(), title: z.string() }),
+                    holder: z.object({ id: z.number(), name: z.string().nullable() }).nullable(),
+                }),
+            ),
+        )
+        .query(async ({ ctx, input: { kindId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const credentialRef = toD4HCredentialRef(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
+
+            const items = (
+                await Promise.all(
+                    d4HTeams.map(async (team) => {
+                        const teamItems = await fetchD4HEquipmentItemsByKind(
+                            accessToken,
+                            team.id,
+                            kindId,
+                        );
+                        const members = teamItems.some(
+                            (item) => item.location?.resourceType === "Member",
+                        )
+                            ? await getD4HTeamMembers(credentialRef, team.id).catch(() => [])
+                            : [];
+
+                        return teamItems.map((item) => {
+                            const holderId =
+                                item.location?.resourceType === "Member" ? item.location.id : null;
+                            return {
+                                ...item,
+                                team: { id: team.id, title: team.title },
+                                holder:
+                                    holderId == null
+                                        ? null
+                                        : {
+                                              id: holderId,
+                                              name:
+                                                  members.find((member) => member.id === holderId)
+                                                      ?.name ?? null,
+                                          },
+                            };
+                        });
+                    }),
+                )
+            ).flat();
+
+            return R.uniqueBy(items, (item) => item.id);
+        }),
+
+    /**
      * Lists all equipment kinds in the D4H system that are accessible to the organization.
      */
     listEquipmentKinds: organizationProcedure({
@@ -463,6 +530,25 @@ export const d4hApiRouter = createTrpcRouter({
                 const item = D4HEquipmentItem.schema.parse(raw);
                 return item;
             });
+        }),
+
+    /**
+     * One D4H team's Operational and Non-operational members, from the cached member list. A team
+     * the token can't reach is not found.
+     */
+    listTeamMembers: organizationProcedure({ d4hEquipment: ["view"] })
+        .input(z.object({ teamId: z.number() }))
+        .output(z.array(D4HMember.schema))
+        .query(async ({ ctx, input: { teamId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const credentialRef = toD4HCredentialRef(accessToken);
+
+            const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
+            if (!d4HTeams.some((team) => team.id === teamId)) {
+                throw new NotFoundError(`D4H team ${teamId} not found.`);
+            }
+
+            return getD4HTeamMembers(credentialRef, teamId);
         }),
 
     /**
