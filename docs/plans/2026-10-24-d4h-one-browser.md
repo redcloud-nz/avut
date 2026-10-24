@@ -177,7 +177,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - The members list renders labelled statuses under a team.
     - Change team keeps the section, and `npm run check` passes.
 
-- [ ] **7. Member page** `visual`
+- [x] **7. Member page** `visual` — feat(d4h): team-scoped member page, linked from the members list and Issued To (#453)
   - **Files:** new `d4h/teams/[d4h_team_id]/members/[member_id]/page.tsx`, `src/modules/d4h/components/members/member-content.tsx`; `team-members-list.tsx` (link Name); the item content (link Issued To)
   - **Do:**
     - **Member page:** the title is the member's name from `listTeamMembers` in `generateMetadata` (generic fallback for no token or not found), with a details card as on today's `d4h/members/[team_id]/[member_id]`.

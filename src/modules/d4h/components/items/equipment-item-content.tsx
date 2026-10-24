@@ -5,6 +5,7 @@
 "use client";
 
 import { ExternalLinkIcon } from "lucide-react";
+import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -196,11 +197,29 @@ export function D4HModule_EquipmentItem_Content({
                                         <DataItem inline>
                                             <DataItemTitle>Issued To</DataItemTitle>
                                             <DataItemValue>
-                                                {holder
-                                                    ? // A holder missing from the team's member
-                                                      // list (e.g. a retired member) has no name.
-                                                      (holder.name ?? `Member #${holder.id}`)
-                                                    : (item.location?.resourceType ?? "—")}
+                                                {holder ? (
+                                                    holder.name ? (
+                                                        <Link
+                                                            href={route(
+                                                                "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
+                                                                {
+                                                                    slug,
+                                                                    d4h_team_id: String(teamId),
+                                                                    member_id: String(holder.id),
+                                                                },
+                                                            )}
+                                                        >
+                                                            {holder.name}
+                                                        </Link>
+                                                    ) : (
+                                                        // A holder missing from the team's member
+                                                        // list (e.g. a retired member) has no
+                                                        // name, and no member page.
+                                                        `Member #${holder.id}`
+                                                    )
+                                                ) : (
+                                                    (item.location?.resourceType ?? "—")
+                                                )}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>

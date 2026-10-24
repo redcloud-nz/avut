@@ -4,6 +4,7 @@
  */
 "use client";
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useMemo } from "react";
 
@@ -48,7 +49,20 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
             Kaga.defineColumns<D4HMember>((columnHelper) => [
                 columnHelper.accessor("name", {
                     header: "Name",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => (
+                        <Link
+                            href={route(
+                                "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
+                                {
+                                    slug,
+                                    d4h_team_id: String(teamId),
+                                    member_id: String(ctx.row.original.id),
+                                },
+                            )}
+                        >
+                            {ctx.getValue()}
+                        </Link>
+                    ),
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -82,7 +96,7 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
                     },
                 }),
             ]),
-        [],
+        [slug, teamId],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
