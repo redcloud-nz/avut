@@ -161,7 +161,17 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
             <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Types", href: route("/orgs/[slug]/d4h/types", { slug }) },
+                    {
+                        label: "Equipment Categories",
+                        href: route("/orgs/[slug]/d4h/categories", { slug }),
+                    },
+                    {
+                        label: kind.category.title,
+                        href: route("/orgs/[slug]/d4h/categories/[category_id]", {
+                            slug,
+                            category_id: String(kind.category.id),
+                        }),
+                    },
                     { label: kind.title },
                 ]}
             />

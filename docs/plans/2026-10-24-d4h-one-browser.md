@@ -237,7 +237,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
 
 Added at checkpoint 2. The user's decisions: "Categories" → **Equipment Categories**, "Brands" → **Equipment Brands**; D4H drops the Types list (every type sits in a category); I3 gets back an **Issued Types** section doing what the old By Equipment Type pages did, **per team with the team picker**, and a type's page **grouped by member**.
 
-- [ ] **12. Equipment Categories and Equipment Brands; drop the Types list** `visual` `mechanical`
+- [x] **12. Equipment Categories and Equipment Brands; drop the Types list** `visual` `mechanical` — feat(d4h): rename to Equipment Categories and Equipment Brands, drop the Types list (#453)
   - **Files:**
     - **Delete:** `d4h/types/page.tsx`, `src/modules/d4h/components/catalogue/types-list.tsx`
     - **Edit:** `src/modules/d4h/components/sidebar-menu.tsx`, `d4h/page.tsx`, the categories/category/type/brands/brand pages and content components (titles, `generateMetadata`, breadcrumbs), `content/help/d4h.mdx`

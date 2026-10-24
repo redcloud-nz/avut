@@ -13,7 +13,7 @@ import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export const metadata: Metadata = { title: `Categories ${TITLE_SEPARATOR} D4H` };
+export const metadata: Metadata = { title: `Equipment Categories ${TITLE_SEPARATOR} D4H` };
 
 export default async function D4HModule_Categories_Page(
     props: PageProps<"/orgs/[slug]/d4h/categories">,

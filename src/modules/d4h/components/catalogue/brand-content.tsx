@@ -93,7 +93,7 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
             <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Brands", href: route("/orgs/[slug]/d4h/brands", { slug }) },
+                    { label: "Equipment Brands", href: route("/orgs/[slug]/d4h/brands", { slug }) },
                     { label: brand.title },
                 ]}
             />

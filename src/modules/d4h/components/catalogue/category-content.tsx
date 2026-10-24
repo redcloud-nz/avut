@@ -97,7 +97,10 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
             <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Categories", href: route("/orgs/[slug]/d4h/categories", { slug }) },
+                    {
+                        label: "Equipment Categories",
+                        href: route("/orgs/[slug]/d4h/categories", { slug }),
+                    },
                     { label: category.title },
                 ]}
             />

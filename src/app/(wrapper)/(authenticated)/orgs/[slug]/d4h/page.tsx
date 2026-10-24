@@ -60,22 +60,10 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/d4h/categories", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Categories</ItemTitle>
+                                        <ItemTitle>Equipment Categories</ItemTitle>
                                         <ItemDescription>
-                                            Equipment categories and their types.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                            <Item asChild>
-                                <Link href={route("/orgs/[slug]/d4h/types", { slug })}>
-                                    <ItemContent>
-                                        <ItemTitle>Types</ItemTitle>
-                                        <ItemDescription>
-                                            Equipment types and their items in every team.
+                                            Categories, their types and each type&apos;s items in
+                                            every team.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>
@@ -86,7 +74,7 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/d4h/brands", { slug })}>
                                     <ItemContent>
-                                        <ItemTitle>Brands</ItemTitle>
+                                        <ItemTitle>Equipment Brands</ItemTitle>
                                         <ItemDescription>
                                             Equipment brands and their models.
                                         </ItemDescription>

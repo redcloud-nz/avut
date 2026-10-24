@@ -21,11 +21,13 @@ export function D4H_Sidebar_Menu() {
             <Protect permissions={{ d4hEquipment: ["view"] }}>
                 <NavSubItem label="Members" href={route("/orgs/[slug]/d4h/members", { slug })} />
                 <NavSubItem
-                    label="Categories"
+                    label="Equipment Categories"
                     href={route("/orgs/[slug]/d4h/categories", { slug })}
                 />
-                <NavSubItem label="Types" href={route("/orgs/[slug]/d4h/types", { slug })} />
-                <NavSubItem label="Brands" href={route("/orgs/[slug]/d4h/brands", { slug })} />
+                <NavSubItem
+                    label="Equipment Brands"
+                    href={route("/orgs/[slug]/d4h/brands", { slug })}
+                />
             </Protect>
             <Protect permissions={{ d4hTask: ["view"] }}>
                 <NavSubItem label="Tasks" href={route("/orgs/[slug]/d4h/tasks", { slug })} />

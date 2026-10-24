@@ -13,7 +13,7 @@ import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export const metadata: Metadata = { title: `Brands ${TITLE_SEPARATOR} D4H` };
+export const metadata: Metadata = { title: `Equipment Brands ${TITLE_SEPARATOR} D4H` };
 
 export default async function D4HModule_Brands_Page(props: PageProps<"/orgs/[slug]/d4h/brands">) {
     const { slug } = await props.params;

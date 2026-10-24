@@ -103,13 +103,13 @@ export function D4HModule_Categories_List() {
             <Std.Navbar
                 breadcrumbs={[
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
-                    { label: "Categories" },
+                    { label: "Equipment Categories" },
                 ]}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>Categories</Saratoga.Title>
+                        <Saratoga.Title>Equipment Categories</Saratoga.Title>
                     </Saratoga.Header>
                     <div>
                         <Kaga.TableToolbar table={table} />
