@@ -227,7 +227,7 @@ function CreateTemplate_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-kind">D4H Kind</FieldLabel>
+                                    <FieldLabel htmlFor="template-kind">D4H Type</FieldLabel>
                                     <Select
                                         value={field.value ? field.value.toString() : ""}
                                         onValueChange={(v) => {
@@ -245,7 +245,7 @@ function CreateTemplate_Body() {
                                             id="template-kind"
                                             aria-invalid={fieldState.invalid}
                                         >
-                                            <SelectValue placeholder="Select a kind" />
+                                            <SelectValue placeholder="Select a type" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {filteredKinds?.map((kind) => (

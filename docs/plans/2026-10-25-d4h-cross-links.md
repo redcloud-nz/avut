@@ -35,6 +35,7 @@ Finish the "Kind" → "Type" wording that #453 started (it is left only on the D
 - **Nullable ids render plain.** An item's `brand.id`/`model.id` can be `null` (and the title missing): the call site renders the title or "—" as plain text then, never a link with a bad id.
 - **`D4HModule_Owner`** (`src/modules/d4h/components/catalogue/owner.tsx`) takes the owner's `id` and renders a `D4HTeamLink` when `resourceType === "Team"`. An Organisation owner stays plain text (no page).
 - **Item links use the item's own team** (`item.owner.id`), and link only when that team is reachable (`teams.some((t) => t.id === owner.id)`), as `ContentsTable` and `type-content.tsx` already do; otherwise `#<ref>` is plain text. `member-content.tsx` uses the route `teamId` today, which 404s for an item owned by another team. **Parents** are the exception: `item.parents` is `{id, ref}[]` with no owner, so they keep the page's team.
+- **Item refs render through `D4HItemRef`** (`src/components/d4h/d4h-item-ref.tsx`, added at checkpoint 1): AVUT's `#` prefix in muted monospace, then the ref as D4H holds it, since some D4H refs already start with `#`. `D4HEquipmentItemLink` uses it; so does any plain-text ref fallback. Plain strings (breadcrumbs, tab titles, toasts) show the ref without our `#`.
 - **No-token behaviour is unchanged.** Every link is built from data the existing queries already return; nothing new is fetched.
 - **Not link sites:** page titles and breadcrumbs (they're the page itself, or already links), select options and pickers, toast and tooltip strings, and dialog titles naming the record being acted on.
 - **The Issue and Return forms get no links** (user, 2026-10-25): not the form lists, not the form instance pages, and not the Return dialog on the item page (`return-equipment-item.tsx`), which is the same flow.
@@ -68,7 +69,7 @@ Finish the "Kind" → "Type" wording that #453 started (it is left only on the D
 
 ### Review group 3: D4H I3 module (`visual`), then visual checkpoint 2
 
-- [ ] **4. "Type" wording** `visual` `mechanical`
+- [x] **4. "Type" wording** `visual` `mechanical` — feat(d4h-i3): say "Type" where users read "Kind" (#455)
   - **Files:** `src/modules/d4h-i3/components/templates/{templates-list,template-content,create-template,update-template}.tsx`, `content/help/d4h-i3.mdx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/d4h-access-tokens/[token_id]/equipment-kinds/page.tsx`.
   - **Do:** "D4H Kind" → "D4H Type", "Select a kind" → "Select a type", the help card's "category and kind" → "category and type", and the debug page's two visible strings (Decisions). Keep `id="template-kind"`, `kindId` and all identifiers.
   - **Done when:** `npm run check` passes, and `grep -rn -i -w -E 'kinds?' src/modules/d4h src/modules/d4h-i3 content/help/d4h*.mdx` finds only identifiers, comments and `{{kind.*}}` placeholders.
@@ -103,3 +104,4 @@ Template screens now say "D4H Type" and names across D4H and D4H I3 link to thei
 ## Review notes
 
 - `docs/patterns/entity-link.md`: sort the new wrapper-table rows alphabetically (D4H Equipment Brand … Type, D4H Member, D4H Team), and note in "Adding a new entity type" step 1 that a Ref may carry `title` instead of `name`, as the D4H records do.
+- Item page Contents table and member page items table: the Type, Brand and Model cells link without the row's reachability check. When the owning team is out of reach and owns that type or brand, the catalogue page 404s. Compute `reachable` once per row and render those cells plain when it's false, as Ref does.

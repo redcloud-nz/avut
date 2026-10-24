@@ -57,7 +57,7 @@ export function D4HI3Module_TemplateList() {
                     enableGlobalFilter: false,
                 }),
                 col.accessor("d4h.kindTitle", {
-                    header: "D4H Kind",
+                    header: "D4H Type",
                     cell: (ctx) => ctx.getValue(),
                     enableColumnFilter: false,
                     enableSorting: false,

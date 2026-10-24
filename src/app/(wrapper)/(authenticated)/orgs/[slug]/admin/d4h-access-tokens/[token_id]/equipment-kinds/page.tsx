@@ -102,14 +102,14 @@ export default async function Admin_D4HAccessToken_EquipmentKinds_Page(
                             token_id,
                         }),
                     },
-                    "Equipment Kinds",
+                    "Equipment Types",
                 ]}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>
-                            Equipment Kinds ({successCount} of {kinds.length})
+                            Equipment Types ({successCount} of {kinds.length})
                         </Saratoga.Title>
                     </Saratoga.Header>
                     {kinds.map((kind) => (
@@ -127,7 +127,7 @@ export default async function Admin_D4HAccessToken_EquipmentKinds_Page(
                                     </pre>
                                 ) : (
                                     <Alert>
-                                        <AlertTitle>Failed to parse equipment kind data</AlertTitle>
+                                        <AlertTitle>Failed to parse equipment type data</AlertTitle>
                                         <AlertDescription>
                                             {kind.parsed.error.message}
                                         </AlertDescription>

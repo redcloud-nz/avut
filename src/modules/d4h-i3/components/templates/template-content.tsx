@@ -86,7 +86,7 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
-                                            <DataItemTitle>D4H Kind</DataItemTitle>
+                                            <DataItemTitle>D4H Type</DataItemTitle>
                                             <DataItemValue>{template.d4h?.kindTitle}</DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
