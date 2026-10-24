@@ -30,11 +30,9 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
   - **`/d4h/members`** opens it on arrival. With one team it redirects to `teams/[id]/members`, and with none (or no token) it shows an empty state.
   - **Change team:** team-scoped list pages (`teams/[d4h_team_id]` and `…/members`) get a **Change team** button that goes to the same section of the chosen team, shown only with more than one team.
   - **Detail pages get no Change team:** an item or member belongs to its team.
-- **Item page composition:** the server `page.tsx` renders `D4HModule_EquipmentItem_Content`. When `isOrganizationModuleUsable(slug, "d4h-i3")` is true, it passes I3's pieces in as React-node props (`actions`, `statusBadge`). Those pieces are self-fetching client components from `src/modules/d4h-i3/` that take `teamId`/`itemId`. They're slots, not functions, because they cross the server → client boundary.
-  - **D4H's Actions menu keeps only Edit.** I3's Return becomes its own trigger button with its existing `?action=return` dialog.
-    - The button isn't rendered when the item has no member holder.
-    - When the item is already returned (or the viewer can't return it), it stays rendered with `aria-disabled` and a tooltip saying why, rather than `disabled`. After a successful Return, `useReturnFocus` lands focus on it instead of dropping it to `<body>`.
-    - Return loses its `Mod+.` path through the actions menu, which is acceptable.
+- **Item page composition:** the server `page.tsx` renders `D4HModule_EquipmentItem_Content`. When `isOrganizationModuleUsable(slug, "d4h-i3")` is true, it passes I3's pieces in as React-node props (`menuActions`, `menuDialogs`, `statusBadge`). Those pieces are self-fetching client components from `src/modules/d4h-i3/` that take `teamId`/`itemId`. They're slots, not functions, because they cross the server → client boundary.
+  - **Return sits in the Actions menu, under Edit** (changed at checkpoint 1; Task 4 first built it as its own button). `EntityActionMenu` takes `extraActions` (more `<MenuAction>`s in its Actions group) and `dialogs` (always mounted beside it, reading the trigger through `useEntityActionMenuTrigger` to return focus). I3 fills them with `D4HI3Module_ItemReturn_MenuAction` and `D4HI3Module_ItemReturn_Dialog`, which also registers Return's hotkey.
+    - Return isn't listed when the item has no member holder, and is disabled when it's already returned or the viewer can't return it.
   - **Unchanged:** Update (D4H edit), the open-tasks card and "Open in D4H" are D4H's own.
 - **Returned badge only on the item page.** The I3 kind and member pages showed it per row. The new D4H member and type pages don't, because a D4H module can't import I3. It's a deliberate loss, and the item page and Return form still show it.
 - **The member list drops the "Issued Items" count.** I3 fetched one `listMemberEquipment` per member, the N+1 behind #447. The member page shows the member's equipment instead.
@@ -185,6 +183,15 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - The item page's Issued To links here when the holder is named.
   - **Done when:** both pages render under a team, labels are human-readable, links resolve, and `npm run check` passes.
 
+- [ ] **11. Item page: Parents and Contents** `visual` (added at checkpoint 1: the old D4H item page had them, and Task 4 dropped them)
+  - **Files:** `src/server/d4h-api/equipment.ts` (+ test), `src/trpc/routers/d4h-api-router.ts` (+ test), `src/modules/d4h/components/items/equipment-item-content.tsx`, the item `page.tsx`, the cache effects that invalidate `listEquipmentKindItems`
+  - **Do:**
+    - **`listEquipmentItemContents({ teamId, itemId })`** (`d4hEquipment: ["view"]`, alphabetical): the items stored in this one, from D4H's equipment list with `parent_id: itemId`, `only_current: true`, `size: 10000`, for that team only (`NotFoundError` for a team the token can't reach, like `listTeamMembers`). Rows use the narrow `D4HEquipmentListItem` schema. Fetch helper beside `fetchD4HEquipmentItemsByKind`.
+    - **Parents:** a Parents row in Item Information, from the item's own `parents` (already on `getEquipmentItem`), each linked to its item page in the same team, shown only when there are any.
+    - **Contents:** a Contents section under Item Information (Kaga table: Ref linked to the item page, Type, Brand, Model, Status labelled), prefetched in `page.tsx`, shown only when there are contents. Look at the deleted `d4h/equipment/items/[item_id]/page.tsx` (`git show c82ae84c:…`) for the old layout.
+    - Invalidate `listEquipmentItemContents` wherever `listEquipmentKindItems` is invalidated after an item edit.
+  - **Done when:** a container item lists its contents and a contained item links up to its parents, tests cover the procedure (including the unknown team and no token), and `npm run check` passes.
+
 ### Review group 4: catalogue and navigation (`visual`), then visual checkpoint 2
 
 - [ ] **8. Categories and types** `visual`
@@ -196,6 +203,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - Server pages prefetch `listEquipmentCategories` / `listEquipmentKinds` / `listEquipmentKindItems`. Category and type titles come from the list `fetchQuery` in `generateMetadata`, with the fallback.
     - **Categories list:** Title (linked), Types (count), Owner (with `resourceType`).
     - **Category page:** a details card plus its types (Title linked, Owner).
+    - **Item page:** link its Category value to the category page (the old D4H item page did).
     - **Types list:** Title (linked), Category (linked), Owner.
     - **Type page:** a details card (Title, Category linked, Owner) plus the items table from `listEquipmentKindItems`: Ref (linked to `teams/[item.team.id]/items/[id]`), Team, Holder (linked to the member page when named), Brand, Model, Status (labelled).
   - **Done when:** all four pages render with "Type" wording and labelled statuses, item and holder links resolve, and `npm run check` passes.

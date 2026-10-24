@@ -5,19 +5,25 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import type { ReactNode } from "react";
 
 import { ObjectIcons } from "@/components/icons";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
 
 /**
- * The item page's Actions menu: Edit (`?action=update`, Alt+E).
+ * The item page's Actions menu: Edit (`?action=update`, Alt+E), then whatever other modules add
+ * through `extraActions` and `dialogs` (see `EntityActionMenu`).
  */
 export function D4HModule_EquipmentItem_Menu({
     canUpdateInD4H,
+    extraActions,
+    dialogs,
 }: {
     /** The viewer's D4H account has Equipment UPDATE on the item's team. */
     canUpdateInD4H: boolean;
+    extraActions?: ReactNode;
+    dialogs?: ReactNode;
 }) {
     const [, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
 
@@ -33,5 +39,12 @@ export function D4HModule_EquipmentItem_Menu({
         },
     ];
 
-    return <EntityActionMenu actions={actions} category="Equipment" />;
+    return (
+        <EntityActionMenu
+            actions={actions}
+            category="Equipment"
+            extraActions={extraActions}
+            dialogs={dialogs}
+        />
+    );
 }

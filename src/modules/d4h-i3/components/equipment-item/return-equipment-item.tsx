@@ -36,16 +36,16 @@ const FormSchema = z.object({ comments: z.string() });
 
 /**
  * Return a single item from its holder, queueing a D4H retire task. Opened by `?action=return`
- * from the Return button that `D4HI3Module_ItemReturn_Action` puts on the D4H item page.
+ * from the Return item that `D4HI3Module_ItemReturn_MenuAction` adds to the D4H item page's Actions
+ * menu.
  *
  * Same result as the Return form (the checks, the retire task with its note, the audit log), but
  * no email and no draft. The param doesn't open the dialog unless `canReturn` (the viewer may
  * return the item, it's issued to a member, and it isn't already Returned), so a hand-typed URL
  * does nothing.
  *
- * The button isn't a `DialogTrigger`, so `useReturnFocus` hands focus back to whatever opened the
- * dialog. Pass the button as `returnFocusRef` too, for when the dialog opened from the URL (a
- * refresh, Back or a pasted link) and nothing on the page was the opener.
+ * Its opener is a menu item, gone by the time the dialog closes, so pass `returnFocusRef` (the
+ * menu's button) for focus to land on instead.
  */
 export function D4HI3Module_ReturnEquipmentItem_Dialog({
     teamId,

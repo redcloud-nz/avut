@@ -40,18 +40,21 @@ import {
 /**
  * A D4H equipment item, read live from D4H with the viewer's token.
  *
- * Other modules add to the page through slots that `page.tsx` fills: `actions` renders after the
- * Actions menu, and `statusBadge` beside the D4H Status value.
+ * Other modules add to the page through slots that `page.tsx` fills: `menuActions` and
+ * `menuDialogs` go to the Actions menu (see `EntityActionMenu`), and `statusBadge` sits beside the
+ * D4H Status value.
  */
 export function D4HModule_EquipmentItem_Content({
     teamId,
     itemId,
-    actions,
+    menuActions,
+    menuDialogs,
     statusBadge,
 }: {
     teamId: number;
     itemId: number;
-    actions?: ReactNode;
+    menuActions?: ReactNode;
+    menuDialogs?: ReactNode;
     statusBadge?: ReactNode;
 }) {
     const organization = useOrganization();
@@ -116,8 +119,11 @@ export function D4HModule_EquipmentItem_Content({
                                     Open in D4H
                                 </a>
                             </Button>
-                            <D4HModule_EquipmentItem_Menu canUpdateInD4H={canUpdateInD4H} />
-                            {actions}
+                            <D4HModule_EquipmentItem_Menu
+                                canUpdateInD4H={canUpdateInD4H}
+                                extraActions={menuActions}
+                                dialogs={menuDialogs}
+                            />
                         </Saratoga.Actions>
                     </Saratoga.Header>
 

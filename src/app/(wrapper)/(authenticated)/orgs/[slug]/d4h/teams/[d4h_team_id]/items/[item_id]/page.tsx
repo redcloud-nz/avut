@@ -11,7 +11,10 @@ import { notFound } from "next/navigation";
 import { TRPCError } from "@trpc/server";
 
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { D4HI3Module_ItemReturn_Action } from "@/modules/d4h-i3/components/equipment-item/item-return-action";
+import {
+    D4HI3Module_ItemReturn_Dialog,
+    D4HI3Module_ItemReturn_MenuAction,
+} from "@/modules/d4h-i3/components/equipment-item/item-return-action";
 import { D4HI3Module_ItemReturnedBadge } from "@/modules/d4h-i3/components/equipment-item/item-returned-badge";
 import { D4HModule_EquipmentItem_Content } from "@/modules/d4h/components/items/equipment-item-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
@@ -96,9 +99,14 @@ export default async function D4HModule_EquipmentItem_Page(props: Props) {
             <D4HModule_EquipmentItem_Content
                 teamId={teamId}
                 itemId={itemId}
-                actions={
+                menuActions={
                     withI3 ? (
-                        <D4HI3Module_ItemReturn_Action teamId={teamId} itemId={itemId} />
+                        <D4HI3Module_ItemReturn_MenuAction teamId={teamId} itemId={itemId} />
+                    ) : null
+                }
+                menuDialogs={
+                    withI3 ? (
+                        <D4HI3Module_ItemReturn_Dialog teamId={teamId} itemId={itemId} />
                     ) : null
                 }
                 statusBadge={
