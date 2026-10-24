@@ -63,10 +63,9 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
                     enableSorting: true,
                     enableColumnFilter: false,
                 }),
-                // A model's owner carries no title, so only its kind can be shown.
-                columnHelper.accessor("owner.resourceType", {
+                columnHelper.accessor("owner.title", {
                     header: "Owner",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => <D4HModule_Owner owner={ctx.row.original.owner} />,
                     enableGlobalFilter: false,
                     enableSorting: true,
                     enableColumnFilter: false,

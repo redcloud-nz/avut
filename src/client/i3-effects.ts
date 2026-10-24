@@ -42,6 +42,7 @@ export const i3Effects = createEffects<"i3">()({
     // The Issue page navigates back to its list on success, so its call site sets `meta.navigates`.
     submitIssueItemsForm: ({ organizationId }) => [
         // Issuing moves items to their new holders in D4H.
+        invalidate(trpc.d4hApi.listMemberEquipment.queryFilter({ organizationId })),
         invalidate(trpc.d4hApi.listEquipmentKindItems.queryFilter({ organizationId })),
         invalidate(trpc.d4hApi.listEquipmentItemContents.queryFilter({ organizationId })),
         invalidate(

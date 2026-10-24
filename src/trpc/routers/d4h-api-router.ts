@@ -259,63 +259,16 @@ export const d4hApiRouter = createTrpcRouter({
         }),
 
     /**
-     * Lists all equipment items in the D4H system that are accessible to the organization. Depending on the number of teams and equipment items, this can be a very expensive operation. Use with caution. For more specific queries, use the other endpoints (e.g. listMemberEquipment).
-     */
-    listEquipmentItems: organizationProcedure({
-        d4hEquipment: ["view"],
-    })
-        .output(z.array(D4HEquipmentItem.schema))
-        .query(async ({ ctx }) => {
-            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
-
-            const fetchClient = getD4HFetchClient(accessToken);
-            const { d4HTeams } = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
-
-            const items = (
-                await Promise.all(
-                    d4HTeams.map(async (team) => {
-                        const { data, error, response } = await fetchClient.GET(
-                            "/v3/{context}/{contextId}/equipment",
-                            {
-                                params: {
-                                    path: {
-                                        context: "team",
-                                        contextId: team.id,
-                                    },
-                                    query: {
-                                        size: 10000,
-                                        only_current: true,
-                                    },
-                                },
-                            },
-                        );
-
-                        // `error` is undefined for a non-ok response with an empty body.
-                        if (!response.ok)
-                            throw new Error(`Failed to fetch equipment items for team ${team.id}`, {
-                                cause: error,
-                            });
-
-                        return (data as D4HListResponse).results.map((raw) => {
-                            const item = D4HEquipmentItem.schema.parse(raw);
-
-                            return item;
-                        });
-                    }),
-                )
-            ).flat();
-
-            return R.uniqueBy(items, (e) => e.id);
-        }),
-
-    /**
      * The current items of one equipment kind, in every D4H team the token reaches, each with
-     * the team it was listed under and, when it's issued to a person, who holds it.
+     * the team that owns it and, when it's issued to a person, who holds it.
      *
-     * Holder names come from each team's (cached) member list, never from the item's `location`,
-     * which keeps only the holder's type and id. A team's members are fetched only when one of its
-     * items is held by a member, and a name is `null` when the holder isn't in that list (e.g. a
-     * retired member) or the list can't be fetched.
+     * An item listed under more than one team is kept once and attributed to its `owner` team,
+     * or to the team that listed it when the token can't reach the owner.
+     *
+     * Holder names come from the owning team's (cached) member list, never from the item's
+     * `location`, which keeps only the holder's type and id. A team's members are fetched only
+     * when one of its items is held by a member, and a name is `null` when the holder isn't in
+     * that list (e.g. a retired member) or the list can't be fetched.
      */
     listEquipmentKindItems: organizationProcedure({ d4hEquipment: ["view"] })
         .input(z.object({ kindId: z.number() }))
@@ -332,42 +285,62 @@ export const d4hApiRouter = createTrpcRouter({
             const credentialRef = toD4HCredentialRef(accessToken);
             const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
 
-            const items = (
+            const listed = (
                 await Promise.all(
-                    d4HTeams.map(async (team) => {
+                    d4HTeams.map(async (listingTeam) => {
                         const teamItems = await fetchD4HEquipmentItemsByKind(
                             accessToken,
-                            team.id,
+                            listingTeam.id,
                             kindId,
                         );
-                        const members = teamItems.some(
-                            (item) => item.location?.resourceType === "Member",
-                        )
-                            ? await getD4HTeamMembers(credentialRef, team.id).catch(() => [])
-                            : [];
-
-                        return teamItems.map((item) => {
-                            const holderId =
-                                item.location?.resourceType === "Member" ? item.location.id : null;
-                            return {
-                                ...item,
-                                team: { id: team.id, title: team.title },
-                                holder:
-                                    holderId == null
-                                        ? null
-                                        : {
-                                              id: holderId,
-                                              name:
-                                                  members.find((member) => member.id === holderId)
-                                                      ?.name ?? null,
-                                          },
-                            };
-                        });
+                        return teamItems.map((item) => ({
+                            item,
+                            team: d4HTeams.find((team) => team.id === item.owner.id) ?? listingTeam,
+                        }));
                     }),
                 )
             ).flat();
 
-            return R.uniqueBy(items, (item) => item.id);
+            // Keep each item once, preferring a row attributed to the item's owner.
+            const rows = R.uniqueBy(
+                R.sortBy(listed, ({ item, team }) => (team.id === item.owner.id ? 0 : 1)),
+                ({ item }) => item.id,
+            );
+
+            const holderTeamIds = R.unique(
+                rows
+                    .filter(({ item }) => item.location?.resourceType === "Member")
+                    .map(({ team }) => team.id),
+            );
+            const membersByTeam = new Map(
+                await Promise.all(
+                    holderTeamIds.map(
+                        async (teamId) =>
+                            [
+                                teamId,
+                                await getD4HTeamMembers(credentialRef, teamId).catch(() => []),
+                            ] as const,
+                    ),
+                ),
+            );
+
+            return rows.map(({ item, team }) => {
+                const holderId = item.location?.resourceType === "Member" ? item.location.id : null;
+                const members = membersByTeam.get(team.id) ?? [];
+                return {
+                    ...item,
+                    team: { id: team.id, title: team.title },
+                    holder:
+                        holderId == null
+                            ? null
+                            : {
+                                  id: holderId,
+                                  name:
+                                      members.find((member) => member.id === holderId)?.name ??
+                                      null,
+                              },
+                };
+            });
         }),
 
     /**
@@ -456,7 +429,10 @@ export const d4hApiRouter = createTrpcRouter({
 
                             return {
                                 ...model,
-                                owner: model.owner.resourceType == "Team" ? team : team.owner!,
+                                owner:
+                                    model.owner.resourceType == "Team"
+                                        ? (d4HTeams.find((t) => t.id === model.owner.id) ?? team)
+                                        : team.owner!,
                             };
                         });
                     }),

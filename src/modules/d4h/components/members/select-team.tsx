@@ -4,9 +4,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
@@ -19,14 +16,13 @@ import { trpc } from "@/trpc/client";
 import { D4HModule_TeamPickerDialog } from "../teams/team-picker-dialog";
 
 /**
- * The `/d4h/members` landing page. Members are listed per team, so it goes straight to the only
- * team's members when there's one, and otherwise opens the team picker. Without a D4H token the
+ * The `/d4h/members` landing page for zero or several teams: an empty state, or the team picker.
+ * With one team, `page.tsx` redirects to its members before this renders. Without a D4H token the
  * query fails and the error boundary explains.
  */
 export function D4HModule_Members_SelectTeam() {
     const organization = useOrganization();
     const { slug } = organization;
-    const router = useRouter();
 
     const { data: teams } = useSuspenseQuery(
         trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }),
@@ -37,12 +33,6 @@ export function D4HModule_Members_SelectTeam() {
             slug,
             d4h_team_id: String(teamId),
         });
-
-    const onlyTeamHref = teams.length === 1 ? membersOf(teams[0].id) : null;
-
-    useEffect(() => {
-        if (onlyTeamHref !== null) router.replace(onlyTeamHref);
-    }, [onlyTeamHref, router]);
 
     return (
         <>

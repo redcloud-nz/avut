@@ -82,7 +82,7 @@ export function D4HModule_TeamMembers_List({ teamId }: { teamId: number }) {
                     enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: "Status",
+                    header: "D4H Status",
                     cell: (ctx) => formatD4HMemberStatus(ctx.getValue()),
                     filterFn: Kaga.filterFns.oneOf,
                     enableColumnFilter: true,

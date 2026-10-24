@@ -77,14 +77,14 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                 }),
                 columnHelper.accessor(
                     (item) =>
-                        item.holder
-                            ? (item.holder.name ?? `Member #${item.holder.id}`)
-                            : (item.location?.resourceType ?? ""),
+                        item.holder ? (item.holder.name ?? `Member #${item.holder.id}`) : "",
                     {
                         id: "holder",
                         header: "Holder",
                         cell: (ctx) => {
                             const { holder, team } = ctx.row.original;
+                            // Not held by a member: the item page's Parents says where it is.
+                            if (!holder) return "—";
                             // A holder missing from the team's member list (e.g. a retired
                             // member) has no name, and no member page.
                             if (!holder?.name) return ctx.getValue();

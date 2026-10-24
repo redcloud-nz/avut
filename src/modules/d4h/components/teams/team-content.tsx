@@ -12,6 +12,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { Protect } from "@/components/protect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
@@ -84,26 +85,31 @@ export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
                                 </DataList>
                             </CardContent>
                         </Card>
-                        <ItemGroup>
-                            <Item asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
-                                        slug,
-                                        d4h_team_id: String(team.id),
-                                    })}
-                                >
-                                    <ItemContent>
-                                        <ItemTitle>Members</ItemTitle>
-                                        <ItemDescription>
-                                            The team&apos;s members in D4H.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </ItemGroup>
+                        <Protect permissions={{ d4hEquipment: ["view"] }}>
+                            <ItemGroup>
+                                <Item asChild>
+                                    <Link
+                                        href={route(
+                                            "/orgs/[slug]/d4h/teams/[d4h_team_id]/members",
+                                            {
+                                                slug,
+                                                d4h_team_id: String(team.id),
+                                            },
+                                        )}
+                                    >
+                                        <ItemContent>
+                                            <ItemTitle>Members</ItemTitle>
+                                            <ItemDescription>
+                                                The team&apos;s members in D4H.
+                                            </ItemDescription>
+                                        </ItemContent>
+                                        <ItemActions>
+                                            <ChevronRightIcon className="size-4" />
+                                        </ItemActions>
+                                    </Link>
+                                </Item>
+                            </ItemGroup>
+                        </Protect>
                     </div>
                 </Saratoga.Root>
             </Std.ScrollContainer>

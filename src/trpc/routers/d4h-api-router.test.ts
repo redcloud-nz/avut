@@ -376,6 +376,17 @@ describe("d4hApiRouter equipment items", () => {
     });
 
     describe("listEquipmentKindItems", () => {
+        it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No D4H access token configured."),
+            );
+
+            await expect(
+                viewer().listEquipmentKindItems({ organizationId: T.org, kindId: 8 }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            expect(fetchD4HEquipmentItemsByKind).not.toHaveBeenCalled();
+        });
+
         it("lists the kind's items across every team, each with its team's title", async () => {
             vi.mocked(fetchD4HEquipmentItemsByKind).mockImplementation(async (_token, teamId) =>
                 teamId === TEAM_ID ? [listItem(1, TEAM_ID)] : [listItem(2, OTHER_TEAM_ID)],
@@ -410,6 +421,30 @@ describe("d4hApiRouter equipment items", () => {
             });
 
             expect(result.map((row) => row.id)).toEqual([1]);
+        });
+
+        it("attributes a duplicate to its owner team even when another team lists it first", async () => {
+            // Owned by OTHER_TEAM_ID, held by one of its members, but listed under TEAM_ID too
+            // (and TEAM_ID is listed first).
+            const held = listItem(1, OTHER_TEAM_ID, {
+                location: { resourceType: "Member", id: 42 },
+            });
+            vi.mocked(fetchD4HEquipmentItemsByKind).mockResolvedValue([held]);
+
+            const result = await viewer().listEquipmentKindItems({
+                organizationId: T.org,
+                kindId: 8,
+            });
+
+            expect(result.map((row) => [row.id, row.team, row.holder])).toEqual([
+                [1, { id: OTHER_TEAM_ID, title: "Alpine Team" }, { id: 42, name: "John Smith" }],
+            ]);
+            // The holder is looked up in the owner's member list only.
+            expect(getD4HTeamMembers).toHaveBeenCalledTimes(1);
+            expect(getD4HTeamMembers).toHaveBeenCalledWith(
+                expect.objectContaining({ credentialId: accessToken.id }),
+                OTHER_TEAM_ID,
+            );
         });
 
         it("names member holders from their team's list, and leaves others unnamed", async () => {
@@ -470,6 +505,17 @@ describe("d4hApiRouter equipment items", () => {
     });
 
     describe("listTeamMembers", () => {
+        it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No D4H access token configured."),
+            );
+
+            await expect(
+                viewer().listTeamMembers({ organizationId: T.org, teamId: TEAM_ID }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            expect(getD4HTeamMembers).not.toHaveBeenCalled();
+        });
+
         it("returns the members of the requested team", async () => {
             const members = await viewer().listTeamMembers({
                 organizationId: T.org,

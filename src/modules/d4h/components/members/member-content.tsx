@@ -108,7 +108,7 @@ export function D4HModule_Member_Content({
                     enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: "Status",
+                    header: "D4H Status",
                     cell: (ctx) => D4HEquipmentStatus.label(ctx.getValue()),
                     filterFn: Kaga.filterFns.oneOf,
                     enableColumnFilter: true,
@@ -203,7 +203,7 @@ export function D4HModule_Member_Content({
                                         <DataItemValue>{team.title}</DataItemValue>
                                     </DataItem>
                                     <DataItem inline>
-                                        <DataItemTitle>Status</DataItemTitle>
+                                        <DataItemTitle>D4H Status</DataItemTitle>
                                         <DataItemValue>
                                             {formatD4HMemberStatus(member.status)}
                                         </DataItemValue>

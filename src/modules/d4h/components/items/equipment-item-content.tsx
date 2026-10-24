@@ -6,7 +6,9 @@
 
 import { CornerDownRightIcon, ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense, useMemo, type ReactNode } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -91,7 +93,7 @@ export function D4HModule_EquipmentItem_Content({
     });
 
     const team = teams.find((t) => t.id === teamId);
-    if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
+    if (!team) notFound();
 
     const category = categories.find((c) => c.id === item.category.id);
 
@@ -252,7 +254,9 @@ export function D4HModule_EquipmentItem_Content({
                                                         `Member #${holder.id}`
                                                     )
                                                 ) : (
-                                                    (item.location?.resourceType ?? "—")
+                                                    // Not held by a member: Parents already says
+                                                    // which container it's in.
+                                                    "—"
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
@@ -287,7 +291,9 @@ export function D4HModule_EquipmentItem_Content({
                                     </DataList>
                                 </CardContent>
                             </Card>
-                            <ItemContents teamId={teamId} itemId={itemId} />
+                            <ItemContentsBoundary>
+                                <ItemContents teamId={teamId} itemId={itemId} />
+                            </ItemContentsBoundary>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Protect permissions={{ d4hTask: ["view"] }}>
@@ -344,6 +350,22 @@ function ParentsTree({
                 </li>
             ))}
         </ul>
+    );
+}
+
+/**
+ * Keeps a failed contents fetch to one line, so it doesn't take the whole item page to the route's
+ * error boundary.
+ */
+function ItemContentsBoundary({ children }: { children: ReactNode }) {
+    return (
+        <ErrorBoundary
+            fallback={
+                <p className="mt-4 text-sm text-muted-foreground">Couldn&apos;t load contents.</p>
+            }
+        >
+            <Suspense fallback={null}>{children}</Suspense>
+        </ErrorBoundary>
     );
 }
 
@@ -404,7 +426,7 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                     enableColumnFilter: false,
                 }),
                 columnHelper.accessor("status", {
-                    header: "Status",
+                    header: "D4H Status",
                     cell: (ctx) => D4HEquipmentStatus.label(ctx.getValue()),
                     filterFn: Kaga.filterFns.oneOf,
                     enableColumnFilter: true,
