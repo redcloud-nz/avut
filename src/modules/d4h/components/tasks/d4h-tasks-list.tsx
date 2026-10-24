@@ -69,31 +69,35 @@ export function D4HModule_D4HTasks_List() {
                     <Saratoga.Header>
                         <Saratoga.Title>D4H Tasks</Saratoga.Title>
                     </Saratoga.Header>
-                    <p className="text-sm text-muted-foreground">
-                        Changes the D4H API can&apos;t make, waiting to be applied by hand in D4H.
-                        Apply each one in D4H, then Check it here to close it.
-                    </p>
                     {groups.size === 0 ? (
                         <Empty>
                             <EmptyHeader>
                                 <EmptyTitle>No open D4H tasks</EmptyTitle>
                                 <EmptyDescription>
-                                    Tasks appear here when AVUT queues a change it can&apos;t make
-                                    through the D4H API.
+                                    When AVUT queues a change the D4H API can&apos;t make, it waits
+                                    here until someone applies it in D4H and checks it off.
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
                     ) : (
-                        [...groups.values()].map((teamRows) => (
-                            <section key={teamRows[0].task.d4hTeamId} className="space-y-2">
-                                <h2 className="text-lg font-semibold">{teamRows[0].teamTitle}</h2>
-                                <ItemGroup>
-                                    {teamRows.map((row) => (
-                                        <TaskRow key={row.task.id} row={row} />
-                                    ))}
-                                </ItemGroup>
-                            </section>
-                        ))
+                        <>
+                            <p className="text-sm text-muted-foreground">
+                                Changes the D4H API can&apos;t make, waiting to be applied by hand
+                                in D4H. Apply each one in D4H, then Check it here to close it.
+                            </p>
+                            {[...groups.values()].map((teamRows) => (
+                                <section key={teamRows[0].task.d4hTeamId} className="space-y-2">
+                                    <h2 className="text-lg font-semibold">
+                                        {teamRows[0].teamTitle}
+                                    </h2>
+                                    <ItemGroup>
+                                        {teamRows.map((row) => (
+                                            <TaskRow key={row.task.id} row={row} />
+                                        ))}
+                                    </ItemGroup>
+                                </section>
+                            ))}
+                        </>
                     )}
                 </Saratoga.Root>
             </Std.ScrollContainer>
