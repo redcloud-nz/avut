@@ -32,9 +32,5 @@ export const d4hApiEffects = createEffects<"d4hApi">()({
                 organizationId: vars.organizationId,
             }),
         ),
-        // Feeds the D4H equipment collections.
-        invalidate(
-            trpc.d4hApi.listEquipmentItems.queryFilter({ organizationId: vars.organizationId }),
-        ),
     ],
 });

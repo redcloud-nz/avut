@@ -211,7 +211,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - **Type page:** a details card (Title, Category linked, Owner) plus the items table from `listEquipmentKindItems`: Ref (linked to `teams/[item.team.id]/items/[id]`), Team, Holder (linked to the member page when named), Brand, Model, Status (labelled).
   - **Done when:** all four pages render with "Type" wording and labelled statuses, item and holder links resolve, and `npm run check` passes.
 
-- [ ] **9. Brands; drop the equipment index** `visual` `mechanical`
+- [x] **9. Brands; drop the equipment index** `visual` `mechanical` — feat(d4h): top-level brands pages; drop the equipment index and collections (#453)
   - **Files:**
     - **New:** `d4h/brands/page.tsx`, `d4h/brands/[brand_id]/page.tsx`, `src/modules/d4h/components/catalogue/{brands-list,brand-content}.tsx`
     - **Delete:** `d4h/equipment/**`, `src/modules/d4h/components/equipment/brand-models.tsx`, `src/client/collections/{equipment-brands,equipment-models}.ts`
@@ -258,3 +258,5 @@ D4H browsing (team-scoped Members/Items with a team picker; top-level Categories
 - (Task 6) With one team, `/d4h/members` should `redirect()` server-side (`fetchQuery` `listAccessibleTeams` in `page.tsx`) rather than `router.replace` in a client effect, so there's no empty flash or extra history entry. Keep the client component for zero or several teams.
 - (Tasks 6, 7, 11, and the old `kind-items.tsx` pattern carried into Task 8) Label D4H's status column and details row "D4H Status", not bare "Status" (house terminology keeps bare "Status" for RecordStatus), in the members list, member page, contents table and the Task 8 tables.
 - (Task 4) The item content throws a plain `Error` for a team not in `listAccessibleTeams`; call `notFound()` like the other D4H content components.
+- (Task 9) `d4hApi.listEquipmentItems` has no callers now that the collections are gone. Delete the procedure and its tests (and any fetch helper only it used).
+- (Task 9) The brand page's models table shows the owner's kind ("Team"/"Organisation") because `D4HEquipmentModel.owner` has no title. Resolve team owners to their title through `listAccessibleTeams` (and the org to its name, as `D4HModule_Owner` does elsewhere) so it reads like the other Owner columns.

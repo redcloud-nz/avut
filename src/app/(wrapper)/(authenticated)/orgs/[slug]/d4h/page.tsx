@@ -41,17 +41,6 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                             </Link>
                         </Item>
                         <Item asChild>
-                            <Link href={route("/orgs/[slug]/d4h/equipment", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>Equipment</ItemTitle>
-                                    <ItemDescription>View your D4H equipment.</ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-                        <Item asChild>
                             <Link href={route("/orgs/[slug]/d4h/members", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Members</ItemTitle>
@@ -81,6 +70,19 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                                     <ItemTitle>Types</ItemTitle>
                                     <ItemDescription>
                                         View your D4H equipment types.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
+                            <Link href={route("/orgs/[slug]/d4h/brands", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Brands</ItemTitle>
+                                    <ItemDescription>
+                                        View your D4H equipment brands.
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions>
