@@ -1,0 +1,79 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
+import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { trpc } from "@/trpc/client";
+
+/**
+ * The `/d4h/members` landing page for zero or several teams: an empty state, or the team picker.
+ * With one team, `page.tsx` redirects to its members before this renders. Without a D4H token the
+ * query fails and the error boundary explains.
+ */
+export function D4HModule_Members_SelectTeam() {
+    const organization = useOrganization();
+    const { slug } = organization;
+
+    const { data: teams } = useSuspenseQuery(
+        trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }),
+    );
+
+    const membersOf = (teamId: number) =>
+        route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
+            slug,
+            d4h_team_id: String(teamId),
+        });
+
+    return (
+        <>
+            <Std.Navbar
+                breadcrumbs={[
+                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+                    { label: "Members" },
+                ]}
+            />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Members</Saratoga.Title>
+                        {teams.length > 1 && (
+                            <Saratoga.Actions>
+                                <D4HTeamPickerDialog
+                                    forceOpen
+                                    label="Select a team"
+                                    section={membersOf}
+                                />
+                            </Saratoga.Actions>
+                        )}
+                    </Saratoga.Header>
+                    {teams.length === 0 ? (
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyTitle>No D4H teams</EmptyTitle>
+                                <EmptyDescription>
+                                    Your D4H access token doesn&apos;t reach any teams, so there are
+                                    no members to show.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    ) : teams.length > 1 ? (
+                        <Empty>
+                            <EmptyDescription>
+                                D4H members are listed per team. Select a team to see its members.
+                            </EmptyDescription>
+                        </Empty>
+                    ) : null}
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </>
+    );
+}

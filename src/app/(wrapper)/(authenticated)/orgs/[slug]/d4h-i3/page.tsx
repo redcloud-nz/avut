@@ -33,58 +33,56 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
             <Std.ScrollContainer>
                 <Std.IndexPage title="D4H I3">
                     <ItemGroup>
-                        <Item asChild>
-                            <Link href={route("/orgs/[slug]/d4h-i3/equipment-kinds", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>By Equipment Type</ItemTitle>
-                                    <ItemDescription>
-                                        View and edit items by their equipment type.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-                        <Item asChild>
-                            <Link href={route("/orgs/[slug]/d4h-i3/members", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>By Member</ItemTitle>
-                                    <ItemDescription>
-                                        View and edit items by their assigned member.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-                        <Item asChild>
-                            <Link href={route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>Issue Items</ItemTitle>
-                                    <ItemDescription>
-                                        Record items being issued to members
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-                        <Item asChild>
-                            <Link href={route("/orgs/[slug]/d4h-i3/forms/return-items", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>Return Items</ItemTitle>
-                                    <ItemDescription>
-                                        Record items being returned by members
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
+                        <Protect permissions={{ i3Item: ["issue"] }}>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Issue Items</ItemTitle>
+                                        <ItemDescription>
+                                            Record items being issued to members
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect permissions={{ i3Item: ["return"] }}>
+                            <Item asChild>
+                                <Link
+                                    href={route("/orgs/[slug]/d4h-i3/forms/return-items", { slug })}
+                                >
+                                    <ItemContent>
+                                        <ItemTitle>Return Items</ItemTitle>
+                                        <ItemDescription>
+                                            Record items being returned by members
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect permissions={{ i3Item: ["view"] }}>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/d4h-i3/issued-types", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Issued Types</ItemTitle>
+                                        <ItemDescription>
+                                            See which equipment types are issued to a team&apos;s
+                                            members, and who holds what
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
                         <Protect permissions={{ i3Template: ["view"] }}>
                             <Item asChild>
                                 <Link href={route("/orgs/[slug]/d4h-i3/templates", { slug })}>

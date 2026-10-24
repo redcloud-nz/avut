@@ -27,6 +27,21 @@ export const d4hTasksEffects = createEffects<"d4hTasks">()({
                           organizationId: vars.organizationId,
                       }),
                   ),
+                  invalidate(
+                      trpc.d4hApi.listTeamIssuedEquipment.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.d4hApi.listEquipmentKindItems.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
+                  invalidate(
+                      trpc.d4hApi.listEquipmentItemContents.queryFilter({
+                          organizationId: vars.organizationId,
+                      }),
+                  ),
               ]
             : []),
     ],

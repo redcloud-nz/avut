@@ -4,7 +4,15 @@
  */
 "use client";
 
-import { ReactNode, RefObject, useEffect, useRef, useState } from "react";
+import {
+    createContext,
+    ReactNode,
+    RefObject,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 import { useHotkey } from "@tanstack/react-hotkeys";
 
@@ -94,9 +102,27 @@ export interface EntityActionMenuProps {
     before?: ReactNode;
     /** Extra groups rendered below the Actions group (e.g. a D4H section). */
     after?: ReactNode;
+    /** Extra `<MenuAction>`s at the end of the Actions group, for actions another module adds
+     *  through a page slot. They mount only while the menu is open, so any hotkey for
+     *  them is registered from `dialogs` (`useMenuActionHotkeys`). */
+    extraActions?: ReactNode;
+    /** Rendered beside the menu and always mounted: the dialogs that `extraActions` open. They read the trigger with {@link useEntityActionMenuTrigger}. */
+    dialogs?: ReactNode;
     /** Ref on the trigger button, which stays mounted after the menu closes, so a dialog opened
      *  from a menu item can return focus to it (`useReturnFocus`). */
     triggerRef?: RefObject<HTMLButtonElement | null>;
+}
+
+const EntityActionMenuTriggerContext = createContext<RefObject<HTMLButtonElement | null> | null>(
+    null,
+);
+
+/**
+ * The enclosing {@link EntityActionMenu}'s trigger button, for a dialog passed in its `dialogs`
+ * to return focus to once the menu item that opened it has unmounted.
+ */
+export function useEntityActionMenuTrigger(): RefObject<HTMLButtonElement | null> | undefined {
+    return useContext(EntityActionMenuTriggerContext) ?? undefined;
 }
 
 /**
@@ -115,9 +141,14 @@ export function EntityActionMenu({
     width = "w-50",
     before,
     after,
-    triggerRef,
+    extraActions,
+    dialogs,
+    triggerRef: triggerRefProp,
 }: EntityActionMenuProps) {
     useMenuActionHotkeys(actions, category);
+
+    const ownTriggerRef = useRef<HTMLButtonElement>(null);
+    const triggerRef = triggerRefProp ?? ownTriggerRef;
 
     const [open, setOpen] = useState(false);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -144,22 +175,26 @@ export function EntityActionMenu({
     );
 
     return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild>
-                <Button ref={triggerRef} variant="ghost" size="icon" aria-label="Actions">
-                    <DropdownMenuTriggerIcon />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent ref={contentRef} className={width} align="end">
-                {before}
-                <DropdownMenuGroup>
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    {actions.map((a) => (
-                        <MenuAction key={a.verb} {...a} />
-                    ))}
-                </DropdownMenuGroup>
-                {after}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <EntityActionMenuTriggerContext value={triggerRef}>
+            <DropdownMenu open={open} onOpenChange={setOpen}>
+                <DropdownMenuTrigger asChild>
+                    <Button ref={triggerRef} variant="ghost" size="icon" aria-label="Actions">
+                        <DropdownMenuTriggerIcon />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent ref={contentRef} className={width} align="end">
+                    {before}
+                    <DropdownMenuGroup>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        {actions.map((a) => (
+                            <MenuAction key={a.verb} {...a} />
+                        ))}
+                        {extraActions}
+                    </DropdownMenuGroup>
+                    {after}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {dialogs}
+        </EntityActionMenuTriggerContext>
     );
 }

@@ -17,21 +17,7 @@ export function D4HI3_Sidebar_Menu() {
 
     return (
         <>
-            <Protect permissions={{ i3Item: ["view"] }}>
-                <NavSubItem
-                    label="By Equipment Kind"
-                    href={route("/orgs/[slug]/d4h-i3/equipment-kinds", { slug })}
-                />
-            </Protect>
-            <Protect permissions={{ i3Item: ["view"] }}>
-                <NavSubItem
-                    label="By Member"
-                    href={route("/orgs/[slug]/d4h-i3/members", { slug })}
-                />
-            </Protect>
-            <Protect permissions={{ i3Item: ["inspect"] }}>
-                <NavSubItem label="Inspect" href={route("/orgs/[slug]/d4h-i3/inspect", { slug })} />
-            </Protect>
+            {/* Inspect stays out of the sidebar until its page is built (d4h-i3/inspect is a stub). */}
             <Protect permissions={{ i3Item: ["issue"] }}>
                 <NavSubItem
                     label="Issue"
@@ -44,10 +30,10 @@ export function D4HI3_Sidebar_Menu() {
                     href={route("/orgs/[slug]/d4h-i3/forms/return-items", { slug })}
                 />
             </Protect>
-            <Protect permissions={{ d4hTask: ["view"] }}>
+            <Protect permissions={{ i3Item: ["view"] }}>
                 <NavSubItem
-                    label="D4H Tasks"
-                    href={route("/orgs/[slug]/d4h-i3/d4h-tasks", { slug })}
+                    label="Issued Types"
+                    href={route("/orgs/[slug]/d4h-i3/issued-types", { slug })}
                 />
             </Protect>
             <Protect permissions={{ i3Template: ["view"] }}>

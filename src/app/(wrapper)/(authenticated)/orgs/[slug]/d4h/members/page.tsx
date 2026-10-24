@@ -4,114 +4,56 @@
  *
  * Path: /orgs/[slug]/d4h/members
  */
-"use client";
 
-import Link from "next/link";
-import { useMemo } from "react";
+import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { useLiveSuspenseQuery } from "@tanstack/react-db";
-import {
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from "@tanstack/react-table";
+import { TRPCError } from "@trpc/server";
 
-import { getD4HMembersCollection } from "@/client/collections/d4h-members";
-import { Kaga } from "@/components/blocks/kaga";
-import { Saratoga } from "@/components/blocks/saratoga";
-import { Std } from "@/components/blocks/std";
-import { useOrganization } from "@/hooks/use-organization";
+import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
+import { D4HModule_Members_SelectTeam } from "@/modules/d4h/components/members/select-team";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-export default function D4HModule_Members_Page() {
-    const organization = useOrganization();
+export const metadata: Metadata = { title: `Members ${TITLE_SEPARATOR} D4H` };
 
-    const { data: members } = useLiveSuspenseQuery((q) =>
-        q.from({
-            member: getD4HMembersCollection(organization.id),
-        }),
-    );
+/**
+ * Members are listed per team: this landing page sends the viewer on to one team's members. With
+ * one team it redirects there; with none or several, the client component shows an empty state or
+ * the team picker.
+ */
+export default async function D4HModule_Members_Page(props: PageProps<"/orgs/[slug]/d4h/members">) {
+    const { slug } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "d4h"))) return null;
+    const organization = await getOrganizationBySlug(slug);
 
-    const columns = useMemo(
-        () =>
-            Kaga.defineColumns<(typeof members)[number]>((columnHelper) => [
-                columnHelper.accessor("id", {
-                    header: "Member ID",
-                    cell: (ctx) => ctx.getValue(),
-                    enableGlobalFilter: false,
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                }),
-                columnHelper.accessor("name", {
-                    header: "Name",
-                    cell: (ctx) => (
-                        <Link
-                            href={route("/orgs/[slug]/d4h/members/[team_id]/[member_id]", {
-                                slug: organization.slug,
-                                team_id: String(ctx.row.original.team.id),
-                                member_id: String(ctx.row.original.id),
-                            })}
-                        >
-                            {ctx.getValue()}
-                        </Link>
-                    ),
-                    enableGlobalFilter: true,
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                }),
-                columnHelper.accessor("team.title", {
-                    header: "Team",
-                    cell: (ctx) => ctx.getValue(),
-                    enableGlobalFilter: true,
-                    enableSorting: true,
-                    enableColumnFilter: false,
-                }),
-            ]),
-        [organization.slug],
-    );
-
-    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
-    const table = useReactTable({
-        data: members,
-        columns,
-        getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        initialState: {
-            pagination: {
-                pageIndex: 0,
-                pageSize: Kaga.DEFAULT_PAGE_SIZE,
-            },
-            sorting: [{ id: "name", desc: false }],
-        },
+    const teamsQuery = trpc.d4hApi.listAccessibleTeams.queryOptions({
+        organizationId: organization.id,
     });
 
+    // Awaited, unlike the usual `prefetch`, so the one-team case redirects before anything renders.
+    const teams = await fetchQuery(teamsQuery).catch((error: unknown) => {
+        // No D4H token: render the client component, whose query fails into the error boundary.
+        if (error instanceof TRPCError && error.code === "PRECONDITION_FAILED") return null;
+        throw error;
+    });
+
+    if (teams?.length === 1) {
+        redirect(
+            route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
+                slug,
+                d4h_team_id: String(teams[0].id),
+            }),
+        );
+    }
+
+    prefetch(teamsQuery);
+
     return (
-        <>
-            <Std.Navbar
-                breadcrumbs={[
-                    {
-                        label: "D4H",
-                        href: route("/orgs/[slug]/d4h", { slug: organization.slug }),
-                    },
-                    "Members",
-                ]}
-            />
-            <Std.ScrollContainer>
-                <Saratoga.Root>
-                    <Saratoga.Header>
-                        <Saratoga.Title>Members</Saratoga.Title>
-                    </Saratoga.Header>
-                    <div>
-                        <Kaga.TableToolbar table={table} />
-                        <Kaga.Table table={table} />
-                        <Kaga.TablePagination table={table} />
-                    </div>
-                </Saratoga.Root>
-            </Std.ScrollContainer>
-        </>
+        <HydrateClient>
+            <D4HModule_Members_SelectTeam />
+        </HydrateClient>
     );
 }

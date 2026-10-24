@@ -36,7 +36,8 @@ const FormSchema = z.object({ comments: z.string() });
 
 /**
  * Return a single item from its holder, queueing a D4H retire task. Opened by `?action=return`
- * from the item page's Actions menu.
+ * from the Return item that `D4HI3Module_ItemReturn_MenuAction` adds to the D4H item page's Actions
+ * menu.
  *
  * Same result as the Return form (the checks, the retire task with its note, the audit log), but
  * no email and no draft. The param doesn't open the dialog unless `canReturn` (the viewer may

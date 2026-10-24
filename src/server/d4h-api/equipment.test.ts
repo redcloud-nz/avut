@@ -9,7 +9,13 @@ import { ForbiddenError } from "@/lib/errors";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 
-import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "./equipment";
+import {
+    fetchD4HEquipmentItem,
+    fetchD4HEquipmentItemContents,
+    fetchD4HEquipmentItemsByKind,
+    fetchD4HTeamEquipmentItems,
+    patchD4HEquipmentItem,
+} from "./equipment";
 
 vi.mock("next/cache", () => ({ cacheLife: vi.fn(), cacheTag: vi.fn(), revalidateTag: vi.fn() }));
 
@@ -133,6 +139,136 @@ describe("fetchD4HEquipmentItem", () => {
         );
 
         await expect(fetchD4HEquipmentItem(token, 7, 1234)).rejects.toThrow(/500/);
+    });
+});
+
+describe("fetchD4HEquipmentItemContents", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("lists the item's current contents, stripping each location to the holder's type and id", async () => {
+        const fetchMock = vi.fn(async (_request: Request) =>
+            Response.json({ results: [itemFixture], page: 0, pageSize: 10000, totalSize: 1 }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const items = await fetchD4HEquipmentItemContents(token, 7, 555);
+
+        expect(items).toHaveLength(1);
+        expect(items[0].location).toStrictEqual({ resourceType: "Member", id: 99 });
+        expect(JSON.stringify(items)).not.toMatch(
+            /Secret Street|jane@example|ical-secret|John Doe/,
+        );
+
+        const url = new URL(fetchMock.mock.calls[0][0].url);
+        expect(url.pathname).toBe("/v3/team/7/equipment");
+        expect(url.searchParams.get("parent_id")).toBe("555");
+        expect(url.searchParams.get("only_current")).toBe("true");
+        expect(url.searchParams.get("size")).toBe("10000");
+    });
+
+    it("throws on failure", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(null, { status: 500 })),
+        );
+
+        await expect(fetchD4HEquipmentItemContents(token, 7, 555)).rejects.toThrow(/500/);
+    });
+});
+
+describe("fetchD4HEquipmentItemsByKind", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("lists the kind's current items, stripping each location to the holder's type and id", async () => {
+        const fetchMock = vi.fn(async (_request: Request) =>
+            Response.json({ results: [itemFixture], page: 0, pageSize: 10000, totalSize: 1 }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const items = await fetchD4HEquipmentItemsByKind(token, 7, 8);
+
+        expect(items).toHaveLength(1);
+        expect(items[0].location).toStrictEqual({ resourceType: "Member", id: 99 });
+        expect(JSON.stringify(items)).not.toMatch(
+            /Secret Street|jane@example|ical-secret|John Doe/,
+        );
+
+        const url = new URL(fetchMock.mock.calls[0][0].url);
+        expect(url.pathname).toBe("/v3/team/7/equipment");
+        expect(url.searchParams.getAll("kind_id")).toEqual(["8"]);
+        expect(url.searchParams.get("only_current")).toBe("true");
+        expect(url.searchParams.get("size")).toBe("10000");
+    });
+
+    it("throws on failure", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(null, { status: 500 })),
+        );
+
+        await expect(fetchD4HEquipmentItemsByKind(token, 7, 8)).rejects.toThrow(/500/);
+    });
+});
+
+describe("fetchD4HTeamEquipmentItems", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("lists the team's current items in one request, stripping each location to the holder's type and id", async () => {
+        const fetchMock = vi.fn(async (_request: Request) =>
+            Response.json({ results: [itemFixture], page: 0, pageSize: 10000, totalSize: 1 }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const items = await fetchD4HTeamEquipmentItems(token, 7);
+
+        expect(items).toHaveLength(1);
+        expect(items[0].location).toStrictEqual({ resourceType: "Member", id: 99 });
+        expect(JSON.stringify(items)).not.toMatch(
+            /Secret Street|jane@example|ical-secret|John Doe/,
+        );
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const url = new URL(fetchMock.mock.calls[0][0].url);
+        expect(url.pathname).toBe("/v3/team/7/equipment");
+        expect(url.searchParams.get("only_current")).toBe("true");
+        expect(url.searchParams.get("size")).toBe("10000");
+    });
+
+    it("keeps an item whose location has no id", async () => {
+        const withoutId = { ...itemFixture, id: 1235, location: { resourceType: "Member" } };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    results: [itemFixture, withoutId],
+                    page: 0,
+                    pageSize: 10000,
+                    totalSize: 2,
+                }),
+            ),
+        );
+
+        const items = await fetchD4HTeamEquipmentItems(token, 7);
+
+        expect(items.map((item) => item.location)).toStrictEqual([
+            { resourceType: "Member", id: 99 },
+            { resourceType: "Member" },
+        ]);
+    });
+
+    it("throws on failure", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(null, { status: 500 })),
+        );
+
+        await expect(fetchD4HTeamEquipmentItems(token, 7)).rejects.toThrow(/500/);
     });
 });
 

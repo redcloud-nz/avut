@@ -9,8 +9,6 @@ It needs the D4H integration and the D4H module turned on for your organisation,
 personal D4H access token, added in your account settings under **D4H**. You
 see the D4H teams that token can see.
 
-- **By Equipment Type** and **By Member** show what's been issued to a team,
-  from D4H.
 - **Issue Items** keeps your draft forms until you submit one. Submitting
   creates an equipment record in D4H for each item. If your D4H account can't
   create equipment for the recipient's team, a warning shows and **Submit** is
@@ -19,16 +17,19 @@ see the D4H teams that token can see.
 - **Return Items** records equipment coming back from a person. Pick who is
   returning, tick the items they hand in and add any comments. Submitting queues a D4H task
   for each item, noting who received it, if your D4H account can update equipment
-  in their team. Nothing changes in D4H until someone applies the task.
-- **D4H tasks** lists changes D4H can't take automatically, such as retiring an
-  item. Do the change in D4H, then press **Check**, or dismiss the task.
-- An **item page** shows one piece of equipment, with an **Open in D4H** link.
+  in their team. Nothing changes in D4H until someone applies the task under
+  **D4H** › **Tasks**.
+- **Return** is also in the **Actions** menu of a D4H item page, for an item
+  issued to a member.
+- **Issued Types** lists, for one D4H team, the equipment types issued to its
+  members, grouped by category, with how many of each are out. Open a type to
+  see who holds which items, with a **Returned** badge on items waiting for
+  their return to be applied in D4H. Use **Change team** to see another team.
 - **Templates** are the items you can issue, each linked to a D4H equipment
   category and kind, with variants such as sizes. Deleting one moves it to the
   Rubbish bin.
 
 Inspections aren't built yet.
 
-An **I3 Editor** can issue items. An **I3 Admin** can also create, change and
-delete templates. Editing an item in D4H and working the **D4H tasks** list
-needs an I3 role, or the Admin or Owner role.
+An **I3 Editor** can issue and return items. An **I3 Admin** can also create,
+change and delete templates.

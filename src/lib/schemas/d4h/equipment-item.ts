@@ -84,6 +84,33 @@ const STATUS_LABELS: Record<string, string> = {
 export type D4HEquipmentStatus = z.infer<typeof D4HEquipmentStatus.schema>;
 
 /**
+ * Who or where holds an item (`Member` for a person), kept to its type and id. D4H expands a
+ * holding member to their full record (address, phones, emergency contacts, iCal secret), which
+ * must never reach the client; `z.object` strips every other key on parse. Never widen it: resolve
+ * a holder's name from the team's member list instead.
+ *
+ * Some live items carry a `location` without an `id` (seen in a team-wide list, 2026-10-24), so
+ * `id` is optional: one such item mustn't fail the whole list. Treat it as unheld.
+ */
+const D4HEquipmentItemLocation = z
+    .object({ resourceType: z.string(), id: z.number().nullish() })
+    .nullable()
+    .optional();
+
+/**
+ * An equipment item as the list GET returns it, with its `location` narrowed as on
+ * `D4HEquipmentItemDetail`.
+ */
+export const D4HEquipmentListItem = {
+    schema: D4HEquipmentItem.schema.extend({
+        /** Who or where holds the item (`Member` for a person). Only the type and id survive. */
+        location: D4HEquipmentItemLocation,
+    }),
+} as const;
+
+export type D4HEquipmentListItem = z.infer<typeof D4HEquipmentListItem.schema>;
+
+/**
  * An equipment item as the single-item GET returns it. The response is typed `unknown` in the
  * generated schema, so the field names come from its `@example` and a live probe (2026-10-22).
  *
@@ -105,7 +132,7 @@ export const D4HEquipmentItemDetail = {
             .nullable()
             .optional(),
         /** Who or where holds the item (`Member` for a person). Only the type and id survive. */
-        location: z.object({ resourceType: z.string(), id: z.number() }).nullable().optional(),
+        location: D4HEquipmentItemLocation,
     }),
 } as const;
 

@@ -6,6 +6,7 @@
 "use client";
 
 import { NavSubItem } from "@/components/nav/nav-section";
+import { Protect } from "@/components/protect";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 
@@ -16,8 +17,21 @@ export function D4H_Sidebar_Menu() {
 
     return (
         <>
-            <NavSubItem label="Equipment" href={route("/orgs/[slug]/d4h/equipment", { slug })} />
-            <NavSubItem label="Members" href={route("/orgs/[slug]/d4h/members", { slug })} />
+            <NavSubItem label="Teams" href={route("/orgs/[slug]/d4h/teams", { slug })} />
+            <Protect permissions={{ d4hEquipment: ["view"] }}>
+                <NavSubItem label="Members" href={route("/orgs/[slug]/d4h/members", { slug })} />
+                <NavSubItem
+                    label="Equipment Categories"
+                    href={route("/orgs/[slug]/d4h/categories", { slug })}
+                />
+                <NavSubItem
+                    label="Equipment Brands"
+                    href={route("/orgs/[slug]/d4h/brands", { slug })}
+                />
+            </Protect>
+            <Protect permissions={{ d4hTask: ["view"] }}>
+                <NavSubItem label="Tasks" href={route("/orgs/[slug]/d4h/tasks", { slug })} />
+            </Protect>
         </>
     );
 }
