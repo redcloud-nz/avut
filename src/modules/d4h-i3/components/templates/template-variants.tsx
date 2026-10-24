@@ -9,6 +9,8 @@ import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
+import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Show } from "@/components/show";
@@ -98,12 +100,29 @@ export function D4HI3Module_Template_Variants_List({ template }: { template: I3T
                                     <TableRow key={index}>
                                         <TableCell>{variant.name}</TableCell>
                                         <TableCell>
-                                            {variant.d4h?.brandTitle ??
-                                                `ID: ${variant.d4h?.brandId}`}
+                                            {variant.d4h ? (
+                                                <D4HEquipmentBrandLink
+                                                    brand={{
+                                                        id: variant.d4h.brandId,
+                                                        title: variant.d4h.brandTitle,
+                                                    }}
+                                                />
+                                            ) : (
+                                                "—"
+                                            )}
                                         </TableCell>
                                         <TableCell>
-                                            {variant.d4h?.modelTitle ??
-                                                `ID: ${variant.d4h?.modelId}`}
+                                            {variant.d4h ? (
+                                                <D4HEquipmentModelLink
+                                                    model={{
+                                                        id: variant.d4h.modelId,
+                                                        title: variant.d4h.modelTitle,
+                                                        brand: { id: variant.d4h.brandId },
+                                                    }}
+                                                />
+                                            ) : (
+                                                "—"
+                                            )}
                                         </TableCell>
                                         <TableCell className="p-0">
                                             <Button

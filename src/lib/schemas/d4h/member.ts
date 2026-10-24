@@ -57,3 +57,15 @@ export const D4HMember = {
 } as const;
 
 export type D4HMember = z.infer<typeof D4HMember.schema>;
+
+export const D4HMemberRef = {
+    schema: z.object({
+        id: z.number(),
+        name: z.string(),
+        owner: z.object({
+            id: z.number(),
+        }),
+    }),
+} as const;
+
+export type D4HMemberRef = z.infer<typeof D4HMemberRef.schema>;

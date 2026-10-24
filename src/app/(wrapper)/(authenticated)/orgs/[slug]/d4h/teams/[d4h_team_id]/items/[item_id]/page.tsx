@@ -45,7 +45,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
                 itemId,
             }),
         );
-        return { title: `Item #${item.ref} ${TITLE_SEPARATOR} D4H` };
+        return { title: `Item ${item.ref} ${TITLE_SEPARATOR} D4H` };
     } catch (error) {
         // No D4H token: keep a usable title, and let the page's error boundary explain.
         if (error instanceof TRPCError && error.code === "PRECONDITION_FAILED") {

@@ -5,12 +5,13 @@
 "use client";
 
 import { ExternalLinkIcon } from "lucide-react";
-import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
+import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
@@ -88,7 +89,13 @@ export function D4HModule_D4HTasks_List() {
                             {[...groups.values()].map((teamRows) => (
                                 <section key={teamRows[0].task.d4hTeamId} className="space-y-2">
                                     <h2 className="text-lg font-semibold">
-                                        {teamRows[0].teamTitle}
+                                        <D4HTeamLink
+                                            team={{
+                                                id: teamRows[0].task.d4hTeamId,
+                                                resourceType: "Team",
+                                                title: teamRows[0].teamTitle,
+                                            }}
+                                        />
                                     </h2>
                                     <ItemGroup>
                                         {teamRows.map((row) => (
@@ -106,23 +113,17 @@ export function D4HModule_D4HTasks_List() {
 }
 
 function TaskRow({ row: { task, requestedByName, d4hUrl } }: { row: OpenTaskRow }) {
-    const { slug } = useOrganization();
     const { formatDate } = usePreferences();
 
     return (
         <Item variant="outline" size="sm" className="flex-wrap">
             <ItemContent className="min-w-48">
                 <ItemTitle>
-                    <Link
-                        className="hover:underline"
-                        href={route("/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]", {
-                            slug,
-                            d4h_team_id: String(task.d4hTeamId),
-                            item_id: String(task.resourceId),
-                        })}
-                    >
-                        {task.itemLabel}
-                    </Link>
+                    {/* The task carries a ready-made label and no ref. */}
+                    <D4HEquipmentItemLink
+                        item={{ id: task.resourceId, ref: "", owner: { id: task.d4hTeamId } }}
+                        label={task.itemLabel}
+                    />
                 </ItemTitle>
                 <D4HModule_D4HTaskChanges task={task} />
                 <ItemDescription className="text-xs">

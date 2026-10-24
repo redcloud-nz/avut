@@ -57,6 +57,18 @@ export const D4HEquipmentItem = {
 
 export type D4HEquipmentItem = z.infer<typeof D4HEquipmentItem.schema>;
 
+export const D4HEquipmentItemRef = {
+    schema: z.object({
+        id: z.number(),
+        ref: z.string(),
+        owner: z.object({
+            id: z.number(),
+        }),
+    }),
+} as const;
+
+export type D4HEquipmentItemRef = z.infer<typeof D4HEquipmentItemRef.schema>;
+
 /**
  * The `status` values D4H's equipment PATCH accepts. A GET can also return `RETIRED`, which only
  * D4H's web app can set.

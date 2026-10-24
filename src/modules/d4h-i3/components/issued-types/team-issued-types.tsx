@@ -14,6 +14,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
+import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
 import {
     Table,
@@ -58,23 +59,26 @@ export function D4HI3Module_TeamIssuedTypes({ teamId }: { teamId: number }) {
         items,
         R.groupBy((item) => item.category.id),
         R.entries(),
-        R.map(([categoryId, categoryItems]) => ({
-            id: Number(categoryId),
-            title:
-                categories.find((category) => category.id === Number(categoryId))?.title ??
-                `Category #${categoryId}`,
-            types: R.pipe(
-                categoryItems,
-                R.groupBy((item) => item.kind.id),
-                R.values(),
-                R.map((typeItems) => ({
-                    id: typeItems[0].kind.id,
-                    title: typeItems[0].kind.title,
-                    count: typeItems.length,
-                })),
-                R.sortBy((type) => type.title),
-            ),
-        })),
+        R.map(([categoryId, categoryItems]) => {
+            const category = categories.find((c) => c.id === Number(categoryId));
+            return {
+                id: Number(categoryId),
+                // Missing from the category list: the header falls back to plain text.
+                category,
+                title: category?.title ?? `Category #${categoryId}`,
+                types: R.pipe(
+                    categoryItems,
+                    R.groupBy((item) => item.kind.id),
+                    R.values(),
+                    R.map((typeItems) => ({
+                        id: typeItems[0].kind.id,
+                        title: typeItems[0].kind.title,
+                        count: typeItems.length,
+                    })),
+                    R.sortBy((type) => type.title),
+                ),
+            };
+        }),
         R.sortBy((group) => group.title),
     );
 
@@ -129,7 +133,13 @@ export function D4HI3Module_TeamIssuedTypes({ teamId }: { teamId: number }) {
                                         <Fragment key={group.id}>
                                             <TableRow className="bg-table-group hover:bg-table-group">
                                                 <TableHeadCell colSpan={2}>
-                                                    {group.title}
+                                                    {group.category ? (
+                                                        <D4HEquipmentCategoryLink
+                                                            category={group.category}
+                                                        />
+                                                    ) : (
+                                                        group.title
+                                                    )}
                                                 </TableHeadCell>
                                             </TableRow>
                                             {group.types.map((type) => (
