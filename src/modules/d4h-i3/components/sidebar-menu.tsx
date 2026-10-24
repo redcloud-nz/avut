@@ -17,18 +17,6 @@ export function D4HI3_Sidebar_Menu() {
 
     return (
         <>
-            <Protect permissions={{ i3Item: ["view"] }}>
-                <NavSubItem
-                    label="By Equipment Kind"
-                    href={route("/orgs/[slug]/d4h-i3/equipment-kinds", { slug })}
-                />
-            </Protect>
-            <Protect permissions={{ i3Item: ["view"] }}>
-                <NavSubItem
-                    label="By Member"
-                    href={route("/orgs/[slug]/d4h-i3/members", { slug })}
-                />
-            </Protect>
             <Protect permissions={{ i3Item: ["inspect"] }}>
                 <NavSubItem label="Inspect" href={route("/orgs/[slug]/d4h-i3/inspect", { slug })} />
             </Protect>

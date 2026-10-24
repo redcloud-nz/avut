@@ -143,7 +143,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - Editing an item then visiting a type page shows the new status.
     - `npm run check` passes (run `npx next typegen` after adding the page).
 
-- [ ] **5. Remove I3's browse pages** `mechanical`
+- [x] **5. Remove I3's browse pages** `mechanical` — refactor(d4h-i3): remove I3's browse pages, now served by the D4H browser (#453)
   - **Files:**
     - **Delete:** `d4h-i3/teams/**`, `d4h-i3/equipment-kinds/page.tsx`, `d4h-i3/members/page.tsx`
     - **Edit:** `src/modules/d4h-i3/components/sidebar-menu.tsx` (drop By Equipment Kind and By Member, leaving Inspect, Issue, Return, Templates), `d4h-i3/page.tsx` (drop By Equipment Type and By Member)

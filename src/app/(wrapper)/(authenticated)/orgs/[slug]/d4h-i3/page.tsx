@@ -34,32 +34,6 @@ export default async function D4HI3_Index_Page(props: PageProps<`/orgs/[slug]/d4
                 <Std.IndexPage title="D4H I3">
                     <ItemGroup>
                         <Item asChild>
-                            <Link href={route("/orgs/[slug]/d4h-i3/equipment-kinds", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>By Equipment Type</ItemTitle>
-                                    <ItemDescription>
-                                        View and edit items by their equipment type.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-                        <Item asChild>
-                            <Link href={route("/orgs/[slug]/d4h-i3/members", { slug })}>
-                                <ItemContent>
-                                    <ItemTitle>By Member</ItemTitle>
-                                    <ItemDescription>
-                                        View and edit items by their assigned member.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
-                        <Item asChild>
                             <Link href={route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug })}>
                                 <ItemContent>
                                     <ItemTitle>Issue Items</ItemTitle>
