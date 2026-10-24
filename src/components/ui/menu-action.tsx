@@ -103,11 +103,10 @@ export interface EntityActionMenuProps {
     /** Extra groups rendered below the Actions group (e.g. a D4H section). */
     after?: ReactNode;
     /** Extra `<MenuAction>`s at the end of the Actions group, for actions another module adds
-     *  through a page slot. They mount only while the menu is open, so their hotkeys are
-     *  registered by whatever renders their dialogs (see `dialogs`). */
+     *  through a page slot. They mount only while the menu is open, so any hotkey for
+     *  them is registered from `dialogs` (`useMenuActionHotkeys`). */
     extraActions?: ReactNode;
-    /** Rendered beside the menu and always mounted: the dialogs that `extraActions` open, plus
-     *  their hotkey registration. They read the trigger with {@link useEntityActionMenuTrigger}. */
+    /** Rendered beside the menu and always mounted: the dialogs that `extraActions` open. They read the trigger with {@link useEntityActionMenuTrigger}. */
     dialogs?: ReactNode;
     /** Ref on the trigger button, which stays mounted after the menu closes, so a dialog opened
      *  from a menu item can return focus to it (`useReturnFocus`). */

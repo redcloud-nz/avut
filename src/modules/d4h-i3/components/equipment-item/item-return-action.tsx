@@ -12,7 +12,6 @@ import { useSuspenseQueries } from "@tanstack/react-query";
 import {
     MenuAction,
     useEntityActionMenuTrigger,
-    useMenuActionHotkeys,
     type MenuActionProps,
 } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
@@ -89,8 +88,8 @@ export function D4HI3Module_ItemReturn_MenuAction({
 }
 
 /**
- * The `?action=return` dialog and the Return hotkey, mounted beside the Actions menu so both
- * work while the menu is closed. Focus goes back to the menu's button when the dialog closes.
+ * The `?action=return` dialog, mounted beside the Actions menu so it stays open after the menu
+ * closes. Focus goes back to the menu's button when the dialog closes.
  */
 export function D4HI3Module_ItemReturn_Dialog({
     teamId,
@@ -101,8 +100,6 @@ export function D4HI3Module_ItemReturn_Dialog({
 }) {
     const { item, holder, action } = useItemReturn(teamId, itemId);
     const triggerRef = useEntityActionMenuTrigger();
-
-    useMenuActionHotkeys([action], "Equipment");
 
     if (!holder) return null;
 
