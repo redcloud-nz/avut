@@ -132,10 +132,11 @@ export function D4HModule_EquipmentItem_Content({
                             #{item.ref} {item.kind.title}
                         </Saratoga.Title>
                         <Saratoga.Actions>
-                            <Button asChild variant="outline" size="sm">
+                            {/* Icon-only below `sm`, with the label kept for screen readers. */}
+                            <Button asChild variant="outline" className="max-sm:w-8 max-sm:px-0">
                                 <a href={d4hUrl} target="_blank" rel="noreferrer">
                                     <ExternalLinkIcon />
-                                    Open in D4H
+                                    <span className="sr-only sm:not-sr-only">Open in D4H</span>
                                 </a>
                             </Button>
                             <D4HModule_EquipmentItem_Menu

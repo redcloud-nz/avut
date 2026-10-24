@@ -60,6 +60,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - The D4H index page uses the same `<Protect>`s.
   - **D4H I3:** Issue, Return, Issued Types, Templates. Inspect is hidden from the sidebar and index until its page is built (checkpoint 2).
 - **Issued Types reads the whole team in one D4H request** (checkpoint 3). D4H has no "held by any member" filter: `member_id` takes one member, and `location_id`'s only documented enum is `NONE`. One team-wide `only_current` list timed the same as the old per-member fan-out (1–2s for 26–31 members). It also finds items held by people outside the team's member list (likely retired), which the fan-out missed. They stay listed as "Member #id", unlinked, since those are the items I3 most needs to recover.
+- **An issued type's page is one row per item** with an Issued To column, sorted by holder then Ref, not grouped by member (checkpoint 3: most people hold one of each type).
 - **No redirects** from removed routes (issue: "No redirects").
 
 ## Tasks
@@ -280,7 +281,7 @@ D4H browsing (team-scoped Members/Items with a team picker; top-level Equipment 
 
 ## Parked
 
-- Skill Track's `person-scope-dialog.tsx` and `skill-scope-dialog.tsx` repeat the picker shell logic (`select-scope`, forceOpen/dismissed, push/replace). Move them onto `PickerDialog` (`src/components/picker-dialog.tsx`). Area: Skill Track reports.
+- Skill Track's `person-scope-dialog.tsx` and `skill-scope-dialog.tsx` repeat the picker shell logic (`select-scope`, forceOpen/dismissed, push/replace). Move them onto `PickerDialog` (`src/components/picker-dialog.tsx`). Area: Skill Track reports. Filed as #463.
 
 ## Review notes
 

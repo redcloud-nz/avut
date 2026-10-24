@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Fragment, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -76,8 +76,8 @@ function optionalCell(
 }
 
 /**
- * The items of one equipment type issued to one D4H team's members, grouped by who holds them,
- * with a Returned badge on items waiting for their Retire task to be applied.
+ * The items of one equipment type issued to one D4H team's members, one row per item sorted by
+ * holder, with a Returned badge on items waiting for their Retire task to be applied.
  */
 export function D4HI3Module_IssuedType_Content({
     teamId,
@@ -122,16 +122,13 @@ export function D4HI3Module_IssuedType_Content({
     );
     const returnedIds = new Set(returnedItemIds);
 
-    const holders = R.pipe(
+    const rows = R.pipe(
         items.filter((item) => item.kind.id === typeId),
-        R.groupBy((item) => item.holder.id),
-        R.values(),
-        R.map((holderItems) => ({
-            holder: holderItems[0].holder,
-            name: holderItems[0].holder.name ?? `Member #${holderItems[0].holder.id}`,
-            items: R.sortBy(holderItems, (item) => item.ref),
-        })),
-        R.sortBy((group) => group.name),
+        R.map((item) => ({ item, holderName: item.holder.name ?? `Member #${item.holder.id}` })),
+        R.sortBy(
+            (row) => row.holderName,
+            (row) => row.item.ref,
+        ),
     );
 
     const visibleColumns = OPTIONAL_COLUMNS.filter((column) => showColumns[column.key]);
@@ -188,7 +185,7 @@ export function D4HI3Module_IssuedType_Content({
                             </DropdownMenu>
                         </Saratoga.Actions>
                     </Saratoga.Header>
-                    {holders.length === 0 ? (
+                    {rows.length === 0 ? (
                         <Empty>
                             <EmptyDescription>
                                 No {kind.title} is issued to members of {team.title}.
@@ -200,6 +197,7 @@ export function D4HI3Module_IssuedType_Content({
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent">
                                         <TableHeadCell>Ref</TableHeadCell>
+                                        <TableHeadCell>Issued To</TableHeadCell>
                                         {visibleColumns.map((column) => (
                                             <TableHeadCell
                                                 key={column.key}
@@ -211,68 +209,57 @@ export function D4HI3Module_IssuedType_Content({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {holders.map(({ holder, name, items: holderItems }) => (
-                                        <Fragment key={holder.id}>
-                                            <TableRow className="bg-table-group hover:bg-table-group">
-                                                <TableHeadCell colSpan={visibleColumns.length + 1}>
-                                                    {/* A holder missing from the team's member
-                                                        list (e.g. a retired member) has no
-                                                        member page. */}
-                                                    {holder.name ? (
-                                                        <Link
-                                                            href={route(
-                                                                "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
-                                                                {
-                                                                    slug,
-                                                                    d4h_team_id: String(teamId),
-                                                                    member_id: String(holder.id),
-                                                                },
-                                                            )}
-                                                        >
-                                                            {name}
-                                                        </Link>
-                                                    ) : (
-                                                        name
+                                    {rows.map(({ item, holderName }) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
+                                                        {
+                                                            slug,
+                                                            d4h_team_id: String(teamId),
+                                                            item_id: String(item.id),
+                                                        },
                                                     )}
-                                                </TableHeadCell>
-                                            </TableRow>
-                                            {holderItems.map((item) => (
-                                                <TableRow key={item.id}>
-                                                    <TableCell className="pl-6">
-                                                        <Link
-                                                            href={route(
-                                                                "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
-                                                                {
-                                                                    slug,
-                                                                    d4h_team_id: String(teamId),
-                                                                    item_id: String(item.id),
-                                                                },
-                                                            )}
-                                                        >
-                                                            {item.ref}
-                                                        </Link>
-                                                        {returnedIds.has(item.id) && (
-                                                            <>
-                                                                {" "}
-                                                                <D4HI3Module_ReturnedBadge />
-                                                            </>
+                                                >
+                                                    {item.ref}
+                                                </Link>
+                                                {returnedIds.has(item.id) && (
+                                                    <>
+                                                        {" "}
+                                                        <D4HI3Module_ReturnedBadge />
+                                                    </>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {/* A holder missing from the team's member list
+                                                    (e.g. a retired member) has no member page. */}
+                                                {item.holder.name ? (
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
+                                                            {
+                                                                slug,
+                                                                d4h_team_id: String(teamId),
+                                                                member_id: String(item.holder.id),
+                                                            },
                                                         )}
-                                                    </TableCell>
-                                                    {visibleColumns.map((column) => (
-                                                        <TableCell
-                                                            key={column.key}
-                                                            className="hidden lg:table-cell"
-                                                        >
-                                                            {optionalCell(
-                                                                item,
-                                                                column.key,
-                                                                formatDate,
-                                                            )}
-                                                        </TableCell>
-                                                    ))}
-                                                </TableRow>
+                                                    >
+                                                        {holderName}
+                                                    </Link>
+                                                ) : (
+                                                    holderName
+                                                )}
+                                            </TableCell>
+                                            {visibleColumns.map((column) => (
+                                                <TableCell
+                                                    key={column.key}
+                                                    className="hidden lg:table-cell"
+                                                >
+                                                    {optionalCell(item, column.key, formatDate)}
+                                                </TableCell>
                                             ))}
-                                        </Fragment>
+                                        </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
