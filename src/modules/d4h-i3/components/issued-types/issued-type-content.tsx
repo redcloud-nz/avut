@@ -4,7 +4,6 @@
  */
 "use client";
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import * as R from "remeda";
@@ -13,6 +12,11 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
+import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
+import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
+import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
+import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { DropdownMenuTriggerIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,10 +64,20 @@ function optionalCell(
     formatDate: (date: string) => string,
 ): ReactNode {
     switch (column) {
-        case "brand":
-            return item.brand.title;
-        case "model":
-            return item.model?.title;
+        case "brand": {
+            const { brand } = item;
+            if (brand.id == null || !brand.title) return brand.title || "—";
+            return <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />;
+        }
+        case "model": {
+            const { brand, model } = item;
+            if (model?.id == null || !model.title || brand.id == null) return model?.title || "—";
+            return (
+                <D4HEquipmentModelLink
+                    model={{ id: model.id, title: model.title, brand: { id: brand.id } }}
+                />
+            );
+        }
         case "serial":
             return item.serial;
         case "expiry":
@@ -185,6 +199,9 @@ export function D4HI3Module_IssuedType_Content({
                             </DropdownMenu>
                         </Saratoga.Actions>
                     </Saratoga.Header>
+                    <p className="text-muted-foreground text-sm">
+                        D4H Type: <D4HEquipmentTypeLink type={kind} />
+                    </p>
                     {rows.length === 0 ? (
                         <Empty>
                             <EmptyDescription>
@@ -209,21 +226,12 @@ export function D4HI3Module_IssuedType_Content({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {rows.map(({ item, holderName }) => (
+                                    {rows.map(({ item }) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/d4h/teams/[d4h_team_id]/items/[item_id]",
-                                                        {
-                                                            slug,
-                                                            d4h_team_id: String(teamId),
-                                                            item_id: String(item.id),
-                                                        },
-                                                    )}
-                                                >
-                                                    {item.ref}
-                                                </Link>
+                                                {/* Only the team's own items are listed, so
+                                                    each item page is under this team. */}
+                                                <D4HEquipmentItemLink item={item} />
                                                 {returnedIds.has(item.id) && (
                                                     <>
                                                         {" "}
@@ -232,24 +240,12 @@ export function D4HI3Module_IssuedType_Content({
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                {/* A holder missing from the team's member list
-                                                    (e.g. a retired member) has no member page. */}
-                                                {item.holder.name ? (
-                                                    <Link
-                                                        href={route(
-                                                            "/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]",
-                                                            {
-                                                                slug,
-                                                                d4h_team_id: String(teamId),
-                                                                member_id: String(item.holder.id),
-                                                            },
-                                                        )}
-                                                    >
-                                                        {holderName}
-                                                    </Link>
-                                                ) : (
-                                                    holderName
-                                                )}
+                                                <D4HMemberLink
+                                                    member={{
+                                                        ...item.holder,
+                                                        owner: { id: teamId },
+                                                    }}
+                                                />
                                             </TableCell>
                                             {visibleColumns.map((column) => (
                                                 <TableCell

@@ -79,7 +79,7 @@ Finish the "Kind" → "Type" wording that #453 started (it is left only on the D
   - **Do:** the list's template name uses `I3TemplateLink`. Its D4H Category and D4H Type cells, and the detail page's Category and Type values, use `D4HEquipmentCategoryLink`/`D4HEquipmentTypeLink` built from `d4h.categoryId/categoryTitle` and `d4h.kindId/kindTitle` (plain "—" when `d4h` is null). Variant rows link Brand and Model from `variant.d4h`.
   - **Done when:** `npm run check` passes.
 
-- [ ] **6. Issued Types** `visual`
+- [x] **6. Issued Types** `visual` — feat(d4h-i3): link names on the Issued Types pages (#455)
   - **Files:** `src/modules/d4h-i3/components/issued-types/{team-issued-types,issued-type-content}.tsx`.
   - **Do:**
     - **Team Issued Types:** each category group header links with `D4HEquipmentCategoryLink` (plain for the `Category #id` fallback). The type → issued-type link stays a bare `<Link>`, since an issued type is a view, not an entity.
