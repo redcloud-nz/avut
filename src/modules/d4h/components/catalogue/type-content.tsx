@@ -107,8 +107,11 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                     id: "brand",
                     header: "Brand",
                     cell: (ctx) => {
-                        const { brand } = ctx.row.original;
-                        if (brand.id == null || !brand.title) return ctx.getValue() || "—";
+                        const { brand, team, owner } = ctx.row.original;
+                        // An owner out of reach may own the brand, which then has no page here.
+                        if (team.id !== owner.id || brand.id == null || !brand.title) {
+                            return ctx.getValue() || "—";
+                        }
                         return (
                             <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />
                         );
@@ -121,8 +124,13 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                     id: "model",
                     header: "Model",
                     cell: (ctx) => {
-                        const { brand, model } = ctx.row.original;
-                        if (model?.id == null || !model.title || brand.id == null) {
+                        const { brand, model, team, owner } = ctx.row.original;
+                        if (
+                            team.id !== owner.id ||
+                            model?.id == null ||
+                            !model.title ||
+                            brand.id == null
+                        ) {
                             return ctx.getValue() || "—";
                         }
                         return (
