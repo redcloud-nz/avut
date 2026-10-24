@@ -17,16 +17,37 @@ Design discussed in #299.
 should reach for the per-entity wrapper in `src/components/entity-links/`, not `EntityLink`
 directly:
 
-| Entity             | Wrapper                 | Prop                                                     |
-| ------------------ | ----------------------- | -------------------------------------------------------- |
-| Organisation Group | `OrganizationGroupLink` | `group: OrganizationGroupRef`                            |
-| Person             | `PersonLink`            | `person: PersonRef & Partial<Pick<PersonData, "email">>` |
-| Skill              | `SkillLink`             | `skill: SkillRef`                                        |
-| Skill Group        | `SkillGroupLink`        | `group: SkillGroupRef`                                   |
-| Skill Package      | `SkillPackageLink`      | `skillPackage: SkillPackageRef`                          |
-| Team               | `TeamLink`              | `team: TeamRef & Partial<Pick<TeamData, "description">>` |
-| Team Membership    | `TeamMembershipLink`    | `teamMembership: TeamMembershipRef`                      |
-| User               | `UserLink`              | `user: UserRef & Partial<Pick<UserData, "email">>`       |
+| Entity                 | Wrapper                    | Prop                                                            |
+| ---------------------- | -------------------------- | --------------------------------------------------------------- |
+| D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }` |
+| D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                              |
+| D4H Equipment Brand    | `D4HEquipmentBrandLink`    | `brand: D4HEquipmentBrandRef`                                   |
+| D4H Equipment Category | `D4HEquipmentCategoryLink` | `category: D4HEquipmentCategoryRef`                             |
+| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                   |
+| D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef`                                   |
+| D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef`                                     |
+| I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                       |
+| Organisation Group     | `OrganizationGroupLink`    | `group: OrganizationGroupRef`                                   |
+| Person                 | `PersonLink`               | `person: PersonRef & Partial<Pick<PersonData, "email">>`        |
+| Skill                  | `SkillLink`                | `skill: SkillRef`                                               |
+| Skill Group            | `SkillGroupLink`           | `group: SkillGroupRef`                                          |
+| Skill Package          | `SkillPackageLink`         | `skillPackage: SkillPackageRef`                                 |
+| Team                   | `TeamLink`                 | `team: TeamRef & Partial<Pick<TeamData, "description">>`        |
+| Team Membership        | `TeamMembershipLink`       | `teamMembership: TeamMembershipRef`                             |
+| User                   | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`              |
+
+The D4H wrappers have a few quirks of their own:
+
+- Their `Ref`s are nested picks of the D4H records (`owner: {id}` is the team, a model's
+  `brand: {id}` its brand), so a full `D4HMember`, `D4HEquipmentItem` or `D4HEquipmentModel`
+  passes straight through.
+- `D4HMemberLink` renders plain `Member #<id>`, with no link, when `name` is `null`: the member
+  isn't in the team's member list, so its page would 404.
+- `D4HEquipmentItemLink`'s text is `label ?? "#<ref>"`. Pass `label` only when the call site
+  holds a ready-made label and no ref.
+- Equipment models have no page, so `D4HEquipmentModelLink` links to the model's brand page.
+- D4H brand and model ids on an item can be `null`; render those as plain text at the call
+  site rather than building a link.
 
 Each wrapper resolves its own route via `route()`, sources `organization.slug` from
 `useOrganization()` internally (callers don't need it in scope just to render a link — drop
