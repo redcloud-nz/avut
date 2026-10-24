@@ -93,6 +93,8 @@ export function D4HModule_EquipmentItem_Content({
     const team = teams.find((t) => t.id === teamId);
     if (!team) throw new Error(`D4HTeam(${teamId}) not found`);
 
+    const category = categories.find((c) => c.id === item.category.id);
+
     const canUpdateInD4H = hasD4HTeamPermission(team.permissions, "Equipment", "UPDATE");
     const canRetireInD4H = hasD4HTeamPermission(team.permissions, "Equipment", "RETIRE");
 
@@ -179,8 +181,21 @@ export function D4HModule_EquipmentItem_Content({
                                         <DataItem inline>
                                             <DataItemTitle>Category</DataItemTitle>
                                             <DataItemValue>
-                                                {categories.find((c) => c.id === item.category.id)
-                                                    ?.title ?? "—"}
+                                                {category ? (
+                                                    <Link
+                                                        href={route(
+                                                            "/orgs/[slug]/d4h/categories/[category_id]",
+                                                            {
+                                                                slug,
+                                                                category_id: String(category.id),
+                                                            },
+                                                        )}
+                                                    >
+                                                        {category.title}
+                                                    </Link>
+                                                ) : (
+                                                    "—"
+                                                )}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>

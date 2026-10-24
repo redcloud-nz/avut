@@ -62,6 +62,32 @@ export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`
                                 </ItemActions>
                             </Link>
                         </Item>
+                        <Item asChild>
+                            <Link href={route("/orgs/[slug]/d4h/categories", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Categories</ItemTitle>
+                                    <ItemDescription>
+                                        View your D4H equipment categories.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item asChild>
+                            <Link href={route("/orgs/[slug]/d4h/types", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Types</ItemTitle>
+                                    <ItemDescription>
+                                        View your D4H equipment types.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>

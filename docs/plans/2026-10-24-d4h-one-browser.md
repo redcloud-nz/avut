@@ -197,7 +197,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
 
 ### Review group 4: catalogue and navigation (`visual`), then visual checkpoint 2
 
-- [ ] **8. Categories and types** `visual`
+- [x] **8. Categories and types** `visual` — feat(d4h): top-level categories and types pages (#453)
   - **Files:**
     - **New:** `d4h/categories/page.tsx`, `d4h/categories/[category_id]/page.tsx`, `d4h/types/page.tsx`, `d4h/types/[type_id]/page.tsx`, `src/modules/d4h/components/catalogue/{categories-list,category-content,types-list,type-content}.tsx`
     - **Delete:** `d4h/equipment/categories/**`, `src/modules/d4h/components/equipment/{category-kinds,kind-items}.tsx`, `src/client/collections/{d4h-equipment-categories,d4h-equipment-kinds,d4h-equipment-items}.ts`
@@ -257,3 +257,4 @@ D4H browsing (team-scoped Members/Items with a team picker; top-level Categories
 - (Task 11) Wrap the item page's `ItemContents` in its own error boundary (plus `Suspense`) that renders a short "Couldn't load contents" line, so a failed `listEquipmentItemContents` doesn't take the whole item page to the route error boundary.
 - (Task 6) With one team, `/d4h/members` should `redirect()` server-side (`fetchQuery` `listAccessibleTeams` in `page.tsx`) rather than `router.replace` in a client effect, so there's no empty flash or extra history entry. Keep the client component for zero or several teams.
 - (Tasks 6, 7, 11, and the old `kind-items.tsx` pattern carried into Task 8) Label D4H's status column and details row "D4H Status", not bare "Status" (house terminology keeps bare "Status" for RecordStatus), in the members list, member page, contents table and the Task 8 tables.
+- (Task 4) The item content throws a plain `Error` for a team not in `listAccessibleTeams`; call `notFound()` like the other D4H content components.

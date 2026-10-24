@@ -48,23 +48,6 @@ export default async function D4HModule_Equipment_Page(
                                 </ItemActions>
                             </Link>
                         </Item>
-                        <Item asChild>
-                            <Link
-                                href={route("/orgs/[slug]/d4h/equipment/categories", {
-                                    slug,
-                                })}
-                            >
-                                <ItemContent>
-                                    <ItemTitle>Equipment Categories</ItemTitle>
-                                    <ItemDescription>
-                                        View your D4H equipment categories.
-                                    </ItemDescription>
-                                </ItemContent>
-                                <ItemActions>
-                                    <ChevronRightIcon className="size-4" />
-                                </ItemActions>
-                            </Link>
-                        </Item>
                     </ItemGroup>
                 </Std.IndexPage>
             </Std.ScrollContainer>

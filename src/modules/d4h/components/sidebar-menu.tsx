@@ -20,6 +20,8 @@ export function D4H_Sidebar_Menu() {
             <NavSubItem label="Teams" href={route("/orgs/[slug]/d4h/teams", { slug })} />
             <NavSubItem label="Equipment" href={route("/orgs/[slug]/d4h/equipment", { slug })} />
             <NavSubItem label="Members" href={route("/orgs/[slug]/d4h/members", { slug })} />
+            <NavSubItem label="Categories" href={route("/orgs/[slug]/d4h/categories", { slug })} />
+            <NavSubItem label="Types" href={route("/orgs/[slug]/d4h/types", { slug })} />
             <Protect permissions={{ d4hTask: ["view"] }}>
                 <NavSubItem label="Tasks" href={route("/orgs/[slug]/d4h/tasks", { slug })} />
             </Protect>
