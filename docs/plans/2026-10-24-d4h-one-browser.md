@@ -54,11 +54,12 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
   - I3's Return form still queues into it.
   - `d4hTasks` procedures aren't gated on d4h-i3, so it works with I3 off.
 - **Sidebars and index pages:**
-  - **D4H:** Teams, Members (to the picker landing), Categories, Types, Brands, Tasks.
+  - **D4H:** Teams, Members (to the picker landing), Equipment Categories, Equipment Brands, Tasks (Types dropped at checkpoint 2).
     - Catalogue, Members and Tasks entries are gated on what their procedures need: `d4hEquipment: ["view"]` and `d4hTask: ["view"]`. Only Skill Track roles lack `d4hEquipment: ["view"]`, and they can't load those pages today.
     - Teams stays ungated, matching `listAccessibleTeams` (`organizationProcedure({})`).
     - The D4H index page uses the same `<Protect>`s.
-  - **D4H I3:** Issue, Return, Templates. Inspect is hidden from the sidebar and index until its page is built (checkpoint 2).
+  - **D4H I3:** Issue, Return, Issued Types, Templates. Inspect is hidden from the sidebar and index until its page is built (checkpoint 2).
+- **Issued Types reads the whole team in one D4H request** (checkpoint 3). D4H has no "held by any member" filter: `member_id` takes one member, and `location_id`'s only documented enum is `NONE`. One team-wide `only_current` list timed the same as the old per-member fan-out (1–2s for 26–31 members). It also finds items held by people outside the team's member list (likely retired), which the fan-out missed. They stay listed as "Member #id", unlinked, since those are the items I3 most needs to recover.
 - **No redirects** from removed routes (issue: "No redirects").
 
 ## Tasks
