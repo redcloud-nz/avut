@@ -19,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
@@ -77,7 +78,8 @@ export function D4HModule_Member_Content({
                     // that team, so link there, and not at all when that team is out of reach.
                     cell: (ctx) => {
                         const item = ctx.row.original;
-                        if (!teams.some((t) => t.id === item.owner.id)) return `#${item.ref}`;
+                        if (!teams.some((t) => t.id === item.owner.id))
+                            return <D4HItemRef value={item.ref} />;
                         return <D4HEquipmentItemLink item={item} />;
                     },
                     enableGlobalFilter: true,

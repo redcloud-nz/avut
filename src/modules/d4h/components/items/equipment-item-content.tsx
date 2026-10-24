@@ -21,6 +21,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
@@ -128,14 +129,14 @@ export function D4HModule_EquipmentItem_Content({
                             d4h_team_id: String(teamId),
                         }),
                     },
-                    { label: `Item #${item.ref}` },
+                    { label: `Item ${item.ref}` },
                 ]}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>
-                            #{item.ref} {item.kind.title}
+                            <D4HItemRef value={item.ref} /> {item.kind.title}
                         </Saratoga.Title>
                         <Saratoga.Actions>
                             {/* Icon-only below `sm`, with the label kept for screen readers. */}
@@ -181,7 +182,9 @@ export function D4HModule_EquipmentItem_Content({
                                     <DataList>
                                         <DataItem inline>
                                             <DataItemTitle>Ref</DataItemTitle>
-                                            <DataItemValue>#{item.ref}</DataItemValue>
+                                            <DataItemValue>
+                                                <D4HItemRef value={item.ref} />
+                                            </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Team</DataItemTitle>
@@ -404,7 +407,8 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                     // so link there, and not at all when that team is out of reach.
                     cell: (ctx) => {
                         const item = ctx.row.original;
-                        if (!teams.some((t) => t.id === item.owner.id)) return `#${item.ref}`;
+                        if (!teams.some((t) => t.id === item.owner.id))
+                            return <D4HItemRef value={item.ref} />;
                         return <D4HEquipmentItemLink item={item} />;
                     },
                     enableGlobalFilter: true,

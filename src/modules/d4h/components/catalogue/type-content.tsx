@@ -19,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
@@ -62,7 +63,7 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                         const { team, owner, id, ref } = ctx.row.original;
                         // The item page lives under the owning team. A row that fell back to the
                         // team listing it (owner out of reach) has no page to link to.
-                        if (team.id !== owner.id) return `#${ref}`;
+                        if (team.id !== owner.id) return <D4HItemRef value={ref} />;
                         return <D4HEquipmentItemLink item={{ id, ref, owner }} />;
                     },
                     enableGlobalFilter: true,

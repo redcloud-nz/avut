@@ -5,6 +5,7 @@
 
 "use client";
 
+import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentItemRef } from "@/lib/schemas/d4h/equipment-item";
@@ -13,7 +14,7 @@ import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentItemLinkProps = {
     item: D4HEquipmentItemRef;
-    /** Link text in place of `#<ref>`, for call sites that hold a ready-made label and no ref. */
+    /** Link text in place of the ref, for call sites that hold a ready-made label and no ref. */
     label?: string;
 };
 
@@ -27,7 +28,7 @@ export function D4HEquipmentItemLink({ item, label }: D4HEquipmentItemLinkProps)
                 d4h_team_id: String(item.owner.id),
                 item_id: String(item.id),
             })}
-            title={label ?? `#${item.ref}`}
+            title={label ?? <D4HItemRef value={item.ref} />}
             type="Equipment Item"
         />
     );

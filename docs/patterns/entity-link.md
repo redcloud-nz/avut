@@ -43,8 +43,11 @@ The D4H wrappers have a few quirks of their own:
   passes straight through.
 - `D4HMemberLink` renders plain `Member #<id>`, with no link, when `name` is `null`: the member
   isn't in the team's member list, so its page would 404.
-- `D4HEquipmentItemLink`'s text is `label ?? "#<ref>"`. Pass `label` only when the call site
-  holds a ready-made label and no ref.
+- `D4HEquipmentItemLink`'s text is `label ?? <D4HItemRef value={ref} />`. `D4HItemRef`
+  (`src/components/d4h/d4h-item-ref.tsx`) sets AVUT's `#` prefix apart in a muted monospace,
+  because D4H refs are free text and some already start with `#`. Use it wherever a ref renders
+  outside a plain string. Pass `label` only when the call site holds a ready-made label and no
+  ref. `EntityLink`'s `title` is a `ReactNode` for this.
 - Equipment models have no page, so `D4HEquipmentModelLink` links to the model's brand page.
 - D4H brand and model ids on an item can be `null`; render those as plain text at the call
   site rather than building a link.

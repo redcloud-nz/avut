@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 
 import { d4hApiEffects } from "@/client/d4h-api-effects";
+import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -124,7 +125,7 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                 toast.error(`Failed to update item: ${error.message}`);
             },
             onSuccess() {
-                toast.success(`Item #${item.ref} updated.`);
+                toast.success(`Item ${item.ref} updated.`);
                 handleDialogOpenChange(false);
             },
         }),
@@ -204,7 +205,9 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
             <DialogTrigger asChild>{trigger}</DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Edit Item #{item.ref}</DialogTitle>
+                    <DialogTitle>
+                        Edit Item <D4HItemRef value={item.ref} />
+                    </DialogTitle>
                     <DialogDescription>
                         Changes are saved to D4H. Brand, model, serial number and dates can only be
                         changed in D4H.

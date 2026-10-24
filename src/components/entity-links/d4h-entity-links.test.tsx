@@ -45,10 +45,10 @@ describe("D4HEquipmentModelLink", () => {
 });
 
 describe("D4HEquipmentItemLink", () => {
-    it("renders #<ref> by default, linking under the item's own team", () => {
-        render(<D4HEquipmentItemLink item={{ id: 100, ref: "1234", owner: { id: 7 } }} />);
+    it("renders # + the ref by default, linking under the item's own team", () => {
+        render(<D4HEquipmentItemLink item={{ id: 100, ref: "P5-1234", owner: { id: 7 } }} />);
 
-        expect(screen.getByRole("link", { name: "#1234" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: /^#\s?P5-1234$/ })).toHaveAttribute(
             "href",
             "/orgs/acme/d4h/teams/7/items/100",
         );
