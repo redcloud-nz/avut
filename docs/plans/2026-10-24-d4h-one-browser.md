@@ -233,9 +233,41 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
 
 **Visual checkpoint 2:** teams, the picker, the team index, members, the member page, categories, types, the type page, brands, and the D4H sidebar and index.
 
+### Review group 5: catalogue naming and I3 Issued Types (`visual`), then visual checkpoint 3
+
+Added at checkpoint 2. The user's decisions: "Categories" → **Equipment Categories**, "Brands" → **Equipment Brands**; D4H drops the Types list (every type sits in a category); I3 gets back an **Issued Types** section doing what the old By Equipment Type pages did, **per team with the team picker**, and a type's page **grouped by member**.
+
+- [ ] **12. Equipment Categories and Equipment Brands; drop the Types list** `visual` `mechanical`
+  - **Files:**
+    - **Delete:** `d4h/types/page.tsx`, `src/modules/d4h/components/catalogue/types-list.tsx`
+    - **Edit:** `src/modules/d4h/components/sidebar-menu.tsx`, `d4h/page.tsx`, the categories/category/type/brands/brand pages and content components (titles, `generateMetadata`, breadcrumbs), `content/help/d4h.mdx`
+  - **Do:**
+    - Sidebar, D4H index, page titles, metadata titles and breadcrumbs say **Equipment Categories** and **Equipment Brands**. Route segments stay `/d4h/categories` and `/d4h/brands`.
+    - Remove Types from the sidebar and index and delete the Types list page. The type page (`/d4h/types/[type_id]`) stays, reached from its category page. Its breadcrumbs become D4H › Equipment Categories › `<category>` › `<type>`.
+    - Grep for any link to `/orgs/[slug]/d4h/types"` (the list route) and repoint it to the category.
+    - Help card: describe Equipment Categories (each with its types, and a type's items across teams) and Equipment Brands; no separate Types section.
+  - **Done when:** no "Types" list remains, the labels read as above, and `npm run check` passes.
+
+- [ ] **13. I3 Issued Types** `visual`
+  - **Files:**
+    - **Move:** `src/modules/d4h/components/teams/team-picker-dialog.tsx` → `src/components/d4h/team-picker-dialog.tsx` (`D4HTeamPickerDialog`; now used by two modules, so it's shared). Repoint D4H's callers.
+    - **New:** `src/server/d4h-api/equipment.ts` helper + test, `src/trpc/routers/d4h-api-router.ts` procedure + test, `d4h-i3/issued-types/page.tsx` (landing), `d4h-i3/teams/[d4h_team_id]/issued-types/page.tsx`, `d4h-i3/teams/[d4h_team_id]/issued-types/[type_id]/page.tsx`, `src/modules/d4h-i3/components/issued-types/*`
+    - **Edit:** `src/modules/d4h-i3/components/sidebar-menu.tsx`, `d4h-i3/page.tsx`, `content/help/d4h-i3.mdx`, the cache effects that invalidate `listMemberEquipment`
+  - **Do:**
+    - **`listTeamIssuedEquipment({ teamId })`** (`d4hEquipment: ["view"]`, alphabetical; `NotFoundError` for a team the token can't reach, like `listTeamMembers`): one D4H equipment-list call for the team (`only_current: true`, `size: 10000`; filter server-side to items whose narrow `location` is a `Member`), each row with `holder: { id, name | null }` from `getD4HTeamMembers`. Use the `D4HEquipmentListItem` schema so `location` stays narrow. This replaces the old pages' one-request-per-member reads.
+    - **Landing** (`/d4h-i3/issued-types`): like D4H's `/d4h/members`: server `redirect()` with one team, the picker forced open with several, `Empty` with none.
+    - **Team page:** "Equipment Types issued to `<team>`", Change team in the header. A table grouped by category (category row, then its types) with Type (linked) and **Issued Count**, as the old `d4h-i3/teams/[team_id]/equipment-kinds` page did (`git show c82ae84c:"src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-i3/teams/[team_id]/equipment-kinds/page.tsx"`). Category and type titles come from the list rows (or `listEquipmentCategories`/`listEquipmentKinds`).
+    - **Type page:** grouped by member, sorted by name: a heading per holder (linked to D4H's member page), then their items of that type (Ref linked to the D4H item page, Brand, Model, D4H Status labelled) with I3's `ReturnedBadge` from `listReturnedItemIds`. Keep the old page's Show Columns menu for Brand, Model, Serial, Expiry, Notes, Status if it's cheap (`git show c82ae84c:"…/teams/[team_id]/equipment-kinds/[kind_id]/page.tsx"`). An unknown team or type calls `notFound()`.
+    - **Navigation:** I3 sidebar and index get **Issued Types** (after Return, before Templates), gated on `i3Item: ["view"]`. The pages link into D4H routes, which `src/app`-owned links may do; I3 components build them with `route()` and import nothing from `src/modules/d4h`.
+    - Invalidate `listTeamIssuedEquipment` wherever `listMemberEquipment` is invalidated.
+    - Help card: add an Issued Types bullet.
+  - **Done when:** an I3 user can pick a team, see issued types with counts, open a type and see who holds what with Returned badges; tests cover the procedure (unknown team, no token, non-member items filtered out, narrow location); `npm run check` passes.
+
+**Visual checkpoint 3:** the D4H sidebar and index labels, a category page leading to a type page, and I3's Issued Types (landing, team page, type page).
+
 ## Docs impact
 
-D4H browsing (team-scoped Members/Items with a team picker; top-level Categories/Types/Brands; Tasks) moves wholly into D4H, and I3 loses By Equipment Type/By Member: restructure `content/docs/d4h-views/**`, trim `content/docs/i3/**`, and re-shoot every D4H page, the item page, and the I3 index and sidebar.
+D4H browsing (team-scoped Members/Items with a team picker; top-level Equipment Categories and Equipment Brands, types reached through their category; Tasks) moves wholly into D4H. I3 loses By Equipment Type/By Member and gains Issued Types (per team): restructure `content/docs/d4h-views/**`, trim `content/docs/i3/**`, and re-shoot every D4H page, the item page, and the I3 index and sidebar.
 
 ## Out of scope
 
