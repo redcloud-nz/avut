@@ -4,12 +4,22 @@ guide: d4h-views
 keyTerms: ["d4h"]
 ---
 
-D4H shows your D4H data inside AVUT, read-only. Nothing here changes D4H;
-make changes in D4H itself.
+D4H shows your D4H teams, members and equipment inside AVUT.
 
-- **Equipment**: browse by **Equipment Brands** and their models, or by
-  **Equipment Categories** and their kinds, down to individual items.
-- **Members**: the D4H members of your teams.
+- **Teams** lists the D4H teams you can see. A team's page links to its
+  **Members**.
+- **Members** asks you to pick a team, then lists that team's members. Use
+  **Change team** to switch. A member's page shows the equipment issued to them.
+- **Categories**, **Types** and **Brands** cover every team, with an **Owner**
+  column for the team each belongs to. A type's page lists its items in every
+  team, with who holds each one.
+- An **item page** shows one piece of equipment, with its **Parents** and
+  **Contents**, any open **D4H Tasks**, and an **Open in D4H** link. **Edit** in
+  the **Actions** menu changes the item in D4H.
+- **Tasks** lists changes D4H can't take automatically, such as retiring an
+  item. Make the change in D4H, then press **Check**, or **Dismiss** the task.
+
+Editing items and **Tasks** need an I3 role, or the Admin or Owner role.
 
 It uses your own personal D4H access token, not one shared by the organisation,
 so you see what your D4H account can see. Add a token in your account settings

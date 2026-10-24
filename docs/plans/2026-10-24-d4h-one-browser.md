@@ -221,7 +221,7 @@ Give D4H one browser and take the browse pages out of D4H I3. The equipment cata
     - Grep to confirm nothing imports the deleted collections.
   - **Done when:** `src/modules/d4h/components/equipment/` and every `d4h/equipment` route are gone, and `npm run check` passes.
 
-- [ ] **10. Navigation gating, index pages and help cards** `visual`
+- [x] **10. Navigation gating, index pages and help cards** `visual` — feat(d4h): gate D4H navigation and update the D4H and D4H I3 help cards (#453)
   - **Files:** `src/modules/d4h/components/sidebar-menu.tsx`, `d4h/page.tsx`, `content/help/d4h.mdx`, `content/help/d4h-i3.mdx`
   - **Do:**
     - **D4H sidebar:** the final order and `<Protect>` gating per Decisions: Teams, Members, Categories, Types, Brands, Tasks.
