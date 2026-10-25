@@ -7,8 +7,9 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -39,25 +40,20 @@ export function D4HI3Module_DeleteVariant_Dialog({
 }: D4HI3Module_DeleteVariant_DialogProps) {
     const logger = useLogger("I3", "DeleteVariant");
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const mutation = useMutation(
         trpc.i3.deleteTemplateVariant.mutationOptions({
+            meta: { effects: i3Effects.deleteTemplateVariant },
             onError(error) {
                 logger.error("Failed to delete template variant", error);
                 toast.error(`Failed to delete template variant: ${error.message}`);
             },
-            async onSuccess() {
+            onSuccess() {
                 logger.info(
                     `Template variant "${variant.name}" deleted from template "${template.name}".`,
                 );
                 toast.success(
                     `Template variant "${variant.name}" deleted from template "${template.name}".`,
-                );
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplates.queryFilter({
-                        organizationId: organization.id,
-                    }),
                 );
                 props.onOpenChange?.(false);
             },

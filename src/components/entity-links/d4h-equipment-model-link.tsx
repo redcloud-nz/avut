@@ -7,17 +7,19 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { D4HEquipmentModelRef } from "@/lib/schemas/d4h/equipment-model";
+import { D4HEquipmentModel, D4HEquipmentModelRef } from "@/lib/schemas/d4h/equipment-model";
 
 import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentModelLinkProps = {
-    model: D4HEquipmentModelRef;
+    /** `owner`, when known, is shown in the hover card. */
+    model: D4HEquipmentModelRef & Partial<Pick<D4HEquipmentModel, "owner">>;
 };
 
 /** Models have no page of their own, so this links to the model's brand page, which lists it. */
 export function D4HEquipmentModelLink({ model }: D4HEquipmentModelLinkProps) {
     const organization = useOrganization();
+    const { owner } = model;
 
     return (
         <EntityLink
@@ -28,6 +30,7 @@ export function D4HEquipmentModelLink({ model }: D4HEquipmentModelLinkProps) {
             title={model.title}
             type="Equipment Model"
         >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
             <span className="text-muted-foreground">
                 Opens the brand page, which lists this model.
             </span>

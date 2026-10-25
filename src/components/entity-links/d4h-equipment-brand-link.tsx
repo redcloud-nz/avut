@@ -7,16 +7,18 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { D4HEquipmentBrandRef } from "@/lib/schemas/d4h/equipment-brand";
+import { D4HEquipmentBrand, D4HEquipmentBrandRef } from "@/lib/schemas/d4h/equipment-brand";
 
 import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentBrandLinkProps = {
-    brand: D4HEquipmentBrandRef;
+    /** `owner`, when known, is shown in the hover card. */
+    brand: D4HEquipmentBrandRef & Partial<Pick<D4HEquipmentBrand, "owner">>;
 };
 
 export function D4HEquipmentBrandLink({ brand }: D4HEquipmentBrandLinkProps) {
     const organization = useOrganization();
+    const { owner } = brand;
 
     return (
         <EntityLink
@@ -26,6 +28,8 @@ export function D4HEquipmentBrandLink({ brand }: D4HEquipmentBrandLinkProps) {
             })}
             title={brand.title}
             type="Equipment Brand"
-        />
+        >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
+        </EntityLink>
     );
 }

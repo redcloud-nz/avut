@@ -11,13 +11,13 @@ import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "rea
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQueries } from "@tanstack/react-query";
 
 import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
-import { ObjectIcons } from "@/components/icons";
+import { AlertWarningIcon, ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -106,6 +106,29 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
     const lacksCreatePermission =
         recipient.id > 0 &&
         !hasD4HTeamPermission(recipientTeam?.permissions, "Equipment", "CREATE");
+    const recipientTeamTitle = recipientTeam?.title ?? "this team";
+
+    // Non-suspending on purpose (see the #454 plan): a D4H failure shows a warning rather than
+    // blanking the form, and the server re-checks fit on submit.
+    const fitsQuery = useQuery(
+        trpc.i3.listTemplateFits.queryOptions(
+            { organizationId: organization.id, teamId: recipient.teamId },
+            { enabled: recipient.teamId > 0 },
+        ),
+    );
+    const fits: TemplateFits | undefined = fitsQuery.isSuccess
+        ? {
+              templateIds: new Set(fitsQuery.data.templateIds),
+              variantIds: new Set(fitsQuery.data.variantIds),
+          }
+        : undefined;
+    // Until the fits arrive, every template is offered, so Submit waits for them.
+    const checkingFits = recipient.teamId > 0 && fitsQuery.isPending;
+
+    const items = useWatch({ control: form.control, name: "items" });
+    const misfitIndexes = fits
+        ? items.flatMap((item, index) => (itemFits(item, fits) ? [] : [index]))
+        : [];
 
     const {
         saveStatus,
@@ -228,11 +251,34 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                         </Alert>
                                     )}
 
+                                    {/* An unreachable team trips both alerts; the permission one is enough. */}
+                                    {fitsQuery.isError && !lacksCreatePermission && (
+                                        <Alert variant="warning">
+                                            <AlertTitle>
+                                                Couldn&apos;t check templates against D4H
+                                            </AlertTitle>
+                                            <AlertDescription>
+                                                Every template is offered. Submit still refuses any
+                                                that can&apos;t be issued to {recipientTeamTitle}.
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+
+                                    {checkingFits && (
+                                        <p className="text-sm text-muted-foreground">
+                                            Checking templates…
+                                        </p>
+                                    )}
+
                                     <FieldSeparator />
 
                                     <D4HI3_Issue_ItemsSection
                                         form={form}
                                         organizationId={organization.id}
+                                        hasRecipient={recipient.id > 0}
+                                        fits={fits}
+                                        teamTitle={recipientTeamTitle}
+                                        misfitIndexes={misfitIndexes}
                                         onChange={handleChange}
                                     />
 
@@ -259,7 +305,11 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                         <MutationButton
                                             type="submit"
                                             status={submitMutation.status}
-                                            disabled={lacksCreatePermission}
+                                            disabled={
+                                                lacksCreatePermission ||
+                                                checkingFits ||
+                                                misfitIndexes.length > 0
+                                            }
                                             text={{
                                                 idle: "Submit",
                                                 pending: "Submitting",
@@ -290,10 +340,20 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
 function D4HI3_Issue_ItemsSection({
     form,
     organizationId,
+    hasRecipient,
+    fits,
+    teamTitle,
+    misfitIndexes,
     onChange,
 }: {
     form: UseFormReturn<I3IssueItemsFormInputData>;
     organizationId: OrganizationId;
+    hasRecipient: boolean;
+    /** The templates and variants that fit the recipient's team, or `undefined` while unknown. */
+    fits: TemplateFits | undefined;
+    teamTitle: string;
+    /** Indexes of the items that don't fit the recipient's team. */
+    misfitIndexes: number[];
     onChange: () => void;
 }) {
     const [{ data: templates }, { data: variants }] = useSuspenseQueries({
@@ -321,14 +381,22 @@ function D4HI3_Issue_ItemsSection({
         <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
                 <div className="text-sm font-medium">Issued Items</div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setTargetIndex("new")}
-                >
-                    Add Item
-                </Button>
+                <div className="flex items-center gap-2">
+                    {!hasRecipient && (
+                        <span className="text-sm text-muted-foreground">
+                            Choose a recipient first
+                        </span>
+                    )}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={!hasRecipient}
+                        onClick={() => setTargetIndex("new")}
+                    >
+                        Add Item
+                    </Button>
+                </div>
             </div>
 
             <ItemGroup>
@@ -350,6 +418,12 @@ function D4HI3_Issue_ItemsSection({
                                         .filter(Boolean)
                                         .join(" - ")}
                                 </ItemDescription>
+                                {misfitIndexes.includes(index) && (
+                                    <ItemDescription className="flex items-center gap-1 text-amber-600 dark:text-amber-500">
+                                        <AlertWarningIcon className="size-3.5" />
+                                        Can&apos;t be issued to {teamTitle}
+                                    </ItemDescription>
+                                )}
                             </ItemContent>
                             <ItemActions>
                                 <ButtonGroup>
@@ -387,6 +461,8 @@ function D4HI3_Issue_ItemsSection({
                 onOpenChange={(open) => setTargetIndex(open ? "new" : null)}
                 templates={templates}
                 variants={variants}
+                fits={fits}
+                teamTitle={teamTitle}
                 onAdd={(item) => {
                     appendItem(item);
                     onChange();
@@ -398,6 +474,8 @@ function D4HI3_Issue_ItemsSection({
                     onOpenChange={(open) => setTargetIndex(open ? targetIndex : null)}
                     templates={templates}
                     variants={variants}
+                    fits={fits}
+                    teamTitle={teamTitle}
                     item={items[targetIndex as number]}
                     onUpdate={(item) => {
                         updateItem(targetIndex as number, item);
@@ -409,16 +487,108 @@ function D4HI3_Issue_ItemsSection({
     );
 }
 
-interface AddItemDialogProps extends DialogProps {
+/**
+ * The ids of the templates and variants that fit the recipient's D4H team. Plain strings, since
+ * the form's input values carry unbranded ids.
+ */
+interface TemplateFits {
+    templateIds: ReadonlySet<string>;
+    variantIds: ReadonlySet<string>;
+}
+
+/** Whether an issued item's template, and its variant if it has one, fit the recipient's team. */
+function itemFits(item: I3IssuedItemInput, fits: TemplateFits) {
+    return (
+        fits.templateIds.has(item.template.id) &&
+        (item.variant == null || fits.variantIds.has(item.variant.id))
+    );
+}
+
+/**
+ * The templates and variants to offer: those that fit, or all of them while fit is unknown.
+ *
+ * `keep` names an item's current template and variant, which stay on offer even when they don't
+ * fit, so Edit Item still shows what the item is. `templateMisfit` and `variantMisfit` tell the
+ * dialog which to mark.
+ */
+function offeredOptions(
+    templates: I3Template[],
+    variants: I3TemplateVariant[],
+    fits: TemplateFits | undefined,
+    keep: { templateId?: string; variantId?: string } = {},
+) {
+    if (!fits) {
+        return {
+            templateOptions: templates,
+            variantOptions: variants,
+            templateMisfit: () => false,
+            variantMisfit: () => false,
+        };
+    }
+    return {
+        templateOptions: templates.filter(
+            (template) => fits.templateIds.has(template.id) || template.id === keep.templateId,
+        ),
+        variantOptions: variants.filter(
+            (variant) => fits.variantIds.has(variant.id) || variant.id === keep.variantId,
+        ),
+        templateMisfit: (id: string) => !fits.templateIds.has(id),
+        variantMisfit: (id: string) => !fits.variantIds.has(id),
+    };
+}
+
+/** Marks a kept template or variant that can't be issued to the recipient's team. */
+function MisfitMarker({ teamTitle }: { teamTitle: string }) {
+    const label = `Can't be issued to ${teamTitle}`;
+    return (
+        <span title={label} className="inline-flex">
+            <AlertWarningIcon className="size-3.5 text-amber-600 dark:text-amber-500" />
+            <span className="sr-only">{label}</span>
+        </span>
+    );
+}
+
+/**
+ * Whether to say no variants fit, in place of an empty variant select: only when the template
+ * has variants and none of them are on offer.
+ */
+function noVariantsFit(
+    template: I3Template | undefined,
+    variants: I3TemplateVariant[],
+    offered: I3TemplateVariant[],
+) {
+    return (
+        template != null &&
+        offered.length === 0 &&
+        variants.some((variant) => variant.templateId === template.id)
+    );
+}
+
+interface ItemDialogFitProps {
+    /** Every template and variant, for lookups. The dialog offers only those in `fits`. */
     templates: I3Template[];
     variants: I3TemplateVariant[];
+    fits: TemplateFits | undefined;
+    teamTitle: string;
+}
+
+interface AddItemDialogProps extends DialogProps, ItemDialogFitProps {
     onAdd: (item: I3IssuedItemInput) => void;
 }
 
 /**
  * Dialog for adding an item to the issue list.
  */
-function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogProps) {
+function AddItemDialog({
+    onAdd,
+    templates,
+    variants,
+    fits,
+    teamTitle,
+    ...props
+}: AddItemDialogProps) {
+    const { templateOptions, variantOptions } = offeredOptions(templates, variants, fits);
+
     const form = useForm({
         resolver: zodResolver(I3IssuedItem.schema),
         defaultValues: {
@@ -464,36 +634,45 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="template">Template</FieldLabel>
-                                    <Select
-                                        value={field.value.id ?? ""}
-                                        onValueChange={(value) => {
-                                            const selectedTemplate = templates.find(
-                                                (template) => template.id === value,
-                                            );
-                                            field.onChange(
-                                                selectedTemplate
-                                                    ? {
-                                                          id: selectedTemplate.id,
-                                                          name: selectedTemplate.name,
-                                                      }
-                                                    : { id: "", name: "" },
-                                            );
-                                        }}
-                                    >
-                                        <SelectTrigger
-                                            id="template"
-                                            aria-invalid={fieldState.invalid}
+                                    {templateOptions.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            No templates can be issued to {teamTitle}.
+                                        </p>
+                                    ) : (
+                                        <Select
+                                            value={field.value.id ?? ""}
+                                            onValueChange={(value) => {
+                                                const selectedTemplate = templates.find(
+                                                    (template) => template.id === value,
+                                                );
+                                                field.onChange(
+                                                    selectedTemplate
+                                                        ? {
+                                                              id: selectedTemplate.id,
+                                                              name: selectedTemplate.name,
+                                                          }
+                                                        : { id: "", name: "" },
+                                                );
+                                            }}
                                         >
-                                            <SelectValue placeholder="Select a template" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {templates.map((template) => (
-                                                <SelectItem key={template.id} value={template.id}>
-                                                    {template.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                            <SelectTrigger
+                                                id="template"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select a template" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {templateOptions.map((template) => (
+                                                    <SelectItem
+                                                        key={template.id}
+                                                        value={template.id}
+                                                    >
+                                                        {template.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
@@ -503,7 +682,7 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                             name="variant"
                             render={({ field, fieldState }) => {
                                 const applicableVariants = currentTemplate
-                                    ? variants.filter(
+                                    ? variantOptions.filter(
                                           (variant) => variant.templateId === currentTemplate.id,
                                       )
                                     : [];
@@ -512,37 +691,50 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="variant">Variant</FieldLabel>
 
-                                        <Select
-                                            value={field.value?.id ?? ""}
-                                            onValueChange={(value) => {
-                                                const selectedVariant = variants.find(
-                                                    (variant) => variant.id === value,
-                                                );
-                                                field.onChange(
-                                                    selectedVariant
-                                                        ? {
-                                                              id: selectedVariant.id,
-                                                              name: selectedVariant.name,
-                                                          }
-                                                        : null,
-                                                );
-                                            }}
-                                            disabled={!currentTemplate}
-                                        >
-                                            <SelectTrigger
-                                                id="variant"
-                                                aria-invalid={fieldState.invalid}
+                                        {noVariantsFit(
+                                            currentTemplate,
+                                            variants,
+                                            applicableVariants,
+                                        ) ? (
+                                            <p className="text-sm text-muted-foreground">
+                                                No variants can be issued to {teamTitle}.
+                                            </p>
+                                        ) : (
+                                            <Select
+                                                value={field.value?.id ?? ""}
+                                                onValueChange={(value) => {
+                                                    const selectedVariant = variants.find(
+                                                        (variant) => variant.id === value,
+                                                    );
+                                                    field.onChange(
+                                                        selectedVariant
+                                                            ? {
+                                                                  id: selectedVariant.id,
+                                                                  name: selectedVariant.name,
+                                                              }
+                                                            : null,
+                                                    );
+                                                }}
+                                                disabled={!currentTemplate}
                                             >
-                                                <SelectValue placeholder="Select a variant" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {applicableVariants.map((variant) => (
-                                                    <SelectItem key={variant.id} value={variant.id}>
-                                                        {variant.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                <SelectTrigger
+                                                    id="variant"
+                                                    aria-invalid={fieldState.invalid}
+                                                >
+                                                    <SelectValue placeholder="Select a variant" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {applicableVariants.map((variant) => (
+                                                        <SelectItem
+                                                            key={variant.id}
+                                                            value={variant.id}
+                                                        >
+                                                            {variant.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
 
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
@@ -584,14 +776,30 @@ function AddItemDialog({ onAdd, templates, variants, ...props }: AddItemDialogPr
     );
 }
 
-interface EditItemDialogProps extends DialogProps {
-    templates: I3Template[];
-    variants: I3TemplateVariant[];
+interface EditItemDialogProps extends DialogProps, ItemDialogFitProps {
     item: I3IssuedItemInput;
     onUpdate: (updatedItem: I3IssuedItemInput) => void;
 }
 
-function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditItemDialogProps) {
+function EditItemDialog({
+    item,
+    onUpdate,
+    templates,
+    variants,
+    fits,
+    teamTitle,
+    ...props
+}: EditItemDialogProps) {
+    const { templateOptions, variantOptions, templateMisfit, variantMisfit } = offeredOptions(
+        templates,
+        variants,
+        fits,
+        {
+            templateId: item.template.id,
+            variantId: item.variant?.id,
+        },
+    );
+
     const form = useForm({
         resolver: zodResolver(I3IssuedItem.schema),
         defaultValues: item,
@@ -633,36 +841,48 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="template">Template</FieldLabel>
-                                    <Select
-                                        value={field.value.id ?? ""}
-                                        onValueChange={(value) => {
-                                            const selectedTemplate = templates.find(
-                                                (template) => template.id === value,
-                                            );
-                                            field.onChange(
-                                                selectedTemplate
-                                                    ? {
-                                                          id: selectedTemplate.id,
-                                                          name: selectedTemplate.name,
-                                                      }
-                                                    : { id: "", name: "" },
-                                            );
-                                        }}
-                                    >
-                                        <SelectTrigger
-                                            id="template"
-                                            aria-invalid={fieldState.invalid}
+                                    {templateOptions.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            No templates can be issued to {teamTitle}.
+                                        </p>
+                                    ) : (
+                                        <Select
+                                            value={field.value.id ?? ""}
+                                            onValueChange={(value) => {
+                                                const selectedTemplate = templates.find(
+                                                    (template) => template.id === value,
+                                                );
+                                                field.onChange(
+                                                    selectedTemplate
+                                                        ? {
+                                                              id: selectedTemplate.id,
+                                                              name: selectedTemplate.name,
+                                                          }
+                                                        : { id: "", name: "" },
+                                                );
+                                            }}
                                         >
-                                            <SelectValue placeholder="Select a template" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {templates.map((template) => (
-                                                <SelectItem key={template.id} value={template.id}>
-                                                    {template.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                            <SelectTrigger
+                                                id="template"
+                                                aria-invalid={fieldState.invalid}
+                                            >
+                                                <SelectValue placeholder="Select a template" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {templateOptions.map((template) => (
+                                                    <SelectItem
+                                                        key={template.id}
+                                                        value={template.id}
+                                                    >
+                                                        {template.name}
+                                                        {templateMisfit(template.id) && (
+                                                            <MisfitMarker teamTitle={teamTitle} />
+                                                        )}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
@@ -672,7 +892,7 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
                             name="variant"
                             render={({ field, fieldState }) => {
                                 const applicableVariants = currentTemplate
-                                    ? variants.filter(
+                                    ? variantOptions.filter(
                                           (variant) => variant.templateId === currentTemplate.id,
                                       )
                                     : [];
@@ -681,37 +901,55 @@ function EditItemDialog({ item, onUpdate, templates, variants, ...props }: EditI
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="variant">Variant</FieldLabel>
 
-                                        <Select
-                                            value={field.value?.id ?? ""}
-                                            onValueChange={(value) => {
-                                                const selectedVariant = variants.find(
-                                                    (variant) => variant.id === value,
-                                                );
-                                                field.onChange(
-                                                    selectedVariant
-                                                        ? {
-                                                              id: selectedVariant.id,
-                                                              name: selectedVariant.name,
-                                                          }
-                                                        : null,
-                                                );
-                                            }}
-                                            disabled={!currentTemplate}
-                                        >
-                                            <SelectTrigger
-                                                id="variant"
-                                                aria-invalid={fieldState.invalid}
+                                        {noVariantsFit(
+                                            currentTemplate,
+                                            variants,
+                                            applicableVariants,
+                                        ) ? (
+                                            <p className="text-sm text-muted-foreground">
+                                                No variants can be issued to {teamTitle}.
+                                            </p>
+                                        ) : (
+                                            <Select
+                                                value={field.value?.id ?? ""}
+                                                onValueChange={(value) => {
+                                                    const selectedVariant = variants.find(
+                                                        (variant) => variant.id === value,
+                                                    );
+                                                    field.onChange(
+                                                        selectedVariant
+                                                            ? {
+                                                                  id: selectedVariant.id,
+                                                                  name: selectedVariant.name,
+                                                              }
+                                                            : null,
+                                                    );
+                                                }}
+                                                disabled={!currentTemplate}
                                             >
-                                                <SelectValue placeholder="Select a variant" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {applicableVariants.map((variant) => (
-                                                    <SelectItem key={variant.id} value={variant.id}>
-                                                        {variant.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                <SelectTrigger
+                                                    id="variant"
+                                                    aria-invalid={fieldState.invalid}
+                                                >
+                                                    <SelectValue placeholder="Select a variant" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {applicableVariants.map((variant) => (
+                                                        <SelectItem
+                                                            key={variant.id}
+                                                            value={variant.id}
+                                                        >
+                                                            {variant.name}
+                                                            {variantMisfit(variant.id) && (
+                                                                <MisfitMarker
+                                                                    teamTitle={teamTitle}
+                                                                />
+                                                            )}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
 
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />

@@ -10,9 +10,11 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useSuspenseQueries } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { i3Effects } from "@/client/i3-effects";
+import { D4HEquipmentCategorySelect } from "@/components/controls/d4h-equipment-category-select";
+import { D4HEquipmentTypeSelect } from "@/components/controls/d4h-equipment-type-select";
 import { ObjectIcons } from "@/components/icons";
 import { Button, MutationButton } from "@/components/ui/button";
 import {
@@ -41,6 +43,7 @@ import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
+import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
 export function D4HI3Module_CreateTemplate_Dialog() {
@@ -77,16 +80,7 @@ function CreateTemplate_Body() {
     const organization = useOrganization();
     const router = useRouter();
 
-    const [{ data: categories }, { data: kinds }] = useSuspenseQueries({
-        queries: [
-            trpc.d4hApi.listEquipmentCategories.queryOptions({
-                organizationId: organization.id,
-            }),
-            trpc.d4hApi.listEquipmentKinds.queryOptions({
-                organizationId: organization.id,
-            }),
-        ],
-    });
+    const organisationOnlyId = useOrganisationOnlyId();
 
     const form = useForm({
         resolver: zodResolver(I3Template.modifiableSchema),
@@ -140,7 +134,6 @@ function CreateTemplate_Body() {
         control: form.control,
         name: "d4h.categoryId",
     });
-    const filteredKinds = kinds?.filter((k) => k.category.id === selectedCategoryId);
 
     return (
         <>
@@ -190,34 +183,22 @@ function CreateTemplate_Body() {
                                     <FieldLabel htmlFor="template-category">
                                         D4H Category
                                     </FieldLabel>
-                                    <Select
-                                        value={field.value ? field.value.toString() : ""}
-                                        onValueChange={(v) => {
-                                            const newCategoryId = parseInt(v, 10);
-                                            field.onChange(newCategoryId);
-                                            form.setValue(
-                                                "d4h.categoryTitle",
-                                                categories?.find((cat) => cat.id === newCategoryId)
-                                                    ?.title || "",
-                                            );
+                                    <D4HEquipmentCategorySelect
+                                        value={field.value}
+                                        onChange={(category) => {
+                                            field.onChange(category.id);
+                                            form.setValue("d4h.categoryTitle", category.title);
                                             form.setValue("d4h.kindId", 0);
                                             form.setValue("d4h.kindTitle", "");
                                         }}
-                                    >
-                                        <SelectTrigger
-                                            id="template-category"
-                                            aria-invalid={fieldState.invalid}
-                                        >
-                                            <SelectValue placeholder="Select a category" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {categories?.map((cat) => (
-                                                <SelectItem key={cat.id} value={cat.id.toString()}>
-                                                    {cat.title}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        organisationOnlyId={organisationOnlyId}
+                                        slotProps={{
+                                            trigger: {
+                                                id: "template-category",
+                                                "aria-invalid": fieldState.invalid,
+                                            },
+                                        }}
+                                    />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
@@ -228,36 +209,22 @@ function CreateTemplate_Body() {
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldLabel htmlFor="template-kind">D4H Type</FieldLabel>
-                                    <Select
-                                        value={field.value ? field.value.toString() : ""}
-                                        onValueChange={(v) => {
-                                            const newKindId = parseInt(v, 10);
-                                            field.onChange(newKindId);
-                                            form.setValue(
-                                                "d4h.kindTitle",
-                                                filteredKinds?.find((k) => k.id === newKindId)
-                                                    ?.title || "",
-                                            );
+                                    <D4HEquipmentTypeSelect
+                                        value={field.value}
+                                        onChange={(kind) => {
+                                            field.onChange(kind.id);
+                                            form.setValue("d4h.kindTitle", kind.title);
                                         }}
+                                        categoryId={selectedCategoryId}
+                                        organisationOnlyId={organisationOnlyId}
                                         disabled={!selectedCategoryId}
-                                    >
-                                        <SelectTrigger
-                                            id="template-kind"
-                                            aria-invalid={fieldState.invalid}
-                                        >
-                                            <SelectValue placeholder="Select a type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {filteredKinds?.map((kind) => (
-                                                <SelectItem
-                                                    key={kind.id}
-                                                    value={kind.id.toString()}
-                                                >
-                                                    {kind.title}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        slotProps={{
+                                            trigger: {
+                                                id: "template-kind",
+                                                "aria-invalid": fieldState.invalid,
+                                            },
+                                        }}
+                                    />
                                     {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}

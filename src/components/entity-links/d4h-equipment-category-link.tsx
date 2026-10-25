@@ -7,16 +7,21 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { D4HEquipmentCategoryRef } from "@/lib/schemas/d4h/equipment-category";
+import {
+    D4HEquipmentCategory,
+    D4HEquipmentCategoryRef,
+} from "@/lib/schemas/d4h/equipment-category";
 
 import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentCategoryLinkProps = {
-    category: D4HEquipmentCategoryRef;
+    /** `owner`, when known, is shown in the hover card. */
+    category: D4HEquipmentCategoryRef & Partial<Pick<D4HEquipmentCategory, "owner">>;
 };
 
 export function D4HEquipmentCategoryLink({ category }: D4HEquipmentCategoryLinkProps) {
     const organization = useOrganization();
+    const { owner } = category;
 
     return (
         <EntityLink
@@ -26,6 +31,8 @@ export function D4HEquipmentCategoryLink({ category }: D4HEquipmentCategoryLinkP
             })}
             title={category.title}
             type="Equipment Category"
-        />
+        >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
+        </EntityLink>
     );
 }

@@ -17,24 +17,24 @@ Design discussed in #299.
 should reach for the per-entity wrapper in `src/components/entity-links/`, not `EntityLink`
 directly:
 
-| Entity                 | Wrapper                    | Prop                                                            |
-| ---------------------- | -------------------------- | --------------------------------------------------------------- |
-| D4H Equipment Brand    | `D4HEquipmentBrandLink`    | `brand: D4HEquipmentBrandRef`                                   |
-| D4H Equipment Category | `D4HEquipmentCategoryLink` | `category: D4HEquipmentCategoryRef`                             |
-| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                   |
-| D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef`                                   |
-| D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef`                                     |
-| D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }` |
-| D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                              |
-| I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                       |
-| Organisation Group     | `OrganizationGroupLink`    | `group: OrganizationGroupRef`                                   |
-| Person                 | `PersonLink`               | `person: PersonRef & Partial<Pick<PersonData, "email">>`        |
-| Skill                  | `SkillLink`                | `skill: SkillRef`                                               |
-| Skill Group            | `SkillGroupLink`           | `group: SkillGroupRef`                                          |
-| Skill Package          | `SkillPackageLink`         | `skillPackage: SkillPackageRef`                                 |
-| Team                   | `TeamLink`                 | `team: TeamRef & Partial<Pick<TeamData, "description">>`        |
-| Team Membership        | `TeamMembershipLink`       | `teamMembership: TeamMembershipRef`                             |
-| User                   | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`              |
+| Entity                 | Wrapper                    | Prop                                                                               |
+| ---------------------- | -------------------------- | ---------------------------------------------------------------------------------- |
+| D4H Equipment Brand    | `D4HEquipmentBrandLink`    | `brand: D4HEquipmentBrandRef & Partial<Pick<D4HEquipmentBrand, "owner">>`          |
+| D4H Equipment Category | `D4HEquipmentCategoryLink` | `category: D4HEquipmentCategoryRef & Partial<Pick<D4HEquipmentCategory, "owner">>` |
+| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                                      |
+| D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef & Partial<Pick<D4HEquipmentModel, "owner">>`          |
+| D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef & Partial<Pick<D4HEquipmentKind, "owner">>`             |
+| D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }`                    |
+| D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                                                 |
+| I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                                          |
+| Organisation Group     | `OrganizationGroupLink`    | `group: OrganizationGroupRef`                                                      |
+| Person                 | `PersonLink`               | `person: PersonRef & Partial<Pick<PersonData, "email">>`                           |
+| Skill                  | `SkillLink`                | `skill: SkillRef`                                                                  |
+| Skill Group            | `SkillGroupLink`           | `group: SkillGroupRef`                                                             |
+| Skill Package          | `SkillPackageLink`         | `skillPackage: SkillPackageRef`                                                    |
+| Team                   | `TeamLink`                 | `team: TeamRef & Partial<Pick<TeamData, "description">>`                           |
+| Team Membership        | `TeamMembershipLink`       | `teamMembership: TeamMembershipRef`                                                |
+| User                   | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
 
 The D4H wrappers have a few quirks of their own:
 
@@ -48,6 +48,9 @@ The D4H wrappers have a few quirks of their own:
   because D4H refs are free text and some already start with `#`. Use it wherever a ref renders
   outside a plain string. Pass `label` only when the call site holds a ready-made label and no
   ref. `EntityLink`'s `title` is a `ReactNode` for this.
+- A catalogue record's `owner` (category, type, brand, model) is the resolved owner with its
+  `title`, which the hover card shows. A caller building the ref from a template's snapshot
+  titles adds the owner it looked up, or leaves it out.
 - Equipment models have no page, so `D4HEquipmentModelLink` links to the model's brand page.
 - D4H brand and model ids on an item can be `null`; render those as plain text at the call
   site rather than building a link.

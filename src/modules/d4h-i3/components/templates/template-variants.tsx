@@ -7,7 +7,7 @@
 
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
@@ -26,11 +26,14 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
+import { variantUsesOtherRecords } from "@/lib/i3-template-fit";
 import { I3Template } from "@/lib/schemas/i3-template";
+import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
 import { D4HI3Module_Template_AddVariant_Dialog } from "./add-variant";
 import { D4HI3Module_DeleteVariant_Dialog } from "./delete-variant";
+import { D4HI3Module_OtherRecords_Marker } from "./other-records-flag";
 import { D4HI3Module_UpdateVariant_Dialog } from "./update-variant";
 
 export function D4HI3Module_Template_Variants_List({ template }: { template: I3Template }) {
@@ -42,6 +45,16 @@ export function D4HI3Module_Template_Variants_List({ template }: { template: I3T
             templateId: template.id,
         }),
     );
+
+    // Not suspending: owners and the flag are extras, so a D4H failure leaves them out rather
+    // than blanking the variants.
+    const { data: brands } = useQuery(
+        trpc.d4hApi.listEquipmentBrands.queryOptions({ organizationId: organization.id }),
+    );
+    const { data: models } = useQuery(
+        trpc.d4hApi.listEquipmentModels.queryOptions({ organizationId: organization.id }),
+    );
+    const organisationOnlyId = useOrganisationOnlyId();
 
     const [action, setAction] = useQueryState(
         "action",
@@ -96,15 +109,36 @@ export function D4HI3Module_Template_Variants_List({ template }: { template: I3T
                         </TableHeader>
                         <TableBody>
                             {variants.map((variant, index) => {
+                                const brandOwner = brands?.find(
+                                    (b) => b.id === variant.d4h?.brandId,
+                                )?.owner;
+                                const modelOwner = models?.find(
+                                    (m) => m.id === variant.d4h?.modelId,
+                                )?.owner;
+                                const flagged =
+                                    organisationOnlyId != null &&
+                                    brands != null &&
+                                    models != null &&
+                                    variantUsesOtherRecords(
+                                        variant.d4h,
+                                        { brands, models },
+                                        organisationOnlyId,
+                                    );
                                 return (
                                     <TableRow key={index}>
-                                        <TableCell>{variant.name}</TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {variant.name}
+                                                {flagged && <D4HI3Module_OtherRecords_Marker />}
+                                            </span>
+                                        </TableCell>
                                         <TableCell>
                                             {variant.d4h ? (
                                                 <D4HEquipmentBrandLink
                                                     brand={{
                                                         id: variant.d4h.brandId,
                                                         title: variant.d4h.brandTitle,
+                                                        owner: brandOwner,
                                                     }}
                                                 />
                                             ) : (
@@ -118,6 +152,7 @@ export function D4HI3Module_Template_Variants_List({ template }: { template: I3T
                                                         id: variant.d4h.modelId,
                                                         title: variant.d4h.modelTitle,
                                                         brand: { id: variant.d4h.brandId },
+                                                        owner: modelOwner,
                                                     }}
                                                 />
                                             ) : (

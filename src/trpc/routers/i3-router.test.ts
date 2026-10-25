@@ -14,8 +14,8 @@ import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
-import { fetchD4HWhoami } from "@/server/d4h-api/client";
-import { fetchD4HEquipmentItem } from "@/server/d4h-api/equipment";
+import { fetchD4HWhoami, getD4HTokenMetadata } from "@/server/d4h-api/client";
+import { fetchD4HEquipmentItem, fetchD4HTeamEquipmentCatalogue } from "@/server/d4h-api/equipment";
 import { sendEmail } from "@/server/email";
 import { createRetireTask } from "@/server/services/d4h-tasks";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -53,10 +53,12 @@ vi.mock("@/server/d4h-api/client", () => ({
     fetchD4HWhoami: vi.fn(),
     getD4HFetchClient: vi.fn(() => ({ GET })),
     getD4HTeamMembers: vi.fn(async () => [{ id: 42, name: "John Smith" }]),
+    getD4HTokenMetadata: vi.fn(),
 }));
 
 vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
+    fetchD4HTeamEquipmentCatalogue: vi.fn(),
 }));
 
 // Mocked only so the returnItem tests can assert it never sends.
@@ -302,6 +304,81 @@ describe("i3Router.listTemplates", () => {
 
         expect(ids).toContain(T.active);
         expect(ids).not.toContain(T.deleted);
+    });
+});
+
+describe("i3Router.listTemplateFits", () => {
+    const T = { org: OrganizationId.create(), user: nanoId16(), template: I3TemplateId.create() };
+    const organisation = { resourceType: "Organisation" as const, id: 100, title: "Org" };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.i3Template.create({
+            data: {
+                id: T.template,
+                organizationId: T.org,
+                name: "Hi-vis vest",
+                description: "",
+                d4h: {
+                    create: {
+                        categoryId: 10,
+                        categoryTitle: "Clothing",
+                        kindId: 20,
+                        kindTitle: "Vest",
+                        outputRefFormat: "",
+                        requireSN: false,
+                    },
+                },
+            },
+        });
+
+        vi.mocked(getD4HTokenMetadata).mockResolvedValue({
+            d4HTeams: [
+                {
+                    id: 1,
+                    title: "Team 1",
+                    resourceType: "Team",
+                    owner: organisation,
+                    permissions: {},
+                },
+            ],
+            d4HOrganisations: [organisation],
+        } as unknown as Awaited<ReturnType<typeof getD4HTokenMetadata>>);
+        vi.mocked(fetchD4HTeamEquipmentCatalogue).mockResolvedValue({
+            categories: [{ id: 10, title: "Clothing", owner: organisation }],
+            kinds: [{ id: 20, title: "Vest", owner: organisation }],
+            brands: [],
+            models: [],
+        } as unknown as Awaited<ReturnType<typeof fetchD4HTeamEquipmentCatalogue>>);
+    });
+
+    function makeCaller(
+        permissions: Parameters<typeof createAuthenticatedMockContext>[0]["permissions"],
+    ) {
+        return i3Router.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.user }, permissions, prisma: db }),
+        );
+    }
+
+    it("needs i3Item issue permission", async () => {
+        await expect(
+            makeCaller({ organization: ["view"], i3Item: ["view"] }).listTemplateFits({
+                organizationId: T.org,
+                teamId: 1,
+            }),
+        ).rejects.toThrow("Insufficient permissions");
+    });
+
+    it("returns the ids of the templates that fit the team", async () => {
+        const fits = await makeCaller({
+            organization: ["view"],
+            i3Item: ["issue"],
+        }).listTemplateFits({ organizationId: T.org, teamId: 1 });
+
+        expect(fits).toEqual({ templateIds: [T.template], variantIds: [] });
     });
 });
 

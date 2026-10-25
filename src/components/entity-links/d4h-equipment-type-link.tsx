@@ -7,17 +7,21 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { D4HEquipmentKindRef } from "@/lib/schemas/d4h/equipment-kind";
+import { D4HEquipmentKind, D4HEquipmentKindRef } from "@/lib/schemas/d4h/equipment-kind";
 
 import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentTypeLinkProps = {
-    /** D4H calls equipment types "kinds" (`EquipmentKind`); users see "Type". */
-    type: D4HEquipmentKindRef;
+    /**
+     * D4H calls equipment types "kinds" (`EquipmentKind`); users see "Type". `owner`, when
+     * known, is shown in the hover card.
+     */
+    type: D4HEquipmentKindRef & Partial<Pick<D4HEquipmentKind, "owner">>;
 };
 
 export function D4HEquipmentTypeLink({ type }: D4HEquipmentTypeLinkProps) {
     const organization = useOrganization();
+    const { owner } = type;
 
     return (
         <EntityLink
@@ -27,6 +31,8 @@ export function D4HEquipmentTypeLink({ type }: D4HEquipmentTypeLinkProps) {
             })}
             title={type.title}
             type="Equipment Type"
-        />
+        >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
+        </EntityLink>
     );
 }

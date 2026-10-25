@@ -20,6 +20,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
+import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
@@ -31,12 +32,13 @@ import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/u
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
-import { D4HModule_Owner } from "@/modules/d4h/components/catalogue/owner";
+import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
 /** One D4H equipment type: its details and its current items across every team. */
 export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
     const organization = useOrganization();
+    const reachableTeamIds = useReachableTeamIds();
     const { slug } = organization;
 
     const { data: kinds } = useSuspenseQuery(
@@ -223,7 +225,10 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                                     <DataItem inline>
                                         <DataItemTitle>Owner</DataItemTitle>
                                         <DataItemValue>
-                                            <D4HModule_Owner owner={kind.owner} />
+                                            <D4HOwner
+                                                owner={kind.owner}
+                                                linkable={reachableTeamIds.has(kind.owner.id)}
+                                            />
                                         </DataItemValue>
                                     </DataItem>
                                 </DataList>

@@ -9,8 +9,9 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import { D4HEquipmentBrandSelect } from "@/components/controls/d4h-equipment-brand-select";
 import { D4HEquipmentModelSelect } from "@/components/controls/d4h-equipment-model-select";
 import { MutationButton } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant } from "@/lib/schemas/i3-template-variant";
+import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
 interface D4HI3Module_UpdateVariant_DialogProps extends DialogProps {
@@ -46,7 +48,7 @@ export function D4HI3Module_UpdateVariant_Dialog({
 }: D4HI3Module_UpdateVariant_DialogProps) {
     const logger = useLogger("I3", "Template_UpdateVariant");
     const organization = useOrganization();
-    const queryClient = useQueryClient();
+    const organisationOnlyId = useOrganisationOnlyId();
 
     const form = useForm({
         resolver: zodResolver(I3TemplateVariant.modifiableSchema),
@@ -55,11 +57,12 @@ export function D4HI3Module_UpdateVariant_Dialog({
 
     const mutation = useMutation(
         trpc.i3.updateTemplateVariant.mutationOptions({
+            meta: { effects: i3Effects.updateTemplateVariant },
             onError(error) {
                 logger.error("Failed to update template variant", error);
                 toast.error(`Failed to update template variant: ${error.message}`);
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 logger.info(
                     `Template variant "${updated.name}" updated in template "${template.name}".`,
                 );
@@ -67,11 +70,6 @@ export function D4HI3Module_UpdateVariant_Dialog({
                     `Template variant "${updated.name}" updated in template "${template.name}".`,
                 );
 
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplateVariants.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
                 handleOpenChange(false);
             },
         }),
@@ -144,7 +142,9 @@ export function D4HI3Module_UpdateVariant_Dialog({
                                         <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
 
                                         <D4HEquipmentBrandSelect
+                                            organisationOnlyId={organisationOnlyId}
                                             value={field.value}
+                                            fallbackTitle={variant.d4h?.brandTitle}
                                             onChange={(brand) => {
                                                 field.onChange(brand.id);
                                                 form.setValue("d4h.brandTitle", brand.title);
@@ -170,7 +170,9 @@ export function D4HI3Module_UpdateVariant_Dialog({
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="variant-model">Model</FieldLabel>
                                         <D4HEquipmentModelSelect
+                                            organisationOnlyId={organisationOnlyId}
                                             value={field.value}
+                                            fallbackTitle={variant.d4h?.modelTitle}
                                             onChange={(model) => {
                                                 field.onChange(model.id);
                                                 form.setValue("d4h.modelTitle", model.title);

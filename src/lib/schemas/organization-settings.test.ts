@@ -105,3 +105,21 @@ describe("OrganizationSettings general.timeZone", () => {
         ).toThrow("Unknown IANA time zone");
     });
 });
+
+describe("OrganizationSettings modules.d4h-i3", () => {
+    it("defaults organisationRecordsOnly to false", () => {
+        expect(OrganizationSettings.default().modules["d4h-i3"]).toEqual({
+            enabled: false,
+            storage: "D4H",
+            organisationRecordsOnly: false,
+        });
+    });
+
+    it("resolves the default for an org whose stored d4h-i3 rows predate the setting", () => {
+        const restored = OrganizationSettings.fromRecords([
+            { key: "modules.d4h-i3.enabled", value: true },
+        ]);
+
+        expect(restored.modules["d4h-i3"].organisationRecordsOnly).toBe(false);
+    });
+});

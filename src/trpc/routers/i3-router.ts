@@ -203,6 +203,27 @@ export const i3Router = createTrpcRouter({
         }),
 
     /**
+     * The ids of the organization's templates and variants that can be issued to D4H team
+     * `teamId`: those whose D4H records the team lists and that the team or its D4H organisation
+     * owns. See `src/lib/i3-template-fit.ts`.
+     *
+     * @throws TRPCError(NOT_FOUND) if the user's D4H token doesn't reach the team.
+     */
+    listTemplateFits: organizationProcedure({ i3Item: ["issue"] })
+        .input(z.object({ teamId: z.number() }))
+        .output(
+            z.object({
+                templateIds: z.array(I3TemplateId.schema),
+                variantIds: z.array(I3TemplateVariantId.schema),
+            }),
+        )
+        .query(async ({ ctx, input: { teamId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+
+            return I3Templates.listFitsForD4HTeam(ctx, { accessToken, teamId });
+        }),
+
+    /**
      * List all D4H PPE Templates for the organization.
      */
     listTemplates: organizationProcedure({ i3Template: ["view"] })

@@ -11,8 +11,9 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import { D4HEquipmentBrandSelect } from "@/components/controls/d4h-equipment-brand-select";
 import { D4HEquipmentModelSelect } from "@/components/controls/d4h-equipment-model-select";
 import { ObjectIcons } from "@/components/icons";
@@ -35,12 +36,13 @@ import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
 export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template: I3Template }) {
     const logger = useLogger("I3", "Template_AddVariant");
     const organization = useOrganization();
-    const queryClient = useQueryClient();
+    const organisationOnlyId = useOrganisationOnlyId();
 
     const [action, setAction] = useQueryState(
         "action",
@@ -63,11 +65,12 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
 
     const mutation = useMutation(
         trpc.i3.createTemplateVariant.mutationOptions({
+            meta: { effects: i3Effects.createTemplateVariant },
             onError(error) {
                 logger.error("Failed to create template variant", error);
                 toast.error(`Failed to create template variant: ${error.message}`);
             },
-            async onSuccess({ created }) {
+            onSuccess({ created }) {
                 logger.info(
                     `Template variant "${created.name}" added to template "${template.name}".`,
                 );
@@ -75,31 +78,6 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                     `Template variant "${created.name}" added to template "${template.name}".`,
                 );
 
-                queryClient.setQueryData(
-                    trpc.i3.listTemplates.queryKey({
-                        organizationId: organization.id,
-                    }),
-                    (old) => {
-                        if (!old) return old;
-
-                        return old.map((t) => {
-                            if (t.id === template.id) {
-                                return {
-                                    ...t,
-                                    variants: [...t.variants, created],
-                                };
-                            }
-                            return t;
-                        });
-                    },
-                );
-
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplateVariants.queryFilter({
-                        organizationId: organization.id,
-                        templateId: template.id,
-                    }),
-                );
                 handleOpenChange(false);
             },
         }),
@@ -181,6 +159,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                         <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
 
                                         <D4HEquipmentBrandSelect
+                                            organisationOnlyId={organisationOnlyId}
                                             value={field.value}
                                             onChange={(brand) => {
                                                 field.onChange(brand.id);
@@ -207,6 +186,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="variant-model">Model</FieldLabel>
                                         <D4HEquipmentModelSelect
+                                            organisationOnlyId={organisationOnlyId}
                                             value={field.value}
                                             onChange={(model) => {
                                                 field.onChange(model.id);

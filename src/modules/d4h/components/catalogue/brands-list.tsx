@@ -18,11 +18,12 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
-import { D4HModule_Owner } from "@/modules/d4h/components/catalogue/owner";
+import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
 type BrandRow = D4HEquipmentBrand & { modelCount: number };
@@ -30,6 +31,7 @@ type BrandRow = D4HEquipmentBrand & { modelCount: number };
 /** Every D4H equipment brand the token reaches, org-wide, with its model count. */
 export function D4HModule_Brands_List() {
     const organization = useOrganization();
+    const reachableTeamIds = useReachableTeamIds();
     const { slug } = organization;
 
     const { data: brands } = useSuspenseQuery(
@@ -66,13 +68,18 @@ export function D4HModule_Brands_List() {
                 }),
                 columnHelper.accessor("owner.title", {
                     header: "Owner",
-                    cell: (ctx) => <D4HModule_Owner owner={ctx.row.original.owner} />,
+                    cell: (ctx) => (
+                        <D4HOwner
+                            owner={ctx.row.original.owner}
+                            linkable={reachableTeamIds.has(ctx.row.original.owner.id)}
+                        />
+                    ),
                     enableGlobalFilter: false,
                     enableSorting: true,
                     enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [reachableTeamIds],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

@@ -19,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DataItem,
@@ -30,12 +31,13 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
-import { D4HModule_Owner } from "@/modules/d4h/components/catalogue/owner";
+import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
 /** One D4H equipment brand: its details and its models. */
 export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
     const organization = useOrganization();
+    const reachableTeamIds = useReachableTeamIds();
     const { slug } = organization;
 
     const { data: brands } = useSuspenseQuery(
@@ -65,13 +67,18 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
                 }),
                 columnHelper.accessor("owner.title", {
                     header: "Owner",
-                    cell: (ctx) => <D4HModule_Owner owner={ctx.row.original.owner} />,
+                    cell: (ctx) => (
+                        <D4HOwner
+                            owner={ctx.row.original.owner}
+                            linkable={reachableTeamIds.has(ctx.row.original.owner.id)}
+                        />
+                    ),
                     enableGlobalFilter: false,
                     enableSorting: true,
                     enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [reachableTeamIds],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -116,7 +123,10 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
                                     <DataItem inline>
                                         <DataItemTitle>Owner</DataItemTitle>
                                         <DataItemValue>
-                                            <D4HModule_Owner owner={brand.owner} />
+                                            <D4HOwner
+                                                owner={brand.owner}
+                                                linkable={reachableTeamIds.has(brand.owner.id)}
+                                            />
                                         </DataItemValue>
                                     </DataItem>
                                     <DataItem inline>

@@ -293,8 +293,12 @@ export const teamsRouter = createTrpcRouter({
      * The org-level D4H link (`Organization_D4H`) for the current org, or `null`
      * if the org has never linked a team to D4H. Read model for the admin
      * organisation page's D4H card. See docs/specs/2026-09-10-d4h-linking.md §3.1.
+     * `allowSystemAdmin` lets the system-admin settings page read the link too.
      */
-    getOrganizationD4H: organizationProcedure({ organization: ["view"] })
+    getOrganizationD4H: organizationProcedure(
+        { organization: ["view"] },
+        { allowSystemAdmin: true },
+    )
         .output(OrganizationD4HData.schema.nullable())
         .query(async ({ ctx, input: { organizationId } }) => {
             const [orgD4H, linkedTeamCount] = await Promise.all([
