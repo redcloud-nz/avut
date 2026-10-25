@@ -287,6 +287,7 @@ function NotifyPersonList({
                     if (personId && !value.includes(personId)) onChange([...value, personId]);
                 }}
                 placeholder="Add a person"
+                activeOnly
             />
         </FieldSet>
     );
