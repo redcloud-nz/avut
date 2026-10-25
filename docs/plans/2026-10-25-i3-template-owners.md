@@ -248,7 +248,7 @@ _End of group A: review with `avut-code-reviewer`._
   - **Done when:** the catalogue pages look as they did before, except that an unreachable team
     owner isn't a link. `grep -r "D4HModule_Owner" src` returns nothing. `npm run check` passes.
 
-- [ ] **7. Generic grouped D4H catalogue select + four wrappers** — `visual`
+- [x] **7. Generic grouped D4H catalogue select + four wrappers** — `feat(d4h): grouped D4H catalogue select with category, type, brand and model wrappers (#454)` — `visual`
   - **Files:** `src/components/controls/d4h-catalogue-select.tsx` (new),
     `src/lib/d4h-catalogue-options.ts` (new), `src/lib/d4h-catalogue-options.test.ts` (new),
     `src/components/controls/d4h-equipment-category-select.tsx` (new),
