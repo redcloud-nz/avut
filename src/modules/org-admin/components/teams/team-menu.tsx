@@ -111,7 +111,6 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
             <EntityActionMenu
                 actions={actions}
                 category="Teams"
-                width="w-44"
                 before={
                     <>
                         <DropdownMenuGroup>

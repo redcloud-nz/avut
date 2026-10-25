@@ -117,7 +117,6 @@ export function SystemAdmin_UserActions_Menu({ user }: { user: SystemAdminUser }
             <EntityActionMenu
                 actions={actions}
                 category="User"
-                width="w-48"
                 after={isSelf && <DropdownMenuItem disabled>No actions available</DropdownMenuItem>}
             />
 

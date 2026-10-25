@@ -113,7 +113,7 @@ export function SkillPackageBuilder_Package_Contents_List({
                                         <FilterColumnValuesIcon />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-50">
+                                <DropdownMenuContent size="sm">
                                     <DropdownMenuLabel>Filter</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
 

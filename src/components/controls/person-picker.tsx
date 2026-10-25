@@ -106,7 +106,7 @@ export function PersonPicker({
                         <ListFilterIcon />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent size="sm" align="end">
                     <DropdownMenuRadioGroup
                         value={statusFilter}
                         onValueChange={(next) => setStatusFilter(next as StatusFilter)}

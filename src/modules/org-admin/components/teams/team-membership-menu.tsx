@@ -43,7 +43,7 @@ export function AdminModule_TeamMembership_Menu({
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="Team membership" width="w-44" />
+            <EntityActionMenu actions={actions} category="Team membership" />
 
             <AdminModule_RemoveTeamMember_Dialog
                 organizationId={organization.id}

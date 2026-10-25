@@ -190,7 +190,7 @@ export function SystemAdmin_MemberActionsMenu({
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-44" align="end">
+                <DropdownMenuContent align="end">
                     <DropdownMenuItem onSelect={() => open("set-member-role")}>
                         <ObjectIcons.Edit /> Change role
                     </DropdownMenuItem>

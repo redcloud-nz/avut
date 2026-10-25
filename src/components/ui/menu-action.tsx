@@ -96,8 +96,6 @@ export interface EntityActionMenuProps {
     actions: MenuActionProps[];
     /** Passed to {@link useMenuActionHotkeys} to group shortcuts in the help overlay. */
     category: string;
-    /** Width class for the dropdown content. */
-    width?: string;
     /** Extra groups rendered above the Actions group (e.g. a History link). */
     before?: ReactNode;
     /** Extra groups rendered below the Actions group (e.g. a D4H section). */
@@ -138,7 +136,6 @@ export function useEntityActionMenuTrigger(): RefObject<HTMLButtonElement | null
 export function EntityActionMenu({
     actions,
     category,
-    width = "w-50",
     before,
     after,
     extraActions,
@@ -182,7 +179,7 @@ export function EntityActionMenu({
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent ref={contentRef} className={width} align="end">
+                <DropdownMenuContent ref={contentRef} align="end">
                     {before}
                     <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
