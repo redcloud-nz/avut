@@ -22,20 +22,39 @@ function DropdownMenuTrigger({
     return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 
+const dropdownMenuContentWidths = {
+    sm: "w-48",
+    md: "w-56",
+    lg: "w-64",
+    trigger: "w-(--radix-dropdown-menu-trigger-width) min-w-56",
+};
+
+/**
+ * The menu's popup. Its width comes from `size`, never a `w-*` class (lint), so menus of the same
+ * kind are the same width across the app.
+ */
 function DropdownMenuContent({
     className,
     align = "start",
     sideOffset = 4,
+    size = "md",
     ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
+    /** Width: `sm` 192px (short filter and option lists), `md` 224px (action menus), `lg` 256px
+     *  (long labels, report options), or `trigger` to match a wide trigger, floored at 224px (the
+     *  sidebar's scope switcher and user menu). Always capped at the viewport space available. */
+    size?: "sm" | "md" | "lg" | "trigger";
+}) {
     return (
         <DropdownMenuPrimitive.Portal>
             <DropdownMenuPrimitive.Content
                 data-slot="dropdown-menu-content"
+                data-size={size}
                 sideOffset={sideOffset}
                 align={align}
                 className={cn(
-                    "z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:overflow-hidden data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+                    dropdownMenuContentWidths[size],
+                    "z-50 max-h-(--radix-dropdown-menu-content-available-height) max-w-(--radix-dropdown-menu-content-available-width) origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:overflow-hidden data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
                     className,
                 )}
                 {...props}

@@ -177,7 +177,7 @@ export function D4HI3Module_IssuedType_Content({
                                         <DropdownMenuTriggerIcon />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
+                                <DropdownMenuContent size="sm" align="end">
                                     <DropdownMenuGroup>
                                         <DropdownMenuLabel>Show Columns</DropdownMenuLabel>
                                         {OPTIONAL_COLUMNS.map((column) => (

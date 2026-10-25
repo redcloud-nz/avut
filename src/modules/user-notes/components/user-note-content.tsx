@@ -92,7 +92,6 @@ function UserNote_Body({ noteId }: { noteId: UserNoteId }) {
                             </Button>
                             <EntityActionMenu
                                 category="Notes"
-                                width="w-44"
                                 before={
                                     <>
                                         <DropdownMenuGroup>

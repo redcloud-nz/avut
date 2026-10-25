@@ -115,7 +115,6 @@ function OrgNote_Body({ noteId }: { noteId: OrganizationNoteId }) {
                             )}
                             <EntityActionMenu
                                 category="Notes"
-                                width="w-44"
                                 before={
                                     <>
                                         <DropdownMenuGroup>

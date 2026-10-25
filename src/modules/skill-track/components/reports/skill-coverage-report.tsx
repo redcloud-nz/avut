@@ -183,7 +183,7 @@ function SkillCoverageReportView({
                                     <DropdownMenuTriggerIcon />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end">
+                            <DropdownMenuContent size="lg" align="end">
                                 <DropdownMenuGroup>
                                     <DropdownMenuLabel>Show</DropdownMenuLabel>
                                     <DropdownMenuCheckboxItem

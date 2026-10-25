@@ -90,7 +90,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                         Record <ChevronDownIcon />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-40" align="end">
+                                <DropdownMenuContent align="end">
                                     <DropdownMenuGroup>
                                         <DropdownMenuLabel>Record skill checks</DropdownMenuLabel>
                                         {/* An approved session's checks are locked until it's

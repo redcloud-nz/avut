@@ -77,7 +77,6 @@ export function AdminModule_OrganizationMenu({ slug }: { slug: string }) {
         <EntityActionMenu
             actions={actions}
             category="Organisation"
-            width="w-48"
             after={
                 d4hEnabled &&
                 (linked || canSyncOrg) && (

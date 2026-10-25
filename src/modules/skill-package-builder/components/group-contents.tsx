@@ -102,7 +102,7 @@ export function SkillPackageBuilder_Group_Contents_List({
                                         <FilterColumnValuesIcon />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-50" align="end">
+                                <DropdownMenuContent size="sm" align="end">
                                     <DropdownMenuLabel>Show</DropdownMenuLabel>
                                     <DropdownMenuCheckboxItem
                                         checked={showArchived}

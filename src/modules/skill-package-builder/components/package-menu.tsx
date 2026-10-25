@@ -166,7 +166,6 @@ export function SkillPackageBuilder_Package_Menu({ skillPackage }: { skillPackag
             <EntityActionMenu
                 actions={actions}
                 category="Packages"
-                width="w-40"
                 before={
                     <>
                         <DropdownMenuGroup>

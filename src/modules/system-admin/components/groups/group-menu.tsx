@@ -50,7 +50,7 @@ export function SystemAdmin_Group_Menu({
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="Groups" width="w-48" />
+            <EntityActionMenu actions={actions} category="Groups" />
 
             <SystemAdmin_DeleteGroup_Dialog
                 group={group}

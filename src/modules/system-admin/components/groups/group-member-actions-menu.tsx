@@ -133,7 +133,7 @@ export function SystemAdmin_GroupMemberActionsMenu({
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-44" align="end">
+                <DropdownMenuContent align="end">
                     {membership.status === "Active" ? (
                         <>
                             <DropdownMenuItem
