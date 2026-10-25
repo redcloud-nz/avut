@@ -16,8 +16,8 @@ const MESSAGE =
 
 const WIDTH_UTILITY = /^!?-?(?:min-w|max-w|w|size)-/;
 
-/** The utility part of a class token, after any variant prefixes (`sm:`, `data-[x=y]:`). */
-function utilityOf(token) {
+/** A class token's variant prefixes (`sm:`, `data-[x=y]:`) and its utility. */
+function splitToken(token) {
   let depth = 0;
   let start = 0;
   for (let i = 0; i < token.length; i++) {
@@ -26,11 +26,17 @@ function utilityOf(token) {
     else if (ch === "]" || ch === ")") depth--;
     else if (ch === ":" && depth === 0) start = i + 1;
   }
-  return token.slice(start);
+  return { variants: token.slice(0, start), utility: token.slice(start) };
 }
 
+// A variant that targets descendants (`*:`, `**:`, `[&_svg]:`) sizes the items, not the menu.
+const CHILD_VARIANT = /(?:^|:)(?:\*{1,2}|\[&[^\]]*\]):/;
+
 function hasWidthClass(value) {
-  return value.split(/\s+/).some((token) => WIDTH_UTILITY.test(utilityOf(token)));
+  return value.split(/\s+/).some((token) => {
+    const { variants, utility } = splitToken(token);
+    return WIDTH_UTILITY.test(utility) && !CHILD_VARIANT.test(variants);
+  });
 }
 
 /** Whether any string literal reachable from this class expression carries a width utility. */

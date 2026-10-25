@@ -42,7 +42,7 @@ function DropdownMenuContent({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
     /** Width: `sm` 192px (short filter and option lists), `md` 224px (action menus), `lg` 256px
      *  (long labels, report options), or `trigger` to match a wide trigger, floored at 224px (the
-     *  sidebar's scope switcher and user menu). Always capped at the viewport space available. */
+     *  sidebar's scope switcher and user menu). The fixed sizes are capped at the viewport space available. */
     size?: "sm" | "md" | "lg" | "trigger";
 }) {
     return (
