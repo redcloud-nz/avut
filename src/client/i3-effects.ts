@@ -46,7 +46,8 @@ export const i3Effects = createEffects<"i3">()({
                 t.id === templateId ? { ...t, variants: [...t.variants, created] } : t,
             ),
         ),
-        invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId, templateId })),
+        // Org-wide, so the Issue form's unfiltered variant list is refreshed too.
+        invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
     ],
     updateTemplateVariant: ({ organizationId }) => [
@@ -58,6 +59,7 @@ export const i3Effects = createEffects<"i3">()({
     ],
     deleteTemplateVariant: ({ organizationId }) => [
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId })),
+        invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
     ],
     returnItem: ({ organizationId }) => [

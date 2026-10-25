@@ -508,7 +508,8 @@ function itemFits(item: I3IssuedItemInput, fits: TemplateFits) {
  * The templates and variants to offer: those that fit, or all of them while fit is unknown.
  *
  * `keep` names an item's current template and variant, which stay on offer even when they don't
- * fit, so Edit Item still shows what the item is. `misfit` tells the dialog which to mark.
+ * fit, so Edit Item still shows what the item is. `templateMisfit` and `variantMisfit` tell the
+ * dialog which to mark.
  */
 function offeredOptions(
     templates: I3Template[],
@@ -517,9 +518,13 @@ function offeredOptions(
     keep: { templateId?: string; variantId?: string } = {},
 ) {
     if (!fits) {
-        return { templateOptions: templates, variantOptions: variants, misfit: () => false };
+        return {
+            templateOptions: templates,
+            variantOptions: variants,
+            templateMisfit: () => false,
+            variantMisfit: () => false,
+        };
     }
-    const misfit = (id: string) => !fits.templateIds.has(id) && !fits.variantIds.has(id);
     return {
         templateOptions: templates.filter(
             (template) => fits.templateIds.has(template.id) || template.id === keep.templateId,
@@ -527,7 +532,8 @@ function offeredOptions(
         variantOptions: variants.filter(
             (variant) => fits.variantIds.has(variant.id) || variant.id === keep.variantId,
         ),
-        misfit,
+        templateMisfit: (id: string) => !fits.templateIds.has(id),
+        variantMisfit: (id: string) => !fits.variantIds.has(id),
     };
 }
 
@@ -784,10 +790,15 @@ function EditItemDialog({
     teamTitle,
     ...props
 }: EditItemDialogProps) {
-    const { templateOptions, variantOptions, misfit } = offeredOptions(templates, variants, fits, {
-        templateId: item.template.id,
-        variantId: item.variant?.id,
-    });
+    const { templateOptions, variantOptions, templateMisfit, variantMisfit } = offeredOptions(
+        templates,
+        variants,
+        fits,
+        {
+            templateId: item.template.id,
+            variantId: item.variant?.id,
+        },
+    );
 
     const form = useForm({
         resolver: zodResolver(I3IssuedItem.schema),
@@ -864,7 +875,7 @@ function EditItemDialog({
                                                         value={template.id}
                                                     >
                                                         {template.name}
-                                                        {misfit(template.id) && (
+                                                        {templateMisfit(template.id) && (
                                                             <MisfitMarker teamTitle={teamTitle} />
                                                         )}
                                                     </SelectItem>
@@ -929,7 +940,7 @@ function EditItemDialog({
                                                             value={variant.id}
                                                         >
                                                             {variant.name}
-                                                            {misfit(variant.id) && (
+                                                            {variantMisfit(variant.id) && (
                                                                 <MisfitMarker
                                                                     teamTitle={teamTitle}
                                                                 />
