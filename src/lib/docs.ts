@@ -20,23 +20,29 @@ function byOrderThenTitle(a: Doc, b: Doc): number {
 }
 
 /**
- * The docs sidebar tree: every configured section that has at least one page,
- * in section order, each with its pages in `order` then title order.
+ * The docs sidebar tree: every configured section that has a landing page or at
+ * least one other page, in section order, each with its pages in `order` then
+ * title order.
  *
  * A section's own `index.mdx` is the section landing page (linked from the
- * section heading) and is not listed as a child page.
+ * section heading) and is not listed as a child page. Nor is the docs home
+ * (`""`), which the sidebar links as Overview.
  */
 export function getDocsNav(): DocsNavSection[] {
     return docsSections
-        .map((section) => ({
-            id: section.id,
-            title: section.title,
-            pages: allDocs
-                .filter((d) => d.section === section.id && !d.isSectionIndex)
-                .sort(byOrderThenTitle)
-                .map((d) => ({ slug: d.slug, title: d.title })),
-        }))
-        .filter((section) => section.pages.length > 0);
+        .map((section) => {
+            const docs = allDocs.filter((d) => d.section === section.id && d.slug !== "");
+            return {
+                id: section.id,
+                title: section.title,
+                indexSlug: docs.find((d) => d.isSectionIndex)?.slug,
+                pages: docs
+                    .filter((d) => !d.isSectionIndex)
+                    .sort(byOrderThenTitle)
+                    .map((d) => ({ slug: d.slug, title: d.title })),
+            };
+        })
+        .filter((section) => section.indexSlug !== undefined || section.pages.length > 0);
 }
 
 /** Look up a doc by its URL slug (`""` is the docs home). */
