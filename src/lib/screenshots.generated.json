@@ -109,6 +109,24 @@
     "alt": "The Notes page: a sortable list of notes with a New note button on the left, and the open note on the right with its pencil and menu buttons.",
     "capturedAt": "2026-10-25T08:40:17.955Z"
   },
+  "skill-package-builder/history": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-package-builder/history.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The First Aid package's History, listing changes to the package, its groups and its skills, with an update to the Burns skill expanded to show its old and new description and frequency.",
+    "capturedAt": "2026-10-25T19:14:38.473Z"
+  },
+  "skill-package-builder/package-page": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-package-builder/package-page.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "The First Aid package in the Skill Package Builder: its details, its groups and skills, and the package menu open with History, Export .json, Archive, Publish and Delete.",
+    "capturedAt": "2026-10-25T19:14:36.112Z"
+  },
   "skill-track/create-session": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/create-session.webp",
