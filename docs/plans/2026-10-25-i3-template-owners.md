@@ -326,7 +326,7 @@ four dialogs)._
     - With D4H unreachable, both pages still render.
     - `npm run check` passes.
 
-- [ ] **10. Issue form offers only templates that fit the recipient** — `visual`
+- [x] **10. Issue form offers only templates that fit the recipient** — `feat(i3): offer only templates that fit the recipient's team on the Issue form (#454)` — `visual`
   - **Files:** `src/modules/d4h-i3/components/issue-items-form-content.tsx`
   - **Do:**
     - **The query.** In the parent `D4HI3Module_IssueItems_FormInstance_Content`, which owns
