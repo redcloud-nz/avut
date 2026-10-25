@@ -33,6 +33,7 @@ export function OrganizationSettingsForm({
     moduleFlags,
     settings,
     canEdit,
+    systemAdmin = false,
 }: {
     organizationId: OrganizationId;
     /** Environment-level module availability — a module's card is hidden when its flag is off. */
@@ -43,6 +44,11 @@ export function OrganizationSettingsForm({
      * system-admin page has no current organization for `<Protect>` to read roles from.
      */
     canEdit: boolean;
+    /**
+     * Rendered on the system-admin page. Cards whose edit dialogs read org-scoped lists (personnel,
+     * teams) that a system admin can't reach show their summary only.
+     */
+    systemAdmin?: boolean;
 }) {
     // For the module cards' `requires` rule (D4H I3 needs D4H): the settings, not module flags.
     const isModuleEnabled = enabledInSettings(settings);
@@ -106,6 +112,7 @@ export function OrganizationSettingsForm({
                                 settings={settings}
                                 canEdit={canEdit}
                                 isModuleEnabled={isModuleEnabled}
+                                systemAdmin={systemAdmin}
                             />
                         </div>
                     )}

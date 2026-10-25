@@ -129,9 +129,12 @@ export function createSettingsStore<
 
         const writes = R.pipe(
             R.entries(flattenedNext),
-            R.filter(([key, newValue]) => newValue !== flattenedExisting[key]),
+            // Deep equality, because array leaves (`modules.d4h-i3.notify.…`) are fresh objects on
+            // every read: `!==` would upsert them on every save, and `===` would never match a
+            // `[]` to its default, so its row would never be deleted.
+            R.filter(([key, newValue]) => !R.isDeepEqual(newValue, flattenedExisting[key])),
             R.map(([key, value]) =>
-                value === flattenedDefaults[key]
+                R.isDeepEqual(value, flattenedDefaults[key])
                     ? delegate.deleteMany({ where: { [scopeField]: scopeId, key } })
                     : delegate.upsert({
                           where: { [`${scopeField}_key`]: { [scopeField]: scopeId, key } },
@@ -141,6 +144,17 @@ export function createSettingsStore<
             ),
         );
 
+        // A key in the existing settings but not the next one was removed: either a dynamic
+        // record key (`modules.d4h-i3.notify.teams.<teamId>`) or an `.optional()` leaf the next
+        // settings left out (a full `write` that omits it). A leaf with a default can't go
+        // missing this way, since the parse fills it in. Without this, the row would stay and
+        // the key would come back on the next read.
+        const removals = R.pipe(
+            R.keys(flattenedExisting),
+            R.filter((key) => !(key in flattenedNext)),
+            R.map((key) => delegate.deleteMany({ where: { [scopeField]: scopeId, key } })),
+        );
+
         const changes = diffObject(
             existing as Record<string, unknown>,
             parsed as Record<string, unknown>,
@@ -148,6 +162,7 @@ export function createSettingsStore<
 
         await (prisma as unknown as SettingsTransactor).$transaction([
             ...writes,
+            ...removals,
             ...(logEntry ? [logEntry(changes)] : []),
         ]);
 

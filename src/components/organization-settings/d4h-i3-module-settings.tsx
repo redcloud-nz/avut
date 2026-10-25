@@ -15,9 +15,13 @@ import { trpc } from "@/trpc/client";
 import { Feature_SettingsCard } from "./feature-settings-card";
 import { SettingEnabledBadge, SettingRow } from "./setting-row";
 import { OrganizationSettings_SettingSwitch } from "./setting-switch";
+import { OrganizationSettings_UpdateI3Notify_Dialog, summariseI3Notify } from "./update-i3-notify";
 
 const ORGANISATION_ONLY_DESCRIPTION =
     "When creating or editing templates, offer only the D4H categories, types, brands and models owned by your D4H organisation, so every new template can be issued in every team.";
+
+const NOTIFY_DESCRIPTION =
+    "Who is emailed when items are issued or returned: everyone on the organisation-wide list, plus the list for the recipient's team. The member also gets a receipt at their D4H email.";
 
 /**
  * The D4H I3 module: Enable/Disable, and while it's enabled, the one setting that limits the
@@ -26,19 +30,26 @@ const ORGANISATION_ONLY_DESCRIPTION =
  * The switch needs a D4H organisation to match against, so it's held off (with a note) when the
  * org has no `Organization_D4H` row or is in org-less-team mode. A switch already on stays
  * usable, so it can be turned off.
+ *
+ * The Notifications row summarises who is emailed on Issue and Return. Its edit dialog reads the
+ * org's personnel and teams, which the system-admin page can't reach, so there (`systemAdmin`)
+ * the row shows the summary only, as it does for a viewer without `canEdit`.
  */
 export function D4HI3Module_SettingsCard({
     organizationId,
     settings,
     canEdit,
     isModuleEnabled,
+    systemAdmin = false,
 }: {
     organizationId: OrganizationId;
     settings: OrganizationSettings;
     canEdit: boolean;
     isModuleEnabled?: (moduleId: OrganizationModuleId) => boolean;
+    /** Rendered on the system-admin page, where the org-scoped personnel and team lists aren't reachable. */
+    systemAdmin?: boolean;
 }) {
-    const { enabled, organisationRecordsOnly } = settings.modules["d4h-i3"];
+    const { enabled, organisationRecordsOnly, notify } = settings.modules["d4h-i3"];
 
     const { data: orgD4H, isSuccess } = useQuery(
         trpc.teams.getOrganizationD4H.queryOptions({ organizationId }),
@@ -82,6 +93,21 @@ export function D4HI3Module_SettingsCard({
                         />
                     ) : (
                         <SettingEnabledBadge enabled={organisationRecordsOnly} />
+                    )
+                }
+            />
+            <SettingRow
+                title="Notifications"
+                description={NOTIFY_DESCRIPTION}
+                value={summariseI3Notify(notify)}
+                action={
+                    canEdit &&
+                    !systemAdmin && (
+                        <OrganizationSettings_UpdateI3Notify_Dialog
+                            organizationId={organizationId}
+                            settings={settings}
+                            description={NOTIFY_DESCRIPTION}
+                        />
                     )
                 }
             />

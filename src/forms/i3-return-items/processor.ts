@@ -8,11 +8,13 @@ import "server-only";
 import { createElement } from "react";
 
 import I3ReturnItemsNotificationEmail from "@/emails/i3-return-items-notification";
+import I3ReturnItemsReceiptEmail from "@/emails/i3-return-items-receipt";
 import { ValidationError } from "@/lib/errors";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
+import * as I3Notifications from "@/server/services/i3-notifications";
 import { AuthenticatedOrganizationContext } from "@/trpc/init";
 
 import { returnItems } from "./return-items";
@@ -20,10 +22,11 @@ import { I3ReturnItemsFormData } from "./schema";
 
 /**
  * Process the submission of the I3 Return Items form: for each item, queue a task to retire it by
- * hand in D4H, noting who received it, and notify the admin.
+ * hand in D4H, noting who received it, then notify the configured personnel and send the member
+ * a receipt.
  *
  * The checks and the tasks are `returnItems`, shared with the item page's quick Return; this
- * pipeline adds the up-front permission check and the notification email.
+ * pipeline adds the up-front permission check, the notification emails and the receipt.
  *
  * When no item could be returned, the `ReturnItems` stage throws a `ValidationError` listing the
  * failures, so the draft stays a Draft and no email goes out.
@@ -80,25 +83,61 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
         },
     })
     .stage({
-        stageName: "NotifyAdmin",
+        stageName: "NotifyPersonnel",
         stageFn: async (ctx, { returnedItems, failures }) => {
-            // The tasks are already queued, so a failed email mustn't report the Return as
-            // failed (or leave its draft un-Processed). Log it and carry on.
+            // Email the org's and the returning member's team's notify lists, one copy each. The
+            // tasks are already queued, so a failure here mustn't report the Return as failed (or
+            // leave its draft un-Processed). Log it and carry on.
             try {
-                await sendEmail({
+                const recipients = await I3Notifications.resolveNotifyRecipients(ctx, {
+                    d4hTeamId: ctx.formData.recipient.teamId,
+                });
+                await I3Notifications.sendEach(recipients, (recipient) => ({
                     from: NoReplyEmailAddress,
-                    to: "delivered+i3-notify@resend.dev",
+                    to: recipient.email,
                     subject: "Items Returned by " + ctx.formData.recipient.name,
                     react: createElement(I3ReturnItemsNotificationEmail, {
                         receiver: { name: ctx.auth.user.name },
-                        emailTarget: { email: "delivered+i3-notify@resend.dev" },
+                        emailTarget: { email: recipient.email },
                         formData: ctx.formData,
                         returnedItems,
                         failures,
                     }),
+                }));
+            } catch (err) {
+                ctx.logger.error("Failed to send the Return Items notification emails", err);
+            }
+        },
+    })
+    .stage({
+        stageName: "SendReceipt",
+        stageFn: async (ctx, { accessToken, returnedItems }) => {
+            // Send the member a receipt at their D4H email, listing only the items returned. A
+            // failure is logged, not thrown.
+            try {
+                const address = await I3Notifications.fetchReceiptAddress(accessToken, {
+                    d4hTeamId: ctx.formData.recipient.teamId,
+                    memberId: ctx.formData.recipient.id,
+                });
+                if (address === null) {
+                    ctx.logger.info(
+                        `No D4H email for member ${ctx.formData.recipient.id}; skipping the receipt`,
+                    );
+                    return;
+                }
+                await sendEmail({
+                    from: NoReplyEmailAddress,
+                    to: address,
+                    subject: "Receipt for items you returned",
+                    react: createElement(I3ReturnItemsReceiptEmail, {
+                        receiver: { name: ctx.auth.user.name },
+                        emailTarget: { email: address },
+                        formData: ctx.formData,
+                        returnedItems,
+                    }),
                 });
             } catch (err) {
-                ctx.logger.error("Failed to send the Return Items notification email", err);
+                ctx.logger.error("Failed to send the Return Items receipt email", err);
             }
         },
     })

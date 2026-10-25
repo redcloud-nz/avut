@@ -160,6 +160,7 @@ describe("settings organization settings", () => {
             enabled: true,
             storage: "AVUT",
             organisationRecordsOnly: false,
+            notify: { org: [], teams: {} },
         });
 
         const row = await db.organizationConfig.findFirst({
@@ -191,6 +192,7 @@ describe("settings organization settings", () => {
             enabled: true,
             storage: "D4H",
             organisationRecordsOnly: false,
+            notify: { org: [], teams: {} },
         });
 
         const rows = await db.organizationConfig.findMany({
@@ -198,6 +200,8 @@ describe("settings organization settings", () => {
         });
         expect(rows.map((r) => r.key).sort()).toEqual([
             "modules.d4h-i3.enabled",
+            // A materialised default row, left alone because the patch didn't change it.
+            "modules.d4h-i3.notify.org",
             "modules.d4h-i3.organisationRecordsOnly",
         ]);
     });
