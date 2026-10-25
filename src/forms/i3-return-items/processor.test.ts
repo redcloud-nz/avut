@@ -12,6 +12,7 @@ import { UserId } from "@/lib/schemas/user";
 import { fetchD4HWhoami } from "@/server/d4h-api/client";
 import { fetchD4HEquipmentItem, patchD4HEquipmentItem } from "@/server/d4h-api/equipment";
 import { sendEmail } from "@/server/email";
+import { fetchReceiptAddress, resolveNotifyRecipients } from "@/server/services/i3-notifications";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
@@ -20,6 +21,10 @@ import { I3ReturnItemsFormData } from "./schema";
 
 const TEAM_ID = 7;
 const MEMBER_ID = 42;
+
+const NOTIFY_A = { personId: "person-a", name: "Alice", email: "alice@example.test" };
+const NOTIFY_B = { personId: "person-b", name: "Bob", email: "bob@example.test" };
+const MEMBER_EMAIL = "john.smith@example.test";
 
 /** The resolved token `getConfiguredD4HAccessToken` hands back. */
 const accessToken = { id: "token-1", serverCode: "ap", token: "secret" };
@@ -86,6 +91,7 @@ vi.mock("@/server/d4h-access-token", () => ({
 
 vi.mock("@/server/d4h-api/client", () => ({
     fetchD4HWhoami: vi.fn(),
+    fetchD4HMember: vi.fn(),
     getD4HFetchClient: vi.fn(() => ({ GET })),
 }));
 
@@ -93,6 +99,14 @@ vi.mock("@/server/d4h-api/client", () => ({
 vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
     patchD4HEquipmentItem: vi.fn(async () => {}),
+}));
+
+// The real `sendEach`, so a test sees one `sendEmail` per recipient; the resolver and the D4H
+// member lookup are stubbed.
+vi.mock("@/server/services/i3-notifications", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/server/services/i3-notifications")>()),
+    resolveNotifyRecipients: vi.fn(),
+    fetchReceiptAddress: vi.fn(),
 }));
 
 vi.mock("@/server/email", () => ({
@@ -124,6 +138,8 @@ describe("I3ReturnItemsFormProcessor", () => {
         });
 
         vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true) as never);
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue([NOTIFY_A] as never);
+        vi.mocked(fetchReceiptAddress).mockResolvedValue(MEMBER_EMAIL);
         vi.mocked(fetchD4HEquipmentItem).mockImplementation(
             async (_token, _teamId, itemId) => item(itemId) as never,
         );
@@ -158,18 +174,24 @@ describe("I3ReturnItemsFormProcessor", () => {
         );
     }
 
-    /** The props the notification email was rendered with. */
+    /** The `sendEmail` calls addressed to `to`. */
+    function sentTo(to: string) {
+        return vi.mocked(sendEmail).mock.calls.filter(([options]) => options.to === to);
+    }
+
+    /** The props the single email addressed to `to` was rendered with. */
+    function emailPropsTo(to: string) {
+        const calls = sentTo(to);
+        expect(calls).toHaveLength(1);
+        return (calls[0][0].react as { props: Record<string, unknown> }).props;
+    }
+
+    /** The props the notification email to `NOTIFY_A` was rendered with. */
     function emailProps() {
-        expect(sendEmail).toHaveBeenCalledOnce();
-        const { react } = vi.mocked(sendEmail).mock.calls[0][0];
-        return (
-            react as {
-                props: {
-                    returnedItems: { itemId: number; ref: string; kindTitle: string }[];
-                    failures: string[];
-                };
-            }
-        ).props;
+        return emailPropsTo(NOTIFY_A.email) as {
+            returnedItems: { itemId: number; ref: string; kindTitle: string }[];
+            failures: string[];
+        };
     }
 
     const NOTE = "Returned via AVUT, received by Receiver. Strap frayed.";
@@ -266,5 +288,100 @@ describe("I3ReturnItemsFormProcessor", () => {
         expect(results.every((r) => r.status === "success")).toBe(true);
         expect(output).toMatchObject({ returned: 1, failures: [] });
         expect((await db.d4HTask.findMany()).map((t) => t.resourceId)).toEqual([1]);
+    });
+
+    it("notifies each resolved recipient separately, at their own address", async () => {
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue([NOTIFY_A, NOTIFY_B] as never);
+
+        const { results } = await execute([1]);
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(resolveNotifyRecipients).toHaveBeenCalledWith(expect.anything(), {
+            d4hTeamId: TEAM_ID,
+        });
+        for (const { email } of [NOTIFY_A, NOTIFY_B]) {
+            expect(sentTo(email)[0][0].subject).toBe("Items Returned by John Smith");
+            expect(emailPropsTo(email).emailTarget).toEqual({ email });
+        }
+        // Two notifications and the receipt.
+        expect(sendEmail).toHaveBeenCalledTimes(3);
+    });
+
+    it("sends no notification when nobody is on the lists", async () => {
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue([]);
+
+        const { results } = await execute([1]);
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(sendEmail).toHaveBeenCalledOnce();
+        expect(sentTo(MEMBER_EMAIL)).toHaveLength(1);
+    });
+
+    it("sends the receipt to the member's D4H email", async () => {
+        await execute([1]);
+
+        expect(fetchReceiptAddress).toHaveBeenCalledWith(accessToken, {
+            d4hTeamId: TEAM_ID,
+            memberId: MEMBER_ID,
+        });
+        const [[receipt]] = sentTo(MEMBER_EMAIL);
+        expect(receipt.subject).toBe("Receipt for items you returned");
+        expect(emailPropsTo(MEMBER_EMAIL).emailTarget).toEqual({ email: MEMBER_EMAIL });
+    });
+
+    it("lists only the returned items in the receipt, without the failures", async () => {
+        vi.mocked(fetchD4HEquipmentItem).mockImplementation(
+            async (_token, _teamId, itemId) =>
+                item(itemId, itemId === 2 ? { status: "RETIRED" } : {}) as never,
+        );
+
+        await execute([1, 2]);
+
+        const props = emailPropsTo(MEMBER_EMAIL) as {
+            returnedItems: { itemId: number }[];
+        };
+        expect(props.returnedItems.map((i) => i.itemId)).toEqual([1]);
+        expect(props).not.toHaveProperty("failures");
+        // The admin notification still carries the failure.
+        expect(emailProps().failures).toHaveLength(1);
+    });
+
+    it("skips the receipt when the member has no email", async () => {
+        vi.mocked(fetchReceiptAddress).mockResolvedValue(null);
+
+        const { results } = await execute([1]);
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(sendEmail).toHaveBeenCalledOnce();
+        expect(sentTo(NOTIFY_A.email)).toHaveLength(1);
+    });
+
+    it("doesn't fail the pipeline when resolving recipients throws", async () => {
+        vi.mocked(resolveNotifyRecipients).mockRejectedValue(new Error("db down"));
+
+        const { results } = await execute([1]);
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(results.at(-1)).toMatchObject({ stageName: "SendReceipt", status: "success" });
+        expect(sentTo(MEMBER_EMAIL)).toHaveLength(1);
+    });
+
+    it("doesn't fail the pipeline when the member fetch throws", async () => {
+        vi.mocked(fetchReceiptAddress).mockRejectedValue(new Error("D4H unavailable"));
+
+        const { results } = await execute([1]);
+
+        expect(results.every((r) => r.status === "success")).toBe(true);
+        expect(results.at(-1)).toMatchObject({ stageName: "SendReceipt", status: "success" });
+        expect(sentTo(NOTIFY_A.email)).toHaveLength(1);
+    });
+
+    it("never sends to the old hardcoded notify address", async () => {
+        await execute([1]);
+
+        const addresses = vi
+            .mocked(sendEmail)
+            .mock.calls.flatMap(([options]) => [options.to, options.cc, options.bcc].flat());
+        expect(addresses).not.toContain("delivered+i3-notify@resend.dev");
     });
 });
