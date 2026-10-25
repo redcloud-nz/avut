@@ -9,8 +9,9 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import { D4HEquipmentBrandSelect } from "@/components/controls/d4h-equipment-brand-select";
 import { D4HEquipmentModelSelect } from "@/components/controls/d4h-equipment-model-select";
 import { MutationButton } from "@/components/ui/button";
@@ -48,7 +49,6 @@ export function D4HI3Module_UpdateVariant_Dialog({
     const logger = useLogger("I3", "Template_UpdateVariant");
     const organization = useOrganization();
     const organisationOnlyId = useOrganisationOnlyId();
-    const queryClient = useQueryClient();
 
     const form = useForm({
         resolver: zodResolver(I3TemplateVariant.modifiableSchema),
@@ -57,11 +57,12 @@ export function D4HI3Module_UpdateVariant_Dialog({
 
     const mutation = useMutation(
         trpc.i3.updateTemplateVariant.mutationOptions({
+            meta: { effects: i3Effects.updateTemplateVariant },
             onError(error) {
                 logger.error("Failed to update template variant", error);
                 toast.error(`Failed to update template variant: ${error.message}`);
             },
-            async onSuccess({ updated }) {
+            onSuccess({ updated }) {
                 logger.info(
                     `Template variant "${updated.name}" updated in template "${template.name}".`,
                 );
@@ -69,11 +70,6 @@ export function D4HI3Module_UpdateVariant_Dialog({
                     `Template variant "${updated.name}" updated in template "${template.name}".`,
                 );
 
-                await queryClient.invalidateQueries(
-                    trpc.i3.listTemplateVariants.queryFilter({
-                        organizationId: organization.id,
-                    }),
-                );
                 handleOpenChange(false);
             },
         }),

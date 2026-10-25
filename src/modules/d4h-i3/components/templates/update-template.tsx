@@ -9,8 +9,9 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
+import { i3Effects } from "@/client/i3-effects";
 import { D4HEquipmentCategorySelect } from "@/components/controls/d4h-equipment-category-select";
 import { D4HEquipmentTypeSelect } from "@/components/controls/d4h-equipment-type-select";
 import { ObjectIcons } from "@/components/icons";
@@ -76,7 +77,6 @@ export function D4HI3Module_UpdateTemplate_Dialog({ template }: { template: I3Te
 
 function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDone: () => void }) {
     const organization = useOrganization();
-    const queryClient = useQueryClient();
 
     const organisationOnlyId = useOrganisationOnlyId();
 
@@ -87,10 +87,11 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
 
     const mutation = useMutation(
         trpc.i3.updateTemplate.mutationOptions({
+            meta: { effects: i3Effects.updateTemplate },
             onError(error) {
                 toast.error(`Failed to update template: ${error.message}`);
             },
-            async onSuccess() {
+            onSuccess() {
                 toast.success(
                     <>
                         Template <ObjectName>{template.name}</ObjectName> updated.
@@ -98,20 +99,6 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
                 );
 
                 onDone();
-
-                await Promise.all([
-                    queryClient.invalidateQueries(
-                        trpc.i3.listTemplates.queryFilter({
-                            organizationId: organization.id,
-                        }),
-                    ),
-                    queryClient.invalidateQueries(
-                        trpc.i3.getTemplate.queryFilter({
-                            organizationId: organization.id,
-                            templateId: template.id,
-                        }),
-                    ),
-                ]);
             },
         }),
     );
