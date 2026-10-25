@@ -5,31 +5,24 @@ keyTerms: ["ppe-template", "d4h"]
 ---
 
 D4H I3 tracks equipment issued to your members, using your D4H equipment records.
-It needs the D4H integration and the D4H module turned on for your organisation, and your own
-personal D4H access token, added in your account settings under **D4H**. You
-see the D4H teams that token can see.
+It needs the D4H integration and module turned on, and your personal D4H access
+token in your account settings under **D4H**.
 
-- **Issue Items** keeps your draft forms until you submit one. Submitting
-  creates an equipment record in D4H for each item. If your D4H account can't
-  create equipment for the recipient's team, a warning shows and **Submit** is
-  disabled. Records already created aren't
-  undone if a later item fails.
-- **Return Items** records equipment coming back from a person. Pick who is
-  returning, tick the items they hand in and add any comments. Submitting queues a D4H task
-  for each item, noting who received it, if your D4H account can update equipment
-  in their team. Nothing changes in D4H until someone applies the task under
-  **D4H** › **Tasks**.
-- **Return** is also in the **Actions** menu of a D4H item page, for an item
-  issued to a member.
-- **Issued Types** lists, for one D4H team, the equipment types issued to its
-  members, grouped by category, with how many of each are out. Open a type to
-  see who holds which items, with a **Returned** badge on items waiting for
-  their return to be applied in D4H. Use **Change team** to see another team.
-- **Templates** are the items you can issue, each linked to a D4H equipment
-  category and type, with variants such as sizes. Deleting one moves it to the
-  Rubbish bin.
+- **Issue Items** keeps your drafts until you submit. Pick the recipient first:
+  **Add Item** needs one, and only templates whose D4H records belong to the
+  recipient's team or its organisation are offered. An item that doesn't fit, or
+  a D4H account that can't create equipment for that team, disables **Submit**.
+  Records already created aren't undone if a later item fails.
+- **Return Items** queues a D4H task for each ticked item. Nothing changes in D4H
+  until someone applies it under **D4H** › **Tasks**. **Return** is also in the
+  **Actions** menu of an issued D4H item.
+- **Issued Types** shows, for one D4H team, how many of each type are out.
+  Open a type to see who holds which items. Use **Change team** to switch.
+- **Templates** are the items you can issue, each linked to a D4H category and
+  type, with variants such as sizes. Pickers group records by owner.
+  Hover a category, type, brand or model link to see its owner. Turn on
+  **Organisation-owned records only** under organisation settings › **Modules** ›
+  **D4H I3** to offer only your linked D4H organisation's records; other templates
+  get a **Not organisation records** badge. Deleting a template moves it to the Rubbish bin.
 
-Inspections aren't built yet.
-
-An **I3 Editor** can issue and return items. An **I3 Admin** can also create,
-change and delete templates.
+An **I3 Editor** can issue and return items; an **I3 Admin** can also change templates.

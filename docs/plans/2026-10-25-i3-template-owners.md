@@ -351,7 +351,7 @@ four dialogs)._
       the template's D4H records after adding the item, before the query refetches.
     - `npm run check` passes.
 
-- [ ] **11. Update the D4H I3 help card** — `mechanical`
+- [x] **11. Update the D4H I3 help card** — `mechanical`
   - **Files:** `content/help/d4h-i3.mdx`
   - **Do:** Follow `content/README.md`'s help-card rules.
     - Add to the **Issue Items** bullet: only templates whose D4H records belong to the
