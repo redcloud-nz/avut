@@ -187,4 +187,19 @@ describe("buildNotifyPatch", () => {
             ),
         ).toEqual({ org: [ALICE], teams: { [ARCHIVED_TEAM]: [CAROL] } });
     });
+
+    it("dedupes each list", () => {
+        expect(
+            buildNotifyPatch(
+                { org: [], teams: { [ARCHIVED_TEAM]: [CAROL, CAROL] } },
+                {
+                    org: [ALICE, ALICE],
+                    teams: [{ teamId: SHOWN_TEAM, personIds: [CAROL, ALICE, CAROL] }],
+                },
+            ),
+        ).toEqual({
+            org: [ALICE],
+            teams: { [ARCHIVED_TEAM]: [CAROL], [SHOWN_TEAM]: [CAROL, ALICE] },
+        });
+    });
 });

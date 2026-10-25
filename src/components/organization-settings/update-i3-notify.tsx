@@ -48,7 +48,11 @@ interface NotifyFormValues {
 /**
  * The `notify` value to save: the shown teams' lists, plus every stored team entry the dialog
  * isn't showing (an unlinked, archived or deleted team), so a team that comes back gets its list
- * back. Teams left with no people are dropped.
+ * back. Teams left with no people are dropped, and each list is deduped.
+ *
+ * The carried-over entries come from the settings the card held when the dialog opened, so a
+ * concurrent edit to another team's list (another tab, another admin) is overwritten. Accepted:
+ * this is a rarely-edited admin screen.
  */
 export function buildNotifyPatch(
     stored: I3NotifySettings,
@@ -58,13 +62,13 @@ export function buildNotifyPatch(
     const teams: Record<TeamId, PersonId[]> = {};
 
     for (const [teamId, personIds] of Object.entries(stored.teams) as [TeamId, PersonId[]][]) {
-        if (!shown.has(teamId) && personIds.length > 0) teams[teamId] = personIds;
+        if (!shown.has(teamId) && personIds.length > 0) teams[teamId] = [...new Set(personIds)];
     }
     for (const { teamId, personIds } of values.teams) {
-        if (personIds.length > 0) teams[teamId] = personIds;
+        if (personIds.length > 0) teams[teamId] = [...new Set(personIds)];
     }
 
-    return { org: values.org, teams };
+    return { org: [...new Set(values.org)], teams };
 }
 
 /**
