@@ -296,7 +296,7 @@ four dialogs)._
 
 ### Review group C — template pages, Issue form (visual checkpoint after task 11)
 
-- [ ] **9. Owners and team-owned flag on the template page and list** — `visual`
+- [x] **9. Owners and team-owned flag on the template page and list** — `visual`
   - **Files:** `src/modules/d4h-i3/components/templates/template-content.tsx`,
     `template-variants.tsx`, `templates-list.tsx`
   - **Do:**
@@ -393,3 +393,5 @@ settings.
 - **Group A, task 1:** `fetchD4HTeamCatalogueList` (`src/server/d4h-api/equipment.ts`) sends no `size` query, so a large catalogue could be truncated. The fit check then refuses records missing from the team listing. Pass `query: { size: 10000 }` as `fetchD4HTeamEquipmentList` does, or confirm in a comment that D4H returns these lists unpaginated.
 - **Group A, task 4:** reword `Messages.i3ItemDoesNotFitTeam` neutrally, for example `…can't be issued to <team>: its D4H records aren't owned by <team> or its D4H organisation.`, since a misfit can also be another organisation's record, or a record missing from the listing. Update the processor test strings to match.
 - **Group B, task 7:** when the selected id isn't in the fetched D4H list at all (the record was deleted in D4H), the catalogue select's trigger is blank. Let the wrappers take an optional fallback title (the template or variant's snapshot `…Title`), and show it in muted text with the marker.
+- **Group B, task 7:** `D4HCatalogueSelect` has no empty state. When it has no groups, render a disabled hint inside `SelectContent`: "No records owned by your D4H organisation" when `organisationOnlyId != null`, otherwise "None available". This happens in practice, for example in the model select under a kept team-owned brand.
+- **Group B, task 5:** in `d4h-i3-module-settings.tsx`, a failed `getOrganizationD4H` query shows the "Needs this organisation linked…" note. On `isError`, leave the switch disabled and leave the note out. Also end the note with a full stop. Add a `teams-router.test.ts` case for `getOrganizationD4H` with `allowSystemAdmin`: a system admin with no membership gets the link, a missing org gets NOT_FOUND, and a non-member who isn't an admin is refused.

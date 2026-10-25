@@ -4,10 +4,11 @@
  */
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { Protect } from "@/components/protect";
@@ -20,10 +21,13 @@ import {
     DataList,
 } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
+import { usesOtherRecords } from "@/lib/i3-template-fit";
 import { route } from "@/lib/routes";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
+import { D4HI3Module_OtherRecords_Badge } from "./other-records-flag";
 import { D4HI3Module_Template_Menu } from "./template-menu";
 import { D4HI3Module_Template_Variants_List } from "./template-variants";
 import { D4HI3Module_UpdateTemplate_Dialog } from "./update-template";
@@ -35,6 +39,24 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
     const { data: template } = useSuspenseQuery(
         trpc.i3.getTemplate.queryOptions({ organizationId: organization.id, templateId }),
     );
+
+    // Not suspending: owners and the flag are extras, so a D4H failure leaves them out rather
+    // than blanking the page.
+    const { data: categories } = useQuery(
+        trpc.d4hApi.listEquipmentCategories.queryOptions({ organizationId: organization.id }),
+    );
+    const { data: kinds } = useQuery(
+        trpc.d4hApi.listEquipmentKinds.queryOptions({ organizationId: organization.id }),
+    );
+    const organisationOnlyId = useOrganisationOnlyId();
+
+    const categoryOwner = categories?.find((c) => c.id === template.d4h?.categoryId)?.owner;
+    const kindOwner = kinds?.find((k) => k.id === template.d4h?.kindId)?.owner;
+    const flagged =
+        organisationOnlyId != null &&
+        categories != null &&
+        kinds != null &&
+        usesOtherRecords(template.d4h, { categories, kinds }, organisationOnlyId);
 
     return (
         <>
@@ -58,7 +80,10 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                         <Saratoga.Column slot="main">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Template Details</CardTitle>
+                                    <CardTitle className="flex flex-wrap items-center gap-2">
+                                        Template Details
+                                        {flagged && <D4HI3Module_OtherRecords_Badge />}
+                                    </CardTitle>
                                     <CardAction>
                                         <Protect permissions={{ i3Template: ["update"] }}>
                                             <D4HI3Module_UpdateTemplate_Dialog
@@ -83,7 +108,7 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                         )}
                                         <DataItem inline>
                                             <DataItemTitle>D4H Category</DataItemTitle>
-                                            <DataItemValue>
+                                            <DataItemValue className="flex items-baseline gap-2">
                                                 {template.d4h ? (
                                                     <D4HEquipmentCategoryLink
                                                         category={{
@@ -94,11 +119,19 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                                 ) : (
                                                     "—"
                                                 )}
+                                                {categoryOwner && (
+                                                    <span className="ml-auto">
+                                                        <D4HOwner
+                                                            owner={categoryOwner}
+                                                            variant="compact"
+                                                        />
+                                                    </span>
+                                                )}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>D4H Type</DataItemTitle>
-                                            <DataItemValue>
+                                            <DataItemValue className="flex items-baseline gap-2">
                                                 {template.d4h ? (
                                                     <D4HEquipmentTypeLink
                                                         type={{
@@ -108,6 +141,14 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                                     />
                                                 ) : (
                                                     "—"
+                                                )}
+                                                {kindOwner && (
+                                                    <span className="ml-auto">
+                                                        <D4HOwner
+                                                            owner={kindOwner}
+                                                            variant="compact"
+                                                        />
+                                                    </span>
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
