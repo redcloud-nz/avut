@@ -1,0 +1,72 @@
+---
+title: D4H
+description: Your D4H teams, members and equipment, inside AVUT.
+section: d4h
+order: 0
+keyTerms: ["d4h"]
+---
+
+# D4H
+
+The D4H module shows data from **D4H** inside AVUT, so you can look up teams,
+members and equipment without switching tools. Most of it is for looking up;
+the exceptions are editing an item and working through D4H tasks.
+
+## Requirements
+
+D4H uses **your own personal D4H access token**, not one shared by the
+organisation, so you see what your D4H account can see. Add a token in your
+account settings under **D4H**.
+
+The organisation also needs the **D4H Integration** and the D4H module turned on
+in [Organisation Settings](/docs/admin/organization#integrations).
+
+## Teams and members
+
+- **Teams** lists the D4H teams you can see. A team's page links to its
+  **Members**.
+- **Members** asks you to pick a team, then lists that team's members. Use
+  **Change team** to see another team's. A member's page shows the equipment
+  issued to them.
+
+## Equipment
+
+Equipment is organised two ways in D4H, and both cover every team you can see.
+Each list has an **Owner** column for the team or organisation each record
+belongs to.
+
+- **Equipment Categories** — a category's page lists its **types**, and a type's
+  page lists its items in every team, with who holds each one.
+- **Equipment Brands** — a brand's page lists its models.
+
+Every team, member, item, category, type, brand and model name links to its
+page, here and in [D4H I3](/docs/d4h-i3).
+
+### Item page
+
+An item's page shows one piece of equipment: its details, its **Parents** and
+**Contents**, and any open D4H tasks for it. The **Actions** menu has:
+
+- **Edit**, which changes the item in D4H: its status, whether it's critical or
+  monitored, its barcode and its notes.
+- **Open in D4H**, to see the item in D4H itself.
+- **Return**, when [D4H I3](/docs/d4h-i3#returning-items) is turned on and the
+  item is issued to someone.
+
+An item with a return waiting to be applied in D4H shows a **Returned** badge.
+
+## Tasks
+
+Some changes can't be made through D4H's API, such as retiring an item. AVUT
+queues these as **D4H tasks** for someone to make by hand. **Tasks** lists the
+open ones, each with the change it needs.
+
+Make the change in D4H, then press **Check**: AVUT looks the item up in D4H and
+closes the task once the change is there. **Dismiss** closes a task without
+checking, for one that no longer applies.
+
+## Roles
+
+Anyone in the organisation can look up teams, members and equipment. Editing
+items and **Tasks** need the Owner, Admin, I3 Editor or I3 Admin role. **Edit** also needs
+your own D4H account to be able to update equipment in the item's team.

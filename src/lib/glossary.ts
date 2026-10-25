@@ -165,7 +165,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
-            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the read-only D4H views, D4H I3's equipment issuing, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
+            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the D4H module's views of teams, members and equipment, D4H I3's equipment issuing and returns, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
         relatedTerms: ["ppe-template"],
     },
 ] as const;
