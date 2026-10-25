@@ -5,11 +5,12 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ForbiddenError } from "@/lib/errors";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 
-import { getD4HFetchClient } from "./client";
+import { fetchD4HMember, getD4HFetchClient } from "./client";
 
 vi.mock("server-only", () => ({}));
 
@@ -50,5 +51,88 @@ describe("getD4HFetchClient", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
         const request = fetchMock.mock.calls[0][0];
         expect(request.headers.get("Authorization")).toBe("Bearer the-api-key");
+    });
+});
+
+describe("fetchD4HMember", () => {
+    const token: D4HAccessToken_ServerOnly = {
+        id: ProviderCredentialId.create(),
+        organizationId: null,
+        userId: null,
+        label: "Test token",
+        serverCode: "us",
+        token: "the-api-key",
+        metadata: { d4HTeams: [], d4HOrganisations: [] },
+    };
+
+    const member = {
+        id: 42,
+        resourceType: "Member",
+        email: { value: "jane@example.com", verified: true },
+        name: "Jane Doe",
+        owner: { id: 7, resourceType: "Team" },
+        position: null,
+        ref: "J1",
+        role: { id: null, resourceType: "Role" },
+        status: "OPERATIONAL",
+    };
+
+    function stubFetch(response: Response) {
+        const fetchMock = vi.fn(async (_request: Request) => response);
+        vi.stubGlobal("fetch", fetchMock);
+        return fetchMock;
+    }
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("requests the member through the team context and parses it", async () => {
+        const fetchMock = stubFetch(Response.json(member));
+
+        const result = await fetchD4HMember(token, 7, 42);
+
+        expect(new URL(fetchMock.mock.calls[0][0].url).pathname).toBe("/v3/team/7/members/42");
+        expect(result).toMatchObject({
+            id: 42,
+            name: "Jane Doe",
+            email: { value: "jane@example.com", verified: true },
+        });
+    });
+
+    it("maps a null email to null", async () => {
+        stubFetch(Response.json({ ...member, email: null }));
+
+        expect(await fetchD4HMember(token, 7, 42)).toMatchObject({ id: 42, email: null });
+    });
+
+    it("maps a missing email or a null email value to null", async () => {
+        const { email: _email, ...withoutEmail } = member;
+        stubFetch(Response.json(withoutEmail));
+        expect(await fetchD4HMember(token, 7, 42)).toMatchObject({ email: null });
+
+        stubFetch(Response.json({ ...member, email: { value: null, verified: false } }));
+        expect(await fetchD4HMember(token, 7, 42)).toMatchObject({ email: null });
+    });
+
+    it("returns null on 404", async () => {
+        stubFetch(new Response(null, { status: 404, statusText: "Not Found" }));
+
+        expect(await fetchD4HMember(token, 7, 42)).toBeNull();
+    });
+
+    it("throws a ForbiddenError on 403", async () => {
+        stubFetch(new Response(null, { status: 403, statusText: "Forbidden" }));
+
+        await expect(fetchD4HMember(token, 7, 42)).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
+    it("throws on any other failure", async () => {
+        stubFetch(new Response(null, { status: 500, statusText: "Internal Server Error" }));
+
+        const error = await fetchD4HMember(token, 7, 42).catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(Error);
+        expect(error).not.toBeInstanceOf(ForbiddenError);
+        expect((error as Error).message).toContain("500");
     });
 });
