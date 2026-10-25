@@ -9,6 +9,7 @@ import prettier from "eslint-config-prettier";
 import boundaries from "eslint-plugin-boundaries";
 
 import buttonAccessibleName from "./eslint-rules/button-accessible-name.mjs";
+import dropdownMenuSize from "./eslint-rules/dropdown-menu-size.mjs";
 import idsViaSchemas from "./eslint-rules/ids-via-schemas.mjs";
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
 import noDeprecatedZod from "./eslint-rules/no-deprecated-zod.mjs";
@@ -27,6 +28,7 @@ const avut = {
   rules: {
     "nz-spelling": nzSpelling,
     "button-accessible-name": buttonAccessibleName,
+    "dropdown-menu-size": dropdownMenuSize,
     "ids-via-schemas": idsViaSchemas,
     "no-deep-relative-imports": noDeepRelativeImports,
     "no-deprecated-zod": noDeprecatedZod,
@@ -343,6 +345,15 @@ const config = [
     plugins: { avut },
     rules: {
       "avut/no-literal-form-id": "error",
+    },
+  },
+  {
+    // A dropdown menu's width comes from DropdownMenuContent's `size` prop, not a width class, so
+    // menus of the same kind are the same width everywhere.
+    files: ["src/**/*.tsx"],
+    plugins: { avut },
+    rules: {
+      "avut/dropdown-menu-size": "error",
     },
   },
   {
