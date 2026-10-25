@@ -4,8 +4,7 @@ Proposed codenames for AVUT releases. A new codename is the name after the last
 used one, going down the list. Names above it (`veronica`, `chatham`, `torch`)
 were skipped, not left for later.
 
-Used so far: `philomel` (v0.8–v0.10), `laburnum` (v0.11).
-Reserved: `dunedin` (v0.12).
+Used so far: `philomel` (v0.8–v0.10), `laburnum` (v0.11), `dunedin` (v0.12).
 
 The table is a shortlist, not the full story. When a name is used, its release
 notes get a short history of every HMS or HMNZS ship with a New Zealand
