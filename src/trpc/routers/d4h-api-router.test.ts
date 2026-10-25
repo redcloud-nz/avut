@@ -18,7 +18,11 @@ import {
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
+    fetchD4HTeamEquipmentBrands,
+    fetchD4HTeamEquipmentCategories,
     fetchD4HTeamEquipmentItems,
+    fetchD4HTeamEquipmentKinds,
+    fetchD4HTeamEquipmentModels,
     patchD4HEquipmentItem,
 } from "@/server/d4h-api/equipment";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -85,7 +89,11 @@ vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
     fetchD4HEquipmentItemContents: vi.fn(),
     fetchD4HEquipmentItemsByKind: vi.fn(),
+    fetchD4HTeamEquipmentBrands: vi.fn(),
+    fetchD4HTeamEquipmentCategories: vi.fn(),
     fetchD4HTeamEquipmentItems: vi.fn(),
+    fetchD4HTeamEquipmentKinds: vi.fn(),
+    fetchD4HTeamEquipmentModels: vi.fn(),
     patchD4HEquipmentItem: vi.fn(),
 }));
 
@@ -787,5 +795,156 @@ describe("d4hApiRouter equipment items", () => {
                 }),
             ]);
         });
+    });
+});
+
+describe("d4hApiRouter equipment catalogue lists", () => {
+    const T = { org: OrganizationId.create(), user: nanoId16() };
+    const db = createMockPrisma();
+
+    const timestamps = { createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z" };
+    const teamOwner = (id: number, title: string) => ({ resourceType: "Team" as const, id, title });
+    // Listed by both teams, owned by TEAM_ID.
+    const shared = teamOwner(TEAM_ID, "Rescue Team");
+    const other = teamOwner(OTHER_TEAM_ID, "Alpine Team");
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+    });
+
+    beforeEach(() => {
+        vi.mocked(getConfiguredD4HAccessToken)
+            .mockReset()
+            .mockResolvedValue(accessToken as never);
+    });
+
+    const viewer = () =>
+        d4hApiRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], d4hEquipment: ["view"] },
+                prisma: db,
+            }),
+        );
+
+    /** Each team lists the shared record and one of its own: "Zebra" from TEAM_ID, "Alpha" from the other. */
+    function perTeam<R>(make: (id: number, title: string, owner: typeof shared) => R) {
+        return async (_token: unknown, teamId: number) =>
+            teamId === TEAM_ID
+                ? [make(1, "Middle", shared), make(2, "Zebra", shared)]
+                : [make(1, "Middle", shared), make(3, "Alpha", other)];
+    }
+
+    function expectFetchedPerTeam(fetcher: (...args: never[]) => unknown) {
+        expect(fetcher).toHaveBeenCalledTimes(2);
+        for (const teamId of [TEAM_ID, OTHER_TEAM_ID]) {
+            expect(fetcher).toHaveBeenCalledWith(
+                accessToken,
+                teamId,
+                expect.objectContaining({ d4HTeams: expect.any(Array) }),
+            );
+        }
+    }
+
+    it("listEquipmentCategories de-duplicates and sorts by title", async () => {
+        vi.mocked(fetchD4HTeamEquipmentCategories)
+            .mockReset()
+            .mockImplementation(
+                perTeam((id, title, owner) => ({
+                    id,
+                    resourceType: "EquipmentCategory" as const,
+                    title,
+                    owner,
+                    ...timestamps,
+                })),
+            );
+
+        const result = await viewer().listEquipmentCategories({ organizationId: T.org });
+
+        expectFetchedPerTeam(fetchD4HTeamEquipmentCategories);
+        expect(result.map((r) => [r.id, r.title, r.owner])).toEqual([
+            [3, "Alpha", other],
+            [1, "Middle", shared],
+            [2, "Zebra", shared],
+        ]);
+    });
+
+    it("listEquipmentKinds de-duplicates and keeps D4H's order", async () => {
+        vi.mocked(fetchD4HTeamEquipmentKinds)
+            .mockReset()
+            .mockImplementation(
+                perTeam((id, title, owner) => ({
+                    id,
+                    resourceType: "EquipmentKind" as const,
+                    title,
+                    category: { id: 9, resourceType: "EquipmentCategory" as const, title: "PPE" },
+                    type: "EQUIPMENT" as const,
+                    owner,
+                    ...timestamps,
+                })),
+            );
+
+        const result = await viewer().listEquipmentKinds({ organizationId: T.org });
+
+        expectFetchedPerTeam(fetchD4HTeamEquipmentKinds);
+        expect(result.map((r) => [r.id, r.title, r.owner])).toEqual([
+            [1, "Middle", shared],
+            [2, "Zebra", shared],
+            [3, "Alpha", other],
+        ]);
+        expect(result[0].category).toEqual({
+            id: 9,
+            resourceType: "EquipmentCategory",
+            title: "PPE",
+        });
+    });
+
+    it("listEquipmentBrands de-duplicates and sorts by title", async () => {
+        vi.mocked(fetchD4HTeamEquipmentBrands)
+            .mockReset()
+            .mockImplementation(
+                perTeam((id, title, owner) => ({
+                    id,
+                    resourceType: "EquipmentBrand" as const,
+                    title,
+                    owner,
+                    ...timestamps,
+                })),
+            );
+
+        const result = await viewer().listEquipmentBrands({ organizationId: T.org });
+
+        expectFetchedPerTeam(fetchD4HTeamEquipmentBrands);
+        expect(result.map((r) => [r.id, r.title, r.owner])).toEqual([
+            [3, "Alpha", other],
+            [1, "Middle", shared],
+            [2, "Zebra", shared],
+        ]);
+    });
+
+    it("listEquipmentModels de-duplicates and sorts by title", async () => {
+        vi.mocked(fetchD4HTeamEquipmentModels)
+            .mockReset()
+            .mockImplementation(
+                perTeam((id, title, owner) => ({
+                    id,
+                    resourceType: "EquipmentModel" as const,
+                    title,
+                    owner,
+                    brand: { id: 5, resourceType: "EquipmentBrand" as const },
+                    updatedAt: timestamps.updatedAt,
+                })),
+            );
+
+        const result = await viewer().listEquipmentModels({ organizationId: T.org });
+
+        expectFetchedPerTeam(fetchD4HTeamEquipmentModels);
+        expect(result.map((r) => [r.id, r.title, r.owner, r.brand.id])).toEqual([
+            [3, "Alpha", other, 5],
+            [1, "Middle", shared, 5],
+            [2, "Zebra", shared, 5],
+        ]);
     });
 });

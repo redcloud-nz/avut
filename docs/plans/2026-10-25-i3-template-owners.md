@@ -90,7 +90,7 @@ limits the pickers to organisation-owned records.
 
 ### Review group A — data layer
 
-- [ ] **1. One catalogue owner resolution, plus per-list and per-team fetchers**
+- [x] **1. One catalogue owner resolution, plus per-list and per-team fetchers** — `feat(d4h): resolve catalogue record owners and fetch catalogues per team (#454)`
   - **Files:** `src/server/d4h-api/equipment.ts`, `src/server/d4h-api/equipment.test.ts`,
     `src/trpc/routers/d4h-api-router.ts`, `src/trpc/routers/d4h-api-router.test.ts`
   - **Do:** In `equipment.ts`, add the following.
@@ -254,26 +254,22 @@ _End of group A: review with `avut-code-reviewer`._
     `src/components/controls/d4h-equipment-type-select.tsx` (new),
     `src/components/controls/d4h-equipment-brand-select.tsx`,
     `src/components/controls/d4h-equipment-model-select.tsx`
-  - **Do:**
-    - **Grouping helper.** Write a pure `groupCatalogueOptions(records, { organisationOnlyId,
+  - **Do:** - **Grouping helper.** Write a pure `groupCatalogueOptions(records, { organisationOnlyId,
 selectedId })` in `src/lib/d4h-catalogue-options.ts`. It returns ordered groups:
-      organisation owners first, then teams A–Z, with records A–Z inside each. Each record carries
-      an `otherOwnerMarker` flag. When `organisationOnlyId` isn't null, the helper drops every
-      record not owned by that organisation (task 2's `isOwnedByOrganisation`) except
-      `selectedId`, which stays with `otherOwnerMarker: true`.
-    - **Generic select.** Build `D4HCatalogueSelect<T extends { id; title; owner }>` with props
-      `records`, `value: number | null`, `onChange(record)`, `placeholder`, `organisationOnlyId`
-      and the existing `slotProps` shape. It renders the helper's groups with sticky
-      `SelectLabel` + `SelectSeparator`, as `D4HTeamMemberSelect` does. When there's more than one
-      group, the trigger shows the title plus a `compact` `D4HOwner`. With a single group there
-      are no labels and no suffix.
-    - **Brand and model selects.** Rewrite them as thin wrappers that keep their current props
-      and their `useQuery` + pending/error/success `match`. Each gets a new
-      `organisationOnlyId?: number | null` prop (default `null`), passed through. The model select keeps
-      its brand filter.
-    - **Category and type selects.** Add wrappers in the same style. The type select takes
-      `categoryId` and filters kinds by `kind.category.id`, as `create-template.tsx` does inline
-      today. Use the "D4H Type" wording for kinds in UI copy.
+    organisation owners first, then teams A–Z, with records A–Z inside each. Each record carries
+    an `otherOwnerMarker` flag. When `organisationOnlyId` isn't null, the helper drops every
+    record not owned by that organisation (task 2's `isOwnedByOrganisation`) except
+    `selectedId`, which stays with `otherOwnerMarker: true`. - **Generic select.** Build `D4HCatalogueSelect<T extends { id; title; owner }>` with props
+    `records`, `value: number | null`, `onChange(record)`, `placeholder`, `organisationOnlyId`
+    and the existing `slotProps` shape. It renders the helper's groups with sticky
+    `SelectLabel` + `SelectSeparator`, as `D4HTeamMemberSelect` does. When there's more than one
+    group, the trigger shows the title plus a `compact` `D4HOwner`. With a single group there
+    are no labels and no suffix. - **Brand and model selects.** Rewrite them as thin wrappers that keep their current props
+    and their `useQuery` + pending/error/success `match`. Each gets a new
+    `organisationOnlyId?: number | null` prop (default `null`), passed through. The model select keeps
+    its brand filter. - **Category and type selects.** Add wrappers in the same style. The type select takes
+    `categoryId` and filters kinds by `kind.category.id`, as `create-template.tsx` does inline
+    today. Use the "D4H Type" wording for kinds in UI copy.
   - **Done when:** the helper's tests cover ordering, a single group, the organisation-only filter
     (including hiding a record owned by another organisation) and keeping a selected record that
     the filter would drop. `npm run check` passes. Task 8 checks the components
