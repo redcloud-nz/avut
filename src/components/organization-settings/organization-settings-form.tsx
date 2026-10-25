@@ -9,6 +9,7 @@ import { enabledInSettings, type ModuleFlagState } from "@/lib/module-flags";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
+import { D4HI3Module_SettingsCard } from "./d4h-i3-module-settings";
 import { D4HIntegration_SettingsCard } from "./d4h-integration-settings";
 import { Feature_SettingsCard } from "./feature-settings-card";
 import { General_SettingsCard } from "./general-settings";
@@ -100,15 +101,11 @@ export function OrganizationSettingsForm({
                     </div>
                     {moduleFlags["d4h-i3"] !== false && (
                         <div id="module-d4h-i3" className="scroll-mt-4">
-                            <Feature_SettingsCard
+                            <D4HI3Module_SettingsCard
                                 organizationId={organizationId}
+                                settings={settings}
                                 canEdit={canEdit}
-                                slice="modules.d4h-i3"
-                                enabled={settings.modules["d4h-i3"].enabled}
                                 isModuleEnabled={isModuleEnabled}
-                                kind="module"
-                                title="D4H I3 Module"
-                                description="The D4H I3 module provides tools to manage individually issued items (I3s) within your organisation."
                             />
                         </div>
                     )}

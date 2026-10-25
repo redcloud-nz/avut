@@ -206,7 +206,7 @@ _End of group A: review with `avut-code-reviewer`._
 
 ### Review group B — settings and pickers (visual checkpoint after task 8)
 
-- [ ] **5. D4H I3 module settings card with the new switch** — `visual`, `mechanical`
+- [x] **5. D4H I3 module settings card with the new switch** — `feat(i3): D4H I3 settings card with organisation-owned records switch (#454)` — `visual`, `mechanical`
   - **Files:** `src/components/organization-settings/d4h-i3-module-settings.tsx` (new),
     `src/components/organization-settings/organization-settings-form.tsx`
   - **Do:** Build `D4HI3Module_SettingsCard`, which wraps the D4H I3 `Feature_SettingsCard`.
@@ -387,3 +387,8 @@ settings.
   personal token reaches. That includes teams that aren't linked to any AVUT team in this org.
   Confining them to linked teams (`Team_D4H`) would change what every I3 user sees, and probably
   belongs with the D4H module too. Raised during #454 planning, 2026-10-25.
+
+## Review notes
+
+- **Group A, task 1:** `fetchD4HTeamCatalogueList` (`src/server/d4h-api/equipment.ts`) sends no `size` query, so a large catalogue could be truncated. The fit check then refuses records missing from the team listing. Pass `query: { size: 10000 }` as `fetchD4HTeamEquipmentList` does, or confirm in a comment that D4H returns these lists unpaginated.
+- **Group A, task 4:** reword `Messages.i3ItemDoesNotFitTeam` neutrally, for example `…can't be issued to <team>: its D4H records aren't owned by <team> or its D4H organisation.`, since a misfit can also be another organisation's record, or a record missing from the listing. Update the processor test strings to match.
