@@ -493,17 +493,58 @@ function itemFits(item: I3IssuedItemInput, fits: TemplateFits) {
     );
 }
 
-/** The templates and variants to offer: those that fit, or all of them while fit is unknown. */
+/**
+ * The templates and variants to offer: those that fit, or all of them while fit is unknown.
+ *
+ * `keep` names an item's current template and variant, which stay on offer even when they don't
+ * fit, so Edit Item still shows what the item is. `misfit` tells the dialog which to mark.
+ */
 function offeredOptions(
     templates: I3Template[],
     variants: I3TemplateVariant[],
     fits: TemplateFits | undefined,
+    keep: { templateId?: string; variantId?: string } = {},
 ) {
-    if (!fits) return { templateOptions: templates, variantOptions: variants };
+    if (!fits) {
+        return { templateOptions: templates, variantOptions: variants, misfit: () => false };
+    }
+    const misfit = (id: string) => !fits.templateIds.has(id) && !fits.variantIds.has(id);
     return {
-        templateOptions: templates.filter((template) => fits.templateIds.has(template.id)),
-        variantOptions: variants.filter((variant) => fits.variantIds.has(variant.id)),
+        templateOptions: templates.filter(
+            (template) => fits.templateIds.has(template.id) || template.id === keep.templateId,
+        ),
+        variantOptions: variants.filter(
+            (variant) => fits.variantIds.has(variant.id) || variant.id === keep.variantId,
+        ),
+        misfit,
     };
+}
+
+/** Marks a kept template or variant that can't be issued to the recipient's team. */
+function MisfitMarker({ teamTitle }: { teamTitle: string }) {
+    const label = `Can't be issued to ${teamTitle}`;
+    return (
+        <span title={label} className="inline-flex">
+            <AlertWarningIcon className="size-3.5 text-amber-600 dark:text-amber-500" />
+            <span className="sr-only">{label}</span>
+        </span>
+    );
+}
+
+/**
+ * Whether to say no variants fit, in place of an empty variant select: only when the template
+ * has variants and none of them are on offer.
+ */
+function noVariantsFit(
+    template: I3Template | undefined,
+    variants: I3TemplateVariant[],
+    offered: I3TemplateVariant[],
+) {
+    return (
+        template != null &&
+        offered.length === 0 &&
+        variants.some((variant) => variant.templateId === template.id)
+    );
 }
 
 interface ItemDialogFitProps {
@@ -633,37 +674,50 @@ function AddItemDialog({
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="variant">Variant</FieldLabel>
 
-                                        <Select
-                                            value={field.value?.id ?? ""}
-                                            onValueChange={(value) => {
-                                                const selectedVariant = variants.find(
-                                                    (variant) => variant.id === value,
-                                                );
-                                                field.onChange(
-                                                    selectedVariant
-                                                        ? {
-                                                              id: selectedVariant.id,
-                                                              name: selectedVariant.name,
-                                                          }
-                                                        : null,
-                                                );
-                                            }}
-                                            disabled={!currentTemplate}
-                                        >
-                                            <SelectTrigger
-                                                id="variant"
-                                                aria-invalid={fieldState.invalid}
+                                        {noVariantsFit(
+                                            currentTemplate,
+                                            variants,
+                                            applicableVariants,
+                                        ) ? (
+                                            <p className="text-sm text-muted-foreground">
+                                                No variants can be issued to {teamTitle}.
+                                            </p>
+                                        ) : (
+                                            <Select
+                                                value={field.value?.id ?? ""}
+                                                onValueChange={(value) => {
+                                                    const selectedVariant = variants.find(
+                                                        (variant) => variant.id === value,
+                                                    );
+                                                    field.onChange(
+                                                        selectedVariant
+                                                            ? {
+                                                                  id: selectedVariant.id,
+                                                                  name: selectedVariant.name,
+                                                              }
+                                                            : null,
+                                                    );
+                                                }}
+                                                disabled={!currentTemplate}
                                             >
-                                                <SelectValue placeholder="Select a variant" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {applicableVariants.map((variant) => (
-                                                    <SelectItem key={variant.id} value={variant.id}>
-                                                        {variant.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                <SelectTrigger
+                                                    id="variant"
+                                                    aria-invalid={fieldState.invalid}
+                                                >
+                                                    <SelectValue placeholder="Select a variant" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {applicableVariants.map((variant) => (
+                                                        <SelectItem
+                                                            key={variant.id}
+                                                            value={variant.id}
+                                                        >
+                                                            {variant.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
 
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
@@ -719,7 +773,10 @@ function EditItemDialog({
     teamTitle,
     ...props
 }: EditItemDialogProps) {
-    const { templateOptions, variantOptions } = offeredOptions(templates, variants, fits);
+    const { templateOptions, variantOptions, misfit } = offeredOptions(templates, variants, fits, {
+        templateId: item.template.id,
+        variantId: item.variant?.id,
+    });
 
     const form = useForm({
         resolver: zodResolver(I3IssuedItem.schema),
@@ -796,6 +853,9 @@ function EditItemDialog({
                                                         value={template.id}
                                                     >
                                                         {template.name}
+                                                        {misfit(template.id) && (
+                                                            <MisfitMarker teamTitle={teamTitle} />
+                                                        )}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -819,37 +879,55 @@ function EditItemDialog({
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="variant">Variant</FieldLabel>
 
-                                        <Select
-                                            value={field.value?.id ?? ""}
-                                            onValueChange={(value) => {
-                                                const selectedVariant = variants.find(
-                                                    (variant) => variant.id === value,
-                                                );
-                                                field.onChange(
-                                                    selectedVariant
-                                                        ? {
-                                                              id: selectedVariant.id,
-                                                              name: selectedVariant.name,
-                                                          }
-                                                        : null,
-                                                );
-                                            }}
-                                            disabled={!currentTemplate}
-                                        >
-                                            <SelectTrigger
-                                                id="variant"
-                                                aria-invalid={fieldState.invalid}
+                                        {noVariantsFit(
+                                            currentTemplate,
+                                            variants,
+                                            applicableVariants,
+                                        ) ? (
+                                            <p className="text-sm text-muted-foreground">
+                                                No variants can be issued to {teamTitle}.
+                                            </p>
+                                        ) : (
+                                            <Select
+                                                value={field.value?.id ?? ""}
+                                                onValueChange={(value) => {
+                                                    const selectedVariant = variants.find(
+                                                        (variant) => variant.id === value,
+                                                    );
+                                                    field.onChange(
+                                                        selectedVariant
+                                                            ? {
+                                                                  id: selectedVariant.id,
+                                                                  name: selectedVariant.name,
+                                                              }
+                                                            : null,
+                                                    );
+                                                }}
+                                                disabled={!currentTemplate}
                                             >
-                                                <SelectValue placeholder="Select a variant" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {applicableVariants.map((variant) => (
-                                                    <SelectItem key={variant.id} value={variant.id}>
-                                                        {variant.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                <SelectTrigger
+                                                    id="variant"
+                                                    aria-invalid={fieldState.invalid}
+                                                >
+                                                    <SelectValue placeholder="Select a variant" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {applicableVariants.map((variant) => (
+                                                        <SelectItem
+                                                            key={variant.id}
+                                                            value={variant.id}
+                                                        >
+                                                            {variant.name}
+                                                            {misfit(variant.id) && (
+                                                                <MisfitMarker
+                                                                    teamTitle={teamTitle}
+                                                                />
+                                                            )}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
 
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
