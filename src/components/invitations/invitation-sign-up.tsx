@@ -6,6 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -54,6 +55,7 @@ export function InvitationSignUp_Form({
 }) {
     const router = useRouter();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -79,7 +81,7 @@ export function InvitationSignUp_Form({
     return (
         <FieldGroup>
             <form
-                id="invitation-sign-up-form"
+                id={formId}
                 onSubmit={form.handleSubmit(({ name, password }) =>
                     mutation.mutate({ invitationId, name, password }),
                 )}
@@ -136,7 +138,7 @@ export function InvitationSignUp_Form({
                     <Field>
                         <MutationButton
                             type="submit"
-                            form="invitation-sign-up-form"
+                            form={formId}
                             status={mutation.status}
                             text={{
                                 idle: "Create account",

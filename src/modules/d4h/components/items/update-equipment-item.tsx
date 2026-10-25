@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -112,6 +112,7 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update" && disabledReason === null;
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(FormSchema),
         defaultValues: formValues(item),
@@ -214,7 +215,7 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-equipment-item-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 name="status"
@@ -353,7 +354,7 @@ export function D4HModule_UpdateEquipmentItem_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-equipment-item-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Update", pending: "Updating...", success: "Updated" }}
                     />

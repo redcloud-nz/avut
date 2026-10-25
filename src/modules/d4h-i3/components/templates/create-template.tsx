@@ -6,6 +6,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -82,6 +83,7 @@ function CreateTemplate_Body() {
 
     const organisationOnlyId = useOrganisationOnlyId();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(I3Template.modifiableSchema),
         defaultValues: {
@@ -138,7 +140,7 @@ function CreateTemplate_Body() {
     return (
         <>
             <DialogBody>
-                <form id="create-template-form" onSubmit={handleSubmit}>
+                <form id={formId} onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             name="name"
@@ -262,7 +264,7 @@ function CreateTemplate_Body() {
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="create-template-form"
+                    form={formId}
                     status={mutation.status}
                     text={{
                         idle: "Create",

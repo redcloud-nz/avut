@@ -98,7 +98,7 @@ of which owns its own padding:
 
 - **`DialogBody` is the only part that scrolls.** The header and footer stay put
   at every size, so a tall form never pushes the buttons off a small screen. Keep
-  the `<form>` inside the body and submit from the footer with the `form="…"`
+  the `<form>` inside the body and submit from the footer with the `form`
   attribute, as above — the footer is never inside the `<form>`.
 - **Below `sm` the dialog is full screen** (slides up, with a visible close
   button, since there's no overlay left to tap; the footer buttons share the
@@ -194,6 +194,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
   const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
   const dialogOpen = action === "update";
 
+  const formId = useId();
   const form = useForm({
     resolver: zodResolver(PersonData.modifiableSchema),
     defaultValues: person,
@@ -247,13 +248,13 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
           <DialogTitle>Update person</DialogTitle>
         </DialogHeader>
         <DialogBody>
-          <form id="update-person-form" onSubmit={handleSubmit}>
+          <form id={formId} onSubmit={handleSubmit}>
             {/* fields */}
           </form>
         </DialogBody>
         <DialogFooter>
           <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-          <MutationButton type="submit" form="update-person-form" status={mutation.status} />
+          <MutationButton type="submit" form={formId} status={mutation.status} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -261,6 +262,12 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
 }
 ```
 
+- **The form id comes from `useId()`, never a literal** (lint). `form="…"` resolves
+  to the first element in the document with that id, and with `cacheComponents`
+  Next keeps visited routes mounted in a hidden `<Activity>`. A fixed id lets the
+  footer button submit a hidden copy of the same dialog from an earlier page, with
+  that copy's props and stale field values, so it creates or updates the wrong
+  record ([#465](https://github.com/redcloud-nz/avut/issues/465)).
 - **`form.handleSubmit(onValid, onInvalid)`** — always pass the second argument.
   A submit that silently does nothing because a field is invalid is hard to
   diagnose from a bug report; logging `onInvalid` surfaces it in the console.

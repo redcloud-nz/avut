@@ -7,7 +7,7 @@
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -80,6 +80,7 @@ export function Auth_ForgotPassword_Card({
 }
 
 function RequestCode_Form({ email, onSent }: { email?: string; onSent: (email: string) => void }) {
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -97,10 +98,7 @@ function RequestCode_Form({ email, onSent }: { email?: string; onSent: (email: s
     });
 
     return (
-        <form
-            id="forgot-password-form"
-            onSubmit={form.handleSubmit((data) => mutation.mutate(data.email))}
-        >
+        <form id={formId} onSubmit={form.handleSubmit((data) => mutation.mutate(data.email))}>
             <FieldGroup>
                 <Controller
                     name="email"
@@ -122,7 +120,7 @@ function RequestCode_Form({ email, onSent }: { email?: string; onSent: (email: s
                 <Field>
                     <MutationButton
                         type="submit"
-                        form="forgot-password-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Send reset code",
@@ -148,6 +146,7 @@ function ResetPassword_Form({
 }) {
     const router = useRouter();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z
@@ -180,7 +179,7 @@ function ResetPassword_Form({
 
     return (
         <form
-            id="reset-password-form"
+            id={formId}
             onSubmit={form.handleSubmit((data) =>
                 resetPassword.mutate({ email, otp: data.code, password: data.newPassword }),
             )}
@@ -255,7 +254,7 @@ function ResetPassword_Form({
                 <Field orientation="horizontal" className="justify-end">
                     <MutationButton
                         type="submit"
-                        form="reset-password-form"
+                        form={formId}
                         status={resetPassword.status}
                         text={{
                             idle: "Update Password",

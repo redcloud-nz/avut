@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, type RefObject } from "react";
+import { useEffect, useId, type RefObject } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -70,6 +70,7 @@ export function D4HI3Module_ReturnEquipmentItem_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["return"] as const));
     const dialogOpen = action === "return" && canReturn;
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(FormSchema),
         defaultValues: { comments: "" },
@@ -129,7 +130,7 @@ export function D4HI3Module_ReturnEquipmentItem_Dialog({
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="return-equipment-item-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Field>
                                 <FieldLabel>Returned by</FieldLabel>
@@ -165,7 +166,7 @@ export function D4HI3Module_ReturnEquipmentItem_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="return-equipment-item-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Return", pending: "Returning...", success: "Returned" }}
                     />

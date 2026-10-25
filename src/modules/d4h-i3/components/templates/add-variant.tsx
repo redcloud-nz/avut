@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -50,6 +50,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
     );
     const dialogOpen = action === "add-variant";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(I3TemplateVariant.modifiableSchema),
         defaultValues: {
@@ -130,7 +131,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="create-template-variant-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 name="name"
@@ -210,7 +211,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
-                        form="create-template-variant-form"
+                        form={formId}
                         type="submit"
                         status={mutation.status}
                         text={{

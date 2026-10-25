@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -57,6 +57,7 @@ export function AdminModule_CreateInvitation_Dialog() {
         },
     ]);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             invitationRolesSchema.extend({
@@ -115,7 +116,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                 <DialogBody>
                     <FormProvider {...form}>
                         <form
-                            id="create-invitation-form"
+                            id={formId}
                             onSubmit={form.handleSubmit(
                                 (data) =>
                                     mutation.mutate({
@@ -160,7 +161,7 @@ export function AdminModule_CreateInvitation_Dialog() {
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="create-invitation-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Send Invitation",

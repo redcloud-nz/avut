@@ -6,6 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useId } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -131,6 +132,7 @@ function AddMember_Body({
         .filter((u) => !existing.has(u.id))
         .map((u) => ({ value: u.id, label: `${u.name} (${u.email})` }));
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(addMemberFormSchema),
         defaultValues: { userId: undefined, ...defaultRoles() },
@@ -168,7 +170,7 @@ function AddMember_Body({
         <>
             <DialogBody>
                 <FormProvider {...form}>
-                    <form id="add-member-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 control={form.control}
@@ -200,7 +202,7 @@ function AddMember_Body({
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="add-member-form"
+                    form={formId}
                     status={mutation.status}
                     text={{ idle: "Add", pending: "Adding", success: "Added" }}
                 />
