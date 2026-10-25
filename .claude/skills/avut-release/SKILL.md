@@ -36,6 +36,13 @@ Work happens in the main checkout, not a worktree.
 > would leave the wrong account active for the rest of the session).
 > Everything else in this skill (merges, `gh pr view`, reads) uses your
 > default account as normal.
+>
+> `GH_TOKEN` only reaches `gh`'s HTTPS calls: the remote is SSH, so the
+> `git push` goes out under the user's own SSH key either way. If
+> `gh pr create` returns 401, check `gh auth status`. An expired `claude-avut`
+> token shows as "The token in keyring is invalid". Ask the user to
+> re-authenticate, which is interactive and theirs to run, or to open the PR
+> under their own account. Don't fall back to their account without asking.
 
 ## Step 0 — Preflight
 
