@@ -79,7 +79,8 @@ describe("I3Notifications.resolveNotifyRecipients", () => {
 
         const people = [
             { id: T.alice, name: "Alice", email: "alice@example.com" },
-            { id: T.bob, name: "Bob", email: "bob@example.com" },
+            // Padded, to check the address comes back trimmed.
+            { id: T.bob, name: "Bob", email: " bob@example.com " },
             { id: T.carol, name: "Carol", email: "carol@example.com" },
             {
                 id: T.archived,

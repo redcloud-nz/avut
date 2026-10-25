@@ -144,10 +144,11 @@ export function createSettingsStore<
             ),
         );
 
-        // A key in the existing settings but not the next one is a dynamic record key that was
-        // removed (`modules.d4h-i3.notify.teams.<teamId>`). `existing` is schema-parsed, so a
-        // fixed leaf can't go missing this way. Without this, the row would stay and the key
-        // would come back on the next read.
+        // A key in the existing settings but not the next one was removed: either a dynamic
+        // record key (`modules.d4h-i3.notify.teams.<teamId>`) or an `.optional()` leaf the next
+        // settings left out (a full `write` that omits it). A leaf with a default can't go
+        // missing this way, since the parse fills it in. Without this, the row would stay and
+        // the key would come back on the next read.
         const removals = R.pipe(
             R.keys(flattenedExisting),
             R.filter((key) => !(key in flattenedNext)),

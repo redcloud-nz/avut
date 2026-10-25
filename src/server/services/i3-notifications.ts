@@ -72,7 +72,7 @@ export async function resolveNotifyRecipients(
         .map((person) => ({
             personId: person.id as PersonId,
             name: person.name,
-            email: person.email,
+            email: person.email.trim(),
         }));
 }
 

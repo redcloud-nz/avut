@@ -183,4 +183,19 @@ describe("OrganizationSettings modules.d4h-i3.notify", () => {
             }),
         ).toThrow();
     });
+
+    it("must be patched whole, so a partial notify can't wipe the team lists", () => {
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "modules.d4h-i3",
+                patch: { notify: { org: [person1] } },
+            }),
+        ).toThrow();
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "modules.d4h-i3",
+                patch: { notify: { teams: { [team1]: [person1] } } },
+            }),
+        ).toThrow();
+    });
 });

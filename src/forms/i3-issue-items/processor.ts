@@ -190,7 +190,8 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
         stageName: "NotifyPersonnel",
         stageFn: async (ctx, { savedToD4H }) => {
             // Email the org's and the recipient team's notify lists, one copy each. A failure here
-            // is logged, not thrown: the items have already been issued (and recorded in D4H).
+            // is logged, not thrown: the items have already been issued, whether or not D4H
+            // recorded them.
             try {
                 const recipients = await I3Notifications.resolveNotifyRecipients(ctx, {
                     d4hTeamId: ctx.formData.recipient.teamId,

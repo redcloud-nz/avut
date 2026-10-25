@@ -7,7 +7,7 @@
 
 import { XIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { Fragment, useId } from "react";
+import { Fragment, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -74,7 +74,7 @@ export function buildNotifyPatch(
  *
  * Edits who is emailed when items are issued or returned: one list for the whole organisation,
  * then one for each Active team linked to D4H. A slice patch is partial only one level down, so
- * `notify` is always saved whole (both keys).
+ * `notify` is always saved whole (both keys); the slice schema rejects anything less.
  */
 export function OrganizationSettings_UpdateI3Notify_Dialog({
     organizationId,
@@ -137,7 +137,11 @@ function UpdateI3Notify_Body({
             trpc.teams.listTeams.queryOptions({ organizationId }),
         ],
     });
-    const teams = allTeams.filter((team) => team.status === "Active" && team.d4h != null);
+    // Frozen at mount: the team lists bind to the form by index, so a `listTeams` refetch while
+    // the dialog is open (a team added, archived or reordered) must not reshuffle them.
+    const [teams] = useState(() =>
+        allTeams.filter((team) => team.status === "Active" && team.d4h != null),
+    );
 
     const formId = useId();
     const form = useForm<NotifyFormValues>({
