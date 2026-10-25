@@ -20,19 +20,29 @@ session is for Skills Admins.
 
 ## 1. Create the session
 
-Start from the Sessions list with **New Session**, giving it a name, a date and
-optional notes. All three are optional: leave the name blank and it takes the
-next session number shown in the placeholder, and leave the date and it
-defaults to today.
+Start from the Sessions list with **New Session**, giving it a name, when it
+runs, and optional notes. Leave the name blank and it takes the next session
+number shown in the placeholder.
 
 <Screenshot
   id="skill-track/create-session"
-  caption="Leave the name blank to take the suggested session number, and the date to take today."
+  caption="Leave the name blank to take the suggested session number. A new session runs all day today until you change it."
 />
 
-Every check recorded in the session is dated with the session's date, not the
-day it was entered. Set it to the day the assessing happened. If you change the
-date later, the session's checks move with it.
+**When** starts as all day today. Pick another **Start date**, then:
+
+- **+ Add end date** makes it an all-day session across several days.
+- **+ Add time** gives it a start time instead, in 15-minute steps, and
+  **+ Add end time** an optional end. An end before the start time is the next
+  day. **Remove time** makes it all day again.
+
+Times are in your organisation's time zone, shown under the picker, and set in
+[Organisation Settings](/docs/admin/organization#general). The session page and
+the Sessions list show when each session runs.
+
+Every check recorded in the session is dated with the session's start, not the
+day it was entered. Set it to when the assessing happened. If you change the
+start later, the session's checks move with it.
 
 Creating a session makes you its first and only assessor, so you need a
 [person record linked](/docs/admin/user-vs-person) to your account.
@@ -122,8 +132,8 @@ Each row has a **Fail** button, a **Pass** button and a **More** button (**⋯**
 Every tap saves straight away — there's no separate save step:
 
 - **Fail** or **Pass** records that result for the row at once. The one that
-  matches the row's current result is highlighted.
-- Tapping the highlighted button again clears the check, and the confirmation
+  matches the row's current result is circled.
+- Tapping the circled button again clears the check, and the confirmation
   that pops up offers **Undo** if you didn't mean to. If the check has a note,
   the tap opens the dialog below instead, so a stray tap can't throw the note
   away.
@@ -164,7 +174,7 @@ recording one — the review settles which check counts (step 5).
 
 - **Recording Mode** — switch between **By Person** and **By Skill**.
 - **Skill Order** — **By Package/Group** (the default) nests skills under
-  their package and skill group, in catalogue order, with anything no longer
+  their package and skill group, in the package's order, with anything no longer
   part of an assessable group collected under "Other." **Alphabetical** lists
   skills by name instead.
 - **Configure Session** — change the session's **Personnel**, **Skills** or
@@ -226,9 +236,14 @@ Below the tiles are three cards:
   the one to include in the approval, or **Exclude all**, then **Save**. A
   resolved conflict shows what was picked, and **Change** picks again.
 - **Personnel** and **Skills** list each one's checks and coverage. Click one to
-  see its checks, untick any you want to leave out of the approval, then
-  **Save**. Checks in a conflict can't be changed there; settle them with
-  **Resolve**.
+  see its checks, untick any you want to leave out of the approval, or use
+  **Include all** or **Exclude all**, then **Save**. Checks in a conflict can't
+  be changed there; settle them with **Resolve**.
+
+**Show**, in the same menu (⋮), narrows the Personnel and Skills cards, and the
+checks dialogs they open, to what you're looking for: **All checks**, only
+**Conflicts**, or only **Excluded checks**. The tiles at the top still count
+every check.
 
 <Screenshot
   id="skill-track/session-resolve-conflict"
@@ -245,11 +260,11 @@ count in reports, and locks the session.
 
 ## Approved sessions
 
-An approved session's personnel, skills, assessors, checks and date are locked.
-Its name and notes stay editable. The recording pages say the session has been
-approved, and the **Record** menu's views are disabled.
+An approved session is locked: its details, personnel, skills, assessors and
+checks can't be changed, and **Edit** is disabled. The recording pages say the
+session has been approved, and the **Record** menu's views are disabled.
 
-To change anything else, a Skills Admin **Reopens** it from the session's menu
+To change anything, a Skills Admin **Reopens** it from the session's menu
 (⋮). The session goes back to **Draft**, its included checks go back to
 **Pending review**, and you can record, review and approve again. Until it's
 approved again, its results leave the reports.

@@ -113,10 +113,10 @@
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/skill-track/create-session.webp",
       "width": 448,
-      "height": 418
+      "height": 486
     },
-    "alt": "The New Session dialog, with optional Name, Date and Notes fields; the name shows the next session number as a placeholder.",
-    "capturedAt": "2026-10-07T06:01:14.701Z"
+    "alt": "The New Session dialog: a Name field showing the suggested session number, a When section with today's start date and Add end date and Add time links, times shown in the organisation's time zone, and a Notes field.",
+    "capturedAt": "2026-10-25T08:15:44.913Z"
   },
   "skill-track/report-matrix": {
     "light": {
@@ -223,8 +223,8 @@
       "width": 1280,
       "height": 800
     },
-    "alt": "A draft session's page: its details on the left, and a Contents card listing personnel, skills, assessors, skill checks and conflicts on the right.",
-    "capturedAt": "2026-10-07T06:01:51.823Z"
+    "alt": "A draft session's page: Session Details with its name, when it runs and its status on the left, and the Contents card listing personnel, skills, assessors, skill checks and conflicts on the right, with Record and a menu in the header.",
+    "capturedAt": "2026-10-25T08:16:16.040Z"
   },
   "skill-track/session-personnel": {
     "light": {

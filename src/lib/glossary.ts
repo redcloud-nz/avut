@@ -155,7 +155,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Skill package catalogue",
         shortDefinition: "The set of skill packages available to an organisation in Skill Track.",
         longDefinition:
-            "The set of skill packages available to an organisation's Skill Track module, drawn from the packages organisations have published from their Skill Package Builder. An organisation subscribes to the packages it wants to assess.",
+            "The set of skill packages available to an organisation, listed on Skill Track's Packages page: the packages organisations have published from their Skill Package Builder. An organisation subscribes to the packages it wants to assess, and its subscribed skills are listed together on the Skills page.",
         modules: ["skill-track"],
         relatedTerms: ["skill-package"],
     },
