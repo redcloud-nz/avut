@@ -5,6 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -80,6 +81,7 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
 
     const organisationOnlyId = useOrganisationOnlyId();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(I3Template.modifiableSchema),
         defaultValues: template,
@@ -123,7 +125,7 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
     return (
         <>
             <DialogBody>
-                <form id="update-template-form" onSubmit={handleSubmit}>
+                <form id={formId} onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             name="name"
@@ -246,7 +248,7 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="update-template-form"
+                    form={formId}
                     status={mutation.status}
                     text={{
                         idle: "Update",

@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,6 +65,7 @@ export function OrganizationSettings_UpdateD4HDefaultServer_Dialog({
     );
     const dialogOpen = action === "update-d4h-default-server";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(defaultServerFormSchema),
         defaultValues: { defaultServer: settings.integrations.d4h.defaultServer },
@@ -115,7 +116,7 @@ export function OrganizationSettings_UpdateD4HDefaultServer_Dialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-d4h-default-server-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 control={form.control}
@@ -156,7 +157,7 @@ export function OrganizationSettings_UpdateD4HDefaultServer_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-d4h-default-server-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

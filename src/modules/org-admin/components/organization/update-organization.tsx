@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ export function AdminModule_UpdateOrganization_Form({
         }),
     );
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(OrganizationData.modifiableSchema),
         defaultValues: {
@@ -84,7 +86,7 @@ export function AdminModule_UpdateOrganization_Form({
     });
 
     return (
-        <form id="update-organization-form" onSubmit={handleSubmit}>
+        <form id={formId} onSubmit={handleSubmit}>
             <FieldGroup>
                 <Field orientation="responsive">
                     <FieldLabel>Organisation ID</FieldLabel>
@@ -121,11 +123,7 @@ export function AdminModule_UpdateOrganization_Form({
                     )}
                 />
                 <Field orientation="horizontal">
-                    <Button
-                        type="submit"
-                        form="update-organization-form"
-                        disabled={mutation.isPending}
-                    >
+                    <Button type="submit" form={formId} disabled={mutation.isPending}>
                         Update
                     </Button>
                     <Button type="button" variant="outline" onClick={() => form.reset()} asChild>

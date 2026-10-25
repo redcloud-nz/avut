@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -77,6 +77,7 @@ export function OrganizationSettings_UpdateRubbishBin_Dialog({
     );
     const dialogOpen = action === "update-rubbish-bin";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(retentionFormSchema),
         defaultValues: settings.rubbishBin,
@@ -127,7 +128,7 @@ export function OrganizationSettings_UpdateRubbishBin_Dialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-rubbish-bin-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 control={form.control}
@@ -161,7 +162,7 @@ export function OrganizationSettings_UpdateRubbishBin_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-rubbish-bin-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

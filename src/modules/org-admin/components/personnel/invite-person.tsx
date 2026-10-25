@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useId } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -93,6 +94,7 @@ function InvitePerson_Body({ person, close }: { person: PersonData; close: () =>
 
     const { data: inviteState } = useSuspenseQuery(inviteStateQueryOptions);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(invitationRolesSchema),
         defaultValues: { roles: ["member"] } as const,
@@ -186,7 +188,7 @@ function InvitePerson_Body({ person, close }: { person: PersonData; close: () =>
                 ) : (
                     <FormProvider {...form}>
                         <form
-                            id="invite-person-form"
+                            id={formId}
                             onSubmit={form.handleSubmit(
                                 (data) =>
                                     inviteMutation.mutate({
@@ -250,7 +252,7 @@ function InvitePerson_Body({ person, close }: { person: PersonData; close: () =>
                 ) : (
                     <MutationButton
                         type="submit"
-                        form="invite-person-form"
+                        form={formId}
                         status={inviteMutation.status}
                         disabled={inviteState.state === "Linked"}
                         text={{

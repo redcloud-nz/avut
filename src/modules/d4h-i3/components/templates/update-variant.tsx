@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -50,6 +50,7 @@ export function D4HI3Module_UpdateVariant_Dialog({
     const organization = useOrganization();
     const organisationOnlyId = useOrganisationOnlyId();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(I3TemplateVariant.modifiableSchema),
         defaultValues: variant,
@@ -116,7 +117,7 @@ export function D4HI3Module_UpdateVariant_Dialog({
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-template-variant-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 name="name"
@@ -196,7 +197,7 @@ export function D4HI3Module_UpdateVariant_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-template-variant-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Update",

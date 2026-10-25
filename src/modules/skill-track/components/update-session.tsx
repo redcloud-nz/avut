@@ -7,7 +7,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -59,6 +59,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
         when: sessionFormState(session.startsAt, session.endsAt, orgZone),
     });
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(sessionDialogSchema),
         defaultValues: formValues(),
@@ -113,7 +114,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                 </DialogHeader>
                 <DialogBody>
                     <form
-                        id="update-session-form"
+                        id={formId}
                         onSubmit={form.handleSubmit(
                             (values) => {
                                 const parsed = parseSessionDialog(values, orgZone);
@@ -185,7 +186,7 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-session-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Update",

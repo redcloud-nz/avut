@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +38,7 @@ export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: 
     );
     const dialogOpen = action === "update-modules";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(UserSettings.schema.shape.modules),
         defaultValues: settings.modules,
@@ -79,7 +80,7 @@ export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: 
                     <DialogTitle>Modules</DialogTitle>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-modules-settings-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             {configurableUserModules.map((module) => (
                                 <Field key={module.id} orientation="horizontal">
@@ -108,7 +109,7 @@ export function UserSettings_UpdateUserModules_Dialog({ settings }: { settings: 
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-modules-settings-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

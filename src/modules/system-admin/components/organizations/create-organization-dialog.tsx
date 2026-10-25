@@ -7,7 +7,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -68,6 +68,7 @@ export function SystemAdmin_CreateOrganization_Dialog() {
         },
     ]);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(createOrganizationFormSchema),
         defaultValues: { name: "", slug: "", addSelfAsOwner: false },
@@ -131,7 +132,7 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="create-organization-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 name="name"
@@ -214,7 +215,7 @@ export function SystemAdmin_CreateOrganization_Dialog() {
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="create-organization-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Create", pending: "Creating", success: "Created" }}
                     />

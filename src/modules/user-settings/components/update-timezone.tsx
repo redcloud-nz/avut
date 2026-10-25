@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useMemo } from "react";
+import { useEffect, useId, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +43,7 @@ export function UserSettings_UpdateTimeZone_Dialog({ settings }: { settings: Use
     // every keystroke of the search box would be wasteful.
     const options = useMemo(timeZoneOptions, []);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(UserSettings.schema.shape.display.pick({ timeZone: true })),
         defaultValues: { timeZone: settings.display.timeZone },
@@ -89,7 +90,7 @@ export function UserSettings_UpdateTimeZone_Dialog({ settings }: { settings: Use
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-time-zone-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <Controller
                             control={form.control}
                             name="timeZone"
@@ -115,7 +116,7 @@ export function UserSettings_UpdateTimeZone_Dialog({ settings }: { settings: Use
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-time-zone-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

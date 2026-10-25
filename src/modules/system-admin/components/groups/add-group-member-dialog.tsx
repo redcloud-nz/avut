@@ -5,6 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -110,6 +111,7 @@ function AddGroupMember_Body({
         .filter((o) => !active.has(o.id))
         .map((o) => ({ value: o.id, label: o.name, subtitle: o.slug }));
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(addGroupMemberFormSchema),
         defaultValues: { organizationId: undefined, role: "Member" },
@@ -140,7 +142,7 @@ function AddGroupMember_Body({
     return (
         <>
             <DialogBody>
-                <form id="add-group-member-form" onSubmit={handleSubmit}>
+                <form id={formId} onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             control={form.control}
@@ -201,7 +203,7 @@ function AddGroupMember_Body({
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="add-group-member-form"
+                    form={formId}
                     status={mutation.status}
                     text={{ idle: "Add", pending: "Adding", success: "Added" }}
                 />
