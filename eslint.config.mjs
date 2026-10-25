@@ -50,7 +50,13 @@ const resendRestriction = {
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
   {
-    ignores: [".next/**", "next-env.d.ts", "src/generated/**", ".claude/worktrees/**"],
+    ignores: [
+      ".next/**",
+      "next-env.d.ts",
+      "src/generated/**",
+      ".content-collections/**",
+      ".claude/worktrees/**",
+    ],
   },
   ...nextCoreWebVitals,
   ...nextTypeScript,

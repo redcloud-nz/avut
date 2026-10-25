@@ -134,6 +134,9 @@ const nextConfig: NextConfig = {
         ];
     },
     cacheComponents: true,
+    // Next 16.4's Partial Prefetching changes what every <Link> prefetches. Kept off until
+    // it's adopted on purpose (node_modules/next/dist/docs/01-app/02-guides/adopting-partial-prefetching.md).
+    partialPrefetching: false,
     ...(environment === "development" ? { allowedDevOrigins: localNetworkHostnames() } : {}),
     images: {
         // Product screenshots served from the Vercel Blob store (see
