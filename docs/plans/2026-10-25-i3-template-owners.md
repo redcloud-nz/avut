@@ -187,7 +187,7 @@ limits the pickers to organisation-owned records.
     an unreachable team → `NotFoundError`. A router test shows the permission gate. `npm run
 check` passes.
 
-- [ ] **4. Issue processor re-checks fit before creating equipment**
+- [x] **4. Issue processor re-checks fit before creating equipment** — `feat(i3): re-check template fit before issuing items to D4H (#454)`
   - **Files:** `src/forms/i3-issue-items/processor.ts`, `src/forms/i3-issue-items/processor.test.ts`,
     `src/trpc/messages.ts`
   - **Do:** Add a `CheckTemplateFit` stage after `ProcessItems` and before

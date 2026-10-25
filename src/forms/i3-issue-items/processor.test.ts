@@ -8,11 +8,13 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ForbiddenError } from "@/lib/errors";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { fetchD4HWhoami, fetchD4HWhoamiCached, getD4HFetchClient } from "@/server/d4h-api/client";
 import { sendEmail } from "@/server/email";
+import { getD4HTeamFitContext } from "@/server/services/i3-templates";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
@@ -41,6 +43,36 @@ function whoami(canCreate: boolean) {
     };
 }
 
+const ORG_ID = 500;
+const OTHER_TEAM_ID = 8;
+
+/** A catalogue record owned by D4H team `teamId`, or by the recipient team's organisation. */
+function record(id: number, teamId?: number) {
+    return {
+        id,
+        title: `Record ${id}`,
+        owner: teamId
+            ? { resourceType: "Team", id: teamId }
+            : { resourceType: "Organisation", id: ORG_ID },
+    };
+}
+
+/**
+ * The recipient team's fit context: the template's category (100) and kind (200), and the
+ * variant's brand (300) and model (400), all organisation-owned unless given a team owner.
+ */
+function fitContext(owners: { kindTeam?: number; modelTeam?: number } = {}) {
+    return {
+        team: { id: TEAM_ID, title: "Rescue Team A", owner: { id: ORG_ID } },
+        catalogue: {
+            categories: [record(100)],
+            kinds: [record(200, owners.kindTeam)],
+            brands: [record(300)],
+            models: [record(400, owners.modelTeam)],
+        },
+    };
+}
+
 // `vi.hoisted` because the client mock's factory below refers to it.
 const POST = vi.hoisted(() => vi.fn());
 
@@ -60,6 +92,10 @@ vi.mock("@/server/d4h-api/client", () => ({
     getD4HFetchClient: vi.fn(() => ({ POST })),
 }));
 
+vi.mock("@/server/services/i3-templates", () => ({
+    getD4HTeamFitContext: vi.fn(),
+}));
+
 vi.mock("@/server/email", () => ({
     NoReplyEmailAddress: "no-reply@example.test",
     sendEmail: vi.fn(async () => {}),
@@ -70,6 +106,7 @@ describe("I3IssueItemsFormProcessor", () => {
         org: OrganizationId.create(),
         user: UserId.create(),
         template: I3TemplateId.create(),
+        variant: I3TemplateVariantId.create(),
     };
 
     const db = createMockPrisma();
@@ -94,6 +131,20 @@ describe("I3IssueItemsFormProcessor", () => {
                         requireSN: false,
                     },
                 },
+                variants: {
+                    create: {
+                        id: T.variant,
+                        name: "Large",
+                        d4h: {
+                            create: {
+                                brandId: 300,
+                                brandTitle: "Brand",
+                                modelId: 400,
+                                modelTitle: "Model",
+                            },
+                        },
+                    },
+                },
             },
         });
     });
@@ -101,14 +152,15 @@ describe("I3IssueItemsFormProcessor", () => {
     beforeEach(() => {
         vi.mocked(getConfiguredD4HAccessToken).mockResolvedValue(accessToken as never);
         vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true) as never);
+        vi.mocked(getD4HTeamFitContext).mockResolvedValue(fitContext() as never);
         POST.mockReset();
         POST.mockResolvedValue({ response: new Response(null, { status: 201 }) });
     });
 
-    function formData(itemCount: number): I3IssueItemsFormData {
+    function formData(itemCount: number, withVariant: boolean): I3IssueItemsFormData {
         const item = {
             template: { id: T.template, name: "Helmet" },
-            variant: null,
+            variant: withVariant ? { id: T.variant, name: "Large" } : null,
             serialNumber: null,
         };
         return I3IssueItemsFormData.schema.parse({
@@ -118,13 +170,17 @@ describe("I3IssueItemsFormProcessor", () => {
         });
     }
 
-    function execute(itemCount: number) {
+    function execute(itemCount: number, withVariant = false) {
         const ctx = createOrganizationMockContext({
             organizationId: T.org,
             user: { id: T.user, name: "Issuer" },
             prisma: db,
         });
-        return I3IssueItemsFormProcessor.execute(FormInstanceId.create(), formData(itemCount), ctx);
+        return I3IssueItemsFormProcessor.execute(
+            FormInstanceId.create(),
+            formData(itemCount, withVariant),
+            ctx,
+        );
     }
 
     /** The `savedToD4H` prop the notification email was rendered with. */
@@ -140,6 +196,49 @@ describe("I3IssueItemsFormProcessor", () => {
         expect(results.every((r) => r.status !== "error")).toBe(true);
         expect(POST).toHaveBeenCalledTimes(3);
         expect(emailedSavedToD4H()).toBe(true);
+    });
+
+    it("checks fit against the recipient's team and creates a fitting variant", async () => {
+        const results = await execute(1, true);
+
+        expect(results.every((r) => r.status !== "error")).toBe(true);
+        expect(getD4HTeamFitContext).toHaveBeenCalledWith(expect.anything(), {
+            accessToken,
+            teamId: TEAM_ID,
+        });
+        expect(POST).toHaveBeenCalledOnce();
+    });
+
+    it("refuses a template whose D4H records belong to another team", async () => {
+        vi.mocked(getD4HTeamFitContext).mockResolvedValue(
+            fitContext({ kindTeam: OTHER_TEAM_ID }) as never,
+        );
+
+        const results = await execute(2);
+
+        const last = results.at(-1);
+        expect(last).toMatchObject({ stageName: "CheckTemplateFit", status: "error" });
+        expect(last?.status === "error" && last.error.message).toBe(
+            `"Helmet" can't be issued to Rescue Team A: its D4H records belong to another team.`,
+        );
+        expect(POST).not.toHaveBeenCalled();
+        expect(sendEmail).not.toHaveBeenCalled();
+    });
+
+    it("refuses a variant whose D4H records belong to another team", async () => {
+        vi.mocked(getD4HTeamFitContext).mockResolvedValue(
+            fitContext({ modelTeam: OTHER_TEAM_ID }) as never,
+        );
+
+        const results = await execute(1, true);
+
+        const last = results.at(-1);
+        expect(last).toMatchObject({ stageName: "CheckTemplateFit", status: "error" });
+        expect(last?.status === "error" && last.error.message).toBe(
+            `"Helmet (Large)" can't be issued to Rescue Team A: its D4H records belong to another team.`,
+        );
+        expect(POST).not.toHaveBeenCalled();
+        expect(sendEmail).not.toHaveBeenCalled();
     });
 
     it("keeps going past a failed POST and names how many of the items failed", async () => {

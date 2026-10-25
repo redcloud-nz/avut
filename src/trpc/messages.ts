@@ -22,6 +22,17 @@ export const Messages = {
     formInstanceNotFound: (formInstanceId: string) =>
         `FormInstance(id=${formInstanceId}) not found.`,
 
+    i3ItemDoesNotFitTeam: ({
+        templateName,
+        variantName,
+        teamTitle,
+    }: {
+        templateName: string;
+        variantName: string | null;
+        teamTitle: string;
+    }) =>
+        `"${variantName ? `${templateName} (${variantName})` : templateName}" can't be issued to ${teamTitle}: its D4H records belong to another team.`,
+
     i3TemplateNotFound: (templateId: string) => `I3Template(id=${templateId}) not found.`,
 
     i3TemplateVariantNotFound: (variantId: string) =>

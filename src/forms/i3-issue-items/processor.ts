@@ -8,12 +8,15 @@ import "server-only";
 import { createElement } from "react";
 
 import I3IssueItemsNotificationEmail from "@/emails/i3-issue-items-notification";
+import { templateFitsTeam, variantFitsTeam } from "@/lib/i3-template-fit";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { getD4HFetchClient } from "@/server/d4h-api/client";
 import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
+import * as I3Templates from "@/server/services/i3-templates";
 import { AuthenticatedOrganizationContext } from "@/trpc/init";
+import { Messages } from "@/trpc/messages";
 
 import { I3IssueItemsFormData } from "./schema";
 
@@ -90,6 +93,34 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
             });
 
             return { items };
+        },
+    })
+    .stage({
+        stageName: "CheckTemplateFit",
+        stageFn: async (ctx, { accessToken, items }) => {
+            // Re-check, before anything is created in D4H, that every item's D4H records belong
+            // to the recipient's team or its organisation. The Issue form only offers fitting
+            // templates, but the templates (or the recipient) may have changed since it loaded.
+            // Throws NotFoundError when the token doesn't reach the recipient's team.
+            const { team, catalogue } = await I3Templates.getD4HTeamFitContext(ctx, {
+                accessToken,
+                teamId: ctx.formData.recipient.teamId,
+            });
+
+            for (const { template, variant } of items) {
+                const fits = variant
+                    ? variantFitsTeam(variant.d4h, template.d4h, catalogue, team)
+                    : templateFitsTeam(template.d4h, catalogue, team);
+                if (!fits) {
+                    throw new Error(
+                        Messages.i3ItemDoesNotFitTeam({
+                            templateName: template.name,
+                            variantName: variant?.name ?? null,
+                            teamTitle: team.title,
+                        }),
+                    );
+                }
+            }
         },
     })
     .stage({
