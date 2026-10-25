@@ -317,9 +317,11 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                             }}
                                         />
                                         <Button
+                                            type="button"
                                             variant="ghost"
                                             onClick={handleDelete}
                                             className="text-destructive"
+                                            aria-label="Delete draft"
                                         >
                                             <ObjectIcons.Delete />
                                         </Button>
