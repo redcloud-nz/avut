@@ -162,7 +162,7 @@ limits the pickers to organisation-owned records.
     and one owned by the linked organisation. The settings default test includes the new key, and
     `npm run check` passes.
 
-- [ ] **3. `I3Templates` fit service + `i3.listTemplateFits` procedure**
+- [x] **3. `I3Templates` fit service + `i3.listTemplateFits` procedure** — `feat(i3): add template fit service and listTemplateFits procedure (#454)`
   - **Files:** `src/server/services/i3-templates.ts`, `src/server/services/i3-templates.test.ts`,
     `src/trpc/routers/i3-router.ts`, `src/trpc/routers/i3-router.test.ts`
   - **Do:** Add two service functions. Both take `OrgServiceContext`.
