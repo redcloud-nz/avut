@@ -14,6 +14,7 @@ import { UserId } from "@/lib/schemas/user";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { fetchD4HWhoami, fetchD4HWhoamiCached, getD4HFetchClient } from "@/server/d4h-api/client";
 import { sendEmail } from "@/server/email";
+import { fetchReceiptAddress, resolveNotifyRecipients } from "@/server/services/i3-notifications";
 import { getD4HTeamFitContext } from "@/server/services/i3-templates";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
@@ -44,6 +45,10 @@ function whoami(canCreate: boolean) {
 }
 
 const ORG_ID = 500;
+
+const NOTIFY_A = { personId: "person-a", name: "Alice", email: "alice@example.test" };
+const NOTIFY_B = { personId: "person-b", name: "Bob", email: "bob@example.test" };
+const MEMBER_EMAIL = "john.smith@example.test";
 const OTHER_TEAM_ID = 8;
 
 /** A catalogue record owned by D4H team `teamId`, or by the recipient team's organisation. */
@@ -89,11 +94,20 @@ vi.mock("@/server/d4h-access-token", () => ({
 vi.mock("@/server/d4h-api/client", () => ({
     fetchD4HWhoami: vi.fn(),
     fetchD4HWhoamiCached: vi.fn(),
+    fetchD4HMember: vi.fn(),
     getD4HFetchClient: vi.fn(() => ({ POST })),
 }));
 
 vi.mock("@/server/services/i3-templates", () => ({
     getD4HTeamFitContext: vi.fn(),
+}));
+
+// The real `sendEach`, so a test sees one `sendEmail` per recipient; the resolver and the D4H
+// member lookup are stubbed.
+vi.mock("@/server/services/i3-notifications", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/server/services/i3-notifications")>()),
+    resolveNotifyRecipients: vi.fn(),
+    fetchReceiptAddress: vi.fn(),
 }));
 
 vi.mock("@/server/email", () => ({
@@ -153,6 +167,8 @@ describe("I3IssueItemsFormProcessor", () => {
         vi.mocked(getConfiguredD4HAccessToken).mockResolvedValue(accessToken as never);
         vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true) as never);
         vi.mocked(getD4HTeamFitContext).mockResolvedValue(fitContext() as never);
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue([NOTIFY_A] as never);
+        vi.mocked(fetchReceiptAddress).mockResolvedValue(MEMBER_EMAIL);
         POST.mockReset();
         POST.mockResolvedValue({ response: new Response(null, { status: 201 }) });
     });
@@ -183,11 +199,21 @@ describe("I3IssueItemsFormProcessor", () => {
         );
     }
 
+    /** The `sendEmail` calls addressed to `to`. */
+    function sentTo(to: string) {
+        return vi.mocked(sendEmail).mock.calls.filter(([options]) => options.to === to);
+    }
+
+    /** The props the single email addressed to `to` was rendered with. */
+    function emailPropsTo(to: string) {
+        const calls = sentTo(to);
+        expect(calls).toHaveLength(1);
+        return (calls[0][0].react as { props: Record<string, unknown> }).props;
+    }
+
     /** The `savedToD4H` prop the notification email was rendered with. */
     function emailedSavedToD4H() {
-        expect(sendEmail).toHaveBeenCalledOnce();
-        const { react } = vi.mocked(sendEmail).mock.calls[0][0];
-        return (react as { props: { savedToD4H: unknown } }).props.savedToD4H;
+        return emailPropsTo(NOTIFY_A.email).savedToD4H;
     }
 
     it("reports savedToD4H: true when every create succeeds", async () => {
@@ -313,5 +339,93 @@ describe("I3IssueItemsFormProcessor", () => {
 
         expect(fetchD4HWhoami).toHaveBeenCalledWith(accessToken);
         expect(fetchD4HWhoamiCached).not.toHaveBeenCalled();
+    });
+
+    it("notifies each resolved recipient separately, at their own address", async () => {
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue([NOTIFY_A, NOTIFY_B] as never);
+
+        const results = await execute(1);
+
+        expect(results.every((r) => r.status !== "error")).toBe(true);
+        expect(resolveNotifyRecipients).toHaveBeenCalledWith(expect.anything(), {
+            d4hTeamId: TEAM_ID,
+        });
+        for (const { email } of [NOTIFY_A, NOTIFY_B]) {
+            expect(sentTo(email)[0][0].subject).toBe("Items Issued to John Smith");
+            expect(emailPropsTo(email).emailTarget).toEqual({ email });
+        }
+        // Two notifications and the receipt.
+        expect(sendEmail).toHaveBeenCalledTimes(3);
+    });
+
+    it("sends no notification when nobody is on the lists", async () => {
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue([]);
+
+        const results = await execute(1);
+
+        expect(results.every((r) => r.status !== "error")).toBe(true);
+        expect(sendEmail).toHaveBeenCalledOnce();
+        expect(sentTo(MEMBER_EMAIL)).toHaveLength(1);
+    });
+
+    it("sends the receipt to the member's D4H email", async () => {
+        await execute(1);
+
+        expect(fetchReceiptAddress).toHaveBeenCalledWith(accessToken, {
+            d4hTeamId: TEAM_ID,
+            memberId: 42,
+        });
+        const [[receipt]] = sentTo(MEMBER_EMAIL);
+        expect(receipt.subject).toBe("Receipt for items issued to you");
+        const props = emailPropsTo(MEMBER_EMAIL);
+        expect(props.emailTarget).toEqual({ email: MEMBER_EMAIL });
+        expect(props).not.toHaveProperty("savedToD4H");
+    });
+
+    it("still sends the receipt when recording in D4H failed", async () => {
+        POST.mockResolvedValue({ response: new Response(null, { status: 500 }) });
+
+        await execute(1);
+
+        expect(sentTo(MEMBER_EMAIL)).toHaveLength(1);
+    });
+
+    it("skips the receipt when the member has no email", async () => {
+        vi.mocked(fetchReceiptAddress).mockResolvedValue(null);
+
+        const results = await execute(1);
+
+        expect(results.every((r) => r.status !== "error")).toBe(true);
+        expect(sendEmail).toHaveBeenCalledOnce();
+        expect(sentTo(NOTIFY_A.email)).toHaveLength(1);
+    });
+
+    it("doesn't fail the pipeline when resolving recipients throws", async () => {
+        vi.mocked(resolveNotifyRecipients).mockRejectedValue(new Error("db down"));
+
+        const results = await execute(1);
+
+        expect(results.every((r) => r.status !== "error")).toBe(true);
+        expect(results.at(-1)).toMatchObject({ stageName: "SendReceipt", status: "success" });
+        expect(sentTo(MEMBER_EMAIL)).toHaveLength(1);
+    });
+
+    it("doesn't fail the pipeline when the member fetch throws", async () => {
+        vi.mocked(fetchReceiptAddress).mockRejectedValue(new Error("D4H unavailable"));
+
+        const results = await execute(1);
+
+        expect(results.every((r) => r.status !== "error")).toBe(true);
+        expect(results.at(-1)).toMatchObject({ stageName: "SendReceipt", status: "success" });
+        expect(sentTo(NOTIFY_A.email)).toHaveLength(1);
+    });
+
+    it("never sends to the old hardcoded notify address", async () => {
+        await execute(1);
+
+        const addresses = vi
+            .mocked(sendEmail)
+            .mock.calls.flatMap(([options]) => [options.to, options.cc, options.bcc].flat());
+        expect(addresses).not.toContain("delivered+i3-notify@resend.dev");
     });
 });

@@ -78,7 +78,7 @@ export default function I3IssueItemsReceiptEmail({
             <Tailwind config={{ presets: [pixelBasedPreset] }}>
                 <Head />
                 <Body className="mx-auto my-auto bg-white px-2 font-sans">
-                    <Preview>Receipt for Issued Items</Preview>
+                    <Preview>Receipt for Items Issued</Preview>
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
                         <Section className="mt-8">
                             <Img
