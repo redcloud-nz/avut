@@ -40,11 +40,12 @@ export function D4HI3Module_SettingsCard({
 }) {
     const { enabled, organisationRecordsOnly } = settings.modules["d4h-i3"];
 
-    const { data: orgD4H, isPending } = useQuery(
+    const { data: orgD4H, isSuccess } = useQuery(
         trpc.teams.getOrganizationD4H.queryOptions({ organizationId }),
     );
+    // While pending or after a failed fetch, the switch stays held off and the note stays out.
     const linked = orgD4H?.d4hOrganisationId != null;
-    const needsLink = !isPending && !linked;
+    const needsLink = isSuccess && !linked;
 
     return (
         <Feature_SettingsCard
@@ -64,7 +65,7 @@ export function D4HI3Module_SettingsCard({
                         {ORGANISATION_ONLY_DESCRIPTION}
                         {needsLink && (
                             <span className="mt-1 block">
-                                Needs this organisation linked to a D4H organisation
+                                Needs this organisation linked to a D4H organisation.
                             </span>
                         )}
                     </>

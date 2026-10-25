@@ -122,6 +122,8 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
               variantIds: new Set(fitsQuery.data.variantIds),
           }
         : undefined;
+    // Until the fits arrive, every template is offered, so Submit waits for them.
+    const checkingFits = recipient.teamId > 0 && fitsQuery.isPending;
 
     const items = useWatch({ control: form.control, name: "items" });
     const misfitIndexes = fits
@@ -249,7 +251,8 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                         </Alert>
                                     )}
 
-                                    {fitsQuery.isError && (
+                                    {/* An unreachable team trips both alerts; the permission one is enough. */}
+                                    {fitsQuery.isError && !lacksCreatePermission && (
                                         <Alert variant="warning">
                                             <AlertTitle>
                                                 Couldn&apos;t check templates against D4H
@@ -259,6 +262,12 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                                 that can&apos;t be issued to {recipientTeamTitle}.
                                             </AlertDescription>
                                         </Alert>
+                                    )}
+
+                                    {checkingFits && (
+                                        <p className="text-sm text-muted-foreground">
+                                            Checking templates…
+                                        </p>
                                     )}
 
                                     <FieldSeparator />
@@ -297,7 +306,9 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                             type="submit"
                                             status={submitMutation.status}
                                             disabled={
-                                                lacksCreatePermission || misfitIndexes.length > 0
+                                                lacksCreatePermission ||
+                                                checkingFits ||
+                                                misfitIndexes.length > 0
                                             }
                                             text={{
                                                 idle: "Submit",

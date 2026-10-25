@@ -50,6 +50,8 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
     ],
     updateTemplateVariant: ({ organizationId }) => [
+        // listTemplates embeds each template's variants.
+        invalidate(trpc.i3.listTemplates.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         // A changed D4H brand/model changes which teams the variant fits.
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),

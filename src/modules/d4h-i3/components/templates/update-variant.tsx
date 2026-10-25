@@ -144,6 +144,7 @@ export function D4HI3Module_UpdateVariant_Dialog({
                                         <D4HEquipmentBrandSelect
                                             organisationOnlyId={organisationOnlyId}
                                             value={field.value}
+                                            fallbackTitle={variant.d4h?.brandTitle}
                                             onChange={(brand) => {
                                                 field.onChange(brand.id);
                                                 form.setValue("d4h.brandTitle", brand.title);
@@ -171,6 +172,7 @@ export function D4HI3Module_UpdateVariant_Dialog({
                                         <D4HEquipmentModelSelect
                                             organisationOnlyId={organisationOnlyId}
                                             value={field.value}
+                                            fallbackTitle={variant.d4h?.modelTitle}
                                             onChange={(model) => {
                                                 field.onChange(model.id);
                                                 form.setValue("d4h.modelTitle", model.title);

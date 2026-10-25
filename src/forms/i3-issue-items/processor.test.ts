@@ -219,7 +219,7 @@ describe("I3IssueItemsFormProcessor", () => {
         const last = results.at(-1);
         expect(last).toMatchObject({ stageName: "CheckTemplateFit", status: "error" });
         expect(last?.status === "error" && last.error.message).toBe(
-            `"Helmet" can't be issued to Rescue Team A: its D4H records belong to another team.`,
+            `"Helmet" can't be issued to Rescue Team A: its D4H records aren't owned by Rescue Team A or its D4H organisation.`,
         );
         expect(POST).not.toHaveBeenCalled();
         expect(sendEmail).not.toHaveBeenCalled();
@@ -235,7 +235,7 @@ describe("I3IssueItemsFormProcessor", () => {
         const last = results.at(-1);
         expect(last).toMatchObject({ stageName: "CheckTemplateFit", status: "error" });
         expect(last?.status === "error" && last.error.message).toBe(
-            `"Helmet (Large)" can't be issued to Rescue Team A: its D4H records belong to another team.`,
+            `"Helmet (Large)" can't be issued to Rescue Team A: its D4H records aren't owned by Rescue Team A or its D4H organisation.`,
         );
         expect(POST).not.toHaveBeenCalled();
         expect(sendEmail).not.toHaveBeenCalled();

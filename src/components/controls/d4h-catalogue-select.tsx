@@ -34,6 +34,11 @@ export interface D4HCatalogueSelectProps<T extends CatalogueOptionRecord> extend
      * `null`. The current selection is always kept, marked when it's owned by anyone else.
      */
     organisationOnlyId: number | null;
+    /**
+     * The title to show when `value` isn't among `records`, such as a template's snapshot title
+     * for a record since deleted in D4H. Shown muted, with a marker.
+     */
+    fallbackTitle?: string | null;
 
     slotProps?: {
         trigger?: Omit<ComponentProps<typeof SelectTrigger>, "children">;
@@ -54,6 +59,7 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
     onChange,
     placeholder,
     organisationOnlyId,
+    fallbackTitle,
     slotProps = {},
     ...props
 }: D4HCatalogueSelectProps<T>) {
@@ -86,16 +92,31 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
                     {selected && (
                         <>
                             {selected.record.title}
-                            {selected.otherOwnerMarker && <OtherOwnerMarker />}
+                            {selected.otherOwnerMarker && (
+                                <OtherOwnerMarker label="Not organisation records" />
+                            )}
                             {/* Pushed to the trigger's right edge, clear of the title. */}
                             <span className="ml-auto pl-2">
                                 <D4HOwner owner={selected.record.owner} variant="compact" />
                             </span>
                         </>
                     )}
+                    {!selected && value && fallbackTitle && (
+                        <>
+                            <span className="text-muted-foreground">{fallbackTitle}</span>
+                            <OtherOwnerMarker label="Not found in D4H" />
+                        </>
+                    )}
                 </SelectValue>
             </SelectTrigger>
             <SelectContent {...slotProps.content}>
+                {groups.length === 0 && (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        {organisationOnlyId != null
+                            ? "No records owned by your D4H organisation"
+                            : "None available"}
+                    </div>
+                )}
                 {groups.map((group, groupIndex) => (
                     <Fragment key={`${group.owner.resourceType}:${group.owner.id}`}>
                         {groupIndex > 0 && <SelectSeparator />}
@@ -111,7 +132,9 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
                                     className="scroll-mt-8"
                                 >
                                     {record.title}
-                                    {otherOwnerMarker && <OtherOwnerMarker />}
+                                    {otherOwnerMarker && (
+                                        <OtherOwnerMarker label="Not organisation records" />
+                                    )}
                                 </SelectItem>
                             ))}
                         </SelectGroup>
@@ -122,12 +145,12 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
     );
 }
 
-/** Marks a kept selection that isn't owned by the linked D4H organisation. */
-function OtherOwnerMarker() {
+/** Marks a kept selection that isn't owned by the linked D4H organisation, or is gone from D4H. */
+function OtherOwnerMarker({ label }: { label: string }) {
     return (
-        <span title="Not organisation records" className="inline-flex">
+        <span title={label} className="inline-flex">
             <AlertWarningIcon className="size-3.5 text-amber-600 dark:text-amber-500" />
-            <span className="sr-only">Not organisation records</span>
+            <span className="sr-only">{label}</span>
         </span>
     );
 }

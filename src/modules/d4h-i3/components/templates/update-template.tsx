@@ -167,6 +167,7 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
                                     </FieldLabel>
                                     <D4HEquipmentCategorySelect
                                         value={field.value}
+                                        fallbackTitle={template.d4h?.categoryTitle}
                                         onChange={(category) => {
                                             field.onChange(category.id);
                                             form.setValue("d4h.categoryTitle", category.title);
@@ -193,6 +194,7 @@ function UpdateTemplate_Body({ template, onDone }: { template: I3Template; onDon
                                     <FieldLabel htmlFor="template-kind">D4H Type</FieldLabel>
                                     <D4HEquipmentTypeSelect
                                         value={field.value}
+                                        fallbackTitle={template.d4h?.kindTitle}
                                         onChange={(kind) => {
                                             field.onChange(kind.id);
                                             form.setValue("d4h.kindTitle", kind.title);

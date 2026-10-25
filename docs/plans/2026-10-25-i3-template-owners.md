@@ -390,7 +390,7 @@ settings.
   pickers, issued types, the fit query) currently fans out over every D4H team the user's
   personal token reaches. That includes teams that aren't linked to any AVUT team in this org.
   Confining them to linked teams (`Team_D4H`) would change what every I3 user sees, and probably
-  belongs with the D4H module too. Raised during #454 planning, 2026-10-25.
+  belongs with the D4H module too. Raised during #454 planning, 2026-10-25. Filed as #468.
 
 ## Review notes
 
@@ -402,4 +402,5 @@ settings.
 - **Group C, task 10:** while a new recipient's `listTemplateFits` is pending, `fits` is undefined, so **Submit** is enabled and Add Item offers everything. Disable Submit while `recipient.teamId > 0` and the query has no data yet. Optionally show "Checking templates…" in the dialog.
 - **Group C, task 10:** hide the "Couldn't check templates against D4H" Alert when `lacksCreatePermission` is true. An unreachable team triggers both alerts, and the second implies Submit is enabled when it isn't.
 - **Group C, task 11:** the help card's "Hover a category, type, brand or model link to see its owner" is only true on a template's page. Say "On a template's page, hover…", and trim the body below 250 words to leave headroom.
+- **Group C, fix commit:** `i3Effects.updateTemplateVariant` invalidates only `listTemplateVariants`. It should also invalidate `listTemplates`, which embeds each template's variants, as the create and delete effects already do.
 - **Group C, checkpoint tweak:** the four D4H entity links take `owner?: { title }` as a separate prop. `docs/patterns/entity-link.md` prefers intersecting the Ref (`D4HEquipmentCategoryRef & Partial<Pick<D4HEquipmentCategory, "owner">>`). Switch to that, or document the separate prop in that doc's wrapper table.

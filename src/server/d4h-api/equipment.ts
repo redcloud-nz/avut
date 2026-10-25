@@ -212,7 +212,9 @@ async function fetchD4HTeamCatalogueList<T extends { owner: RawCatalogueOwner }>
     what: string,
 ): Promise<(Omit<T, "owner"> & { owner: D4HCatalogueOwner })[]> {
     const { data, error, response } = await getD4HFetchClient(token).GET(path, {
-        params: { path: { context: "team", contextId: d4hTeamId } },
+        // D4H pages these lists like the equipment one. Ask for everything in one page, since the fit
+        // check refuses any record missing from the listing.
+        params: { path: { context: "team", contextId: d4hTeamId }, query: { size: 10000 } },
     });
 
     // `error` is undefined for a non-ok response with an empty body, so check the response.

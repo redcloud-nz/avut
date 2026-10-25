@@ -7,18 +7,21 @@
 
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { D4HEquipmentCategoryRef } from "@/lib/schemas/d4h/equipment-category";
+import {
+    D4HEquipmentCategory,
+    D4HEquipmentCategoryRef,
+} from "@/lib/schemas/d4h/equipment-category";
 
 import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentCategoryLinkProps = {
-    category: D4HEquipmentCategoryRef;
-    /** The D4H team or organisation that owns the category, shown in the hover card when known. */
-    owner?: { title: string };
+    /** `owner`, when known, is shown in the hover card. */
+    category: D4HEquipmentCategoryRef & Partial<Pick<D4HEquipmentCategory, "owner">>;
 };
 
-export function D4HEquipmentCategoryLink({ category, owner }: D4HEquipmentCategoryLinkProps) {
+export function D4HEquipmentCategoryLink({ category }: D4HEquipmentCategoryLinkProps) {
     const organization = useOrganization();
+    const { owner } = category;
 
     return (
         <EntityLink

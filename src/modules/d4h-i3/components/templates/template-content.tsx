@@ -113,8 +113,8 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                                         category={{
                                                             id: template.d4h.categoryId,
                                                             title: template.d4h.categoryTitle,
+                                                            owner: categoryOwner,
                                                         }}
-                                                        owner={categoryOwner}
                                                     />
                                                 ) : (
                                                     "—"
@@ -129,8 +129,8 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                                         type={{
                                                             id: template.d4h.kindId,
                                                             title: template.d4h.kindTitle,
+                                                            owner: kindOwner,
                                                         }}
-                                                        owner={kindOwner}
                                                     />
                                                 ) : (
                                                     "—"
