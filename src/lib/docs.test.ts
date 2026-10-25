@@ -20,6 +20,8 @@ describe("getDocsNav", () => {
             .sort();
 
         expect(nav.flatMap((section) => section.indexSlug ?? []).sort()).toEqual(indexSlugs);
+        // Pinned, so a change that leaves no page recognised as an index can't pass as `[]`.
+        expect(nav.find((section) => section.id === "org-admin")?.indexSlug).toBe("admin");
     });
 
     it("doesn't list a section's index page, or the docs home, among its pages", () => {
