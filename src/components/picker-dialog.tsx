@@ -84,7 +84,7 @@ export function PickerDialog<A extends string>({
 
     // `forceOpen` (nothing picked yet) shows the dialog on arrival, but it stays dismissable:
     // Escape leaves the page with its prompt and the trigger button to reopen. Once dismissed,
-    // it only ever reopens through `?action=`, so a Back-button navigation that clears the
+    // it reopens only through `?action=` until the page is left and reached again, so a Back-button navigation that clears the
     // param always closes it.
     const [dismissed, setDismissed] = useDismissedThisVisit();
     const open = action === actionValue || (forceOpen && !dismissed);

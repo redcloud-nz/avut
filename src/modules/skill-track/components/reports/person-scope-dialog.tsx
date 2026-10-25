@@ -56,7 +56,7 @@ export function SkillTrack_PersonScopeDialog({
 
     // `forceOpen` (report has no scope yet) shows the dialog on arrival, but it stays
     // dismissable — Escape leaves the blank report with its prompt and the trigger button to
-    // reopen. Once dismissed, it only ever reopens through `?action=select-scope`, so a
+    // reopen. Once dismissed, it reopens only through `?action=select-scope` until the page is left and reached again, so a
     // Back-button navigation that clears the param always closes it.
     const [dismissed, setDismissed] = useDismissedThisVisit();
     const open = action === "select-scope" || (forceOpen && !dismissed);
