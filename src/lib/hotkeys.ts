@@ -3,48 +3,57 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import type { RawHotkey } from "@tanstack/react-hotkeys";
+import type { Hotkey, RawHotkey } from "@tanstack/react-hotkeys";
+
+/** Every verb an entity actions menu can offer. */
+export type ActionVerb =
+    | "create"
+    | "update"
+    | "delete"
+    | "archive"
+    | "restore"
+    | "recover"
+    | "publish"
+    | "unpublish"
+    | "unsubscribe"
+    | "move"
+    | "export"
+    | "import"
+    | "invite"
+    | "link"
+    | "unlink"
+    | "make-owner"
+    | "remove-owner"
+    | "reopen"
+    | "return"
+    | "impersonate"
+    | "promote"
+    | "demote"
+    | "ban"
+    | "unban";
 
 /**
- * Canonical keyboard shortcut for each action verb, app-wide. Every dialog
- * trigger is `Alt+<key>`; the two bare keys (`/`, `?`) are non-destructive and
- * follow near-universal web convention.
+ * Keyboard shortcut for the few common action verbs, app-wide (#380). Every other verb is reached
+ * through the actions menu ({@link ACTIONS_MENU_HOTKEY}, arrows, Enter) rather than a key nobody
+ * would remember; its menu item shows no shortcut badge.
  *
- * `Alt`-prefixing rather than a bare letter: the hotkey library's `ignoreInputs`
- * already stops a bare `E` firing inside a text field, but it would still fire
- * when focus is on a button, link, table row, or the page body. `Alt+<key>`
- * requires intent.
- *
- * `link` and `unlink` deliberately share `Alt+L` — they're mutually exclusive on
- * any one page (a linked entity shows Unlink, an unlinked one shows Link), like a
- * toggle, so registering both at once never happens. `make-owner`/`remove-owner`
- * share `Alt+W` for the same reason — a member's menu shows exactly one of them.
+ * `Alt`-prefixing rather than a bare letter: the hotkey library's `ignoreInputs` already stops a
+ * bare `E` firing inside a text field, but it would still fire when focus is on a button, link,
+ * table row, or the page body. `Alt+<key>` requires intent.
  */
-export const ActionHotkey = {
+export const ActionHotkey: Partial<Record<ActionVerb, Hotkey>> = {
     create: "Alt+N",
     update: "Alt+E",
     delete: "Alt+Backspace",
     archive: "Alt+A",
-    restore: "Alt+R",
-    // O for recOver — Alt+R is already `restore`.
-    recover: "Alt+O",
-    publish: "Alt+P",
-    unpublish: "Alt+U",
-    move: "Alt+M",
-    export: "Alt+X",
-    import: "Alt+I",
-    // V for inVite — Alt+I is already `import`.
-    invite: "Alt+V",
-    link: "Alt+L",
-    unlink: "Alt+L",
-    // W for oWner — O is already `recover`.
-    "make-owner": "Alt+W",
-    "remove-owner": "Alt+W",
-    // K for unlocK — R is `restore` and O is `recover`. Reopens an approved session.
-    reopen: "Alt+K",
-} as const satisfies Record<string, string>;
+};
 
-export type ActionVerb = keyof typeof ActionHotkey;
+/**
+ * Open the page's actions menu with its first item focused (`Cmd+.` on Mac, `Ctrl+.` elsewhere),
+ * as VS Code's Quick Fix menu does. Registered by `EntityActionMenu`, which only page-level menus
+ * use. Deliberately not `Alt+<key>`: opening the menu isn't an action.
+ */
+export const ACTIONS_MENU_HOTKEY: Hotkey = "Mod+.";
 
 /** Focus the table search input. Owned by the Kaga table toolbar. */
 export const SEARCH_HOTKEY = "/";

@@ -130,6 +130,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                         objectType: "SkillGroup",
                         objectId: skillGroupId,
                         changes: diff,
+                        refs: SkillPackages.groupLogRefs({ skillPackageId }),
                     }),
                 ]);
 
@@ -238,6 +239,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                         objectType: "Skill",
                         objectId: skillId,
                         changes: diff,
+                        refs: SkillPackages.skillLogRefs({ skillPackageId, skillGroupId }),
                     }),
                 ]);
 
@@ -619,10 +621,16 @@ export const skillPackageBuilderRouter = createTrpcRouter({
         }),
 
     /**
-     * Move a skill to a different skill group within the same skill package.
+     * Move a skill to a different skill group, in the same or another skill package of the
+     * organization. Logs a `Move` entry that refs the old group as `from` and the new one as `to`
+     * (and the packages the same way when they differ), so the move shows on both groups' History
+     * pages. Moving a skill to the group it is already in writes nothing.
      * @param skillId The ID of the skill to move.
-     * @param targetGroupId The ID of the skill group to move the skill to.
+     * @param destinationPackageId The ID of the skill package the destination group belongs to.
+     * @param destinationGroupId The ID of the skill group to move the skill to.
+     * @returns The skill, unchanged when it is already in the destination group.
      * @throws TRPCError(NOT_FOUND) if the skill or target skill group does not exist or does not belong to the organization.
+     * @throws TRPCError(BAD_REQUEST) if the destination group does not belong to the destination package.
      */
     moveSkill: organizationProcedure({ skillPackage: ["update"] })
         .input(
@@ -645,6 +653,10 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                 });
             }
 
+            if (destinationGroupId === skill.skillGroupId) {
+                return { updated: skill };
+            }
+
             const changes = diffObject(
                 {
                     skillGroupId: skill.skillGroupId,
@@ -665,11 +677,18 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     },
                 }),
                 ctx.logEvent({
-                    action: "Update",
+                    action: "Move",
                     objectType: "Skill",
                     objectId: skillId,
                     description: `Moved skill to group ${destinationGroup.name}`,
                     changes,
+                    refs: SkillPackages.skillMoveLogRefs({
+                        from: skill,
+                        to: {
+                            skillPackageId: destinationPackageId,
+                            skillGroupId: destinationGroupId,
+                        },
+                    }),
                 }),
             ]);
 
@@ -920,6 +939,9 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                             },
                         ],
                         description: "Reordered skills within the group.",
+                        refs: SkillPackages.groupLogRefs({
+                            skillPackageId: SkillPackageId.schema.parse(group.skillPackageId),
+                        }),
                     }),
                 ]);
             }
@@ -1034,6 +1056,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     objectType: "SkillGroup",
                     objectId: skillGroupId,
                     changes: diff,
+                    refs: SkillPackages.groupLogRefs(existingGroup),
                 }),
             ]);
 
@@ -1106,6 +1129,7 @@ export const skillPackageBuilderRouter = createTrpcRouter({
                     objectType: "Skill",
                     objectId: skillId,
                     changes: diff,
+                    refs: SkillPackages.skillLogRefs(existingSkill),
                 }),
             ]);
 

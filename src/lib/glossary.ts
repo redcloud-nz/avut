@@ -80,10 +80,10 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         slug: "ppe-template",
         term: "PPE template",
         shortDefinition:
-            "A standard set of items an I3 issue is built from, with optional size/config variants.",
+            "A standard set of items a D4H I3 issue is built from, with optional size/config variants.",
         longDefinition:
-            "Describes a standard set of items — for example, a personal protective equipment (PPE) kit — that I3 issues are built from. A template can have variants for different sizes or configurations, and can be linked to D4H equipment so issued items stay in step with the D4H inventory.",
-        modules: ["i3"],
+            "Describes a standard set of items — for example, a personal protective equipment (PPE) kit — that D4H I3 issues are built from. A template can have variants for different sizes or configurations, and can be linked to D4H equipment so issued items stay in step with the D4H inventory.",
+        modules: ["d4h-i3"],
         relatedTerms: ["d4h"],
     },
     {
@@ -155,7 +155,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Skill package catalogue",
         shortDefinition: "The set of skill packages available to an organisation in Skill Track.",
         longDefinition:
-            "The set of skill packages available to an organisation's Skill Track module, drawn from the packages organisations have published from their Skill Package Builder. An organisation subscribes to the packages it wants to assess.",
+            "The set of skill packages available to an organisation, listed on Skill Track's Packages page: the packages organisations have published from their Skill Package Builder. An organisation subscribes to the packages it wants to assess, and its subscribed skills are listed together on the Skills page.",
         modules: ["skill-track"],
         relatedTerms: ["skill-package"],
     },
@@ -165,7 +165,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
-            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the read-only D4H Views, I3's equipment issuing, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
+            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the D4H module's views of teams, members and equipment, D4H I3's equipment issuing and returns, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
         relatedTerms: ["ppe-template"],
     },
 ] as const;
@@ -177,4 +177,31 @@ export const glossaryBySlug: ReadonlyMap<string, GlossaryEntry> = new Map(
 /** All entries sorted A-Z by term, for the flat glossary page. */
 export function getGlossaryEntriesSorted(): GlossaryEntry[] {
     return [...glossaryEntries].sort((a, b) => a.term.localeCompare(b.term));
+}
+
+/**
+ * The entries to show when the modules in `hidden` are flag-hidden.
+ *
+ * An entry tagged with modules is dropped when every one of them is hidden; an entry with no
+ * `modules` always shows. A kept entry loses the badges of its hidden modules, and its
+ * `relatedTerms` lose any slug whose entry was dropped (that anchor no longer exists on the page).
+ * Pure, so it can be tested without `@/lib/flags`; `getVisibleGlossaryEntries` in
+ * `src/server/docs.ts` supplies the hidden set.
+ */
+export function visibleGlossaryEntries(
+    entries: readonly GlossaryEntry[],
+    hidden: ReadonlySet<string>,
+): GlossaryEntry[] {
+    const kept = entries.filter(
+        (entry) =>
+            !entry.modules ||
+            entry.modules.length === 0 ||
+            entry.modules.some((moduleId) => !hidden.has(moduleId)),
+    );
+    const keptSlugs = new Set(kept.map((entry) => entry.slug));
+    return kept.map((entry) => ({
+        ...entry,
+        modules: entry.modules?.filter((moduleId) => !hidden.has(moduleId)),
+        relatedTerms: entry.relatedTerms?.filter((slug) => keptSlugs.has(slug)),
+    }));
 }

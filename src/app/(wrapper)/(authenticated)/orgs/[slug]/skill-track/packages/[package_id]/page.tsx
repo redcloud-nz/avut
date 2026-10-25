@@ -1,0 +1,51 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Paths: /orgs/[slug]/skill-track/packages/[package_id]
+ */
+
+import { Metadata } from "next";
+
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillTrack_Package_Content } from "@/modules/skill-track/components/package-content";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
+
+type Props = PageProps<"/orgs/[slug]/skill-track/packages/[package_id]">;
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+    const { slug, package_id } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    const skillPackageId = SkillPackageId.schema.parse(package_id);
+    const skillPackage = await fetchQuery(
+        trpc.skillPackageSubscriptions.getPackage.queryOptions({
+            organizationId: organization.id,
+            skillPackageId,
+        }),
+    );
+
+    return { title: `${skillPackage.name} ${TITLE_SEPARATOR} Packages` };
+}
+
+export default async function SkillTrack_Package_Page(props: Props) {
+    const { slug, package_id } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    const skillPackageId = SkillPackageId.schema.parse(package_id);
+
+    prefetch(
+        trpc.skillPackageSubscriptions.getPackage.queryOptions({
+            organizationId: organization.id,
+            skillPackageId,
+        }),
+    );
+
+    return (
+        <HydrateClient>
+            <SkillTrack_Package_Content skillPackageId={skillPackageId} />
+        </HydrateClient>
+    );
+}

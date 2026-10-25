@@ -1,0 +1,172 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect, useId } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogBody,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { FieldValue } from "@/components/ui/field-value";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useOrganization } from "@/hooks/use-organization";
+import { ModifiableSkillPackage, SkillPackage } from "@/lib/schemas/skill-package";
+import { trpc } from "@/trpc/client";
+
+export function SkillPackageBuilder_UpdatePackage_Dialog({
+    skillPackage,
+}: {
+    skillPackage: SkillPackage;
+}) {
+    const organization = useOrganization();
+
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
+    const dialogOpen = action === "update";
+
+    const formId = useId();
+    const form = useForm({
+        resolver: zodResolver(SkillPackage.modifiableSchema),
+        defaultValues: skillPackage,
+    });
+
+    const mutation = useMutation(
+        trpc.skillPackageBuilder.updatePackage.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.updatePackage },
+            onError(error) {
+                if (error.shape?.cause?.name == "FieldConflictError") {
+                    form.setError(error.shape.cause.message as keyof ModifiableSkillPackage, {
+                        message: error.message,
+                    });
+                } else {
+                    toast.error(`Failed to update skill package: ${error.message}`);
+                    console.error("Failed to update skill package:", error);
+                }
+            },
+            onSuccess() {
+                toast.success("Skill package updated");
+                handleOpenChange(false);
+            },
+        }),
+    );
+
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "update" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset(skillPackage);
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
+    const handleSubmit = form.handleSubmit(
+        (formData) =>
+            mutation.mutate({
+                skillPackageId: skillPackage.id,
+                organizationId: organization.id,
+                update: formData,
+            }),
+        (errors) => {
+            console.warn("Form validation errors:", errors);
+        },
+    );
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost">
+                    <ObjectIcons.Edit />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Update skill package</DialogTitle>
+                    <DialogDescription>Update the details of this skill package.</DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                    <form id={formId} onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel>Package ID</FieldLabel>
+                                <FieldValue value={skillPackage.id} format="id" />
+                            </Field>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="package-name">Name</FieldLabel>
+                                        <Input
+                                            id="package-name"
+                                            autoFocus
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="package-description">
+                                            Description
+                                        </FieldLabel>
+                                        <Textarea
+                                            id="package-description"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form={formId}
+                        status={mutation.status}
+                        text={{
+                            idle: "Update",
+                            pending: "Updating...",
+                            success: "Updated",
+                        }}
+                    />
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}

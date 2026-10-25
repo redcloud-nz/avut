@@ -8,11 +8,17 @@ import "server-only";
 import { createElement } from "react";
 
 import I3IssueItemsNotificationEmail from "@/emails/i3-issue-items-notification";
+import I3IssueItemsReceiptEmail from "@/emails/i3-issue-items-receipt";
+import { templateFitsTeam, variantFitsTeam } from "@/lib/i3-template-fit";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
-import { fetchD4HWhoami, getD4HFetchClient } from "@/server/d4h-api/client";
+import { getD4HFetchClient } from "@/server/d4h-api/client";
+import { requireD4HTeamPermission } from "@/server/d4h-permissions";
 import { NoReplyEmailAddress, sendEmail } from "@/server/email";
 import { FormProcessingPipeline } from "@/server/form-processor";
+import * as I3Notifications from "@/server/services/i3-notifications";
+import * as I3Templates from "@/server/services/i3-templates";
 import { AuthenticatedOrganizationContext } from "@/trpc/init";
+import { Messages } from "@/trpc/messages";
 
 import { I3IssueItemsFormData } from "./schema";
 
@@ -30,6 +36,19 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
 
             return { accessToken };
+        },
+    })
+    .stage({
+        stageName: "CheckPermissions",
+        stageFn: async (ctx, { accessToken }) => {
+            // Refuse up front, before anything is written, when the user can't create equipment
+            // in D4H for the recipient team. Throws a ForbiddenError naming the team.
+            await requireD4HTeamPermission(
+                accessToken,
+                ctx.formData.recipient.teamId,
+                "Equipment",
+                "CREATE",
+            );
         },
     })
     .stage({
@@ -79,27 +98,37 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
         },
     })
     .stage({
-        stageName: "CheckPermissions",
-        stageFn: async (ctx, { accessToken }) => {
-            // Check if the user has permission to create equipment in D4H for the recipient team, which is required to save issued items to D4H.
-            // Uncached: an authorization decision must not rest on a whoami that may be hours old.
-            const whoami = await fetchD4HWhoami(accessToken);
+        stageName: "CheckTemplateFit",
+        stageFn: async (ctx, { accessToken, items }) => {
+            // Re-check, before anything is created in D4H, that every item's D4H records belong
+            // to the recipient's team or its organisation. The Issue form only offers fitting
+            // templates, but the templates (or the recipient) may have changed since it loaded.
+            // Throws NotFoundError when the token doesn't reach the recipient's team.
+            const { team, catalogue } = await I3Templates.getD4HTeamFitContext(ctx, {
+                accessToken,
+                teamId: ctx.formData.recipient.teamId,
+            });
 
-            const userMembershipInRecipientTeam = whoami.members.find(
-                (m) => m.owner.id === ctx.formData.recipient.teamId,
-            );
-
-            const canCreateEquipment =
-                userMembershipInRecipientTeam?.permissions?.Equipment?.CREATE === true;
-
-            return { canCreateEquipment };
+            for (const { template, variant } of items) {
+                const fits = variant
+                    ? variantFitsTeam(variant.d4h, template.d4h, catalogue, team)
+                    : templateFitsTeam(template.d4h, catalogue, team);
+                if (!fits) {
+                    throw new Error(
+                        Messages.i3ItemDoesNotFitTeam({
+                            templateName: template.name,
+                            variantName: variant?.name ?? null,
+                            teamTitle: team.title,
+                        }),
+                    );
+                }
+            }
         },
     })
-    .conditionalStage({
+    .stage({
         stageName: "CreateEquipmentInD4H",
-        test: (ctx, { canCreateEquipment }) => canCreateEquipment === true,
         stageFn: async (ctx, { accessToken, items }) => {
-            // User has permission to create equipment in D4H for the recipient team, so create equipment records for each issued item in D4H.
+            // Create an equipment record in D4H for each issued item.
 
             const fetchClient = getD4HFetchClient(accessToken);
 
@@ -158,21 +187,60 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
         },
     })
     .stage({
-        stageName: "NotifyAdmin",
+        stageName: "NotifyPersonnel",
         stageFn: async (ctx, { savedToD4H }) => {
-            await sendEmail({
-                from: NoReplyEmailAddress,
-                to: "delivered+i3-notify@resend.dev",
-                subject: "Items Issued to " + ctx.formData.recipient.name,
-                react: createElement(I3IssueItemsNotificationEmail, {
-                    issuer: {
-                        name: ctx.auth.user.name,
-                    },
-                    emailTarget: { email: "delivered+i3-notify@resend.dev" },
-                    formData: ctx.formData,
-                    savedToD4H: savedToD4H ?? { reason: "insufficient permissions" },
-                }),
-            });
+            // Email the org's and the recipient team's notify lists, one copy each. A failure here
+            // is logged, not thrown: the items have already been issued, whether or not D4H
+            // recorded them.
+            try {
+                const recipients = await I3Notifications.resolveNotifyRecipients(ctx, {
+                    d4hTeamId: ctx.formData.recipient.teamId,
+                });
+                await I3Notifications.sendEach(recipients, (recipient) => ({
+                    from: NoReplyEmailAddress,
+                    to: recipient.email,
+                    subject: "Items Issued to " + ctx.formData.recipient.name,
+                    react: createElement(I3IssueItemsNotificationEmail, {
+                        issuer: { name: ctx.auth.user.name },
+                        emailTarget: { email: recipient.email },
+                        formData: ctx.formData,
+                        savedToD4H,
+                    }),
+                }));
+            } catch (err) {
+                ctx.logger.error("Failed to send the Issue Items notification emails", err);
+            }
+        },
+    })
+    .stage({
+        stageName: "SendReceipt",
+        stageFn: async (ctx, { accessToken }) => {
+            // Send the member a receipt at their D4H email. It records the physical handover, so it
+            // goes out even when recording in D4H failed. A failure is logged, not thrown.
+            try {
+                const address = await I3Notifications.fetchReceiptAddress(accessToken, {
+                    d4hTeamId: ctx.formData.recipient.teamId,
+                    memberId: ctx.formData.recipient.id,
+                });
+                if (address === null) {
+                    ctx.logger.info(
+                        `No D4H email for member ${ctx.formData.recipient.id}; skipping the receipt`,
+                    );
+                    return;
+                }
+                await sendEmail({
+                    from: NoReplyEmailAddress,
+                    to: address,
+                    subject: "Receipt for items issued to you",
+                    react: createElement(I3IssueItemsReceiptEmail, {
+                        issuer: { name: ctx.auth.user.name },
+                        emailTarget: { email: address },
+                        formData: ctx.formData,
+                    }),
+                });
+            } catch (err) {
+                ctx.logger.error("Failed to send the Issue Items receipt email", err);
+            }
         },
     })
     .build();

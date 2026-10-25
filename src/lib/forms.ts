@@ -13,11 +13,17 @@ interface AVUTForm {
 
 export const I3IssueItemsForm = {
     formKey: "i3-issue",
-    name: "I3 Issue Items Form",
-    description: "Form for issuing items in the I3 module.",
+    name: "D4H I3 Issue Items Form",
+    description: "Form for issuing items in the D4H I3 module.",
 } as const satisfies AVUTForm;
 
-export const forms = [I3IssueItemsForm] as const;
+export const I3ReturnItemsForm = {
+    formKey: "i3-return",
+    name: "D4H I3 Return Items Form",
+    description: "Form for returning items in the D4H I3 module.",
+} as const satisfies AVUTForm;
+
+export const forms = [I3IssueItemsForm, I3ReturnItemsForm] as const;
 
 export type FormKey = (typeof forms)[number]["formKey"];
 

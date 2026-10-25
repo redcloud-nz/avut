@@ -5,10 +5,10 @@
  * Paths: /orgs/[slug]/admin/invitations
  */
 
-import { AdminModule_Invitations_List } from "@/components/admin/invitations/invitations-list";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
+import { AdminModule_Invitations_List } from "@/modules/org-admin/components/invitations/invitations-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

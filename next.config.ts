@@ -116,9 +116,27 @@ const nextConfig: NextConfig = {
                 destination: "/orgs/:slug/admin/organization-settings",
                 permanent: true,
             },
+            // Skill Track's Catalogue was renamed Packages (#420).
+            {
+                source: "/orgs/:slug/skill-track/catalogue/:path*",
+                destination: "/orgs/:slug/skill-track/packages/:path*",
+                permanent: true,
+            },
+            // The D4H guides moved with the modules' rename (#460).
+            { source: "/docs/d4h-views", destination: "/docs/d4h", permanent: true },
+            { source: "/docs/i3", destination: "/docs/d4h-i3", permanent: true },
+            // The Catalogue guide followed Skill Track's rename to Packages (#441).
+            {
+                source: "/docs/skill-track/catalogue",
+                destination: "/docs/skill-track/packages",
+                permanent: true,
+            },
         ];
     },
     cacheComponents: true,
+    // Next 16.4's Partial Prefetching changes what every <Link> prefetches. Kept off until
+    // it's adopted on purpose (node_modules/next/dist/docs/01-app/02-guides/adopting-partial-prefetching.md).
+    partialPrefetching: false,
     ...(environment === "development" ? { allowedDevOrigins: localNetworkHostnames() } : {}),
     images: {
         // Product screenshots served from the Vercel Blob store (see

@@ -138,45 +138,72 @@ describe("settings organization settings", () => {
     it("lets an in-org admin write through the same procedure", async () => {
         const result = await asOrgAdmin().updateOrganizationSettingsSlice({
             organizationId: T.bareOrg,
-            update: { slice: "modules.d4h-views", patch: { enabled: true } },
+            update: { slice: "modules.d4h", patch: { enabled: true } },
         });
 
-        expect(result.modules["d4h-views"].enabled).toBe(true);
+        expect(result.modules.d4h.enabled).toBe(true);
     });
 
     it("updates an existing config row on a fully materialised organization", async () => {
-        const result = await asSiteAdmin().updateOrganizationSettingsSlice({
+        // D4H I3 requires D4H.
+        await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            update: { slice: "modules.i3", patch: { enabled: true, storage: "AVUT" } },
+            update: { slice: "modules.d4h", patch: { enabled: true } },
         });
 
-        expect(result.modules.i3).toEqual({ enabled: true, storage: "AVUT" });
+        const result = await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.seededOrg,
+            update: { slice: "modules.d4h-i3", patch: { enabled: true, storage: "AVUT" } },
+        });
+
+        expect(result.modules["d4h-i3"]).toEqual({
+            enabled: true,
+            storage: "AVUT",
+            organisationRecordsOnly: false,
+            notify: { org: [], teams: {} },
+        });
 
         const row = await db.organizationConfig.findFirst({
-            where: { organizationId: T.seededOrg, key: "modules.i3.storage" },
+            where: { organizationId: T.seededOrg, key: "modules.d4h-i3.storage" },
         });
         expect(row?.value).toBe("AVUT");
     });
 
     it("leaves the rest of a slice alone when the patch names one field", async () => {
+        // D4H I3 requires D4H.
         await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            update: { slice: "modules.i3", patch: { enabled: true, storage: "AVUT" } },
+            update: { slice: "modules.d4h", patch: { enabled: true } },
+        });
+
+        await asSiteAdmin().updateOrganizationSettingsSlice({
+            organizationId: T.seededOrg,
+            update: { slice: "modules.d4h-i3", patch: { enabled: true, storage: "AVUT" } },
         });
 
         const settings = await asSiteAdmin().updateOrganizationSettingsSlice({
             organizationId: T.seededOrg,
-            update: { slice: "modules.i3", patch: { storage: "D4H" } },
+            update: { slice: "modules.d4h-i3", patch: { storage: "D4H" } },
         });
 
         // `enabled` is absent from the second patch, so it keeps the value the first one set —
         // even though "D4H" is the default for `storage` and so deletes that row.
-        expect(settings.modules.i3).toEqual({ enabled: true, storage: "D4H" });
+        expect(settings.modules["d4h-i3"]).toEqual({
+            enabled: true,
+            storage: "D4H",
+            organisationRecordsOnly: false,
+            notify: { org: [], teams: {} },
+        });
 
         const rows = await db.organizationConfig.findMany({
-            where: { organizationId: T.seededOrg, key: { startsWith: "modules.i3" } },
+            where: { organizationId: T.seededOrg, key: { startsWith: "modules.d4h-i3" } },
         });
-        expect(rows.map((r) => r.key)).toEqual(["modules.i3.enabled"]);
+        expect(rows.map((r) => r.key).sort()).toEqual([
+            "modules.d4h-i3.enabled",
+            // A materialised default row, left alone because the patch didn't change it.
+            "modules.d4h-i3.notify.org",
+            "modules.d4h-i3.organisationRecordsOnly",
+        ]);
     });
 
     it("does not clobber a concurrent edit to another slice", async () => {
@@ -269,6 +296,105 @@ describe("settings organization settings", () => {
                 update: { slice: "personnel", patch: { autoLinkOnPersonCreate: true } },
             }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("settings module requirements", () => {
+    const T = {
+        siteAdmin: UserId.create(),
+        org: OrganizationId.create(),
+        // D4H off and D4H I3 stored on — an org left as it was by the D4H rename.
+        heldOrg: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: {
+                id: T.siteAdmin,
+                name: "Site Admin",
+                email: `${T.siteAdmin}@x.test`,
+                emailVerified: true,
+                createdAt: new Date(),
+            },
+        });
+        for (const [id, slug] of [
+            [T.org, "requirements"],
+            [T.heldOrg, "held"],
+        ] as const) {
+            await db.organization.create({
+                data: { id, name: slug, slug, createdAt: new Date() },
+            });
+        }
+        await db.organizationConfig.create({
+            data: { organizationId: T.heldOrg, key: "modules.d4h-i3.enabled", value: true },
+        });
+    });
+
+    const caller = () =>
+        settingsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.siteAdmin, role: "admin" },
+                prisma: db,
+            }),
+        );
+
+    const update = (
+        organizationId: OrganizationId,
+        slice: "modules.d4h" | "modules.d4h-i3" | "modules.notes",
+        enabled: boolean,
+    ) =>
+        caller().updateOrganizationSettingsSlice({
+            organizationId,
+            update: { slice, patch: { enabled } },
+        });
+
+    it("refuses to turn D4H I3 on while D4H is off", async () => {
+        await expect(update(T.org, "modules.d4h-i3", true)).rejects.toMatchObject({
+            code: "CONFLICT",
+            message: expect.stringContaining("Turn on D4H first"),
+        });
+
+        const rows = await db.organizationConfig.findMany({ where: { organizationId: T.org } });
+        expect(rows).toEqual([]);
+    });
+
+    it("turns D4H I3 off with D4H, in the same audit entry", async () => {
+        await update(T.org, "modules.d4h", true);
+        await update(T.org, "modules.d4h-i3", true);
+
+        const settings = await update(T.org, "modules.d4h", false);
+
+        expect(settings.modules.d4h.enabled).toBe(false);
+        expect(settings.modules["d4h-i3"].enabled).toBe(false);
+
+        const rows = await db.organizationConfig.findMany({ where: { organizationId: T.org } });
+        expect(rows).toEqual([]);
+
+        const entries = await db.logEntry.findMany({
+            where: { organizationId: T.org, objectType: "OrganizationSettings" },
+        });
+        expect(entries.at(-1)?.description).toBe("Updated modules.d4h settings");
+        expect(entries.at(-1)?.changes).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ path: ["modules", "d4h", "enabled"], curr: false }),
+                expect.objectContaining({ path: ["modules", "d4h-i3", "enabled"], curr: false }),
+            ]),
+        );
+    });
+
+    it("leaves an unrelated slice alone", async () => {
+        const settings = await update(T.heldOrg, "modules.notes", true);
+
+        expect(settings.modules.notes.enabled).toBe(true);
+        // Already on before the write with D4H off: held off by `isModuleUsable`, not rewritten.
+        expect(settings.modules["d4h-i3"].enabled).toBe(true);
+    });
+
+    it("still lets a held-off D4H I3 be turned off", async () => {
+        const settings = await update(T.heldOrg, "modules.d4h-i3", false);
+
+        expect(settings.modules["d4h-i3"].enabled).toBe(false);
     });
 });
 

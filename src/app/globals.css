@@ -14,6 +14,10 @@
 
 :root {
   --radius: 0.45rem;
+  /* Height of the impersonation banner while it's shown, 0 otherwise. The shell offsets its
+     fixed sidebar and full-height inset by it (#87). Set by CSS rather than the banner's own
+     JS, so the server-rendered shell already has it. */
+  --impersonation-h: 0px;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -24,24 +28,29 @@
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* Interactive highlight (hover, menu focus): a translucent blue, so it lands lighter on white
+     surfaces and a shade darker on --page, from the one value. Over white it's ≈ oklch(0.969 0.008 244). */
+  --accent: oklch(0.55 0.12 244 / 0.07);
+  --accent-foreground: oklch(0.3791 0.1378 265.5222);
+  /* Selected (active nav item, pressed toggle, chosen list entry): the accent's blue, heavier. */
+  --selected: oklch(0.55 0.12 244 / 0.13);
+  --selected-foreground: var(--accent-foreground);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: oklch(0.912 0.0052 247.8822);
+  --input: var(--border);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.609 0.126 221.723);
   --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
   --sidebar-ring: oklch(0.708 0 0);
 
   --table-frame: oklch(0.645 0.246 16.439);
@@ -54,12 +63,23 @@
   --mdxeditor-toolbar-height: 45px;
   --page-padding: var(--spacing) * 4;
   --scrollbar-thumb: var(--color-neutral-400);
-  --scrollbar-track: var(--background);
+  /* Transparent so a scroller's track shows whichever surface it sits on (scrollbar-color is inherited). */
+  --scrollbar-track: transparent;
 
   --table-head: var(--color-stone-100);
   --table-head-foreground: var(--foreground);
+  /* Group-heading band inside a white table; a step darker than --muted, which sits too close to --page. */
+  --table-group: oklch(0.95 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+
+  /* Shell surfaces: the navbar frames the page alongside the sidebar; the page recedes behind both. */
+  --navbar: oklch(1 0 0);
+  --page: oklch(0.975 0.0042 236.4993);
+}
+
+:root:has([data-slot="impersonation-banner"]) {
+  --impersonation-h: 2.25rem;
 }
 
 .dark {
@@ -75,11 +95,12 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.7 0.12 244 / 0.14);
+  --accent-foreground: oklch(0.8823 0.0571 254.1284);
+  --selected: oklch(0.7 0.12 244 / 0.24);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -90,10 +111,11 @@
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.715 0.143 215.221);
   --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  --navbar: oklch(0.205 0 0);
+  --page: oklch(0.145 0 0);
+  --table-group: oklch(0.269 0 0);
 }
 
 @theme inline {
@@ -111,6 +133,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-selected: var(--selected);
+  --color-selected-foreground: var(--selected-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -130,9 +154,13 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-navbar: var(--navbar);
+  --color-page: var(--page);
+
   --color-table-frame: var(--table-frame);
   --color-table-head: var(--table-head);
   --color-table-head-foreground: var(--table-head-foreground);
+  --color-table-group: var(--table-group);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
@@ -165,6 +193,10 @@
   }
   html {
     @apply font-sans;
+  }
+  /* The docs site scrolls the window, not a `Std.ScrollContainer`, so the viewport scrollbar gets the same styling. */
+  html:has([data-slot="docs-shell"]) {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 }
 

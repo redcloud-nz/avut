@@ -1,0 +1,222 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+"use client";
+
+import { TelescopeIcon } from "lucide-react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import * as R from "remeda";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+import { Button } from "@/components/ui/button";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { DialogBoundary } from "@/components/ui/dialog-boundary";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { useDismissedThisVisit } from "@/hooks/use-dismissed-this-visit";
+import { useOrganization } from "@/hooks/use-organization";
+import { cn } from "@/lib/utils";
+import { trpc } from "@/trpc/client";
+
+/**
+ * Scope picker for the Skill Coverage report, presented as a command dialog. Opened via
+ * `?action=select-scope` (or forced open when no skill is picked yet); choosing a skill
+ * sets `?skill=<id>`. A team filter (`?team=<id>`, absent = whole organization) is folded
+ * in as a select at the top of the dialog.
+ */
+export function SkillTrack_SkillScopeDialog({
+    forceOpen = false,
+    label = "Change scope",
+    compact = false,
+}: {
+    forceOpen?: boolean;
+    label?: string;
+    /** Hide the trigger button below `sm` — the report offers it in the dropdown menu instead. */
+    compact?: boolean;
+}) {
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["select-scope"] as const),
+    );
+    const [, setSkill] = useQueryState("skill");
+
+    // `forceOpen` (report has no scope yet) shows the dialog on arrival, but it stays
+    // dismissable — Escape leaves the blank report with its prompt and the trigger button to
+    // reopen. Once dismissed, it reopens only through `?action=select-scope` until the page is left and reached again, so a
+    // Back-button navigation that clears the param always closes it.
+    const [dismissed, setDismissed] = useDismissedThisVisit();
+    const open = action === "select-scope" || (forceOpen && !dismissed);
+
+    function handleOpenChange(next: boolean) {
+        if (!next) setDismissed(true);
+        void setAction(next ? "select-scope" : null, { history: next ? "push" : "replace" });
+    }
+
+    function handleSelectSkill(skillId: string) {
+        setDismissed(true);
+        void setSkill(skillId, { history: "push" });
+        void setAction(null, { history: "replace" });
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <Button
+                variant="outline"
+                onClick={() => handleOpenChange(true)}
+                className={cn(compact && "max-sm:hidden")}
+            >
+                <TelescopeIcon />
+                <span className="sr-only sm:not-sr-only">{label}</span>
+            </Button>
+            <DialogContent className="gap-0 p-0">
+                <DialogHeader className="border-b px-4 py-3">
+                    <DialogTitle>Select a skill</DialogTitle>
+                    <DialogDescription>
+                        Choose a skill to see who currently holds it.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBoundary>
+                    <SkillScope_Picker onSelect={handleSelectSkill} />
+                </DialogBoundary>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+/**
+ * The team filter and skill list, rendered inside `DialogContent` so their queries only run once
+ * the dialog opens — the dialog is always mounted in the report header.
+ */
+function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }) {
+    const organization = useOrganization();
+    const [teamParam, setTeamParam] = useQueryState("team");
+
+    const { data: teams } = useSuspenseQuery(
+        trpc.teams.listTeams.queryOptions({ organizationId: organization.id }),
+    );
+    // Only Active teams are offered as a new scope; an existing `?team=` naming an
+    // Archived team still validates below so a saved/linked scope keeps resolving.
+    const activeTeams = teams.filter((team) => team.status === "Active");
+
+    const {
+        data: { skillPackages, skillGroups, skills },
+    } = useSuspenseQuery(
+        trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
+            organizationId: organization.id,
+        }),
+    );
+
+    // Package -> group -> skill, flattened to a single "Package · Group" heading per section.
+    const groupSections = R.pipe(
+        skillPackages,
+        R.sortBy((skillPackage) => skillPackage.name),
+        R.flatMap((skillPackage) =>
+            R.pipe(
+                skillGroups,
+                R.filter((skillGroup) => skillGroup.skillPackageId === skillPackage.id),
+                R.sortBy((skillGroup) => skillGroup.sequence),
+                R.flatMap((skillGroup) => {
+                    const groupSkills = R.pipe(
+                        skills,
+                        R.filter((skill) => skill.skillGroupId === skillGroup.id),
+                        R.sortBy((skill) => skill.sequence),
+                    );
+                    if (groupSkills.length === 0) return [];
+                    return [
+                        {
+                            id: skillGroup.id,
+                            label: `${skillPackage.name} · ${skillGroup.name}`,
+                            skills: groupSkills,
+                        },
+                    ];
+                }),
+            ),
+        ),
+    );
+
+    // A malformed `?team=` isn't one of the SelectItem values, so fall back to whole-org —
+    // matching how the report itself treats an unparseable team id.
+    const currentTeamValue =
+        teamParam && teams.some((team) => team.id === teamParam) ? teamParam : "all";
+    // A saved/linked scope naming an Archived team still resolves and needs its own option so
+    // the Select can show its name, even though it isn't offered as a new selection.
+    const selectableTeams = activeTeams.some((team) => team.id === currentTeamValue)
+        ? activeTeams
+        : [...activeTeams, ...teams.filter((team) => team.id === currentTeamValue)];
+
+    return (
+        <>
+            <div className="flex items-center gap-2 border-b px-4 py-3">
+                <Label htmlFor="skill-scope-team" className="text-muted-foreground">
+                    Team
+                </Label>
+                <Select
+                    value={currentTeamValue}
+                    onValueChange={(value) =>
+                        void setTeamParam(value === "all" ? null : value, {
+                            history: "replace",
+                        })
+                    }
+                >
+                    <SelectTrigger id="skill-scope-team" size="sm" className="flex-1">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Whole Organisation</SelectItem>
+                        {R.pipe(
+                            selectableTeams,
+                            R.sortBy((team) => team.name),
+                            R.map((team) => (
+                                <SelectItem key={team.id} value={team.id}>
+                                    {team.name}
+                                </SelectItem>
+                            )),
+                        )}
+                    </SelectContent>
+                </Select>
+            </div>
+            <Command className="max-sm:min-h-0 max-sm:flex-1">
+                <CommandInput placeholder="Search skills…" />
+                <CommandList className="max-sm:max-h-none max-sm:flex-1 sm:h-72">
+                    <CommandEmpty>No skills match your search.</CommandEmpty>
+                    {groupSections.map((section) => (
+                        <CommandGroup key={section.id} heading={section.label}>
+                            {section.skills.map((skill) => (
+                                <CommandItem
+                                    key={skill.id}
+                                    value={`${skill.name} ${section.label}`}
+                                    onSelect={() => onSelect(skill.id)}
+                                >
+                                    {skill.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    ))}
+                </CommandList>
+            </Command>
+        </>
+    );
+}

@@ -36,6 +36,33 @@ reproduce it.
 
 <Anything an operator must do — migrations, env vars, config. Omit the section
 if there's nothing.>
+
+### The name
+
+<A short history of the codename. Omit the section if the codename didn't
+change in this release.>
 ```
 
 `### Upgrade notes` earns its place only when there's an action to take.
+
+## The name
+
+Every release that brings in a new codename (see
+[`version-names.md`](../version-names.md)) ends with a paragraph on where the
+name comes from. Research it; don't work from the one-line note in
+`version-names.md`. Cover each naval ship of that name with a New Zealand
+connection, not only the one the list is about: every HMNZS ship, and every HMS
+ship that served on the New Zealand station or with the New Zealand Division.
+Only HMS and HMNZS ships count; leave out merchant ships and other navies'
+ships. One paragraph each, oldest first.
+
+For each ship:
+
+- an opening line of the form "HMS Laburnum was an Acacia-class sloop that
+  served with the New Zealand Division from 1922 to 1935.": its class and
+  type, and its New Zealand service years
+- one interesting fact
+- its notable actions, and how its career ended
+
+Plain prose, a few sentences per ship. [`v0.11.md`](v0.11.md) is the first
+example.

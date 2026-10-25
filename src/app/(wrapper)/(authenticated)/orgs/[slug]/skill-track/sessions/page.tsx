@@ -7,9 +7,9 @@
 
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import SkillTrack_Sessions_List from "@/components/skill-track/sessions-list";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
+import SkillTrack_Sessions_List from "@/modules/skill-track/components/sessions-list";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 

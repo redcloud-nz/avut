@@ -238,8 +238,9 @@ export async function requireMembership(
  *
  * If a `Deleted` membership already exists for the pair, revives it in place instead of inserting
  * a second row — `@@unique([teamId, personId])` means a fresh `create` would fail once a row for
- * that pair exists at all, deleted or not. Mirrors `d4h-team-sync.ts`'s `adoptExistingMembership`,
- * which revives the same way for the D4H-driven add path.
+ * that pair exists at all, deleted or not. (The D4H sync's add path, `executeAdd` in
+ * `d4h-team-sync.ts`, doesn't revive: it skips a `Deleted` membership as
+ * `membership-in-rubbish-bin`.)
  * @throws ConflictError if an Active or Archived membership already exists for this pair.
  */
 export async function createMembership(

@@ -10,6 +10,7 @@ import {
     ArrowLeftIcon,
     ArrowRightLeftIcon,
     BellIcon,
+    BookMinusIcon,
     BookOpenIcon,
     BookUpIcon,
     BookXIcon,
@@ -106,6 +107,7 @@ export const ObjectIcons = {
     Restore: ArchiveRestoreIcon,
     Unlink: Link2OffIcon,
     Unpublish: BookXIcon,
+    Unsubscribe: BookMinusIcon,
 };
 
 export const D4HIcons = {

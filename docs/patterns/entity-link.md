@@ -17,12 +17,43 @@ Design discussed in #299.
 should reach for the per-entity wrapper in `src/components/entity-links/`, not `EntityLink`
 directly:
 
-| Entity          | Wrapper              | Prop                                                     |
-| --------------- | -------------------- | -------------------------------------------------------- |
-| Person          | `PersonLink`         | `person: PersonRef & Partial<Pick<PersonData, "email">>` |
-| Team            | `TeamLink`           | `team: TeamRef & Partial<Pick<TeamData, "description">>` |
-| Team Membership | `TeamMembershipLink` | `teamMembership: TeamMembershipRef`                      |
-| User            | `UserLink`           | `user: UserRef & Partial<Pick<UserData, "email">>`       |
+| Entity                 | Wrapper                    | Prop                                                                               |
+| ---------------------- | -------------------------- | ---------------------------------------------------------------------------------- |
+| D4H Equipment Brand    | `D4HEquipmentBrandLink`    | `brand: D4HEquipmentBrandRef & Partial<Pick<D4HEquipmentBrand, "owner">>`          |
+| D4H Equipment Category | `D4HEquipmentCategoryLink` | `category: D4HEquipmentCategoryRef & Partial<Pick<D4HEquipmentCategory, "owner">>` |
+| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                                      |
+| D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef & Partial<Pick<D4HEquipmentModel, "owner">>`          |
+| D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef & Partial<Pick<D4HEquipmentKind, "owner">>`             |
+| D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }`                    |
+| D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                                                 |
+| I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                                          |
+| Organisation Group     | `OrganizationGroupLink`    | `group: OrganizationGroupRef`                                                      |
+| Person                 | `PersonLink`               | `person: PersonRef & Partial<Pick<PersonData, "email">>`                           |
+| Skill                  | `SkillLink`                | `skill: SkillRef`                                                                  |
+| Skill Group            | `SkillGroupLink`           | `group: SkillGroupRef`                                                             |
+| Skill Package          | `SkillPackageLink`         | `skillPackage: SkillPackageRef`                                                    |
+| Team                   | `TeamLink`                 | `team: TeamRef & Partial<Pick<TeamData, "description">>`                           |
+| Team Membership        | `TeamMembershipLink`       | `teamMembership: TeamMembershipRef`                                                |
+| User                   | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
+
+The D4H wrappers have a few quirks of their own:
+
+- Their `Ref`s are nested picks of the D4H records (`owner: {id}` is the team, a model's
+  `brand: {id}` its brand), so a full `D4HMember`, `D4HEquipmentItem` or `D4HEquipmentModel`
+  passes straight through.
+- `D4HMemberLink` renders plain `Member #<id>`, with no link, when `name` is `null`: the member
+  isn't in the team's member list, so its page would 404.
+- `D4HEquipmentItemLink`'s text is `label ?? <D4HItemRef value={ref} />`. `D4HItemRef`
+  (`src/components/d4h/d4h-item-ref.tsx`) sets AVUT's `#` prefix apart in a muted monospace,
+  because D4H refs are free text and some already start with `#`. Use it wherever a ref renders
+  outside a plain string. Pass `label` only when the call site holds a ready-made label and no
+  ref. `EntityLink`'s `title` is a `ReactNode` for this.
+- A catalogue record's `owner` (category, type, brand, model) is the resolved owner with its
+  `title`, which the hover card shows. A caller building the ref from a template's snapshot
+  titles adds the owner it looked up, or leaves it out.
+- Equipment models have no page, so `D4HEquipmentModelLink` links to the model's brand page.
+- D4H brand and model ids on an item can be `null`; render those as plain text at the call
+  site rather than building a link.
 
 Each wrapper resolves its own route via `route()`, sources `organization.slug` from
 `useOrganization()` internally (callers don't need it in scope just to render a link — drop
@@ -71,7 +102,8 @@ use the `Ref` schema.
 
 1. Add `<Entity>Ref` to `src/lib/schemas/<entity>.ts` if it doesn't already exist — `{id, name}`
    for anything with a single-id detail route, or the full identifying key (as
-   `TeamMembershipRef` does) when it doesn't.
+   `TeamMembershipRef` does) when it doesn't. A Ref may carry `title` instead of `name` when
+   the record itself does, as the D4H records do.
 2. Add `src/components/entity-links/<entity>-link.tsx`, following an existing wrapper as a
    template: resolve the route with `route()`, pass `title`/`type` to `EntityLink`, and put
    any enrichment field in `children`.

@@ -9,6 +9,8 @@ export const Messages = {
 
     assessorNotSelf: () => `You can only record a skill check with yourself as the assessor.`,
 
+    checkedAtInFuture: () => `A skill check can't be dated in the future.`,
+
     d4HAccessTokenNotFound: (tokenId: string) => `D4H Access Token(id=${tokenId}) not found.`,
 
     d4HAccessTokenRejected: (status: number) =>
@@ -19,6 +21,17 @@ export const Messages = {
 
     formInstanceNotFound: (formInstanceId: string) =>
         `FormInstance(id=${formInstanceId}) not found.`,
+
+    i3ItemDoesNotFitTeam: ({
+        templateName,
+        variantName,
+        teamTitle,
+    }: {
+        templateName: string;
+        variantName: string | null;
+        teamTitle: string;
+    }) =>
+        `"${variantName ? `${templateName} (${variantName})` : templateName}" can't be issued to ${teamTitle}: its D4H records aren't owned by ${teamTitle} or its D4H organisation.`,
 
     i3TemplateNotFound: (templateId: string) => `I3Template(id=${templateId}) not found.`,
 

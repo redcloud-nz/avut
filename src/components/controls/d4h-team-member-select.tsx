@@ -71,36 +71,50 @@ export function D4HTeamMemberSelect({
         }
     }
 
+    const groups = teams
+        .toSorted((a, b) => a.title.localeCompare(b.title))
+        .map((team) => ({
+            team,
+            members: members
+                .filter((member) => member.team.id === team.id)
+                .toSorted((a, b) => a.name.localeCompare(b.name)),
+        }))
+        .filter((group) => group.members.length > 0);
+
+    // The same person is often a member of several teams, so the trigger names the team too.
+    const selectedTeam = teams.find((team) => team.id === value.teamId);
+
     return (
         <Select value={value.id == 0 ? "" : value.id + ""} onValueChange={handleChange}>
             <SelectTrigger {...slotProps.trigger}>
-                <SelectValue {...slotProps.value} placeholder="Select a recipient" />
+                <SelectValue placeholder="Select a recipient" {...slotProps.value}>
+                    {members.find((member) => member.id === value.id)?.name ?? value.name}
+                    {selectedTeam && groups.length > 1 && (
+                        <span className="text-muted-foreground">{selectedTeam.title}</span>
+                    )}
+                </SelectValue>
             </SelectTrigger>
             <SelectContent {...slotProps.content}>
-                {teams
-                    .sort((a, b) => a.title.localeCompare(b.title))
-                    .map((team, teamIndex) => {
-                        const teamMembers = members.filter((member) => member.team.id === team.id);
-                        if (teamMembers.length === 0) {
-                            return null;
-                        }
-
-                        return (
-                            <Fragment key={team.id}>
-                                <SelectGroup>
-                                    <SelectLabel>{team.title}</SelectLabel>
-                                    {teamMembers
-                                        .sort((a, b) => a.name.localeCompare(b.name))
-                                        .map((member) => (
-                                            <SelectItem key={member.id} value={member.id + ""}>
-                                                {member.name}
-                                            </SelectItem>
-                                        ))}
-                                </SelectGroup>
-                                {teamIndex < teams.length - 1 && <SelectSeparator />}
-                            </Fragment>
-                        );
-                    })}
+                {groups.map(({ team, members: teamMembers }, groupIndex) => (
+                    <Fragment key={team.id}>
+                        {groupIndex > 0 && <SelectSeparator />}
+                        <SelectGroup className="pt-0">
+                            {/* Sticky, so the team stays visible while scrolling a long group. */}
+                            <SelectLabel className="sticky top-0 z-10 bg-popover pt-2 font-medium text-foreground">
+                                {team.title}
+                            </SelectLabel>
+                            {teamMembers.map((member) => (
+                                <SelectItem
+                                    key={member.id}
+                                    value={member.id + ""}
+                                    className="scroll-mt-8"
+                                >
+                                    {member.name}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </Fragment>
+                ))}
             </SelectContent>
         </Select>
     );

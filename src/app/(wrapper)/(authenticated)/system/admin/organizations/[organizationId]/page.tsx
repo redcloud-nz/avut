@@ -7,9 +7,9 @@
 
 import { Metadata } from "next";
 
-import { SystemAdmin_Organization_Content } from "@/components/system/admin/organizations/organization-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { OrganizationId } from "@/lib/schemas/organization";
+import { SystemAdmin_Organization_Content } from "@/modules/system-admin/components/organizations/organization-content";
 import { resolveModuleFlags } from "@/server/module-flags";
 import { requireSystemAdmin } from "@/server/system-admin-access";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -38,6 +38,7 @@ export default async function SystemAdmin_Organization_Page(props: Props) {
     const organizationId = OrganizationId.schema.parse(raw);
 
     prefetch(trpc.organizations.getOrganizationAsAdmin.queryOptions({ organizationId }));
+    prefetch(trpc.organizationGroups.listGroupsForOrganization.queryOptions({ organizationId }));
 
     const moduleFlags = await resolveModuleFlags();
 

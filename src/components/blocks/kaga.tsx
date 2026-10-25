@@ -51,6 +51,7 @@ import {
     TableCell,
     TableHeadCell,
     TableHeader,
+    TablePanel,
     TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -66,41 +67,43 @@ function KagaTable<TData extends RowData>({ table }: KagaTableProps<TData>) {
     const isEmpty = table.getRowCount() == 0;
 
     return (
-        <Table>
-            <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id} className="">
-                        {headerGroup.headers.map((header) => (
-                            <KagaTableHeadCell key={header.id} header={header} />
-                        ))}
-                    </TableRow>
-                ))}
-            </TableHeader>
-            <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => {
-                            const { columnDef } = cell.column;
-                            return (
-                                <TableCell key={cell.id} {...(columnDef.meta?.cellProps ?? {})}>
-                                    {flexRender(columnDef.cell, cell.getContext())}
-                                </TableCell>
-                            );
-                        })}
-                    </TableRow>
-                ))}
-                {isEmpty && (
-                    <TableRow>
-                        <TableCell
-                            colSpan={table.getVisibleFlatColumns().length}
-                            className="text-center"
-                        >
-                            No results found
-                        </TableCell>
-                    </TableRow>
-                )}
-            </TableBody>
-        </Table>
+        <TablePanel className="mt-2">
+            <Table>
+                <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                            {headerGroup.headers.map((header) => (
+                                <KagaTableHeadCell key={header.id} header={header} />
+                            ))}
+                        </TableRow>
+                    ))}
+                </TableHeader>
+                <TableBody>
+                    {table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                            {row.getVisibleCells().map((cell) => {
+                                const { columnDef } = cell.column;
+                                return (
+                                    <TableCell key={cell.id} {...(columnDef.meta?.cellProps ?? {})}>
+                                        {flexRender(columnDef.cell, cell.getContext())}
+                                    </TableCell>
+                                );
+                            })}
+                        </TableRow>
+                    ))}
+                    {isEmpty && (
+                        <TableRow>
+                            <TableCell
+                                colSpan={table.getVisibleFlatColumns().length}
+                                className="text-center"
+                            >
+                                No results found
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </TablePanel>
     );
 }
 
@@ -138,7 +141,7 @@ function KagaTableHeadCell<TData extends RowData>({
                     <button
                         type="button"
                         data-slot="table-head-cell-content"
-                        className="flex h-10 w-full items-center gap-1.5 px-2 text-left font-medium outline-none select-none hover:bg-muted/50 focus-visible:bg-muted/50"
+                        className="flex h-10 w-full items-center gap-1.5 px-2 text-left font-medium outline-none select-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground"
                     >
                         <span className="truncate">{label}</span>
                         {isSorted == "asc" && (
@@ -155,7 +158,7 @@ function KagaTableHeadCell<TData extends RowData>({
                         <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
                     </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="start">
+                <DropdownMenuContent align="start">
                     {canSort && <KagaSortMenuItems column={column} isSorted={isSorted} />}
                     {canSort && canFilter && <DropdownMenuSeparator />}
                     {canFilter && <KagaFilterMenuItems column={column} />}
@@ -286,7 +289,7 @@ function KagaTableOptionsMenu<TData extends RowData>({
                         <EllipsisVerticalIcon className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="end">
+                <DropdownMenuContent align="end">
                     {hidableColumns.length > 0 && (
                         <>
                             <DropdownMenuGroup>
@@ -337,10 +340,7 @@ function KagaTablePagination<TData extends RowData>({
     const endRowIndex = Math.min(startRowIndex + pagination.pageSize, rowCount);
 
     return (
-        <div
-            className={cn("grid grid-cols-2 items-center text-sm p-2 border-t", className)}
-            {...props}
-        >
+        <div className={cn("grid grid-cols-2 items-center text-sm p-2", className)} {...props}>
             <div
                 className={cn(
                     "flex gap-1 lg:gap-1.5 text-muted-foreground",
@@ -368,14 +368,14 @@ function KagaTablePagination<TData extends RowData>({
                         onClick={() => table.previousPage()}
                     >
                         <ChevronLeftIcon className="size-4" />{" "}
-                        <span className="hidden sm:block">Previous</span>
+                        <span className="sr-only sm:not-sr-only">Previous</span>
                     </Button>
                     <Button
                         variant="outline"
                         disabled={!table.getCanNextPage()}
                         onClick={() => table.nextPage()}
                     >
-                        <span className="hidden sm:block">Next</span>{" "}
+                        <span className="sr-only sm:not-sr-only">Next</span>{" "}
                         <ChevronRightIcon className="size-4" />
                     </Button>
                 </div>

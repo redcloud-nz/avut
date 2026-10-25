@@ -1,0 +1,202 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { PocketKnifeIcon } from "lucide-react";
+import Link from "next/link";
+import { useMemo } from "react";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
+
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { SkillGroupLink } from "@/components/entity-links/skill-group-link";
+import { SkillLink } from "@/components/entity-links/skill-link";
+import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
+import { Show } from "@/components/show";
+import { Badge } from "@/components/ui/badge";
+import { Empty, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { Skill } from "@/lib/schemas/skill";
+import { SkillGroup } from "@/lib/schemas/skill-group";
+import { SkillPackage } from "@/lib/schemas/skill-package";
+import { formatFrequency } from "@/modules/skill-track/lib/format-frequency";
+import { trpc } from "@/trpc/client";
+
+type SkillRow = Skill & { group: SkillGroup; skillPackage: SkillPackage };
+
+function isArchived(row: SkillRow) {
+    return row.status !== "Active" || row.group.status !== "Active";
+}
+
+/**
+ * Every skill in the organization's subscribed packages, flat. Reads the same query as the
+ * dashboard's Skills stat card, so the two always agree on the count.
+ */
+export function SkillTrack_SkillsList() {
+    const organization = useOrganization();
+
+    const { data: assessable } = useSuspenseQuery(
+        trpc.skillPackageSubscriptions.listAssessableSkills.queryOptions({
+            organizationId: organization.id,
+        }),
+    );
+
+    // Join each skill to its group and package, in package order: package, then the author's
+    // group and skill order within it.
+    const rows = useMemo(() => {
+        const packages = new Map(assessable.skillPackages.map((pkg) => [pkg.id, pkg]));
+        const groups = new Map(assessable.skillGroups.map((group) => [group.id, group]));
+
+        return assessable.skills
+            .flatMap((skill): SkillRow[] => {
+                const skillPackage = packages.get(skill.skillPackageId);
+                const group = groups.get(skill.skillGroupId);
+                return skillPackage && group ? [{ ...skill, group, skillPackage }] : [];
+            })
+            .sort(
+                (a, b) =>
+                    a.skillPackage.name.localeCompare(b.skillPackage.name) ||
+                    a.skillPackageId.localeCompare(b.skillPackageId) ||
+                    a.group.sequence - b.group.sequence ||
+                    a.sequence - b.sequence,
+            );
+    }, [assessable]);
+
+    // Packages from different publishers can share a name; the filter matches on the name, so
+    // list each name once.
+    const packageOptions = useMemo(
+        () =>
+            [...new Set(assessable.skillPackages.map((pkg) => pkg.name))]
+                .sort((a, b) => a.localeCompare(b))
+                .map((name) => ({ label: name, value: name })),
+        [assessable.skillPackages],
+    );
+
+    const columns = useMemo(
+        () =>
+            Kaga.defineColumns<SkillRow>((col) => [
+                col.accessor("name", {
+                    header: "Skill",
+                    // The reports and the package's page leave archived skills out, so
+                    // say why a row here is missing from them.
+                    cell: (ctx) => {
+                        const link = <SkillLink skill={ctx.row.original} />;
+                        return isArchived(ctx.row.original) ? (
+                            <span className="flex items-center gap-2">
+                                {link}
+                                <Badge variant="outline">Archived</Badge>
+                            </span>
+                        ) : (
+                            link
+                        );
+                    },
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
+                }),
+                col.accessor((row) => row.group.name, {
+                    id: "group",
+                    header: "Group",
+                    cell: (ctx) => <SkillGroupLink group={ctx.row.original.group} />,
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
+                }),
+                col.accessor((row) => row.skillPackage.name, {
+                    id: "package",
+                    header: "Package",
+                    cell: (ctx) => (
+                        <SkillPackageLink skillPackage={ctx.row.original.skillPackage} />
+                    ),
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: true,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: { columnOptions: packageOptions },
+                }),
+                col.accessor("frequency", {
+                    header: "Frequency",
+                    cell: (ctx) => formatFrequency(ctx.getValue()),
+                    enableSorting: true,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
+                }),
+                col.accessor("tags", {
+                    header: "Tags",
+                    cell: (ctx) => (
+                        <div className="flex flex-wrap gap-1">
+                            {ctx.row.original.tags.map((tag) => (
+                                <Badge key={tag} variant="secondary">
+                                    {tag}
+                                </Badge>
+                            ))}
+                        </div>
+                    ),
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
+                }),
+            ]),
+        [packageOptions],
+    );
+
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
+    const table = useReactTable({
+        data: rows,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        globalFilterFn: "includesString",
+        initialState: {
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
+        },
+    });
+
+    return (
+        <Saratoga.Root>
+            <Saratoga.Header>
+                <Saratoga.Title>Skills</Saratoga.Title>
+            </Saratoga.Header>
+            <Show
+                when={rows.length > 0}
+                fallback={
+                    <Empty>
+                        <EmptyMedia>
+                            <PocketKnifeIcon className="size-12 text-muted-foreground" />
+                        </EmptyMedia>
+                        <EmptyDescription>
+                            No skills yet.{" "}
+                            <Link
+                                href={route("/orgs/[slug]/skill-track/packages", {
+                                    slug: organization.slug,
+                                })}
+                            >
+                                Subscribe to a package
+                            </Link>{" "}
+                            to add its skills.
+                        </EmptyDescription>
+                    </Empty>
+                }
+            >
+                <div>
+                    <Kaga.TableToolbar table={table} />
+                    <Kaga.Table table={table} />
+                    <Kaga.TablePagination table={table} />
+                </div>
+            </Show>
+        </Saratoga.Root>
+    );
+}

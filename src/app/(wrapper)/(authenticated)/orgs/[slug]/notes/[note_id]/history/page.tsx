@@ -7,10 +7,10 @@
 
 import { Metadata } from "next";
 
-import { OrgNoteHistory_Content } from "@/components/notes/org-note-history-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
-import { isModuleUsable } from "@/lib/module-flags";
+import { enabledInSettings, isModuleUsable } from "@/lib/module-flags";
 import { OrganizationNoteId } from "@/lib/schemas/organization-note";
+import { OrgNoteHistory_Content } from "@/modules/notes/components/org-note-history-content";
 import { resolveModuleFlags } from "@/server/module-flags";
 import { requireOrganization } from "@/server/organization-access";
 import { fetchQuery, HydrateClient, prefetch, prefetchInfinite, trpc } from "@/trpc/server";
@@ -28,7 +28,7 @@ async function resolveNotesOrganization(slug: string) {
 
     return {
         organization,
-        usable: isModuleUsable(moduleFlags, "notes", settings.modules.notes.enabled),
+        usable: isModuleUsable(moduleFlags, "notes", enabledInSettings(settings)),
     };
 }
 

@@ -26,9 +26,11 @@ export const D4HEquipmentModel = {
         resourceType: z.literal("EquipmentModel"),
 
         title: z.string(),
+        /** The owning team or organisation, with its title resolved from the token's teams. */
         owner: z.object({
             id: z.number(),
             resourceType: z.enum(["Team", "Organisation"]),
+            title: z.string(),
         }),
         brand: z.object({
             id: z.number(),
@@ -39,3 +41,15 @@ export const D4HEquipmentModel = {
 } as const;
 
 export type D4HEquipmentModel = z.infer<typeof D4HEquipmentModel.schema>;
+
+export const D4HEquipmentModelRef = {
+    schema: z.object({
+        id: z.number(),
+        title: z.string(),
+        brand: z.object({
+            id: z.number(),
+        }),
+    }),
+} as const;
+
+export type D4HEquipmentModelRef = z.infer<typeof D4HEquipmentModelRef.schema>;

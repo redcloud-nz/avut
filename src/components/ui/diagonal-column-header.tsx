@@ -38,7 +38,7 @@ export interface DiagonalColumnHeaderProps {
  *   where the div's own top edge would otherwise cross above the header's top edge.
  *
  * The column's own background is drawn here too, as a `skewX`'d rectangle rather than a
- * plain one — a caller putting a plain `bg-background` rect on the `<th>` itself would
+ * plain one — a caller putting a plain `bg-card` rect on the `<th>` itself would
  * cover the *previous* column's label wherever it bleeds into this column's rectangle
  * (which, given the shallow label angle, is most of it). A `skewX`'d background exactly
  * matching the label's own parallelogram only ever paints over its own column's diagonal
@@ -74,7 +74,8 @@ export function DiagonalColumnHeader({
             style={{ width: columnWidth, height: headerHeight }}
         >
             <div
-                className="absolute bg-background"
+                data-slot="diagonal-column-header-bg"
+                className="absolute bg-card"
                 style={{
                     width: columnWidth,
                     height: headerHeight,
@@ -83,6 +84,7 @@ export function DiagonalColumnHeader({
                 }}
             />
             <div
+                data-slot="diagonal-column-header-label"
                 className="absolute overflow-hidden border-b text-left text-sm text-ellipsis whitespace-nowrap"
                 style={{
                     left: columnWidth,
@@ -148,7 +150,7 @@ export function DiagonalLeadColumnHeader({
             style={{ width: columnWidth, height: headerHeight }}
         >
             <div
-                className="absolute border-r bg-background"
+                className="absolute border-r bg-card"
                 style={{
                     width: columnWidth,
                     height: headerHeight,
@@ -156,7 +158,7 @@ export function DiagonalLeadColumnHeader({
                     transformOrigin: "bottom",
                 }}
             />
-            <div className="absolute inset-0 flex items-end border-b bg-background px-3 py-2 text-left font-medium">
+            <div className="absolute inset-0 flex items-end border-b bg-card px-3 py-2 text-left font-medium">
                 {label}
             </div>
         </div>

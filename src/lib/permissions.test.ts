@@ -45,6 +45,15 @@ describe("Roles", () => {
         ]);
     });
 
+    it("lets only owner, admin and the I3 roles update D4H equipment or work D4H tasks", () => {
+        const d4hEditors = ["owner", "admin", "i3-editor", "i3-admin"];
+        expect(roles.filter((role) => can(role, { d4hEquipment: ["update"] }))).toEqual(d4hEditors);
+        expect(roles.filter((role) => can(role, { d4hTask: ["view", "apply"] }))).toEqual(
+            d4hEditors,
+        );
+        expect(can("member", { d4hEquipment: ["view"] })).toBe(true);
+    });
+
     describe("i3-editor", () => {
         // getLinkedPerson / listPersonLinks / getLinkedUser all require both halves.
         it("can read the user↔person link", () => {
@@ -190,7 +199,7 @@ describe("Roles", () => {
             }
         });
 
-        it("get no module-specific access beyond what member already has", () => {
+        it("get no I3 or Skill Track access beyond what member already has", () => {
             for (const role of ["owner", "admin"] as const) {
                 expect(can(role, { i3Item: ["view"] })).toBe(false);
                 expect(can(role, { i3Template: ["view"] })).toBe(false);

@@ -14,9 +14,9 @@ This file tracks the checks. The reasoning lives in `AGENTS.md` and the `docs/pa
 CI fails on `npm run lint` errors, so skip these; the rule message explains any fix (rules are in `eslint.config.mjs`):
 
 - ID creation via `<Model>Id.create()`; Zod import form and v3 string formats; `@/trpc/client` in a Next entry file without `"use client"`
-- `import "server-only"` in every `src/server` module, and the layering (`src/lib` is the leaf, server never imports UI, `client`/`hooks` import server code as types only, Prisma singleton only in `src/server` and `src/trpc/init.ts`)
+- `import "server-only"` in every `src/server` module, and the layering (`src/lib` is the leaf, server never imports UI, `client`/`hooks` import server code as types only, Prisma singleton only in `src/server` and `src/trpc/init.ts`, no module importing another module)
 - Hand-written `logEntry` writes
-- Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling
+- Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling, literal `form="…"` ids
 
 Check only that an added `eslint-disable` for one of these has a genuine exemption and a stated reason.
 
@@ -49,6 +49,11 @@ Lint catches ID imports but not an ID built without one:
 - Lint covers only Zod's import form and v3 string formats. Watch for other v3-era patterns copied from an older file or from training data (e.g. `.errors` where Zod 4 has `.issues`, `message:` where it has `error:`).
 - Placement: a schema used by both client and server belongs in `src/lib/schemas/`; a schema that only makes sense server-side (e.g. touching a `D4HAccessToken_ServerOnly`-shaped value) belongs under `src/server/`. A shared-looking schema added under `src/server/` (or vice versa) is worth double-checking against where it's actually imported from.
 
+## File placement
+
+- **Module-only UI goes in `src/modules/<module-id>/`, shared UI in `src/components/`.** A new component, hook or helper used by one module belongs in that module's folder (AGENTS.md → Modules), not in `src/components/<area>/` or as a non-route file beside a page under `src/app/`. One used by two or more modules belongs in `src/components/`. Lint stops one module importing another, but not a module-only file landing in the shared layer.
+- **No barrel `index.ts` files.** Import each file directly. A barrel loads everything to import one thing, and mixes server and client code across the `"use client"` boundary.
+
 ## Routes and internal links
 
 - **Dynamic segments use `route()`.** Any internal link or redirect to a route with a `[param]` segment must go through `route()` from `src/lib/routes.ts`, not a hand-built template string (`` `/orgs/${slug}/admin` `` for a _static_ route is fine; `` `/orgs/${slug}/admin/personnel/${id}` `` is not — that has a dynamic segment and should be `route("/orgs/[slug]/admin/personnel/[person_id]", { slug, person_id: id })`).
@@ -65,6 +70,7 @@ The authoritative walkthrough (code + rationale) is [`docs/patterns/detail-page-
 
 - **Server Components import `trpc` from `@/trpc/server`.** Lint catches `@/trpc/client` only in Next entry files (`page`, `layout`, `route`, …). A non-entry file without `"use client"` that imports `@/trpc/client` is a finding: its query goes out over HTTP without the request's session.
 - **`fetchQuery` vs `prefetch`.** `fetchQuery` (awaited, throws Next interrupts on `TRPCError`) is for when the Server Component needs the value itself (metadata title, a not-found/forbidden decision). `prefetch` (fire-and-forget, wrapped in `<HydrateClient>`) is for warming the cache ahead of a Client Component's `useSuspenseQuery`. Absence of `prefetch`/`HydrateClient` isn't itself a finding (it's opportunistic) — but a page that `fetchQuery`s for metadata and _also_ cold-fetches the same data client-side is double-fetching; worth a note.
+- **Access is checked at the read, not the route** ([`docs/patterns/route-access-control.md`](patterns/route-access-control.md)). A page, layout or `generateMetadata` that reads data outside tRPC (Prisma, a `src/server` helper, a D4H client) without a `require…` check next to the read is a finding — an ancestor layout doesn't count, since it doesn't re-run on client navigation. The reverse is a finding too: a `requireOrganizationWith` added to a page that only reads through tRPC duplicates the procedure's permission.
 - **`useSuspenseQuery`, not `useQuery` + manual loading/error state.** Loading/error handling is structural here (ambient `Suspense` in `Std.SidebarInset`/`Std.ScrollContainer`, route-level `error.tsx`/`not-found.tsx`) — a component adding its own spinner or error branch is a deviation, not a style choice.
 - **Every mutation sets `meta: { effects: ... }`** sourced from a `src/client/<domain>-effects.ts` file. A `useMutation(...)` with no `meta.effects` and no manual `queryClient` call in `onSuccess` is a real bug (stale data everywhere else that reads it until reload/`staleTime` expiry), not a nit — check that a new mutation either has effects wired up or reuses an existing one that already covers it.
 

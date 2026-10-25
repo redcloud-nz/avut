@@ -19,6 +19,7 @@ import {
     type ExportedSkill,
     type SkillPackageExport as SkillPackageExportType,
 } from "@/lib/schemas/skill-package-export";
+import type { LogEntryRef } from "@/server/log-entry";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -100,6 +101,53 @@ export async function requirePackageById(
     }
 
     return SkillPackage.fromRecord(existingPackage);
+}
+
+/**
+ * The refs a `Skill` log entry carries, so it also shows on its package's and group's History
+ * pages (#342): the package and the group, both as `context`. Every call site that logs a
+ * `Skill` entry uses this, so none can forget the group.
+ */
+export function skillLogRefs(skill: Pick<Skill, "skillPackageId" | "skillGroupId">): LogEntryRef[] {
+    return [
+        { objectType: "SkillPackage", objectId: skill.skillPackageId, role: "context" },
+        { objectType: "SkillGroup", objectId: skill.skillGroupId, role: "context" },
+    ];
+}
+
+/**
+ * The refs a `SkillGroup` log entry carries, so it also shows on its package's History page
+ * (#342): the package, as `context`.
+ */
+export function groupLogRefs(group: Pick<SkillGroup, "skillPackageId">): LogEntryRef[] {
+    return [{ objectType: "SkillPackage", objectId: group.skillPackageId, role: "context" }];
+}
+
+/**
+ * The refs a `Skill` move entry carries (#342): the old group as `from` and the new one as `to`,
+ * so the move shows on both groups' History pages. The package is `context` when it is unchanged,
+ * otherwise the old package is `from` and the new one `to`. Used by `moveSkill` and by an import
+ * that changes a skill's group or brings it back from another package.
+ */
+export function skillMoveLogRefs({
+    from,
+    to,
+}: {
+    from: Pick<Skill, "skillPackageId" | "skillGroupId">;
+    to: Pick<Skill, "skillPackageId" | "skillGroupId">;
+}): LogEntryRef[] {
+    const packageRefs: LogEntryRef[] =
+        from.skillPackageId === to.skillPackageId
+            ? [{ objectType: "SkillPackage", objectId: to.skillPackageId, role: "context" }]
+            : [
+                  { objectType: "SkillPackage", objectId: from.skillPackageId, role: "from" },
+                  { objectType: "SkillPackage", objectId: to.skillPackageId, role: "to" },
+              ];
+    return [
+        ...packageRefs,
+        { objectType: "SkillGroup", objectId: from.skillGroupId, role: "from" },
+        { objectType: "SkillGroup", objectId: to.skillGroupId, role: "to" },
+    ];
 }
 
 /**
@@ -198,6 +246,7 @@ export interface SkillPackageWriteItem {
         objectId: string;
         changes?: DiffChange[];
         description?: string;
+        refs?: LogEntryRef[];
     };
 }
 
@@ -247,11 +296,13 @@ function pick<K extends string>(obj: object, keys: readonly K[]): Record<string,
  *   **archive** (never delete — `SkillCheck.skillId` cascades) any active group/skill under
  *   the package that the file omits.
  * - Package ID owned by a different organization → `CONFLICT`.
+ * - A skill ID that lives in another of the organization's packages → moved back, and logged as
+ *   a move. A skill or group ID owned by a different organization → `CONFLICT`.
  *
  * An imported package always lands `published: false` / `status: Active`.
  *
  * @throws ValidationError if the envelope repeats a group or skill ID.
- * @throws ConflictError if the package ID belongs to another organization.
+ * @throws ConflictError if the package ID, or a group or skill ID, belongs to another organization.
  */
 export async function prepareImport(
     prisma: SkillPackagePrisma,
@@ -277,6 +328,50 @@ export async function prepareImport(
 
     const existingGroups = new Map((existing?.groups ?? []).map((g) => [g.id, g]));
     const existingSkills = new Map((existing?.skills ?? []).map((s) => [s.id, s]));
+
+    // Skills in the file that now live in another package, e.g. after a cross-package
+    // `moveSkill`. The upsert moves them back, so they're planned and logged as moves, with the
+    // package they leave as `from`. One owned by another organisation is refused, as a package is.
+    const otherPackageSkillIds = incoming.groups
+        .flatMap((g) => g.skills.map((s) => s.id))
+        .filter((id) => !existingSkills.has(id));
+    const otherPackageSkills = new Map(
+        otherPackageSkillIds.length === 0
+            ? []
+            : (
+                  await prisma.skill.findMany({
+                      where: { id: { in: otherPackageSkillIds } },
+                      include: { skillPackage: { select: { organizationId: true } } },
+                  })
+              ).map((s) => [s.id, s]),
+    );
+    for (const skill of otherPackageSkills.values()) {
+        if (skill.skillPackage.organizationId !== targetOrganizationId) {
+            throw new ConflictError(
+                `Skill ${skill.id} already exists under a different organisation. A skill ID belongs to exactly one organisation per instance.`,
+            );
+        }
+    }
+    const currentSkillOf = (id: string) => existingSkills.get(id) ?? otherPackageSkills.get(id);
+
+    // A group ID owned by another organisation is refused too, or the upsert would re-parent it.
+    const otherPackageGroupIds = incoming.groups
+        .map((g) => g.id)
+        .filter((id) => !existingGroups.has(id));
+    if (otherPackageGroupIds.length > 0) {
+        const foreignGroup = await prisma.skillGroup.findFirst({
+            where: {
+                id: { in: otherPackageGroupIds },
+                skillPackage: { organizationId: { not: targetOrganizationId } },
+            },
+            select: { id: true },
+        });
+        if (foreignGroup) {
+            throw new ConflictError(
+                `Skill group ${foreignGroup.id} already exists under a different organisation. A skill group ID belongs to exactly one organisation per instance.`,
+            );
+        }
+    }
 
     const fileGroupIds = new Set<string>();
     const fileSkillIds = new Set<string>();
@@ -306,7 +401,7 @@ export async function prepareImport(
 
         for (const skill of group.skills) {
             fileSkillIds.add(skill.id);
-            const currentSkill = existingSkills.get(skill.id);
+            const currentSkill = currentSkillOf(skill.id);
             const groupChanged = currentSkill?.skillGroupId !== group.id;
             const skillDiff = currentSkill
                 ? diffObject(
@@ -314,6 +409,24 @@ export async function prepareImport(
                       pick(skill, SKILL_COMPARE_KEYS),
                   )
                 : diffObject({}, pick(skill, SKILL_COMPARE_KEYS));
+            // A move back from another package reads "Package: X → Y".
+            if (currentSkill && currentSkill.skillPackageId !== incoming.id) {
+                skillDiff.push({
+                    type: "obj_mod",
+                    path: ["skillPackageId"],
+                    prev: currentSkill.skillPackageId,
+                    curr: incoming.id,
+                });
+            }
+            // A move to another group reads "Group: X → Y", like `moveSkill`'s entry (#342).
+            if (currentSkill && groupChanged) {
+                skillDiff.push({
+                    type: "obj_mod",
+                    path: ["skillGroupId"],
+                    prev: currentSkill.skillGroupId,
+                    curr: group.id,
+                });
+            }
             skillChanges.set(skill.id, skillDiff);
             skillNodes.push({
                 kind: "skill",
@@ -422,6 +535,7 @@ export async function prepareImport(
                     objectType: "SkillGroup",
                     objectId: node.id,
                     description: `No longer present in re-imported skill package "${incoming.name}".`,
+                    refs: groupLogRefs({ skillPackageId: incoming.id }),
                 },
             });
             continue;
@@ -458,6 +572,7 @@ export async function prepareImport(
                 objectType: "SkillGroup",
                 objectId: node.id,
                 changes: groupChanges.get(node.id),
+                refs: groupLogRefs({ skillPackageId: incoming.id }),
             },
         });
     }
@@ -473,12 +588,33 @@ export async function prepareImport(
                     objectType: "Skill",
                     objectId: node.id,
                     description: `No longer present in re-imported skill package "${incoming.name}".`,
+                    refs: skillLogRefs({
+                        skillPackageId: incoming.id,
+                        skillGroupId: SkillGroupId.schema.parse(
+                            existingSkills.get(node.id)!.skillGroupId,
+                        ),
+                    }),
                 },
             });
             continue;
         }
         const skill = skillsById.get(node.id as SkillId)!;
         const group = incoming.groups.find((g) => g.skills.some((s) => s.id === skill.id))!;
+        // A skill re-imported into a different group, or back from another package, refs where
+        // it was as `from` and where it lands as `to`, so the move shows on both (#342).
+        const previous = currentSkillOf(skill.id);
+        const current = { skillPackageId: incoming.id, skillGroupId: group.id };
+        const refs =
+            previous !== undefined &&
+            (previous.skillGroupId !== group.id || previous.skillPackageId !== incoming.id)
+                ? skillMoveLogRefs({
+                      from: {
+                          skillPackageId: SkillPackageId.schema.parse(previous.skillPackageId),
+                          skillGroupId: SkillGroupId.schema.parse(previous.skillGroupId),
+                      },
+                      to: current,
+                  })
+                : skillLogRefs(current);
         writeItems.push({
             write: (db) =>
                 db.skill.upsert({
@@ -516,6 +652,7 @@ export async function prepareImport(
                 objectType: "Skill",
                 objectId: node.id,
                 changes: skillChanges.get(node.id),
+                refs,
             },
         });
     }
@@ -544,7 +681,12 @@ export async function archiveSkill(ctx: OrgServiceContext, skillId: SkillId): Pr
 
     await ctx.prisma.$transaction([
         ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Archived" } }),
-        ctx.logEvent({ action: "Archive", objectType: "Skill", objectId: skillId }),
+        ctx.logEvent({
+            action: "Archive",
+            objectType: "Skill",
+            objectId: skillId,
+            refs: skillLogRefs(existing),
+        }),
     ]);
 
     return await requireSkillById(ctx, skillId);
@@ -569,7 +711,7 @@ export async function restoreSkill(ctx: OrgServiceContext, skillId: SkillId): Pr
         );
     }
 
-    return await setSkillActive(ctx, skillId, "Restore");
+    return await setSkillActive(ctx, existing, "Restore");
 }
 
 /**
@@ -591,17 +733,24 @@ export async function recoverSkill(ctx: OrgServiceContext, skillId: SkillId): Pr
         );
     }
 
-    return await setSkillActive(ctx, skillId, "Recover");
+    return await setSkillActive(ctx, existing, "Recover");
 }
 
 async function setSkillActive(
     ctx: OrgServiceContext,
-    skillId: SkillId,
+    existing: Skill,
     action: "Restore" | "Recover",
 ): Promise<Skill> {
+    const skillId = existing.id;
+
     await ctx.prisma.$transaction([
         ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Active" } }),
-        ctx.logEvent({ action, objectType: "Skill", objectId: skillId }),
+        ctx.logEvent({
+            action,
+            objectType: "Skill",
+            objectId: skillId,
+            refs: skillLogRefs(existing),
+        }),
     ]);
 
     return await requireSkillById(ctx, skillId);
@@ -621,7 +770,12 @@ export async function deleteSkill(ctx: OrgServiceContext, skillId: SkillId): Pro
 
     await ctx.prisma.$transaction([
         ctx.prisma.skill.update({ where: { id: skillId }, data: { status: "Deleted" } }),
-        ctx.logEvent({ action: "Delete", objectType: "Skill", objectId: skillId }),
+        ctx.logEvent({
+            action: "Delete",
+            objectType: "Skill",
+            objectId: skillId,
+            refs: skillLogRefs(existing),
+        }),
     ]);
 
     return await requireSkillById(ctx, skillId);
@@ -672,7 +826,12 @@ export async function archiveGroup(
             where: { id: skillGroupId },
             data: { status: "Archived" },
         }),
-        ctx.logEvent({ action: "Archive", objectType: "SkillGroup", objectId: skillGroupId }),
+        ctx.logEvent({
+            action: "Archive",
+            objectType: "SkillGroup",
+            objectId: skillGroupId,
+            refs: groupLogRefs(existing),
+        }),
     ]);
 
     return await requireGroupById(ctx, skillGroupId);
@@ -700,7 +859,7 @@ export async function restoreGroup(
         );
     }
 
-    return await setGroupActive(ctx, skillGroupId, "Restore");
+    return await setGroupActive(ctx, existing, "Restore");
 }
 
 /**
@@ -725,17 +884,24 @@ export async function recoverGroup(
         );
     }
 
-    return await setGroupActive(ctx, skillGroupId, "Recover");
+    return await setGroupActive(ctx, existing, "Recover");
 }
 
 async function setGroupActive(
     ctx: OrgServiceContext,
-    skillGroupId: SkillGroupId,
+    existing: SkillGroup,
     action: "Restore" | "Recover",
 ): Promise<SkillGroup> {
+    const skillGroupId = existing.id;
+
     await ctx.prisma.$transaction([
         ctx.prisma.skillGroup.update({ where: { id: skillGroupId }, data: { status: "Active" } }),
-        ctx.logEvent({ action, objectType: "SkillGroup", objectId: skillGroupId }),
+        ctx.logEvent({
+            action,
+            objectType: "SkillGroup",
+            objectId: skillGroupId,
+            refs: groupLogRefs(existing),
+        }),
     ]);
 
     return await requireGroupById(ctx, skillGroupId);
@@ -746,7 +912,10 @@ async function setGroupActive(
  * existing record unchanged, if the group is already `Deleted`.
  *
  * Always soft — nothing physically removes the row, and the group's skills are left untouched
- * (no cascade on soft-delete), matching how archive already behaves.
+ * (no cascade on soft-delete), matching how archive already behaves. Subscriber reads hide a
+ * skill in a Deleted group instead (`listAssessableSkills`, `getSkill`, `assertAssessableSkills`),
+ * as they hide a Deleted package's contents, so recovering the group brings back exactly the
+ * skills it had.
  * @throws NotFoundError if the group does not exist in the organization.
  */
 export async function deleteGroup(
@@ -761,7 +930,12 @@ export async function deleteGroup(
 
     await ctx.prisma.$transaction([
         ctx.prisma.skillGroup.update({ where: { id: skillGroupId }, data: { status: "Deleted" } }),
-        ctx.logEvent({ action: "Delete", objectType: "SkillGroup", objectId: skillGroupId }),
+        ctx.logEvent({
+            action: "Delete",
+            objectType: "SkillGroup",
+            objectId: skillGroupId,
+            refs: groupLogRefs(existing),
+        }),
     ]);
 
     return await requireGroupById(ctx, skillGroupId);
@@ -789,6 +963,10 @@ export async function getGroupDeleteImpact(
 /**
  * Archive a skill package (reversible via `restorePackage`). No-op, returning the
  * existing record unchanged, if the package is already `Archived`.
+ *
+ * Archiving also unpublishes, in the same transaction: the package leaves the catalogue, and its
+ * subscribers lose its skills from their sessions and reports. Restoring it doesn't publish it
+ * again.
  * @throws NotFoundError if the package does not exist in the organization.
  * @throws ValidationError if the package is `Deleted` — use `recoverPackage` first.
  */
@@ -811,8 +989,17 @@ export async function archivePackage(
     await ctx.prisma.$transaction([
         ctx.prisma.skillPackage.update({
             where: { id: skillPackageId },
-            data: { status: "Archived" },
+            data: { status: "Archived", published: false },
         }),
+        ...(existing.published
+            ? [
+                  ctx.logEvent({
+                      action: "Unpublish",
+                      objectType: "SkillPackage",
+                      objectId: skillPackageId,
+                  }),
+              ]
+            : []),
         ctx.logEvent({ action: "Archive", objectType: "SkillPackage", objectId: skillPackageId }),
     ]);
 
@@ -822,6 +1009,10 @@ export async function archivePackage(
 /**
  * Restore an `Archived` skill package back to `Active`. No-op, returning the existing record
  * unchanged, if the package is already `Active`.
+ *
+ * Restoring doesn't publish: the package comes back unpublished, and its author publishes it
+ * again on purpose. A package archived before archiving unpublished can be `Archived` and
+ * `published` at once; restoring it unpublishes it, with an `Unpublish` log entry.
  * @throws NotFoundError if the package does not exist in the organization.
  * @throws ValidationError if the package is `Deleted` — use `recoverPackage` instead.
  */
@@ -841,7 +1032,7 @@ export async function restorePackage(
         );
     }
 
-    return await setPackageActive(ctx, skillPackageId, "Restore");
+    return await setPackageActive(ctx, existing, "Restore");
 }
 
 /**
@@ -866,19 +1057,35 @@ export async function recoverPackage(
         );
     }
 
-    return await setPackageActive(ctx, skillPackageId, "Recover");
+    return await setPackageActive(ctx, existing, "Recover");
 }
 
+/**
+ * Move a package back to `Active`, leaving it unpublished. A package that was still `published`
+ * (only a legacy `Archived` one can be: archiving and deleting both unpublish) gets an
+ * `Unpublish` entry ahead of the `Restore`/`Recover` one.
+ */
 async function setPackageActive(
     ctx: OrgServiceContext,
-    skillPackageId: SkillPackageId,
+    existing: SkillPackage,
     action: "Restore" | "Recover",
 ): Promise<SkillPackage> {
+    const skillPackageId = existing.id;
+
     await ctx.prisma.$transaction([
         ctx.prisma.skillPackage.update({
             where: { id: skillPackageId },
-            data: { status: "Active" },
+            data: { status: "Active", published: false },
         }),
+        ...(existing.published
+            ? [
+                  ctx.logEvent({
+                      action: "Unpublish",
+                      objectType: "SkillPackage",
+                      objectId: skillPackageId,
+                  }),
+              ]
+            : []),
         ctx.logEvent({ action, objectType: "SkillPackage", objectId: skillPackageId }),
     ]);
 
@@ -893,7 +1100,8 @@ async function setPackageActive(
  * untouched (no cascade on soft-delete), matching how archive already behaves.
  *
  * A published package is also unpublished, so other organizations lose it from the catalogue
- * now rather than when the Rubbish bin purges it. Recovering it leaves it unpublished.
+ * now rather than when the Rubbish bin purges it; a subscriber still sees it, withdrawn, so it
+ * can unsubscribe (see `catalogueSkillPackageWhere`). Recovering it leaves it unpublished.
  * @throws NotFoundError if the package does not exist in the organization.
  */
 export async function deletePackage(

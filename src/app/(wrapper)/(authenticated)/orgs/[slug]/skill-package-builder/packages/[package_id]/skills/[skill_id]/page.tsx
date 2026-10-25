@@ -7,11 +7,11 @@
 
 import { Metadata } from "next";
 
-import { SkillPackageBuilder_Skill_Content } from "@/components/skill-package-builder/skill-content";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { SkillId } from "@/lib/schemas/skill";
+import { SkillPackageBuilder_Skill_Content } from "@/modules/skill-package-builder/components/skill-content";
 import { getOrganizationBySlug } from "@/server/cache/organization";
-import { requireOrganizationWith } from "@/server/organization-access";
+import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 type Props =
@@ -19,6 +19,7 @@ type Props =
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
     const { slug, skill_id } = await props.params;
+    if (!(await isOrganizationModuleUsable(slug, "skill-package-builder"))) return {};
     const organization = await getOrganizationBySlug(slug);
 
     const skillId = SkillId.schema.parse(skill_id);
@@ -34,7 +35,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function SkillPackageBuilder_Skill_Page(props: Props) {
     const { slug, skill_id } = await props.params;
-    const { organization } = await requireOrganizationWith(slug, { skillPackage: ["view"] });
+    if (!(await isOrganizationModuleUsable(slug, "skill-package-builder"))) return null;
+    const organization = await getOrganizationBySlug(slug);
 
     const skillId = SkillId.schema.parse(skill_id);
 

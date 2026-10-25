@@ -30,7 +30,7 @@ function SidebarInset({ children }: { children: ReactNode }) {
     return (
         <div
             data-component="StdSidebarInset"
-            className="relative flex w-full min-w-0 h-svh flex-1 flex-col bg-background"
+            className="relative flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
         >
             <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
         </div>
@@ -113,7 +113,7 @@ function Navbar({ breadcrumbs, actions, children, sidebarTrigger = true }: Navba
     return (
         <header
             slot="header"
-            className="bg-background sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md"
+            className="bg-navbar sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md"
         >
             {sidebarTrigger && (
                 <>

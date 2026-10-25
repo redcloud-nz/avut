@@ -1,0 +1,149 @@
+---
+title: Packages
+description: Skill packages, groups and skills, and subscribing your organisation to a package.
+section: skill-track
+order: 10
+keyTerms: ["skill-package", "skill-group", "skill", "catalogue"]
+---
+
+# Packages
+
+A **skill package** is a bundle of related skills published by an organisation,
+such as a first-aid package or an equipment-operation package. **Packages**
+lists every published package, in two parts:
+
+- **Subscribed** — the packages your organisation subscribes to.
+- **Available** — the rest, which you can search.
+
+## Browsing a package
+
+Open a package to see its contents, organised into **skill groups**, each
+holding a set of individual **skills**:
+
+<div className="my-6 flex justify-center">
+  <svg
+    viewBox="0 0 770 300"
+    role="img"
+    aria-label="A skill package (e.g. First Aid) containing two skill groups (Basic Life Support, Wound Care), each containing two skills."
+    className="w-full max-w-2xl"
+  >
+    <g fill="var(--muted-foreground)" fontSize="12" fontWeight="600">
+      <text x="16" y="49">Package</text>
+      <text x="16" y="172">Group</text>
+      <text x="16" y="266">Skill</text>
+    </g>
+
+    <g stroke="var(--border)" strokeWidth="1.5" fill="none">
+      <path d="M430 72 V96 H280 V140" />
+      <path d="M430 72 V96 H580 V140" />
+      <path d="M280 196 V218 H210 V240" />
+      <path d="M280 196 V218 H350 V240" />
+      <path d="M580 196 V218 H510 V240" />
+      <path d="M580 196 V218 H650 V240" />
+    </g>
+
+    <rect x="330" y="16" width="200" height="56" rx="8" fill="var(--primary)" />
+    <text x="430" y="49" textAnchor="middle" fill="var(--primary-foreground)" fontSize="15" fontWeight="600">First Aid</text>
+
+    <rect x="150" y="140" width="260" height="56" rx="8" fill="var(--muted)" stroke="var(--border)" />
+    <text x="280" y="173" textAnchor="middle" fill="var(--foreground)" fontSize="14" fontWeight="500">Basic Life Support</text>
+
+    <rect x="450" y="140" width="260" height="56" rx="8" fill="var(--muted)" stroke="var(--border)" />
+    <text x="580" y="173" textAnchor="middle" fill="var(--foreground)" fontSize="14" fontWeight="500">Wound Care</text>
+
+    <rect x="150" y="240" width="120" height="44" rx="6" fill="var(--card)" stroke="var(--border)" />
+    <text x="210" y="267" textAnchor="middle" fill="var(--foreground)" fontSize="13">CPR</text>
+
+    <rect x="290" y="240" width="120" height="44" rx="6" fill="var(--card)" stroke="var(--border)" />
+    <text x="350" y="267" textAnchor="middle" fill="var(--foreground)" fontSize="13">AED Use</text>
+
+    <rect x="450" y="240" width="120" height="44" rx="6" fill="var(--card)" stroke="var(--border)" />
+    <text x="510" y="267" textAnchor="middle" fill="var(--foreground)" fontSize="13">Bandaging</text>
+
+    <rect x="590" y="240" width="120" height="44" rx="6" fill="var(--card)" stroke="var(--border)" />
+    <text x="650" y="267" textAnchor="middle" fill="var(--foreground)" fontSize="13">Burns</text>
+
+  </svg>
+</div>
+
+<Screenshot
+  id="skill-track/package-page"
+  caption="A package's page: its details, then its skill groups and the skills in each."
+/>
+
+Each group and each skill opens its own page. A group's page lists its skills.
+A skill's page shows its details, which the package's author sets, such as its
+**Frequency**: how often it should be reassessed. If you can view checks,
+**Skill Coverage** under **Related** opens the
+[report](/docs/skill-track/reports) for that skill.
+
+<Screenshot
+  id="skill-track/skill-page"
+  caption="A skill's page, with Skill Coverage under Related for anyone who can view checks."
+/>
+
+Skill, group and package names link to these pages wherever they appear in
+Skill Track.
+
+A group or skill can carry two flags, set by the package's author:
+
+- **Not included by default** — once enforced, this will decide whether the
+  skill or group is available to your organisation at all.
+- **Required** — once enforced, this will decide whether the skill counts
+  towards coverage statistics in reports.
+
+<Callout>
+  Neither flag is enforced yet — they're descriptive only for now. Choosing which skills belong in a
+  session is always a manual step on the session's **Skills** page (see
+  [Sessions](/docs/skill-track/sessions)), and every subscribed skill counts in reports regardless
+  of "Required". Turning these into organisation-customizable settings is planned for a future
+  update.
+</Callout>
+
+## Skills
+
+**Skills** lists every skill your organisation can assess, in one table: the
+skills of each package you subscribe to, with their group, package and
+frequency. It's the same set the session skill picker uses. Search by skill,
+group or package name, or filter by **Package**.
+
+<Screenshot
+  id="skill-track/skills-list"
+  caption="Every skill your organisation can assess, with its group, package and frequency."
+/>
+
+An **Archived** skill is one its author has retired. It's still listed, but the
+reports and the package's page leave it out.
+
+## Subscribing
+
+A package's skills only become assessable once your organisation
+**subscribes** to it. Subscribing is an organisation-wide decision, not a
+per-user one, and only a **Skills Admin** can make it, from the package's page:
+**Subscribe** is a button, and **Unsubscribe** is in the page's menu (⋮). Each
+asks you to confirm.
+
+- **Subscribing** makes every skill in the package available to your sessions
+  and reports.
+- **Unsubscribing** takes the package's skills out of the session skill picker
+  and the reports straight away. Checks already recorded against them are kept,
+  and count again if you subscribe again.
+
+Packages aren't versioned. When the author changes a package, subscribers see
+the change straight away.
+
+## Withdrawn packages
+
+If a package's author unpublishes, archives or deletes it, it's **withdrawn**
+from every subscriber. It stays under **Subscribed** in **Packages**, marked
+**Withdrawn**, and its page shows **Subscribed · Withdrawn**. Its skills are out of your sessions and reports until the author publishes
+it again. A session that already had its skills lists them under **No longer
+available** when you change the session's skills. Checks already recorded are
+kept, and you can still unsubscribe.
+
+The same happens to a single group when its author deletes it: its skills drop
+out of your sessions, reports and the **Skills** list.
+
+Writing and publishing packages is a separate area, the
+[Skill Package Builder](/docs/skill-package-builder), for the Skills Author
+role.

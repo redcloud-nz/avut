@@ -5,7 +5,7 @@
 
 "use client";
 
-import { formatISO, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { ComponentProps } from "react";
 
@@ -43,16 +43,16 @@ export function DatePicker({
 }: DatePickerProps) {
     const { formatDate } = usePreferences();
 
+    // `toISOString`, not `formatISO`: the schemas validate with `z.iso.datetime()`, which rejects
+    // the local offset (`+13:00`) `formatISO` writes.
     function handleSelect(selected: Date | undefined) {
-        const str = selected ? formatISO(selected) : undefined;
-
-        onValueChange(str);
+        onValueChange(selected?.toISOString());
     }
 
     const selected = value ? parseISO(value) : undefined;
 
     const {
-        //calendar: calendarProps = {},
+        calendar: calendarProps = {},
         //popover: popoverProps = {},
         popoverContent: { className: popoverContentClassName, ...popoverContentProps } = {},
         popoverTrigger: { className: popoverTriggerClassName, ...popoverTriggerProps } = {},
@@ -86,6 +86,7 @@ export function DatePicker({
                 {...popoverContentProps}
             >
                 <Calendar
+                    {...calendarProps}
                     mode="single"
                     selected={selected}
                     captionLayout="dropdown"

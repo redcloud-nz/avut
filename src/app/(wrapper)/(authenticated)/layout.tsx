@@ -23,13 +23,14 @@ import {
     SidebarHeader,
     SidebarRail,
 } from "@/components/ui/sidebar";
-import { TimeZoneAutoDetect } from "@/components/user/user-settings/timezone-auto-detect";
 import { WhatsNewVersionButton } from "@/components/whats-new/whats-new-button";
 import {
     WhatsNewBoundary,
     WhatsNewDialog,
     WhatsNewProvider,
 } from "@/components/whats-new/whats-new-dialog";
+import { ImpersonationBanner } from "@/modules/system-admin/components/impersonation-banner";
+import { TimeZoneAutoDetect } from "@/modules/user-settings/components/timezone-auto-detect";
 import { resolveUserModuleFlags } from "@/server/module-flags";
 import { requireSession } from "@/server/session";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -93,6 +94,8 @@ export default async function AuthenticatedLayout(props: {
             {/* Adopts the browser's zone as `display.timeZone` on a user's first visit with no
                 saved preference — see the component's own docstring. Renders nothing. */}
             <TimeZoneAutoDetect />
+            {/* Below the awaited `getSession` above, so it reads the hydrated session (#347). */}
+            <ImpersonationBanner />
             <SidebarPortalProvider>
                 <WhatsNewProvider>
                     <Sidebar>

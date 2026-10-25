@@ -15,6 +15,7 @@ import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -33,6 +34,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
     //                                                               → skill2 Bandaging freq=6 (Active)
     //                                                               → skill5 Deprecated (Archived)
     //                                        → grp2 "Advanced Skills" → skill3 Airway freq=12 (Active)
+    //                                        → grp4 "Retired" (Deleted) → skill6 Splinting (Active, hidden)
     //            pkg2 "Advanced" (not published) → grp3 → skill4 (Active but unreachable)
     //   Checks (fake now = 2026-01-01 for isCurrent tests):
     //     person1+skill1+assessor1: Include 2025-01-01 "Fail" (old, expired → de-duped away)
@@ -57,6 +59,8 @@ describe("skillChecks.getCompetencyMatrix", () => {
         pkg2: SkillPackageId.create(),
         grp1: SkillGroupId.create(),
         grp2: SkillGroupId.create(),
+        grp4: SkillGroupId.create(),
+        skill6: SkillId.create(),
         grp3: SkillGroupId.create(),
         skill1: SkillId.create(),
         skill2: SkillId.create(),
@@ -194,6 +198,16 @@ describe("skillChecks.getCompetencyMatrix", () => {
         });
         await db.skillGroup.create({
             data: {
+                id: T.grp4,
+                skillPackageId: T.pkg1,
+                name: "Retired",
+                description: "",
+                properties: {},
+                status: "Deleted",
+            },
+        });
+        await db.skillGroup.create({
+            data: {
                 id: T.grp3,
                 skillPackageId: T.pkg2,
                 name: "Special",
@@ -255,6 +269,16 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 description: "",
                 properties: {},
                 status: "Archived" as never,
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill6,
+                skillPackageId: T.pkg1,
+                skillGroupId: T.grp4,
+                name: "Splinting",
+                description: "",
+                properties: {},
             },
         });
 
@@ -420,6 +444,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
             expect(ids).toContain(T.skill3);
             expect(ids).not.toContain(T.skill4); // pkg2 not published
             expect(ids).not.toContain(T.skill5); // Archived
+            expect(ids).not.toContain(T.skill6); // Active, but its group is Deleted
         });
 
         it("filters to a single skill when skillId is provided", async () => {
@@ -447,7 +472,8 @@ describe("skillChecks.getCompetencyMatrix", () => {
         });
 
         it("filters skills by skillPackageId", async () => {
-            // pkg1 has skill1, skill2, skill3 (Active) and skill5 (Archived — excluded)
+            // pkg1 has skill1, skill2, skill3 (Active), skill5 (Archived — excluded) and skill6
+            // (in Deleted grp4 — excluded)
             const result = await makeCaller().getCompetencyMatrix({
                 organizationId: T.org,
                 skillPackageId: T.pkg1,
@@ -487,7 +513,8 @@ describe("skillChecks.getCompetencyMatrix", () => {
         });
 
         it("returns every group of a subscribed package that has active skills", async () => {
-            // pkg1 has grp1 (skill1, skill2) and grp2 (skill3); pkg2 is not published.
+            // pkg1 has grp1 (skill1, skill2), grp2 (skill3) and Deleted grp4; pkg2 is not
+            // published.
             const result = await makeCaller().getCompetencyMatrix({ organizationId: T.org });
 
             expect(result.skillGroups.map((g) => g.id).sort()).toEqual([T.grp1, T.grp2].sort());
@@ -936,6 +963,7 @@ describe("skillChecks — the session approval lock", () => {
     //   standaloneEditCheck → no session, by assessorPerson (for the edit test)
     //   orphanedCheck   → no session, its assessor purged (assessorId null)
     //   skill           → in pkg, which the org subscribes to; skill2..4 have no rows
+    //   withdrawnSkill  → in withdrawnPkg, which the org subscribes to but is unpublished
     //   otherOrg        → holds foreignPerson and foreignSkill (in foreignPkg, not subscribed)
     // Every check is seeded with checkedAt and recordedAt at SEEDED.
     // Each test writes to a check no other test reads, so they don't depend on order.
@@ -969,6 +997,8 @@ describe("skillChecks — the session approval lock", () => {
         foreignPerson: PersonId.create(),
         foreignPkg: SkillPackageId.create(),
         foreignSkill: SkillId.create(),
+        withdrawnPkg: SkillPackageId.create(),
+        withdrawnSkill: SkillId.create(),
     };
     const SEEDED = new Date("2026-01-01T00:00:00.000Z");
 
@@ -998,9 +1028,10 @@ describe("skillChecks — the session approval lock", () => {
                 email: `${T.foreignPerson}@example.com`,
             },
         });
-        for (const [pkgId, organizationId, skillId] of [
-            [T.pkg, T.org, T.skill],
-            [T.foreignPkg, T.otherOrg, T.foreignSkill],
+        for (const [pkgId, organizationId, skillId, published] of [
+            [T.pkg, T.org, T.skill, true],
+            [T.foreignPkg, T.otherOrg, T.foreignSkill, true],
+            [T.withdrawnPkg, T.org, T.withdrawnSkill, false],
         ] as const) {
             const skillGroupId = SkillGroupId.create();
             await db.skillPackage.create({
@@ -1010,7 +1041,7 @@ describe("skillChecks — the session approval lock", () => {
                     name: pkgId,
                     description: "",
                     properties: {},
-                    published: true,
+                    published,
                 },
             });
             await db.skillGroup.create({
@@ -1033,9 +1064,15 @@ describe("skillChecks — the session approval lock", () => {
                 },
             });
         }
-        await db.skillPackageSubscription.create({
-            data: { id: nanoId16(), organizationId: T.org, skillPackageId: T.pkg },
-        });
+        for (const skillPackageId of [T.pkg, T.withdrawnPkg]) {
+            await db.skillPackageSubscription.create({
+                data: {
+                    id: SkillPackageSubscriptionId.create(),
+                    organizationId: T.org,
+                    skillPackageId,
+                },
+            });
+        }
 
         for (const [userId, personId] of [
             [T.assessorUser, T.assessorPerson],
@@ -1190,6 +1227,41 @@ describe("skillChecks — the session approval lock", () => {
             }
         });
 
+        it("back-dates a check to the given checkedAt, keeping recordedAt as now", async () => {
+            const now = new Date("2026-10-01T09:00:00.000Z");
+            const checkedAt = "2025-03-14T11:00:00.000Z";
+            vi.useFakeTimers({ now, toFake: ["Date"] });
+            try {
+                const created = await makeCaller().createSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId: SkillCheckId.create(),
+                    sessionId: null,
+                    create: { ...create, checkedAt },
+                });
+
+                expect(created).toMatchObject({ checkedAt, recordedAt: now.toISOString() });
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it("rejects a checkedAt in the future with BAD_REQUEST", async () => {
+            const skillCheckId = SkillCheckId.create();
+            await expect(
+                makeCaller().createSkillCheck({
+                    organizationId: T.org,
+                    skillCheckId,
+                    sessionId: null,
+                    create: {
+                        ...create,
+                        checkedAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                    },
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+            expect(await db.skillCheck.findUnique({ where: { id: skillCheckId } })).toBeNull();
+        });
+
         it("rejects a session check with BAD_REQUEST — those go through setSessionSkillCheck", async () => {
             const skillCheckId = SkillCheckId.create();
             await expect(
@@ -1222,6 +1294,12 @@ describe("skillChecks — the session approval lock", () => {
                 "a skill from a package the organization doesn't subscribe to",
                 T.assessorUser,
                 { skillId: T.foreignSkill },
+                "BAD_REQUEST",
+            ],
+            [
+                "a skill from an unpublished package the organization subscribes to",
+                T.assessorUser,
+                { skillId: T.withdrawnSkill },
                 "BAD_REQUEST",
             ],
         ] as const) {

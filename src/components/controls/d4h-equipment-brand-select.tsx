@@ -10,14 +10,11 @@ import { match } from "ts-pattern";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+    D4HCatalogueSelect,
+    D4HCatalogueSelectProps,
+} from "@/components/controls/d4h-catalogue-select";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
@@ -25,23 +22,20 @@ import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 interface D4HEquipmentBrandSelectProps extends Omit<
-    ComponentProps<typeof Select>,
-    "children" | "onValueChange" | "value"
+    D4HCatalogueSelectProps<D4HEquipmentBrand>,
+    "records" | "placeholder" | "organisationOnlyId" | "slotProps"
 > {
-    value: number | null;
-    onChange: (value: D4HEquipmentBrand) => void;
+    /** The linked D4H organisation's id when only its brands should be offered. */
+    organisationOnlyId?: number | null;
 
-    slotProps?: {
+    slotProps?: D4HCatalogueSelectProps<D4HEquipmentBrand>["slotProps"] & {
         skeleton?: ComponentProps<typeof Skeleton>;
-        trigger?: Omit<ComponentProps<typeof SelectTrigger>, "children">;
-        value?: Omit<ComponentProps<typeof SelectValue>, "children">;
-        content?: Omit<ComponentProps<typeof SelectContent>, "children">;
     };
 }
 
+/** A select for a D4H equipment brand, grouped by owner. See `D4HCatalogueSelect`. */
 export function D4HEquipmentBrandSelect({
-    value,
-    onChange,
+    organisationOnlyId = null,
     slotProps = {},
     ...props
 }: D4HEquipmentBrandSelectProps) {
@@ -51,24 +45,11 @@ export function D4HEquipmentBrandSelect({
         trpc.d4hApi.listEquipmentBrands.queryOptions({ organizationId: organization.id }),
     );
 
-    function handleValueChange(value: string) {
-        const brandId = parseInt(value, 10);
-        const brand = query.data!.find((b) => b.id === brandId);
-
-        if (!brand) {
-            console.error(`Selected brand with id ${brandId} not found in query results.`);
-            return;
-        }
-
-        onChange(brand);
-    }
+    const { skeleton, ...selectSlotProps } = slotProps;
 
     return match(query)
         .with({ status: "pending" }, () => (
-            <Skeleton
-                className={cn("w-full h-8", slotProps.skeleton?.className ?? "")}
-                {...slotProps.skeleton}
-            >
+            <Skeleton className={cn("w-full h-8", skeleton?.className ?? "")} {...skeleton}>
                 Fetching equipment brands...
             </Skeleton>
         ))
@@ -78,22 +59,13 @@ export function D4HEquipmentBrandSelect({
             </Alert>
         ))
         .with({ status: "success" }, ({ data }) => (
-            <Select
-                value={value ? value.toString() : ""}
-                onValueChange={handleValueChange}
+            <D4HCatalogueSelect
+                records={data}
+                placeholder="Select a brand"
+                organisationOnlyId={organisationOnlyId}
+                slotProps={selectSlotProps}
                 {...props}
-            >
-                <SelectTrigger {...slotProps.trigger}>
-                    <SelectValue placeholder="Select a brand" {...slotProps.value} />
-                </SelectTrigger>
-                <SelectContent {...slotProps.content}>
-                    {data.map((brand) => (
-                        <SelectItem key={brand.id} value={brand.id.toString()}>
-                            {brand.title}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            />
         ))
         .exhaustive();
 }

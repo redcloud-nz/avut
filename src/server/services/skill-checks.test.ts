@@ -13,11 +13,13 @@ import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import {
+    assertAssessableSkills,
     assertSessionCheckTarget,
     assertSessionUnlocked,
     createSession,
@@ -108,6 +110,111 @@ describe("skill-checks", () => {
         it("allows a Draft or Exclude session", () => {
             expect(() => assertSessionUnlocked({ id: T.session, status: "Draft" })).not.toThrow();
             expect(() => assertSessionUnlocked({ id: T.session, status: "Exclude" })).not.toThrow();
+        });
+    });
+
+    describe("assertAssessableSkills", () => {
+        // Dataset (all in B.org), one skill per package:
+        //   available    → published, Active, subscribed    → assessable
+        //   unpublished  → unpublished, Active, subscribed  → not assessable
+        //   archived     → published, Archived, subscribed  → not assessable
+        //   unsubscribed → published, Active, not subscribed → not assessable
+        //   inDeletedGroup → published, Active, subscribed, but its group Deleted → not assessable
+        const B = {
+            org: OrganizationId.create(),
+            available: SkillId.create(),
+            unpublished: SkillId.create(),
+            archived: SkillId.create(),
+            unsubscribed: SkillId.create(),
+            inDeletedGroup: SkillId.create(),
+        };
+
+        beforeAll(async () => {
+            await db.organization.create({
+                data: { id: B.org, name: B.org, slug: B.org, createdAt: new Date() },
+            });
+            for (const [skillId, published, status, subscribed, groupStatus] of [
+                [B.available, true, "Active", true, "Active"],
+                [B.unpublished, false, "Active", true, "Active"],
+                [B.archived, true, "Archived", true, "Active"],
+                [B.unsubscribed, true, "Active", false, "Active"],
+                [B.inDeletedGroup, true, "Active", true, "Deleted"],
+            ] as const) {
+                const skillPackageId = SkillPackageId.create();
+                const skillGroupId = SkillGroupId.create();
+                await db.skillPackage.create({
+                    data: {
+                        id: skillPackageId,
+                        organizationId: B.org,
+                        name: skillPackageId,
+                        description: "",
+                        properties: {},
+                        published,
+                        status,
+                    },
+                });
+                await db.skillGroup.create({
+                    data: {
+                        id: skillGroupId,
+                        skillPackageId,
+                        name: skillGroupId,
+                        description: "",
+                        properties: {},
+                        status: groupStatus,
+                    },
+                });
+                await db.skill.create({
+                    data: {
+                        id: skillId,
+                        skillPackageId,
+                        skillGroupId,
+                        name: skillId,
+                        description: "",
+                        properties: {},
+                    },
+                });
+                if (subscribed) {
+                    await db.skillPackageSubscription.create({
+                        data: {
+                            id: SkillPackageSubscriptionId.create(),
+                            organizationId: B.org,
+                            skillPackageId,
+                        },
+                    });
+                }
+            }
+        });
+
+        function ctxB() {
+            return createOrganizationMockContext({
+                organizationId: B.org,
+                user: { id: T.user },
+                permissions: {},
+                prisma: db,
+            });
+        }
+
+        it("accepts a skill from an available subscribed package", async () => {
+            await expect(assertAssessableSkills(ctxB(), [B.available])).resolves.toBeUndefined();
+        });
+
+        it.each([
+            ["an unpublished", B.unpublished],
+            ["an Archived", B.archived],
+            ["an unsubscribed", B.unsubscribed],
+        ])("rejects a skill from %s package, naming only that skill", async (_, skillId) => {
+            const error = await assertAssessableSkills(ctxB(), [B.available, skillId]).catch(
+                (e: unknown) => e,
+            );
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toContain(`Skill(id=${skillId})`);
+            expect((error as Error).message).not.toContain(B.available);
+        });
+
+        it("rejects an Active skill whose group is Deleted", async () => {
+            await expect(assertAssessableSkills(ctxB(), [B.inDeletedGroup])).rejects.toThrow(
+                ValidationError,
+            );
         });
     });
 

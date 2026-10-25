@@ -26,15 +26,16 @@ on its own.
 ## File layout
 
 ```
-src/app/(authenticated)/orgs/[slug]/admin/teams/[team_id]/page.tsx   # route shell only
-src/components/admin/teams/team-content.tsx                          # "use client", all rendering
+src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/teams/[team_id]/page.tsx   # route shell only
+src/modules/org-admin/components/teams/team-content.tsx                         # "use client", all rendering
 ```
 
-The route folder holds only `page.tsx`. The content component lives under
-`src/components/admin/<domain>/`, named `<entity>-content.tsx`, alongside the other
-components for that domain (menus, dialogs, cards) — not in the route folder. This
-mirrors where every other page-specific component for a domain already lives, and
-means the route folder stays a thin routing artifact.
+The route folder holds only `page.tsx`. The content component lives in its module, under
+`src/modules/<module-id>/components/<domain>/` (AGENTS.md → Modules), named
+`<entity>-content.tsx`, alongside the other components for that domain (menus, dialogs,
+cards) — not in the route folder. This mirrors where every other page-specific
+component for a domain already lives, and means the route folder stays a thin routing
+artifact.
 
 ---
 
@@ -43,7 +44,7 @@ means the route folder stays a thin routing artifact.
 ```tsx
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug, team_id } = await props.params;
-  const { organization } = await requireOrganization(slug);
+  const organization = await getOrganizationBySlug(slug);
 
   const teamId = TeamId.schema.parse(team_id);
   const team = await fetchQuery(
@@ -55,7 +56,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function AdminModule_Team_Page(props: Props) {
   const { slug, team_id } = await props.params;
-  const { organization } = await requireOrganization(slug);
+  const organization = await getOrganizationBySlug(slug);
 
   const teamId = TeamId.schema.parse(team_id);
 
@@ -76,6 +77,10 @@ Key points:
 - **Both `trpc` calls here are the `@/trpc/server` one** — it calls the router
   in-process, preserving the request's session; the `@/trpc/client` one exists for
   Client Components only and goes out over HTTP unauthenticated if used here by mistake.
+- **No permission check in `page.tsx`.** `getOrganizationBySlug` only resolves the org's
+  id; `teams.getTeam` checks the caller. See
+  [`route-access-control.md`](route-access-control.md) for why, and for the one case
+  (a read outside tRPC) that needs a check here.
 - **`generateMetadata` and the page body each resolve independently.** No shared
   `resolveX` helper. `generateMetadata` uses `fetchQuery` (awaited) because it needs
   the value synchronously to build the title. The page body only needs the parsed id —
@@ -216,8 +221,8 @@ export const teamsEffects = createEffects<"teams">()({
 
 If a detail page's title doesn't need the entity's name (a static title is fine), skip
 `generateMetadata`'s extra `fetchQuery` — see the "static/generic title" convention
-used by list-style pages (e.g. `skill-track/catalogue/page.tsx`:
-`` `Catalogue ${TITLE_SEPARATOR} Skill Track` ``). In that case the page body's
+used by list-style pages (e.g. `skill-track/packages/page.tsx`:
+`` `Packages ${TITLE_SEPARATOR} Skill Track` ``). In that case the page body's
 `prefetch` calls are the only server-side data touch needed.
 
 ## Pages that host `?action=` dialogs

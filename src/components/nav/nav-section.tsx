@@ -132,7 +132,7 @@ export function NavCollapsible<T extends string>({
                     here would look broken rather than just inert. */}
                 {!isExpanded && (
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuAction>
+                        <SidebarMenuAction aria-label={`Show or hide ${label}`}>
                             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuAction>
                     </CollapsibleTrigger>

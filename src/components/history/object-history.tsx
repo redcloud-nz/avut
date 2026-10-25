@@ -32,6 +32,7 @@ import {
 import { LogObjectType } from "@/lib/schemas/log-entry";
 import {
     idFieldTarget,
+    SelfNamedObjectType,
     type HistoryObjectType,
     type IdFieldTarget,
     type ObjectHistoryEntry,
@@ -144,6 +145,8 @@ function ObjectHistoryList({
         () => ({
             Person: Object.assign({}, ...data.pages.map((page) => page.names.Person)),
             Skill: Object.assign({}, ...data.pages.map((page) => page.names.Skill)),
+            SkillGroup: Object.assign({}, ...data.pages.map((page) => page.names.SkillGroup)),
+            SkillPackage: Object.assign({}, ...data.pages.map((page) => page.names.SkillPackage)),
         }),
         [data.pages],
     );
@@ -224,9 +227,7 @@ function ObjectHistoryEntryItem({
         (entry.relation === "related"
             ? `${actionPastTenseLabel(entry.action)} ${lowerFirst(objectTypeLabel(entry.objectType))}`
             : actionPastTenseLabel(entry.action));
-    // A ref with no name to show (purged, not viewable) is left out of the sentence rather than
-    // standing in as its type ("Added to team team"); the details still list it as unavailable.
-    const inlineNames = phrase ? entry.refs.flatMap((ref) => refName(ref) ?? []) : [];
+    const inlineNames = summaryNames(entry, phrase);
 
     // Plain text, read as a sentence: "Added to team Erehwon Logistics — Demo Owner", with only
     // the relative time after it. In a narrow list (the `<li>` is the container) it drops to the
@@ -255,7 +256,7 @@ function ObjectHistoryEntryItem({
     return (
         <li className="@container">
             <Collapsible>
-                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-muted/50 sm:px-2">
+                <CollapsibleTrigger className="group flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-accent sm:px-2">
                     {summary}
                     <ChevronDownIcon
                         className="size-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
@@ -308,6 +309,22 @@ function ObjectHistoryEntryItem({
 type IdFieldNames = ObjectHistoryPage["names"];
 
 /**
+ * The names a related entry's summary reads after its verb. A ref with no name to show (purged,
+ * not viewable) is left out of the sentence rather than standing in as its type ("Added to team
+ * team"); the details still list it as unavailable. A skill-package object names itself instead
+ * ("Updated skill CPR — …"), phrased or not. With no `objectName` (purged, not viewable) it reads
+ * as the bare phrase: a ref's name would pass a purged skill's group off as the skill.
+ */
+function summaryNames(entry: ObjectHistoryEntry, phrase: string | undefined): string[] {
+    if (entry.relation !== "related") return [];
+    if (SelfNamedObjectType.is(entry.objectType)) {
+        return entry.objectName ? [entry.objectName] : [];
+    }
+    if (!phrase) return [];
+    return entry.refs.flatMap((ref) => refName(ref) ?? []);
+}
+
+/**
  * For a change in an `IdFields` field, a `valueLabel` that shows each id as its record's name, or
  * "(unavailable)" when the service couldn't resolve it (purged, or not this organization's). A
  * value that isn't an id-shaped string (a `null` prev) keeps the default formatting.
@@ -326,13 +343,13 @@ function idValueLabel(
 }
 
 /**
- * A ref's name as plain text, for the summary sentence: the person's or team's name, or `null`
- * when it has none to show (purged, not viewable, or a type that isn't resolved).
+ * A ref's name as plain text, for the summary sentence: the person's, team's or other record's
+ * name, or `null` when it has none to show (purged, not viewable, or a type that isn't resolved).
  */
 function refName(historyRef: ObjectHistoryRef): string | null {
-    if ("person" in historyRef && historyRef.person) return historyRef.person.name;
-    if ("team" in historyRef && historyRef.team) return historyRef.team.name;
-    return null;
+    if ("person" in historyRef) return historyRef.person?.name ?? null;
+    if ("team" in historyRef) return historyRef.team?.name ?? null;
+    return historyRef.name;
 }
 
 function HistoryRef({ historyRef }: { historyRef: ObjectHistoryRef }) {
@@ -347,11 +364,20 @@ function HistoryRef({ historyRef }: { historyRef: ObjectHistoryRef }) {
         target = historyRef.person ? <PersonLink person={historyRef.person} /> : unavailable;
     } else if ("team" in historyRef) {
         target = historyRef.team ? <TeamLink team={historyRef.team} /> : unavailable;
+    } else if (historyRef.name) {
+        // Other types' names are plain text: they have no entity link.
+        target = <span>{historyRef.name}</span>;
     }
+
+    // A move's old and new location: "from Skill group Medical", "to Skill group Rescue".
+    const direction =
+        historyRef.role === "from" || historyRef.role === "to" ? historyRef.role : null;
 
     return (
         <span className="inline-flex items-center gap-1">
-            <span className="text-muted-foreground">{typeLabel}</span>
+            <span className="text-muted-foreground">
+                {direction ? `${direction} ${typeLabel}` : typeLabel}
+            </span>
             {target}
         </span>
     );

@@ -9,7 +9,7 @@
 import GithubSlugger from "github-slugger";
 
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
-const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
+const ATX_HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
 
 /**
  * Reduce a heading's inline markdown to the text `rehype-slug` sees (the
@@ -25,14 +25,28 @@ function headingText(raw: string): string {
 }
 
 /**
- * The ids `rehype-slug` gives a document's headings, in document order: every
- * ATX heading (`#` to `######`) outside fenced code, slugged with one
- * `github-slugger` instance so repeated headings get `-1`, `-2`, … exactly as
- * rendered. Run over the whole document, not the intro/rest halves.
+ * One heading of a document, as the "On this page" contents list shows it. A
+ * `type`, not an `interface`: content-collections only accepts transform output
+ * whose types it can prove serializable, and an interface fails that check.
  */
-export function headingAnchors(markdown: string): string[] {
+export type HeadingOutlineItem = {
+    /** The id `rehype-slug` gives the rendered heading. */
+    id: string;
+    /** The heading's display text: link text kept, emphasis and code markers dropped. */
+    label: string;
+    /** The heading level: the number of `#`s (1 to 6). */
+    depth: number;
+};
+
+/**
+ * A document's headings in document order, with the ids `rehype-slug` gives
+ * them: every ATX heading (`#` to `######`) outside fenced code, slugged with
+ * one `github-slugger` instance so repeated headings get `-1`, `-2`, … exactly
+ * as rendered. Run over the whole document, not the intro/rest halves.
+ */
+export function headingOutline(markdown: string): HeadingOutlineItem[] {
     const slugger = new GithubSlugger();
-    const anchors: string[] = [];
+    const outline: HeadingOutlineItem[] = [];
     let fence: string | null = null;
 
     for (const line of markdown.split("\n")) {
@@ -47,7 +61,22 @@ export function headingAnchors(markdown: string): string[] {
             continue;
         }
         const heading = ATX_HEADING.exec(line);
-        if (heading) anchors.push(slugger.slug(headingText(heading[1] ?? "")));
+        if (heading) {
+            const text = headingText(heading[2] ?? "");
+            outline.push({
+                id: slugger.slug(text),
+                label: text.replace(/[*`]/g, "").replace(/\s+/g, " ").trim(),
+                depth: heading[1].length,
+            });
+        }
     }
-    return anchors;
+    return outline;
+}
+
+/**
+ * The ids `rehype-slug` gives a document's headings, in document order (see
+ * `headingOutline`). Run over the whole document, not the intro/rest halves.
+ */
+export function headingAnchors(markdown: string): string[] {
+    return headingOutline(markdown).map((h) => h.id);
 }

@@ -31,7 +31,7 @@ export interface ToolSection {
     tools?: { name: string; description: string }[];
 }
 
-/** Display order for the /tools page — matches the homepage's module grid, D4H Tools alongside D4H Views. */
+/** Display order for the /tools page — matches the homepage's module grid, D4H Tools alongside D4H. */
 export const TOOLS_CONTENT: readonly ToolSection[] = [
     {
         id: "admin",
@@ -60,9 +60,9 @@ export const TOOLS_CONTENT: readonly ToolSection[] = [
         ],
     },
     {
-        id: "d4h-views",
-        label: Modules["d4h-views"].label,
-        icon: Modules["d4h-views"].icon,
+        id: "d4h",
+        label: Modules.d4h.label,
+        icon: Modules.d4h.icon,
         status: "in-development",
         description:
             "Read-only views of the D4H data your org already maintains — members, teams and equipment — without re-typing anything or writing back.",
@@ -97,9 +97,9 @@ export const TOOLS_CONTENT: readonly ToolSection[] = [
         ],
     },
     {
-        id: "i3",
-        label: Modules.i3.label,
-        icon: Modules.i3.icon,
+        id: "d4h-i3",
+        label: Modules["d4h-i3"].label,
+        icon: Modules["d4h-i3"].icon,
         status: "in-development",
         description:
             "Issue, inspect and return equipment and PPE against templates defined per item type, backed by your D4H equipment records.",
@@ -129,7 +129,7 @@ export const TOOLS_CONTENT: readonly ToolSection[] = [
         description:
             "Run skill checks and assessment sessions against a catalogue of skill packages, then see who's current with reports sliced by person, skill or team.",
         tools: [
-            { name: "Catalogue", description: "The skill packages your org assesses against." },
+            { name: "Packages", description: "The skill packages your org assesses against." },
             { name: "Sessions", description: "Scheduled assessment sessions with a recorder." },
             { name: "Checks", description: "Individual skill check records, pass or fail." },
             {

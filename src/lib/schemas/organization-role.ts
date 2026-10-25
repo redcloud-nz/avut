@@ -45,7 +45,7 @@ const organizationRoles = {
     admin: {
         displayName: "Admin",
         description:
-            "Everything a Member can do, plus full access to organisation settings, users and roster management. Can manage users and roles.",
+            "Everything a Member can do, plus full access to organisation settings, users and roster management. Can manage users and roles, edit D4H equipment items and work the D4H task queue.",
         isAdminAssignable: true,
     },
     member: {
@@ -58,13 +58,13 @@ const organizationRoles = {
         description:
             "Everything an I3 Editor can do, plus managing I3 templates — creating, editing and deleting them, including trash/restore/purge.",
         isAdminAssignable: true,
-        moduleId: "i3",
+        moduleId: "d4h-i3",
     },
     "i3-editor": {
         displayName: "I3 Editor",
         description: "Can edit I3 content within the organisation.",
         isAdminAssignable: true,
-        moduleId: "i3",
+        moduleId: "d4h-i3",
     },
     "skills-admin": {
         displayName: "Skills Admin",

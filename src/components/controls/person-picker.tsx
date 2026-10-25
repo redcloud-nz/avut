@@ -38,6 +38,8 @@ interface PersonPickerProps {
     className?: string;
     id?: string;
     "aria-invalid"?: boolean;
+    /** Offer only Active personnel, and drop the status filter. */
+    activeOnly?: boolean;
 }
 
 /**
@@ -54,9 +56,11 @@ export function PersonPicker({
     className,
     id,
     "aria-invalid": ariaInvalid,
+    activeOnly = false,
 }: PersonPickerProps) {
     const personnelQuery = useQuery(trpc.personnel.listPersonnel.queryOptions({ organizationId }));
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
+    const [chosenFilter, setStatusFilter] = useState<StatusFilter>("active");
+    const statusFilter = activeOnly ? "active" : chosenFilter;
 
     const options = useMemo(
         () =>
@@ -94,30 +98,32 @@ export function PersonPicker({
                 aria-invalid={ariaInvalid}
                 emptyMessage={`No ${statusFilter === "all" ? "" : `${statusFilter} `}personnel in this organization.`}
             />
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={disabled}
-                        aria-invalid={ariaInvalid}
-                        aria-label="Filter by status"
-                    >
-                        <ListFilterIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuRadioGroup
-                        value={statusFilter}
-                        onValueChange={(next) => setStatusFilter(next as StatusFilter)}
-                    >
-                        <DropdownMenuLabel>Status</DropdownMenuLabel>
-                        <DropdownMenuRadioItem value="active">Active</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="archived">Archived</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            {!activeOnly && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={disabled}
+                            aria-invalid={ariaInvalid}
+                            aria-label="Filter by status"
+                        >
+                            <ListFilterIcon />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent size="sm" align="end">
+                        <DropdownMenuRadioGroup
+                            value={statusFilter}
+                            onValueChange={(next) => setStatusFilter(next as StatusFilter)}
+                        >
+                            <DropdownMenuLabel>Status</DropdownMenuLabel>
+                            <DropdownMenuRadioItem value="active">Active</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="archived">Archived</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </ButtonGroup>
     );
 }

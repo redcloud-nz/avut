@@ -14,8 +14,8 @@
 import { usePathname } from "next/navigation";
 
 import { NavCollapsible, NavItem, NavSection } from "@/components/nav/nav-section";
-import { SystemAdmin_Sidebar_Menu } from "@/components/system/admin/sidebar-menu";
 import { systemModules, userModules, type UserModuleId } from "@/lib/modules";
+import { SystemAdmin_Sidebar_Menu } from "@/modules/system-admin/components/sidebar-menu";
 
 interface ScopeSidebar_ModulesProps {
     /** Whether each user module's flag is on for this deployment; flagged-off modules are hidden. */

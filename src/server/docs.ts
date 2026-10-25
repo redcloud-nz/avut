@@ -7,7 +7,8 @@
  * (see `src/lib/flags.ts` / `src/server/module-flags.ts`) is hidden entirely —
  * it drops out of the sidebar, 404s on direct navigation, and is excluded from
  * the search index. `getting-started` / `account` have no flag and are always
- * shown. Help cards (`content/help/**`) hide along with their guide's section.
+ * shown. Help cards (`content/help/**`) hide along with their guide's section,
+ * and glossary terms tagged only with hidden modules drop out of `/docs/glossary`.
  */
 
 import "server-only";
@@ -16,6 +17,11 @@ import { allDocs, allHelpCards, type HelpCard } from "content-collections";
 import { cache } from "react";
 
 import { getDocsNav, type Doc, type DocsNavSection } from "@/lib/docs";
+import {
+    getGlossaryEntriesSorted,
+    visibleGlossaryEntries,
+    type GlossaryEntry,
+} from "@/lib/glossary";
 import { resolveModuleFlags } from "@/server/module-flags";
 
 /** Section ids hidden for the current deployment environment. Cached per request. */
@@ -61,4 +67,12 @@ export async function getVisibleHelpCard(id: string): Promise<HelpCard | undefin
     const card = allHelpCards.find((c) => c.id === id);
     if (!card) return undefined;
     return (await hiddenDocsSectionIds()).has(card.section) ? undefined : card;
+}
+
+/**
+ * Glossary entries sorted A-Z, minus those whose modules are all flag-hidden
+ * (see `visibleGlossaryEntries`).
+ */
+export async function getVisibleGlossaryEntries(): Promise<GlossaryEntry[]> {
+    return visibleGlossaryEntries(getGlossaryEntriesSorted(), await hiddenDocsSectionIds());
 }

@@ -21,6 +21,19 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 
 import * as SkillPackages from "./skill-packages";
 
+/** The non-primary refs of the one entry matching `where`, as `role:objectType:objectId`. */
+async function refsOf(
+    db: ReturnType<typeof createMockPrisma>,
+    where: { objectType: string; objectId: string; action: string },
+): Promise<string[]> {
+    const entries = await db.logEntry.findMany({ where, include: { objects: true } });
+    expect(entries).toHaveLength(1);
+    return entries[0]!.objects
+        .filter((ref) => ref.role !== "primary")
+        .map((ref) => `${ref.role}:${ref.objectType}:${ref.objectId}`)
+        .sort();
+}
+
 const T = {
     orgA: OrganizationId.create(),
     orgB: OrganizationId.create(),
@@ -30,6 +43,8 @@ const T = {
     skillSafety: SkillId.create(),
     skillComms: SkillId.create(),
     skillRescue: SkillId.create(),
+    otherPkg: SkillPackageId.create(),
+    otherGroup: SkillGroupId.create(),
 };
 
 function envelope(overrides?: Partial<SkillPackageExport["package"]>): SkillPackageExport {
@@ -202,6 +217,195 @@ describe("SkillPackages.prepareImport", () => {
         expect(stored?.status).toBe("Archived");
         const rescueStored = await db.skill.findUnique({ where: { id: T.skillRescue } });
         expect(rescueStored?.status).toBe("Active");
+    });
+
+    it("refs each entry's package and group, with from/to for a skill moved between groups", async () => {
+        const ctx = createOrganizationMockContext({
+            organizationId: T.orgA,
+            user: { id: UserId.create() },
+            permissions: {},
+            prisma: db,
+        });
+        async function applyLogged(env: SkillPackageExport) {
+            const { writeItems } = await SkillPackages.prepareImport(db, env, T.orgA);
+            for (const item of writeItems) {
+                await db.$transaction([item.write(db), ctx.logEvent(item.log)]);
+            }
+        }
+        const skill = (id: SkillId, name: string, sequence: number) => ({
+            id,
+            name,
+            description: "",
+            tags: [],
+            properties: {},
+            sequence,
+            frequency: 12,
+            defaultInclude: true,
+            defaultRequired: false,
+        });
+        const advanced = (skills: ReturnType<typeof skill>[]) => ({
+            id: T.groupAdvanced,
+            name: "Advanced",
+            description: "",
+            tags: [],
+            properties: {},
+            sequence: 2,
+            defaultInclude: false,
+            skills,
+        });
+
+        // Foundations (Safety, Comms) + Advanced (Rescue).
+        const first = envelope();
+        first.package.groups.push(advanced([skill(T.skillRescue, "Rescue", 1)]));
+        await applyLogged(first);
+
+        // Rename Safety, move Comms to Advanced, drop Rescue.
+        const second = envelope();
+        second.package.groups[0]!.skills = [skill(T.skillSafety, "Safety (renamed)", 1)];
+        second.package.groups.push(advanced([skill(T.skillComms, "Comms", 1)]));
+        await applyLogged(second);
+
+        const pkg = `context:SkillPackage:${T.pkg}`;
+        expect(
+            await refsOf(db, {
+                objectType: "SkillGroup",
+                objectId: T.groupAdvanced,
+                action: "Create",
+            }),
+        ).toEqual([pkg]);
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillRescue, action: "Create" }),
+        ).toEqual([`context:SkillGroup:${T.groupAdvanced}`, pkg]);
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillSafety, action: "Update" }),
+        ).toEqual([`context:SkillGroup:${T.groupFoundations}`, pkg]);
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillComms, action: "Update" }),
+        ).toEqual([
+            pkg,
+            `from:SkillGroup:${T.groupFoundations}`,
+            `to:SkillGroup:${T.groupAdvanced}`,
+        ]);
+        const moved = await db.logEntry.findFirst({
+            where: { objectType: "Skill", objectId: T.skillComms, action: "Update" },
+        });
+        expect(moved?.changes).toContainEqual({
+            type: "obj_mod",
+            path: ["skillGroupId"],
+            prev: T.groupFoundations,
+            curr: T.groupAdvanced,
+        });
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillRescue, action: "Archive" }),
+        ).toEqual([`context:SkillGroup:${T.groupAdvanced}`, pkg]);
+    });
+
+    /** A second package in `organizationId` with one group, for a skill to have moved into. */
+    async function createOtherPackage(organizationId: OrganizationId) {
+        await db.skillPackage.create({
+            data: {
+                id: T.otherPkg,
+                organizationId,
+                name: "Other Package",
+                description: "",
+                tags: [],
+                properties: {},
+                published: false,
+                status: "Active",
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.otherGroup,
+                skillPackageId: T.otherPkg,
+                name: "Other Group",
+                description: "",
+                tags: [],
+                properties: {},
+                sequence: 1,
+                defaultInclude: true,
+                status: "Active",
+            },
+        });
+    }
+
+    it("plans and logs a skill moving back from another package as a move", async () => {
+        const ctx = createOrganizationMockContext({
+            organizationId: T.orgA,
+            user: { id: UserId.create() },
+            permissions: {},
+            prisma: db,
+        });
+        await apply(envelope(), T.orgA);
+        await createOtherPackage(T.orgA);
+        // As a cross-package `moveSkill` leaves it.
+        await db.skill.update({
+            where: { id: T.skillComms },
+            data: { skillPackageId: T.otherPkg, skillGroupId: T.otherGroup },
+        });
+
+        const { plan, writeItems } = await SkillPackages.prepareImport(db, envelope(), T.orgA);
+        expect(plan.skills.find((s) => s.id === T.skillComms)?.action).toBe("update");
+        for (const item of writeItems) {
+            await db.$transaction([item.write(db), ctx.logEvent(item.log)]);
+        }
+
+        const stored = await db.skill.findUnique({ where: { id: T.skillComms } });
+        expect(stored).toMatchObject({ skillPackageId: T.pkg, skillGroupId: T.groupFoundations });
+        expect(
+            await refsOf(db, { objectType: "Skill", objectId: T.skillComms, action: "Update" }),
+        ).toEqual([
+            `from:SkillGroup:${T.otherGroup}`,
+            `from:SkillPackage:${T.otherPkg}`,
+            `to:SkillGroup:${T.groupFoundations}`,
+            `to:SkillPackage:${T.pkg}`,
+        ]);
+        const moved = await db.logEntry.findFirst({
+            where: { objectType: "Skill", objectId: T.skillComms, action: "Update" },
+        });
+        expect(moved?.changes).toEqual(
+            expect.arrayContaining([
+                { type: "obj_mod", path: ["skillPackageId"], prev: T.otherPkg, curr: T.pkg },
+                {
+                    type: "obj_mod",
+                    path: ["skillGroupId"],
+                    prev: T.otherGroup,
+                    curr: T.groupFoundations,
+                },
+            ]),
+        );
+    });
+
+    it("rejects a skill ID owned by a different organization", async () => {
+        await createOtherPackage(T.orgB);
+        await db.skill.create({
+            data: {
+                id: T.skillComms,
+                skillPackageId: T.otherPkg,
+                skillGroupId: T.otherGroup,
+                name: "Comms",
+                description: "",
+                tags: [],
+                properties: {},
+                sequence: 1,
+                frequency: 12,
+                defaultInclude: true,
+                defaultRequired: false,
+                status: "Active",
+            },
+        });
+
+        await expect(SkillPackages.prepareImport(db, envelope(), T.orgA)).rejects.toThrow(
+            ConflictError,
+        );
+    });
+
+    it("rejects a skill group ID owned by a different organization", async () => {
+        await createOtherPackage(T.orgB);
+        const env = envelope();
+        env.package.groups[0]!.id = T.otherGroup;
+
+        await expect(SkillPackages.prepareImport(db, env, T.orgA)).rejects.toThrow(ConflictError);
     });
 
     it("reports unchanged rows on an identical re-import", async () => {
@@ -639,6 +843,19 @@ describe("SkillPackages archive / restore / recover / delete", () => {
         ).toHaveLength(1);
     });
 
+    it("refs the package and group on every skill and group lifecycle entry", async () => {
+        const pkg = `context:SkillPackage:${L.pkg}`;
+        for (const action of ["Archive", "Restore", "Delete", "Recover"]) {
+            expect(await refsOf(db, { objectType: "Skill", objectId: L.skill, action })).toEqual([
+                `context:SkillGroup:${L.group}`,
+                pkg,
+            ]);
+            expect(
+                await refsOf(db, { objectType: "SkillGroup", objectId: L.group, action }),
+            ).toEqual([pkg]);
+        }
+    });
+
     it("getSkillDeleteImpact counts recorded skill checks", async () => {
         expect(await SkillPackages.getSkillDeleteImpact(ctx(), L.skill)).toEqual({
             skillCheckCount: 1,
@@ -671,5 +888,77 @@ describe("SkillPackages archive / restore / recover / delete", () => {
 
         const recovered = await SkillPackages.recoverPackage(ctx(), L.pkg);
         expect(recovered).toMatchObject({ status: "Active", published: false });
+    });
+});
+
+describe("SkillPackages archive / restore unpublish", () => {
+    const P = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        published: SkillPackageId.create(),
+        unpublished: SkillPackageId.create(),
+        legacyArchived: SkillPackageId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: P.org, name: "Acme", slug: "acme-unpublish", createdAt: new Date() },
+        });
+        const fixtures = [
+            { id: P.published, status: "Active", published: true },
+            { id: P.unpublished, status: "Active", published: false },
+            // Archived before archiving unpublished.
+            { id: P.legacyArchived, status: "Archived", published: true },
+        ] as const;
+        for (const { id, status, published } of fixtures) {
+            await db.skillPackage.create({
+                data: {
+                    id,
+                    organizationId: P.org,
+                    name: `Package ${id}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    status,
+                    published,
+                },
+            });
+        }
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: P.org,
+            user: { id: P.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    async function actionsFor(objectId: SkillPackageId) {
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "SkillPackage", objectId },
+        });
+        return entries.map((entry) => entry.action).sort();
+    }
+
+    it("archivePackage unpublishes a published package, logging Unpublish and Archive", async () => {
+        const archived = await SkillPackages.archivePackage(ctx(), P.published);
+        expect(archived).toMatchObject({ status: "Archived", published: false });
+        expect(await actionsFor(P.published)).toEqual(["Archive", "Unpublish"]);
+    });
+
+    it("archivePackage logs only Archive for an unpublished package", async () => {
+        const archived = await SkillPackages.archivePackage(ctx(), P.unpublished);
+        expect(archived).toMatchObject({ status: "Archived", published: false });
+        expect(await actionsFor(P.unpublished)).toEqual(["Archive"]);
+    });
+
+    it("restorePackage brings a legacy Archived + published package back Active and unpublished", async () => {
+        const restored = await SkillPackages.restorePackage(ctx(), P.legacyArchived);
+        expect(restored).toMatchObject({ status: "Active", published: false });
+        expect(await actionsFor(P.legacyArchived)).toEqual(["Restore", "Unpublish"]);
     });
 });

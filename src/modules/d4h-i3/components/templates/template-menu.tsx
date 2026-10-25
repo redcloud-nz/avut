@@ -1,0 +1,84 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+
+import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { I3Template } from "@/lib/schemas/i3-template";
+
+import { D4HI3Module_DeleteTemplate_Dialog } from "./delete-template";
+import { D4HI3Module_RecoverTemplate_Dialog } from "./recover-template";
+
+export function D4HI3Module_Template_Menu({ template }: { template: I3Template }) {
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["delete", "recover"] as const),
+    );
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label="Actions">
+                        <DropdownMenuTriggerIcon />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <Protect
+                        permissions={{ i3Template: ["delete"] }}
+                        render={(allowed) =>
+                            template.status == "Deleted" ? (
+                                <DropdownMenuItem
+                                    onClick={() => setAction("recover", { history: "push" })}
+                                    disabled={!allowed}
+                                >
+                                    <ObjectIcons.Recover /> Recover from rubbish
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem
+                                    onClick={() => setAction("delete", { history: "push" })}
+                                    disabled={!allowed}
+                                >
+                                    <ObjectIcons.Delete /> Delete
+                                </DropdownMenuItem>
+                            )
+                        }
+                    />
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <D4HI3Module_DeleteTemplate_Dialog
+                template={template}
+                open={action === "delete"}
+                onOpenChange={(open) =>
+                    setAction(open ? "delete" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+
+            <D4HI3Module_RecoverTemplate_Dialog
+                template={template}
+                open={action === "recover"}
+                onOpenChange={(open) =>
+                    setAction(open ? "recover" : null, {
+                        history: open ? "push" : "replace",
+                    })
+                }
+            />
+        </>
+    );
+}

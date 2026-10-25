@@ -9,11 +9,13 @@ import { createTrpcRouter } from "../init";
 
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 import { d4hApiRouter } from "./d4h-api-router";
+import { d4hTasksRouter } from "./d4h-tasks-router";
 import { formsRouter } from "./forms-router";
 import { historyRouter } from "./history-router";
 import { i3Router } from "./i3-router";
 import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
+import { organizationGroupsRouter } from "./organization-groups-router";
 import { organizationNotesRouter } from "./organization-notes-router";
 import { organizationsRouter } from "./organizations-router";
 import { personnelRouter } from "./personnel-router";
@@ -32,11 +34,13 @@ import { whatsNewRouter } from "./whats-new-router";
 export const appRouter = createTrpcRouter({
     d4hAccessTokens: d4hAccessTokensRouter,
     d4hApi: d4hApiRouter,
+    d4hTasks: d4hTasksRouter,
     forms: formsRouter,
     history: historyRouter,
     i3: i3Router,
     invitations: invitationsRouter,
     notifications: notificationsRouter,
+    organizationGroups: organizationGroupsRouter,
     organizationNotes: organizationNotesRouter,
     organizations: organizationsRouter,
     personnel: personnelRouter,

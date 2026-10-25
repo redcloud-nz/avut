@@ -11,6 +11,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import { installDevTools } from "@/client/dev-tools";
 import { env } from "@/lib/env";
+
+// Plain-English validation messages for every form (registers a global Zod error map).
+import "@/lib/zod-error-map";
+
 import { getQueryClient } from "@/trpc/client";
 import { useMutationEffector } from "@/trpc/mutation-effector";
 

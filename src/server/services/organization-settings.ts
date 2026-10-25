@@ -16,11 +16,59 @@
 import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
+import { ConflictError } from "@/lib/errors";
+import { enabledInSettings } from "@/lib/module-flags";
+import { configurableModuleIds, Modules, requiredModuleOf } from "@/lib/modules";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { createSettingsStore } from "@/server/settings-store";
 
 /** The slice of the Prisma client the write path needs. */
 export type OrganizationSettingsPrisma = Pick<PrismaClient, "organizationConfig" | "$transaction">;
+
+/**
+ * Keep every module's `requires` (from the registry) satisfied by a write. A write that leaves a
+ * module enabled while the module it requires is off is resolved by what the write changed:
+ *
+ * - it turned the required module off, so the dependent is turned off with it (in the same
+ *   transaction and audit entry, since this runs before the diff);
+ * - it turned the dependent on, so the write is refused with a `ConflictError`.
+ *
+ * A pair already in that state before the write (an org left as it was by the D4H rename) is left
+ * alone: the dependent stays stored as on, and `isModuleUsable` keeps it unusable meanwhile.
+ *
+ * Modules are visited in registry order, so a required module is settled before its dependents.
+ */
+function enforceModuleRequirements(
+    existing: OrganizationSettings,
+    next: OrganizationSettings,
+): OrganizationSettings {
+    const wasEnabled = enabledInSettings(existing);
+    let result = next;
+
+    for (const moduleId of configurableModuleIds) {
+        const required = requiredModuleOf(moduleId);
+        if (required === undefined) continue;
+
+        const isEnabled = enabledInSettings(result);
+        if (!isEnabled(moduleId) || isEnabled(required)) continue;
+
+        if (wasEnabled(required)) {
+            result = {
+                ...result,
+                modules: {
+                    ...result.modules,
+                    [moduleId]: { ...result.modules[moduleId], enabled: false },
+                },
+            };
+        } else if (!wasEnabled(moduleId)) {
+            throw new ConflictError(
+                `Turn on ${Modules[required].label} first: ${Modules[moduleId].label} requires it.`,
+            );
+        }
+    }
+
+    return result;
+}
 
 const store = createSettingsStore<
     OrganizationSettings,
@@ -30,6 +78,7 @@ const store = createSettingsStore<
     settings: OrganizationSettings,
     model: "organizationConfig",
     scopeField: "organizationId",
+    normalize: enforceModuleRequirements,
 });
 
 /**
@@ -66,7 +115,8 @@ export const write = store.write;
  *
  * The patch is merged onto the settings as they stand in the database, not onto the snapshot the
  * caller was holding, so a concurrent edit to a different group survives. Everything else
- * (leaf-level diffing, revert-to-default deletes, the in-transaction audit entry) is `write`.
+ * (leaf-level diffing, revert-to-default deletes, the in-transaction audit entry, the module
+ * requirements in `enforceModuleRequirements`) is `write`.
  *
  * @returns the organization's settings as they stand after the write.
  */

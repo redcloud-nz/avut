@@ -75,3 +75,12 @@ export const I3Template = {
 export type I3Template = z.infer<typeof i3TemplateSchema>;
 
 export type ModifiableI3Template = z.infer<typeof I3Template.modifiableSchema>;
+
+export const I3TemplateRef = {
+    schema: i3TemplateSchema.pick({
+        id: true,
+        name: true,
+    }),
+} as const;
+
+export type I3TemplateRef = z.infer<typeof I3TemplateRef.schema>;

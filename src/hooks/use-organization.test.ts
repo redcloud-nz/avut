@@ -14,9 +14,9 @@ import { OrganizationClient } from "./use-organization";
 
 const ALL_ON: ModuleFlagState = {
     "org-admin": true,
-    "d4h-views": true,
+    d4h: true,
     forms: true,
-    i3: true,
+    "d4h-i3": true,
     notes: true,
     "skill-track": true,
     "skill-package-builder": true,
@@ -44,15 +44,26 @@ function makeClient(opts: {
 
 describe("OrganizationClient.isModuleEnabled", () => {
     it("requires both the flag and the org setting for a flag-gated module", () => {
-        expect(makeClient({}).isModuleEnabled("i3")).toBe(false); // setting defaults off
-
-        expect(makeClient({ enabled: { i3: true } }).isModuleEnabled("i3")).toBe(true);
+        expect(makeClient({}).isModuleEnabled("d4h-i3")).toBe(false); // setting defaults off
 
         expect(
-            makeClient({ moduleFlags: { i3: false }, enabled: { i3: true } }).isModuleEnabled("i3"),
+            makeClient({ enabled: { d4h: true, "d4h-i3": true } }).isModuleEnabled("d4h-i3"),
+        ).toBe(true);
+
+        expect(
+            makeClient({
+                moduleFlags: { "d4h-i3": false },
+                enabled: { d4h: true, "d4h-i3": true },
+            }).isModuleEnabled("d4h-i3"),
         ).toBe(false);
 
-        expect(makeClient({ moduleFlags: { i3: false } }).isModuleEnabled("i3")).toBe(false);
+        expect(makeClient({ moduleFlags: { "d4h-i3": false } }).isModuleEnabled("d4h-i3")).toBe(
+            false,
+        );
+    });
+
+    it("keeps D4H I3 off while the D4H module it requires is off", () => {
+        expect(makeClient({ enabled: { "d4h-i3": true } }).isModuleEnabled("d4h-i3")).toBe(false);
     });
 
     it("treats a module without a flag as governed by its setting alone", () => {

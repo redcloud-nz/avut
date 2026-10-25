@@ -1,6 +1,6 @@
 ---
 name: avut-brainstorm
-description: Extended back-and-forth exploration of a big idea or problem, ending in a `brainstorm`-labeled GitHub issue. Trigger only when the user types /avut-brainstorm.
+description: Extended back-and-forth exploration of a big idea or problem, ending in a `brainstorm`-labeled GitHub issue in redcloud-nz/avut-ideas. Trigger only when the user types /avut-brainstorm.
 effort: medium
 manual: true
 ---
@@ -11,6 +11,11 @@ You are a thinking partner for an extended exploration of a big idea or problem:
 deliberate, unhurried conversation that ends in a well-developed GitHub issue. To try an
 idea out in code instead of talking it through, that's `/avut-explore`.
 
+Brainstorms live in **redcloud-nz/avut-ideas**, not redcloud-nz/avut: avut's issues are the
+build backlog, and an idea moves there (via `/avut-develop-feature`) once it's ready to build.
+The ideas repo also takes ideas that aren't about the app itself. Reference avut issues and
+PRs from a brainstorm as `redcloud-nz/avut#123`, since a bare `#123` means the ideas repo.
+
 The topic: $ARGUMENTS
 
 ## First: new idea or expanding an existing one?
@@ -20,7 +25,7 @@ If `$ARGUMENTS` is a bare issue number, `#123`, or an issue URL, this is an
 clearly points at an existing idea by title, search for it:
 
 ```bash
-gh issue list --repo redcloud-nz/avut --label brainstorm --search "<topic>"
+gh issue list --repo redcloud-nz/avut-ideas --label brainstorm --search "<topic>"
 ```
 
 If exactly one match, that's an expansion session too. If several match, list
@@ -28,7 +33,7 @@ them and ask which. If none, it's a new idea — follow the flow below.
 
 For an expansion session:
 
-- `gh issue view <n> --repo redcloud-nz/avut --json number,title,body,comments,labels`.
+- `gh issue view <n> --repo redcloud-nz/avut-ideas --json number,title,body,comments,labels`.
   Open the conversation from where it left off — summarise what's already
   captured (including any past `## Review` comment) and ask what's changed or
   what the user wants to dig into.
@@ -98,7 +103,7 @@ wanted, goes in a comment, so the body stays the idea itself.
 **New idea:**
 
 ```bash
-gh issue create --repo redcloud-nz/avut \
+gh issue create --repo redcloud-nz/avut-ideas \
   --title "<title>" \
   --label "brainstorm" \
   --body-file <tmpfile>
@@ -107,8 +112,8 @@ gh issue create --repo redcloud-nz/avut \
 **Expansion:**
 
 ```bash
-gh issue edit <n> --repo redcloud-nz/avut --body-file <tmpfile>
-gh issue comment <n> --repo redcloud-nz/avut --body "Expanded: <one-line summary of what changed and why>"
+gh issue edit <n> --repo redcloud-nz/avut-ideas --body-file <tmpfile>
+gh issue comment <n> --repo redcloud-nz/avut-ideas --body "Expanded: <one-line summary of what changed and why>"
 ```
 
 The comment exists because GitHub's "edited" marker on the body doesn't show a
@@ -121,4 +126,5 @@ work identically from a local checkout or a cloud session.
 
 - Writing a `## Review` section into the body instead of a comment
 - Skipping the "Expanded" comment after an in-place body edit, leaving no trace in the timeline of what changed
+- Writing a bare `#123` for an avut issue or PR — in the ideas repo that links to the wrong issue
 - Treating a fuzzy title match as certain when more than one open `brainstorm` issue matches — ask instead of guessing

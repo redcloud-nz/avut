@@ -7,6 +7,7 @@
 
 import React from "react";
 
+import { ClientOnly } from "@/components/client-only";
 import { usePreferences } from "@/hooks/use-preferences";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,10 @@ import { cn } from "@/lib/utils";
  * `usePreferences()`. Keeping `DataList`/`DataItem` in a module with no `"use client"` leaves
  * them usable from the Server Components that import them.
  *
+ * The relative line renders only in the browser. It reads the clock, so the server's "less than a
+ * minute ago" can differ from the client's "1 minute ago" at hydration. A blank line holds its
+ * place until then, so nothing shifts.
+ *
  * Re-exported from `data-item.tsx`, so call sites import it alongside its siblings.
  */
 export function DataItemDateValue({
@@ -26,7 +31,7 @@ export function DataItemDateValue({
     date,
     ...props
 }: Omit<React.ComponentPropsWithRef<"div">, "children"> & { date: Date | string }) {
-    const { formatDateTime, formatRelativeDateTime } = usePreferences();
+    const { formatDateTime } = usePreferences();
 
     return (
         <div
@@ -37,7 +42,17 @@ export function DataItemDateValue({
             <time dateTime={new Date(date).toISOString()} className="block">
                 {formatDateTime(date)}
             </time>
-            <div className="text-muted-foreground">{formatRelativeDateTime(date)}</div>
+            <div className="text-muted-foreground">
+                <ClientOnly fallback={"\u00a0"}>
+                    <RelativeTime date={date} />
+                </ClientOnly>
+            </div>
         </div>
     );
+}
+
+/** A component, not an inline call, so the server never reads the clock at all. */
+function RelativeTime({ date }: { date: Date | string }) {
+    const { formatRelativeDateTime } = usePreferences();
+    return formatRelativeDateTime(date);
 }

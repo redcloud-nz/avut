@@ -798,3 +798,256 @@ describe("skillPackageBuilder.importPackageAsAdmin", () => {
         ).rejects.toThrow(/different organisation/i);
     });
 });
+
+describe("skillPackageBuilderRouter log refs and moveSkill (#342)", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        pkg: SkillPackageId.create(),
+        otherPkg: SkillPackageId.create(),
+        groupA: SkillGroupId.create(),
+        groupB: SkillGroupId.create(),
+        groupC: SkillGroupId.create(),
+        newGroup: SkillGroupId.create(),
+        skillEdit: SkillId.create(),
+        skillReorder: SkillId.create(),
+        skillMoveSame: SkillId.create(),
+        skillMoveCross: SkillId.create(),
+        skillStay: SkillId.create(),
+        newSkill: SkillId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        for (const id of [T.pkg, T.otherPkg]) {
+            await db.skillPackage.create({
+                data: {
+                    id,
+                    organizationId: T.org,
+                    name: `Package ${id}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                },
+            });
+        }
+        for (const [id, skillPackageId, sequence] of [
+            [T.groupA, T.pkg, 1],
+            [T.groupB, T.pkg, 2],
+            [T.groupC, T.otherPkg, 1],
+        ] as const) {
+            await db.skillGroup.create({
+                data: {
+                    id,
+                    skillPackageId,
+                    name: `Group ${sequence}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    sequence,
+                },
+            });
+        }
+        const skills = [
+            T.skillEdit,
+            T.skillReorder,
+            T.skillMoveSame,
+            T.skillMoveCross,
+            T.skillStay,
+        ];
+        for (const [index, id] of skills.entries()) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: T.pkg,
+                    skillGroupId: T.groupA,
+                    name: `Skill ${index + 1}`,
+                    description: "",
+                    properties: {},
+                    tags: [],
+                    sequence: index + 1,
+                },
+            });
+        }
+    });
+
+    function makeCaller() {
+        return skillPackageBuilderRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { skillPackage: ["update"], organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    /** The one entry matching `where`, with its non-primary refs as `role:objectType:objectId`. */
+    async function entryOf(where: { objectType: string; objectId: string; action: string }) {
+        const entries = await db.logEntry.findMany({ where, include: { objects: true } });
+        expect(entries).toHaveLength(1);
+        return {
+            entry: entries[0]!,
+            refs: entries[0]!.objects
+                .filter((ref) => ref.role !== "primary")
+                .map((ref) => `${ref.role}:${ref.objectType}:${ref.objectId}`)
+                .sort(),
+        };
+    }
+
+    const groupFields = {
+        name: "New group",
+        description: "",
+        tags: [],
+        properties: {},
+        defaultInclude: true,
+    };
+    const skillFields = {
+        name: "New skill",
+        description: "",
+        tags: [],
+        properties: {},
+        frequency: 12,
+        defaultInclude: true,
+        defaultRequired: false,
+    };
+
+    it("createGroup refs the package as context", async () => {
+        await makeCaller().createGroup({
+            organizationId: T.org,
+            skillPackageId: T.pkg,
+            skillGroupId: T.newGroup,
+            create: groupFields,
+        });
+
+        const { refs } = await entryOf({
+            objectType: "SkillGroup",
+            objectId: T.newGroup,
+            action: "Create",
+        });
+        expect(refs).toEqual([`context:SkillPackage:${T.pkg}`]);
+    });
+
+    it("updateGroup refs the package as context", async () => {
+        await makeCaller().updateGroup({
+            organizationId: T.org,
+            skillGroupId: T.groupB,
+            update: { ...groupFields, name: "Renamed group" },
+        });
+
+        const { refs } = await entryOf({
+            objectType: "SkillGroup",
+            objectId: T.groupB,
+            action: "Update",
+        });
+        expect(refs).toEqual([`context:SkillPackage:${T.pkg}`]);
+    });
+
+    it("reorderGroupSkills refs the package as context", async () => {
+        await makeCaller().reorderGroupSkills({
+            organizationId: T.org,
+            skillGroupId: T.groupA,
+            newOrder: [T.skillReorder, T.skillEdit],
+        });
+
+        const { refs } = await entryOf({
+            objectType: "SkillGroup",
+            objectId: T.groupA,
+            action: "Update",
+        });
+        expect(refs).toEqual([`context:SkillPackage:${T.pkg}`]);
+    });
+
+    it("createSkill refs the package and the group as context", async () => {
+        await makeCaller().createSkill({
+            organizationId: T.org,
+            skillId: T.newSkill,
+            skillPackageId: T.pkg,
+            skillGroupId: T.groupB,
+            create: skillFields,
+        });
+
+        const { refs } = await entryOf({
+            objectType: "Skill",
+            objectId: T.newSkill,
+            action: "Create",
+        });
+        expect(refs).toEqual([`context:SkillGroup:${T.groupB}`, `context:SkillPackage:${T.pkg}`]);
+    });
+
+    it("updateSkill refs the package and the group as context", async () => {
+        await makeCaller().updateSkill({
+            organizationId: T.org,
+            skillId: T.skillEdit,
+            update: { ...skillFields, name: "Edited skill" },
+        });
+
+        const { refs } = await entryOf({
+            objectType: "Skill",
+            objectId: T.skillEdit,
+            action: "Update",
+        });
+        expect(refs).toEqual([`context:SkillGroup:${T.groupA}`, `context:SkillPackage:${T.pkg}`]);
+    });
+
+    it("moveSkill within a package logs Move with group from/to and package context", async () => {
+        await makeCaller().moveSkill({
+            organizationId: T.org,
+            skillId: T.skillMoveSame,
+            destinationPackageId: T.pkg,
+            destinationGroupId: T.groupB,
+        });
+
+        const { entry, refs } = await entryOf({
+            objectType: "Skill",
+            objectId: T.skillMoveSame,
+            action: "Move",
+        });
+        expect(refs).toEqual([
+            `context:SkillPackage:${T.pkg}`,
+            `from:SkillGroup:${T.groupA}`,
+            `to:SkillGroup:${T.groupB}`,
+        ]);
+        expect(entry.changes).toEqual([
+            { type: "obj_mod", path: ["skillGroupId"], prev: T.groupA, curr: T.groupB },
+        ]);
+    });
+
+    it("moveSkill across packages refs the packages as from/to too", async () => {
+        await makeCaller().moveSkill({
+            organizationId: T.org,
+            skillId: T.skillMoveCross,
+            destinationPackageId: T.otherPkg,
+            destinationGroupId: T.groupC,
+        });
+
+        const { refs } = await entryOf({
+            objectType: "Skill",
+            objectId: T.skillMoveCross,
+            action: "Move",
+        });
+        expect(refs).toEqual([
+            `from:SkillGroup:${T.groupA}`,
+            `from:SkillPackage:${T.pkg}`,
+            `to:SkillGroup:${T.groupC}`,
+            `to:SkillPackage:${T.otherPkg}`,
+        ]);
+    });
+
+    it("moveSkill to the skill's current group writes nothing", async () => {
+        const before = await db.logEntry.count();
+
+        const { updated } = await makeCaller().moveSkill({
+            organizationId: T.org,
+            skillId: T.skillStay,
+            destinationPackageId: T.pkg,
+            destinationGroupId: T.groupA,
+        });
+
+        expect(updated.skillGroupId).toBe(T.groupA);
+        expect(await db.logEntry.count()).toBe(before);
+    });
+});

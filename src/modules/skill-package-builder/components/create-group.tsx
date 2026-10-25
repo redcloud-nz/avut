@@ -1,0 +1,209 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+
+"use client";
+
+import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect, useId } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+
+import { skillPackageBuilderEffects } from "@/client/skill-package-builder-effects";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogBody,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ObjectName } from "@/components/ui/typography";
+import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { ModifiableSkillGroup, SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
+import { SkillPackage } from "@/lib/schemas/skill-package";
+import { trpc } from "@/trpc/client";
+
+export function SkillPackageBuilder_CreateGroup_Dialog({
+    skillPackage,
+}: {
+    skillPackage: SkillPackage;
+}) {
+    const organization = useOrganization();
+    const router = useRouter();
+
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const dialogOpen = action === "create";
+
+    const canCreateGroup = useHasPermission({ skillPackage: ["create"] });
+    useActionHotkeys([
+        {
+            verb: "create",
+            run: () => void setAction("create", { history: "push" }),
+            enabled: canCreateGroup,
+            name: "New group",
+            category: "Groups",
+        },
+    ]);
+
+    const formId = useId();
+    const form = useForm({
+        resolver: zodResolver(SkillGroup.modifiableSchema),
+        defaultValues: {
+            name: "",
+            description: "",
+            tags: [],
+            properties: {},
+        },
+    });
+
+    const mutation = useMutation(
+        trpc.skillPackageBuilder.createGroup.mutationOptions({
+            meta: { effects: skillPackageBuilderEffects.createGroup, navigates: true },
+            onError(error) {
+                if (error.shape?.cause?.name == "FieldConflictError") {
+                    form.setError(error.shape.cause.message as keyof ModifiableSkillGroup, {
+                        message: error.message,
+                    });
+                } else {
+                    toast.error(`Failed to create skill group: ${error.message}`);
+                    console.error("Failed to create skill group:", error);
+                }
+            },
+            onSuccess({ created }) {
+                toast.success(
+                    <>
+                        Skill Group <ObjectName>{created.name}</ObjectName> created successfully!
+                    </>,
+                );
+
+                router.push(
+                    route(
+                        "/orgs/[slug]/skill-package-builder/packages/[package_id]/groups/[group_id]",
+                        {
+                            slug: organization.slug,
+                            package_id: skillPackage.id,
+                            group_id: created.id,
+                        },
+                    ),
+                );
+            },
+        }),
+    );
+
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            mutation.mutate({
+                organizationId: organization.id,
+                skillPackageId: skillPackage.id,
+                skillGroupId: SkillGroupId.create(),
+                create: formData,
+            });
+        },
+        (errors) => {
+            console.warn("Form validation errors:", errors);
+        },
+    );
+
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "create" : null, { history: open ? "push" : "replace" });
+    }
+
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset();
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="New group">
+                    <ObjectIcons.Create />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>New Group</DialogTitle>
+                    <DialogDescription>
+                        Create a new skill group within the package {skillPackage.name}.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                    <form id={formId} onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="group-name">Name</FieldLabel>
+                                        <Input
+                                            id="group-name"
+                                            autoFocus
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="group-description">
+                                            Description
+                                        </FieldLabel>
+                                        <Textarea
+                                            id="group-description"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        type="submit"
+                        form={formId}
+                        status={mutation.status}
+                        text={{
+                            idle: "Create",
+                            pending: "Creating",
+                            success: "Created",
+                        }}
+                    />
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}

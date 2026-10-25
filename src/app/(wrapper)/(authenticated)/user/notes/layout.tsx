@@ -11,7 +11,10 @@ import { Suspense } from "react";
 import { Hermes } from "@/components/blocks/hermes";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
-import { UserNotes_Breadcrumbs, UserNotes_List } from "@/components/notes/user-notes-list";
+import {
+    UserNotes_Breadcrumbs,
+    UserNotes_List,
+} from "@/modules/user-notes/components/user-notes-list";
 import { resolveUserModuleFlags } from "@/server/module-flags";
 import { requireSession } from "@/server/session";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";

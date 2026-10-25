@@ -42,6 +42,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.skillPackageSubscriptions.pathFilter()),
     ],
     archiveSkill: (vars, { updated }) => [
         write(
@@ -95,6 +96,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.skillPackageSubscriptions.pathFilter()),
     ],
     deleteSkill: (vars) => [
         invalidate(
@@ -147,6 +149,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.skillPackageSubscriptions.pathFilter()),
     ],
     restoreGroup: (vars, { updated }) => [
         write(
@@ -190,6 +193,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.skillPackageSubscriptions.pathFilter()),
     ],
     recoverPackage: (vars, { updated }) => [
         write(
@@ -205,6 +209,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
             }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.skillPackageSubscriptions.pathFilter()),
     ],
     restoreSkill: (vars, { updated }) => [
         write(
@@ -248,6 +253,7 @@ export const skillPackageBuilderEffects = createEffects<"skillPackageBuilder">()
                 organizationId: vars.organizationId,
             }),
         ),
+        invalidate(trpc.skillPackageSubscriptions.pathFilter()),
     ],
     updateGroup: (vars, { updated }) => [
         write(

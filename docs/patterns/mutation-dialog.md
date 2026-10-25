@@ -98,7 +98,7 @@ of which owns its own padding:
 
 - **`DialogBody` is the only part that scrolls.** The header and footer stay put
   at every size, so a tall form never pushes the buttons off a small screen. Keep
-  the `<form>` inside the body and submit from the footer with the `form="…"`
+  the `<form>` inside the body and submit from the footer with the `form`
   attribute, as above — the footer is never inside the `<form>`.
 - **Below `sm` the dialog is full screen** (slides up, with a visible close
   button, since there's no overlay left to tap; the footer buttons share the
@@ -194,6 +194,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
   const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
   const dialogOpen = action === "update";
 
+  const formId = useId();
   const form = useForm({
     resolver: zodResolver(PersonData.modifiableSchema),
     defaultValues: person,
@@ -232,7 +233,7 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
         personId: person.id,
         update: formData,
       }),
-    (errors) => console.error("Form validation errors:", errors),
+    (errors) => console.warn("Form validation errors:", errors),
   );
 
   return (
@@ -247,13 +248,13 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
           <DialogTitle>Update person</DialogTitle>
         </DialogHeader>
         <DialogBody>
-          <form id="update-person-form" onSubmit={handleSubmit}>
+          <form id={formId} onSubmit={handleSubmit}>
             {/* fields */}
           </form>
         </DialogBody>
         <DialogFooter>
           <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-          <MutationButton type="submit" form="update-person-form" status={mutation.status} />
+          <MutationButton type="submit" form={formId} status={mutation.status} />
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -261,9 +262,17 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
 }
 ```
 
+- **The form id comes from `useId()`, never a literal** (lint). `form="…"` resolves
+  to the first element in the document with that id, and with `cacheComponents`
+  Next keeps visited routes mounted in a hidden `<Activity>`. A fixed id lets the
+  footer button submit a hidden copy of the same dialog from an earlier page, with
+  that copy's props and stale field values, so it creates or updates the wrong
+  record ([#465](https://github.com/redcloud-nz/avut/issues/465)).
 - **`form.handleSubmit(onValid, onInvalid)`** — always pass the second argument.
   A submit that silently does nothing because a field is invalid is hard to
   diagnose from a bug report; logging `onInvalid` surfaces it in the console.
+  Log it with `console.warn`, not `console.error`: an invalid submit is the form
+  working, and the Next.js dev overlay counts every `console.error` as an Issue.
 - **On success**, close by clearing the param via `handleDialogOpenChange(false)`
   — _unless_ success also navigates (create), in which case see the next rule.
 - Cancel is the visually primary (first) button — the safe default to reach for.
@@ -420,7 +429,7 @@ recurring shapes have fixed rules:
     <Card>
       {/* row buttons: onClick={() => openVariantAction("update-variant", variant.id)} */}
       {activeVariant && (
-        <I3Module_UpdateVariant_Dialog
+        <D4HI3Module_UpdateVariant_Dialog
           template={template}
           variant={activeVariant}
           open={action === "update-variant"}
@@ -507,7 +516,7 @@ const returnFocus = useReturnFocus(returnFocusRef);
 When the trigger can unmount before the dialog closes (an item in a sheet or a
 `DropdownMenuItem`), pass a `fallbackRef` to a control that stays mounted, such
 as the sheet's or menu's own button. Focus goes there when the opener is gone.
-The session config dialogs (`src/components/skill-track/session-config-dialogs.tsx`)
+The session config dialogs (`src/modules/skill-track/components/session-config-dialogs.tsx`)
 are the worked example.
 
 Older menu-triggered dialogs instead call `preventDefault()` on

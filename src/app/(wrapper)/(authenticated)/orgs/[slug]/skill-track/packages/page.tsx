@@ -1,0 +1,54 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Paths: /orgs/[slug]/skill-track/packages
+ */
+
+import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
+import { TITLE_SEPARATOR } from "@/lib/constants";
+import { route } from "@/lib/routes";
+import { SkillTrack_Packages_List } from "@/modules/skill-track/components/packages-list";
+import { getOrganizationBySlug } from "@/server/cache/organization";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
+
+export const metadata = {
+    title: `Packages ${TITLE_SEPARATOR} Skill Track`,
+};
+
+export default async function SkillTrack_Packages_Page(
+    props: PageProps<"/orgs/[slug]/skill-track/packages">,
+) {
+    const { slug } = await props.params;
+    const organization = await getOrganizationBySlug(slug);
+
+    prefetch(
+        trpc.skillPackageSubscriptions.listPackages.queryOptions({
+            organizationId: organization.id,
+        }),
+    );
+
+    return (
+        <HydrateClient>
+            <>
+                <Std.Navbar
+                    breadcrumbs={[
+                        {
+                            label: "Skill Track",
+                            href: route("/orgs/[slug]/skill-track", { slug }),
+                        },
+                        {
+                            label: "Packages",
+                            href: route("/orgs/[slug]/skill-track/packages", { slug }),
+                        },
+                    ]}
+                    actions={<HelpButton id="skill-track/packages" />}
+                />
+                <Std.ScrollContainer>
+                    <SkillTrack_Packages_List />
+                </Std.ScrollContainer>
+            </>
+        </HydrateClient>
+    );
+}

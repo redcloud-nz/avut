@@ -31,7 +31,13 @@ organisation, its server and when it was last synced.
 ## Organisation Settings
 
 Everyone in the organisation can view **Organisation Settings**; only owners
-and admins can change them. The page has four sections.
+and admins can change them.
+
+### General
+
+**Time zone** is the zone your organisation operates in. Skill check
+[session](/docs/skill-track/sessions) start and end times are entered and shown
+in it, whatever time zone each person has chosen for themselves.
 
 ### Personnel
 
@@ -54,16 +60,31 @@ by default.
 ### Integrations
 
 **D4H Integration** turns on D4H for the organisation, with its default
-server. Each member who uses D4H still adds their own personal access token,
-under **User Settings → D4H**. [D4H Views](/docs/d4h-views), [I3](/docs/i3)
-and [team linking](/docs/admin/teams#linking-a-team-to-d4h) all need it.
+server. Each member who uses D4H still adds their own personal access token in
+their account settings under **D4H**. The [D4H](/docs/d4h) and
+[D4H I3](/docs/d4h-i3) modules and
+[team linking](/docs/admin/teams#linking-a-team-to-d4h) all need it.
 
 ### Modules
 
-Turn each module on or off with **Enable** and **Disable**. Turning a module off
+Each module has its own heading, with a short description of what it's for.
+Turn a module on or off with **Enable** and **Disable**. Turning a module off
 hides it for everyone, and stops its roles being offered, but deletes nothing:
 turn it back on and everything is where you left it. Admin is always on.
 
-The **Skill Track** card also has **Skill Check Result Options**: which results
-your organisation can record, and what each one is called — see
+Some modules need another one: D4H I3 can only be turned on while D4H is.
+
+#### D4H I3
+
+- **Organisation-owned records only** — offer only your D4H organisation's
+  records when creating or editing I3 templates, so every template can be issued
+  in every team. See [Templates](/docs/d4h-i3#organisation-owned-records-only).
+- **Notifications** — who is emailed when items are issued or returned: one list
+  for the whole organisation, and one for each team linked to D4H. Edit the
+  lists with the pencil button. See [Notifications](/docs/d4h-i3#notifications).
+
+#### Skill Track
+
+**Skill Check Result Options** sets which results your organisation can record,
+and what each one is called — see
 [Skill Track](/docs/skill-track#skill-checks).

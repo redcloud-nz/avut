@@ -12,15 +12,19 @@ import type { Prisma } from "@/generated/prisma/client";
 import {
     ConflictError,
     ForbiddenError,
+    NotConfiguredError,
     NotFoundError,
     PreconditionError,
-    StalePlanError,
     ValidationError,
 } from "@/lib/errors";
 import { Permissions } from "@/lib/permissions";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
+
+// The same validation messages as the client, for procedure input errors.
+import "@/lib/zod-error-map";
+
 import type { AuthSession } from "@/server/auth";
 // NOTE: import type only — @/server/auth loads server-only modules and must not be imported at runtime here
 import { recordLogEntry, resolveActor } from "@/server/log-entry";
@@ -101,11 +105,8 @@ export const publicProcedure = t.procedure
             if (cause instanceof ValidationError) {
                 throw new TRPCError({ code: "BAD_REQUEST", message: cause.message, cause });
             }
-            if (cause instanceof PreconditionError) {
+            if (cause instanceof PreconditionError || cause instanceof NotConfiguredError) {
                 throw new TRPCError({ code: "PRECONDITION_FAILED", message: cause.message, cause });
-            }
-            if (cause instanceof StalePlanError) {
-                throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });
             }
             if (cause instanceof FieldConflictError) {
                 throw new TRPCError({ code: "CONFLICT", message: cause.message, cause });

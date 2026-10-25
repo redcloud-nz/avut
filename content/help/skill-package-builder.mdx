@@ -5,25 +5,30 @@ keyTerms: ["skill-package", "skill-group", "skill"]
 ---
 
 The **Skill Package Builder** is where your organisation writes skill packages
-for any organisation to use from its Skill Track catalogue. You need the
+for any organisation to subscribe to in Skill Track. You need the
 **Skills Author** role.
 
 **New** starts a package. **Import** loads a package exported as `.json`: a
 package already here is updated in place, anything the file leaves out is
 archived, and the result is always unpublished. Open a package to add its
 groups and skills. A skill's **Revalidation Frequency** is in months and
-decides when a pass expires in reports; 0 means it never expires.
+decides when a pass expires in reports; 0 means it never expires. Deleting a
+group takes its skills out of subscribers' sessions and reports with it, until
+you recover the group from the Rubbish bin.
 
 The package's menu (⋮) has:
 
-- **Publish**, which puts it in every organisation's catalogue, and
-  **Unpublish**, which stops new subscriptions and removes its skills from
-  subscribers' reports. Their sessions can still use its skills.
-- **Archive** and **Restore**. While archived, its skills leave subscribers'
-  reports, but it stays in the catalogue, open to subscription, and in the
-  session skill picker.
+- **History**, which lists every change to the package, including its groups
+  and skills. Groups and skills have their own History in their menus.
+- **Publish**, which offers it to every organisation in Skill Track, and
+  **Unpublish**, which takes it out. Unpublishing withdraws its skills from
+  subscribers' sessions and reports until you publish it again; the checks they
+  recorded are kept.
+- **Archive** and **Restore**. Archiving also unpublishes, so it withdraws the
+  skills the same way. Restoring doesn't publish again: do that yourself.
 - **Delete**, which unpublishes the package and moves it to the Rubbish bin.
-  Subscribers lose its skills straight away.
+  Subscribers lose its skills straight away, but still see it as withdrawn, so
+  they can unsubscribe.
 - **Export .json**, to copy it to another organisation or AVUT instance.
 
 Packages aren't versioned: a change to a published package reaches every

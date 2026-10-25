@@ -1,6 +1,6 @@
 ---
 name: avut-develop-feature
-description: Build a feature from a GitHub issue or a plain description. Clarify it if needed, triage it into a quick path (implement in-session) or a long path (reviewed plan executed by implementer/reviewer subagents in a worktree), pause for visual checks on UI work, park side-findings as follow-ups, and finish through /avut-ship. With --plan-only, stop once the plan is written and reviewed, on a plan/<slug> branch; given a plan (path, slug or plan/ branch), pick it up and build it. Trigger only when the user types /avut-develop-feature.
+description: Build a feature from a GitHub issue, a brainstorm in redcloud-nz/avut-ideas, or a plain description. Clarify it if needed, triage it into a quick path (implement in-session) or a long path (reviewed plan executed by implementer/reviewer subagents in a worktree), pause for visual checks on UI work, park side-findings as follow-ups, and finish through /avut-ship. With --plan-only, stop once the plan is written and reviewed, on a plan/<slug> branch; given a plan (path, slug or plan/ branch), pick it up and build it. Trigger only when the user types /avut-develop-feature.
 effort: high
 manual: true
 ---
@@ -9,7 +9,7 @@ manual: true
 
 Takes a piece of work from "I want X" to a branch ready for `/avut-ship`. `$ARGUMENTS` is one of:
 
-- a GitHub issue (a bare number, `#123`, or an issue URL) or a text description of what to achieve: the full flow below
+- a GitHub issue (a bare number, `#123`, or an issue URL), a brainstorm in redcloud-nz/avut-ideas (`ideas#<n>` or its URL), or a text description of what to achieve: the full flow below
 - either of those with **`--plan-only`**: write and review the plan, then stop. See [Plan only](#plan-only)
 - **a plan to pick up**: a `docs/plans/…` path, a `plan/<slug>` branch, or a slug. See [Pick up a plan](#pick-up-a-plan)
 
@@ -19,7 +19,8 @@ The checkpoints are deliberate, and there are few of them. Clarify only when the
 
 ## Step 1 — Resolve the source
 
-- **Issue:** `gh issue view <n> --repo redcloud-nz/avut --json number,title,url,body,labels,milestone,comments`. Read the body and the comments. Brainstorm issues carry `## Idea`/`## Options considered`/`## Open questions` and often a `## Review` comment. Bug issues carry What happened / Steps to reproduce / Expected. Feature issues carry Proposed solution / Alternatives considered.
+- **Issue:** `gh issue view <n> --repo redcloud-nz/avut --json number,title,url,body,labels,milestone,comments`. Read the body and the comments. Bug issues carry What happened / Steps to reproduce / Expected. Feature issues carry Proposed solution / Alternatives considered.
+- **Brainstorm** (an issue in redcloud-nz/avut-ideas: `ideas#<n>` or its URL): `gh issue view <n> --repo redcloud-nz/avut-ideas --json number,title,url,body,comments`. Brainstorms carry `## Idea`/`## Options considered`/`## Open questions` and often a `## Review` comment. It isn't on the build backlog yet, so once Step 2 has settled its open questions, promote it: draft an `enhancement` issue for redcloud-nz/avut in `/avut-issue`'s feature format, linking the brainstorm as `redcloud-nz/avut-ideas#<n>` (a bare `#<n>` would link an unrelated avut issue). Show the draft and confirm before creating it, then carry on with that issue as the source (milestone, `Fixes #N`). Comment `Promoted to redcloud-nz/avut#<n>.` on the brainstorm and close it as completed. If the brainstorm splits into several buildable pieces, file all of them now (one confirmation covers the set), build one, and close the brainstorm once they're filed.
 - **Description:** use it as given. If it names an existing issue or looks like one (`gh issue list --repo redcloud-nz/avut --search "<text>"`), mention the match and ask whether to build from that instead.
 - **An exploration,** handed over by `/avut-explore`'s Keep step: its branch, its Decisions list, its gap list and the route chosen there. Skip Steps 2 and 3, since the exploration settled the idea and Keep chose the route:
   - **Finish in place:** the quick path from step 3, on the exploration's branch in the current checkout.

@@ -63,9 +63,9 @@ describe("moduleIdForObjectType", () => {
         expect(moduleIdForObjectType("SkillCheckSession")).toBe("skill-track");
     });
 
-    it("attributes i3 templates to i3", () => {
-        expect(moduleIdForObjectType("I3Template")).toBe("i3");
-        expect(moduleIdForObjectType("I3TemplateVariant")).toBe("i3");
+    it("attributes i3 templates to d4h-i3", () => {
+        expect(moduleIdForObjectType("I3Template")).toBe("d4h-i3");
+        expect(moduleIdForObjectType("I3TemplateVariant")).toBe("d4h-i3");
     });
 
     it("attributes organization notes to notes", () => {
@@ -82,7 +82,19 @@ describe("moduleIdForObjectType", () => {
 
 describe("objectTypesForModule", () => {
     it("generates the WHERE-IN list for a module feed", () => {
-        expect(objectTypesForModule("i3").sort()).toEqual(["I3Template", "I3TemplateVariant"]);
+        expect(objectTypesForModule("d4h-i3").sort()).toEqual([
+            "D4HEquipmentItem",
+            "D4HTask",
+            "I3Template",
+            "I3TemplateVariant",
+        ]);
+    });
+
+    it("attributes organization groups to the system-admin module", () => {
+        expect(objectTypesForModule("system-admin").sort()).toEqual([
+            "OrganizationGroup",
+            "OrganizationGroupMembership",
+        ]);
     });
 
     it("returns an empty list for a module with no logged entities", () => {
@@ -96,6 +108,7 @@ describe("Operations", () => {
             "d4h-team-import",
             "d4h-team-link",
             "d4h-team-sync",
+            "i3-return-items",
             "invitation-accept",
             "invitation-reject",
             "organization-leave",

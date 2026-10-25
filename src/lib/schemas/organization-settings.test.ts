@@ -6,8 +6,10 @@
 import { describe, expect, it } from "vitest";
 
 import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
 
-import { OrganizationSettings } from "./organization-settings";
+import { OrganizationSettings, OrganizationSettingsSlices } from "./organization-settings";
 import { SKILL_CHECK_RESULT_VALUES } from "./skill-check-result";
 
 describe("OrganizationSettings default skill-track result config", () => {
@@ -71,5 +73,129 @@ describe("OrganizationSettings default skill-track result config", () => {
             enabled: true,
             label: "Fail",
         });
+    });
+});
+
+describe("OrganizationSettings general.timeZone", () => {
+    it("defaults to Pacific/Auckland", () => {
+        expect(OrganizationSettings.default().general.timeZone).toBe("Pacific/Auckland");
+    });
+
+    it("resolves the default for an org whose stored general rows predate the setting", () => {
+        const restored = OrganizationSettings.fromRecords([
+            { key: "general.publicDomain", value: "example.org" },
+        ]);
+
+        expect(restored.general).toEqual({
+            publicDomain: "example.org",
+            timeZone: "Pacific/Auckland",
+        });
+    });
+
+    it("accepts a known zone in a general slice patch and rejects an unknown one", () => {
+        const parsed = OrganizationSettingsSlices.input.parse({
+            slice: "general",
+            patch: { timeZone: "America/New_York" },
+        });
+        expect(parsed.patch).toEqual({ timeZone: "America/New_York" });
+
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "general",
+                patch: { timeZone: "Mars/Olympus_Mons" },
+            }),
+        ).toThrow("Unknown IANA time zone");
+    });
+});
+
+describe("OrganizationSettings modules.d4h-i3", () => {
+    it("defaults organisationRecordsOnly to false", () => {
+        expect(OrganizationSettings.default().modules["d4h-i3"]).toEqual({
+            enabled: false,
+            storage: "D4H",
+            organisationRecordsOnly: false,
+            notify: { org: [], teams: {} },
+        });
+    });
+
+    it("resolves the default for an org whose stored d4h-i3 rows predate the setting", () => {
+        const restored = OrganizationSettings.fromRecords([
+            { key: "modules.d4h-i3.enabled", value: true },
+        ]);
+
+        expect(restored.modules["d4h-i3"].organisationRecordsOnly).toBe(false);
+        expect(restored.modules["d4h-i3"].notify).toEqual({ org: [], teams: {} });
+    });
+});
+
+describe("OrganizationSettings modules.d4h-i3.notify", () => {
+    const person1 = PersonId.create();
+    const person2 = PersonId.create();
+    const team1 = TeamId.create();
+    const team2 = TeamId.create();
+
+    it("flattens to one row for the org list and one per team, and round-trips", () => {
+        const settings = OrganizationSettings.default();
+        settings.modules["d4h-i3"].notify = {
+            org: [person1],
+            teams: { [team1]: [person1, person2], [team2]: [person2] },
+        };
+
+        const flattened = OrganizationSettings.flatten(settings);
+        const notifyEntries = Object.entries(flattened).filter(([key]) =>
+            key.startsWith("modules.d4h-i3.notify."),
+        );
+        expect(Object.fromEntries(notifyEntries)).toEqual({
+            "modules.d4h-i3.notify.org": [person1],
+            [`modules.d4h-i3.notify.teams.${team1}`]: [person1, person2],
+            [`modules.d4h-i3.notify.teams.${team2}`]: [person2],
+        });
+
+        const restored = OrganizationSettings.fromRecords(
+            notifyEntries.map(([key, value]) => ({ key, value })),
+        );
+        expect(restored.modules["d4h-i3"].notify).toEqual(settings.modules["d4h-i3"].notify);
+    });
+
+    it("rejects an entry that isn't a PersonId", () => {
+        expect(() =>
+            OrganizationSettings.fromRecords([
+                { key: "modules.d4h-i3.notify.org", value: ["not a person id"] },
+            ]),
+        ).toThrow();
+        expect(() =>
+            OrganizationSettings.fromRecords([
+                { key: `modules.d4h-i3.notify.teams.${team1}`, value: [42] },
+            ]),
+        ).toThrow();
+    });
+
+    it("rejects a key that isn't a TeamId", () => {
+        expect(() =>
+            OrganizationSettings.fromRecords([
+                { key: "modules.d4h-i3.notify.teams.not-a-team", value: [person1] },
+            ]),
+        ).toThrow();
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "modules.d4h-i3",
+                patch: { notify: { org: [], teams: { "not-a-team": [person1] } } },
+            }),
+        ).toThrow();
+    });
+
+    it("must be patched whole, so a partial notify can't wipe the team lists", () => {
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "modules.d4h-i3",
+                patch: { notify: { org: [person1] } },
+            }),
+        ).toThrow();
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "modules.d4h-i3",
+                patch: { notify: { teams: { [team1]: [person1] } } },
+            }),
+        ).toThrow();
     });
 });

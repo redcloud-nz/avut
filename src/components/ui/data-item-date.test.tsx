@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
+import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { render, screen } from "@testing-library/react";
@@ -71,5 +72,14 @@ describe("DataItemDateValue", () => {
         render(<DataItemDateValue date={new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)} />);
 
         expect(screen.getByText("3 days ago")).toBeInTheDocument();
+    });
+
+    it("leaves the relative line out of the server render, so hydration can't disagree with it", () => {
+        givenPreferences({ dateFormat: "written", timeFormat: "12-hour", timeZone: NZ });
+        const html = renderToString(
+            <DataItemDateValue date={new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)} />,
+        );
+
+        expect(html).not.toContain("ago");
     });
 });

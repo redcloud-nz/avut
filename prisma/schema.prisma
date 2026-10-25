@@ -51,10 +51,13 @@ model User {
   authoredOrganizationNotes OrganizationNote[] @relation("organization_note_to_author")
   notes                     UserNote[]         @relation("user_note_to_user")
   formInstances             FormInstance[]     @relation("form_instance_to_user")
+  requestedD4HTasks         D4HTask[]          @relation("d4h_task_to_requested_by")
+  appliedD4HTasks           D4HTask[]          @relation("d4h_task_to_applied_by")
   logEntries                LogEntry[]         @relation("log_entry_to_user")
   ownedLogEntries           LogEntry[]         @relation("log_entry_to_owner")
   impersonatedLogEntries    LogEntry[]         @relation("log_entry_to_impersonator")
   logBatches                LogBatch[]         @relation("log_batch_to_user")
+  batchUpdatePlans          BatchUpdatePlan[]  @relation("batch_update_plan_to_user")
 
   @@unique([email])
   @@map("users")
@@ -139,9 +142,61 @@ model Organization {
   i3IssuedItems I3IssuedItem[] @relation("i3_issued_item_to_organization")
   i3Templates   I3Template[]   @relation("i3_template_to_organization")
   formInstances FormInstance[] @relation("form_instance_to_organization")
+  d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
+
+  groupMemberships OrganizationGroupMembership[] @relation("organization_group_membership_to_organization")
+
+  batchUpdatePlans BatchUpdatePlan[] @relation("batch_update_plan_to_organization")
 
   @@unique([slug])
   @@map("organizations")
+}
+
+/// A set of organizations bound together (avut#382). v1 is the fabric only: the link grants
+/// nothing until a capability consumes it.
+model OrganizationGroup {
+  id        String   @id
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships         OrganizationGroupMembership[] @relation("organization_group_membership_to_organization_group")
+  providerCredentials ProviderCredential[]          @relation("provider_credential_to_organization_group")
+
+  @@map("organization_groups")
+}
+
+/// One organization's place in a group. Revoking keeps the row (status Revoked); re-adding the
+/// organization reactivates it.
+model OrganizationGroupMembership {
+  id             String                            @id
+  groupId        String
+  group          OrganizationGroup                 @relation("organization_group_membership_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization                      @relation("organization_group_membership_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  role           OrganizationGroupRole
+  status         OrganizationGroupMembershipStatus
+  createdAt      DateTime                          @default(now())
+  updatedAt      DateTime                          @updatedAt
+
+  @@unique([groupId, organizationId])
+  @@index([groupId])
+  @@index([organizationId])
+  @@map("organization_group_memberships")
+}
+
+enum OrganizationGroupRole {
+  Overseer
+  Member
+}
+
+enum OrganizationGroupMembershipStatus {
+  /// DORMANT: reserved for the later invite → accept flow; never written in v1.
+  Invited
+  Active
+  Revoked
 }
 
 model OrganizationConfig {
@@ -383,6 +438,43 @@ model LogBatch {
   @@map("log_batches")
 }
 
+/// A planned bulk operation, persisted between preview and execution, so execution applies exactly
+/// the items the user saw. Generic across kinds; `(kind, targetType, targetId)` is the lock key.
+/// Each kind validates `payload` and `outcomes` with its own schema. Bookkeeping, not audited
+/// itself: executing it logs under the `LogBatch` it records. See
+/// `src/server/services/batch-update-plans.ts`.
+model BatchUpdatePlan {
+  id                 String                @id
+  organizationId     String
+  organization       Organization          @relation("batch_update_plan_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  /// The kind of operation, e.g. `"d4h-team-sync"`.
+  kind               String
+  targetType         String
+  targetId           String
+  status             BatchUpdatePlanStatus
+  payload            Json
+  outcomes           Json?
+  createdById        String?
+  createdBy          User?                 @relation("batch_update_plan_to_user", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt          DateTime              @default(now())
+  executionStartedAt DateTime?
+  completedAt        DateTime?
+  logBatchId         String?
+
+  @@index([organizationId, kind, targetType, targetId, status])
+  @@map("batch_update_plans")
+}
+
+/// `Pending → Executing → Completed | Failed`, plus `Superseded`. Expired plans are deleted by
+/// cleanup rather than given a status.
+enum BatchUpdatePlanStatus {
+  Pending
+  Executing
+  Completed
+  Failed
+  Superseded
+}
+
 enum AccountDeletedBy {
   Self
   Admin
@@ -401,22 +493,23 @@ enum Provider {
 /// Generalizes D4HAccessToken's former encrypted-credential storage across every
 /// external-service integration (see #286). D4H itself now runs on this table.
 model ProviderCredential {
-  id             String        @id
+  id             String             @id
   provider       Provider
   organizationId String?
-  organization   Organization? @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization?      @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
-  user           User?         @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
-  /// Nullable, unused until OrganizationGroup (#198) exists. No FK yet — added ahead of need
-  /// because #284 already commits to group-owned credentials being real.
+  user           User?              @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  /// Owning OrganizationGroup (avut#382). Nothing writes it yet: group-owned credentials arrive
+  /// with redcloud-nz/avut-ideas#18.
   groupId        String?
+  group          OrganizationGroup? @relation("provider_credential_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
   label          String
   token          String
   status         String
   expiresAt      DateTime
-  metadata       Json          @default("{}")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  metadata       Json               @default("{}")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   linkedTeams          Team_D4H[]         @relation("team_d4h_link_token")
   syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")
@@ -626,7 +719,14 @@ model SkillCheckSession {
   skills         Skill[]          @relation("skill_check_session_skills")
   name           String
   sessionNumber  Int
+  /// When the session starts, read in the org's time zone (`OrganizationSettings.general.timeZone`):
+  /// local midnight on the first day for an all-day session, the start time for a timed one. All
+  /// day is derived, not stored: both ends on local midnight and `endsAt > startsAt`. Null only on
+  /// old rows (the API shows `createdAt`); every write sets it. Session checks copy it as `checkedAt`.
   startsAt       DateTime?
+  /// When the session ends: local midnight N calendar days after `startsAt` for an N-day all-day
+  /// session, the end time for a timed one (under 24h, may cross midnight), or null for a timed
+  /// session with no end. Older rows store `endsAt = startsAt` for "no end", which reads the same.
   endsAt         DateTime?
   notes          String?
   status         SkillCheckStatus @default(Draft)
@@ -660,8 +760,9 @@ model SkillCheck {
   notes          String
   status         SkillCheckStatus   @default(Draft)
   /// When the assessment happened. Competency expiry, the competency matrix and the reports use it.
-  /// A session check takes the session's date (set by `setSessionSkillCheck`, re-stamped when the
-  /// session's date changes); a standalone check takes the time it was created. No default, so
+  /// A session check takes the session's `startsAt` (set by `setSessionSkillCheck`, re-stamped when
+  /// the session's `startsAt` changes, or its `createdAt` while it has none); a standalone check
+  /// takes the time it was created. No default, so
   /// every writer has to set it.
   checkedAt      DateTime
   /// When an assessor last recorded or removed the check: the session checks sync cursor and the
@@ -820,7 +921,8 @@ model FormInstance {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items FormInstanceItem[] @relation("form_instance_item_to_form_instance")
+  items    FormInstanceItem[] @relation("form_instance_item_to_form_instance")
+  d4hTasks D4HTask[]          @relation("d4h_task_to_form_instance")
 
   @@index([formKey, organizationId, userId])
   @@map("form_instances")
@@ -841,4 +943,48 @@ model FormInstanceItem {
 
   @@index([formInstanceId])
   @@map("form_instance_items")
+}
+
+// D4H task queue
+
+/// A change to a D4H record that the D4H API can't make, queued to be applied by hand in D4H.
+/// v1 has one kind, `Retire` on resource type `Equipment`, queued by an I3 Return.
+model D4HTask {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("d4h_task_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  d4hTeamId      Int
+  /// The D4H resource type, e.g. `Equipment`.
+  resourceType   String
+  /// The D4H id of the resource the task applies to.
+  resourceId     Int
+  /// A display label for the resource (e.g. `#1234 Helmet`), so the task list needs no D4H call per task.
+  itemLabel      String
+  /// What to do to the resource, e.g. `Retire`. `payload` holds the kind's details.
+  kind           String
+  payload        Json         @default("{}")
+  /// `Open`, `Done` or `Dismissed`.
+  status         String       @default("Open")
+  /// `Manual` (applied by hand in D4H) or `Api`. v1 only writes `Manual`.
+  applyMethod    String       @default("Manual")
+
+  requestedById String?
+  requestedBy   User?     @relation("d4h_task_to_requested_by", fields: [requestedById], references: [id], onDelete: SetNull)
+  requestedAt   DateTime  @default(now())
+  /// For a `Manual` task this is whoever confirmed (by Check) that the change had been applied in
+  /// D4H, which can't be told apart from whoever made it. Null while open, and on a dismissed task.
+  appliedById   String?
+  appliedBy     User?     @relation("d4h_task_to_applied_by", fields: [appliedById], references: [id], onDelete: SetNull)
+  appliedAt     DateTime?
+
+  /// The form submission (e.g. an I3 Return) that queued the task.
+  formInstanceId String?
+  formInstance   FormInstance? @relation("d4h_task_to_form_instance", fields: [formInstanceId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, d4hTeamId, resourceId])
+  @@map("d4h_tasks")
 }
