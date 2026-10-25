@@ -276,7 +276,7 @@ selectedId })` in `src/lib/d4h-catalogue-options.ts`. It returns ordered groups:
     the filter would drop. `npm run check` passes. Task 8 checks the components
     in the browser.
 
-- [ ] **8. Use the shared selects in the four template/variant dialogs** — `visual`, `mechanical`
+- [x] **8. Use the shared selects in the four template/variant dialogs** — `visual`, `mechanical`
   - **Files:** `src/modules/d4h-i3/components/templates/create-template.tsx`,
     `update-template.tsx`, `add-variant.tsx`, `update-variant.tsx`
   - **Do:** In the create and update template dialogs, replace the inline category and kind
@@ -392,3 +392,4 @@ settings.
 
 - **Group A, task 1:** `fetchD4HTeamCatalogueList` (`src/server/d4h-api/equipment.ts`) sends no `size` query, so a large catalogue could be truncated. The fit check then refuses records missing from the team listing. Pass `query: { size: 10000 }` as `fetchD4HTeamEquipmentList` does, or confirm in a comment that D4H returns these lists unpaginated.
 - **Group A, task 4:** reword `Messages.i3ItemDoesNotFitTeam` neutrally, for example `…can't be issued to <team>: its D4H records aren't owned by <team> or its D4H organisation.`, since a misfit can also be another organisation's record, or a record missing from the listing. Update the processor test strings to match.
+- **Group B, task 7:** when the selected id isn't in the fetched D4H list at all (the record was deleted in D4H), the catalogue select's trigger is blank. Let the wrappers take an optional fallback title (the template or variant's snapshot `…Title`), and show it in muted text with the marker.

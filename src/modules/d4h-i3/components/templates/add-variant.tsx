@@ -35,11 +35,13 @@ import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3Template } from "@/lib/schemas/i3-template";
 import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
 export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template: I3Template }) {
     const logger = useLogger("I3", "Template_AddVariant");
     const organization = useOrganization();
+    const organisationOnlyId = useOrganisationOnlyId();
     const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState(
@@ -181,6 +183,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                         <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
 
                                         <D4HEquipmentBrandSelect
+                                            organisationOnlyId={organisationOnlyId}
                                             value={field.value}
                                             onChange={(brand) => {
                                                 field.onChange(brand.id);
@@ -207,6 +210,7 @@ export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template:
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor="variant-model">Model</FieldLabel>
                                         <D4HEquipmentModelSelect
+                                            organisationOnlyId={organisationOnlyId}
                                             value={field.value}
                                             onChange={(model) => {
                                                 field.onChange(model.id);
