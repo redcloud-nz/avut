@@ -13,6 +13,7 @@ import idsViaSchemas from "./eslint-rules/ids-via-schemas.mjs";
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
 import noDeprecatedZod from "./eslint-rules/no-deprecated-zod.mjs";
 import noDirectLogWrites from "./eslint-rules/no-direct-log-writes.mjs";
+import noLiteralFormId from "./eslint-rules/no-literal-form-id.mjs";
 import noPrismaModelImports from "./eslint-rules/no-prisma-model-imports.mjs";
 import noProcessEnv from "./eslint-rules/no-process-env.mjs";
 import noTrpcClientInServerComponent from "./eslint-rules/no-trpc-client-in-server-component.mjs";
@@ -30,6 +31,7 @@ const avut = {
     "no-deep-relative-imports": noDeepRelativeImports,
     "no-deprecated-zod": noDeprecatedZod,
     "no-direct-log-writes": noDirectLogWrites,
+    "no-literal-form-id": noLiteralFormId,
     "no-prisma-model-imports": noPrismaModelImports,
     "no-process-env": noProcessEnv,
     "no-trpc-client-in-server-component": noTrpcClientInServerComponent,
@@ -332,6 +334,15 @@ const config = [
     plugins: { avut },
     rules: {
       "avut/button-accessible-name": "error",
+    },
+  },
+  {
+    // A submit button outside its form points at it by a per-instance useId() id, never a literal:
+    // a hidden copy of the form on a page Next keeps mounted would otherwise be the one submitted.
+    files: ["src/**/*.tsx"],
+    plugins: { avut },
+    rules: {
+      "avut/no-literal-form-id": "error",
     },
   },
   {
