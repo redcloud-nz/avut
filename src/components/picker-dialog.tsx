@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
+import { useDismissedThisVisit } from "@/hooks/use-dismissed-this-visit";
 import { cn } from "@/lib/utils";
 
 /** What a `PickerDialog`'s children get, to call as the user picks. */
@@ -40,7 +41,7 @@ export interface PickerDialogProps<A extends string> {
     action: A;
     /**
      * Show the dialog on arrival (nothing picked yet). It stays dismissable: once dismissed it
-     * only reopens through `?action=`.
+     * only reopens through `?action=` until the user leaves the page and comes back.
      */
     forceOpen?: boolean;
     /** Trigger button icon. */
@@ -85,7 +86,7 @@ export function PickerDialog<A extends string>({
     // Escape leaves the page with its prompt and the trigger button to reopen. Once dismissed,
     // it only ever reopens through `?action=`, so a Back-button navigation that clears the
     // param always closes it.
-    const [dismissed, setDismissed] = useState(false);
+    const [dismissed, setDismissed] = useDismissedThisVisit();
     const open = action === actionValue || (forceOpen && !dismissed);
 
     function handleOpenChange(next: boolean) {

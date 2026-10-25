@@ -7,7 +7,6 @@
 
 import { TelescopeIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useState } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -37,6 +36,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { useDismissedThisVisit } from "@/hooks/use-dismissed-this-visit";
 import { useOrganization } from "@/hooks/use-organization";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
@@ -67,7 +67,7 @@ export function SkillTrack_SkillScopeDialog({
     // dismissable — Escape leaves the blank report with its prompt and the trigger button to
     // reopen. Once dismissed, it only ever reopens through `?action=select-scope`, so a
     // Back-button navigation that clears the param always closes it.
-    const [dismissed, setDismissed] = useState(false);
+    const [dismissed, setDismissed] = useDismissedThisVisit();
     const open = action === "select-scope" || (forceOpen && !dismissed);
 
     function handleOpenChange(next: boolean) {
