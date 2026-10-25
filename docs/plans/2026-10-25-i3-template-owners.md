@@ -233,7 +233,7 @@ _End of group A: review with `avut-code-reviewer`._
     settings pages, and it's disabled with the note for an org with no linked D4H organisation.
     `npm run check` passes.
 
-- [ ] **6. Move the owner display to the shared layer** — `mechanical`
+- [x] **6. Move the owner display to the shared layer** — `refactor(d4h): move the owner display to the shared layer (#454)` — `mechanical`
   - **Files:** `src/modules/d4h/components/catalogue/owner.tsx` → `src/components/d4h/d4h-owner.tsx`
     (rename the export `D4HOwner`), plus every file importing it (`grep -rn D4HModule_Owner src`)
   - **Do:** `git mv` the file and rename the component.

@@ -19,18 +19,20 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
-import { D4HModule_Owner } from "@/modules/d4h/components/catalogue/owner";
+import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
 /** One D4H equipment category: its details and the types in it. */
 export function D4HModule_Category_Content({ categoryId }: { categoryId: number }) {
     const organization = useOrganization();
+    const reachableTeamIds = useReachableTeamIds();
     const { slug } = organization;
 
     const [{ data: categories }, { data: kinds }] = useSuspenseQueries({
@@ -60,13 +62,18 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
                 }),
                 columnHelper.accessor("owner.title", {
                     header: "Owner",
-                    cell: (ctx) => <D4HModule_Owner owner={ctx.row.original.owner} />,
+                    cell: (ctx) => (
+                        <D4HOwner
+                            owner={ctx.row.original.owner}
+                            linkable={reachableTeamIds.has(ctx.row.original.owner.id)}
+                        />
+                    ),
                     enableGlobalFilter: false,
                     enableSorting: true,
                     enableColumnFilter: false,
                 }),
             ]),
-        [],
+        [reachableTeamIds],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
@@ -114,7 +121,10 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
                                     <DataItem inline>
                                         <DataItemTitle>Owner</DataItemTitle>
                                         <DataItemValue>
-                                            <D4HModule_Owner owner={category.owner} />
+                                            <D4HOwner
+                                                owner={category.owner}
+                                                linkable={reachableTeamIds.has(category.owner.id)}
+                                            />
                                         </DataItemValue>
                                     </DataItem>
                                 </DataList>
