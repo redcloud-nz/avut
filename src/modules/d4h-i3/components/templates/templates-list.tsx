@@ -110,7 +110,6 @@ export function D4HI3Module_TemplateList() {
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         initialState: {
-            columnFilters: [{ id: "status", value: ["Active"] }],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
             sorting: [{ id: "name", desc: false }],
         },
