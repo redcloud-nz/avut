@@ -13,9 +13,11 @@ import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentCategoryLinkProps = {
     category: D4HEquipmentCategoryRef;
+    /** The D4H team or organisation that owns the category, shown in the hover card when known. */
+    owner?: { title: string };
 };
 
-export function D4HEquipmentCategoryLink({ category }: D4HEquipmentCategoryLinkProps) {
+export function D4HEquipmentCategoryLink({ category, owner }: D4HEquipmentCategoryLinkProps) {
     const organization = useOrganization();
 
     return (
@@ -26,6 +28,8 @@ export function D4HEquipmentCategoryLink({ category }: D4HEquipmentCategoryLinkP
             })}
             title={category.title}
             type="Equipment Category"
-        />
+        >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
+        </EntityLink>
     );
 }

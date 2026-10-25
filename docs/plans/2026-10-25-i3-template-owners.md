@@ -63,8 +63,9 @@ limits the pickers to organisation-owned records.
   team-owned option is hidden.
 - **Pickers group by owner** the way `D4HTeamMemberSelect` groups by team (#449): sticky
   `SelectLabel` group headers, with organisation groups first and then teams A–Z. The trigger
-  shows the owner in muted text after the title. When every option has the same owner, groups
-  and the trigger suffix are left out. All four record types use one shared, generic select.
+  shows the owner in muted text, right-aligned. Owners are shown even when every option has the
+  same owner (changed at the group B checkpoint), so a user can confirm the records are all the
+  organisation's. All four record types use one shared, generic select.
   Shared controls take `organisationOnlyId: number | null` as a prop: the linked D4H
   organisation id when the setting is on and a link exists, otherwise `null`. They never read a
   module's settings themselves.
@@ -77,9 +78,12 @@ limits the pickers to organisation-owned records.
   D4H. `runStages` in `src/server/form-processor.ts` returns straight after a stage error, so no
   later stage runs and nothing is POSTed. `submitIssueItemsForm` rethrows the first stage
   error's message, which the client toasts as "Form processing failed: …".
-- **Owner display** (template page, variants table, pickers) uses the catalogue pages'
-  `D4HModule_Owner`, moved to the shared layer, since a module can't import another module. A
-  `Team` owner links only when the team is in the token's reach.
+- **Owner display.** The pickers use the catalogue pages' `D4HModule_Owner`, moved to the shared
+  layer as `D4HOwner`, since a module can't import another module. A `Team` owner links only
+  when the team is in the token's reach. On the template page (Template Details and the variants
+  table), owners go in the D4H category, type, brand and model links' hover previews ("Owned by
+  …"), through an optional `owner` prop on those entity links. This was changed at the group B
+  checkpoint, because long team names didn't fit inline.
 - **Non-suspending queries are deliberate here**, an exception to the `useSuspenseQuery` rule in
   `docs/conventions-checklist.md`. Owner data on the template page and list, and the Issue form's
   fit query, use `useQuery`. The page renders straight away, and a D4H failure (no token, for

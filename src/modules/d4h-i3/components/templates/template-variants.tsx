@@ -9,7 +9,6 @@ import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
-import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { ObjectIcons } from "@/components/icons";
@@ -140,17 +139,10 @@ export function D4HI3Module_Template_Variants_List({ template }: { template: I3T
                                                         id: variant.d4h.brandId,
                                                         title: variant.d4h.brandTitle,
                                                     }}
+                                                    owner={brandOwner}
                                                 />
                                             ) : (
                                                 "—"
-                                            )}
-                                            {brandOwner && (
-                                                <span className="pl-2">
-                                                    <D4HOwner
-                                                        owner={brandOwner}
-                                                        variant="compact"
-                                                    />
-                                                </span>
                                             )}
                                         </TableCell>
                                         <TableCell>
@@ -161,17 +153,10 @@ export function D4HI3Module_Template_Variants_List({ template }: { template: I3T
                                                         title: variant.d4h.modelTitle,
                                                         brand: { id: variant.d4h.brandId },
                                                     }}
+                                                    owner={modelOwner}
                                                 />
                                             ) : (
                                                 "—"
-                                            )}
-                                            {modelOwner && (
-                                                <span className="pl-2">
-                                                    <D4HOwner
-                                                        owner={modelOwner}
-                                                        variant="compact"
-                                                    />
-                                                </span>
                                             )}
                                         </TableCell>
                                         <TableCell className="p-0">

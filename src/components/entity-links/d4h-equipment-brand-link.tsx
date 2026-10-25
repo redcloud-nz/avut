@@ -13,9 +13,11 @@ import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentBrandLinkProps = {
     brand: D4HEquipmentBrandRef;
+    /** The D4H team or organisation that owns the brand, shown in the hover card when known. */
+    owner?: { title: string };
 };
 
-export function D4HEquipmentBrandLink({ brand }: D4HEquipmentBrandLinkProps) {
+export function D4HEquipmentBrandLink({ brand, owner }: D4HEquipmentBrandLinkProps) {
     const organization = useOrganization();
 
     return (
@@ -26,6 +28,8 @@ export function D4HEquipmentBrandLink({ brand }: D4HEquipmentBrandLinkProps) {
             })}
             title={brand.title}
             type="Equipment Brand"
-        />
+        >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
+        </EntityLink>
     );
 }

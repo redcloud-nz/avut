@@ -13,10 +13,12 @@ import { EntityLink } from "./entity-link";
 
 export type D4HEquipmentModelLinkProps = {
     model: D4HEquipmentModelRef;
+    /** The D4H team or organisation that owns the model, shown in the hover card when known. */
+    owner?: { title: string };
 };
 
 /** Models have no page of their own, so this links to the model's brand page, which lists it. */
-export function D4HEquipmentModelLink({ model }: D4HEquipmentModelLinkProps) {
+export function D4HEquipmentModelLink({ model, owner }: D4HEquipmentModelLinkProps) {
     const organization = useOrganization();
 
     return (
@@ -28,6 +30,7 @@ export function D4HEquipmentModelLink({ model }: D4HEquipmentModelLinkProps) {
             title={model.title}
             type="Equipment Model"
         >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
             <span className="text-muted-foreground">
                 Opens the brand page, which lists this model.
             </span>

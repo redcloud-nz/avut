@@ -8,7 +8,6 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
-import { D4HOwner } from "@/components/d4h/d4h-owner";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { Protect } from "@/components/protect";
@@ -108,47 +107,33 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                         )}
                                         <DataItem inline>
                                             <DataItemTitle>D4H Category</DataItemTitle>
-                                            <DataItemValue className="flex items-baseline gap-2">
+                                            <DataItemValue>
                                                 {template.d4h ? (
                                                     <D4HEquipmentCategoryLink
                                                         category={{
                                                             id: template.d4h.categoryId,
                                                             title: template.d4h.categoryTitle,
                                                         }}
+                                                        owner={categoryOwner}
                                                     />
                                                 ) : (
                                                     "—"
-                                                )}
-                                                {categoryOwner && (
-                                                    <span className="ml-auto">
-                                                        <D4HOwner
-                                                            owner={categoryOwner}
-                                                            variant="compact"
-                                                        />
-                                                    </span>
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>D4H Type</DataItemTitle>
-                                            <DataItemValue className="flex items-baseline gap-2">
+                                            <DataItemValue>
                                                 {template.d4h ? (
                                                     <D4HEquipmentTypeLink
                                                         type={{
                                                             id: template.d4h.kindId,
                                                             title: template.d4h.kindTitle,
                                                         }}
+                                                        owner={kindOwner}
                                                     />
                                                 ) : (
                                                     "—"
-                                                )}
-                                                {kindOwner && (
-                                                    <span className="ml-auto">
-                                                        <D4HOwner
-                                                            owner={kindOwner}
-                                                            variant="compact"
-                                                        />
-                                                    </span>
                                                 )}
                                             </DataItemValue>
                                         </DataItem>

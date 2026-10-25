@@ -19,6 +19,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { CatalogueOptionRecord, groupCatalogueOptions } from "@/lib/d4h-catalogue-options";
+import { cn } from "@/lib/utils";
 
 export interface D4HCatalogueSelectProps<T extends CatalogueOptionRecord> extends Omit<
     ComponentProps<typeof Select>,
@@ -43,8 +44,9 @@ export interface D4HCatalogueSelectProps<T extends CatalogueOptionRecord> extend
 
 /**
  * A select for a D4H catalogue record (category, type, brand or model), grouped by the D4H
- * organisation or team that owns it. With more than one owner, the groups get sticky labels and
- * the trigger shows the selected record's owner after its title.
+ * organisation or team that owns it. Each group gets a sticky label and the trigger shows the
+ * selected record's owner after its title, even when there's only one owner: that's how a user
+ * confirms the records are all their organisation's.
  */
 export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
     records,
@@ -56,7 +58,6 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
     ...props
 }: D4HCatalogueSelectProps<T>) {
     const groups = groupCatalogueOptions(records, { organisationOnlyId, selectedId: value });
-    const grouped = groups.length > 1;
 
     const selected = groups
         .flatMap((group) => group.options)
@@ -77,14 +78,19 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
     return (
         <Select value={value ? value.toString() : ""} onValueChange={handleValueChange} {...props}>
             <SelectTrigger {...slotProps.trigger}>
-                <SelectValue placeholder={placeholder} {...slotProps.value}>
+                <SelectValue
+                    placeholder={placeholder}
+                    {...slotProps.value}
+                    className={cn("flex-1", slotProps.value?.className)}
+                >
                     {selected && (
                         <>
                             {selected.record.title}
                             {selected.otherOwnerMarker && <OtherOwnerMarker />}
-                            {grouped && (
+                            {/* Pushed to the trigger's right edge, clear of the title. */}
+                            <span className="ml-auto pl-2">
                                 <D4HOwner owner={selected.record.owner} variant="compact" />
-                            )}
+                            </span>
                         </>
                     )}
                 </SelectValue>
@@ -93,18 +99,16 @@ export function D4HCatalogueSelect<T extends CatalogueOptionRecord>({
                 {groups.map((group, groupIndex) => (
                     <Fragment key={`${group.owner.resourceType}:${group.owner.id}`}>
                         {groupIndex > 0 && <SelectSeparator />}
-                        <SelectGroup className={grouped ? "pt-0" : undefined}>
+                        <SelectGroup className="pt-0">
                             {/* Sticky, so the owner stays visible while scrolling a long group. */}
-                            {grouped && (
-                                <SelectLabel className="sticky top-0 z-10 bg-popover pt-2 font-medium text-foreground">
-                                    {group.owner.title}
-                                </SelectLabel>
-                            )}
+                            <SelectLabel className="sticky top-0 z-10 bg-popover pt-2 font-medium text-foreground">
+                                {group.owner.title}
+                            </SelectLabel>
                             {group.options.map(({ record, otherOwnerMarker }) => (
                                 <SelectItem
                                     key={record.id}
                                     value={record.id.toString()}
-                                    className={grouped ? "scroll-mt-8" : undefined}
+                                    className="scroll-mt-8"
                                 >
                                     {record.title}
                                     {otherOwnerMarker && <OtherOwnerMarker />}

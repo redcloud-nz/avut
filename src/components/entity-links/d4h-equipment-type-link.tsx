@@ -14,9 +14,11 @@ import { EntityLink } from "./entity-link";
 export type D4HEquipmentTypeLinkProps = {
     /** D4H calls equipment types "kinds" (`EquipmentKind`); users see "Type". */
     type: D4HEquipmentKindRef;
+    /** The D4H team or organisation that owns the type, shown in the hover card when known. */
+    owner?: { title: string };
 };
 
-export function D4HEquipmentTypeLink({ type }: D4HEquipmentTypeLinkProps) {
+export function D4HEquipmentTypeLink({ type, owner }: D4HEquipmentTypeLinkProps) {
     const organization = useOrganization();
 
     return (
@@ -27,6 +29,8 @@ export function D4HEquipmentTypeLink({ type }: D4HEquipmentTypeLinkProps) {
             })}
             title={type.title}
             type="Equipment Type"
-        />
+        >
+            {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
+        </EntityLink>
     );
 }
