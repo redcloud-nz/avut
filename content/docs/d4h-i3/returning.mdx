@@ -1,0 +1,81 @@
+---
+title: Returning items
+description: Recording equipment a member hands back, and the D4H tasks that retire it.
+section: d4h-i3
+order: 20
+keyTerms: ["d4h"]
+---
+
+# Returning items
+
+**Return** records equipment a member hands back. D4H can't retire an item
+through its API, so a return doesn't change D4H by itself. Instead, each
+returned item gets a [D4H task](/docs/d4h#tasks) to retire it, for someone to
+finish in D4H.
+
+You need the **I3 Editor** or **I3 Admin** role, and your own D4H account must be
+allowed to update equipment in the member's team.
+
+## Drafts
+
+Return forms are drafts, the same as [Issue forms](/docs/d4h-i3/issuing#drafts):
+**Return** lists yours, **New** starts one, a draft saves itself as you fill it
+in, and the bin button discards it.
+
+## Filling in the form
+
+Pick the member handing the items back under **Returned by**. Their issued items
+are listed by type, each with its ref and any serial number. Items already
+returned, and waiting for their task to be finished in D4H, aren't listed.
+
+<Screenshot
+  id="d4h-i3/return-form"
+  caption="A draft Return form, with three of the member's items ticked."
+/>
+
+Tick each item they're handing back. Picking a different member clears the
+ticks, since the list is now someone else's items.
+
+Add any **Comments**. You're recorded as **Received by**.
+
+If your D4H account can't update equipment in the member's team, the form says
+so and **Submit** stays disabled.
+
+## Submitting
+
+**Submit** queues a task for each ticked item to retire it in D4H, with the
+reason "Returned To Cache". The task's note says it was returned through AVUT and
+who received it, followed by your comments. The item shows a **Returned** badge
+until the task is closed.
+
+AVUT then emails a summary to the
+[notification lists](/docs/d4h-i3#notifications), and sends the member a
+receipt, listing the items returned, at their D4H email address.
+
+AVUT looks each item up in D4H first, and skips it if:
+
+- it isn't in the member's team any more,
+- the member no longer holds it,
+- it's already retired, or
+- it already has an open task to retire it.
+
+The other items are still returned, and the message after you submit lists the
+skipped ones and why. If no item could be returned, nothing is queued or
+emailed, and the draft stays so you can fix it.
+
+## Returning a single item
+
+To return one item without a form, open its [item page](/docs/d4h#item-page) and
+choose **Return** from the **Actions** menu. The dialog shows who holds the item
+and that you're receiving it, with optional comments.
+
+<Screenshot id="d4h-i3/return-item-dialog" caption="Returning one item from its page." />
+
+**Return** queues the same task as the form does. It doesn't email the
+notification lists or send the member a receipt.
+
+## Finishing the return in D4H
+
+The queued tasks are listed under **D4H** › [Tasks](/docs/d4h#tasks). Retire
+each item in D4H, then press **Check** on its task: AVUT confirms the change in
+D4H and closes the task.

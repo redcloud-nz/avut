@@ -1,4 +1,58 @@
 {
+  "d4h-i3/issue-add-item": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/d4h-i3/issue-add-item.webp",
+      "width": 508,
+      "height": 428
+    },
+    "alt": "The Add Issued Item dialog with its Template list open, offering RT Boots, Standard Helmet, RT Overalls and RT Jacket, above the Variant and Serial Number fields.",
+    "capturedAt": "2026-10-25T19:56:15.220Z"
+  },
+  "d4h-i3/issue-drafts": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/d4h-i3/issue-drafts.webp",
+      "width": 1280,
+      "height": 230
+    },
+    "alt": "The Issue Items page listing one draft form, for Toby Winslow, with 3 items.",
+    "capturedAt": "2026-10-25T19:56:10.200Z"
+  },
+  "d4h-i3/issue-form": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/d4h-i3/issue-form.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "A draft Issue Items form: the issuer, the recipient Toby Winslow of Erehwon Response Team, three items with their variants, a Comments box and Submit.",
+    "capturedAt": "2026-10-25T19:56:12.182Z"
+  },
+  "d4h-i3/return-form": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/d4h-i3/return-form.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "A draft Return Items form for Douglas Renshaw, listing his issued items with Gloves, Hi Vis Traffic Vest and Knee Pads ticked.",
+    "capturedAt": "2026-10-25T19:56:18.174Z"
+  },
+  "d4h-i3/return-item-dialog": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/d4h-i3/return-item-dialog.webp",
+      "width": 508,
+      "height": 455
+    },
+    "alt": "The Return dialog for a helmet, showing who returned it and who received it, an optional Comments box, and Return.",
+    "capturedAt": "2026-10-25T19:56:20.406Z"
+  },
+  "d4h/item-page": {
+    "light": {
+      "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/d4h/item-page.webp",
+      "width": 1280,
+      "height": 800
+    },
+    "alt": "A D4H equipment item's page in AVUT: its ref, team, type, category, brand, model, serial number, status and holder, with the Actions menu open showing Edit and Return.",
+    "capturedAt": "2026-10-25T19:56:22.732Z"
+  },
   "getting-started/forgot-password": {
     "light": {
       "url": "https://2uhipdajnjs0teia.public.blob.vercel-storage.com/docs-screenshots/getting-started/forgot-password.webp",

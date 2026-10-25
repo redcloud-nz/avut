@@ -28,50 +28,21 @@ account's permissions.
 
 ## What's here
 
-- **Issue** is where you issue equipment, using a form that keeps your drafts
-  until you submit one.
-- **Return** is where you take equipment back.
+- **Issue** is where you issue equipment to a member, creating its records in
+  D4H. See [Issuing items](/docs/d4h-i3/issuing).
+- **Return** is where you take equipment back, queuing a D4H task to retire
+  each item. See [Returning items](/docs/d4h-i3/returning).
 - **Issued Types** shows what one D4H team has out.
 - **Templates** are the items you can issue.
 
 Inspections aren't built yet.
 
-## Issuing items
-
-Start an issue form and pick the recipient first: **Add Item** needs one. Then
-add each item from a template, with its variant and serial number if it has
-them, add any comments, and submit the form. Submitting creates an equipment
-record in D4H for each item.
-
-Only templates that fit the recipient are offered: their D4H records must belong
-to the recipient's team or to your D4H organisation. **Submit** stays disabled
-while an item doesn't fit, or while your D4H account can't create equipment for
-the recipient's team.
-
-<Callout type="warning">
-  If one item fails partway through, the records already created in D4H stay there; they aren't
-  rolled back. Check D4H before submitting the form again.
-</Callout>
-
-## Returning items
-
-Start a return form and pick who is returning the items, under **Returned by**.
-Their issued items are listed: tick each one they're handing back, add any
-comments, and submit. You're recorded as **Received by**.
-
-D4H can't retire an item through its API, so a return doesn't change D4H
-straight away. Each returned item gets a [D4H task](/docs/d4h#tasks) to retire
-it, and shows a **Returned** badge until someone makes the change in D4H and
-checks the task off.
-
-To return a single item, use **Return** in the **Actions** menu of its
-[item page](/docs/d4h#item-page).
-
 ## Notifications
 
-Issuing or returning items emails a summary to everyone on the organisation's
-notification list, and to everyone on the list for the recipient's team. The
-member also gets a receipt at their D4H email address.
+Submitting an Issue or Return form emails a summary to everyone on the
+organisation's notification list, and to everyone on the list for the member's
+team. The member also gets a receipt at their D4H email address. Returning a
+single item from its page sends no emails.
 
 Owners and admins choose who's on these lists in
 [Organisation Settings](/docs/admin/organization#d4h-i3), under **Modules** ›
