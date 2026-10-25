@@ -6,6 +6,8 @@
 import { describe, expect, it } from "vitest";
 
 import { OrganizationId } from "@/lib/schemas/organization";
+import { PersonId } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
 
 import { OrganizationSettings, OrganizationSettingsSlices } from "./organization-settings";
 import { SKILL_CHECK_RESULT_VALUES } from "./skill-check-result";
@@ -112,6 +114,7 @@ describe("OrganizationSettings modules.d4h-i3", () => {
             enabled: false,
             storage: "D4H",
             organisationRecordsOnly: false,
+            notify: { org: [], teams: {} },
         });
     });
 
@@ -121,5 +124,63 @@ describe("OrganizationSettings modules.d4h-i3", () => {
         ]);
 
         expect(restored.modules["d4h-i3"].organisationRecordsOnly).toBe(false);
+        expect(restored.modules["d4h-i3"].notify).toEqual({ org: [], teams: {} });
+    });
+});
+
+describe("OrganizationSettings modules.d4h-i3.notify", () => {
+    const person1 = PersonId.create();
+    const person2 = PersonId.create();
+    const team1 = TeamId.create();
+    const team2 = TeamId.create();
+
+    it("flattens to one row for the org list and one per team, and round-trips", () => {
+        const settings = OrganizationSettings.default();
+        settings.modules["d4h-i3"].notify = {
+            org: [person1],
+            teams: { [team1]: [person1, person2], [team2]: [person2] },
+        };
+
+        const flattened = OrganizationSettings.flatten(settings);
+        const notifyEntries = Object.entries(flattened).filter(([key]) =>
+            key.startsWith("modules.d4h-i3.notify."),
+        );
+        expect(Object.fromEntries(notifyEntries)).toEqual({
+            "modules.d4h-i3.notify.org": [person1],
+            [`modules.d4h-i3.notify.teams.${team1}`]: [person1, person2],
+            [`modules.d4h-i3.notify.teams.${team2}`]: [person2],
+        });
+
+        const restored = OrganizationSettings.fromRecords(
+            notifyEntries.map(([key, value]) => ({ key, value })),
+        );
+        expect(restored.modules["d4h-i3"].notify).toEqual(settings.modules["d4h-i3"].notify);
+    });
+
+    it("rejects an entry that isn't a PersonId", () => {
+        expect(() =>
+            OrganizationSettings.fromRecords([
+                { key: "modules.d4h-i3.notify.org", value: ["not a person id"] },
+            ]),
+        ).toThrow();
+        expect(() =>
+            OrganizationSettings.fromRecords([
+                { key: `modules.d4h-i3.notify.teams.${team1}`, value: [42] },
+            ]),
+        ).toThrow();
+    });
+
+    it("rejects a key that isn't a TeamId", () => {
+        expect(() =>
+            OrganizationSettings.fromRecords([
+                { key: "modules.d4h-i3.notify.teams.not-a-team", value: [person1] },
+            ]),
+        ).toThrow();
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "modules.d4h-i3",
+                patch: { notify: { org: [], teams: { "not-a-team": [person1] } } },
+            }),
+        ).toThrow();
     });
 });

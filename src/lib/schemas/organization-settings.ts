@@ -7,12 +7,14 @@ import * as z from "zod";
 
 import { D4HServerCode } from "@/lib/d4h-servers";
 
+import { PersonId } from "./person";
 import { createSettingsSchema, defineSettingsSlices } from "./settings-schema";
 import {
     defaultSkillCheckResultLabel,
     SKILL_CHECK_RESULT_VALUES,
     SkillCheckResultValue,
 } from "./skill-check-result";
+import { TeamId } from "./team";
 import { TimeZone } from "./time-zone";
 
 const SKILL_TRACK_DEFAULT_ENABLED_RESULTS: readonly SkillCheckResultValue[] = [
@@ -131,6 +133,23 @@ const organizationSettingsSchema = z.object({
              * recipient's team.
              */
             organisationRecordsOnly: z.boolean().default(false),
+            /**
+             * Who gets emailed when items are issued or returned (one list for both). A
+             * submission's recipients are the union of `org` and the lists in `teams` of every
+             * non-Deleted AVUT team linked (through `Team_D4H.d4hTeamId`) to the recipient's D4H
+             * team, kept to Active people in the org with an email and deduped by id.
+             *
+             * `teams` is keyed by AVUT `TeamId`, not the D4H team id. It is a record rather than
+             * an array of `{ teamId, personIds }` because `flatten` recurses into plain objects:
+             * each team becomes its own config row (`modules.d4h-i3.notify.teams.<teamId>`)
+             * holding an array of scalars, which is the only array shape `diffObject` accepts,
+             * and the audit log then records changes per team. The settings store deletes the
+             * row of a team that drops out of the next settings.
+             */
+            notify: z.object({
+                org: z.array(PersonId.schema).default([]),
+                teams: z.record(TeamId.schema, z.array(PersonId.schema)).default({}),
+            }),
         }),
         notes: z.object({
             enabled: z.boolean().default(false),
