@@ -125,6 +125,12 @@ const organizationSettingsSchema = z.object({
         "d4h-i3": z.object({
             enabled: z.boolean().default(false),
             storage: z.enum(["AVUT", "D4H"]).default("D4H"),
+            /**
+             * Limit the template and variant pickers to D4H records owned by the org's linked D4H
+             * organisation. It doesn't change issuing, which still checks each item against the
+             * recipient's team.
+             */
+            organisationRecordsOnly: z.boolean().default(false),
         }),
         notes: z.object({
             enabled: z.boolean().default(false),

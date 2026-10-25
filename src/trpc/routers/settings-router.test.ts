@@ -156,7 +156,11 @@ describe("settings organization settings", () => {
             update: { slice: "modules.d4h-i3", patch: { enabled: true, storage: "AVUT" } },
         });
 
-        expect(result.modules["d4h-i3"]).toEqual({ enabled: true, storage: "AVUT" });
+        expect(result.modules["d4h-i3"]).toEqual({
+            enabled: true,
+            storage: "AVUT",
+            organisationRecordsOnly: false,
+        });
 
         const row = await db.organizationConfig.findFirst({
             where: { organizationId: T.seededOrg, key: "modules.d4h-i3.storage" },
@@ -183,12 +187,19 @@ describe("settings organization settings", () => {
 
         // `enabled` is absent from the second patch, so it keeps the value the first one set —
         // even though "D4H" is the default for `storage` and so deletes that row.
-        expect(settings.modules["d4h-i3"]).toEqual({ enabled: true, storage: "D4H" });
+        expect(settings.modules["d4h-i3"]).toEqual({
+            enabled: true,
+            storage: "D4H",
+            organisationRecordsOnly: false,
+        });
 
         const rows = await db.organizationConfig.findMany({
             where: { organizationId: T.seededOrg, key: { startsWith: "modules.d4h-i3" } },
         });
-        expect(rows.map((r) => r.key)).toEqual(["modules.d4h-i3.enabled"]);
+        expect(rows.map((r) => r.key).sort()).toEqual([
+            "modules.d4h-i3.enabled",
+            "modules.d4h-i3.organisationRecordsOnly",
+        ]);
     });
 
     it("does not clobber a concurrent edit to another slice", async () => {

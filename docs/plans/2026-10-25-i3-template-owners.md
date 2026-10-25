@@ -123,7 +123,7 @@ limits the pickers to organisation-owned records.
       tests today.
     - `npm run check` passes.
 
-- [ ] **2. Fit rule and the `organisationRecordsOnly` setting**
+- [x] **2. Fit rule and the `organisationRecordsOnly` setting** — `feat(i3): add template fit rule and organisationRecordsOnly setting (#454)`
   - **Files:** `src/lib/i3-template-fit.ts` (new), `src/lib/i3-template-fit.test.ts` (new),
     `src/lib/schemas/organization-settings.ts`, `src/lib/schemas/organization-settings.test.ts`
   - **Do:** Write pure functions, with no server imports:
@@ -132,7 +132,8 @@ limits the pickers to organisation-owned records.
       `{ id, owner?: { id } | null }`. It returns false for `undefined`, which means the record
       isn't in the team's listing.
     - `templateFitsTeam(templateD4H | null, catalogue, team)` and
-      `variantFitsTeam(variantD4H | null, catalogue, team)`. They look up `categoryId`/`kindId`
+      `variantFitsTeam(variantD4H | null, templateD4H | null, catalogue, team)` (as built: the
+      template's records are needed for "the template fits too"). They look up `categoryId`/`kindId`
       or `brandId`/`modelId` by id in the catalogue from task 1. Type it structurally, so the
       client can import this file. A `null` D4H config doesn't fit.
     - `isOwnedByOrganisation(owner, d4hOrganisationId)`: true only for an `Organisation` owner
