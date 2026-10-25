@@ -122,6 +122,15 @@ const nextConfig: NextConfig = {
                 destination: "/orgs/:slug/skill-track/packages/:path*",
                 permanent: true,
             },
+            // The D4H guides moved with the modules' rename (#460).
+            { source: "/docs/d4h-views", destination: "/docs/d4h", permanent: true },
+            { source: "/docs/i3", destination: "/docs/d4h-i3", permanent: true },
+            // The Catalogue guide followed Skill Track's rename to Packages (#441).
+            {
+                source: "/docs/skill-track/catalogue",
+                destination: "/docs/skill-track/packages",
+                permanent: true,
+            },
         ];
     },
     cacheComponents: true,

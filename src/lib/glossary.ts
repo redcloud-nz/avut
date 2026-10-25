@@ -155,7 +155,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         term: "Skill package catalogue",
         shortDefinition: "The set of skill packages available to an organisation in Skill Track.",
         longDefinition:
-            "The set of skill packages available to an organisation's Skill Track module, drawn from the packages organisations have published from their Skill Package Builder. An organisation subscribes to the packages it wants to assess.",
+            "The set of skill packages available to an organisation, listed on Skill Track's Packages page: the packages organisations have published from their Skill Package Builder. An organisation subscribes to the packages it wants to assess, and its subscribed skills are listed together on the Skills page.",
         modules: ["skill-track"],
         relatedTerms: ["skill-package"],
     },
@@ -165,7 +165,7 @@ export const glossaryEntries: readonly GlossaryEntry[] = [
         shortDefinition:
             "An external platform for team/equipment management; AVUT can optionally connect to it.",
         longDefinition:
-            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the read-only D4H views, D4H I3's equipment issuing, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
+            "D4H is an external team- and equipment-management platform. An organisation turns the D4H integration on, then each member who uses it adds their own personal D4H access token. That unlocks the D4H module's views of teams, members and equipment, D4H I3's equipment issuing and returns, and teams kept in sync with D4H. D4H integration is optional — without it, D4H-backed screens simply don't appear.",
         relatedTerms: ["ppe-template"],
     },
 ] as const;

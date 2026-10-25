@@ -1,17 +1,19 @@
 ---
-title: Catalogue
-description: Skill packages, groups, and skills — and subscribing your organisation to a package.
+title: Packages
+description: Skill packages, groups and skills, and subscribing your organisation to a package.
 section: skill-track
 order: 10
 keyTerms: ["skill-package", "skill-group", "skill", "catalogue"]
 ---
 
-# Catalogue
+# Packages
 
-The catalogue lists **skill packages** available to your organisation — bundles
-of related skills published by AVUT or by another organisation, such as a
-first-aid package or an equipment-operation package. Every organisation can see
-the packages on offer, whether or not they've subscribed yet.
+A **skill package** is a bundle of related skills published by an organisation,
+such as a first-aid package or an equipment-operation package. **Packages**
+lists every published package, in two parts:
+
+- **Subscribed** — the packages your organisation subscribes to.
+- **Available** — the rest, which you can search.
 
 ## Browsing a package
 
@@ -64,11 +66,29 @@ holding a set of individual **skills**:
   </svg>
 </div>
 
-A group or skill carries two flags in the catalogue view:
+<Screenshot
+  id="skill-track/package-page"
+  caption="A package's page: its details, then its skill groups and the skills in each."
+/>
 
-- **Included** — shown as "Not included by default" when off. Once enforced,
-  this will decide whether the skill/group is available to your organisation
-  at all.
+Each group and each skill opens its own page. A group's page lists its skills.
+A skill's page shows its details, which the package's author sets, such as its
+**Frequency**: how often it should be reassessed. If you can view checks,
+**Skill Coverage** under **Related** opens the
+[report](/docs/skill-track/reports) for that skill.
+
+<Screenshot
+  id="skill-track/skill-page"
+  caption="A skill's page, with Skill Coverage under Related for anyone who can view checks."
+/>
+
+Skill, group and package names link to these pages wherever they appear in
+Skill Track.
+
+A group or skill can carry two flags, set by the package's author:
+
+- **Not included by default** — once enforced, this will decide whether the
+  skill or group is available to your organisation at all.
 - **Required** — once enforced, this will decide whether the skill counts
   towards coverage statistics in reports.
 
@@ -80,23 +100,49 @@ A group or skill carries two flags in the catalogue view:
   update.
 </Callout>
 
+## Skills
+
+**Skills** lists every skill your organisation can assess, in one table: the
+skills of each package you subscribe to, with their group, package and
+frequency. It's the same set the session skill picker uses. Search by skill,
+group or package name, or filter by **Package**.
+
+<Screenshot
+  id="skill-track/skills-list"
+  caption="Every skill your organisation can assess, with its group, package and frequency."
+/>
+
+An **Archived** skill is one its author has retired. It's still listed, but the
+reports and the package's page leave it out.
+
 ## Subscribing
 
 A package's skills only become assessable once your organisation
 **subscribes** to it. Subscribing is an organisation-wide decision, not a
-per-user one, and only a **Skills Admin** can make it: **Subscribe** and
-**Unsubscribe** are on the package's page, each with a confirmation. The
-catalogue marks the packages you subscribe to as **Subscribed**.
+per-user one, and only a **Skills Admin** can make it, from the package's page:
+**Subscribe** is a button, and **Unsubscribe** is in the page's menu (⋮). Each
+asks you to confirm.
 
-- **Subscribing** makes every skill in the package available to your
-  sessions. Reports show its active skills, as long as the package stays
-  published and its author hasn't archived it.
+- **Subscribing** makes every skill in the package available to your sessions
+  and reports.
 - **Unsubscribing** takes the package's skills out of the session skill picker
   and the reports straight away. Checks already recorded against them are kept,
   and count again if you subscribe again.
 
 Packages aren't versioned. When the author changes a package, subscribers see
 the change straight away.
+
+## Withdrawn packages
+
+If a package's author unpublishes, archives or deletes it, it's **withdrawn**
+from every subscriber. It stays under **Subscribed** in **Packages**, marked
+**Withdrawn**, and its page shows **Subscribed · Withdrawn**. Its skills are out of your sessions and reports until the author publishes
+it again. A session that already had its skills lists them under **No longer
+available** when you change the session's skills. Checks already recorded are
+kept, and you can still unsubscribe.
+
+The same happens to a single group when its author deletes it: its skills drop
+out of your sessions, reports and the **Skills** list.
 
 Writing and publishing packages is a separate area, the
 [Skill Package Builder](/docs/skill-package-builder), for the Skills Author
