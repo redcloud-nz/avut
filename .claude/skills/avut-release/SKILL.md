@@ -31,7 +31,7 @@ Work happens in the main checkout, not a worktree.
 
 > Identity note: the release PR this skill opens is authored as `claude-avut`,
 > a separate GitHub account registered as a second `gh` identity — not as your
-> default account. Scope its token to the `git push`/`gh pr create` via
+> default account. Scope its token to `gh pr create` via
 > `GH_TOKEN=$(gh auth token --user claude-avut)`, never `gh auth switch` (that
 > would leave the wrong account active for the rest of the session).
 > Everything else in this skill (merges, `gh pr view`, reads) uses your
@@ -116,8 +116,10 @@ comment above it.
 research it and write it, following
 [`docs/releases/README.md`](../../../docs/releases/README.md#the-name). Search
 the web for every HMNZS ship of that name, and every HMS ship of that name that
-served on the New Zealand station or with the New Zealand Division, not only
-the one in `version-names.md`. HMS and HMNZS ships only: no merchant ships. Check
+served on the New Zealand station or with the New Zealand Division, plus any
+Royal Fleet Auxiliary ship of that name that served with the Division, not only
+the one in `version-names.md`. HMS, HMNZS and those RFA ships only: no merchant
+ships. Check
 the dates and facts against a second source, such as Wikipedia and the Navy
 Museum (navymuseum.co.nz) or NZHistory. One paragraph
 per ship, oldest first. List the sources you used when you show the draft, but
@@ -139,7 +141,7 @@ or nothing is user-facing, carry on.
 git add "docs/releases/v$NEW.md"                       # new file — `commit -a` won't pick it up
 git commit -am "chore(release): v$NEW ($CODENAME)"     # include the Co-Authored-By trailer
 BOT_TOKEN=$(gh auth token --user claude-avut)
-GH_TOKEN="$BOT_TOKEN" git push -u origin "release/v$NEW"
+git push -u origin "release/v$NEW"                     # SSH: goes out under your own key
 GH_TOKEN="$BOT_TOKEN" gh pr create --repo redcloud-nz/avut --base production --head "release/v$NEW" \
   --title "Release v$NEW ($CODENAME)" \
   --body "$(git log --oneline origin/production..origin/integration | head -60)"
