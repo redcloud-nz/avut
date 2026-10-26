@@ -5,10 +5,12 @@ used one, going down the list. Names above it (`veronica`, `chatham`, `torch`)
 were skipped, not left for later.
 
 Used so far: `philomel` (v0.8–v0.10), `laburnum` (v0.11), `dunedin` (v0.12).
+Reserved: `nucula` (v0.13).
 
 The table is a shortlist, not the full story. When a name is used, its release
 notes get a short history of every HMS or HMNZS ship with a New Zealand
-connection that carried it (see [`releases/README.md`](releases/README.md#the-name)).
+connection that carried it, and of any Royal Fleet Auxiliary ship of that name
+that served with the New Zealand Division (see [`releases/README.md`](releases/README.md#the-name)).
 
 ## Theme 1 — Ships of the New Zealand Division of the Royal Navy
 
