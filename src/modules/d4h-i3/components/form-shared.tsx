@@ -19,7 +19,7 @@ import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 /**
- * Shows the signed-in user's name (the "Issuer" / "Received by" field of an I3 form).
+ * Shows the signed-in user's name (the "Recorded by" field of an I3 form).
  */
 export function UserNameFieldValue() {
     const { data, error, isPending } = useSession();
@@ -33,7 +33,8 @@ export function UserNameFieldValue() {
             </Alert>
         );
     } else if (data) {
-        return <div>{data.user.name}</div>;
+        // Matches the height of the person select it sits beside.
+        return <div className="flex h-8 items-center text-sm">{data.user.name}</div>;
     }
 }
 

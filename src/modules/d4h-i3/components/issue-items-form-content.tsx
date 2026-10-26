@@ -17,6 +17,7 @@ import { i3Effects } from "@/client/i3-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamMemberSelect } from "@/components/controls/d4h-team-member-select";
+import { HelpButton } from "@/components/docs/help-button";
 import { AlertWarningIcon, ObjectIcons } from "@/components/icons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button, MutationButton } from "@/components/ui/button";
@@ -182,8 +183,9 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                         label: "Issue Items",
                         href: route("/orgs/[slug]/d4h-i3/forms/issue-items", { slug }),
                     },
-                    { label: form.getValues().recipient.name || "No Recipient" },
+                    { label: form.getValues().recipient.name || "No one selected" },
                 ]}
+                actions={<HelpButton id="d4h-i3/issue" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
@@ -206,37 +208,36 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                 onChange={handleChange}
                             >
                                 <FieldGroup>
-                                    <Field>
-                                        <FieldLabel>Issuer</FieldLabel>
-                                        <UserNameFieldValue />
-                                    </Field>
-                                    <Controller
-                                        control={form.control}
-                                        name="recipient"
-                                        render={({ field, fieldState }) => (
-                                            <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor="recipient">
-                                                    Recipient
-                                                </FieldLabel>
-                                                <D4HTeamMemberSelect
-                                                    {...field}
-                                                    organizationId={organization.id}
-                                                    slotProps={{
-                                                        trigger: {
-                                                            id: "recipient",
-                                                            "aria-invalid": fieldState.invalid,
-                                                        },
-                                                        value: {
-                                                            placeholder: "Select a recipient",
-                                                        },
-                                                    }}
-                                                />
-                                                {fieldState.error && (
-                                                    <FieldError errors={[fieldState.error]} />
-                                                )}
-                                            </Field>
-                                        )}
-                                    />
+                                    <div className="grid gap-5 sm:grid-cols-2">
+                                        <Controller
+                                            control={form.control}
+                                            name="recipient"
+                                            render={({ field, fieldState }) => (
+                                                <Field data-invalid={fieldState.invalid}>
+                                                    <FieldLabel htmlFor="recipient">
+                                                        Issued to
+                                                    </FieldLabel>
+                                                    <D4HTeamMemberSelect
+                                                        value={field.value}
+                                                        onChange={(value) => {
+                                                            field.onChange(value);
+                                                            handleChange();
+                                                        }}
+                                                        organizationId={organization.id}
+                                                        id="recipient"
+                                                        aria-invalid={fieldState.invalid}
+                                                    />
+                                                    {fieldState.error && (
+                                                        <FieldError errors={[fieldState.error]} />
+                                                    )}
+                                                </Field>
+                                            )}
+                                        />
+                                        <Field>
+                                            <FieldLabel>Recorded by</FieldLabel>
+                                            <UserNameFieldValue />
+                                        </Field>
+                                    </div>
 
                                     {lacksCreatePermission && (
                                         <Alert variant="warning">
@@ -386,7 +387,7 @@ function D4HI3_Issue_ItemsSection({
                 <div className="flex items-center gap-2">
                     {!hasRecipient && (
                         <span className="text-sm text-muted-foreground">
-                            Choose a recipient first
+                            Choose who they&apos;re issued to first
                         </span>
                     )}
                     <Button

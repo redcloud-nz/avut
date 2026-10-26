@@ -19,13 +19,13 @@ import {
     Text,
 } from "@react-email/components";
 
-import { I3ReturnedItem, I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
+import { I3ReturnedItemSummary, I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 
 import { assetBaseUrl } from "./base-url";
 
 interface I3ReturnItemsReceiptEmailProps {
-    /** The AVUT user who submitted the Return ("Received by"). */
-    receiver: {
+    /** The AVUT user who submitted the Return ("Recorded by"). */
+    recordedBy: {
         name: string;
     };
     emailTarget: {
@@ -36,11 +36,11 @@ interface I3ReturnItemsReceiptEmailProps {
      * The items with a retire task queued, labelled as D4H has them. Only these are listed: the
      * items that couldn't be returned are admin detail, in the notification email only.
      */
-    returnedItems: I3ReturnedItem[];
+    returnedItems: I3ReturnedItemSummary[];
 }
 
 export default function I3ReturnItemsReceiptEmail({
-    receiver = { name: "Alex Westphal" },
+    recordedBy = { name: "Alex Westphal" },
     emailTarget = {
         email: "your-email@example.com",
     },
@@ -57,8 +57,15 @@ export default function I3ReturnItemsReceiptEmail({
         ],
     },
     returnedItems = [
-        { itemId: 1001, ref: "1234", kindTitle: "Helmet" },
-        { itemId: 1002, ref: "1235", kindTitle: "RT Boots" },
+        {
+            itemId: 1001,
+            ref: "1234",
+            kindTitle: "Helmet",
+            brandTitle: "Petzl",
+            modelTitle: "Vertex Vent",
+            serial: "SN123456",
+        },
+        { itemId: 1002, ref: "1235", kindTitle: "RT Boots", brandTitle: "Blundstone" },
     ],
 }: I3ReturnItemsReceiptEmailProps) {
     return (
@@ -82,15 +89,22 @@ export default function I3ReturnItemsReceiptEmail({
                         </Heading>
 
                         <Section>
-                            <Text className="text-[14px] text-black leading-6">
-                                {receiver.name} received the following items from you:
+                            <Text className="my-1 text-[14px] text-black leading-6">
+                                <span className="text-gray-500">Returned by:</span>{" "}
+                                {formData.recipient.name}
                             </Text>
+                            <Text className="my-1 text-[14px] text-black leading-6">
+                                <span className="text-gray-500">Recorded by:</span>{" "}
+                                {recordedBy.name}
+                            </Text>
+                        </Section>
+
+                        <Section>
+                            <Heading as="h4" className="font-medium text-sm">
+                                Items
+                            </Heading>
                             {returnedItems.map((item) => (
-                                <Row key={item.itemId}>
-                                    <Text className="text-[14px] leading-4 ml-2 mt-2 mb-2">
-                                        #{item.ref} {item.kindTitle}
-                                    </Text>
-                                </Row>
+                                <ReturnedItemRow key={item.itemId} item={item} />
                             ))}
                         </Section>
 
@@ -113,5 +127,25 @@ export default function I3ReturnItemsReceiptEmail({
                 </Body>
             </Tailwind>
         </Html>
+    );
+}
+
+/** One returned item: its ref and type, then its brand, model and serial, as on the Return form. */
+export function ReturnedItemRow({ item }: { item: I3ReturnedItemSummary }) {
+    const details = [item.brandTitle, item.modelTitle, item.serial && `S/N: ${item.serial}`]
+        .filter(Boolean)
+        .join(" · ");
+
+    return (
+        <Row>
+            <Text className={`text-[14px] leading-4 ml-2 mt-2 ${details ? "mb-1" : "mb-2"}`}>
+                #{item.ref} {item.kindTitle}
+            </Text>
+            {details && (
+                <Text className="text-[14px] leading-4 text-gray-500 ml-2 mt-1 mb-2">
+                    {details}
+                </Text>
+            )}
+        </Row>
     );
 }
