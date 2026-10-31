@@ -195,7 +195,8 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                                         />
                                         <Field>
                                             <FieldLabel>Recorded by</FieldLabel>
-                                            <UserNameFieldValue />
+                                            {/* Matches the height of the person select it sits beside. */}
+                                            <UserNameFieldValue className="flex h-8 items-center text-sm" />
                                         </Field>
                                     </div>
 

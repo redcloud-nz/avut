@@ -43,10 +43,10 @@ export function D4HTeamMemberSelect({
     });
 
     const teamTitles = new Map(teams.map((team) => [team.id, team.title]));
-    const showTeams = new Set(members.map((member) => member.team.id)).size > 1;
+    const listedMembers = members.filter((member) => teamTitles.has(member.team.id));
+    const showTeams = new Set(listedMembers.map((member) => member.team.id)).size > 1;
 
-    const options = members
-        .filter((member) => teamTitles.has(member.team.id))
+    const options = listedMembers
         .toSorted(
             (a, b) =>
                 a.name.localeCompare(b.name) ||

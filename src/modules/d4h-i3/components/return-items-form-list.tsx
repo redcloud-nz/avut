@@ -67,8 +67,9 @@ export function D4HI3Module_ReturnItems_FormInstanceList() {
     );
 
     // The draft being opened is cached from its save. Keep it out of the list while its page
-    // opens, so the click doesn't read as only adding a row.
-    const openingId = newFormMutation.variables?.formInstanceId;
+    // opens, so the click doesn't read as only adding a row. Only while it opens: Next keeps this
+    // page alive, mutation state and all, for when the user comes back to it.
+    const openingId = isOpening ? newFormMutation.variables?.formInstanceId : undefined;
     const sortedInstances = [...instances]
         .filter((inst) => !inst.deleted && inst.id !== openingId)
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
