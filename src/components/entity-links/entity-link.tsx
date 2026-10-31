@@ -12,9 +12,9 @@ import { ComponentProps, ReactNode } from "react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 
-export type EntityLinkProps = Omit<ComponentProps<typeof Link>, "href"> & {
+export type EntityLinkProps = Omit<ComponentProps<typeof Link>, "href" | "title"> & {
     href: Route;
-    title: string;
+    title: ReactNode;
     type: string;
     children?: ReactNode;
 };

@@ -1556,3 +1556,61 @@ describe("teamsRouter.createTeamMembership re-adding a previously-removed member
         ).rejects.toMatchObject({ code: "CONFLICT" });
     });
 });
+
+describe("teamsRouter.getOrganizationD4H", () => {
+    const T = {
+        org: OrganizationId.create(),
+        // A site-wide administrator, deliberately not a member of the organization.
+        siteAdmin: nanoId16(),
+        outsider: nanoId16(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization_D4H.create({
+            data: {
+                organizationId: T.org,
+                serverCode: "us",
+                d4hOrganisationId: 77,
+                d4hOrganisationName: "Acme D4H",
+            },
+        });
+    });
+
+    /** A site-wide admin with no membership: takes the `allowSystemAdmin` bypass. */
+    const asSiteAdmin = () =>
+        teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.siteAdmin, role: "admin" },
+                prisma: db,
+            }),
+        );
+
+    /** A non-member who isn't a site admin: holds no permissions in the organization. */
+    const asOutsider = () =>
+        teamsRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.outsider }, prisma: db }),
+        );
+
+    it("returns the link to a site admin who isn't a member", async () => {
+        const orgD4H = await asSiteAdmin().getOrganizationD4H({ organizationId: T.org });
+
+        expect(orgD4H).toMatchObject({ d4hOrganisationId: 77, d4hOrganisationName: "Acme D4H" });
+    });
+
+    it("throws NOT_FOUND to a site admin for a missing organization", async () => {
+        await expect(
+            asSiteAdmin().getOrganizationD4H({ organizationId: OrganizationId.create() }),
+        ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+
+    it("refuses a non-member who isn't a site admin", async () => {
+        await expect(
+            asOutsider().getOrganizationD4H({ organizationId: T.org }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});

@@ -1,0 +1,226 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ */
+"use client";
+
+import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useEffect, useId } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+
+import { i3Effects } from "@/client/i3-effects";
+import { D4HEquipmentBrandSelect } from "@/components/controls/d4h-equipment-brand-select";
+import { D4HEquipmentModelSelect } from "@/components/controls/d4h-equipment-model-select";
+import { ObjectIcons } from "@/components/icons";
+import { Button, MutationButton } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogBody,
+    DialogCloseButton,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { ObjectName } from "@/components/ui/typography";
+import { useLogger } from "@/hooks/use-logger";
+import { useOrganization } from "@/hooks/use-organization";
+import { I3Template } from "@/lib/schemas/i3-template";
+import { I3TemplateVariant, I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
+import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
+import { trpc } from "@/trpc/client";
+
+export function D4HI3Module_Template_AddVariant_Dialog({ template }: { template: I3Template }) {
+    const logger = useLogger("I3", "Template_AddVariant");
+    const organization = useOrganization();
+    const organisationOnlyId = useOrganisationOnlyId();
+
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["add-variant"] as const),
+    );
+    const dialogOpen = action === "add-variant";
+
+    const formId = useId();
+    const form = useForm({
+        resolver: zodResolver(I3TemplateVariant.modifiableSchema),
+        defaultValues: {
+            name: "",
+            d4h: {
+                brandId: 0,
+                brandTitle: "",
+                modelId: 0,
+                modelTitle: "",
+            },
+        },
+    });
+
+    const mutation = useMutation(
+        trpc.i3.createTemplateVariant.mutationOptions({
+            meta: { effects: i3Effects.createTemplateVariant },
+            onError(error) {
+                logger.error("Failed to create template variant", error);
+                toast.error(`Failed to create template variant: ${error.message}`);
+            },
+            onSuccess({ created }) {
+                logger.info(
+                    `Template variant "${created.name}" added to template "${template.name}".`,
+                );
+                toast.success(
+                    `Template variant "${created.name}" added to template "${template.name}".`,
+                );
+
+                handleOpenChange(false);
+            },
+        }),
+    );
+
+    useEffect(() => {
+        if (dialogOpen) {
+            form.reset();
+            mutation.reset();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
+    }, [dialogOpen]);
+
+    function handleOpenChange(open: boolean) {
+        void setAction(open ? "add-variant" : null, { history: open ? "push" : "replace" });
+    }
+
+    const handleSubmit = form.handleSubmit(
+        (formData) => {
+            const variantId = I3TemplateVariantId.create();
+
+            logger.log(`Creating I3TemplateVariant(${variantId}) with data:`, formData);
+            mutation.mutate({
+                organizationId: organization.id,
+                templateId: template.id,
+                variantId: variantId,
+                create: formData,
+            });
+        },
+        (errors) => {
+            logger.warn("Form validation failed:", errors);
+        },
+    );
+
+    const selectedBrandId = form.watch("d4h.brandId");
+
+    return (
+        <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Add variant">
+                    <ObjectIcons.Create />
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add Variant to Template</DialogTitle>
+                    <DialogDescription>
+                        Add a new variant to template <ObjectName>{template.name}</ObjectName>.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogBody>
+                    <form id={formId} onSubmit={handleSubmit}>
+                        <FieldGroup>
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant-name">Name</FieldLabel>
+                                        <Input
+                                            id="variant-name"
+                                            autoFocus
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                control={form.control}
+                                name="d4h.brandId"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant-brand">Brand</FieldLabel>
+
+                                        <D4HEquipmentBrandSelect
+                                            organisationOnlyId={organisationOnlyId}
+                                            value={field.value}
+                                            onChange={(brand) => {
+                                                field.onChange(brand.id);
+                                                form.setValue("d4h.brandTitle", brand.title);
+
+                                                // Reset model selection when brand changes
+                                                form.setValue("d4h.modelId", 0);
+                                                form.setValue("d4h.modelTitle", "");
+                                            }}
+                                            slotProps={{
+                                                trigger: { id: "variant-brand" },
+                                            }}
+                                        />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                control={form.control}
+                                name="d4h.modelId"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="variant-model">Model</FieldLabel>
+                                        <D4HEquipmentModelSelect
+                                            organisationOnlyId={organisationOnlyId}
+                                            value={field.value}
+                                            onChange={(model) => {
+                                                field.onChange(model.id);
+                                                form.setValue("d4h.modelTitle", model.title);
+                                            }}
+                                            brandId={selectedBrandId}
+                                            slotProps={{
+                                                trigger: { id: "variant-model" },
+                                            }}
+                                        />
+
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </form>
+                </DialogBody>
+                <DialogFooter>
+                    <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
+                    <MutationButton
+                        form={formId}
+                        type="submit"
+                        status={mutation.status}
+                        text={{
+                            idle: "Add",
+                            pending: "Adding",
+                            success: "Added",
+                        }}
+                    />
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}

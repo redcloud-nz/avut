@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 /**
  * Navbar control that opens the contextual help sheet on a help card. `id` is
- * the card's path under `content/help` without extension (e.g. `"i3"`,
+ * the card's path under `content/help` without extension (e.g. `"d4h-i3"`,
  * `"skill-track/sessions"`). Pass it as a string literal: the coverage test
  * (`help-cards.test.ts`) greps call sites for `id="…"`. The sheet itself
  * (`<HelpSheet>`) is mounted once globally; this only writes the `?help=<id>`

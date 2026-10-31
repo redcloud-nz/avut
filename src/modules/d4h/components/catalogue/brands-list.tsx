@@ -1,0 +1,121 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { useMemo } from "react";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
+import {
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
+
+import { Kaga } from "@/components/blocks/kaga";
+import { Saratoga } from "@/components/blocks/saratoga";
+import { Std } from "@/components/blocks/std";
+import { D4HOwner } from "@/components/d4h/d4h-owner";
+import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
+import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
+import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
+import { trpc } from "@/trpc/client";
+
+type BrandRow = D4HEquipmentBrand & { modelCount: number };
+
+/** Every D4H equipment brand the token reaches, org-wide, with its model count. */
+export function D4HModule_Brands_List() {
+    const organization = useOrganization();
+    const reachableTeamIds = useReachableTeamIds();
+    const { slug } = organization;
+
+    const { data: brands } = useSuspenseQuery(
+        trpc.d4hApi.listEquipmentBrands.queryOptions({ organizationId: organization.id }),
+    );
+    const { data: models } = useSuspenseQuery(
+        trpc.d4hApi.listEquipmentModels.queryOptions({ organizationId: organization.id }),
+    );
+
+    const rows = useMemo<BrandRow[]>(() => {
+        const counts = new Map<number, number>();
+        for (const model of models) {
+            counts.set(model.brand.id, (counts.get(model.brand.id) ?? 0) + 1);
+        }
+        return brands.map((brand) => ({ ...brand, modelCount: counts.get(brand.id) ?? 0 }));
+    }, [brands, models]);
+
+    const columns = useMemo(
+        () =>
+            Kaga.defineColumns<BrandRow>((columnHelper) => [
+                columnHelper.accessor("title", {
+                    header: "Title",
+                    cell: (ctx) => <D4HEquipmentBrandLink brand={ctx.row.original} />,
+                    enableGlobalFilter: true,
+                    enableSorting: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor("modelCount", {
+                    header: "Models",
+                    cell: (ctx) => ctx.getValue(),
+                    enableGlobalFilter: false,
+                    enableSorting: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor("owner.title", {
+                    header: "Owner",
+                    cell: (ctx) => (
+                        <D4HOwner
+                            owner={ctx.row.original.owner}
+                            linkable={reachableTeamIds.has(ctx.row.original.owner.id)}
+                        />
+                    ),
+                    enableGlobalFilter: false,
+                    enableSorting: true,
+                    enableColumnFilter: false,
+                }),
+            ]),
+        [reachableTeamIds],
+    );
+
+    // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
+    const table = useReactTable({
+        data: rows,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        initialState: {
+            pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
+            sorting: [{ id: "title", desc: false }],
+        },
+    });
+
+    return (
+        <>
+            <Std.Navbar
+                breadcrumbs={[
+                    { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
+                    { label: "Equipment Brands" },
+                ]}
+            />
+            <Std.ScrollContainer>
+                <Saratoga.Root>
+                    <Saratoga.Header>
+                        <Saratoga.Title>Equipment Brands</Saratoga.Title>
+                    </Saratoga.Header>
+                    <div>
+                        <Kaga.TableToolbar table={table} />
+                        <Kaga.Table table={table} />
+                        <Kaga.TablePagination table={table} />
+                    </div>
+                </Saratoga.Root>
+            </Std.ScrollContainer>
+        </>
+    );
+}

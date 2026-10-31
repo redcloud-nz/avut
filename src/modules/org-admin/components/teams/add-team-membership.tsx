@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -95,6 +96,7 @@ function PickTeam_Body({ person, onDone }: { person: PersonRef; onDone: () => vo
         .filter((team) => team.status === "Active" && !joinedTeamIds.has(team.id))
         .map((team) => ({ value: team.id, label: team.name }));
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(z.object({ teamId: TeamId.schema })),
     });
@@ -130,7 +132,7 @@ function PickTeam_Body({ person, onDone }: { person: PersonRef; onDone: () => vo
     return (
         <>
             <DialogBody>
-                <form id="add-team-membership-form" onSubmit={handleSubmit}>
+                <form id={formId} onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             control={form.control}
@@ -160,7 +162,7 @@ function PickTeam_Body({ person, onDone }: { person: PersonRef; onDone: () => vo
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="add-team-membership-form"
+                    form={formId}
                     status={mutation.status}
                     text={{ idle: "Add", pending: "Adding", success: "Added" }}
                 />
@@ -190,6 +192,7 @@ function PickPerson_Body({ team, onDone }: { team: TeamData; onDone: () => void 
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((person) => ({ value: person.id, label: person.name }));
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -238,7 +241,7 @@ function PickPerson_Body({ team, onDone }: { team: TeamData; onDone: () => void 
     return (
         <>
             <DialogBody>
-                <form id="add-team-membership-form" onSubmit={handleSubmit}>
+                <form id={formId} onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             control={form.control}
@@ -268,7 +271,7 @@ function PickPerson_Body({ team, onDone }: { team: TeamData; onDone: () => void 
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="add-team-membership-form"
+                    form={formId}
                     status={mutation.status}
                     text={{
                         idle: "Add",

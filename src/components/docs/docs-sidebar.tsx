@@ -49,9 +49,21 @@ export function DocsSidebar({ nav }: { nav: DocsNavSection[] }) {
             </div>
             {nav.map((section) => (
                 <div key={section.id} className="flex flex-col gap-1">
-                    <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
-                        {section.title}
-                    </p>
+                    {section.indexSlug === undefined ? (
+                        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
+                            {section.title}
+                        </p>
+                    ) : (
+                        <Link
+                            href={docsHref(section.indexSlug)}
+                            className={cn(
+                                "text-muted-foreground hover:text-foreground mb-1 text-xs font-semibold tracking-wide uppercase",
+                                pathname === docsHref(section.indexSlug) && "text-primary",
+                            )}
+                        >
+                            {section.title}
+                        </Link>
+                    )}
                     {section.pages.map((page) => {
                         const href = docsHref(page.slug);
                         return (

@@ -9,10 +9,12 @@ import prettier from "eslint-config-prettier";
 import boundaries from "eslint-plugin-boundaries";
 
 import buttonAccessibleName from "./eslint-rules/button-accessible-name.mjs";
+import dropdownMenuSize from "./eslint-rules/dropdown-menu-size.mjs";
 import idsViaSchemas from "./eslint-rules/ids-via-schemas.mjs";
 import noDeepRelativeImports from "./eslint-rules/no-deep-relative-imports.mjs";
 import noDeprecatedZod from "./eslint-rules/no-deprecated-zod.mjs";
 import noDirectLogWrites from "./eslint-rules/no-direct-log-writes.mjs";
+import noLiteralFormId from "./eslint-rules/no-literal-form-id.mjs";
 import noPrismaModelImports from "./eslint-rules/no-prisma-model-imports.mjs";
 import noProcessEnv from "./eslint-rules/no-process-env.mjs";
 import noTrpcClientInServerComponent from "./eslint-rules/no-trpc-client-in-server-component.mjs";
@@ -26,10 +28,12 @@ const avut = {
   rules: {
     "nz-spelling": nzSpelling,
     "button-accessible-name": buttonAccessibleName,
+    "dropdown-menu-size": dropdownMenuSize,
     "ids-via-schemas": idsViaSchemas,
     "no-deep-relative-imports": noDeepRelativeImports,
     "no-deprecated-zod": noDeprecatedZod,
     "no-direct-log-writes": noDirectLogWrites,
+    "no-literal-form-id": noLiteralFormId,
     "no-prisma-model-imports": noPrismaModelImports,
     "no-process-env": noProcessEnv,
     "no-trpc-client-in-server-component": noTrpcClientInServerComponent,
@@ -46,7 +50,13 @@ const resendRestriction = {
 /** @type {import("eslint").Linter.Config[]} */
 const config = [
   {
-    ignores: [".next/**", "next-env.d.ts", "src/generated/**", ".claude/worktrees/**"],
+    ignores: [
+      ".next/**",
+      "next-env.d.ts",
+      "src/generated/**",
+      ".content-collections/**",
+      ".claude/worktrees/**",
+    ],
   },
   ...nextCoreWebVitals,
   ...nextTypeScript,
@@ -332,6 +342,24 @@ const config = [
     plugins: { avut },
     rules: {
       "avut/button-accessible-name": "error",
+    },
+  },
+  {
+    // A submit button outside its form points at it by a per-instance useId() id, never a literal:
+    // a hidden copy of the form on a page Next keeps mounted would otherwise be the one submitted.
+    files: ["src/**/*.tsx"],
+    plugins: { avut },
+    rules: {
+      "avut/no-literal-form-id": "error",
+    },
+  },
+  {
+    // A dropdown menu's width comes from DropdownMenuContent's `size` prop, not a width class, so
+    // menus of the same kind are the same width everywhere.
+    files: ["src/**/*.tsx"],
+    plugins: { avut },
+    rules: {
+      "avut/dropdown-menu-size": "error",
     },
   },
   {

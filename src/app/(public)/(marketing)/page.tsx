@@ -25,9 +25,10 @@ import { hasActiveSession } from "@/server/session";
  */
 const MODULE_COPY = {
     "org-admin": "Users, teams, personnel and invitations for your organisation.",
-    "d4h-views": "Read-only views of the D4H data you already maintain.",
+    d4h: "Read-only views of the D4H data you already maintain.",
     forms: "",
-    i3: "Issue, inspect and return equipment and PPE, with templates per item type. Runs on your D4H equipment records.",
+    "d4h-i3":
+        "Issue, inspect and return equipment and PPE, with templates per item type. Runs on your D4H equipment records.",
     notes: "Rich-text notes that live with the org instead of in someone's inbox.",
     "skill-track": "Skill checks, assessment sessions, a catalogue and reports on who's current.",
     "skill-package-builder":
@@ -35,7 +36,7 @@ const MODULE_COPY = {
 } satisfies Record<(typeof orgModules)[number]["id"], string>;
 
 /** Module ids that only work with a connected D4H account. */
-const NEEDS_D4H = new Set(["d4h-views", "i3"]);
+const NEEDS_D4H = new Set(["d4h", "d4h-i3"]);
 
 /**
  * Hero product screenshot — the "Assess by Person" recording view from the
@@ -55,7 +56,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
     },
     {
         q: "Do I need D4H?",
-        a: "For D4H Views and I3, yes — both read your D4H data, so they need a connected D4H account. Admin, Skill Track, Notes and the Skill Package Builder don't.",
+        a: "For D4H and D4H I3, yes — both read your D4H data, so they need a connected D4H account. Admin, Skill Track, Notes and the Skill Package Builder don't.",
     },
     {
         q: "Where does our data live?",
@@ -219,8 +220,8 @@ export default function HomePage() {
                         <p className="text-sm leading-relaxed text-muted-foreground">
                             Add a read-only access token and AVUT reads your members, equipment and
                             activities straight from D4H, so nothing gets re-typed and nothing gets
-                            written back. D4H Views and I3 both build on that connection; Admin,
-                            Skill Track, Notes and the Skill Package Builder stand on their own.
+                            written back. D4H and D4H I3 both build on that connection; Admin, Skill
+                            Track, Notes and the Skill Package Builder stand on their own.
                         </p>
                     </div>
                     <div className="flex flex-col gap-3">

@@ -8,7 +8,7 @@ import "server-only";
 import { cache } from "react";
 
 import { i3ModuleFlag, notesModuleFlag } from "@/lib/flags";
-import { isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
+import { enabledInSettings, isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
 import {
     moduleList,
     userModules,
@@ -21,7 +21,7 @@ import { requireOrganization } from "./organization-access";
 
 /** Flag evaluators, keyed by module id. Modules absent here are always available. */
 const MODULE_FLAG_EVALUATORS: Partial<Record<OrganizationModuleId, () => Promise<boolean>>> = {
-    i3: i3ModuleFlag,
+    "d4h-i3": i3ModuleFlag,
     notes: notesModuleFlag,
 };
 
@@ -93,5 +93,5 @@ export async function isOrganizationModuleUsable(
     const { settings } = await requireOrganization(slug);
     const moduleFlags = await resolveModuleFlags();
 
-    return isModuleUsable(moduleFlags, moduleId, settings.modules[moduleId].enabled);
+    return isModuleUsable(moduleFlags, moduleId, enabledInSettings(settings));
 }

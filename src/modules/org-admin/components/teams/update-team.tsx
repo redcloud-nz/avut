@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),
         defaultValues: team,
@@ -91,7 +92,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                 </DialogHeader>
                 <DialogBody>
                     <form
-                        id="update-team-form"
+                        id={formId}
                         onSubmit={form.handleSubmit(
                             (formData) =>
                                 mutation.mutate({
@@ -152,7 +153,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-team-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Update",

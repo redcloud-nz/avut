@@ -75,6 +75,10 @@ export interface SettingsStore<TSettings, TReadPrisma, TWritePrisma> {
  * @param settings The scope's schema helpers (`OrganizationSettings`, `UserSettings`, …).
  * @param model Picks the delegate off the injected client — `"organizationConfig"`/`"userConfig"`.
  * @param scopeField That model's scope column — `"organizationId"`/`"userId"`.
+ * @param normalize Applies the scope's cross-field rules to a validated write: handed the settings
+ *     as they stand and as they're about to become, it returns the settings to store, or throws to
+ *     refuse the write. Runs before the diff, so anything it changes is written and audited with
+ *     the rest.
  */
 export function createSettingsStore<
     TSettings,
@@ -84,10 +88,12 @@ export function createSettingsStore<
     settings: settingsSchema,
     model,
     scopeField,
+    normalize,
 }: {
     settings: SettingsSchemaLike<TSettings>;
     model: "organizationConfig" | "userConfig";
     scopeField: "organizationId" | "userId";
+    normalize?: (existing: TSettings, next: TSettings) => TSettings;
 }): SettingsStore<TSettings, TReadPrisma, TWritePrisma> {
     const delegateOf = (prisma: object) =>
         (prisma as Record<string, unknown>)[model] as SettingsConfigDelegate;
@@ -112,7 +118,8 @@ export function createSettingsStore<
         const existing = await read(prisma, scopeId);
 
         // Validate before writing — the settings may have come straight off the wire.
-        const parsed = settingsSchema.schema.parse(produce(existing));
+        const validated = settingsSchema.schema.parse(produce(existing));
+        const parsed = normalize ? normalize(existing, validated) : validated;
 
         const flattenedExisting = settingsSchema.flatten(existing);
         const flattenedNext = settingsSchema.flatten(parsed);
@@ -122,9 +129,12 @@ export function createSettingsStore<
 
         const writes = R.pipe(
             R.entries(flattenedNext),
-            R.filter(([key, newValue]) => newValue !== flattenedExisting[key]),
+            // Deep equality, because array leaves (`modules.d4h-i3.notify.…`) are fresh objects on
+            // every read: `!==` would upsert them on every save, and `===` would never match a
+            // `[]` to its default, so its row would never be deleted.
+            R.filter(([key, newValue]) => !R.isDeepEqual(newValue, flattenedExisting[key])),
             R.map(([key, value]) =>
-                value === flattenedDefaults[key]
+                R.isDeepEqual(value, flattenedDefaults[key])
                     ? delegate.deleteMany({ where: { [scopeField]: scopeId, key } })
                     : delegate.upsert({
                           where: { [`${scopeField}_key`]: { [scopeField]: scopeId, key } },
@@ -134,6 +144,17 @@ export function createSettingsStore<
             ),
         );
 
+        // A key in the existing settings but not the next one was removed: either a dynamic
+        // record key (`modules.d4h-i3.notify.teams.<teamId>`) or an `.optional()` leaf the next
+        // settings left out (a full `write` that omits it). A leaf with a default can't go
+        // missing this way, since the parse fills it in. Without this, the row would stay and
+        // the key would come back on the next read.
+        const removals = R.pipe(
+            R.keys(flattenedExisting),
+            R.filter((key) => !(key in flattenedNext)),
+            R.map((key) => delegate.deleteMany({ where: { [scopeField]: scopeId, key } })),
+        );
+
         const changes = diffObject(
             existing as Record<string, unknown>,
             parsed as Record<string, unknown>,
@@ -141,6 +162,7 @@ export function createSettingsStore<
 
         await (prisma as unknown as SettingsTransactor).$transaction([
             ...writes,
+            ...removals,
             ...(logEntry ? [logEntry(changes)] : []),
         ]);
 

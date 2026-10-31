@@ -8,8 +8,8 @@ import { createContext, ReactNode, useContext, useMemo } from "react";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
 
-import { isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
-import { Modules, type ModuleDef, type OrganizationModuleId } from "@/lib/modules";
+import { enabledInSettings, isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
+import type { OrganizationModuleId } from "@/lib/modules";
 import type { Role } from "@/lib/permissions";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
@@ -93,16 +93,10 @@ export class OrganizationClient {
 
     /**
      * Whether `moduleId` is usable for this org in this deployment: its Vercel flag must be
-     * on for the current environment *and* the org must have opted in via settings. `admin`
-     * is always on once flag-available.
+     * on for the current environment, the org must have opted in via settings, and the module
+     * it `requires` (if any) must be usable too. `admin` is always on once flag-available.
      */
     isModuleEnabled(moduleId: OrganizationModuleId): boolean {
-        const moduleDef: ModuleDef = Modules[moduleId];
-        const config = this.settings.modules[moduleId as keyof OrganizationSettings["modules"]];
-        return isModuleUsable(
-            this.moduleFlags,
-            moduleId,
-            moduleDef.alwaysOn === true || config?.enabled === true,
-        );
+        return isModuleUsable(this.moduleFlags, moduleId, enabledInSettings(this.settings));
     }
 }

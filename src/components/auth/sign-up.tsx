@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -92,6 +93,7 @@ function Auth_EmailPasswordSignUp_Form({
 }) {
     const router = useRouter();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -122,7 +124,7 @@ function Auth_EmailPasswordSignUp_Form({
     });
 
     return (
-        <form id="sign-up-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
+        <form id={formId} onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
             <FieldGroup>
                 <Controller
                     name="name"
@@ -181,7 +183,7 @@ function Auth_EmailPasswordSignUp_Form({
                 <Field>
                     <MutationButton
                         type="submit"
-                        form="sign-up-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Sign Up",

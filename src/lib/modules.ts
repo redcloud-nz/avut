@@ -28,9 +28,9 @@ import type { UserSettings } from "@/lib/schemas/user-settings";
  */
 export type OrganizationModuleId =
     | "org-admin"
-    | "d4h-views"
+    | "d4h"
     | "forms"
-    | "i3"
+    | "d4h-i3"
     | "notes"
     | "skill-track"
     | "skill-package-builder";
@@ -67,6 +67,12 @@ export interface OrganizationModuleDef extends BaseModuleDef {
     scope: "organization";
     /** Builds the org-scoped href. Present only for modules that have a page. */
     href?: (slug: string) => Route;
+    /**
+     * Another org module this one depends on. The module is usable only while that one is, and
+     * the settings write path keeps the pair consistent: turning the required module off turns
+     * this one off too, and turning this one on while the required module is off is refused.
+     */
+    requires?: OrganizationModuleId;
 }
 
 export interface UserModuleDef extends BaseModuleDef {
@@ -102,13 +108,13 @@ export const Modules = {
         scope: "organization",
         href: (slug) => route("/orgs/[slug]/admin", { slug }),
     },
-    "d4h-views": {
-        id: "d4h-views",
-        label: "D4H Views",
+    d4h: {
+        id: "d4h",
+        label: "D4H",
         icon: CableIcon,
-        segment: "d4h-views",
+        segment: "d4h",
         scope: "organization",
-        href: (slug) => route("/orgs/[slug]/d4h-views", { slug }),
+        href: (slug) => route("/orgs/[slug]/d4h", { slug }),
     },
     forms: {
         id: "forms",
@@ -117,13 +123,14 @@ export const Modules = {
         segment: "forms",
         scope: "organization",
     },
-    i3: {
-        id: "i3",
-        label: "I3",
+    "d4h-i3": {
+        id: "d4h-i3",
+        label: "D4H I3",
         icon: ShirtIcon,
-        segment: "i3",
+        segment: "d4h-i3",
         scope: "organization",
-        href: (slug) => route("/orgs/[slug]/i3", { slug }),
+        requires: "d4h",
+        href: (slug) => route("/orgs/[slug]/d4h-i3", { slug }),
     },
     notes: {
         id: "notes",
@@ -180,6 +187,23 @@ export const Modules = {
 
 /** All modules in display order. */
 export const moduleList: readonly ModuleDef[] = Object.values(Modules);
+
+/**
+ * The module `moduleId` requires, if any. Read through an `OrganizationModuleDef`-typed lookup
+ * because most registry entries have no `requires` property under `satisfies`.
+ */
+export function requiredModuleOf(moduleId: OrganizationModuleId): OrganizationModuleId | undefined {
+    const moduleDef: OrganizationModuleDef = Modules[moduleId];
+    return moduleDef.requires;
+}
+
+/** The org modules whose `requires` is `moduleId`, in display order. */
+export function modulesRequiring(moduleId: OrganizationModuleId): OrganizationModuleId[] {
+    return moduleList
+        .filter((m): m is OrganizationModuleDef => m.scope === "organization")
+        .filter((m) => m.requires === moduleId)
+        .map((m) => m.id);
+}
 
 /** Settings-gated module ids (org-scoped modules except always-on `org-admin`). */
 export const configurableModuleIds = moduleList

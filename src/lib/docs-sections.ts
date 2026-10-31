@@ -27,6 +27,8 @@ export interface DocsNavPage {
 export interface DocsNavSection {
     id: string;
     title: string;
+    /** Slug of the section's landing page (`<section>/index.mdx`), which its heading links to. */
+    indexSlug?: string;
     pages: DocsNavPage[];
 }
 

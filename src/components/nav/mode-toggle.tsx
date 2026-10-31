@@ -30,7 +30,7 @@ export function ModeToggle() {
                 </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent size="sm" align="end">
                 <DropdownMenuLabel>Theme</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
                     <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>

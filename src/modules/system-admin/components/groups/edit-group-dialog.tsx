@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -44,6 +44,7 @@ export function SystemAdmin_EditGroup_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["edit"] as const));
     const dialogOpen = action === "edit";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(OrganizationGroupData.createSchema),
         defaultValues: { name: group.name, slug: group.slug },
@@ -98,7 +99,7 @@ export function SystemAdmin_EditGroup_Dialog({
                     <DialogDescription>Change the group&rsquo;s name or slug.</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="edit-group-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 name="name"
@@ -151,7 +152,7 @@ export function SystemAdmin_EditGroup_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="edit-group-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving", success: "Saved" }}
                     />

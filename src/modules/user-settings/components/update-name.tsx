@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -41,6 +41,7 @@ export function UserSettings_UpdateName_Dialog({ session }: { session: SessionDa
     );
     const dialogOpen = action === "update-name";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(z.object({ name: z.string().min(1).max(100) })),
         defaultValues: { name: session.user.name || "" },
@@ -88,7 +89,7 @@ export function UserSettings_UpdateName_Dialog({ session }: { session: SessionDa
                     <DialogTitle>Change name</DialogTitle>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-name-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <Field data-invalid={!!form.formState.errors.name}>
                             <FieldLabel htmlFor="update-name-input">Name</FieldLabel>
                             <Input
@@ -106,7 +107,7 @@ export function UserSettings_UpdateName_Dialog({ session }: { session: SessionDa
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-name-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

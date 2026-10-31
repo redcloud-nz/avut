@@ -1,0 +1,108 @@
+/*
+ *  Copyright (c) 2025 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ *
+ * Path: /orgs/[slug]/d4h
+ */
+
+import { ChevronRightIcon } from "lucide-react";
+import Link from "next/link";
+
+import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
+import { Protect } from "@/components/protect";
+import {
+    Item,
+    ItemActions,
+    ItemContent,
+    ItemDescription,
+    ItemGroup,
+    ItemTitle,
+} from "@/components/ui/item";
+import { route } from "@/lib/routes";
+
+export default async function D4H_Index_Page(props: PageProps<`/orgs/[slug]/d4h`>) {
+    const { slug } = await props.params;
+
+    return (
+        <>
+            <Std.Navbar breadcrumbs={["D4H"]} actions={<HelpButton id="d4h" />} />
+            <Std.ScrollContainer>
+                <Std.IndexPage title="D4H">
+                    <ItemGroup>
+                        <Item asChild>
+                            <Link href={route("/orgs/[slug]/d4h/teams", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Teams</ItemTitle>
+                                    <ItemDescription>
+                                        The D4H teams your access token can see.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Protect permissions={{ d4hEquipment: ["view"] }}>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/d4h/members", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Members</ItemTitle>
+                                        <ItemDescription>
+                                            A team&apos;s D4H members and their issued equipment.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/d4h/categories", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Equipment Categories</ItemTitle>
+                                        <ItemDescription>
+                                            Categories, their types and each type&apos;s items in
+                                            every team.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/d4h/brands", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Equipment Brands</ItemTitle>
+                                        <ItemDescription>
+                                            Equipment brands and their models.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                        <Protect permissions={{ d4hTask: ["view"] }}>
+                            <Item asChild>
+                                <Link href={route("/orgs/[slug]/d4h/tasks", { slug })}>
+                                    <ItemContent>
+                                        <ItemTitle>Tasks</ItemTitle>
+                                        <ItemDescription>
+                                            Equipment changes waiting to be made in D4H.
+                                        </ItemDescription>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ChevronRightIcon className="size-4" />
+                                    </ItemActions>
+                                </Link>
+                            </Item>
+                        </Protect>
+                    </ItemGroup>
+                </Std.IndexPage>
+            </Std.ScrollContainer>
+        </>
+    );
+}

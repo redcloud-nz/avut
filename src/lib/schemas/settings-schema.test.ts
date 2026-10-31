@@ -121,6 +121,30 @@ describe("defineSettingsSlices", () => {
         );
     });
 
+    it("requires every key of a nested object field rather than defaulting the missing ones", () => {
+        // A nested object is replaced whole by the merge, so a partial one would be filled out
+        // with defaults and reset the keys it left out.
+        const Nested = defineSettingsSlices(
+            z.object({
+                group: z.object({
+                    list: z.object({
+                        a: z.array(z.string()).default([]),
+                        b: z.array(z.string()).default([]),
+                    }),
+                }),
+            }),
+            ["group"] as const,
+        );
+
+        expect(() =>
+            Nested.input.parse({ slice: "group", patch: { list: { a: ["x"] } } }),
+        ).toThrow();
+        expect(
+            Nested.input.parse({ slice: "group", patch: { list: { a: ["x"], b: [] } } }).patch,
+        ).toEqual({ list: { a: ["x"], b: [] } });
+        expect(Nested.input.parse({ slice: "group", patch: {} }).patch).toEqual({});
+    });
+
     it("rejects an unknown slice", () => {
         expect(() => Slices.input.parse({ slice: "nope", patch: {} })).toThrow();
     });

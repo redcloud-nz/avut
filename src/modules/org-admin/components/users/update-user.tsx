@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -53,6 +53,7 @@ export function AdminModule_UpdateUser_Dialog({
     const isOwner = hasOwnerRole(organizationUser.role);
     const roleDefaults = { roles: OrganizationRole.formDefaults(organizationUser.role) };
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(memberRolesSchema(isOwner)),
         defaultValues: roleDefaults,
@@ -112,7 +113,7 @@ export function AdminModule_UpdateUser_Dialog({
                 <DialogBody>
                     <FormProvider {...form}>
                         <form
-                            id="update-user-form"
+                            id={formId}
                             onSubmit={form.handleSubmit(
                                 (data) => {
                                     mutation.mutate({
@@ -136,7 +137,7 @@ export function AdminModule_UpdateUser_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-user-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Update User",

@@ -7,7 +7,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -62,6 +62,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
         },
     ]);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(SkillGroup.modifiableSchema),
         defaultValues: {
@@ -147,7 +148,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="create-skill-group-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 name="name"
@@ -193,7 +194,7 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="create-skill-group-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Create",

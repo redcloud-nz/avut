@@ -94,7 +94,7 @@ export function ScopeSwitcher() {
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg">
+                    <DropdownMenuContent size="trigger">
                         <DropdownMenuGroup>
                             <DropdownMenuLabel>Organisations</DropdownMenuLabel>
                             {memberships.map((membership) => (

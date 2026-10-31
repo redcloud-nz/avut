@@ -79,6 +79,7 @@ The dev database holds records for **real people with their real email addresses
 - When you judge it's a good point to commit, stage the relevant changes and commit them without asking, then show the commit message you used.
 - Never `git push`, open a PR, or otherwise publish commits without explicit approval — committing locally is fine, sharing is not.
 - Issues in redcloud-nz/avut are the build backlog. Ideas and brainstorms not ready to build live in redcloud-nz/avut-ideas (`/avut-brainstorm` files there; `/avut-develop-feature` promotes one into an avut issue).
+- `/avut-brainstorm`, `/avut-issue` and `/avut-status` are user-level skills (`~/.claude/skills/`), not in this repo, because they serve every repo in `avut-project`. The other `avut-*` skills live in `.claude/skills/`.
 - Feature PRs merge to `integration` (the default branch). `production` is the release target — see [`docs/releasing.md`](docs/releasing.md) for how a version gets there, and [`docs/branch-protection.md`](docs/branch-protection.md) for the branch rules.
 
 ## Worktrees
@@ -272,11 +273,11 @@ The app has three real scope roots, each with its own sidebar and module set: **
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
 - Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules
 - Only org modules with an `href` appear in the org nav switcher and dashboard (`orgModules`), which is why `forms` is absent from those
-- The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `i3`. It's retained only because it's a settings-gated key
+- The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `d4h-i3`. It's retained only because it's a settings-gated key
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 

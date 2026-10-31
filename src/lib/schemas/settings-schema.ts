@@ -181,6 +181,12 @@ function schemaAt(schema: z.ZodObject, path: string[]): z.ZodObject {
     return current as z.ZodObject;
 }
 
+/** Strip a field's `.default()` wrapper, if it has one. */
+function withoutDefault(field: z.ZodType): z.ZodType {
+    const def = (field as unknown as { def: { type: string; innerType?: z.ZodType } }).def;
+    return def.type === "default" && def.innerType ? def.innerType : field;
+}
+
 /**
  * Build the schema a slice patch is validated against: every field optional, and *without* its
  * default.
@@ -190,6 +196,11 @@ function schemaAt(schema: z.ZodObject, path: string[]): z.ZodObject {
  * — so a card patching one field would arrive carrying schema defaults for every other field in
  * its slice and silently reset them. Unwrapping `ZodDefault` first is what makes an omitted key
  * mean "leave alone".
+ *
+ * A field that is itself an object is replaced whole by the merge, never deep-merged, so its own
+ * keys lose their defaults too and become required. Otherwise a partial nested patch would be
+ * filled out with defaults: `{ notify: { org: [x] } }` (`modules.d4h-i3`) would resolve `teams`
+ * to `{}` and the store would then delete every team's row.
  */
 function patchSchemaOf(objectSchema: z.ZodObject): z.ZodObject {
     const shape = (objectSchema as unknown as { def: { shape: Record<string, z.ZodType> } }).def
@@ -198,11 +209,26 @@ function patchSchemaOf(objectSchema: z.ZodObject): z.ZodObject {
     return z.object(
         Object.fromEntries(
             Object.entries(shape).map(([key, field]) => {
-                const def = (field as unknown as { def: { type: string; innerType?: z.ZodType } })
-                    .def;
-                const undefaulted = def.type === "default" && def.innerType ? def.innerType : field;
+                const undefaulted = withoutDefault(field);
+                const def = (
+                    undefaulted as unknown as {
+                        def: { type: string; shape?: Record<string, z.ZodType> };
+                    }
+                ).def;
 
-                return [key, undefaulted.optional()];
+                const strict =
+                    def.type === "object" && def.shape
+                        ? z.object(
+                              Object.fromEntries(
+                                  Object.entries(def.shape).map(([k, child]) => [
+                                      k,
+                                      withoutDefault(child),
+                                  ]),
+                              ),
+                          )
+                        : undefaulted;
+
+                return [key, strict.optional()];
             }),
         ),
     );

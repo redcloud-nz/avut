@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useMemo } from "react";
+import { useEffect, useId, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,6 +58,7 @@ export function OrganizationSettings_UpdateTimeZone_Dialog({
     // Built once per mount: computing the offset for ~400 zones per keystroke would be wasteful.
     const options = useMemo(timeZoneOptions, []);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(timeZoneFormSchema),
         defaultValues: { timeZone: settings.general.timeZone },
@@ -108,7 +109,7 @@ export function OrganizationSettings_UpdateTimeZone_Dialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-org-time-zone-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 control={form.control}
@@ -145,7 +146,7 @@ export function OrganizationSettings_UpdateTimeZone_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-org-time-zone-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

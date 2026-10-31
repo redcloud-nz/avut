@@ -7,7 +7,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -78,6 +78,7 @@ export function SkillTrack_CreateSession_Dialog() {
     // A function, so each open starts on today rather than the day the page loaded.
     const formValues = () => ({ name: "", notes: "", when: defaultSessionWhen(orgZone) });
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(sessionDialogSchema),
         defaultValues: formValues(),
@@ -135,7 +136,7 @@ export function SkillTrack_CreateSession_Dialog() {
                 </DialogHeader>
                 <DialogBody>
                     <form
-                        id="new-session-form"
+                        id={formId}
                         onSubmit={form.handleSubmit(
                             (values) => {
                                 const parsed = parseSessionDialog(values, orgZone);
@@ -207,7 +208,7 @@ export function SkillTrack_CreateSession_Dialog() {
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="new-session-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Create",

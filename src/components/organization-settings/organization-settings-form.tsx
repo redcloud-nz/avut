@@ -5,10 +5,11 @@
 "use client";
 
 import type { SaratogaContentsItem } from "@/components/blocks/saratoga-contents";
-import type { ModuleFlagState } from "@/lib/module-flags";
+import { enabledInSettings, type ModuleFlagState } from "@/lib/module-flags";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
+import { D4HI3Module_SettingsCard } from "./d4h-i3-module-settings";
 import { D4HIntegration_SettingsCard } from "./d4h-integration-settings";
 import { Feature_SettingsCard } from "./feature-settings-card";
 import { General_SettingsCard } from "./general-settings";
@@ -32,6 +33,7 @@ export function OrganizationSettingsForm({
     moduleFlags,
     settings,
     canEdit,
+    systemAdmin = false,
 }: {
     organizationId: OrganizationId;
     /** Environment-level module availability — a module's card is hidden when its flag is off. */
@@ -42,7 +44,15 @@ export function OrganizationSettingsForm({
      * system-admin page has no current organization for `<Protect>` to read roles from.
      */
     canEdit: boolean;
+    /**
+     * Rendered on the system-admin page. Cards whose edit dialogs read org-scoped lists (personnel,
+     * teams) that a system admin can't reach show their summary only.
+     */
+    systemAdmin?: boolean;
 }) {
+    // For the module cards' `requires` rule (D4H I3 needs D4H): the settings, not module flags.
+    const isModuleEnabled = enabledInSettings(settings);
+
     return (
         <>
             <div id="general" className="space-y-4 scroll-mt-4">
@@ -84,26 +94,25 @@ export function OrganizationSettingsForm({
             <div id="modules" className="space-y-4 pt-12 scroll-mt-4">
                 <h2 className="text-lg font-semibold tracking-tight">Modules</h2>
                 <div className="space-y-10">
-                    <div id="module-d4h-views" className="scroll-mt-4">
+                    <div id="module-d4h" className="scroll-mt-4">
                         <Feature_SettingsCard
                             organizationId={organizationId}
                             canEdit={canEdit}
-                            slice="modules.d4h-views"
-                            enabled={settings.modules["d4h-views"].enabled}
+                            slice="modules.d4h"
+                            enabled={settings.modules.d4h.enabled}
+                            isModuleEnabled={isModuleEnabled}
                             kind="module"
-                            title="D4H Views Module"
+                            title="D4H Module"
                         />
                     </div>
-                    {moduleFlags.i3 !== false && (
-                        <div id="module-i3" className="scroll-mt-4">
-                            <Feature_SettingsCard
+                    {moduleFlags["d4h-i3"] !== false && (
+                        <div id="module-d4h-i3" className="scroll-mt-4">
+                            <D4HI3Module_SettingsCard
                                 organizationId={organizationId}
+                                settings={settings}
                                 canEdit={canEdit}
-                                slice="modules.i3"
-                                enabled={settings.modules.i3.enabled}
-                                kind="module"
-                                title="I3 Module"
-                                description="The I3 module provides tools to manage individually issued items (I3s) within your organisation."
+                                isModuleEnabled={isModuleEnabled}
+                                systemAdmin={systemAdmin}
                             />
                         </div>
                     )}
@@ -147,7 +156,7 @@ export function OrganizationSettingsForm({
 /**
  * Matches the section (and, for "Modules", per-module card) `id`s above — passed to
  * `Saratoga.Contents` by the page. Takes `moduleFlags` so the "Modules" children stay in sync
- * with which cards the form itself actually renders (`i3` and `notes`, gated the same way above).
+ * with which cards the form itself actually renders (`d4h-i3` and `notes`, gated the same way above).
  */
 export function getOrganizationSettingsFormSections(
     moduleFlags: ModuleFlagState,
@@ -161,8 +170,10 @@ export function getOrganizationSettingsFormSections(
             id: "modules",
             label: "Modules",
             children: [
-                { id: "module-d4h-views", label: "D4H Views" },
-                ...(moduleFlags.i3 !== false ? [{ id: "module-i3", label: "I3" }] : []),
+                { id: "module-d4h", label: "D4H" },
+                ...(moduleFlags["d4h-i3"] !== false
+                    ? [{ id: "module-d4h-i3", label: "D4H I3" }]
+                    : []),
                 ...(moduleFlags.notes !== false ? [{ id: "module-notes", label: "Notes" }] : []),
                 { id: "module-skill-package-builder", label: "Skill Package Builder" },
                 { id: "module-skill-track", label: "Skill Track" },

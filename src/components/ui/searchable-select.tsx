@@ -5,7 +5,7 @@
 "use client";
 
 import { ChevronDownIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { ReactNode, useId, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -54,6 +54,8 @@ type SearchableSelectProps = {
     "aria-invalid"?: boolean;
     className?: string;
     id?: string;
+    /** Shown in the trigger instead of the selected option's label, when there's a value. */
+    valueLabel?: ReactNode;
 };
 
 export function SearchableSelect({
@@ -67,11 +69,12 @@ export function SearchableSelect({
     "aria-invalid": ariaInvalid,
     className,
     id: providedId,
+    valueLabel,
 }: SearchableSelectProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
 
-    const selectedLabel = options.find((o) => o.value === value)?.label;
+    const selectedLabel = (value && valueLabel) || options.find((o) => o.value === value)?.label;
 
     const id = useId();
 

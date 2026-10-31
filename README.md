@@ -17,7 +17,7 @@ AVUT is a multi-tenant web app. People belong to one or more **organisations**,
 and each organisation gets a set of tools it can turn on or off independently:
 
 - Managing personnel, teams, users, and invitations
-- Issuing, inspecting, and returning equipment (the "I3" flow) and PPE templates
+- Issuing, inspecting, and returning equipment (the "D4H I3" flow) and PPE templates
 - Tracking skill checks, assessment sessions, and a skills catalogue
 - Authoring reusable skill packages
 - Rich-text notes
@@ -37,8 +37,8 @@ by their **role(s)** in that organisation.
 | Module                  | Path                                 | What it does                                                     |
 | ----------------------- | ------------------------------------ | ---------------------------------------------------------------- |
 | `admin`                 | `/orgs/[slug]/admin`                 | Org management — users, teams, personnel, invitations. Always on |
-| `d4h-views`             | `/orgs/[slug]/d4h-views`             | Read-only views of D4H data                                      |
-| `i3`                    | `/orgs/[slug]/i3`                    | Equipment issue / inspect / return (I3) and PPE templates        |
+| `d4h`                   | `/orgs/[slug]/d4h`                   | Read-only views of D4H data                                      |
+| `d4h-i3`                | `/orgs/[slug]/d4h-i3`                | Equipment issue / inspect / return (D4H I3) and PPE templates    |
 | `notes`                 | `/orgs/[slug]/notes`                 | Rich-text notes                                                  |
 | `skill-track`           | `/orgs/[slug]/skill-track`           | Skill checks, assessment sessions, catalogue, reports            |
 | `skill-package-builder` | `/orgs/[slug]/skill-package-builder` | Authoring skill packages                                         |

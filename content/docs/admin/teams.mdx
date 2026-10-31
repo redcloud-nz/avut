@@ -42,28 +42,42 @@ The team's menu (⋮) has **Edit**, **Add person**, **Archive** and **Delete**.
 
 With the [D4H integration](/docs/admin/organization#integrations) on, owners and
 admins can keep a team's members in step with a team in D4H. Linking uses your
-own personal D4H access token (**User Settings → D4H**), so you can only link to
+own personal D4H access token (account settings › **D4H**), so you can only link to
 a D4H team that token can see.
 
-- **Link to D4H**, on an active team, picks the D4H team. **Link & sync** links
-  it and imports its members straight away. Each D4H member is matched to a
-  person record by email; anyone without one gets a new record.
+- **Link to D4H**, on an active team, picks the D4H team. **Link** then opens
+  the sync preview straight away, so you see who would be imported before
+  anyone is. Each D4H member is matched to a person record by email; anyone
+  without one gets a new record.
 - **Sync with D4H**, on the team's **D4H Integration** card, fetches the D4H
   team and previews what would change before anything does: members to
   **Add**, **Update**, **Reactivate** or **Archive**, and changes to the team's
-  own details. **Apply** makes the changes; **Cancel** leaves everything as it
-  is. If nothing has changed, it says **Already in sync**.
+  own details. Untick any change you don't want, then **Apply** the rest;
+  **Cancel** leaves everything as it is. If nothing has changed, it says
+  **Already in sync**.
 - **Unlink from D4H** stops the syncing. The personnel and memberships it
   imported stay.
+
+Once a sync is applied, the dialog sums up what was done, including anything it
+couldn't apply because the record changed after the preview. If someone else is
+already syncing the team, the dialog waits for them to finish and then shows a
+fresh preview.
 
 Members imported from D4H carry a **D4H** badge in the member list. On a linked
 team, people you add by hand carry **Manual**, and syncing leaves them alone.
 
-<Callout>
-  A D4H member with no email address in D4H can't be matched, so the sync skips them and lists them.
-  So does a member whose email belongs to a person in the Rubbish bin: recover that person, or
-  delete them forever, then sync again.
-</Callout>
+### Skipped members
+
+The preview lists the D4H members a sync can't import, grouped by why:
+
+- **No email in D4H** — AVUT matches members by email, so one without an email
+  can't be matched.
+- **Email shared by several D4H members** — AVUT can't tell which of them is
+  the person.
+- **Email belongs to a person in the Rubbish bin**, or **team membership in the
+  Rubbish bin** — recover the record, or delete it forever, then sync again.
+- **Person already linked to another D4H member** — the person's membership on
+  this team is already linked to a different D4H member.
 
 Once any team has been linked, the organisation's **D4H Integration** card
 appears on the [Organisation](/docs/admin/organization#d4h-integration) page.

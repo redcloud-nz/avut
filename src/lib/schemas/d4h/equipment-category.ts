@@ -34,3 +34,12 @@ export const D4HEquipmentCategory = {
 } as const;
 
 export type D4HEquipmentCategory = z.infer<typeof D4HEquipmentCategory.schema>;
+
+export const D4HEquipmentCategoryRef = {
+    schema: z.object({
+        id: z.number(),
+        title: z.string(),
+    }),
+} as const;
+
+export type D4HEquipmentCategoryRef = z.infer<typeof D4HEquipmentCategoryRef.schema>;

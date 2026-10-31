@@ -10,14 +10,11 @@ import { match } from "ts-pattern";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { Alert, AlertTitle } from "@/components/ui/alert";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+    D4HCatalogueSelect,
+    D4HCatalogueSelectProps,
+} from "@/components/controls/d4h-catalogue-select";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
@@ -25,25 +22,26 @@ import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 interface D4HEquipmentModelSelectProps extends Omit<
-    ComponentProps<typeof Select>,
-    "children" | "onValueChange" | "value"
+    D4HCatalogueSelectProps<D4HEquipmentModel>,
+    "records" | "placeholder" | "organisationOnlyId" | "slotProps"
 > {
-    value: number | null;
-    onChange: (value: D4HEquipmentModel) => void;
+    /** When set, only this brand's models are offered. */
     brandId?: number;
+    /** The linked D4H organisation's id when only its models should be offered. */
+    organisationOnlyId?: number | null;
 
-    slotProps?: {
+    slotProps?: D4HCatalogueSelectProps<D4HEquipmentModel>["slotProps"] & {
         skeleton?: ComponentProps<typeof Skeleton>;
-        trigger?: Omit<ComponentProps<typeof SelectTrigger>, "children">;
-        value?: Omit<ComponentProps<typeof SelectValue>, "children">;
-        content?: Omit<ComponentProps<typeof SelectContent>, "children">;
     };
 }
 
+/**
+ * A select for a D4H equipment model, optionally only those of one brand, grouped by owner. See
+ * `D4HCatalogueSelect`.
+ */
 export function D4HEquipmentModelSelect({
-    value,
-    onChange,
     brandId,
+    organisationOnlyId = null,
     slotProps = {},
     ...props
 }: D4HEquipmentModelSelectProps) {
@@ -53,24 +51,11 @@ export function D4HEquipmentModelSelect({
         trpc.d4hApi.listEquipmentModels.queryOptions({ organizationId: organization.id }),
     );
 
-    function handleValueChange(value: string) {
-        const modelId = parseInt(value, 10);
-        const model = query.data!.find((m) => m.id === modelId);
-
-        if (!model) {
-            console.error(`Selected model with id ${modelId} not found in query results.`);
-            return;
-        }
-
-        onChange(model);
-    }
+    const { skeleton, ...selectSlotProps } = slotProps;
 
     return match(query)
         .with({ status: "pending" }, () => (
-            <Skeleton
-                className={cn("w-full h-8", slotProps.skeleton?.className ?? "")}
-                {...slotProps.skeleton}
-            >
+            <Skeleton className={cn("w-full h-8", skeleton?.className ?? "")} {...skeleton}>
                 Fetching equipment models...
             </Skeleton>
         ))
@@ -80,24 +65,13 @@ export function D4HEquipmentModelSelect({
             </Alert>
         ))
         .with({ status: "success" }, ({ data }) => (
-            <Select
-                value={value ? value.toString() : ""}
-                onValueChange={handleValueChange}
+            <D4HCatalogueSelect
+                records={brandId ? data.filter((model) => model.brand.id === brandId) : data}
+                placeholder="Select a model"
+                organisationOnlyId={organisationOnlyId}
+                slotProps={selectSlotProps}
                 {...props}
-            >
-                <SelectTrigger {...slotProps.trigger}>
-                    <SelectValue placeholder="Select a model" {...slotProps.value} />
-                </SelectTrigger>
-                <SelectContent {...slotProps.content}>
-                    {(brandId ? data.filter((model) => model.brand.id === brandId) : data).map(
-                        (model) => (
-                            <SelectItem key={model.id} value={model.id.toString()}>
-                                {model.title}
-                            </SelectItem>
-                        ),
-                    )}
-                </SelectContent>
-            </Select>
+            />
         ))
         .exhaustive();
 }

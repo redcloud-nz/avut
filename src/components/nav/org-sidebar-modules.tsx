@@ -32,8 +32,8 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { orgModules, type OrganizationModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
-import { D4HViews_Sidebar_Menu } from "@/modules/d4h-views/components/sidebar-menu";
-import { I3_Sidebar_Menu } from "@/modules/i3/components/sidebar-menu";
+import { D4HI3_Sidebar_Menu } from "@/modules/d4h-i3/components/sidebar-menu";
+import { D4H_Sidebar_Menu } from "@/modules/d4h/components/sidebar-menu";
 import { Admin_Sidebar_Menu } from "@/modules/org-admin/components/sidebar-menu";
 import { SkillTrack_Sidebar_Menu } from "@/modules/skill-track/components/sidebar-menu";
 
@@ -45,8 +45,8 @@ import { SkillTrack_Sidebar_Menu } from "@/modules/skill-track/components/sideba
  */
 const MODULE_SIDEBAR: Partial<Record<OrganizationModuleId, ReactNode>> = {
     "org-admin": <Admin_Sidebar_Menu />,
-    "d4h-views": <D4HViews_Sidebar_Menu />,
-    i3: <I3_Sidebar_Menu />,
+    d4h: <D4H_Sidebar_Menu />,
+    "d4h-i3": <D4HI3_Sidebar_Menu />,
     "skill-track": <SkillTrack_Sidebar_Menu />,
 };
 

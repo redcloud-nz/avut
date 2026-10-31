@@ -7,6 +7,7 @@
 
 import { isToday, parseISO, subMonths } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -135,6 +136,7 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
 
     const resultOptions = getEnabledSkillCheckResultOptions(organization.settings);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(CreateCheckSchema),
         defaultValues: {
@@ -186,7 +188,7 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                     </Alert>
                 ) : (
                     <form
-                        id="add-check-form"
+                        id={formId}
                         onSubmit={form.handleSubmit(
                             ({ checkedAt, ...formData }) => {
                                 if (!personSelf) return;
@@ -338,7 +340,7 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                 {!hasNoLinkedPerson && (
                     <MutationButton
                         type="submit"
-                        form="add-check-form"
+                        form={formId}
                         disabled={!personSelf}
                         status={mutation.status}
                         text={{

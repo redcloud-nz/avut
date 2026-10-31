@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 
@@ -87,6 +87,7 @@ export function OrganizationSettings_UpdateSkillTrackResults_Dialog({
     );
     const dialogOpen = action === "update-skill-track-results";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(resultsFormSchema),
         defaultValues: { results: settings.modules["skill-track"].results },
@@ -152,7 +153,7 @@ export function OrganizationSettings_UpdateSkillTrackResults_Dialog({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-skill-track-results-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             {SKILL_TRACK_RESULT_GROUPS.map((group, index) => (
                                 <Fragment key={group.label}>
@@ -230,7 +231,7 @@ export function OrganizationSettings_UpdateSkillTrackResults_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-skill-track-results-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

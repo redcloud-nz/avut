@@ -47,3 +47,12 @@ export const D4HEquipmentKind = {
 } as const;
 
 export type D4HEquipmentKind = z.infer<typeof D4HEquipmentKind.schema>;
+
+export const D4HEquipmentKindRef = {
+    schema: z.object({
+        id: z.number(),
+        title: z.string(),
+    }),
+} as const;
+
+export type D4HEquipmentKindRef = z.infer<typeof D4HEquipmentKindRef.schema>;

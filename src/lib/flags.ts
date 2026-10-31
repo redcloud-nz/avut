@@ -23,7 +23,7 @@ export const i3ModuleFlag = flag<boolean>({
     key: "i3-module",
     adapter: vercelAdapter(),
     defaultValue: false,
-    description: "Is the i3 module available.",
+    description: "Is the D4H I3 module available.",
     options: booleanOptions,
 });
 

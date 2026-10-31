@@ -495,7 +495,7 @@ export function SkillTrack_SessionReview_Content({
                                         <span className="sr-only">View options</span>
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-60" align="end">
+                                <DropdownMenuContent size="lg" align="end">
                                     <DropdownMenuLabel>Include</DropdownMenuLabel>
                                     <DropdownMenuCheckboxItem
                                         checked={includeUnassessedPeople}

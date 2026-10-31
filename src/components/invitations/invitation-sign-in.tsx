@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -47,6 +48,7 @@ export function InvitationSignIn_Form({
     const queryClient = useQueryClient();
     const returnTo = route("/invitations/[invitation_id]", { invitation_id: invitationId });
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(z.object({ password: z.string().min(1, "Password is required.") })),
         defaultValues: { password: "" },
@@ -88,7 +90,7 @@ export function InvitationSignIn_Form({
     return (
         <FieldGroup>
             <form
-                id="invitation-sign-in-form"
+                id={formId}
                 onSubmit={form.handleSubmit(({ password }) => mutation.mutate({ password }))}
             >
                 <FieldGroup>
@@ -133,7 +135,7 @@ export function InvitationSignIn_Form({
                     <Field>
                         <MutationButton
                             type="submit"
-                            form="invitation-sign-in-form"
+                            form={formId}
                             status={mutation.status}
                             text={{
                                 idle: "Sign in",

@@ -16,7 +16,7 @@ CI fails on `npm run lint` errors, so skip these; the rule message explains any 
 - ID creation via `<Model>Id.create()`; Zod import form and v3 string formats; `@/trpc/client` in a Next entry file without `"use client"`
 - `import "server-only"` in every `src/server` module, and the layering (`src/lib` is the leaf, server never imports UI, `client`/`hooks` import server code as types only, Prisma singleton only in `src/server` and `src/trpc/init.ts`, no module importing another module)
 - Hand-written `logEntry` writes
-- Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling
+- Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling, literal `form="…"` ids
 
 Check only that an added `eslint-disable` for one of these has a genuine exemption and a stated reason.
 

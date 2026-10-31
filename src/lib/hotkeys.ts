@@ -25,6 +25,7 @@ export type ActionVerb =
     | "make-owner"
     | "remove-owner"
     | "reopen"
+    | "return"
     | "impersonate"
     | "promote"
     | "demote"

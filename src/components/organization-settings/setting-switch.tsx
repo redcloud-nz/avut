@@ -43,6 +43,7 @@ export function OrganizationSettings_SettingSwitch<S extends OrganizationSetting
     field,
     value,
     label,
+    disabled = false,
 }: {
     organizationId: OrganizationId;
     slice: S;
@@ -51,6 +52,8 @@ export function OrganizationSettings_SettingSwitch<S extends OrganizationSetting
     value: boolean;
     /** Accessible name for the switch — usually the row's title. */
     label: string;
+    /** Holds the switch off for a reason other than a save in flight. */
+    disabled?: boolean;
 }) {
     const mutation = useOrganizationSettingsMutation({
         errorMessage: `Failed to update "${label}"`,
@@ -79,7 +82,7 @@ export function OrganizationSettings_SettingSwitch<S extends OrganizationSetting
         <Switch
             aria-label={label}
             checked={checked}
-            disabled={pending}
+            disabled={pending || disabled}
             onCheckedChange={handleCheckedChange}
         />
     );

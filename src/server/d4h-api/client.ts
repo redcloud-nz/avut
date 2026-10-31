@@ -11,6 +11,7 @@ import { cache } from "react";
 import * as z from "zod";
 
 import { getD4HServer } from "@/lib/d4h-servers";
+import { ForbiddenError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HActivityAttendance } from "@/lib/schemas/d4h/activity-attendance";
@@ -230,7 +231,7 @@ export async function getD4HTeamsWithMembers(
 
 /**
  * D4H's OpenAPI spec omits the `{context}/{contextId}` path parameters on a handful
- * of GET endpoints (team detail, attendance), so the generated types reject
+ * of GET endpoints (team detail, attendance, a single member), so the generated types reject
  * `params.path` for them even though the request URL needs it. These helpers call
  * those endpoints with the path filled in at runtime, isolating the unavoidable cast.
  */
@@ -243,6 +244,53 @@ function d4hGetWithUntypedPath(
         url,
         { params },
     );
+}
+
+/**
+ * A single D4H member as `fetchD4HMember` returns it. `D4HMember.schema` requires an email, and
+ * its callers (team sync, the members pages) rely on that, so this local variant accepts a null
+ * or missing `email` (or `email.value`) instead and maps it to `email: null`.
+ */
+const D4HMemberWithOptionalEmailSchema = D4HMember.schema.extend({
+    email: z
+        .object({ value: z.string().nullish(), verified: z.boolean().nullish() })
+        .nullish()
+        .transform((email) =>
+            email?.value == null ? null : { value: email.value, verified: email.verified ?? false },
+        ),
+});
+
+export type D4HMemberWithOptionalEmail = z.infer<typeof D4HMemberWithOptionalEmailSchema>;
+
+/**
+ * Fetch one member of a D4H team. Not cached: callers (the I3 receipt) want the current email.
+ * Returns `null` when D4H has no such member (404), throws a `ForbiddenError` when the token
+ * can't read it (403), and throws on any other failure.
+ */
+export async function fetchD4HMember(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    memberId: number,
+): Promise<D4HMemberWithOptionalEmail | null> {
+    const fetchClient = getD4HFetchClient(token);
+
+    const { data, response } = await d4hGetWithUntypedPath(
+        fetchClient,
+        "/v3/{context}/{contextId}/members/{member}",
+        { path: { context: "team", contextId: d4hTeamId, member: memberId } },
+    );
+    if (response.status === 404) return null;
+    if (response.status === 403) {
+        throw new ForbiddenError(
+            `The D4H access token can't read member ${memberId} of D4H team ${d4hTeamId}`,
+        );
+    }
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H member ${memberId} of team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+        );
+    }
+    return D4HMemberWithOptionalEmailSchema.parse(data);
 }
 
 /**

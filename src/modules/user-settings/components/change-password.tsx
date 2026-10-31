@@ -7,7 +7,7 @@
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -121,6 +121,7 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
         },
     });
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z
@@ -184,7 +185,7 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                         </>
                     ) : (
                         <form
-                            id="set-password-form"
+                            id={formId}
                             onSubmit={form.handleSubmit((data) =>
                                 setPassword.mutate({
                                     email: email!,
@@ -289,7 +290,7 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                     </Button>
                     <MutationButton
                         type="submit"
-                        form="set-password-form"
+                        form={formId}
                         status={setPassword.status}
                         text={{
                             idle: "Set Password",
@@ -305,6 +306,7 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
 }
 
 function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z
@@ -342,7 +344,7 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
             </DialogHeader>
             <DialogBody>
                 <form
-                    id="change-password-form"
+                    id={formId}
                     onSubmit={form.handleSubmit(
                         ({ confirmNewPassword: _confirmNewPassword, ...data }) =>
                             mutation.mutate(data),
@@ -422,7 +424,7 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="change-password-form"
+                    form={formId}
                     status={mutation.status}
                     text={{
                         idle: "Change Password",

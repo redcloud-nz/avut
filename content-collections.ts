@@ -91,8 +91,11 @@ const docs = defineCollection({
              * like `anchors`, so the ids match the rendered ones.
              */
             headings: headingOutline(doc.content),
-            /** `true` for a section landing page (`<section>/index.mdx`). */
-            isSectionIndex: doc._meta.path.endsWith("index") && slug !== "",
+            /**
+             * `true` for a section landing page (`<section>/index.mdx`). Read from the file path:
+             * `_meta.path` drops a nested `/index`, so it can't tell `admin/index.mdx` from `admin.mdx`.
+             */
+            isSectionIndex: /(^|\/)index\.mdx$/.test(doc._meta.filePath) && slug !== "",
         };
     },
 });

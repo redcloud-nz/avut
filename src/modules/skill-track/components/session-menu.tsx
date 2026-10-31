@@ -80,7 +80,6 @@ export function SkillsModule_SessionMenu({ session }: { session: SkillCheckSessi
             <EntityActionMenu
                 actions={actions}
                 category="Sessions"
-                width="w-40"
                 before={
                     <>
                         <DropdownMenuGroup>

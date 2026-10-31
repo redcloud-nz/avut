@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useId } from "react";
 import { Controller, useForm, Watch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -44,6 +45,7 @@ export function AdminModule_CreateD4HAccessToken_Form({
 }: CreateD4HAccessTokenFormProps) {
     const router = useRouter();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             D4HAccessToken.schema
@@ -93,7 +95,7 @@ export function AdminModule_CreateD4HAccessToken_Form({
     });
 
     return (
-        <form id="create-d4h-access-token-form" onSubmit={handleCreate}>
+        <form id={formId} onSubmit={handleCreate}>
             <FieldGroup>
                 <Controller
                     name="serverCode"
@@ -176,7 +178,7 @@ export function AdminModule_CreateD4HAccessToken_Form({
                 <Field orientation="horizontal">
                     <MutationButton
                         type="submit"
-                        form="create-d4h-access-token-form"
+                        form={formId}
                         status={createTokenMutation.status}
                         text={{
                             idle: "Create",

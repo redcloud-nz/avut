@@ -6,6 +6,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useId } from "react";
 import { Controller, useForm, Watch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -89,6 +90,7 @@ function AddD4HAccessToken_Body() {
 
     const { data: memberships } = useSuspenseQuery(trpc.user.listMemberships.queryOptions());
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -149,7 +151,7 @@ function AddD4HAccessToken_Body() {
     return (
         <>
             <DialogBody>
-                <form id="create-personal-d4h-access-token-form" onSubmit={handleSubmit}>
+                <form id={formId} onSubmit={handleSubmit}>
                     <FieldGroup>
                         <Controller
                             name="organizationId"
@@ -251,7 +253,7 @@ function AddD4HAccessToken_Body() {
                 <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                 <MutationButton
                     type="submit"
-                    form="create-personal-d4h-access-token-form"
+                    form={formId}
                     status={mutation.status}
                     text={{
                         idle: "Create",

@@ -158,7 +158,7 @@ function KagaTableHeadCell<TData extends RowData>({
                         <ChevronDownIcon className="ml-auto size-3.5 shrink-0 text-muted-foreground" />
                     </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="start">
+                <DropdownMenuContent align="start">
                     {canSort && <KagaSortMenuItems column={column} isSorted={isSorted} />}
                     {canSort && canFilter && <DropdownMenuSeparator />}
                     {canFilter && <KagaFilterMenuItems column={column} />}
@@ -289,7 +289,7 @@ function KagaTableOptionsMenu<TData extends RowData>({
                         <EllipsisVerticalIcon className="size-4" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-50" align="end">
+                <DropdownMenuContent align="end">
                     {hidableColumns.length > 0 && (
                         <>
                             <DropdownMenuGroup>

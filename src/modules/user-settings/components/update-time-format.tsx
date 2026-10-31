@@ -7,7 +7,7 @@
 
 import { format } from "date-fns";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +43,7 @@ export function UserSettings_UpdateTimeFormat_Dialog({ settings }: { settings: U
     );
     const dialogOpen = action === "update-time-format";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(UserSettings.schema.shape.display.pick({ timeFormat: true })),
         defaultValues: { timeFormat: settings.display.timeFormat },
@@ -87,7 +88,7 @@ export function UserSettings_UpdateTimeFormat_Dialog({ settings }: { settings: U
                     <DialogDescription>Select your preferred time format.</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-time-format-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <Controller
                             control={form.control}
                             name="timeFormat"
@@ -126,7 +127,7 @@ export function UserSettings_UpdateTimeFormat_Dialog({ settings }: { settings: U
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-time-format-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Save", pending: "Saving...", success: "Saved!" }}
                     />

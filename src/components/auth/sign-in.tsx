@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -72,6 +73,7 @@ export function SignIn_Card({ email, redirectTo }: { email?: string; redirectTo?
 function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redirectTo?: string }) {
     const router = useRouter();
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(
             z.object({
@@ -100,7 +102,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
     });
 
     return (
-        <form id="sign-in-form" onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
+        <form id={formId} onSubmit={form.handleSubmit((data) => mutation.mutate(data))}>
             <FieldGroup>
                 <Controller
                     name="email"
@@ -164,7 +166,7 @@ function EmailPasswordSignIn_Form({ email, redirectTo }: { email?: string; redir
                 <Field>
                     <MutationButton
                         type="submit"
-                        form="sign-in-form"
+                        form={formId}
                         status={mutation.status}
                         text={{ idle: "Login", pending: "Signing in...", success: "Signing in..." }}
                     />

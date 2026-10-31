@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -44,6 +44,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
     const dialogOpen = action === "update";
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(SkillPackage.modifiableSchema),
         defaultValues: skillPackage,
@@ -106,7 +107,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                     <DialogDescription>Update the details of this skill package.</DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="update-skill-package-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Field>
                                 <FieldLabel>Package ID</FieldLabel>
@@ -156,7 +157,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="update-skill-package-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Update",

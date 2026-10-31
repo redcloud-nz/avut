@@ -219,7 +219,7 @@ function InvitationActions({ invitation }: { invitation: OrganizationInvitationD
                     <DropdownMenuTriggerIcon />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end">
                 <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <Protect

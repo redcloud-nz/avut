@@ -101,7 +101,6 @@ export function SkillTrack_Package_Content({ skillPackageId }: { skillPackageId:
                             {skillPackage.subscription && (
                                 <EntityActionMenu
                                     category="Packages"
-                                    width="w-44"
                                     actions={[
                                         {
                                             verb: "unsubscribe",

@@ -7,7 +7,7 @@
 
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -79,6 +79,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
         },
     ]);
 
+    const formId = useId();
     const form = useForm({
         resolver: zodResolver(Skill.modifiableSchema),
         defaultValues: {
@@ -168,7 +169,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBody>
-                    <form id="create-skill-form" onSubmit={handleSubmit}>
+                    <form id={formId} onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Controller
                                 name="name"
@@ -287,7 +288,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
                     <MutationButton
                         type="submit"
-                        form="create-skill-form"
+                        form={formId}
                         status={mutation.status}
                         text={{
                             idle: "Create",
