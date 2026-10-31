@@ -10,7 +10,8 @@
  * A run is split in two so Run now can answer the request before the slow part:
  * `startRun` records the `D4HNagRun` (`Running`) and returns its id; `executeRun` does the D4H
  * fetches and the send loop, and always leaves the run `Completed` or `Failed` rather than
- * throwing. `runRule` is both in sequence, which is the cron's path.
+ * throwing. `runRule` is both in sequence, which is the cron's path. `runDue` is the hourly
+ * dispatcher that calls it for every rule whose slot has come round.
  */
 
 import "server-only";
@@ -20,9 +21,16 @@ import D4HAttendanceReminderEmail, {
     d4hAttendanceReminderSubject,
 } from "@/emails/d4h-attendance-reminder";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { MIN_LEAD_MS, scheduledWindow } from "@/lib/d4h-nag-schedule";
+import { isSlotDue, latestSlot, MIN_LEAD_MS, scheduledWindow } from "@/lib/d4h-nag-schedule";
 import { d4hExerciseViewUrl } from "@/lib/d4h-servers";
 import { NotFoundError } from "@/lib/errors";
+import { enabledInSettings } from "@/lib/module-flags";
+import {
+    Modules,
+    requiredModuleOf,
+    type OrganizationModuleDef,
+    type OrganizationModuleId,
+} from "@/lib/modules";
 import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import {
     D4HNagRecipientId,
@@ -34,6 +42,8 @@ import {
 } from "@/lib/schemas/d4h-nag";
 import type { D4HActivity } from "@/lib/schemas/d4h/activity";
 import type { D4HActivityAttendance } from "@/lib/schemas/d4h/activity-attendance";
+import { OrganizationId } from "@/lib/schemas/organization";
+import type { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import type { UserId } from "@/lib/schemas/user";
 import { toD4HCredentialRef } from "@/server/d4h-access-token";
 import {
@@ -445,6 +455,190 @@ export async function runRule(
         });
     }
     return result;
+}
+
+// The hourly dispatcher (decisions 8, 9, 12, 23, 27)
+
+/** How long a run may stay `Running` before a tick marks it `Failed` (decision 12). */
+export const STUCK_RUN_MS = 15 * 60 * 1000;
+
+/** How long runs and their recipients are kept, by `startedAt` (decision 23). */
+export const RUN_RETENTION_MS = 90 * 24 * HOUR_MS;
+
+/** The error a stuck run is failed with. */
+export const TIMED_OUT_ERROR = "Timed out";
+
+/** One scheduled run a tick started. */
+export interface DueRunSummary {
+    ruleId: D4HNagRuleId;
+    runId: D4HNagRunId;
+    status: RunResult["status"];
+    error: string | null;
+}
+
+/**
+ * One organization's part of a tick: skipped because the module isn't on in its settings, the
+ * runs it started (none when no slot was due), or why it couldn't be processed at all.
+ */
+export type DueOrganizationResult =
+    | { organizationId: OrganizationId; outcome: "skipped" }
+    | { organizationId: OrganizationId; outcome: "ran"; runs: DueRunSummary[] }
+    | { organizationId: OrganizationId; outcome: "failed"; error: string };
+
+export interface RunDueResult {
+    /** Runs found stuck in `Running` and marked `Failed`. */
+    timedOut: number;
+    organizations: DueOrganizationResult[];
+    /** Runs deleted for being older than the retention period, across every organization. */
+    pruned: number;
+}
+
+/**
+ * The hourly tick (`/api/cron/d4h-nag`):
+ * 1. Fail every run stuck in `Running` for `STUCK_RUN_MS`, releasing its `Pending` claims
+ *    (decision 12).
+ * 2. For each organization with the module on in its settings (decision 27), run every runnable
+ *    rule whose latest slot hasn't been claimed yet, claiming the slot first (decisions 8, 9).
+ *    Each organization is processed in its own try/catch, so one failing doesn't stop the rest.
+ * 3. Delete runs older than `RUN_RETENTION_MS` in every organization, including those with the
+ *    module off (decision 23).
+ */
+export async function runDue(
+    prisma: PrismaClient,
+    now: Date,
+    deps: RunnerDeps = defaultRunnerDeps,
+): Promise<RunDueResult> {
+    const timedOut = await failStuckRuns(prisma, now);
+
+    const organizations: DueOrganizationResult[] = [];
+    for (const { id } of await prisma.organization.findMany({ select: { id: true } })) {
+        const organizationId = OrganizationId.schema.parse(id);
+        try {
+            const settings = await OrgSettings.read(prisma, organizationId);
+            if (!isNagModuleOn(settings)) {
+                organizations.push({ organizationId, outcome: "skipped" });
+                continue;
+            }
+            const runs = await runDueRules(
+                { prisma, organizationId },
+                settings.general.timeZone,
+                now,
+                deps,
+            );
+            organizations.push({ organizationId, outcome: "ran", runs });
+        } catch (error) {
+            organizations.push({
+                organizationId,
+                outcome: "failed",
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+
+    const pruned = await prisma.d4HNagRun.deleteMany({
+        where: { startedAt: { lt: new Date(now.getTime() - RUN_RETENTION_MS) } },
+    });
+
+    return { timedOut, organizations, pruned: pruned.count };
+}
+
+/**
+ * Whether `d4h-nag` and every module it requires are on in the organization's settings
+ * (decision 27): the settings half of `isModuleUsable`, without the Vercel flag, which can't be
+ * evaluated outside a request.
+ */
+function isNagModuleOn(settings: OrganizationSettings): boolean {
+    const isEnabled = enabledInSettings(settings);
+    for (
+        let moduleId: OrganizationModuleId | undefined = "d4h-nag";
+        moduleId !== undefined;
+        moduleId = requiredModuleOf(moduleId)
+    ) {
+        const moduleDef: OrganizationModuleDef = Modules[moduleId];
+        if (moduleDef.alwaysOn !== true && !isEnabled(moduleId)) return false;
+    }
+    return true;
+}
+
+/**
+ * Fail every run still `Running` after `STUCK_RUN_MS` with `TIMED_OUT_ERROR`, and release its
+ * `Pending` claims (outcome `Failed`, `dedupeKey` cleared) so those members can be retried.
+ * Returns how many runs it failed.
+ */
+async function failStuckRuns(prisma: PrismaClient, now: Date): Promise<number> {
+    const stuck = await prisma.d4HNagRun.findMany({
+        where: { status: "Running", startedAt: { lte: new Date(now.getTime() - STUCK_RUN_MS) } },
+        select: { id: true },
+    });
+    for (const { id } of stuck) {
+        const released = await prisma.d4HNagRecipient.updateMany({
+            where: { runId: id, outcome: "Pending" },
+            data: { outcome: "Failed", dedupeKey: null },
+        });
+        await prisma.d4HNagRun.updateMany({
+            where: { id, status: "Running" },
+            data: {
+                status: "Failed",
+                completedAt: now,
+                error: TIMED_OUT_ERROR,
+                failedCount: { increment: released.count },
+            },
+        });
+    }
+    return stuck.length;
+}
+
+/**
+ * Run each of the organization's enabled rules whose latest slot is due. A rule that isn't
+ * runnable is skipped silently and keeps its slot unclaimed (decision 6). The claim is a
+ * conditional `updateMany`, so a slow tick overlapping the next can't run a slot twice.
+ */
+async function runDueRules(
+    ctx: Pick<OrgServiceContext, "prisma" | "organizationId">,
+    timeZone: string,
+    now: Date,
+    deps: RunnerDeps,
+): Promise<DueRunSummary[]> {
+    const rules = await ctx.prisma.d4HNagRule.findMany({
+        where: { organizationId: ctx.organizationId, enabled: true },
+        select: { id: true, weekday: true, hour: true, lastScheduledFor: true },
+        orderBy: { createdAt: "asc" },
+    });
+
+    const runs: DueRunSummary[] = [];
+    for (const rule of rules) {
+        const ruleId = D4HNagRuleId.schema.parse(rule.id);
+        const slot = latestSlot(rule, timeZone, now);
+        if (!isSlotDue(rule.lastScheduledFor, slot)) continue;
+
+        const runnability = await deps.checkRunnable(ctx, ruleId);
+        if (!runnability.runnable) continue;
+
+        const claim = await ctx.prisma.d4HNagRule.updateMany({
+            where: {
+                id: ruleId,
+                organizationId: ctx.organizationId,
+                OR: [{ lastScheduledFor: null }, { lastScheduledFor: { lt: slot } }],
+            },
+            data: { lastScheduledFor: slot },
+        });
+        if (claim.count !== 1) continue;
+
+        const result = await runRule(
+            ctx,
+            ruleId,
+            {
+                trigger: "Cron",
+                dryRun: false,
+                now,
+                slot,
+                previousLastScheduledFor: rule.lastScheduledFor,
+            },
+            deps,
+        );
+        runs.push({ ruleId, runId: result.runId, status: result.status, error: result.error });
+    }
+    return runs;
 }
 
 /** Every (exercise, member) pair with `REQUESTED` attendance, exercises in start order. */
