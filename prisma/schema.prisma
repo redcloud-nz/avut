@@ -58,6 +58,9 @@ model User {
   impersonatedLogEntries    LogEntry[]         @relation("log_entry_to_impersonator")
   logBatches                LogBatch[]         @relation("log_batch_to_user")
   batchUpdatePlans          BatchUpdatePlan[]  @relation("batch_update_plan_to_user")
+  createdD4HNagRules        D4HNagRule[]       @relation("d4h_nag_rule_to_created_by")
+  startedD4HNagRuns         D4HNagRun[]        @relation("d4h_nag_run_to_started_by")
+  createdD4HNagOptOuts      D4HNagOptOut[]     @relation("d4h_nag_opt_out_to_created_by")
 
   @@unique([email])
   @@map("users")
@@ -143,6 +146,11 @@ model Organization {
   i3Templates   I3Template[]   @relation("i3_template_to_organization")
   formInstances FormInstance[] @relation("form_instance_to_organization")
   d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
+
+  d4hNagRules      D4HNagRule[]      @relation("d4h_nag_rule_to_organization")
+  d4hNagRuns       D4HNagRun[]       @relation("d4h_nag_run_to_organization")
+  d4hNagRecipients D4HNagRecipient[] @relation("d4h_nag_recipient_to_organization")
+  d4hNagOptOuts    D4HNagOptOut[]    @relation("d4h_nag_opt_out_to_organization")
 
   groupMemberships OrganizationGroupMembership[] @relation("organization_group_membership_to_organization")
 
@@ -234,6 +242,10 @@ model Team {
   updatedAt       DateTime?        @updatedAt
   configs         TeamConfig[]     @relation("team_config_to_team")
   teamMemberships TeamMembership[] @relation("team_membership_to_team")
+
+  d4hNagRules   D4HNagRule[]   @relation("d4h_nag_rule_to_team")
+  d4hNagRuns    D4HNagRun[]    @relation("d4h_nag_run_to_team")
+  d4hNagOptOuts D4HNagOptOut[] @relation("d4h_nag_opt_out_to_team")
 
   @@index([organizationId])
   @@map("teams")
@@ -987,4 +999,156 @@ model D4HTask {
   @@index([organizationId, status])
   @@index([organizationId, d4hTeamId, resourceId])
   @@map("d4h_tasks")
+}
+
+// D4H attendance reminders (d4h-nag)
+
+/// A weekly reminder rule: at `weekday`/`hour` (org timezone), email the members of the team's
+/// linked D4H team whose attendance is still `REQUESTED` for exercises starting in the next
+/// `lookAheadHours`. No `@updatedAt`: the slot claim writes `lastScheduledFor` every week, so the
+/// last-edited time comes from the audit log. Hard-deleted; its runs keep their history.
+model D4HNagRule {
+  id               String       @id
+  organizationId   String
+  organization     Organization @relation("d4h_nag_rule_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId           String
+  team             Team         @relation("d4h_nag_rule_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  /// 0–6, Sunday = 0 (as `Date.getDay()`), in the org's timezone.
+  weekday          Int
+  /// 0–23, in the org's timezone.
+  hour             Int
+  lookAheadHours   Int          @default(24)
+  /// Optional plain-text message included in the email; empty for none.
+  message          String       @default("")
+  enabled          Boolean      @default(true)
+  /// The latest scheduled slot claimed for this rule. The cron claims a slot by moving this
+  /// forward atomically; edits to the schedule set it to the latest slot so a past slot never fires.
+  lastScheduledFor DateTime?
+
+  createdById String?
+  createdBy   User?    @relation("d4h_nag_rule_to_created_by", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  runs D4HNagRun[] @relation("d4h_nag_run_to_rule")
+
+  @@index([organizationId])
+  @@index([teamId])
+  @@map("d4h_nag_rules")
+}
+
+/// One execution of a rule, scheduled or manual, real or dry. Carries its own team so its history
+/// survives the rule being deleted. Pruned after 90 days by the d4h-nag dispatcher.
+model D4HNagRun {
+  id             String           @id
+  organizationId String
+  organization   Organization     @relation("d4h_nag_run_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Null once the rule is deleted ("Deleted rule").
+  ruleId         String?
+  rule           D4HNagRule?      @relation("d4h_nag_run_to_rule", fields: [ruleId], references: [id], onDelete: SetNull)
+  teamId         String
+  team           Team             @relation("d4h_nag_run_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  /// The team's name when the run started.
+  teamName       String
+  trigger        D4HNagRunTrigger
+  dryRun         Boolean
+
+  /// Null for a cron run, or once the user's account is purged.
+  startedById String?
+  startedBy   User?     @relation("d4h_nag_run_to_started_by", fields: [startedById], references: [id], onDelete: SetNull)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  /// The exercise start window searched.
+  windowStart DateTime
+  windowEnd   DateTime
+
+  exercisesFound Int             @default(0)
+  sentCount      Int             @default(0)
+  skippedCount   Int             @default(0)
+  failedCount    Int             @default(0)
+  status         D4HNagRunStatus
+  error          String?
+  /// The `LogBatch` a real run logs under. Null for a dry run.
+  logBatchId     String?
+
+  recipients D4HNagRecipient[] @relation("d4h_nag_recipient_to_run")
+
+  @@index([organizationId, startedAt])
+  @@index([ruleId, startedAt])
+  @@index([status, startedAt])
+  @@map("d4h_nag_runs")
+}
+
+/// One member considered by a run for one exercise, and what happened.
+model D4HNagRecipient {
+  id               String        @id
+  organizationId   String
+  organization     Organization  @relation("d4h_nag_recipient_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  runId            String
+  run              D4HNagRun     @relation("d4h_nag_recipient_to_run", fields: [runId], references: [id], onDelete: Cascade)
+  d4hTeamId        Int
+  d4hExerciseId    Int
+  exerciseTitle    String
+  exerciseStartsAt DateTime
+  d4hMemberId      Int
+  memberName       String
+  email            String?
+  outcome          D4HNagOutcome
+  /// sha256 hex of the link token in the email. Only `Sent` rows have one.
+  tokenHash        String?       @unique
+  /// `<organizationId>:<d4hTeamId>:<exerciseId>:<memberId>` while the row holds the once-only
+  /// claim (`Pending` or `Sent`). Cleared on failure so a later run can retry; never set by a dry run.
+  dedupeKey        String?       @unique
+  createdAt        DateTime      @default(now())
+
+  @@index([runId])
+  @@map("d4h_nag_recipients")
+}
+
+/// A D4H member who has opted out of reminders for an AVUT team. The row existing means opted
+/// out; opting back in deletes it. Never pruned.
+model D4HNagOptOut {
+  id             String             @id
+  organizationId String
+  organization   Organization       @relation("d4h_nag_opt_out_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  teamId         String
+  team           Team               @relation("d4h_nag_opt_out_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  d4hMemberId    Int
+  /// The member's name when the opt-out was made, for display.
+  memberName     String
+  source         D4HNagOptOutSource
+  /// The admin who made it; null for a self-service opt-out (or once the account is purged).
+  createdById    String?
+  createdBy      User?              @relation("d4h_nag_opt_out_to_created_by", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime           @default(now())
+
+  @@unique([teamId, d4hMemberId])
+  @@index([organizationId, d4hMemberId])
+  @@map("d4h_nag_opt_outs")
+}
+
+enum D4HNagRunTrigger {
+  Cron
+  Manual
+}
+
+enum D4HNagRunStatus {
+  Running
+  Completed
+  Failed
+}
+
+enum D4HNagOutcome {
+  Pending
+  Sent
+  Failed
+  SkippedNoEmail
+  SkippedOptedOut
+  SkippedAlreadyReminded
+  DryRun
+}
+
+enum D4HNagOptOutSource {
+  Self
+  Admin
 }
