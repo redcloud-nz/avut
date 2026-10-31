@@ -9,6 +9,7 @@ import { createTrpcRouter } from "../init";
 
 import { d4hAccessTokensRouter } from "./d4h-access-tokens-router";
 import { d4hApiRouter } from "./d4h-api-router";
+import { d4hNagRouter } from "./d4h-nag-router";
 import { d4hTasksRouter } from "./d4h-tasks-router";
 import { formsRouter } from "./forms-router";
 import { historyRouter } from "./history-router";
@@ -34,6 +35,7 @@ import { whatsNewRouter } from "./whats-new-router";
 export const appRouter = createTrpcRouter({
     d4hAccessTokens: d4hAccessTokensRouter,
     d4hApi: d4hApiRouter,
+    d4hNag: d4hNagRouter,
     d4hTasks: d4hTasksRouter,
     forms: formsRouter,
     history: historyRouter,

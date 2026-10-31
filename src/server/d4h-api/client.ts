@@ -539,3 +539,33 @@ export async function fetchD4HMembersByIds(
     );
     return chunks.flat();
 }
+
+/**
+ * A team's current members (`OPERATIONAL` + `NON_OPERATIONAL`, the roster team sync reconciles
+ * against), uncached, in one request for the whole list (`size: 10000`). Parsed like
+ * {@link fetchD4HMembersByIds}, so a member without an email doesn't fail the list. Throws on any
+ * failure.
+ */
+export async function fetchD4HCurrentTeamMembers(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+): Promise<D4HMemberWithOptionalEmail[]> {
+    const { data, error, response } = await getD4HFetchClient(token).GET(
+        "/v3/{context}/{contextId}/members",
+        {
+            params: {
+                path: { context: "team", contextId: d4hTeamId },
+                query: { status: ["OPERATIONAL", "NON_OPERATIONAL"], size: 10000 },
+            },
+        },
+    );
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H members of team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+            { cause: error },
+        );
+    }
+    return (data as D4HListResponse).results.map((raw) =>
+        D4HMemberWithOptionalEmailSchema.parse(raw),
+    );
+}

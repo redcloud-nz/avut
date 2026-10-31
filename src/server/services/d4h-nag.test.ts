@@ -30,6 +30,7 @@ vi.mock("@/server/d4h-access-token", () => ({
 }));
 
 vi.mock("@/server/d4h-api/client", () => ({
+    fetchD4HCurrentTeamMembers: vi.fn(),
     getD4HTokenMetadata: vi.fn(),
 }));
 

@@ -11,6 +11,7 @@ import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { getD4HAccessToken } from "@/server/d4h-access-token";
 
 import {
+    fetchD4HCurrentTeamMembers,
     fetchD4HExercisesStartingBetween,
     fetchD4HMember,
     fetchD4HMembersByIds,
@@ -299,6 +300,40 @@ describe("D4H list fetches for attendance reminders", () => {
 
             expect(await fetchD4HMembersByIds(token, 7, [])).toEqual([]);
             expect(fetchMock).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("fetchD4HCurrentTeamMembers", () => {
+        const member = {
+            id: 42,
+            resourceType: "Member",
+            email: { value: "jane@example.com", verified: true },
+            name: "Jane Doe",
+            owner: { id: 7, resourceType: "Team" },
+            position: null,
+            ref: "J1",
+            role: { id: null, resourceType: "Role" },
+            status: "OPERATIONAL",
+        };
+
+        it("filters to current members, asking for the whole list", async () => {
+            const fetchMock = stubList([member]);
+
+            await fetchD4HCurrentTeamMembers(token, 7);
+
+            const url = requestedUrl(fetchMock);
+            expect(url.pathname).toBe("/v3/team/7/members");
+            expect(url.searchParams.getAll("status")).toEqual(["OPERATIONAL", "NON_OPERATIONAL"]);
+            expect(url.searchParams.get("size")).toBe("10000");
+        });
+
+        it("parses a member with no email without failing the list", async () => {
+            stubList([member, { ...member, id: 43, name: "No Email", email: null }]);
+
+            expect(await fetchD4HCurrentTeamMembers(token, 7)).toMatchObject([
+                { id: 42 },
+                { id: 43, email: null },
+            ]);
         });
     });
 });

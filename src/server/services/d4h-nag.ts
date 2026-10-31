@@ -19,6 +19,7 @@ import {
     type AddD4HNagOptOutData,
     type CreateD4HNagRuleData,
     type D4HNagEligibleTeam,
+    type D4HNagOptOutByToken,
     type D4HNagOptOutListItem,
     type D4HNagOptOutRecord,
     type D4HNagPausedReason,
@@ -28,18 +29,25 @@ import {
     type D4HNagRunDetail,
     type D4HNagRunListItem,
     type D4HNagRunRecord,
+    type D4HNagTeamMembers,
     type UpdateD4HNagRuleData,
 } from "@/lib/schemas/d4h-nag";
 import type { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
+import { OrganizationId } from "@/lib/schemas/organization";
 import { TeamId } from "@/lib/schemas/team";
 import type { RecordStatus } from "@/lib/validation";
 import { getD4HNagAccessToken, toD4HCredentialRef } from "@/server/d4h-access-token";
-import { getD4HTokenMetadata } from "@/server/d4h-api/client";
-import type { LogEntryRef } from "@/server/log-entry";
+import {
+    fetchD4HCurrentTeamMembers,
+    getD4HTokenMetadata,
+    type D4HMemberWithOptionalEmail,
+} from "@/server/d4h-api/client";
+import { hashLinkToken } from "@/server/link-token";
+import { createLogBatch, type LogEntryRef } from "@/server/log-entry";
 import { isUniqueViolation } from "@/server/prisma-errors";
 
 import * as OrgSettings from "./organization-settings";
-import type { OrgServiceContext } from "./service-context";
+import { unattendedOrgContext, type OrgServiceContext } from "./service-context";
 
 // Runnability (decision 6)
 
@@ -388,6 +396,49 @@ export async function listEligibleTeams(ctx: OrgServiceContext): Promise<D4HNagE
     );
 }
 
+/** What listing a team's D4H members reaches outside the database, injectable for tests. */
+export interface TeamMembersDeps extends RunnabilityDeps {
+    fetchTeamMembers: (
+        token: D4HAccessToken_ServerOnly,
+        d4hTeamId: number,
+    ) => Promise<Pick<D4HMemberWithOptionalEmail, "id" | "name">[]>;
+}
+
+export const defaultTeamMembersDeps: TeamMembersDeps = {
+    ...defaultRunnabilityDeps,
+    fetchTeamMembers: fetchD4HCurrentTeamMembers,
+};
+
+/**
+ * A team's current D4H members by name, read through the module's D4H token, for an admin
+ * picking whom to opt out. The team must pass the same checks a rule for it would (decision 6,
+ * less the rule's own enabled flag); otherwise the first that fails comes back as the reason.
+ * @throws NotFoundError if the team does not exist within the organization.
+ * @throws whatever the D4H calls throw.
+ */
+export async function listTeamD4HMembers(
+    ctx: UnattendedContext,
+    teamId: TeamId,
+    deps: TeamMembersDeps = defaultTeamMembersDeps,
+): Promise<D4HNagTeamMembers> {
+    const team = await ctx.prisma.team.findUnique({
+        where: { id: teamId, organizationId: ctx.organizationId },
+        ...ruleTeamSelect,
+    });
+    if (!team) throw new NotFoundError(`Team(id=${teamId}) not found.`);
+
+    const runnability = await createRunnabilityResolver(ctx, deps)({ enabled: true, team });
+    if (!runnability.runnable) return { state: "not-runnable", reason: runnability.reason };
+
+    const members = await deps.fetchTeamMembers(runnability.token, runnability.d4hTeamId);
+    return {
+        state: "ok",
+        members: members
+            .map((member) => ({ d4hMemberId: member.id, name: member.name }))
+            .sort((a, b) => a.name.localeCompare(b.name)),
+    };
+}
+
 // Opt-outs
 
 /** The organization's opt-outs, by team name then member name. */
@@ -512,6 +563,182 @@ export async function removeOptOut(
             refs: [teamRef(optOut.teamId)],
         }),
     ]);
+}
+
+// Self-service opt-out by link token (decisions 19, 20, 22)
+
+/** The public opt-out functions' context: no organization or user until the token names one. */
+type PublicContext = Pick<OrgServiceContext, "prisma">;
+
+/**
+ * Resolve an email's link token to its recipient, and the AVUT teams whose opt-outs apply to
+ * them: the run's own team, plus every team in the org currently linked to the recipient's D4H
+ * team (decision 19). The team comes from the run, never the rule, so the link outlives the rule
+ * (decision 7). `null` for a token no recipient row holds.
+ */
+async function resolveLinkToken(ctx: PublicContext, token: string) {
+    const recipient = await ctx.prisma.d4HNagRecipient.findUnique({
+        where: { tokenHash: hashLinkToken(token) },
+        select: {
+            organizationId: true,
+            d4hTeamId: true,
+            d4hMemberId: true,
+            memberName: true,
+            organization: { select: { name: true } },
+            run: { select: { team: { select: { id: true, name: true } } } },
+        },
+    });
+    if (!recipient) return null;
+
+    const organizationId = OrganizationId.schema.parse(recipient.organizationId);
+    const links = await ctx.prisma.team_D4H.findMany({
+        where: { d4hTeamId: recipient.d4hTeamId },
+        select: { teamId: true },
+    });
+    const linkedTeams = await ctx.prisma.team.findMany({
+        where: { id: { in: links.map((link) => link.teamId) }, organizationId },
+        select: { id: true },
+    });
+
+    const team = recipient.run.team;
+    return {
+        organizationId,
+        organizationName: recipient.organization.name,
+        team,
+        d4hMemberId: recipient.d4hMemberId,
+        memberName: recipient.memberName,
+        teamIds: [...new Set([team.id, ...linkedTeams.map((linked) => linked.id)])],
+    };
+}
+
+type LinkTokenScope = NonNullable<Awaited<ReturnType<typeof resolveLinkToken>>>;
+
+/** The member's opt-out rows on any of the scope's teams. */
+function findScopeOptOuts(ctx: PublicContext, scope: LinkTokenScope) {
+    return ctx.prisma.d4HNagOptOut.findMany({
+        where: {
+            organizationId: scope.organizationId,
+            teamId: { in: scope.teamIds },
+            d4hMemberId: scope.d4hMemberId,
+        },
+        select: { id: true, teamId: true, memberName: true },
+    });
+}
+
+function optOutState(scope: LinkTokenScope, optedOut: boolean): D4HNagOptOutByToken {
+    return {
+        state: "ok",
+        organizationName: scope.organizationName,
+        teamName: scope.team.name,
+        memberName: scope.memberName,
+        optedOut,
+    };
+}
+
+/**
+ * The public opt-out page's view of a link token: the org, team and member it was sent to, and
+ * whether the member has opted out on any AVUT team in the org linked to that D4H team.
+ * `not-found` for a token no recipient row holds (never issued, or purged).
+ */
+export async function getOptOutByToken(
+    ctx: PublicContext,
+    token: string,
+): Promise<D4HNagOptOutByToken> {
+    const scope = await resolveLinkToken(ctx, token);
+    if (!scope) return { state: "not-found" };
+
+    const optOuts = await findScopeOptOuts(ctx, scope);
+    return optOutState(scope, optOuts.length > 0);
+}
+
+/**
+ * Opt the link token's member out (`source: Self`, on the run's team) or back in (removing their
+ * rows on every team in scope). A no-op when they're already in the requested state. A change is
+ * audited under a `d4h-nag-opt-out` batch labelled with the member's name, since there is no user
+ * behind it (decision 22): one entry per row created or removed.
+ */
+export async function setOptOutByToken(
+    ctx: PublicContext,
+    token: string,
+    optedOut: boolean,
+): Promise<D4HNagOptOutByToken> {
+    const scope = await resolveLinkToken(ctx, token);
+    if (!scope) return { state: "not-found" };
+
+    const existing = await findScopeOptOuts(ctx, scope);
+
+    if (optedOut && existing.length === 0) {
+        const logCtx = await openSelfServiceBatch(ctx, scope);
+        const id = D4HNagOptOutId.create();
+        try {
+            await ctx.prisma.$transaction([
+                ctx.prisma.d4HNagOptOut.create({
+                    data: {
+                        id,
+                        organizationId: scope.organizationId,
+                        teamId: scope.team.id,
+                        d4hMemberId: scope.d4hMemberId,
+                        memberName: scope.memberName,
+                        source: "Self",
+                        createdById: null,
+                    },
+                }),
+                logCtx.logEvent({
+                    action: "Create",
+                    objectType: "D4HNagOptOut",
+                    objectId: id,
+                    changes: diffObject(
+                        {},
+                        {
+                            teamId: scope.team.id,
+                            d4hMemberId: scope.d4hMemberId,
+                            memberName: scope.memberName,
+                        },
+                    ),
+                    description: scope.memberName,
+                    refs: [teamRef(scope.team.id)],
+                }),
+            ]);
+        } catch (error) {
+            // A concurrent request opted them out first: the state asked for already holds.
+            if (!isUniqueViolation(error)) throw error;
+        }
+    }
+
+    if (!optedOut && existing.length > 0) {
+        const logCtx = await openSelfServiceBatch(ctx, scope);
+        await ctx.prisma.$transaction([
+            ctx.prisma.d4HNagOptOut.deleteMany({
+                where: { id: { in: existing.map((optOut) => optOut.id) } },
+            }),
+            ...existing.map((optOut) =>
+                logCtx.logEvent({
+                    action: "Delete",
+                    objectType: "D4HNagOptOut",
+                    objectId: optOut.id,
+                    description: optOut.memberName,
+                    refs: [teamRef(optOut.teamId)],
+                }),
+            ),
+        ]);
+    }
+
+    return optOutState(scope, optedOut);
+}
+
+/**
+ * Open the `d4h-nag-opt-out` batch for a self-service change and the actor-less context whose
+ * entries join it, labelled with the member's cached name (decision 22).
+ */
+async function openSelfServiceBatch(ctx: PublicContext, scope: LinkTokenScope) {
+    const batch = await createLogBatch(
+        { operationKey: "d4h-nag-opt-out", actorLabel: scope.memberName },
+        ctx.prisma,
+    );
+    return unattendedOrgContext(ctx.prisma, scope.organizationId, {
+        id: batch.id,
+        actorLabel: scope.memberName,
+    });
 }
 
 // Runs

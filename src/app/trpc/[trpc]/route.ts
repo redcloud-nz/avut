@@ -11,6 +11,13 @@ import { createTrpcContext } from "@/server/trpc-context";
 import { logTrpcError } from "@/trpc/log-error";
 import { appRouter } from "@/trpc/routers/_app";
 
+/**
+ * Covers work a procedure schedules with `after()`, which counts against this route's duration:
+ * a d4h-nag Run now sends its reminders there, at least 500 ms apart (about two minutes for a
+ * large team). The same budget as the d4h-nag cron route.
+ */
+export const maxDuration = 300;
+
 const actualHandler = (req: Request) =>
     fetchRequestHandler({
         endpoint: "/trpc",

@@ -192,6 +192,11 @@ export interface D4HNagEligibleTeam {
     d4hTeamName: string;
 }
 
+/** A team's current D4H members, through the module's token, for picking whom to opt out. */
+export type D4HNagTeamMembers =
+    | { state: "not-runnable"; reason: D4HNagPausedReason }
+    | { state: "ok"; members: { d4hMemberId: number; name: string }[] };
+
 // Opt-outs
 
 export const D4HNagOptOutData = {
@@ -215,6 +220,20 @@ export interface D4HNagOptOutListItem {
     createdBy: { id: string; name: string } | null;
     createdAt: string;
 }
+
+/**
+ * The public opt-out page's view of an email's link token. `optedOut` is true when the member has
+ * opted out on any AVUT team in the org linked to the email's D4H team (decision 19).
+ */
+export type D4HNagOptOutByToken =
+    | { state: "not-found" }
+    | {
+          state: "ok";
+          organizationName: string;
+          teamName: string;
+          memberName: string;
+          optedOut: boolean;
+      };
 
 // Runs
 
