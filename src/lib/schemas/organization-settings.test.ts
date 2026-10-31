@@ -89,6 +89,7 @@ describe("OrganizationSettings general.timeZone", () => {
         expect(restored.general).toEqual({
             publicDomain: "example.org",
             timeZone: "Pacific/Auckland",
+            replyTo: null,
         });
     });
 
@@ -105,6 +106,37 @@ describe("OrganizationSettings general.timeZone", () => {
                 patch: { timeZone: "Mars/Olympus_Mons" },
             }),
         ).toThrow("Unknown IANA time zone");
+    });
+});
+
+describe("OrganizationSettings general.replyTo", () => {
+    it("defaults to null", () => {
+        expect(OrganizationSettings.default().general.replyTo).toBeNull();
+    });
+
+    it("accepts an email, or null, in a general slice patch", () => {
+        expect(
+            OrganizationSettingsSlices.input.parse({
+                slice: "general",
+                patch: { replyTo: "training@example.org" },
+            }).patch,
+        ).toEqual({ replyTo: "training@example.org" });
+        expect(
+            OrganizationSettingsSlices.input.parse({ slice: "general", patch: { replyTo: null } })
+                .patch,
+        ).toEqual({ replyTo: null });
+    });
+
+    it("rejects a non-email", () => {
+        expect(() =>
+            OrganizationSettingsSlices.input.parse({
+                slice: "general",
+                patch: { replyTo: "not an email" },
+            }),
+        ).toThrow();
+        expect(() =>
+            OrganizationSettings.fromRecords([{ key: "general.replyTo", value: "nope" }]),
+        ).toThrow();
     });
 });
 

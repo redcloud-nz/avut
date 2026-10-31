@@ -75,6 +75,13 @@ const organizationSettingsSchema = z.object({
          * in this zone. Changing it doesn't re-anchor sessions already stored.
          */
         timeZone: TimeZone.schema.default("Pacific/Auckland"),
+        /*
+         * The Reply-To address on every email the organization originates (invitations, I3
+         * notifications and receipts), since replies to the no-reply sender reach nobody. `null`
+         * sends without one. Account emails (verification codes, the email-changed notice) never
+         * carry it.
+         */
+        replyTo: z.email().nullable().default(null),
     }),
 
     integrations: z.object({

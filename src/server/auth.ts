@@ -22,11 +22,13 @@ import { withDevServerPort } from "@/lib/dev-server";
 // eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
+import type { OrganizationId } from "@/lib/schemas/organization";
 import { getNewestUpdateVersion } from "@/lib/updates";
-import { NoReplyEmailAddress, sendEmail } from "@/server/email";
+import { NoReplyEmailAddress, orgReplyTo, sendEmail } from "@/server/email";
 
 import { deletedUserPlugin } from "./auth-hooks/deleted-user-plugin";
 import { revalidateOrganization } from "./cache/organization";
+import { getOrganizationSettings } from "./cache/organization-settings";
 import { revalidateOrganizationUser } from "./cache/organization-user-revalidate";
 import prisma from "./prisma";
 import { isVerificationOtpEmailSuppressed } from "./verification-otp-suppression";
@@ -259,9 +261,11 @@ export const auth = betterAuth({
                 console.log(
                     `Sending organization invitation to: ${email} (Invitation ID: ${invitation.id})`,
                 );
+                const settings = await getOrganizationSettings(organization.id as OrganizationId);
                 await sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
+                    replyTo: orgReplyTo(settings),
                     subject: `Invitation to join ${organization.name} on AVUT`,
                     react: OrganizationInviteTemplate({
                         invitation,
