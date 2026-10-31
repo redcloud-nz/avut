@@ -20,6 +20,7 @@ import { UserId } from "@/lib/schemas/user";
 import { getD4HNagAccessToken } from "@/server/d4h-access-token";
 import { fetchD4HCurrentTeamMembers, getD4HTokenMetadata } from "@/server/d4h-api/client";
 import { hashLinkToken } from "@/server/link-token";
+import { resolveModuleFlags } from "@/server/module-flags";
 import { executeRun } from "@/server/services/d4h-nag-runner";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -45,6 +46,9 @@ vi.mock("@/server/d4h-access-token", () => ({
     toD4HCredentialRef: vi.fn(),
 }));
 
+// The Vercel flags, evaluated outside any deployment here; every module's flag is on by default.
+vi.mock("@/server/module-flags", () => ({ resolveModuleFlags: vi.fn() }));
+
 vi.mock("@/server/d4h-api/client", () => ({
     fetchD4HCurrentTeamMembers: vi.fn(),
     getD4HTokenMetadata: vi.fn(),
@@ -68,17 +72,30 @@ describe("d4hNagRouter", () => {
         teamA: TeamId.create(),
         teamB: TeamId.create(),
         teamOther: TeamId.create(),
+        /** Once linked to D4H team 303, now linked to nothing. */
+        teamUnlinked: TeamId.create(),
+        /** Now linked to D4H team 303. */
+        teamRelinked: TeamId.create(),
         ruleRunnable: D4HNagRuleId.create(),
         rulePaused: D4HNagRuleId.create(),
         ruleToDelete: D4HNagRuleId.create(),
         runA: D4HNagRunId.create(),
         runB: D4HNagRunId.create(),
+        runUnlinked: D4HNagRunId.create(),
         optOutCrossTeam: D4HNagOptOutId.create(),
         optOutOtherOrg: D4HNagOptOutId.create(),
     };
 
     /** Mia (55) and Cal (77) were reminded on teamA's run, Noah (66) on teamB's. */
-    const TOKEN = { mia: "token-mia", cal: "token-cal", noah: "token-noah" };
+    const TOKEN = {
+        mia: "token-mia",
+        cal: "token-cal",
+        noah: "token-noah",
+        /** Reminded on teamUnlinked's run, for D4H team 303, now linked to teamRelinked. */
+        ivy: "token-ivy",
+        /** Reminded on teamUnlinked's run, for D4H team 404, which no team is linked to now. */
+        owen: "token-owen",
+    };
 
     const db = createMockPrisma();
 
@@ -99,6 +116,12 @@ describe("d4hNagRouter", () => {
             });
             await db.organizationConfig.create({
                 data: { organizationId: id, key: "integrations.d4h.enabled", value: true },
+            });
+        }
+        // The module is on in T.org only.
+        for (const key of ["modules.d4h.enabled", "modules.d4h-nag.enabled"]) {
+            await db.organizationConfig.create({
+                data: { organizationId: T.org, key, value: true },
             });
         }
         for (const id of [T.admin, T.member]) {
@@ -122,6 +145,20 @@ describe("d4hNagRouter", () => {
                 },
             });
         }
+        await db.team.create({
+            data: { id: T.teamUnlinked, organizationId: T.org, name: "Unlinked" },
+        });
+        await db.team.create({
+            data: { id: T.teamRelinked, organizationId: T.org, name: "Relinked" },
+        });
+        await db.team_D4H.create({
+            data: {
+                teamId: T.teamRelinked,
+                d4hTeamId: 303,
+                d4hTeamName: "D4H 303",
+                d4hServerCode: "ap",
+            },
+        });
 
         const rules = [
             { id: T.ruleRunnable, teamId: T.teamA },
@@ -137,6 +174,7 @@ describe("d4hNagRouter", () => {
         const runs = [
             { id: T.runA, ruleId: T.ruleRunnable, teamId: T.teamA, teamName: "Alpha" },
             { id: T.runB, ruleId: T.ruleToDelete, teamId: T.teamB, teamName: "Bravo" },
+            { id: T.runUnlinked, ruleId: null, teamId: T.teamUnlinked, teamName: "Unlinked" },
         ];
         for (const run of runs) {
             await db.d4HNagRun.create({
@@ -156,6 +194,20 @@ describe("d4hNagRouter", () => {
             { runId: T.runA, d4hMemberId: 55, memberName: "Mia", token: TOKEN.mia },
             { runId: T.runA, d4hMemberId: 77, memberName: "Cal", token: TOKEN.cal },
             { runId: T.runB, d4hMemberId: 66, memberName: "Noah", token: TOKEN.noah },
+            {
+                runId: T.runUnlinked,
+                d4hTeamId: 303,
+                d4hMemberId: 88,
+                memberName: "Ivy",
+                token: TOKEN.ivy,
+            },
+            {
+                runId: T.runUnlinked,
+                d4hTeamId: 404,
+                d4hMemberId: 99,
+                memberName: "Owen",
+                token: TOKEN.owen,
+            },
         ];
         for (const { token: plain, ...recipient } of recipients) {
             await db.d4HNagRecipient.create({
@@ -201,6 +253,9 @@ describe("d4hNagRouter", () => {
 
     beforeEach(() => {
         afterCallbacks.length = 0;
+        vi.mocked(resolveModuleFlags).mockResolvedValue({
+            "d4h-nag": true,
+        } as Awaited<ReturnType<typeof resolveModuleFlags>>);
         vi.mocked(getD4HNagAccessToken).mockResolvedValue(token);
         vi.mocked(getD4HTokenMetadata).mockResolvedValue({
             d4HTeams: [{ id: 101, title: "D4H 101", resourceType: "Team", permissions: {} }],
@@ -273,6 +328,35 @@ describe("d4hNagRouter", () => {
     });
 
     describe("runRule", () => {
+        it("refuses when the module's Vercel flag is off, and starts nothing", async () => {
+            vi.mocked(resolveModuleFlags).mockResolvedValue({
+                "d4h-nag": false,
+            } as Awaited<ReturnType<typeof resolveModuleFlags>>);
+
+            await expect(
+                makeCaller(T.admin, ADMIN).runRule({
+                    organizationId: T.org,
+                    ruleId: T.ruleRunnable,
+                    dryRun: false,
+                }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+
+            expect(await db.d4HNagRun.count({ where: { trigger: "Manual" } })).toBe(0);
+            expect(afterCallbacks).toHaveLength(0);
+        });
+
+        it("refuses when the module is off in the organization's settings", async () => {
+            await expect(
+                makeCaller(T.admin, ADMIN).runRule({
+                    organizationId: T.otherOrg,
+                    ruleId: T.ruleRunnable,
+                    dryRun: false,
+                }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+
+            expect(afterCallbacks).toHaveLength(0);
+        });
+
         it("refuses a paused rule, naming the reason, and starts nothing", async () => {
             await expect(
                 makeCaller(T.admin, ADMIN).runRule({
@@ -467,6 +551,49 @@ describe("d4hNagRouter", () => {
             expect(await db.d4HNagOptOut.findMany({ where: { d4hMemberId: 66 } })).toMatchObject([
                 { teamId: T.teamB, source: "Self" },
             ]);
+        });
+
+        it("opts out on the team now linked when the run's team no longer is", async () => {
+            const caller = anonymous();
+            expect(await caller.getOptOutByToken({ token: TOKEN.ivy })).toMatchObject({
+                state: "ok",
+                teamName: "Unlinked",
+                optedOut: false,
+            });
+
+            const out = await caller.setOptOutByToken({ token: TOKEN.ivy, optedOut: true });
+            expect(out).toMatchObject({ state: "ok", optedOut: true });
+            expect(await db.d4HNagOptOut.findMany({ where: { d4hMemberId: 88 } })).toMatchObject([
+                { teamId: T.teamRelinked, source: "Self" },
+            ]);
+            expect(await caller.getOptOutByToken({ token: TOKEN.ivy })).toMatchObject({
+                optedOut: true,
+            });
+        });
+
+        it("ignores an opt-out on the run's team once it is unlinked", async () => {
+            await db.d4HNagOptOut.create({
+                data: {
+                    id: D4HNagOptOutId.create(),
+                    organizationId: T.org,
+                    teamId: T.teamUnlinked,
+                    d4hMemberId: 99,
+                    memberName: "Owen",
+                    source: "Self",
+                },
+            });
+
+            const caller = anonymous();
+            expect(await caller.getOptOutByToken({ token: TOKEN.owen })).toMatchObject({
+                state: "ok",
+                teamName: "Unlinked",
+                optedOut: false,
+            });
+
+            // No team is linked to Owen's D4H team, so nothing can send to him: a no-op.
+            const out = await caller.setOptOutByToken({ token: TOKEN.owen, optedOut: true });
+            expect(out).toMatchObject({ state: "ok", optedOut: false });
+            expect(await db.d4HNagOptOut.count({ where: { d4hMemberId: 99 } })).toBe(1);
         });
     });
 });

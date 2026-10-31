@@ -7,6 +7,7 @@ import { after } from "next/server";
 import * as z from "zod";
 
 import { PreconditionError } from "@/lib/errors";
+import { enabledInSettings, isModuleUsable } from "@/lib/module-flags";
 import {
     D4HNagOptOutData,
     D4HNagOptOutId,
@@ -15,8 +16,10 @@ import {
     D4HNagRunId,
 } from "@/lib/schemas/d4h-nag";
 import { TeamId } from "@/lib/schemas/team";
+import { resolveModuleFlags } from "@/server/module-flags";
 import * as D4HNag from "@/server/services/d4h-nag";
 import * as D4HNagRunner from "@/server/services/d4h-nag-runner";
+import * as OrgSettings from "@/server/services/organization-settings";
 
 import { createTrpcRouter, organizationProcedure, publicProcedure } from "../init";
 
@@ -143,12 +146,25 @@ export const d4hNagRouter = createTrpcRouter({
      * its id; the D4H fetches and sends finish in `after()`, which runs within this route's
      * `maxDuration`. A run `after()` drops is timed out by the hourly dispatcher (decision 12).
      * @throws TRPCError(NOT_FOUND) if the rule is not in the organization.
-     * @throws TRPCError(PRECONDITION_FAILED) if the rule is paused, naming the reason.
+     * @throws TRPCError(PRECONDITION_FAILED) if the module isn't usable in the organization (its
+     *     Vercel flag, its setting or the D4H module it requires is off), or the rule is paused,
+     *     naming the reason.
      */
     runRule: organizationProcedure({ d4hNag: ["run"] })
         .input(z.object({ ruleId: D4HNagRuleId.schema, dryRun: z.boolean() }))
         .output(z.object({ runId: D4HNagRunId.schema }))
         .mutation(async ({ ctx, input: { ruleId, dryRun } }) => {
+            // The one procedure that sends email, so the one that checks the module is on.
+            // Sequential: flag evaluation follows the request's first read, as in
+            // `isOrganizationModuleUsable`.
+            const settings = await OrgSettings.read(ctx.prisma, ctx.organizationId);
+            const moduleFlags = await resolveModuleFlags();
+            if (!isModuleUsable(moduleFlags, "d4h-nag", enabledInSettings(settings))) {
+                throw new PreconditionError(
+                    "D4H attendance reminders aren't enabled in this organization.",
+                );
+            }
+
             const runnability = await D4HNag.checkRunnable(ctx, ruleId);
             if (!runnability.runnable) {
                 throw new PreconditionError(`The rule is paused: ${runnability.reason}.`);

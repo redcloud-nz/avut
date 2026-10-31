@@ -51,6 +51,7 @@ describe("d4h-nag-runner", () => {
         ruleOther: D4HNagRuleId.create(),
         ruleSlot: D4HNagRuleId.create(),
         ruleEdited: D4HNagRuleId.create(),
+        ruleStartFails: D4HNagRuleId.create(),
         optOut: D4HNagOptOutId.create(),
     };
 
@@ -219,6 +220,12 @@ describe("d4h-nag-runner", () => {
             { id: T.ruleOther, organizationId: T.otherOrg, teamId: T.teamOther },
             { id: T.ruleSlot, organizationId: T.org, teamId: T.teamA, lastScheduledFor: SLOT },
             { id: T.ruleEdited, organizationId: T.org, teamId: T.teamA, lastScheduledFor: SLOT },
+            {
+                id: T.ruleStartFails,
+                organizationId: T.org,
+                teamId: T.teamA,
+                lastScheduledFor: SLOT,
+            },
         ];
         for (const rule of rules) {
             await db.d4HNagRule.create({ data: { weekday: 3, hour: 12, ...rule } });
@@ -484,6 +491,77 @@ describe("d4h-nag-runner", () => {
 
             const rule = await db.d4HNagRule.findUniqueOrThrow({ where: { id: T.ruleEdited } });
             expect(rule.lastScheduledFor).toEqual(edited);
+        });
+
+        it("releases the slot and rethrows when the run can't be started", async () => {
+            const create = vi
+                .spyOn(db.d4HNagRun, "create")
+                .mockRejectedValueOnce(new Error("Database is down"));
+            const deps = makeDeps(513, [1]);
+
+            try {
+                await expect(
+                    Runner.runRule(
+                        cronCtx(),
+                        T.ruleStartFails,
+                        { ...cronOptions, previousLastScheduledFor: PREVIOUS_SLOT },
+                        deps,
+                    ),
+                ).rejects.toThrow("Database is down");
+            } finally {
+                create.mockRestore();
+            }
+
+            const rule = await db.d4HNagRule.findUniqueOrThrow({
+                where: { id: T.ruleStartFails },
+            });
+            expect(rule.lastScheduledFor).toEqual(PREVIOUS_SLOT);
+            expect(deps.checkRunnable).not.toHaveBeenCalled();
+        });
+
+        it("retries recording a sent email once", async () => {
+            const update = vi
+                .spyOn(db.d4HNagRecipient, "update")
+                .mockRejectedValueOnce(new Error("Database blipped"));
+            const deps = makeDeps(514, [1]);
+
+            try {
+                const result = await Runner.runRule(cronCtx(), T.ruleA, cronOptions, deps);
+                expect(result.status).toBe("Completed");
+                expect((await recipientsOf(result.runId)).get(1)?.outcome).toBe("Sent");
+            } finally {
+                update.mockRestore();
+            }
+        });
+
+        it("keeps the claim of a sent email it couldn't record, so it isn't sent again", async () => {
+            const update = vi
+                .spyOn(db.d4HNagRecipient, "update")
+                .mockRejectedValueOnce(new Error("Database is down"))
+                .mockRejectedValueOnce(new Error("Database is down"));
+            const deps = makeDeps(515, [1, 5]);
+
+            let first: Runner.RunResult;
+            try {
+                first = await Runner.runRule(cronCtx(), T.ruleA, cronOptions, deps);
+            } finally {
+                update.mockRestore();
+            }
+
+            expect(first).toMatchObject({ status: "Failed", sendAttempted: true });
+            expect((await recipientsOf(first.runId)).get(1)).toMatchObject({
+                outcome: "Pending",
+                dedupeKey: `${T.org}:${D4H_TEAM}:515:1`,
+            });
+            const run = await db.d4HNagRun.findUniqueOrThrow({ where: { id: first.runId } });
+            expect(run).toMatchObject({ status: "Failed", sentCount: 1 });
+
+            const second = await Runner.runRule(cronCtx(), T.ruleA, cronOptions, deps);
+            const rows = await recipientsOf(second.runId);
+            expect(rows.get(1)?.outcome).toBe("SkippedAlreadyReminded");
+            expect(rows.get(5)?.outcome).toBe("Sent");
+            // Member 1 once, in the first run; member 5 only in the second.
+            expect(deps.sendEmail).toHaveBeenCalledTimes(2);
         });
 
         it("fails a paused rule's run with the reason", async () => {

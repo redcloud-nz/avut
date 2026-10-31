@@ -572,9 +572,11 @@ type PublicContext = Pick<OrgServiceContext, "prisma">;
 
 /**
  * Resolve an email's link token to its recipient, and the AVUT teams whose opt-outs apply to
- * them: the run's own team, plus every team in the org currently linked to the recipient's D4H
- * team (decision 19). The team comes from the run, never the rule, so the link outlives the rule
- * (decision 7). `null` for a token no recipient row holds.
+ * them: every team in the org currently linked to the recipient's D4H team, the same set the
+ * runner reads (decision 19). A self opt-out goes on the run's team while it is still in that
+ * set, otherwise on the first linked team; `optOutTeamId` is `null` when no team is linked, as
+ * nothing can then send to them. The team the page names comes from the run, never the rule, so
+ * the link outlives the rule (decision 7). `null` for a token no recipient row holds.
  */
 async function resolveLinkToken(ctx: PublicContext, token: string) {
     const recipient = await ctx.prisma.d4HNagRecipient.findUnique({
@@ -598,24 +600,28 @@ async function resolveLinkToken(ctx: PublicContext, token: string) {
     const linkedTeams = await ctx.prisma.team.findMany({
         where: { id: { in: links.map((link) => link.teamId) }, organizationId },
         select: { id: true },
+        orderBy: { id: "asc" },
     });
 
     const team = recipient.run.team;
+    const teamIds = linkedTeams.map((linked) => linked.id);
     return {
         organizationId,
         organizationName: recipient.organization.name,
         team,
         d4hMemberId: recipient.d4hMemberId,
         memberName: recipient.memberName,
-        teamIds: [...new Set([team.id, ...linkedTeams.map((linked) => linked.id)])],
+        teamIds,
+        optOutTeamId: teamIds.includes(team.id) ? team.id : (teamIds[0] ?? null),
     };
 }
 
 type LinkTokenScope = NonNullable<Awaited<ReturnType<typeof resolveLinkToken>>>;
 
 /** The member's opt-out rows on any of the scope's teams. */
-function findScopeOptOuts(ctx: PublicContext, scope: LinkTokenScope) {
-    return ctx.prisma.d4HNagOptOut.findMany({
+async function findScopeOptOuts(ctx: PublicContext, scope: LinkTokenScope) {
+    if (scope.teamIds.length === 0) return [];
+    return await ctx.prisma.d4HNagOptOut.findMany({
         where: {
             organizationId: scope.organizationId,
             teamId: { in: scope.teamIds },
@@ -652,10 +658,12 @@ export async function getOptOutByToken(
 }
 
 /**
- * Opt the link token's member out (`source: Self`, on the run's team) or back in (removing their
- * rows on every team in scope). A no-op when they're already in the requested state. A change is
- * audited under a `d4h-nag-opt-out` batch labelled with the member's name, since there is no user
- * behind it (decision 22): one entry per row created or removed.
+ * Opt the link token's member out (`source: Self`, on the scope's `optOutTeamId`) or back in
+ * (removing their rows on every team in scope). A no-op when they're already in the requested
+ * state, or when no team in the org is linked to their D4H team any more (nothing can send to
+ * them, so they read as opted in). A change is audited under a `d4h-nag-opt-out` batch labelled
+ * with the member's name, since there is no user behind it (decision 22): one entry per row
+ * created or removed.
  */
 export async function setOptOutByToken(
     ctx: PublicContext,
@@ -664,6 +672,8 @@ export async function setOptOutByToken(
 ): Promise<D4HNagOptOutByToken> {
     const scope = await resolveLinkToken(ctx, token);
     if (!scope) return { state: "not-found" };
+    const { optOutTeamId } = scope;
+    if (optOutTeamId === null) return optOutState(scope, false);
 
     const existing = await findScopeOptOuts(ctx, scope);
 
@@ -676,7 +686,7 @@ export async function setOptOutByToken(
                     data: {
                         id,
                         organizationId: scope.organizationId,
-                        teamId: scope.team.id,
+                        teamId: optOutTeamId,
                         d4hMemberId: scope.d4hMemberId,
                         memberName: scope.memberName,
                         source: "Self",
@@ -690,13 +700,13 @@ export async function setOptOutByToken(
                     changes: diffObject(
                         {},
                         {
-                            teamId: scope.team.id,
+                            teamId: optOutTeamId,
                             d4hMemberId: scope.d4hMemberId,
                             memberName: scope.memberName,
                         },
                     ),
                     description: scope.memberName,
-                    refs: [teamRef(scope.team.id)],
+                    refs: [teamRef(optOutTeamId)],
                 }),
             ]);
         } catch (error) {

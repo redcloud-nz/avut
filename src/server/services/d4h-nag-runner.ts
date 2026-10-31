@@ -219,6 +219,9 @@ export async function executeRun(
 
     const counts = { exercisesFound: 0, sentCount: 0, skippedCount: 0, failedCount: 0 };
     let sendAttempted = false;
+    // A recipient whose email went out but whose `Sent` couldn't be recorded. Its claim is kept
+    // when the run fails, so no later run sends to them again.
+    let sentUnrecorded: string | null = null;
 
     try {
         if (!run.ruleId) throw new Error("The rule was deleted.");
@@ -363,10 +366,15 @@ export async function executeRun(
             });
 
             if (result.ok) {
-                await prisma.d4HNagRecipient.update({
-                    where: { id: recipientId },
-                    data: { outcome: "Sent", tokenHash: link.hash },
-                });
+                const markSent = () =>
+                    prisma.d4HNagRecipient.update({
+                        where: { id: recipientId },
+                        data: { outcome: "Sent", tokenHash: link.hash },
+                    });
+                sentUnrecorded = recipientId;
+                // Retried once: failing that, the run fails with this claim kept.
+                await markSent().catch(() => markSent());
+                sentUnrecorded = null;
                 counts.sentCount++;
             } else {
                 await prisma.d4HNagRecipient.update({
@@ -405,9 +413,14 @@ export async function executeRun(
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         try {
-            // A claim left `Pending` by the failure is released, so a later run can retry it.
+            // A claim left `Pending` by the failure is released, so a later run can retry it,
+            // unless its email was sent: that one stays `Pending`, holding its claim.
             const released = await prisma.d4HNagRecipient.updateMany({
-                where: { runId, outcome: "Pending" },
+                where: {
+                    runId,
+                    outcome: "Pending",
+                    ...(sentUnrecorded !== null && { id: { not: sentUnrecorded } }),
+                },
                 data: { outcome: "Failed", dedupeKey: null },
             });
             await prisma.d4HNagRun.update({
@@ -417,6 +430,7 @@ export async function executeRun(
                     completedAt: new Date(),
                     error: message,
                     ...counts,
+                    sentCount: counts.sentCount + (sentUnrecorded !== null ? 1 : 0),
                     failedCount: counts.failedCount + released.count,
                 },
             });
@@ -432,7 +446,8 @@ export async function executeRun(
  * Start a run and execute it in one go: the cron's path. A scheduled run that fails before any
  * send hands its slot back (decision 8), so the next tick retries it: `lastScheduledFor` goes back
  * to `previousLastScheduledFor`, but only while it still holds the slot this run claimed, so a
- * schedule edit made during the run isn't undone.
+ * schedule edit made during the run isn't undone. A `startRun` that throws hands the slot back
+ * the same way before the error is rethrown.
  */
 export async function runRule(
     ctx: RunnerContext,
@@ -441,10 +456,8 @@ export async function runRule(
     deps: RunnerDeps = defaultRunnerDeps,
 ): Promise<RunResult> {
     const { previousLastScheduledFor, ...startOptions } = options;
-    const runId = await startRun(ctx, ruleId, startOptions);
-    const result = await executeRun(ctx, runId, deps);
-
-    if (result.status === "Failed" && !result.sendAttempted && options.slot) {
+    const releaseSlot = async () => {
+        if (!options.slot) return;
         await ctx.prisma.d4HNagRule.updateMany({
             where: {
                 id: ruleId,
@@ -453,7 +466,18 @@ export async function runRule(
             },
             data: { lastScheduledFor: previousLastScheduledFor ?? null },
         });
+    };
+
+    let runId: D4HNagRunId;
+    try {
+        runId = await startRun(ctx, ruleId, startOptions);
+    } catch (error) {
+        await releaseSlot();
+        throw error;
     }
+    const result = await executeRun(ctx, runId, deps);
+
+    if (result.status === "Failed" && !result.sendAttempted) await releaseSlot();
     return result;
 }
 
