@@ -29,6 +29,8 @@ const MODULE_COPY = {
     forms: "",
     "d4h-i3":
         "Issue, inspect and return equipment and PPE, with templates per item type. Runs on your D4H equipment records.",
+    "d4h-nag":
+        "Email members who haven't answered their D4H training invitation, on a schedule you set.",
     notes: "Rich-text notes that live with the org instead of in someone's inbox.",
     "skill-track": "Skill checks, assessment sessions, a catalogue and reports on who's current.",
     "skill-package-builder":
@@ -36,7 +38,7 @@ const MODULE_COPY = {
 } satisfies Record<(typeof orgModules)[number]["id"], string>;
 
 /** Module ids that only work with a connected D4H account. */
-const NEEDS_D4H = new Set(["d4h", "d4h-i3"]);
+const NEEDS_D4H = new Set(["d4h", "d4h-i3", "d4h-nag"]);
 
 /**
  * Hero product screenshot — the "Assess by Person" recording view from the

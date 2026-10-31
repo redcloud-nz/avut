@@ -303,6 +303,7 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
         org: OrganizationId.create(),
         user: nanoId16(),
         syncToken: ProviderCredentialId.create(),
+        nagToken: ProviderCredentialId.create(),
         otherToken: ProviderCredentialId.create(),
         member: nanoId16(),
         personalToken: ProviderCredentialId.create(),
@@ -314,7 +315,7 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
-        for (const id of [T.syncToken, T.otherToken]) {
+        for (const id of [T.syncToken, T.nagToken, T.otherToken]) {
             await db.providerCredential.create({
                 data: credentialData({ id, organizationId: T.org, userId: null }),
             });
@@ -324,6 +325,9 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
         });
         await db.organizationConfig.create({
             data: { organizationId: T.org, key: "integrations.d4h.syncToken", value: T.syncToken },
+        });
+        await db.organizationConfig.create({
+            data: { organizationId: T.org, key: "modules.d4h-nag.d4hTokenId", value: T.nagToken },
         });
     });
 
@@ -354,6 +358,29 @@ describe("d4hAccessTokensRouter.deleteOrganizationAccessToken", () => {
             },
         });
         expect(config?.value).toBe(T.syncToken);
+    });
+
+    it("clears the D4H Attendance Reminders token setting when its token is deleted", async () => {
+        const nagConfig = () =>
+            db.organizationConfig.findUnique({
+                where: {
+                    organizationId_key: {
+                        organizationId: T.org,
+                        key: "modules.d4h-nag.d4hTokenId",
+                    },
+                },
+            });
+
+        // Deleting a different token leaves it alone.
+        expect((await nagConfig())?.value).toBe(T.nagToken);
+
+        await makeCaller().deleteOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.nagToken,
+        });
+
+        expect(await db.providerCredential.findUnique({ where: { id: T.nagToken } })).toBeNull();
+        expect(await nagConfig()).toBeNull();
     });
 
     it("deletes the sync token and its config entry", async () => {

@@ -140,6 +140,24 @@ describe("OrganizationSettings general.replyTo", () => {
     });
 });
 
+describe("OrganizationSettings modules.d4h-nag", () => {
+    it("defaults off, with no D4H token", () => {
+        expect(OrganizationSettings.default().modules["d4h-nag"]).toEqual({
+            enabled: false,
+            d4hTokenId: null,
+        });
+    });
+
+    it("is an editable slice", () => {
+        expect(
+            OrganizationSettingsSlices.input.parse({
+                slice: "modules.d4h-nag",
+                patch: { d4hTokenId: "abc" },
+            }).patch,
+        ).toEqual({ d4hTokenId: "abc" });
+    });
+});
+
 describe("OrganizationSettings modules.d4h-i3", () => {
     it("defaults organisationRecordsOnly to false", () => {
         expect(OrganizationSettings.default().modules["d4h-i3"]).toEqual({

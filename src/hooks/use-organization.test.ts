@@ -17,6 +17,7 @@ const ALL_ON: ModuleFlagState = {
     d4h: true,
     forms: true,
     "d4h-i3": true,
+    "d4h-nag": true,
     notes: true,
     "skill-track": true,
     "skill-package-builder": true,

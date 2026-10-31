@@ -4,6 +4,7 @@
  */
 
 import {
+    BellRingIcon,
     CableIcon,
     LayoutDashboardIcon,
     NotebookPenIcon,
@@ -31,6 +32,7 @@ export type OrganizationModuleId =
     | "d4h"
     | "forms"
     | "d4h-i3"
+    | "d4h-nag"
     | "notes"
     | "skill-track"
     | "skill-package-builder";
@@ -131,6 +133,15 @@ export const Modules = {
         scope: "organization",
         requires: "d4h",
         href: (slug) => route("/orgs/[slug]/d4h-i3", { slug }),
+    },
+    "d4h-nag": {
+        id: "d4h-nag",
+        label: "D4H Attendance Reminders",
+        icon: BellRingIcon,
+        segment: "d4h-nag",
+        scope: "organization",
+        requires: "d4h",
+        href: (slug) => route("/orgs/[slug]/d4h-nag", { slug }),
     },
     notes: {
         id: "notes",

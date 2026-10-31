@@ -37,6 +37,7 @@ export type FeatureSliceId =
     | "integrations.email"
     | "modules.d4h"
     | "modules.d4h-i3"
+    | "modules.d4h-nag"
     | "modules.notes"
     | "modules.skill-package-builder"
     | "modules.skill-track";
