@@ -120,7 +120,7 @@ describe("returnItems", () => {
                 resourceId: 1,
                 payload: {
                     reason: "Returned To Cache",
-                    note: "Returned via AVUT, received by Receiver. Strap frayed.",
+                    note: "Returned via AVUT, recorded by Receiver. Strap frayed.",
                 },
                 formInstanceId: null,
             },
@@ -155,7 +155,7 @@ describe("returnItems", () => {
         const [task] = await db.d4HTask.findMany();
         expect(task.payload).toEqual({
             reason: "Returned To Cache",
-            note: "Returned via AVUT, received by Receiver.",
+            note: "Returned via AVUT, recorded by Receiver.",
         });
     });
 

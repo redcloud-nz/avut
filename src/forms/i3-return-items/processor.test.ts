@@ -194,7 +194,7 @@ describe("I3ReturnItemsFormProcessor", () => {
         };
     }
 
-    const NOTE = "Returned via AVUT, received by Receiver. Strap frayed.";
+    const NOTE = "Returned via AVUT, recorded by Receiver. Strap frayed.";
 
     it("queues a retire task with a note for each item, writes nothing to D4H, and emails", async () => {
         const { results, output } = await execute([1, 2], "Strap frayed.");

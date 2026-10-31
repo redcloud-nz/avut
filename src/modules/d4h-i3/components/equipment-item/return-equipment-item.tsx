@@ -137,7 +137,7 @@ export function D4HI3Module_ReturnEquipmentItem_Dialog({
                                 <div>{holder.name ?? `Member #${holder.id}`}</div>
                             </Field>
                             <Field>
-                                <FieldLabel>Received by</FieldLabel>
+                                <FieldLabel>Recorded by</FieldLabel>
                                 <UserNameFieldValue />
                             </Field>
                             <Controller

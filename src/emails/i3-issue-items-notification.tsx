@@ -26,7 +26,8 @@ import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 import { assetBaseUrl } from "./base-url";
 
 interface I3IssueItemsNotificationEmailProps {
-    issuer: {
+    /** The AVUT user who submitted the Issue ("Recorded by"). */
+    recordedBy: {
         name: string;
     };
     emailTarget: {
@@ -41,7 +42,7 @@ interface I3IssueItemsNotificationEmailProps {
 }
 
 export default function I3IssueItemsNotificationEmail({
-    issuer = { name: "Alex Westphal" },
+    recordedBy = { name: "Alex Westphal" },
     emailTarget = {
         email: "your-email@example.com",
     },
@@ -100,10 +101,20 @@ export default function I3IssueItemsNotificationEmail({
                         </Heading>
 
                         <Section>
-                            <Text className="text-[14px] text-black leading-6">
-                                {issuer.name} has issued the following items to{" "}
-                                {formData.recipient.name}:
+                            <Text className="my-1 text-[14px] text-black leading-6">
+                                <span className="text-gray-500">Issued to:</span>{" "}
+                                {formData.recipient.name}
                             </Text>
+                            <Text className="my-1 text-[14px] text-black leading-6">
+                                <span className="text-gray-500">Recorded by:</span>{" "}
+                                {recordedBy.name}
+                            </Text>
+                        </Section>
+
+                        <Section>
+                            <Heading as="h4" className="font-medium text-sm">
+                                Items
+                            </Heading>
                             {formData.items.map((item, index) => (
                                 <Row key={index}>
                                     <Text className="text-[14px] leading-4 ml-2 mt-2 mb-1">
@@ -115,7 +126,7 @@ export default function I3IssueItemsNotificationEmail({
                                             item.serialNumber ? `S/N: ${item.serialNumber}` : null,
                                         ]
                                             .filter(Boolean)
-                                            .join(" - ")}
+                                            .join(" · ")}
                                     </Text>
                                 </Row>
                             ))}

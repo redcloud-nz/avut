@@ -22,7 +22,7 @@ import { I3ReturnItemsFormData } from "./schema";
 
 /**
  * Process the submission of the I3 Return Items form: for each item, queue a task to retire it by
- * hand in D4H, noting who received it, then notify the configured personnel and send the member
+ * hand in D4H, noting who recorded it, then notify the configured personnel and send the member
  * a receipt.
  *
  * The checks and the tasks are `returnItems`, shared with the item page's quick Return; this
@@ -97,7 +97,7 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
                     to: recipient.email,
                     subject: "Items Returned by " + ctx.formData.recipient.name,
                     react: createElement(I3ReturnItemsNotificationEmail, {
-                        receiver: { name: ctx.auth.user.name },
+                        recordedBy: { name: ctx.auth.user.name },
                         emailTarget: { email: recipient.email },
                         formData: ctx.formData,
                         returnedItems,
@@ -130,7 +130,7 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
                     to: address,
                     subject: "Receipt for items you returned",
                     react: createElement(I3ReturnItemsReceiptEmail, {
-                        receiver: { name: ctx.auth.user.name },
+                        recordedBy: { name: ctx.auth.user.name },
                         emailTarget: { email: address },
                         formData: ctx.formData,
                         returnedItems,

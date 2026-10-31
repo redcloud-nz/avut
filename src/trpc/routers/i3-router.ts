@@ -294,7 +294,7 @@ export const i3Router = createTrpcRouter({
 
     /**
      * Return one equipment item from the person it's issued to (the item page's quick Return).
-     * Does what the Return form does for one item (the checks, a retire task noting who received
+     * Does what the Return form does for one item (the checks, a retire task noting who recorded
      * it, the audit log) but sends no email and keeps no form instance.
      *
      * Needs D4H's own Equipment UPDATE permission on the team as well as `i3Item: ["return"]`.

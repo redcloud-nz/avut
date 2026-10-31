@@ -16,6 +16,13 @@ export const I3ReturnedItem = {
 
 export type I3ReturnedItem = z.infer<typeof I3ReturnedItem.schema>;
 
+/** A returned item as the emails list it: the form's item plus its brand, model and serial from D4H. */
+export type I3ReturnedItemSummary = I3ReturnedItem & {
+    brandTitle?: string;
+    modelTitle?: string;
+    serial?: string | null;
+};
+
 export const I3ReturnItemsFormData = {
     schema: z.object({
         /** The D4H member returning the items ("Returned by" in the UI). */

@@ -19,13 +19,14 @@ import {
     Text,
 } from "@react-email/components";
 
-import { I3ReturnedItem, I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
+import { I3ReturnedItemSummary, I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 
 import { assetBaseUrl } from "./base-url";
+import { ReturnedItemRow } from "./i3-return-items-receipt";
 
 interface I3ReturnItemsNotificationEmailProps {
-    /** The AVUT user who submitted the Return ("Received by"). */
-    receiver: {
+    /** The AVUT user who submitted the Return ("Recorded by"). */
+    recordedBy: {
         name: string;
     };
     emailTarget: {
@@ -33,13 +34,13 @@ interface I3ReturnItemsNotificationEmailProps {
     };
     formData: I3ReturnItemsFormData;
     /** The items with a retire task queued, labelled as D4H has them. */
-    returnedItems: I3ReturnedItem[];
+    returnedItems: I3ReturnedItemSummary[];
     /** One line per item that couldn't be returned, naming the item and why. */
     failures: string[];
 }
 
 export default function I3ReturnItemsNotificationEmail({
-    receiver = { name: "Alex Westphal" },
+    recordedBy = { name: "Alex Westphal" },
     emailTarget = {
         email: "your-email@example.com",
     },
@@ -55,7 +56,16 @@ export default function I3ReturnItemsNotificationEmail({
             { itemId: 1002, ref: "1235", kindTitle: "RT Boots" },
         ],
     },
-    returnedItems = [{ itemId: 1001, ref: "1234", kindTitle: "Helmet" }],
+    returnedItems = [
+        {
+            itemId: 1001,
+            ref: "1234",
+            kindTitle: "Helmet",
+            brandTitle: "Petzl",
+            modelTitle: "Vertex Vent",
+            serial: "SN123456",
+        },
+    ],
     failures = ["#1235 RT Boots: already has an open retire task"],
 }: I3ReturnItemsNotificationEmailProps) {
     return (
@@ -78,18 +88,24 @@ export default function I3ReturnItemsNotificationEmail({
                             Items Returned by {formData.recipient.name}
                         </Heading>
 
+                        <Section>
+                            <Text className="my-1 text-[14px] text-black leading-6">
+                                <span className="text-gray-500">Returned by:</span>{" "}
+                                {formData.recipient.name}
+                            </Text>
+                            <Text className="my-1 text-[14px] text-black leading-6">
+                                <span className="text-gray-500">Recorded by:</span>{" "}
+                                {recordedBy.name}
+                            </Text>
+                        </Section>
+
                         {returnedItems.length > 0 && (
                             <Section>
-                                <Text className="text-[14px] text-black leading-6">
-                                    {receiver.name} has received the following items from{" "}
-                                    {formData.recipient.name}:
-                                </Text>
+                                <Heading as="h4" className="font-medium text-sm">
+                                    Items
+                                </Heading>
                                 {returnedItems.map((item) => (
-                                    <Row key={item.itemId}>
-                                        <Text className="text-[14px] leading-4 ml-2 mt-2 mb-2">
-                                            #{item.ref} {item.kindTitle}
-                                        </Text>
-                                    </Row>
+                                    <ReturnedItemRow key={item.itemId} item={item} />
                                 ))}
                                 <Text className="text-[14px] text-black leading-6">
                                     Each of these items has a retire task waiting to be applied in
@@ -100,11 +116,11 @@ export default function I3ReturnItemsNotificationEmail({
 
                         {failures.length > 0 && (
                             <Section>
-                                <Text className="text-[14px] text-black leading-6">
+                                <Heading as="h4" className="font-medium text-sm">
                                     {returnedItems.length > 0
-                                        ? "These items could not be returned:"
-                                        : `None of the items ${receiver.name} tried to receive from ${formData.recipient.name} could be returned:`}
-                                </Text>
+                                        ? "Not Returned"
+                                        : "None of the Items Could Be Returned"}
+                                </Heading>
                                 {failures.map((failure, index) => (
                                     <Row key={index}>
                                         <Text className="text-[14px] leading-4 text-gray-500 ml-2 mt-1 mb-2">

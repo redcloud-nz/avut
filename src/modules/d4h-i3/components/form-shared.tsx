@@ -19,9 +19,11 @@ import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 /**
- * Shows the signed-in user's name (the "Issuer" / "Received by" field of an I3 form).
+ * Shows the signed-in user's name (the "Recorded by" field of an I3 form).
+ *
+ * @param className - Classes for the name, e.g. to line it up with the field beside it.
  */
-export function UserNameFieldValue() {
+export function UserNameFieldValue({ className }: { className?: string }) {
     const { data, error, isPending } = useSession();
 
     if (isPending) {
@@ -33,7 +35,7 @@ export function UserNameFieldValue() {
             </Alert>
         );
     } else if (data) {
-        return <div>{data.user.name}</div>;
+        return <div className={className}>{data.user.name}</div>;
     }
 }
 

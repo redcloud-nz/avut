@@ -201,7 +201,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
                     to: recipient.email,
                     subject: "Items Issued to " + ctx.formData.recipient.name,
                     react: createElement(I3IssueItemsNotificationEmail, {
-                        issuer: { name: ctx.auth.user.name },
+                        recordedBy: { name: ctx.auth.user.name },
                         emailTarget: { email: recipient.email },
                         formData: ctx.formData,
                         savedToD4H,
@@ -233,7 +233,7 @@ export const I3IssueItemsFormProcessor = FormProcessingPipeline.builder<
                     to: address,
                     subject: "Receipt for items issued to you",
                     react: createElement(I3IssueItemsReceiptEmail, {
-                        issuer: { name: ctx.auth.user.name },
+                        recordedBy: { name: ctx.auth.user.name },
                         emailTarget: { email: address },
                         formData: ctx.formData,
                     }),
