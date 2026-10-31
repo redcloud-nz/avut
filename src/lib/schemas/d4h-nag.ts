@@ -19,6 +19,8 @@ import type {
 import { nanoId16 } from "../id";
 import { zodNanoId16 } from "../validation";
 
+import { TeamId, type TeamRef } from "./team";
+
 export type { D4HNagOptOutRecord, D4HNagRecipientRecord, D4HNagRuleRecord, D4HNagRunRecord };
 
 // IDs
@@ -109,3 +111,146 @@ type _EnumsMatchPrisma = [
     AssertTrue<D4HNagOptOutSourceRecord extends D4HNagOptOutSource ? true : false>,
 ];
 type AssertTrue<T extends true> = T;
+
+// Rules
+
+/** Why a rule won't run, in the order they're checked (decision 6). The first that fails is shown. */
+export const D4HNagPausedReason = {
+    schema: z.enum([
+        "d4h-disabled",
+        "disabled",
+        "team-inactive",
+        "team-unlinked",
+        "no-token",
+        "token-cannot-see-team",
+    ]),
+} as const;
+
+export type D4HNagPausedReason = z.infer<typeof D4HNagPausedReason.schema>;
+
+const ruleFieldsSchema = z.object({
+    /** 0–6, Sunday = 0 (as `Date.getDay()`), in the org's timezone. */
+    weekday: z.number().int().min(0).max(6),
+    /** 0–23, in the org's timezone. */
+    hour: z.number().int().min(0).max(23),
+    lookAheadHours: z.number().int().min(1).max(168),
+    /** Optional plain text included in the email; empty for none. */
+    message: z.string().trim().max(1000),
+    enabled: z.boolean(),
+});
+
+const d4hNagRuleSchema = ruleFieldsSchema.extend({
+    id: D4HNagRuleId.schema,
+    teamId: TeamId.schema,
+    lastScheduledFor: z.iso.datetime().nullable(),
+    createdAt: z.iso.datetime(),
+});
+
+export const D4HNagRuleData = {
+    schema: d4hNagRuleSchema,
+
+    /** Input for creating a rule. A rule's team can't be changed afterwards. */
+    createSchema: ruleFieldsSchema.extend({
+        teamId: TeamId.schema,
+        lookAheadHours: ruleFieldsSchema.shape.lookAheadHours.default(24),
+        message: ruleFieldsSchema.shape.message.default(""),
+        enabled: ruleFieldsSchema.shape.enabled.default(true),
+    }),
+
+    /** Input for updating a rule: any of its fields except the team. */
+    updateSchema: ruleFieldsSchema.partial(),
+
+    fromRecord: (record: D4HNagRuleRecord): D4HNagRuleData =>
+        d4hNagRuleSchema.parse({
+            ...record,
+            lastScheduledFor: record.lastScheduledFor?.toISOString() ?? null,
+            createdAt: record.createdAt.toISOString(),
+        }),
+} as const;
+
+export type D4HNagRuleData = z.infer<typeof d4hNagRuleSchema>;
+
+export type CreateD4HNagRuleData = z.infer<typeof D4HNagRuleData.createSchema>;
+
+export type UpdateD4HNagRuleData = z.infer<typeof D4HNagRuleData.updateSchema>;
+
+/** A rule as the rules list shows it. */
+export type D4HNagRuleListItem = D4HNagRuleData & {
+    team: TeamRef;
+    /** The schedule in words, e.g. "Mondays at 19:00". */
+    schedule: string;
+    /** Why the rule won't run, or `null` when it's runnable. */
+    pausedReason: D4HNagPausedReason | null;
+    lastRun: { id: D4HNagRunId; startedAt: string; status: D4HNagRunStatus } | null;
+};
+
+/** An active AVUT team linked to D4H: one a rule or an opt-out can be made for. */
+export interface D4HNagEligibleTeam {
+    id: TeamId;
+    name: string;
+    d4hTeamId: number;
+    d4hTeamName: string;
+}
+
+// Opt-outs
+
+export const D4HNagOptOutData = {
+    /** Input for an admin adding an opt-out. */
+    addSchema: z.object({
+        teamId: TeamId.schema,
+        d4hMemberId: z.number().int().positive(),
+        memberName: z.string().trim().min(1).max(200),
+    }),
+} as const;
+
+export type AddD4HNagOptOutData = z.infer<typeof D4HNagOptOutData.addSchema>;
+
+export interface D4HNagOptOutListItem {
+    id: D4HNagOptOutId;
+    team: TeamRef;
+    d4hMemberId: number;
+    memberName: string;
+    source: D4HNagOptOutSource;
+    /** The admin who made it; `null` for a self-service opt-out or once the account is purged. */
+    createdBy: { id: string; name: string } | null;
+    createdAt: string;
+}
+
+// Runs
+
+export interface D4HNagRunListItem {
+    id: D4HNagRunId;
+    /** `null` once the rule is deleted ("Deleted rule"). */
+    ruleId: D4HNagRuleId | null;
+    teamId: TeamId;
+    teamName: string;
+    trigger: D4HNagRunTrigger;
+    dryRun: boolean;
+    status: D4HNagRunStatus;
+    error: string | null;
+    startedAt: string;
+    completedAt: string | null;
+    windowStart: string;
+    windowEnd: string;
+    exercisesFound: number;
+    sentCount: number;
+    skippedCount: number;
+    failedCount: number;
+}
+
+export interface D4HNagRecipientItem {
+    id: D4HNagRecipientId;
+    d4hExerciseId: number;
+    exerciseTitle: string;
+    exerciseStartsAt: string;
+    d4hMemberId: number;
+    memberName: string;
+    email: string | null;
+    outcome: D4HNagOutcome;
+}
+
+/** A run with who started it and every recipient it considered. */
+export type D4HNagRunDetail = D4HNagRunListItem & {
+    startedBy: { id: string; name: string } | null;
+    recipients: D4HNagRecipientItem[];
+};
