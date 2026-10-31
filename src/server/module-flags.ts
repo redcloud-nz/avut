@@ -7,7 +7,7 @@ import "server-only";
 
 import { cache } from "react";
 
-import { i3ModuleFlag, notesModuleFlag } from "@/lib/flags";
+import { d4hNagModuleFlag, i3ModuleFlag, notesModuleFlag } from "@/lib/flags";
 import { enabledInSettings, isModuleUsable, type ModuleFlagState } from "@/lib/module-flags";
 import {
     moduleList,
@@ -22,6 +22,7 @@ import { requireOrganization } from "./organization-access";
 /** Flag evaluators, keyed by module id. Modules absent here are always available. */
 const MODULE_FLAG_EVALUATORS: Partial<Record<OrganizationModuleId, () => Promise<boolean>>> = {
     "d4h-i3": i3ModuleFlag,
+    "d4h-nag": d4hNagModuleFlag,
     notes: notesModuleFlag,
 };
 

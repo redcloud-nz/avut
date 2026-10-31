@@ -24,6 +24,7 @@ export type ModuleFlagState = Record<OrganizationModuleId, boolean>;
 /** Org modules whose availability is gated by a Vercel flag. */
 export const FLAGGED_MODULE_IDS = [
     "d4h-i3",
+    "d4h-nag",
     "notes",
 ] as const satisfies readonly OrganizationModuleId[];
 

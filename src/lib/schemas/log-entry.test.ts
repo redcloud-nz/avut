@@ -105,6 +105,8 @@ describe("objectTypesForModule", () => {
 describe("Operations", () => {
     it("names the multi-entry operations that exist today", () => {
         expect(Object.keys(Operations).sort()).toEqual([
+            "d4h-nag-opt-out",
+            "d4h-nag-run",
             "d4h-team-import",
             "d4h-team-link",
             "d4h-team-sync",

@@ -11,9 +11,10 @@ import { resolveModuleFlags, resolveUserModuleFlags } from "./module-flags";
 
 // `resolveModuleFlags`/`resolveUserModuleFlags` are `cache()`d per request, but outside a request
 // React's `cache` doesn't memoise, so each call re-evaluates the mocked flags.
-const flags = vi.hoisted(() => ({ notes: true, i3: true }));
+const flags = vi.hoisted(() => ({ notes: true, i3: true, d4hNag: true }));
 
 vi.mock("@/lib/flags", () => ({
+    d4hNagModuleFlag: async () => flags.d4hNag,
     i3ModuleFlag: async () => flags.i3,
     notesModuleFlag: async () => flags.notes,
 }));
@@ -22,6 +23,7 @@ describe("resolveUserModuleFlags", () => {
     beforeEach(() => {
         flags.notes = true;
         flags.i3 = true;
+        flags.d4hNag = true;
     });
 
     it("has an entry for every user module", async () => {
