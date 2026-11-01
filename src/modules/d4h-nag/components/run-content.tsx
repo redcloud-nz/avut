@@ -5,7 +5,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -20,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { EntityLink } from "@/components/entity-links/entity-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,9 +40,8 @@ import type {
     D4HNagRunDetail,
     D4HNagRunId,
 } from "@/lib/schemas/d4h-nag";
+import { describeRunTrigger } from "@/modules/d4h-nag/lib/describe-run-trigger";
 import { trpc } from "@/trpc/client";
-
-import { describeRunTrigger } from "./runs-table";
 
 /** How often the page refetches while the run is still `Running`. */
 const RUNNING_REFETCH_MS = 3000;
@@ -131,7 +130,7 @@ export function D4HNag_Run_Content({ runId }: { runId: D4HNagRunId }) {
                     },
                     run.ruleId
                         ? {
-                              label: run.teamName,
+                              label: `Rule for ${run.teamName}`,
                               href: route("/orgs/[slug]/d4h-nag/rules/[rule_id]", {
                                   slug: organization.slug,
                                   rule_id: run.ruleId,
@@ -182,15 +181,14 @@ function RunDetails_Card({ run }: { run: D4HNagRunDetail }) {
                         <DataItemTitle>Rule</DataItemTitle>
                         <DataItemValue>
                             {run.ruleId ? (
-                                <Link
+                                <EntityLink
                                     href={route("/orgs/[slug]/d4h-nag/rules/[rule_id]", {
                                         slug: organization.slug,
                                         rule_id: run.ruleId,
                                     })}
-                                    className="hover:underline"
-                                >
-                                    Rule for {run.teamName}
-                                </Link>
+                                    title={`Rule for ${run.teamName}`}
+                                    type="Reminder rule"
+                                />
                             ) : (
                                 <span className="text-muted-foreground">Deleted rule</span>
                             )}

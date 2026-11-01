@@ -431,10 +431,11 @@ function chunkIds(ids: readonly number[]): number[][] {
 }
 
 /**
- * One team's exercises starting in `[startsAfter, startsBefore)`, in a single request, uncached.
- * Filters on `starts_after` and `before` (which D4H applies to the start): `after` means _ends_
- * after, which is the wrong test here. No `published` filter, like `myActivitiesToday`. Throws on
- * any failure.
+ * One team's exercises starting in `[startsAfter, startsBefore]` (inclusive at both ends, like
+ * `NagWindow`), in a single request, uncached. Filters on `starts_after` and `before` (which D4H
+ * applies to the start): `after` means _ends_ after, which is the wrong test here. `before` is
+ * exclusive, so it's sent 1ms past `startsBefore`. No `published` filter, like
+ * `myActivitiesToday`. Throws on any failure.
  */
 export async function fetchD4HExercisesStartingBetween(
     token: D4HAccessToken_ServerOnly,
@@ -448,7 +449,7 @@ export async function fetchD4HExercisesStartingBetween(
                 path: { context: "team", contextId: d4hTeamId },
                 query: {
                     starts_after: startsAfter.toISOString(),
-                    before: startsBefore.toISOString(),
+                    before: new Date(startsBefore.getTime() + 1).toISOString(),
                     size: 10000,
                 },
             },

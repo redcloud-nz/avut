@@ -196,10 +196,26 @@ describe("D4H list fetches for attendance reminders", () => {
             const url = requestedUrl(fetchMock);
             expect(url.pathname).toBe("/v3/team/7/exercises");
             expect(url.searchParams.get("starts_after")).toBe("2026-11-02T00:00:00.000Z");
-            expect(url.searchParams.get("before")).toBe("2026-11-03T00:00:00.000Z");
+            expect(url.searchParams.get("before")).toBe("2026-11-03T00:00:00.001Z");
             expect(url.searchParams.has("after")).toBe(false);
             expect(url.searchParams.get("size")).toBe("10000");
             expect(result).toMatchObject([{ id: 11, referenceDescription: "Rope training" }]);
+        });
+
+        it("includes an exercise starting exactly at the window end", async () => {
+            const fetchMock = stubList([]);
+            const end = new Date("2026-11-03T06:00:00.000Z");
+
+            await fetchD4HExercisesStartingBetween(token, 7, {
+                startsAfter: new Date("2026-11-02T06:00:00.000Z"),
+                startsBefore: end,
+            });
+
+            // D4H's `before` is exclusive, so an exercise starting at `end` is only returned when
+            // the filter sits past it.
+            const before = new Date(requestedUrl(fetchMock).searchParams.get("before")!);
+            expect(before.getTime()).toBeGreaterThan(end.getTime());
+            expect(before.getTime()).toBe(end.getTime() + 1);
         });
 
         it("throws on failure", async () => {

@@ -36,6 +36,7 @@ import {
 import { OrganizationId } from "@/lib/schemas/organization";
 import { trpc } from "@/trpc/client";
 
+import { d4hNagTokenOptions } from "./d4h-nag-token-options";
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
 
 /** The select's value for "no token": Radix's `SelectItem` can't take an empty string. */
@@ -112,8 +113,7 @@ function UpdateD4HNagToken_Body({
         ],
     });
 
-    // Without an org-level D4H link there's no server to match, and no team to remind either.
-    const options = orgD4H ? tokens.filter((token) => token.serverCode === orgD4H.serverCode) : [];
+    const options = d4hNagTokenOptions(tokens, orgD4H);
     const storedIsOption = options.some((token) => token.id === d4hTokenId);
 
     const selectId = useId();

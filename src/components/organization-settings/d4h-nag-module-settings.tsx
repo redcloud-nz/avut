@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 
 import { useOrganization } from "@/hooks/use-organization";
 import type { OrganizationModuleId } from "@/lib/modules";
@@ -16,6 +16,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { trpc } from "@/trpc/client";
 
+import { d4hNagTokenOptions } from "./d4h-nag-token-options";
 import { Feature_SettingsCard } from "./feature-settings-card";
 import { SettingRow } from "./setting-row";
 import { OrganizationSettings_UpdateD4HNagToken_Dialog } from "./update-d4h-nag-token";
@@ -27,7 +28,8 @@ const TOKEN_DESCRIPTION =
  * The D4H Attendance Reminders module: Enable/Disable (it requires the D4H module), and while
  * it's enabled, the D4H token its unattended runs use.
  *
- * The token row resolves the stored id against the org's own token list, which needs
+ * The token row resolves the stored id against the org's own token list on its D4H server, which
+ * needs
  * `organization: ["update"]` in the org itself. A system admin (`systemAdmin`) can't call that
  * list, and a viewer without `canEdit` isn't allowed to, so for both the row shows only whether a
  * token is set.
@@ -72,7 +74,11 @@ export function D4HNagModule_SettingsCard({
     );
 }
 
-/** The editable token row: the token's label, "None", or "Token not found" for a stale id. */
+/**
+ * The editable token row: the token's label, "None", "Wrong D4H server" for a token on another
+ * server than the org's D4H link, or "Token not found" for a stale id. Judged against the same
+ * tokens the dialog offers.
+ */
 function D4HNagTokenRow({
     organizationId,
     d4hTokenId,
@@ -81,17 +87,31 @@ function D4HNagTokenRow({
     d4hTokenId: string | null;
 }) {
     const { slug } = useOrganization();
-    const { data: tokens } = useQuery(
-        trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({ organizationId }),
-    );
+    const [tokensQuery, orgD4HQuery] = useQueries({
+        queries: [
+            trpc.d4hAccessTokens.listOrganizationAccessTokens.queryOptions({ organizationId }),
+            trpc.teams.getOrganizationD4H.queryOptions({ organizationId }),
+        ],
+    });
+    const tokens = tokensQuery.data;
+    const orgD4H = orgD4HQuery.data;
+    const isError = tokensQuery.isError || orgD4HQuery.isError;
+    const loaded = tokens !== undefined && orgD4H !== undefined;
+    const options = loaded ? d4hNagTokenOptions(tokens, orgD4H) : null;
 
-    // While the list loads (or if it fails), fall back to the summary the read-only row shows.
+    // While the lists load (or if they fail), fall back to the summary the read-only row shows.
     let value: string;
-    if (!tokens) value = d4hTokenId ? "Set" : "None";
-    else if (d4hTokenId === null) value = tokens.length === 0 ? "No tokens" : "None";
-    else value = tokens.find((token) => token.id === d4hTokenId)?.label ?? "Token not found";
+    if (!loaded || !options) value = d4hTokenId ? "Set" : "None";
+    else if (d4hTokenId === null) value = options.length === 0 ? "No tokens" : "None";
+    else {
+        value =
+            options.find((token) => token.id === d4hTokenId)?.label ??
+            (tokens.some((token) => token.id === d4hTokenId)
+                ? "Wrong D4H server"
+                : "Token not found");
+    }
 
-    const noTokens = tokens?.length === 0;
+    const noTokens = options?.length === 0;
 
     return (
         <SettingRow
@@ -99,9 +119,19 @@ function D4HNagTokenRow({
             description={
                 <>
                     {TOKEN_DESCRIPTION}
-                    {noTokens && (
+                    {isError && (
+                        <span className="mt-1 block text-destructive">
+                            Couldn&apos;t load the organisation&apos;s D4H tokens to check this one.
+                        </span>
+                    )}
+                    {noTokens && orgD4H === null && (
                         <span className="mt-1 block">
-                            This organisation has no D4H access tokens yet.{" "}
+                            This organisation isn&apos;t linked to D4H yet.
+                        </span>
+                    )}
+                    {noTokens && orgD4H !== null && (
+                        <span className="mt-1 block">
+                            This organisation has no D4H access tokens on its D4H server.{" "}
                             <Link
                                 href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
                                 className="underline underline-offset-4 hover:text-foreground"

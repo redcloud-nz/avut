@@ -22,7 +22,7 @@ import { withDevServerPort } from "@/lib/dev-server";
 // eslint-disable-next-line avut/ids-via-schemas -- better-auth generates IDs for every auth model (user, session, account, member, …) through one hook
 import { nanoId16 } from "@/lib/id";
 import { ac, Roles } from "@/lib/permissions";
-import type { OrganizationId } from "@/lib/schemas/organization";
+import { OrganizationId } from "@/lib/schemas/organization";
 import { getNewestUpdateVersion } from "@/lib/updates";
 import { NoReplyEmailAddress, orgReplyTo, sendEmail } from "@/server/email";
 
@@ -261,11 +261,23 @@ export const auth = betterAuth({
                 console.log(
                     `Sending organization invitation to: ${email} (Invitation ID: ${invitation.id})`,
                 );
-                const settings = await getOrganizationSettings(organization.id as OrganizationId);
+                // A settings failure mustn't stop the invitation: it goes out without a Reply-To.
+                let replyTo: string | undefined;
+                try {
+                    const settings = await getOrganizationSettings(
+                        OrganizationId.schema.parse(organization.id),
+                    );
+                    replyTo = orgReplyTo(settings);
+                } catch (err) {
+                    console.error(
+                        `Failed to read the Reply-To for organization ${organization.id}; sending the invitation without one`,
+                        err,
+                    );
+                }
                 await sendEmail({
                     from: NoReplyEmailAddress,
                     to: email,
-                    replyTo: orgReplyTo(settings),
+                    replyTo,
                     subject: `Invitation to join ${organization.name} on AVUT`,
                     react: OrganizationInviteTemplate({
                         invitation,

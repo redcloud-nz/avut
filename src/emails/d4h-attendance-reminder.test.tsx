@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { render } from "@react-email/render";
+import { render } from "@react-email/components";
 
 import D4HAttendanceReminderEmail, {
     d4hAttendanceReminderSubject,

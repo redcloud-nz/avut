@@ -92,12 +92,18 @@ type UnattendedContext = Pick<OrgServiceContext, "prisma" | "organizationId">;
 
 /**
  * A runnability check for one org's rules. The settings, the token and its metadata are each
- * read at most once, however many rules it's asked about.
+ * read at most once, however many rules it's asked about. With `pauseOnD4HFailure`, a failed
+ * token metadata lookup reads as paused (`d4h-unavailable`, logged once) instead of throwing, so
+ * a D4H outage can't break the pages that only show the state.
  */
-function createRunnabilityResolver(ctx: UnattendedContext, deps: RunnabilityDeps) {
+function createRunnabilityResolver(
+    ctx: UnattendedContext,
+    deps: RunnabilityDeps,
+    { pauseOnD4HFailure = false }: { pauseOnD4HFailure?: boolean } = {},
+) {
     let settings: ReturnType<typeof OrgSettings.read> | undefined;
     let token: Promise<D4HAccessToken_ServerOnly | null> | undefined;
-    let metadata: Promise<D4HAccessTokenMetadata> | undefined;
+    let metadata: Promise<D4HAccessTokenMetadata | null> | undefined;
 
     return async function resolve(rule: RunnabilityInput): Promise<Runnability> {
         const paused = (reason: D4HNagPausedReason): Runnability => ({ runnable: false, reason });
@@ -115,8 +121,17 @@ function createRunnabilityResolver(ctx: UnattendedContext, deps: RunnabilityDeps
         const resolvedToken = await token;
         if (!resolvedToken) return paused("no-token");
 
-        metadata ??= deps.getTokenMetadata(resolvedToken);
-        const { d4HTeams } = await metadata;
+        metadata ??= deps.getTokenMetadata(resolvedToken).catch((error: unknown) => {
+            if (!pauseOnD4HFailure) throw error;
+            console.error(
+                `Failed to read the D4H token metadata for organization ${ctx.organizationId}`,
+                error,
+            );
+            return null;
+        });
+        const resolvedMetadata = await metadata;
+        if (!resolvedMetadata) return paused("d4h-unavailable");
+        const { d4HTeams } = resolvedMetadata;
         if (!d4HTeams.some((team) => team.id === link.d4hTeamId)) {
             return paused("token-cannot-see-team");
         }
@@ -215,8 +230,8 @@ async function ruleItem(
 
 /**
  * The organization's rules, by team name then schedule, each with its team, its schedule in
- * words, why it's paused (`null` when runnable) and its latest run.
- * @throws whatever the token metadata lookup throws (a D4H failure).
+ * words, why it's paused (`null` when runnable) and its latest run. A failed D4H token metadata
+ * lookup shows as `d4h-unavailable` rather than throwing.
  */
 export async function listRules(
     ctx: OrgServiceContext,
@@ -232,7 +247,7 @@ export async function listRules(
             a.team.name.localeCompare(b.team.name) || a.weekday - b.weekday || a.hour - b.hour,
     );
 
-    const resolve = createRunnabilityResolver(ctx, deps);
+    const resolve = createRunnabilityResolver(ctx, deps, { pauseOnD4HFailure: true });
     const items: D4HNagRuleListItem[] = [];
     for (const rule of rules) {
         items.push(await ruleItem(rule, resolve));
@@ -242,9 +257,9 @@ export async function listRules(
 
 /**
  * Fetch a rule as the rule page shows it: with its team, its schedule in words, why it's paused
- * (`null` when runnable) and its latest run, as `listRules` gives each rule.
+ * (`null` when runnable) and its latest run, as `listRules` gives each rule (a D4H failure
+ * included, as `d4h-unavailable`).
  * @throws NotFoundError if the rule does not exist within the organization.
- * @throws whatever the token metadata lookup throws (a D4H failure).
  */
 export async function requireRuleItemById(
     ctx: OrgServiceContext,
@@ -257,7 +272,7 @@ export async function requireRuleItemById(
     });
     if (!rule) throw new NotFoundError(`D4HNagRule(id=${ruleId}) not found.`);
 
-    return ruleItem(rule, createRunnabilityResolver(ctx, deps));
+    return ruleItem(rule, createRunnabilityResolver(ctx, deps, { pauseOnD4HFailure: true }));
 }
 
 /**
@@ -286,14 +301,21 @@ async function orgTimeZone(ctx: OrgServiceContext): Promise<string> {
 /**
  * Create a rule for one of the organization's teams. `lastScheduledFor` starts at the rule's
  * latest slot, so a slot that has already passed this week never fires (decision 8).
- * @throws NotFoundError if the team does not exist within the organization.
+ * @throws NotFoundError if the team does not exist within the organization, or isn't active and
+ * linked to D4H.
  */
 export async function createRule(
     ctx: OrgServiceContext,
     input: CreateD4HNagRuleData,
 ): Promise<D4HNagRuleData> {
+    // Only a team `listEligibleTeams` offers: active and linked to D4H.
     const team = await ctx.prisma.team.findUnique({
-        where: { id: input.teamId, organizationId: ctx.organizationId },
+        where: {
+            id: input.teamId,
+            organizationId: ctx.organizationId,
+            status: "Active",
+            d4h: { isNot: null },
+        },
         select: { id: true, name: true },
     });
     if (!team) throw new NotFoundError(`Team(id=${input.teamId}) not found.`);
@@ -558,7 +580,11 @@ export async function addOptOut(
                 objectId: id,
                 changes: diffObject(
                     {},
-                    { d4hMemberId: input.d4hMemberId, memberName: input.memberName },
+                    {
+                        teamId: team.id,
+                        d4hMemberId: input.d4hMemberId,
+                        memberName: input.memberName,
+                    },
                 ),
                 description: input.memberName,
                 refs: [teamRef(team.id)],
@@ -677,13 +703,15 @@ function optOutState(scope: LinkTokenScope, optedOut: boolean): D4HNagOptOutByTo
         teamName: scope.team.name,
         memberName: scope.memberName,
         optedOut,
+        teamLinked: scope.optOutTeamId !== null,
     };
 }
 
 /**
- * The public opt-out page's view of a link token: the org, team and member it was sent to, and
- * whether the member has opted out on any AVUT team in the org linked to that D4H team.
- * `not-found` for a token no recipient row holds (never issued, or purged).
+ * The public opt-out page's view of a link token: the org, team and member it was sent to,
+ * whether the member has opted out on any AVUT team in the org linked to that D4H team, and
+ * whether any team is linked to it at all. `not-found` for a token no recipient row holds (never
+ * issued, or purged).
  */
 export async function getOptOutByToken(
     ctx: PublicContext,
@@ -826,7 +854,21 @@ export async function listRuns(
     return runs.map(runItem);
 }
 
-function recipientItem(recipient: D4HNagRecipientRecord): D4HNagRecipientItem {
+/** The recipient fields the run page shows: never the token hash or dedupe key. */
+const recipientItemSelect = {
+    id: true,
+    d4hExerciseId: true,
+    exerciseTitle: true,
+    exerciseStartsAt: true,
+    d4hMemberId: true,
+    memberName: true,
+    email: true,
+    outcome: true,
+} as const satisfies Partial<Record<keyof D4HNagRecipientRecord, true>>;
+
+function recipientItem(
+    recipient: Pick<D4HNagRecipientRecord, keyof typeof recipientItemSelect>,
+): D4HNagRecipientItem {
     return {
         id: D4HNagRecipientId.schema.parse(recipient.id),
         d4hExerciseId: recipient.d4hExerciseId,
@@ -850,7 +892,10 @@ export async function requireRunById(
 ): Promise<D4HNagRunDetail> {
     const run = await ctx.prisma.d4HNagRun.findUnique({
         where: { id: runId, organizationId: ctx.organizationId },
-        include: { recipients: true, startedBy: { select: { id: true, name: true } } },
+        include: {
+            recipients: { select: recipientItemSelect },
+            startedBy: { select: { id: true, name: true } },
+        },
     });
     if (!run) throw new NotFoundError(`D4HNagRun(id=${runId}) not found.`);
 

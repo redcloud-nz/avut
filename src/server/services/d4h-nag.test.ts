@@ -281,6 +281,25 @@ describe("d4h-nag", () => {
             expect(deps.getToken).not.toHaveBeenCalled();
         });
 
+        it("reports d4h-unavailable, not an error, when the token metadata lookup fails", async () => {
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+            const deps = makeDeps({
+                getTokenMetadata: vi.fn(async () => {
+                    throw new Error("D4H is down");
+                }),
+            });
+            const rules = await D4HNag.listRules(makeCtx(), deps);
+            const reasonOf = (id: string) => rules.find((rule) => rule.id === id)?.pausedReason;
+
+            expect(reasonOf(T.ruleRunnable)).toBe("d4h-unavailable");
+            expect(reasonOf(T.ruleHidden)).toBe("d4h-unavailable");
+            // Checks before the D4H lookup still win.
+            expect(reasonOf(T.ruleUnlinked)).toBe("team-unlinked");
+            expect(deps.getTokenMetadata).toHaveBeenCalledTimes(1);
+            expect(consoleError).toHaveBeenCalledTimes(1);
+            consoleError.mockRestore();
+        });
+
         it("reads the token and its metadata once for all the org's rules", async () => {
             const deps = makeDeps();
             await D4HNag.listRules(makeCtx(), deps);
@@ -307,6 +326,17 @@ describe("d4h-nag", () => {
     });
 
     describe("checkRunnable", () => {
+        it("throws when the token metadata lookup fails", async () => {
+            const deps = makeDeps({
+                getTokenMetadata: vi.fn(async () => {
+                    throw new Error("D4H is down");
+                }),
+            });
+            await expect(D4HNag.checkRunnable(makeCtx(), T.ruleRunnable, deps)).rejects.toThrow(
+                "D4H is down",
+            );
+        });
+
         it("returns the token, D4H team and timezone for a runnable rule", async () => {
             const result = await D4HNag.checkRunnable(makeCtx(), T.ruleRunnable, makeDeps());
 
@@ -372,6 +402,16 @@ describe("d4h-nag", () => {
             await expect(
                 D4HNag.createRule(makeCtx(), { ...input, teamId: T.teamOther }),
             ).rejects.toThrow(NotFoundError);
+        });
+
+        it.each([
+            ["archived", T.teamArchived],
+            ["deleted", T.teamDeleted],
+            ["unlinked", T.teamUnlinked],
+        ])("rejects an %s team", async (_label, teamId) => {
+            await expect(D4HNag.createRule(makeCtx(), { ...input, teamId })).rejects.toThrow(
+                NotFoundError,
+            );
         });
     });
 

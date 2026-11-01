@@ -41,25 +41,48 @@ export function OptOut_Card({ token }: { token: string }) {
                 logger.error("Failed to change attendance reminder opt-out", error.message);
                 toast.error(`Couldn't save your choice: ${error.message}`);
             },
-            onSuccess(result) {
-                if (result.state === "ok")
+            onSuccess(result, vars) {
+                if (result.state !== "ok") return;
+                if (result.optedOut !== vars.optedOut) {
+                    // Nothing could change, e.g. the team was unlinked from D4H in the meantime.
+                    toast.info("Nothing changed: these reminders can't be sent to you any more");
+                } else {
                     toast.success(
                         result.optedOut
                             ? "You won't get these reminders any more"
                             : "You'll get these reminders again",
                     );
+                }
             },
         }),
     );
 
     if (data.state === "not-found") return <OptOutLinkInvalid_Card />;
 
-    const { organizationName, teamName, memberName, optedOut } = data;
+    const { organizationName, teamName, memberName, optedOut, teamLinked } = data;
     const team = (
         <>
             <ObjectName>{teamName}</ObjectName> (<ObjectName>{organizationName}</ObjectName>)
         </>
     );
+
+    if (!teamLinked) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Attendance reminders</CardTitle>
+                    <CardDescription>
+                        Attendance reminders for {team} have stopped: no team in{" "}
+                        <ObjectName>{organizationName}</ObjectName> is linked to this D4H team any
+                        more, so there&apos;s nothing to opt out of.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                    Sent to <span className="text-foreground">{memberName}</span>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card>

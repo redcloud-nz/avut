@@ -14,6 +14,7 @@ import {
     D4HNagRuleData,
     D4HNagRuleId,
     D4HNagRunId,
+    linkTokenSchema,
 } from "@/lib/schemas/d4h-nag";
 import { TeamId } from "@/lib/schemas/team";
 import { resolveModuleFlags } from "@/server/module-flags";
@@ -22,9 +23,6 @@ import * as D4HNagRunner from "@/server/services/d4h-nag-runner";
 import * as OrgSettings from "@/server/services/organization-settings";
 
 import { createTrpcRouter, organizationProcedure, publicProcedure } from "../init";
-
-/** An email's opt-out link token. Anything that isn't one simply resolves to `not-found`. */
-const linkTokenSchema = z.string().min(1).max(200);
 
 /**
  * D4H attendance reminders (`d4h-nag`): rules, runs and opt-outs for admins, plus the public

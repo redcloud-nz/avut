@@ -11,6 +11,7 @@ import { Suspense } from "react";
 import { AuthCard_Skeleton } from "@/components/auth/auth-card-skeleton";
 import { Argus } from "@/components/blocks/argus";
 import { OptOut_Card, OptOutLinkInvalid_Card } from "@/components/d4h-nag-opt-out/opt-out-card";
+import { linkTokenSchema } from "@/lib/schemas/d4h-nag";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // The URL carries a secret link token: keep it out of search indexes, and out of the Referer
@@ -20,9 +21,6 @@ export const metadata: Metadata = {
     robots: { index: false, follow: false },
     referrer: "no-referrer",
 };
-
-/** The router's `linkTokenSchema` bound; a longer token can't name a recipient. */
-const MAX_TOKEN_LENGTH = 200;
 
 // Not `async` — see the note in /auth/sign-in/page.tsx.
 export default function D4HNagOptOut_Page(props: PageProps<"/public/d4h-nag/opt-out/[token]">) {
@@ -46,7 +44,7 @@ async function OptOut_CardFromParams({
 
     // Access is by the token alone, through the public procedures. A token the procedure's
     // input would reject can never match, so it gets the same answer as an unknown one.
-    if (token.length > MAX_TOKEN_LENGTH) return <OptOutLinkInvalid_Card />;
+    if (!linkTokenSchema.safeParse(token).success) return <OptOutLinkInvalid_Card />;
 
     // Read only: the page's GET never changes state, since email link scanners open every URL.
     prefetch(trpc.d4hNag.getOptOutByToken.queryOptions({ token }));

@@ -292,7 +292,11 @@ describe("d4h-nag-runner", () => {
             expect(rows.get(2)).toMatchObject({ outcome: "SkippedNoEmail", email: null });
             expect(rows.get(3)).toMatchObject({ outcome: "SkippedOptedOut" });
             expect(rows.get(4)).toMatchObject({ outcome: "SkippedNoEmail", email: null });
-            expect(rows.get(5)).toMatchObject({ outcome: "Failed", dedupeKey: null });
+            expect(rows.get(5)).toMatchObject({
+                outcome: "Failed",
+                dedupeKey: null,
+                tokenHash: null,
+            });
 
             const run = await db.d4HNagRun.findUniqueOrThrow({ where: { id: result.runId } });
             expect(run).toMatchObject({
@@ -549,9 +553,11 @@ describe("d4h-nag-runner", () => {
             }
 
             expect(first).toMatchObject({ status: "Failed", sendAttempted: true });
+            // The link token went on with the claim, so the email's opt-out link still works.
             expect((await recipientsOf(first.runId)).get(1)).toMatchObject({
                 outcome: "Pending",
                 dedupeKey: `${T.org}:${D4H_TEAM}:515:1`,
+                tokenHash: "hash-515-1",
             });
             const run = await db.d4HNagRun.findUniqueOrThrow({ where: { id: first.runId } });
             expect(run).toMatchObject({ status: "Failed", sentCount: 1 });

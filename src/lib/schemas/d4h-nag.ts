@@ -75,8 +75,9 @@ export type D4HNagRunStatus = z.infer<typeof D4HNagRunStatus.schema>;
 
 /**
  * What happened to one recipient. `Pending` holds the once-only claim while the send is in
- * progress. A dry run records every outcome except `Pending`, `Sent` and `Failed`, with `DryRun`
- * in place of a send.
+ * progress; on a finished run it means sent, unconfirmed: the email went out (or may have) but
+ * `Sent` was never recorded, so the claim is kept. A dry run records every outcome except
+ * `Pending`, `Sent` and `Failed`, with `DryRun` in place of a send.
  */
 export const D4HNagOutcome = {
     schema: z.enum([
@@ -114,7 +115,11 @@ type AssertTrue<T extends true> = T;
 
 // Rules
 
-/** Why a rule won't run, in the order they're checked (decision 6). The first that fails is shown. */
+/**
+ * Why a rule won't run, in the order they're checked (decision 6). The first that fails is shown.
+ * `d4h-unavailable` is only shown on the rules list and rule page, when the token's D4H teams
+ * couldn't be read; a run whose lookup fails is recorded as a failed run instead.
+ */
 export const D4HNagPausedReason = {
     schema: z.enum([
         "d4h-disabled",
@@ -123,6 +128,7 @@ export const D4HNagPausedReason = {
         "team-unlinked",
         "no-token",
         "token-cannot-see-team",
+        "d4h-unavailable",
     ]),
 } as const;
 
@@ -221,9 +227,14 @@ export interface D4HNagOptOutListItem {
     createdAt: string;
 }
 
+/** An email's opt-out link token. Anything that isn't one simply resolves to `not-found`. */
+export const linkTokenSchema = z.string().min(1).max(200);
+
 /**
  * The public opt-out page's view of an email's link token. `optedOut` is true when the member has
  * opted out on any AVUT team in the org linked to the email's D4H team (decision 19).
+ * `teamLinked` is false when no team in the org is linked to that D4H team any more: nothing can
+ * send to them, so there's nothing to opt out of and `optedOut` is always false.
  */
 export type D4HNagOptOutByToken =
     | { state: "not-found" }
@@ -233,6 +244,7 @@ export type D4HNagOptOutByToken =
           teamName: string;
           memberName: string;
           optedOut: boolean;
+          teamLinked: boolean;
       };
 
 // Runs

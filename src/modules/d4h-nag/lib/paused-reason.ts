@@ -40,6 +40,11 @@ const PAUSED_REASONS: Record<D4HNagPausedReason, PausedReasonText> = {
         description:
             "The module's D4H access token can't see this team's D4H team. Choose a token that can in the module's settings.",
     },
+    "d4h-unavailable": {
+        label: "D4H unavailable",
+        description:
+            "AVUT couldn't reach D4H to check this rule's team. It will be checked again when the rule next runs.",
+    },
 };
 
 /** Why a rule is paused, in words. Shared by the rules list and the rule page. */

@@ -20,21 +20,12 @@ import { Kaga } from "@/components/blocks/kaga";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
-import type { D4HNagRuleId, D4HNagRunListItem, D4HNagRunTrigger } from "@/lib/schemas/d4h-nag";
+import type { D4HNagRuleId, D4HNagRunListItem } from "@/lib/schemas/d4h-nag";
+import { describeRunTrigger } from "@/modules/d4h-nag/lib/describe-run-trigger";
 import { trpc } from "@/trpc/client";
 
 /** How often the table refetches while one of its runs is still `Running`. */
 const RUNNING_REFETCH_MS = 3000;
-
-const TRIGGER_LABELS: Record<D4HNagRunTrigger, string> = {
-    Cron: "Scheduled",
-    Manual: "Manual",
-};
-
-/** What started a run, in words. Shared by the runs table and the run page. */
-export function describeRunTrigger(trigger: D4HNagRunTrigger): string {
-    return TRIGGER_LABELS[trigger];
-}
 
 /**
  * One rule's runs, newest first. While a run is in progress (a Run now or Dry run finishes in
@@ -76,7 +67,7 @@ export function D4HNag_Runs_Table({ ruleId }: { ruleId: D4HNagRuleId }) {
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
                 }),
-                columnHelper.accessor((row) => TRIGGER_LABELS[row.trigger], {
+                columnHelper.accessor((row) => describeRunTrigger(row.trigger), {
                     id: "trigger",
                     header: "Trigger",
                     enableSorting: true,

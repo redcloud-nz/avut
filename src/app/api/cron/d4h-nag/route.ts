@@ -10,11 +10,10 @@
  * `/api`), so the secret is the whole guard.
  */
 
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
+import { isAuthorizedCronRequest } from "@/server/cron/authorize";
 import { runD4HNagDue } from "@/server/cron/d4h-nag";
-import { serverEnv } from "@/server/env";
 
 /**
  * Every organization's sends share this one invocation, at least 500 ms apart (decision 16). A
@@ -22,22 +21,20 @@ import { serverEnv } from "@/server/env";
  */
 export const maxDuration = 300;
 
-function safeCompare(a: string, b: string): boolean {
-    const bufA = Buffer.from(a);
-    const bufB = Buffer.from(b);
-    return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
-}
-
 export async function GET(request: Request): Promise<NextResponse> {
-    const secret = serverEnv.CRON_SECRET;
-    const authorization = request.headers.get("authorization");
-    if (!secret || !authorization || !safeCompare(authorization, `Bearer ${secret}`)) {
+    if (!isAuthorizedCronRequest(request)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const result = await runD4HNagDue();
 
-    const failed = result.organizations.some((r) => r.outcome === "failed");
+    // An org that couldn't be processed, or a run that failed inside it, fails the tick, as a
+    // per-item failure does in `purge-rubbish`.
+    const failed = result.organizations.some(
+        (r) =>
+            r.outcome === "failed" ||
+            (r.outcome === "ran" && r.runs.some((run) => run.status === "Failed")),
+    );
     if (failed) console.error("D4H attendance reminder tick had failures:", JSON.stringify(result));
 
     return NextResponse.json(result, { status: failed ? 500 : 200 });

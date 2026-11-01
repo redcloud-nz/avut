@@ -295,7 +295,7 @@ describe("d4h-nag-runner.runDue", () => {
         expect(remaining.map((run) => run.id).sort()).toEqual([...kept].sort());
     });
 
-    it("fails a stuck Running run and releases its Pending claims", async () => {
+    it("fails a stuck Running run and releases its Pending claims without a link token", async () => {
         const org = await seedOrg({ nag: false });
         const stuck = await seedRun(org, {
             startedAt: new Date(NOW.getTime() - 20 * 60 * 1000),
@@ -323,6 +323,25 @@ describe("d4h-nag-runner.runDue", () => {
                 dedupeKey,
             },
         });
+        // A claim holding a link token may have been sent (sent, unconfirmed): it's kept.
+        const sentUnconfirmed = D4HNagRecipientId.create();
+        await db.d4HNagRecipient.create({
+            data: {
+                id: sentUnconfirmed,
+                organizationId: org.organizationId,
+                runId: stuck,
+                d4hTeamId: D4H_TEAM,
+                d4hExerciseId: 7,
+                exerciseTitle: "Exercise 7",
+                exerciseStartsAt: new Date(NOW.getTime() + DAY_MS),
+                d4hMemberId: 2,
+                memberName: "Member 2",
+                email: "two@example.com",
+                outcome: "Pending",
+                dedupeKey: `${org.organizationId}:${D4H_TEAM}:7:2`,
+                tokenHash: "stuck-hash",
+            },
+        });
 
         const result = await Runner.runDue(db, NOW, makeDeps());
 
@@ -336,6 +355,13 @@ describe("d4h-nag-runner.runDue", () => {
         expect(
             await db.d4HNagRecipient.findUniqueOrThrow({ where: { id: recipient } }),
         ).toMatchObject({ outcome: "Failed", dedupeKey: null });
+        expect(
+            await db.d4HNagRecipient.findUniqueOrThrow({ where: { id: sentUnconfirmed } }),
+        ).toMatchObject({
+            outcome: "Pending",
+            dedupeKey: `${org.organizationId}:${D4H_TEAM}:7:2`,
+            tokenHash: "stuck-hash",
+        });
         expect(await db.d4HNagRun.findUniqueOrThrow({ where: { id: recent } })).toMatchObject({
             status: "Running",
         });

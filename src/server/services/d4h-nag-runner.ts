@@ -197,7 +197,8 @@ interface Candidate {
  * Do a started run: check the rule is runnable, fetch from D4H, decide and send each reminder,
  * then complete the run with its counts and, for a real run, its audit entry. Never throws for a
  * failure inside the run: it records `Failed` with the error instead, and releases any claim
- * still `Pending`. Does nothing to a run that is no longer `Running`.
+ * still `Pending`, except one whose email was sent. Does nothing to a run that is no longer
+ * `Running`.
  * @throws NotFoundError if the run does not exist within the organization.
  */
 export async function executeRun(
@@ -328,11 +329,19 @@ export async function executeRun(
                 continue;
             }
 
-            // Claim, then send (decision 14).
+            // Claim, then send (decision 14). The opt-out link's hash goes on with the claim, so the
+            // link works even if the `Sent` update is never recorded.
             const recipientId = D4HNagRecipientId.create();
+            const link = deps.createLinkToken();
             try {
                 await prisma.d4HNagRecipient.create({
-                    data: { id: recipientId, ...row, outcome: "Pending", dedupeKey },
+                    data: {
+                        id: recipientId,
+                        ...row,
+                        outcome: "Pending",
+                        dedupeKey,
+                        tokenHash: link.hash,
+                    },
                 });
             } catch (error) {
                 if (!isUniqueViolation(error)) throw error;
@@ -343,7 +352,6 @@ export async function executeRun(
 
             // Spacing goes between sends, not before the first (decision 16).
             if (sendAttempted) await deps.sleep(SEND_SPACING_MS);
-            const link = deps.createLinkToken();
             sendAttempted = true;
             const result: SendEmailResult = await deps.sendEmail({
                 from: NoReplyEmailAddress,
@@ -369,7 +377,7 @@ export async function executeRun(
                 const markSent = () =>
                     prisma.d4HNagRecipient.update({
                         where: { id: recipientId },
-                        data: { outcome: "Sent", tokenHash: link.hash },
+                        data: { outcome: "Sent" },
                     });
                 sentUnrecorded = recipientId;
                 // Retried once: failing that, the run fails with this claim kept.
@@ -379,7 +387,7 @@ export async function executeRun(
             } else {
                 await prisma.d4HNagRecipient.update({
                     where: { id: recipientId },
-                    data: { outcome: "Failed", dedupeKey: null },
+                    data: { outcome: "Failed", dedupeKey: null, tokenHash: null },
                 });
                 counts.failedCount++;
             }
@@ -421,7 +429,7 @@ export async function executeRun(
                     outcome: "Pending",
                     ...(sentUnrecorded !== null && { id: { not: sentUnrecorded } }),
                 },
-                data: { outcome: "Failed", dedupeKey: null },
+                data: { outcome: "Failed", dedupeKey: null, tokenHash: null },
             });
             await prisma.d4HNagRun.update({
                 where: { id: runId },
@@ -472,7 +480,8 @@ export async function runRule(
     try {
         runId = await startRun(ctx, ruleId, startOptions);
     } catch (error) {
-        await releaseSlot();
+        // A failed release mustn't replace the error that got us here.
+        await releaseSlot().catch(console.error);
         throw error;
     }
     const result = await executeRun(ctx, runId, deps);
@@ -519,8 +528,8 @@ export interface RunDueResult {
 
 /**
  * The hourly tick (`/api/cron/d4h-nag`):
- * 1. Fail every run stuck in `Running` for `STUCK_RUN_MS`, releasing its `Pending` claims
- *    (decision 12).
+ * 1. Fail every run stuck in `Running` for `STUCK_RUN_MS`, releasing its `Pending` claims that
+ *    hold no link token (decision 12).
  * 2. For each organization with the module on in its settings (decision 27), run every runnable
  *    rule whose latest slot hasn't been claimed yet, claiming the slot first (decisions 8, 9).
  *    Each organization is processed in its own try/catch, so one failing doesn't stop the rest.
@@ -586,8 +595,9 @@ function isNagModuleOn(settings: OrganizationSettings): boolean {
 
 /**
  * Fail every run still `Running` after `STUCK_RUN_MS` with `TIMED_OUT_ERROR`, and release its
- * `Pending` claims (outcome `Failed`, `dedupeKey` cleared) so those members can be retried.
- * Returns how many runs it failed.
+ * `Pending` claims (outcome `Failed`, `dedupeKey` cleared) so those members can be retried. A
+ * `Pending` claim with a `tokenHash` is left alone: its email may have gone out (sent,
+ * unconfirmed), so it keeps holding the claim. Returns how many runs it failed.
  */
 async function failStuckRuns(prisma: PrismaClient, now: Date): Promise<number> {
     const stuck = await prisma.d4HNagRun.findMany({
@@ -596,7 +606,7 @@ async function failStuckRuns(prisma: PrismaClient, now: Date): Promise<number> {
     });
     for (const { id } of stuck) {
         const released = await prisma.d4HNagRecipient.updateMany({
-            where: { runId: id, outcome: "Pending" },
+            where: { runId: id, outcome: "Pending", tokenHash: null },
             data: { outcome: "Failed", dedupeKey: null },
         });
         await prisma.d4HNagRun.updateMany({

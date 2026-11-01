@@ -393,6 +393,25 @@ describe("d4hNagRouter", () => {
             expect(afterCallbacks).toHaveLength(0);
         });
 
+        it("refuses when the module is on but the D4H module it requires is off", async () => {
+            const d4hModule = { organizationId: T.org, key: "modules.d4h.enabled" };
+            await db.organizationConfig.updateMany({ where: d4hModule, data: { value: false } });
+            try {
+                await expect(
+                    makeCaller(T.admin, ADMIN).runRule({
+                        organizationId: T.org,
+                        ruleId: T.ruleRunnable,
+                        dryRun: false,
+                    }),
+                ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            } finally {
+                await db.organizationConfig.updateMany({ where: d4hModule, data: { value: true } });
+            }
+
+            expect(await db.d4HNagRun.count({ where: { trigger: "Manual" } })).toBe(0);
+            expect(afterCallbacks).toHaveLength(0);
+        });
+
         it("refuses a paused rule, naming the reason, and starts nothing", async () => {
             await expect(
                 makeCaller(T.admin, ADMIN).runRule({
@@ -500,6 +519,7 @@ describe("d4hNagRouter", () => {
                 teamName: "Alpha",
                 memberName: "Mia",
                 optedOut: false,
+                teamLinked: true,
             });
 
             const out = await caller.setOptOutByToken({ token: TOKEN.mia, optedOut: true });
@@ -624,6 +644,7 @@ describe("d4hNagRouter", () => {
                 state: "ok",
                 teamName: "Unlinked",
                 optedOut: false,
+                teamLinked: false,
             });
 
             // No team is linked to Owen's D4H team, so nothing can send to him: a no-op.

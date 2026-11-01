@@ -5,6 +5,7 @@
 
 "use client";
 
+import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useId } from "react";
 import { useForm } from "react-hook-form";
@@ -31,14 +32,14 @@ import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
 import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { trpc } from "@/trpc/client";
 
 import { D4HNag_RuleFormFields, D4HNagRuleFormSchema } from "./rule-form";
 
 /**
- * `?action=create` — self-triggered (Recipe A): the trigger button lives here, and the dialog
- * stays mounted on the rules list through the create. The rule has no page of its own yet, so a
- * successful create closes the dialog and the new rule appears in the list.
+ * `?action=create` — self-triggered (Recipe A): the trigger button lives here. A successful
+ * create navigates to the new rule's page, which is the whole close.
  */
 export function D4HNag_CreateRule_Dialog() {
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
@@ -75,15 +76,16 @@ export function D4HNag_CreateRule_Dialog() {
                     </DialogDescription>
                 </DialogHeader>
                 <DialogBoundary>
-                    <CreateRule_Body onDone={() => handleDialogOpenChange(false)} />
+                    <CreateRule_Body />
                 </DialogBoundary>
             </DialogContent>
         </Dialog>
     );
 }
 
-function CreateRule_Body({ onDone }: { onDone: () => void }) {
+function CreateRule_Body() {
     const organization = useOrganization();
+    const router = useRouter();
 
     const { data: teams } = useSuspenseQuery(
         trpc.d4hNag.listEligibleTeams.queryOptions({ organizationId: organization.id }),
@@ -103,14 +105,19 @@ function CreateRule_Body({ onDone }: { onDone: () => void }) {
 
     const mutation = useMutation(
         trpc.d4hNag.createRule.mutationOptions({
-            meta: { effects: d4hNagEffects.createRule },
+            meta: { effects: d4hNagEffects.createRule, navigates: true },
             onError(error) {
                 console.error("Failed to create rule", error);
                 toast.error(`Failed to create rule: ${error.message}`);
             },
-            onSuccess() {
+            onSuccess({ created }) {
                 toast.success("Rule created");
-                onDone();
+                router.push(
+                    route("/orgs/[slug]/d4h-nag/rules/[rule_id]", {
+                        slug: organization.slug,
+                        rule_id: created.id,
+                    }),
+                );
             },
         }),
     );
