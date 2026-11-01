@@ -26,6 +26,7 @@ import {
     type D4HNagRecipientItem,
     type D4HNagRecipientRecord,
     type D4HNagRuleListItem,
+    type D4HNagRuleRecord,
     type D4HNagRunDetail,
     type D4HNagRunListItem,
     type D4HNagRunRecord,
@@ -173,6 +174,45 @@ function loggedRuleFields(rule: {
     return { weekday, hour, lookAheadHours, message, enabled };
 }
 
+/** What a rule item reads: the rule, its team and its latest run. */
+const ruleItemInclude = {
+    team: ruleTeamSelect,
+    runs: {
+        select: { id: true, startedAt: true, status: true },
+        orderBy: { startedAt: "desc" },
+        take: 1,
+    },
+} as const;
+
+/** A rule with its team, its schedule in words, why it's paused and its latest run. */
+async function ruleItem(
+    {
+        team,
+        runs,
+        ...rule
+    }: D4HNagRuleRecord & {
+        team: { id: string; name: string; status: RecordStatus; d4h: { d4hTeamId: number } | null };
+        runs: { id: string; startedAt: Date; status: D4HNagRunRecord["status"] }[];
+    },
+    resolve: ReturnType<typeof createRunnabilityResolver>,
+): Promise<D4HNagRuleListItem> {
+    const runnability = await resolve({ enabled: rule.enabled, team });
+    const [lastRun] = runs;
+    return {
+        ...D4HNagRuleData.fromRecord(rule),
+        team: { id: TeamId.schema.parse(team.id), name: team.name },
+        schedule: describeSchedule(rule),
+        pausedReason: runnability.runnable ? null : runnability.reason,
+        lastRun: lastRun
+            ? {
+                  id: D4HNagRunId.schema.parse(lastRun.id),
+                  startedAt: lastRun.startedAt.toISOString(),
+                  status: lastRun.status,
+              }
+            : null,
+    };
+}
+
 /**
  * The organization's rules, by team name then schedule, each with its team, its schedule in
  * words, why it's paused (`null` when runnable) and its latest run.
@@ -184,14 +224,7 @@ export async function listRules(
 ): Promise<D4HNagRuleListItem[]> {
     const rules = await ctx.prisma.d4HNagRule.findMany({
         where: { organizationId: ctx.organizationId },
-        include: {
-            team: ruleTeamSelect,
-            runs: {
-                select: { id: true, startedAt: true, status: true },
-                orderBy: { startedAt: "desc" },
-                take: 1,
-            },
-        },
+        include: ruleItemInclude,
     });
 
     rules.sort(
@@ -201,24 +234,30 @@ export async function listRules(
 
     const resolve = createRunnabilityResolver(ctx, deps);
     const items: D4HNagRuleListItem[] = [];
-    for (const { team, runs, ...rule } of rules) {
-        const runnability = await resolve({ enabled: rule.enabled, team });
-        const [lastRun] = runs;
-        items.push({
-            ...D4HNagRuleData.fromRecord(rule),
-            team: { id: TeamId.schema.parse(team.id), name: team.name },
-            schedule: describeSchedule(rule),
-            pausedReason: runnability.runnable ? null : runnability.reason,
-            lastRun: lastRun
-                ? {
-                      id: D4HNagRunId.schema.parse(lastRun.id),
-                      startedAt: lastRun.startedAt.toISOString(),
-                      status: lastRun.status,
-                  }
-                : null,
-        });
+    for (const rule of rules) {
+        items.push(await ruleItem(rule, resolve));
     }
     return items;
+}
+
+/**
+ * Fetch a rule as the rule page shows it: with its team, its schedule in words, why it's paused
+ * (`null` when runnable) and its latest run, as `listRules` gives each rule.
+ * @throws NotFoundError if the rule does not exist within the organization.
+ * @throws whatever the token metadata lookup throws (a D4H failure).
+ */
+export async function requireRuleItemById(
+    ctx: OrgServiceContext,
+    ruleId: D4HNagRuleId,
+    deps: RunnabilityDeps = defaultRunnabilityDeps,
+): Promise<D4HNagRuleListItem> {
+    const rule = await ctx.prisma.d4HNagRule.findUnique({
+        where: { id: ruleId, organizationId: ctx.organizationId },
+        include: ruleItemInclude,
+    });
+    if (!rule) throw new NotFoundError(`D4HNagRule(id=${ruleId}) not found.`);
+
+    return ruleItem(rule, createRunnabilityResolver(ctx, deps));
 }
 
 /**

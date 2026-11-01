@@ -31,17 +31,24 @@ export const d4hNagEffects = createEffects<"d4hNag">()({
     runRule: (vars) => [
         invalidate(trpc.d4hNag.listRuns.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.d4hNag.listRules.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.d4hNag.getRule.queryFilter({
+                organizationId: vars.organizationId,
+                ruleId: vars.ruleId,
+            }),
+        ),
     ],
     setOptOutByToken: (vars, data) => [
         write(trpc.d4hNag.getOptOutByToken.queryKey({ token: vars.token }), data),
     ],
-    updateRule: (vars, { updated }) => [
-        write(
-            trpc.d4hNag.getRule.queryKey({
+    // `getRule` also carries the paused reason, which an enable or disable changes, so it's
+    // refetched rather than written from the bare rule the mutation returns.
+    updateRule: (vars) => [
+        invalidate(
+            trpc.d4hNag.getRule.queryFilter({
                 organizationId: vars.organizationId,
                 ruleId: vars.ruleId,
             }),
-            updated,
         ),
         invalidate(trpc.d4hNag.listRules.queryFilter({ organizationId: vars.organizationId })),
     ],

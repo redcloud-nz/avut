@@ -80,13 +80,13 @@ export const d4hNagRouter = createTrpcRouter({
         }),
 
     /**
+     * A rule with its team, its schedule in words, why it's paused (if it is) and its latest run.
      * @throws TRPCError(NOT_FOUND) if the rule is not in the organization.
      */
     getRule: organizationProcedure({ d4hNag: ["view"] })
         .input(z.object({ ruleId: D4HNagRuleId.schema }))
-        .output(D4HNagRuleData.schema)
         .query(async ({ ctx, input: { ruleId } }) => {
-            return await D4HNag.requireRuleById(ctx, ruleId);
+            return await D4HNag.requireRuleItemById(ctx, ruleId);
         }),
 
     /**

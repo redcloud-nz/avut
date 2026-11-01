@@ -327,6 +327,42 @@ describe("d4hNagRouter", () => {
         });
     });
 
+    describe("getRule", () => {
+        const org = { organizationId: T.org };
+
+        it("gives the rule with its team, schedule, latest run and no paused reason", async () => {
+            const rule = await makeCaller(T.admin, ADMIN).getRule({
+                ...org,
+                ruleId: T.ruleRunnable,
+            });
+
+            expect(rule).toMatchObject({
+                id: T.ruleRunnable,
+                team: { id: T.teamA, name: "Alpha" },
+                schedule: expect.any(String),
+                pausedReason: null,
+                lastRun: { id: T.runA, status: "Completed" },
+            });
+        });
+
+        it("gives a paused rule's reason, and no latest run when it has none", async () => {
+            const rule = await makeCaller(T.admin, ADMIN).getRule({
+                ...org,
+                ruleId: T.rulePaused,
+            });
+
+            expect(rule).toMatchObject({ pausedReason: "disabled", lastRun: null });
+        });
+
+        it("is allowed on view alone", async () => {
+            const viewer = makeCaller(T.member, { organization: ["view"], d4hNag: ["view"] });
+
+            await expect(viewer.getRule({ ...org, ruleId: T.ruleRunnable })).resolves.toMatchObject(
+                { id: T.ruleRunnable },
+            );
+        });
+    });
+
     describe("runRule", () => {
         it("refuses when the module's Vercel flag is off, and starts nothing", async () => {
             vi.mocked(resolveModuleFlags).mockResolvedValue({

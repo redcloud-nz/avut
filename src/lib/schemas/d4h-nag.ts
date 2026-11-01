@@ -174,7 +174,7 @@ export type CreateD4HNagRuleData = z.infer<typeof D4HNagRuleData.createSchema>;
 
 export type UpdateD4HNagRuleData = z.infer<typeof D4HNagRuleData.updateSchema>;
 
-/** A rule as the rules list shows it. */
+/** A rule as the rules list and the rule page show it. */
 export type D4HNagRuleListItem = D4HNagRuleData & {
     team: TeamRef;
     /** The schedule in words, e.g. "Mondays at 19:00". */

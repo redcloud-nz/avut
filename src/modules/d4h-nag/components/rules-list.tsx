@@ -18,20 +18,18 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { EntityLink } from "@/components/entity-links/entity-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Protect } from "@/components/protect";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
+import { route } from "@/lib/routes";
 import type { D4HNagRuleListItem } from "@/lib/schemas/d4h-nag";
+import { describeWindow } from "@/modules/d4h-nag/lib/describe-window";
 import { describePausedReason } from "@/modules/d4h-nag/lib/paused-reason";
 import { trpc } from "@/trpc/client";
 
 import { D4HNag_CreateRule_Dialog } from "./create-rule-dialog";
-
-/** The rule's look-ahead in words, e.g. "Next 24 hours". */
-function describeWindow(lookAheadHours: number): string {
-    return lookAheadHours === 1 ? "Next hour" : `Next ${lookAheadHours} hours`;
-}
 
 /** The organization's reminder rules. */
 export function D4HNag_Rules_List() {
@@ -55,7 +53,20 @@ export function D4HNag_Rules_List() {
                 }),
                 columnHelper.accessor("schedule", {
                     header: "When",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => (
+                        <EntityLink
+                            href={route("/orgs/[slug]/d4h-nag/rules/[rule_id]", {
+                                slug: organization.slug,
+                                rule_id: ctx.row.original.id,
+                            })}
+                            title={ctx.getValue()}
+                            type="Reminder rule"
+                        >
+                            <span className="text-muted-foreground">
+                                {ctx.row.original.team.name}
+                            </span>
+                        </EntityLink>
+                    ),
                     // Week order (Sunday first, as `weekday` counts), then hour.
                     sortingFn: (a, b) =>
                         a.original.weekday - b.original.weekday ||
@@ -111,7 +122,7 @@ export function D4HNag_Rules_List() {
                     enableColumnFilter: false,
                 }),
             ]),
-        [formatRelativeDateTime],
+        [formatRelativeDateTime, organization.slug],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
