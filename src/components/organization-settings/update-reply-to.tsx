@@ -5,6 +5,7 @@
 
 "use client";
 
+import { XIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useEffect, useId } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -26,13 +27,18 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@/components/ui/input-group";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { useOrganizationSettingsMutation } from "./use-organization-settings-mutation";
 
-/** An empty field saves as `null` (no Reply-To), the same as Clear. */
+/** An empty field saves as `null` (no Reply-To). The field's clear button empties it. */
 const replyToFormSchema = z.object({
     replyTo: z.union([z.literal(""), z.email("Enter a valid email address")]),
 });
@@ -120,14 +126,34 @@ export function OrganizationSettings_UpdateReplyTo_Dialog({
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
                                         <FieldLabel htmlFor={inputId}>Reply-To Address</FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={inputId}
-                                            type="email"
-                                            placeholder="training@example.org"
-                                            autoComplete="off"
-                                            aria-invalid={fieldState.invalid}
-                                        />
+                                        <InputGroup>
+                                            <InputGroupInput
+                                                {...field}
+                                                id={inputId}
+                                                type="email"
+                                                placeholder="training@example.org"
+                                                autoComplete="off"
+                                                aria-invalid={fieldState.invalid}
+                                            />
+                                            {field.value !== "" && (
+                                                <InputGroupAddon align="inline-end">
+                                                    <InputGroupButton
+                                                        type="button"
+                                                        size="icon-xs"
+                                                        aria-label="Clear Reply-To address"
+                                                        title="Clear"
+                                                        onClick={() =>
+                                                            form.setValue("replyTo", "", {
+                                                                shouldDirty: true,
+                                                                shouldValidate: true,
+                                                            })
+                                                        }
+                                                    >
+                                                        <XIcon />
+                                                    </InputGroupButton>
+                                                </InputGroupAddon>
+                                            )}
+                                        </InputGroup>
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}
@@ -139,14 +165,6 @@ export function OrganizationSettings_UpdateReplyTo_Dialog({
                 </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        disabled={settings.general.replyTo === null || mutation.isPending}
-                        onClick={() => save(null)}
-                    >
-                        Clear
-                    </Button>
                     <MutationButton
                         type="submit"
                         form={formId}
