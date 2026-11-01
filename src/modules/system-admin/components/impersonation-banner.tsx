@@ -27,9 +27,10 @@ import { trpc } from "@/trpc/client";
  * because the RSC payload on screen was rendered as the impersonated user.
  *
  * Rendered inside the authenticated layout's `HydrateClient`, below its awaited `getSession`
- * fetch, so this reads the hydrated session. Rendered any higher, its query ran over HTTP during
- * server rendering without the request's cookie, cached `null`, and made every session read below
- * it render as signed out on the server (#347).
+ * fetch, so this reads the hydrated session. Rendered any higher, its query once ran over HTTP
+ * during server rendering without the request's cookie, cached `null`, and made every session read
+ * below it render as signed out on the server (#347). The client link now fails such calls instead
+ * (`serverRenderLink` in `src/trpc/client.ts`), so it would fall back to client rendering.
  *
  * The bar is `fixed` to the top of the viewport. While it's in the DOM, `globals.css` sets
  * `--impersonation-h` to its height, which pushes the sidebar and `Std.SidebarInset` down (#87).
