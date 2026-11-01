@@ -6,6 +6,7 @@
 "use client";
 
 import { PlayIcon, ToggleLeftIcon, ToggleRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
 
@@ -245,23 +246,26 @@ function D4HNag_Rule_Menu({ rule }: { rule: D4HNagRuleListItem }) {
 
 /**
  * Run now and Dry run. Both are refused for a paused rule, so they're disabled with the reason.
- * The run itself finishes in the background; the runs table refetches until it completes.
+ * Both navigate to the new run, which finishes in the background; its page refetches until then.
  */
 function RunRule_Buttons({ rule }: { rule: D4HNagRuleListItem }) {
     const organization = useOrganization();
+    const router = useRouter();
 
     const mutation = useMutation(
         trpc.d4hNag.runRule.mutationOptions({
-            meta: { effects: d4hNagEffects.runRule },
+            meta: { effects: d4hNagEffects.runRule, navigates: true },
             onError(error) {
                 console.error("Failed to start run", error);
                 toast.error(`Failed to start run: ${error.message}`);
             },
-            onSuccess(_, { dryRun }) {
-                toast.success(
-                    dryRun
-                        ? "Dry run started. Nothing will be sent; the result shows under Runs."
-                        : "Run started. Reminders are being sent; the result shows under Runs.",
+            onSuccess({ runId }, { dryRun }) {
+                toast.success(dryRun ? "Dry run started. Nothing will be sent." : "Run started.");
+                router.push(
+                    route("/orgs/[slug]/d4h-nag/runs/[run_id]", {
+                        slug: organization.slug,
+                        run_id: runId,
+                    }),
                 );
             },
         }),

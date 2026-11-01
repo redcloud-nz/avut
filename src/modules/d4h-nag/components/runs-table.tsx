@@ -5,6 +5,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
+import { route } from "@/lib/routes";
 import type { D4HNagRuleId, D4HNagRunListItem, D4HNagRunTrigger } from "@/lib/schemas/d4h-nag";
 import { trpc } from "@/trpc/client";
 
@@ -28,6 +30,11 @@ const TRIGGER_LABELS: Record<D4HNagRunTrigger, string> = {
     Cron: "Scheduled",
     Manual: "Manual",
 };
+
+/** What started a run, in words. Shared by the runs table and the run page. */
+export function describeRunTrigger(trigger: D4HNagRunTrigger): string {
+    return TRIGGER_LABELS[trigger];
+}
 
 /**
  * One rule's runs, newest first. While a run is in progress (a Run now or Dry run finishes in
@@ -54,7 +61,17 @@ export function D4HNag_Runs_Table({ ruleId }: { ruleId: D4HNagRuleId }) {
             Kaga.defineColumns<D4HNagRunListItem>((columnHelper) => [
                 columnHelper.accessor("startedAt", {
                     header: "Started",
-                    cell: (ctx) => formatDateTime(ctx.getValue()),
+                    cell: (ctx) => (
+                        <Link
+                            href={route("/orgs/[slug]/d4h-nag/runs/[run_id]", {
+                                slug: organization.slug,
+                                run_id: ctx.row.original.id,
+                            })}
+                            className="hover:underline"
+                        >
+                            {formatDateTime(ctx.getValue())}
+                        </Link>
+                    ),
                     enableSorting: true,
                     enableGlobalFilter: false,
                     enableColumnFilter: false,
@@ -127,7 +144,7 @@ export function D4HNag_Runs_Table({ ruleId }: { ruleId: D4HNagRuleId }) {
                     enableColumnFilter: false,
                 }),
             ]),
-        [formatDateTime],
+        [formatDateTime, organization.slug],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

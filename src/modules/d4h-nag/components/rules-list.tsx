@@ -5,6 +5,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -112,9 +113,19 @@ export function D4HNag_Rules_List() {
                         if (!lastRun) return <span className="text-muted-foreground">Never</span>;
 
                         const when = formatRelativeDateTime(lastRun.startedAt);
-                        return lastRun.status === "Completed"
-                            ? when
-                            : `${when} (${lastRun.status})`;
+                        return (
+                            <Link
+                                href={route("/orgs/[slug]/d4h-nag/runs/[run_id]", {
+                                    slug: organization.slug,
+                                    run_id: lastRun.id,
+                                })}
+                                className="hover:underline"
+                            >
+                                {lastRun.status === "Completed"
+                                    ? when
+                                    : `${when} (${lastRun.status})`}
+                            </Link>
+                        );
                     },
                     sortUndefined: "last",
                     enableSorting: true,

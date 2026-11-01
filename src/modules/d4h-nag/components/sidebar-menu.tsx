@@ -18,5 +18,10 @@ export function D4HNag_Sidebar_Menu() {
     const organization = useOrganization();
     const { slug } = organization;
 
-    return <NavSubItem label="Rules" href={route("/orgs/[slug]/d4h-nag", { slug })} />;
+    return (
+        <>
+            <NavSubItem label="Rules" href={route("/orgs/[slug]/d4h-nag", { slug })} />
+            <NavSubItem label="Opt-outs" href={route("/orgs/[slug]/d4h-nag/opt-outs", { slug })} />
+        </>
+    );
 }
