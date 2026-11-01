@@ -129,7 +129,7 @@ Router conventions and the audit-logging guide (which `ctx.logEvent` you hold, `
 
 ## Data Fetching
 
-AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP, so its `queryFn` arrives unauthenticated on the server). Lint catches the wrong one in Next entry files (`page`, `layout`, `route`, …); any other Server Component is on you.
+AVUT has two distinct tRPC entry points — `trpc` from `@/trpc/server` (Server Components: calls the router in-process, preserving the request's session) and `trpc` from `@/trpc/client` (Client Components: goes out over HTTP from the browser, and fails every call during a server render rather than fetch without the session, so what a client component reads there must be prefetched). Lint catches the wrong one in Next entry files (`page`, `layout`, `route`, …); any other Server Component is on you.
 
 Mutations declare their cache side-effects once via `meta: { effects: ... }` (`src/trpc/mutation-effector.tsx`), not with manual `queryClient.setQueryData`/`invalidateQueries` calls at each call site.
 

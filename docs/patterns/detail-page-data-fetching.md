@@ -76,7 +76,9 @@ Key points:
 
 - **Both `trpc` calls here are the `@/trpc/server` one** — it calls the router
   in-process, preserving the request's session; the `@/trpc/client` one exists for
-  Client Components only and goes out over HTTP unauthenticated if used here by mistake.
+  Client Components only. On the server it fails every call rather than fetch without the
+  session, so a client component's `useSuspenseQuery` only renders on the server from
+  data prefetched here.
 - **No permission check in `page.tsx`.** `getOrganizationBySlug` only resolves the org's
   id; `teams.getTeam` checks the caller. See
   [`route-access-control.md`](route-access-control.md) for why, and for the one case
