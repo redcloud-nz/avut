@@ -5,7 +5,7 @@
 
 "use client";
 
-import { PlayIcon, ToggleLeftIcon, ToggleRightIcon } from "lucide-react";
+import { ChevronDownIcon, PlayIcon, ToggleLeftIcon, ToggleRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { toast } from "sonner";
@@ -29,9 +29,12 @@ import {
     DataList,
 } from "@/components/ui/data-item";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -136,15 +139,6 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                                     </DataList>
                                 </CardContent>
                             </Card>
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Runs</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <D4HNag_Runs_Table ruleId={rule.id} />
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">
@@ -166,6 +160,11 @@ export function D4HNag_Rule_Content({ ruleId }: { ruleId: D4HNagRuleId }) {
                             </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
+
+                    <section className="space-y-3 pt-4">
+                        <h2 className="text-lg font-semibold tracking-tight">Runs</h2>
+                        <D4HNag_Runs_Table ruleId={rule.id} />
+                    </section>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
@@ -245,7 +244,7 @@ function D4HNag_Rule_Menu({ rule }: { rule: D4HNagRuleListItem }) {
 }
 
 /**
- * Run now and Dry run. Both are refused for a paused rule, so they're disabled with the reason.
+ * The Run menu: Dry run and Run now. Both are refused for a paused rule, so they're disabled with the reason.
  * Both navigate to the new run, which finishes in the background; its page refetches until then.
  */
 function RunRule_Buttons({ rule }: { rule: D4HNagRuleListItem }) {
@@ -278,15 +277,22 @@ function RunRule_Buttons({ rule }: { rule: D4HNagRuleListItem }) {
         mutation.mutate({ organizationId: organization.id, ruleId: rule.id, dryRun });
     }
 
-    const buttons = (
-        <div className="flex gap-2">
-            <Button variant="outline" disabled={disabled} onClick={() => run(true)}>
-                <PlayIcon /> Dry Run
-            </Button>
-            <Button variant="outline" disabled={disabled} onClick={() => run(false)}>
-                <PlayIcon /> Run Now
-            </Button>
-        </div>
+    const trigger = (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={disabled}>
+                    <PlayIcon />
+                    <span className="sr-only sm:not-sr-only">Run</span>
+                    <ChevronDownIcon className="max-sm:hidden" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                    <DropdownMenuItem onClick={() => run(true)}>Dry Run</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => run(false)}>Run Now</DropdownMenuItem>
+                </DropdownMenuGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 
     if (pausedReason) {
@@ -295,12 +301,12 @@ function RunRule_Buttons({ rule }: { rule: D4HNagRuleListItem }) {
                 <TooltipTrigger asChild>
                     {/* A disabled button gets no pointer events, so the wrapper takes the hover
                         and focus instead. */}
-                    <span tabIndex={0}>{buttons}</span>
+                    <span tabIndex={0}>{trigger}</span>
                 </TooltipTrigger>
                 <TooltipContent>Paused: {pausedReason.label}</TooltipContent>
             </Tooltip>
         );
     }
 
-    return buttons;
+    return trigger;
 }

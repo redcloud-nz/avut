@@ -14,7 +14,6 @@ import {
     Heading,
     Hr,
     Html,
-    Img,
     Link,
     pixelBasedPreset,
     Preview,
@@ -22,8 +21,6 @@ import {
     Tailwind,
     Text,
 } from "@react-email/components";
-
-import { assetBaseUrl } from "./base-url";
 
 export interface D4HAttendanceReminderEmailProps {
     organization: { name: string };
@@ -91,16 +88,7 @@ export default function D4HAttendanceReminderEmail({
                 <Body className="mx-auto my-auto bg-white px-2 font-sans">
                     <Preview>Are you coming to {exercise.title}?</Preview>
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
-                        <Section className="mt-8">
-                            <Img
-                                src={`${assetBaseUrl}/avut-logo.png`}
-                                width="150"
-                                height="50"
-                                alt="AVUT Logo"
-                                className="mx-auto my-0"
-                            />
-                        </Section>
-                        <Heading className="max-0 my-[30px] p-0 text-center font-normal text-[24px] text-black">
+                        <Heading className="mx-0 mt-8 mb-[30px] p-0 text-center font-normal text-[24px] text-black">
                             Are you coming to {exercise.title}?
                         </Heading>
 
@@ -150,6 +138,9 @@ export default function D4HAttendanceReminderEmail({
                                 opt out
                             </Link>
                             .
+                        </Text>
+                        <Text className="my-0 text-center text-[#999999] text-[11px] leading-5">
+                            Powered by AVUT
                         </Text>
                     </Container>
                 </Body>

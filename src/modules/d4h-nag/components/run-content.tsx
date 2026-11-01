@@ -157,14 +157,10 @@ export function D4HNag_Run_Content({ runId }: { runId: D4HNagRunId }) {
                         </Saratoga.Column>
                     </Saratoga.Columns>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Recipients</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Recipients_Table run={run} />
-                        </CardContent>
-                    </Card>
+                    <section className="space-y-3 pt-4">
+                        <h2 className="text-lg font-semibold tracking-tight">Recipients</h2>
+                        <Recipients_Table run={run} />
+                    </section>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>

@@ -44,14 +44,6 @@ export function D4HNag_Rules_List() {
     const columns = useMemo(
         () =>
             Kaga.defineColumns<D4HNagRuleListItem>((columnHelper) => [
-                columnHelper.accessor((row) => row.team.name, {
-                    id: "team",
-                    header: "Team",
-                    cell: (ctx) => <TeamLink team={ctx.row.original.team} />,
-                    enableSorting: true,
-                    enableGlobalFilter: true,
-                    enableColumnFilter: false,
-                }),
                 columnHelper.accessor("schedule", {
                     header: "When",
                     cell: (ctx) => (
@@ -72,6 +64,14 @@ export function D4HNag_Rules_List() {
                     sortingFn: (a, b) =>
                         a.original.weekday - b.original.weekday ||
                         a.original.hour - b.original.hour,
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
+                }),
+                columnHelper.accessor((row) => row.team.name, {
+                    id: "team",
+                    header: "Team",
+                    cell: (ctx) => <TeamLink team={ctx.row.original.team} />,
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
