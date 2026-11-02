@@ -70,13 +70,9 @@ function optionalCell(
             return <D4HEquipmentBrandLink brand={{ id: brand.id, title: brand.title }} />;
         }
         case "model": {
-            const { brand, model } = item;
-            if (model?.id == null || !model.title || brand.id == null) return model?.title || "—";
-            return (
-                <D4HEquipmentModelLink
-                    model={{ id: model.id, title: model.title, brand: { id: brand.id } }}
-                />
-            );
+            const { model } = item;
+            if (model?.id == null || !model.title) return model?.title || "—";
+            return <D4HEquipmentModelLink model={{ id: model.id, title: model.title }} />;
         }
         case "serial":
             return item.serial;

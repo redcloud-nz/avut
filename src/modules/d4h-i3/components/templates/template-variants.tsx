@@ -151,7 +151,6 @@ export function D4HI3Module_Template_Variants_List({ template }: { template: I3T
                                                     model={{
                                                         id: variant.d4h.modelId,
                                                         title: variant.d4h.modelTitle,
-                                                        brand: { id: variant.d4h.brandId },
                                                         owner: modelOwner,
                                                     }}
                                                 />
