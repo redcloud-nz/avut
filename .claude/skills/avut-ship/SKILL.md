@@ -11,7 +11,7 @@ Takes a finished feature branch to a merged PR with one human checkpoint. The re
 
 `$ARGUMENTS` is optional free text: extra context for the PR description, or `--no-merge` to open the PR without auto-merge (e.g. something you want to look at in the Vercel preview first).
 
-**A track** (`/avut-develop-feature`'s several issues on one branch, one commit each) ships as one PR like any other branch. The steps below say where a track differs: the review intent, the PR title and body, the docs item, and the plan's status.
+**A track** (`/avut-develop-feature`'s several issues on one branch, one commit each) ships as one PR like any other branch. The steps below say where a track differs: the review intent, the PR title and body, and the docs item.
 
 For a PR that deserves a second, independent pass after it's open — auth, credentials, migrations, someone else's code — use `/avut-review-pr` instead of, or as well as, this. When you plan to run it as well, pass `--no-merge`. `integration` needs no approval, so auto-merge would merge on green CI before that review runs, or despite a "request changes".
 
@@ -147,9 +147,6 @@ node .claude/skills/avut-docs/milestone.ts docs-add <milestone version> <PR numb
 ```
 
 It finds the milestone's `Docs: <milestone>` issue, creating it if needed, and adds the item as a marked comment. It never edits the body: several sessions ship in parallel, and a body edit by one would overwrite another's. Report the issue number it prints, and whether it created the issue.
-
-**Update the work plan,** if the branch's issues are rows in an active plan in the vault (`~/Obsidian/Alex/AVUT/Plans/*.md` with `status: Active`). Set each issue's Status cell to `PR #n`, and the track's Status cell too for a track. Change only Status cells. The vault isn't in git, so this needs no commit.
-
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
 **If the branch carries a migration,** the shared `avut` database won't have it once the PR merges. The branch applied it to its `db:branch` copy, and every other checkout will fail on the missing column. With auto-merge, Step 8 deploys it, with the user's yes. Without auto-merge, give the user the commands as "once it merges", since deploying before then would land an unmerged migration on shared `avut`:
@@ -161,8 +158,7 @@ npm run prisma migrate deploy        # apply the merged migration to avut
 
 ## Step 8 — Clean up after the merge
 
-Step 8 runs only when auto-merge was set in Step 7. Without auto-merge (`--no-merge`, a stacked PR, or a migration or UI change held back for a preview look), stop after reporting the PR. If it carries a migration, give the `db:unbranch` / `migrate deploy` commands from Step 7 as "once it merges". If Step 7 set work-plan rows to `PR #n`, say they stay that way until the merge, and `/wrapup` marks them done after it.
-
+Step 8 runs only when auto-merge was set in Step 7. Without auto-merge (`--no-merge`, a stacked PR, or a migration or UI change held back for a preview look), stop after reporting the PR. If it carries a migration, give the `db:unbranch` / `migrate deploy` commands from Step 7 as "once it merges".
 **Before the merge lands, while the branch still exists,** note two things for the prompt:
 
 - whether the branch adds migrations: `git diff --name-only origin/<base>...HEAD -- prisma/migrations`
@@ -203,8 +199,6 @@ Then **ask once**, listing exactly what will run. A yes is the explicit permissi
    - its `.env.local` has `POSTGRES_DATABASE="avut"`
 
    Then, in the main checkout: `npm run prisma migrate deploy`, followed by `npx prisma generate`. Otherwise, don't run it. Hand the user the command and the reason, because a deploy from any other tree or database would report success while `avut` stays without the migration.
-6. **Mark the plan's rows done,** if Step 7 updated a work plan: `PR #n` becomes `Done (PR #n)`. This one needs no yes, so it isn't in the prompt's list.
-
 **Report** what ran and what was skipped. The user's dev server on 3000 picks up pulled code by itself. Say it needs a restart when any of these happened:
 - `npm install` ran, or the Prisma client was regenerated
 - a migration ran

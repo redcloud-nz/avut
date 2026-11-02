@@ -1,6 +1,6 @@
 ---
 name: avut-develop-feature
-description: Build a feature from a GitHub issue, a brainstorm in redcloud-nz/avut-ideas, or a plain description. Clarify it if needed, triage it into a quick path (implement in-session) or a long path (reviewed plan executed by implementer/reviewer subagents in a worktree), pause for visual checks on UI work, park side-findings as follow-ups, and finish through /avut-ship. Given several issues or track:<name>, build a track of quick items on one branch, one commit per issue, shipped as one PR. With --plan-only, stop once the plan is written and reviewed, on a plan/<slug> branch; given a plan (path, slug or plan/ branch), pick it up and build it. Trigger only when the user types /avut-develop-feature.
+description: Build a feature from a GitHub issue, a brainstorm in redcloud-nz/avut-ideas, or a plain description. Clarify it if needed, triage it into a quick path (implement in-session) or a long path (reviewed plan executed by implementer/reviewer subagents in a worktree), pause for visual checks on UI work, park side-findings as follow-ups, and finish through /avut-ship. Given several issues, build a track of quick items on one branch, one commit per issue, shipped as one PR. With --plan-only, stop once the plan is written and reviewed, on a plan/<slug> branch; given a plan (path, slug or plan/ branch), pick it up and build it. Trigger only when the user types /avut-develop-feature.
 effort: high
 manual: true
 ---
@@ -11,7 +11,7 @@ Takes a piece of work from "I want X" to a branch ready for `/avut-ship`. `$ARGU
 
 - a GitHub issue (a bare number, `#123`, or an issue URL), a brainstorm in redcloud-nz/avut-ideas (`ideas#<n>` or its URL), or a text description of what to achieve: the full flow below
 - the first of those with **`--plan-only`**: write and review the plan, then stop. See [Plan only](#plan-only)
-- **a track**: several issues (`#475 #442`), or `track:<name>` from the active work plan. Built on one branch and shipped as one PR. See [Tracks](#tracks)
+- **a track**: several issues (`#475 #442`, optionally `--track <name>` and `--worktree <wt>`). Built on one branch and shipped as one PR. See [Tracks](#tracks)
 - **a plan to pick up**: a `docs/plans/…` path, a `plan/<slug>` branch, or a slug. See [Pick up a plan](#pick-up-a-plan)
 
 The checkpoints are deliberate, and there are few of them. Clarify only when the work is unclear. On the long path, get approval for the plan. Pause for visual checks on UI work. The final push confirmation belongs to `/avut-ship`. Between checkpoints, just work.
@@ -27,7 +27,7 @@ The checkpoints are deliberate, and there are few of them. Clarify only when the
   - **Finish in place:** the quick path from step 3, on the exploration's branch in the current checkout.
   - **Plan the rest:** the long path from L2, with the exploration's branch moved to a worktree (see L2). In L3, the exploration is **Task 0**, already done and ticked with its commits, and the gaps are the remaining tasks. The Decisions list goes into the plan's Decisions. L1 is covered by Keep's checkpoint.
 - **A plan** (a `docs/plans/` path, `plan/<slug>`, or a slug that matches a `plan/*` branch): skip everything and go to [Pick up a plan](#pick-up-a-plan).
-- **A track** (more than one issue, or `track:<name>`): go to [Tracks](#tracks).
+- **A track** (more than one issue): go to [Tracks](#tracks).
 - **Nothing given:** ask what to build and stop. Mention any waiting plans (`git branch --list 'plan/*'`).
 
 **Database preflight.** Run `npm run prisma migrate status` (read-only). The shared `avut` database falls behind `integration` whenever someone merges a migration, and the app then fails at the first visual check with a missing-column error. If migrations are pending, check each against `git ls-tree --name-only origin/integration prisma/migrations/`. Those already on `integration` mean `avut` fell behind: list them in your first message and ask the user to run `npm run prisma migrate deploy` from the main checkout. A migration that exists only on this branch must never reach shared `avut`. It needs `db:branch` (L2), not a deploy. Don't run either yourself: it mutates the shared database, and the permission classifier blocks it anyway. Carry on with reading and planning while they do. (`npm run dev` prints the same warning when it starts, but an agent doesn't always start a server, so check here regardless.)
@@ -146,17 +146,21 @@ The user can override either way. "Just do it" on a parked item makes it fix-now
 
 A track is an ordered run of quick-path issues, built on one branch and shipped as **one PR**. Each issue's work sits in its own commits, never mixed with another issue's, and the first of them carries `Fixes #n`. It saves a branch, a CI wait and a cleanup per issue. Long-path items are never part of a track.
 
-Multi-issue work plans live in the Obsidian vault, not the repo: `~/Obsidian/Alex/AVUT/Plans/<version> <Name>.md` (`v0.13 Nucula.md`), with `status: Active` in the frontmatter while in use. Their `## Tracks` table gives each track's name, its items in order, where it runs (main checkout or a named worktree), and a status. The wave tables below it hold each item's notes. Those notes are part of the brief, so read them along with the issue.
+The input is the issues, in build order, plus optionally:
 
-1. **Resolve the track.** `track:<name>` reads the row from the active plan. If more than one active plan has that name, ask which. If none does (or there's no active plan), say so, list the active plans' track names, and stop. A list of issues is used in the order given, and if each one is in the same track of an active plan, take that track's name and notes. Resolve every issue as in Step 1, and run the database preflight once.
+- `--track <name>`: the track's name, used for the branch. Without it, derive a slug.
+- `--worktree <wt>`: build in `.claude/worktrees/<wt>`. Without it, use the main checkout.
+- notes per item, handed over by whoever invoked this (a planning skill, say). They're part of the brief: read them along with the issue.
+
+1. **Resolve the items.** Resolve every issue as in Step 1, in the order given, and run the database preflight once.
 2. **Triage each item,** as in Steps 2 and 3. If any item has an open decision, ask them all together in one `AskUserQuestion` and wait. Take out any item that triages long, or whose decision stays open. Then say, in one message: "Track `<name>`: #a, #b, #c on `track/<name>` in <where>", plus anything taken out and why, and carry on in the same turn.
-3. **Branch** where the plan's Where column says. For a list of issues with no track name, derive a slug and use the main checkout.
+3. **Branch:**
    - **Main checkout:** the quick path's step 2, with the branch named `track/<name>`. If `track/<name>` already exists, switch to it instead.
-   - **A worktree** `<wt>` (named in the Where column, which may differ from the track name): if `.claude/worktrees/<wt>` exists, `EnterWorktree` with `path`. Otherwise, if `track/<name>` exists, `git worktree add .claude/worktrees/<wt> track/<name>`; if not, `git worktree add -b track/<name> .claude/worktrees/<wt> origin/integration`. Then `EnterWorktree` with `path`, and `npm run worktree:setup`. Don't use `EnterWorktree` with `name` here: it makes its own branch.
-   - **Already in progress** (the branch exists, or the plan names another branch for it): continue on that branch. The items already built are the ones with a `Fixes #n` commit in `git log origin/integration..HEAD`. Start from the first item without one.
+   - **A worktree** `<wt>` (which may differ from the track name): if `.claude/worktrees/<wt>` exists, `EnterWorktree` with `path`. Otherwise, if `track/<name>` exists, `git worktree add .claude/worktrees/<wt> track/<name>`; if not, `git worktree add -b track/<name> .claude/worktrees/<wt> origin/integration`. Then `EnterWorktree` with `path`, and `npm run worktree:setup`. Don't use `EnterWorktree` with `name` here: it makes its own branch.
+   - **Already in progress** (the branch exists, or the notes name another branch for it): continue on that branch. The items already built are the ones with a `Fixes #n` commit in `git log origin/integration..HEAD`. Start from the first item without one.
 4. **Build each item in order,** as the quick path's implement step. Finish each one with a commit before starting the next: a conventional subject for that issue, with `Fixes #n` in the body. A fix-now side finding still gets its own commit. Run `npm run check` before each commit. Side findings go on one [parked list](#side-findings-fix-now-or-park) for the whole track. If an item turns out bigger than quick, stop and ask: take it out of the track (it gets its own long path later), or carry on.
 5. **One visual checkpoint** at the end, covering every item that changed UI. Give a URL and what to look at for each item. Iterate as usual. When it looks right, commit the tweaks once per item they belong to, naming the issue in the subject.
-6. **Finish:** settle the parked list, then continue into `/avut-ship` with the track name, the plan file, the issues in order, and each item's docs impact (or "none").
+6. **Finish:** settle the parked list, then continue into `/avut-ship` with the track name, the issues in order, and each item's docs impact (or "none").
 
 ## Plan only
 
@@ -210,4 +214,4 @@ If there's no dev server running for the checkout, start one as AGENTS.md → De
 - Committing every round of visual feedback.
 - Running a separate final review. `/avut-ship` does that.
 - Putting a long-path item in a track, or opening a PR per item. A track is one branch and one PR. Keep each issue's work in its own commits, and don't squash them together.
-- Writing a multi-issue work plan into `docs/plans/`. Milestone plans live in the vault (`~/Obsidian/Alex/AVUT/Plans/`). `docs/plans/` is for one piece of work's plan, which ships on its branch.
+- Writing a multi-issue work plan into `docs/plans/`. Milestone plans aren't kept in the repo. `docs/plans/` is for one piece of work's plan, which ships on its branch.
