@@ -34,6 +34,7 @@ const token: D4HAccessToken_ServerOnly = {
     organizationId: null,
     userId: null,
     label: "Test token",
+    access: "ReadWrite",
     serverCode: "ap",
     token: "the-api-key",
     metadata: { d4HTeams: [], d4HOrganisations: [] },

@@ -45,6 +45,7 @@ vi.mock("@/server/d4h-access-token", () => ({
         id: "token-1",
         serverCode: "ap",
         token: "secret",
+        access: "ReadWrite",
     })),
     toD4HCredentialRef: vi.fn(() => ({ credentialId: "token-1" })),
 }));

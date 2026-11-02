@@ -41,6 +41,7 @@ function credentialData({
         userId,
         groupId,
         label: "Seeded token",
+        access: userId === null ? ("ReadOnly" as const) : ("ReadWrite" as const),
         token: "encrypted:seeded-secret",
         status: "OK",
         expiresAt: new Date("2036-01-01T00:00:00Z"),

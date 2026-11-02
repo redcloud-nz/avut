@@ -28,6 +28,16 @@ export const Provider = {
 export type Provider = z.infer<typeof Provider.schema>;
 
 /**
+ * What AVUT may do with a credential. Enforced by `getD4HFetchClient`: anything but `ReadWrite`
+ * can only `GET`/`HEAD`.
+ */
+export const ProviderCredentialAccess = {
+    schema: z.enum(["ReadOnly", "ReadWrite"] as const),
+} as const;
+
+export type ProviderCredentialAccess = z.infer<typeof ProviderCredentialAccess.schema>;
+
+/**
  * Provider-specific metadata, discriminated on `provider`. Each provider gets its own union
  * member here rather than every call site casting an untyped `Json` bag by hand.
  */
@@ -54,6 +64,7 @@ export const ProviderCredential = {
         userId: z.string().nullable(),
         groupId: z.string().nullable(),
         label: z.string(),
+        access: ProviderCredentialAccess.schema,
         status: z.string(),
         expiresAt: z.string(),
         createdAt: z.string(),
@@ -80,6 +91,7 @@ export const ProviderCredential_ServerOnly = {
         userId: z.string().nullable(),
         groupId: z.string().nullable(),
         label: z.string(),
+        access: ProviderCredentialAccess.schema,
         token: z.string(),
         metadata: ProviderCredentialMetadata.schema,
     }),

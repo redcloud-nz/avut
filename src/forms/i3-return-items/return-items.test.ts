@@ -22,6 +22,7 @@ const accessToken = {
     id: "token-1",
     serverCode: "ap",
     token: "secret",
+    access: "ReadWrite",
 } as unknown as D4HAccessToken_ServerOnly;
 
 /** A single-item GET result (as `fetchD4HEquipmentItem` returns it, already parsed). */

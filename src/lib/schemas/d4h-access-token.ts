@@ -8,7 +8,11 @@ import * as z from "zod";
 import { D4HServerCode } from "@/lib/d4h-servers";
 
 import { D4HAccessTokenMetadata, D4HProviderMetadata } from "./d4h-provider-metadata";
-import { ProviderCredentialId, type ProviderCredentialRecord } from "./provider-credential";
+import {
+    ProviderCredentialAccess,
+    ProviderCredentialId,
+    type ProviderCredentialRecord,
+} from "./provider-credential";
 
 /**
  * D4H's own view of a `ProviderCredential` row — same shape this codebase used before D4H moved
@@ -21,6 +25,7 @@ export const D4HAccessToken = {
         organizationId: z.string().nullable(),
         userId: z.string().nullable(),
         label: z.string(),
+        access: ProviderCredentialAccess.schema,
         serverCode: D4HServerCode.schema,
         status: z.string(),
         expiresAt: z.string(),
@@ -53,6 +58,7 @@ export const D4HAccessToken_ServerOnly = {
         organizationId: z.string().nullable(),
         userId: z.string().nullable(),
         label: z.string(),
+        access: ProviderCredentialAccess.schema,
         serverCode: D4HServerCode.schema,
         token: z.string(),
         metadata: D4HAccessTokenMetadata.schema,

@@ -62,6 +62,7 @@ vi.mock("@/server/d4h-access-token", () => ({
         organizationId: null,
         userId: null,
         label: "Test token",
+        access: "ReadWrite",
         serverCode: "us",
         token: "fake-token",
         metadata: { d4HTeams: [], d4HOrganisations: [] },

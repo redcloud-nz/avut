@@ -133,6 +133,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 id: tokenId,
                 organizationId: ctx.organizationId,
                 userId: null,
+                access: "ReadOnly",
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
@@ -158,6 +159,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         organizationId: ctx.organizationId,
                         userId: null,
                         label: create.label,
+                        access: "ReadOnly",
                         token: encryptDBValue(create.token),
                         status: credentialStatus(validation),
                         expiresAt: addYears(new Date(), 10),
@@ -210,6 +212,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 organizationId: ctx.organizationId,
                 userId: ctx.userId,
                 label,
+                access: "ReadWrite",
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
@@ -235,6 +238,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         organizationId: ctx.organizationId,
                         userId: ctx.userId,
                         label,
+                        access: "ReadWrite",
                         token: encryptDBValue(create.token),
                         status: credentialStatus(validation),
                         expiresAt: addYears(new Date(), 10),
