@@ -58,6 +58,8 @@ export default async function D4HModule_Model_Page(props: Props) {
     prefetch(
         trpc.d4hApi.getEquipmentModel.queryOptions({ organizationId: organization.id, modelId }),
     );
+    // `useReachableTeamIds` reads the teams.
+    prefetch(trpc.d4hApi.listTeams.queryOptions({ organizationId: organization.id }));
 
     return (
         <HydrateClient>
