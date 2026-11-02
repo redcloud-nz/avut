@@ -226,14 +226,11 @@ export function D4HModule_EquipmentItem_Content({
                                         <DataItem inline>
                                             <DataItemTitle>Model</DataItemTitle>
                                             <DataItemValue>
-                                                {item.model?.id != null &&
-                                                item.model.title &&
-                                                item.brand.id != null ? (
+                                                {item.model?.id != null && item.model.title ? (
                                                     <D4HEquipmentModelLink
                                                         model={{
                                                             id: item.model.id,
                                                             title: item.model.title,
-                                                            brand: { id: item.brand.id },
                                                         }}
                                                     />
                                                 ) : (
@@ -450,24 +447,11 @@ function ItemContents({ teamId, itemId }: { teamId: number; itemId: number }) {
                 header: "Model",
                 cell: (ctx) => {
                     const item = ctx.row.original;
-                    const { brand, model } = item;
-                    if (
-                        model?.id == null ||
-                        !model.title ||
-                        brand.id == null ||
-                        !isReachable(item)
-                    ) {
+                    const { model } = item;
+                    if (model?.id == null || !model.title || !isReachable(item)) {
                         return ctx.getValue() || "—";
                     }
-                    return (
-                        <D4HEquipmentModelLink
-                            model={{
-                                id: model.id,
-                                title: model.title,
-                                brand: { id: brand.id },
-                            }}
-                        />
-                    );
+                    return <D4HEquipmentModelLink model={{ id: model.id, title: model.title }} />;
                 },
                 enableGlobalFilter: true,
                 enableSorting: true,

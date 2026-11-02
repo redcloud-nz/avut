@@ -35,7 +35,7 @@ describe("D4HMemberLink", () => {
 
 describe("D4HEquipmentModelLink", () => {
     it("links to the model's own page", () => {
-        render(<D4HEquipmentModelLink model={{ id: 9, title: "Vector", brand: { id: 3 } }} />);
+        render(<D4HEquipmentModelLink model={{ id: 9, title: "Vector" }} />);
 
         expect(screen.getByRole("link", { name: "Vector" })).toHaveAttribute(
             "href",
