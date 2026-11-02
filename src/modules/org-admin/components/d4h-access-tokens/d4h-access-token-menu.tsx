@@ -4,13 +4,21 @@
  */
 "use client";
 
-import { KeyRoundIcon } from "lucide-react";
+import { KeyRoundIcon, RefreshCwIcon } from "lucide-react";
+import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import { useHasPermission } from "@/hooks/use-has-permission";
+import { useOrganization } from "@/hooks/use-organization";
 import type { Permissions } from "@/lib/permissions";
+import { route } from "@/lib/routes";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
 import { AdminModule_DeleteD4HAccessToken_Dialog } from "./delete-d4h-access-token-dialog";
@@ -23,12 +31,18 @@ type OrganizationAccessToken = RouterOutput["d4hAccessTokens"]["getOrganizationA
 // `deleteOrganizationAccessToken`, which all require `organization: ["update"]`.
 const TOKEN_PERMISSIONS: Permissions = { organization: ["update"] };
 
-export function AdminModule_D4HAccessToken_Menu({ token }: { token: OrganizationAccessToken }) {
+export const D4HAccessTokenAction = parseAsStringLiteral(["edit", "replace", "delete"] as const);
+
+export function AdminModule_D4HAccessToken_Menu({
+    token,
+    onRefresh,
+}: {
+    token: OrganizationAccessToken;
+    onRefresh: () => void;
+}) {
+    const organization = useOrganization();
     const canManage = useHasPermission(TOKEN_PERMISSIONS);
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["edit", "replace", "delete"] as const),
-    );
+    const [action, setAction] = useQueryState("action", D4HAccessTokenAction);
 
     function openAction(next: "edit" | "replace" | "delete") {
         void setAction(next, { history: "push" });
@@ -66,7 +80,30 @@ export function AdminModule_D4HAccessToken_Menu({ token }: { token: Organization
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="D4H Access Token" />
+            <EntityActionMenu
+                actions={actions}
+                category="D4H Access Token"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem asChild disabled={!canManage}>
+                                <Link
+                                    href={route(
+                                        "/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history",
+                                        { slug: organization.slug, token_id: token.id },
+                                    )}
+                                >
+                                    <ObjectIcons.History /> History
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem disabled={!canManage} onClick={onRefresh}>
+                                <RefreshCwIcon /> Refresh from D4H
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
+            />
 
             <AdminModule_EditD4HAccessToken_Dialog
                 token={token}

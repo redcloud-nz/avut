@@ -7,6 +7,7 @@
 import { RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -14,9 +15,17 @@ import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import { d4hAccessTokensEffects } from "@/client/d4h-access-tokens-effects";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { ObjectIcons } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -32,18 +41,23 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { ProviderCredentialAccess, ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
-import { UserSettings_D4HAccessToken_Menu } from "./d4h-access-token-menu";
+import {
+    PersonalD4HAccessTokenAction,
+    UserSettings_D4HAccessToken_Menu,
+} from "./d4h-access-token-menu";
 
 export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: ProviderCredentialId }) {
     const { data: tokens } = useSuspenseQuery(
         trpc.d4hAccessTokens.listPersonalAccessTokens.queryOptions(),
     );
     const token = tokens.find((t) => t.id === tokenId);
+    const [, setAction] = useQueryState("action", PersonalD4HAccessTokenAction);
 
     const refreshMutation = useMutation(
         trpc.d4hAccessTokens.refreshPersonalAccessToken.mutationOptions({
@@ -82,17 +96,24 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                     <Saratoga.Header>
                         <Saratoga.Title>D4H Personal Access Token</Saratoga.Title>
                         <Saratoga.Actions>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleRefresh}
-                                disabled={refreshMutation.isPending}
-                                aria-label="Refresh"
-                                title="Refresh"
-                            >
-                                <RefreshCwIcon />
-                            </Button>
-                            <UserSettings_D4HAccessToken_Menu token={token} />
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleRefresh}
+                                        disabled={refreshMutation.isPending}
+                                        aria-label="Refresh from D4H"
+                                    >
+                                        <RefreshCwIcon />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Refresh from D4H</TooltipContent>
+                            </Tooltip>
+                            <UserSettings_D4HAccessToken_Menu
+                                token={token}
+                                onRefresh={handleRefresh}
+                            />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
@@ -100,6 +121,18 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Token Details</CardTitle>
+                                    <CardAction>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Edit access token"
+                                            onClick={() =>
+                                                void setAction("edit", { history: "push" })
+                                            }
+                                        >
+                                            <ObjectIcons.Edit />
+                                        </Button>
+                                    </CardAction>
                                 </CardHeader>
                                 <CardContent>
                                     <DataList>
@@ -187,6 +220,10 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                                         <DataItem inline>
                                             <DataItemTitle>Created</DataItemTitle>
                                             <DataItemDateValue date={token.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={token.updatedAt} />
                                         </DataItem>
                                     </DataList>
                                 </CardContent>

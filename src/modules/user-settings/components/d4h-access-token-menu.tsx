@@ -4,10 +4,15 @@
  */
 "use client";
 
-import { KeyRoundIcon } from "lucide-react";
+import { KeyRoundIcon, RefreshCwIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { ObjectIcons } from "@/components/icons";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
@@ -17,11 +22,20 @@ import { UserSettings_ReplaceD4HAccessToken_Dialog } from "./replace-d4h-access-
 
 type PersonalAccessToken = RouterOutput["d4hAccessTokens"]["listPersonalAccessTokens"][number];
 
-export function UserSettings_D4HAccessToken_Menu({ token }: { token: PersonalAccessToken }) {
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["edit", "replace", "remove"] as const),
-    );
+export const PersonalD4HAccessTokenAction = parseAsStringLiteral([
+    "edit",
+    "replace",
+    "remove",
+] as const);
+
+export function UserSettings_D4HAccessToken_Menu({
+    token,
+    onRefresh,
+}: {
+    token: PersonalAccessToken;
+    onRefresh: () => void;
+}) {
+    const [action, setAction] = useQueryState("action", PersonalD4HAccessTokenAction);
 
     // The menu opens each dialog, so the edit and replace dialogs only ever ask to close.
     function handleOpenChange(open: boolean) {
@@ -52,7 +66,20 @@ export function UserSettings_D4HAccessToken_Menu({ token }: { token: PersonalAcc
 
     return (
         <>
-            <EntityActionMenu actions={actions} category="D4H Access Token" />
+            <EntityActionMenu
+                actions={actions}
+                category="D4H Access Token"
+                before={
+                    <>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem onClick={onRefresh}>
+                                <RefreshCwIcon /> Refresh from D4H
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                    </>
+                }
+            />
 
             <UserSettings_EditD4HAccessToken_Dialog
                 token={token}

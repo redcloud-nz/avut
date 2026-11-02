@@ -5,7 +5,7 @@
 "use client";
 
 import { RefreshCwIcon } from "lucide-react";
-import Link from "next/link";
+import { useQueryState } from "nuqs";
 import { toast } from "sonner";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -16,7 +16,14 @@ import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import {
     DataItem,
     DataItemDateValue,
@@ -32,16 +39,18 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { ProviderCredentialAccess, ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_D4HAccessToken_Menu } from "./d4h-access-token-menu";
+import { AdminModule_D4HAccessToken_Menu, D4HAccessTokenAction } from "./d4h-access-token-menu";
 
 export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: ProviderCredentialId }) {
     const organization = useOrganization();
+    const [, setAction] = useQueryState("action", D4HAccessTokenAction);
 
     const { data: accessToken } = useSuspenseQuery(
         trpc.d4hAccessTokens.getOrganizationAccessToken.queryOptions({
@@ -95,28 +104,24 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                         </Saratoga.Title>
                         <Saratoga.Actions>
                             <Protect permissions={{ organization: ["update"] }}>
-                                <Button variant="ghost" size="icon" asChild>
-                                    <Link
-                                        href={route(
-                                            "/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history",
-                                            { slug: organization.slug, token_id: tokenId },
-                                        )}
-                                        aria-label="History"
-                                        title="History"
-                                    >
-                                        <ObjectIcons.History />
-                                    </Link>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Refresh"
-                                    onClick={handleRefresh}
-                                >
-                                    <RefreshCwIcon />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Refresh from D4H"
+                                            onClick={handleRefresh}
+                                        >
+                                            <RefreshCwIcon />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Refresh from D4H</TooltipContent>
+                                </Tooltip>
                             </Protect>
-                            <AdminModule_D4HAccessToken_Menu token={accessToken} />
+                            <AdminModule_D4HAccessToken_Menu
+                                token={accessToken}
+                                onRefresh={handleRefresh}
+                            />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
@@ -124,6 +129,20 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                             <Card>
                                 <CardHeader>
                                     <CardTitle>D4H Access Token</CardTitle>
+                                    <CardAction>
+                                        <Protect permissions={{ organization: ["update"] }}>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                aria-label="Edit access token"
+                                                onClick={() =>
+                                                    void setAction("edit", { history: "push" })
+                                                }
+                                            >
+                                                <ObjectIcons.Edit />
+                                            </Button>
+                                        </Protect>
+                                    </CardAction>
                                 </CardHeader>
                                 <CardContent>
                                     <DataList>
@@ -233,6 +252,10 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                                         <DataItem inline>
                                             <DataItemTitle>Created</DataItemTitle>
                                             <DataItemDateValue date={accessToken.createdAt} />
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Updated</DataItemTitle>
+                                            <DataItemDateValue date={accessToken.updatedAt} />
                                         </DataItem>
                                     </DataList>
                                 </CardContent>

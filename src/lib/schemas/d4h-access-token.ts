@@ -30,6 +30,7 @@ export const D4HAccessToken = {
         status: z.string(),
         expiresAt: z.string(),
         createdAt: z.string(),
+        updatedAt: z.string(),
         metadata: D4HAccessTokenMetadata.schema,
     }),
 
@@ -45,6 +46,7 @@ export const D4HAccessToken = {
             serverCode,
             expiresAt: record.expiresAt.toISOString(),
             createdAt: record.createdAt.toISOString(),
+            updatedAt: record.updatedAt.toISOString(),
             metadata: { d4HTeams, d4HOrganisations },
         });
     },
