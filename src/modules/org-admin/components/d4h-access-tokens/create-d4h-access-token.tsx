@@ -90,7 +90,7 @@ export function AdminModule_CreateD4HAccessToken_Form({
         createTokenMutation.mutate({
             organizationId: organization.id,
             tokenId: ProviderCredentialId.create(),
-            create: formData,
+            create: { ...formData, access: "ReadOnly" },
         });
     });
 

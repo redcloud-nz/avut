@@ -22,6 +22,20 @@ export const d4hAccessTokensEffects = createEffects<"d4hAccessTokens">()({
     createPersonalAccessToken: () => [
         invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
     ],
+    // Delete also clears the `modules.d4h-nag.d4hTokenId` and `integrations.d4h.syncToken`
+    // settings that pointed at the token.
+    deleteOrganizationAccessToken: (vars) => [
+        invalidate(
+            trpc.d4hAccessTokens.listOrganizationAccessTokens.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(
+            trpc.settings.getOrganizationSettings.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+    ],
     deletePersonalAccessToken: () => [
         invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
     ],
@@ -34,6 +48,32 @@ export const d4hAccessTokensEffects = createEffects<"d4hAccessTokens">()({
         ),
     ],
     refreshToken: (vars) => [
+        invalidate(
+            trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({
+                organizationId: vars.organizationId,
+                tokenId: vars.tokenId,
+            }),
+        ),
+    ],
+    replaceOrganizationAccessToken: (vars) => [
+        invalidate(
+            trpc.d4hAccessTokens.listOrganizationAccessTokens.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(
+            trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({
+                organizationId: vars.organizationId,
+                tokenId: vars.tokenId,
+            }),
+        ),
+    ],
+    updateOrganizationAccessToken: (vars) => [
+        invalidate(
+            trpc.d4hAccessTokens.listOrganizationAccessTokens.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
         invalidate(
             trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({
                 organizationId: vars.organizationId,

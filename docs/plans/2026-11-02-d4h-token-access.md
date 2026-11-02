@@ -35,7 +35,7 @@ Org D4H access tokens get the same management as personal tokens (add in a dialo
   - **Do:** In `onRequest`, before setting `Authorization`, throw `ForbiddenError` (from `@/lib/errors`) when `token.access !== "ReadWrite"` and `request.method` isn't `GET` or `HEAD` (fail closed). The message goes in `Messages` in `src/trpc/messages.ts`, next to `d4HAccessTokenRejected` (`src/server` already imports `src/trpc`, e.g. `trpc-context.ts`). Update the JSDoc on `getD4HFetchClient` to say it's the one enforcement point.
   - **Done when:** tests show a read-only token's `GET` goes out, its `POST`/`PATCH`/`DELETE` throw `ForbiddenError` without `fetch` being called, and a read-write token's `POST` goes out.
 
-- [ ] **Task 3: org token procedures.**
+- [x] **Task 3: org token procedures.** _feat(d4h): add org token update and replace procedures_
   - **Files:** `src/trpc/routers/d4h-access-tokens-router.ts`, its test, `src/client/d4h-access-tokens-effects.ts`, `src/trpc/messages.ts` if new messages are needed.
   - **Do:**
     - `createOrganizationAccessToken` takes `create.access` (`ProviderCredentialAccess.schema`), stores it, and includes it in the audit diff.

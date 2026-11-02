@@ -16,6 +16,7 @@ import {
     revalidatePersonalD4HAccessTokenForUser,
 } from "@/server/d4h-access-token";
 import { validateD4HCredential } from "@/server/d4h-api/client";
+import { decryptDBValue } from "@/server/encrypt";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -97,9 +98,13 @@ vi.mock("@/server/cache/organization-settings", () => ({
     revalidateOrganizationSettings: vi.fn(),
 }));
 
+// A stored value without the `encrypted:` prefix stands for one that no longer decrypts.
 vi.mock("@/server/encrypt", () => ({
     encryptDBValue: (value: string) => `encrypted:${value}`,
-    decryptDBValue: (value: string) => value.replace(/^encrypted:/, ""),
+    decryptDBValue: vi.fn((value: string) => {
+        if (!value.startsWith("encrypted:")) throw new Error("Decrypt failed");
+        return value.replace(/^encrypted:/, "");
+    }),
 }));
 
 describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
@@ -135,6 +140,7 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
             create: {
                 serverCode: "us" as D4HServerCode,
                 label: "Test token",
+                access: "ReadWrite",
                 token: "super-secret-d4h-key",
             },
         });
@@ -161,9 +167,13 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
             curr: "Test token",
         });
 
-        // The token itself is still persisted (encrypted) on the record.
+        expect(changes).toContainEqual({ type: "obj_add", path: ["access"], curr: "ReadWrite" });
+
+        // The token itself is still persisted (encrypted) on the record, with the chosen access.
         const stored = await db.providerCredential.findUniqueOrThrow({ where: { id: tokenId } });
         expect(stored.token).not.toBe("super-secret-d4h-key");
+        expect(stored.access).toBe("ReadWrite");
+        expect(result.created.access).toBe("ReadWrite");
     });
 
     it("rejects a token D4H refuses, saving and logging nothing", async () => {
@@ -175,7 +185,12 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
             makeCaller().createOrganizationAccessToken({
                 organizationId: T.org,
                 tokenId,
-                create: { serverCode: "us" as D4HServerCode, label: "Bad", token: "bad-key" },
+                create: {
+                    serverCode: "us" as D4HServerCode,
+                    label: "Bad",
+                    access: "ReadOnly",
+                    token: "bad-key",
+                },
             }),
         ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringContaining("401") });
 
@@ -195,7 +210,12 @@ describe("d4hAccessTokensRouter.createOrganizationAccessToken", () => {
             .createOrganizationAccessToken({
                 organizationId: T.org,
                 tokenId,
-                create: { serverCode: "us" as D4HServerCode, label: "Down", token: "good-key" },
+                create: {
+                    serverCode: "us" as D4HServerCode,
+                    label: "Down",
+                    access: "ReadOnly",
+                    token: "good-key",
+                },
             })
             .catch((e: unknown) => e);
 
@@ -707,6 +727,311 @@ describe("d4hAccessTokensRouter.refreshToken", () => {
         await expect(
             makeCaller().refreshToken({ organizationId: T.org, tokenId: T.personalToken }),
         ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    });
+});
+
+describe("d4hAccessTokensRouter.replaceOrganizationAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        member: nanoId16(),
+        orgToken: ProviderCredentialId.create(),
+        rejectedToken: ProviderCredentialId.create(),
+        undecryptableToken: ProviderCredentialId.create(),
+        otherOrgToken: ProviderCredentialId.create(),
+        personalToken: ProviderCredentialId.create(),
+    };
+
+    const replacedMetadata: D4HAccessTokenMetadata = {
+        d4HTeams: [
+            {
+                id: 99,
+                title: "Replaced Team",
+                resourceType: "Team",
+                permissions: { Equipment: { CREATE: true } },
+            },
+        ],
+        d4HOrganisations: [],
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, name] of [
+            [T.org, "Acme"],
+            [T.otherOrg, "Other"],
+        ]) {
+            await db.organization.create({
+                data: { id, name, slug: id, createdAt: new Date() },
+            });
+        }
+        await db.providerCredential.create({
+            data: {
+                ...credentialData({ id: T.orgToken, organizationId: T.org, userId: null }),
+                label: "Sync token",
+                status: "Unauthorized",
+            },
+        });
+        await db.providerCredential.create({
+            data: {
+                ...credentialData({ id: T.rejectedToken, organizationId: T.org, userId: null }),
+                metadata: storedMetadata,
+            },
+        });
+        await db.providerCredential.create({
+            data: {
+                ...credentialData({
+                    id: T.undecryptableToken,
+                    organizationId: T.org,
+                    userId: null,
+                }),
+                token: "garbled-ciphertext",
+            },
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.otherOrgToken, organizationId: T.otherOrg, userId: null }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.member }),
+        });
+    });
+
+    function makeCaller(
+        permissions: { organization: ("view" | "update")[] } = {
+            organization: ["view", "update"],
+        },
+    ) {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.user }, permissions, prisma: db }),
+        );
+    }
+
+    it("throws FORBIDDEN without organization update", async () => {
+        await expect(
+            makeCaller({ organization: ["view"] }).replaceOrganizationAccessToken({
+                organizationId: T.org,
+                tokenId: T.orgToken,
+                token: "new-secret",
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+        expect(validateD4HCredential).not.toHaveBeenCalled();
+    });
+
+    it("throws NOT_FOUND for another organization's token or a personal token", async () => {
+        for (const tokenId of [T.otherOrgToken, T.personalToken]) {
+            await expect(
+                makeCaller().replaceOrganizationAccessToken({
+                    organizationId: T.org,
+                    tokenId,
+                    token: "new-secret",
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        }
+
+        expect(validateD4HCredential).not.toHaveBeenCalled();
+    });
+
+    it("validates the new value, stores it with fresh status and metadata, and keeps the id", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            metadata: replacedMetadata,
+        });
+
+        await makeCaller().replaceOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.orgToken,
+            token: "brand-new-secret",
+        });
+
+        // Validated with the new value and the record's own fields.
+        expect(validateD4HCredential).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: T.orgToken,
+                label: "Sync token",
+                access: "ReadOnly",
+                serverCode: "us",
+                token: "brand-new-secret",
+            }),
+        );
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.orgToken },
+        });
+        expect(stored.token).toBe("encrypted:brand-new-secret");
+        expect(stored.status).toBe("OK");
+        expect(stored.label).toBe("Sync token");
+        expect(stored.access).toBe("ReadOnly");
+        expect(stored.metadata).toEqual({ provider: "D4H", serverCode: "us", ...replacedMetadata });
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.orgToken } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].action).toBe("Update");
+        expect(entries[0].description).toBe("Replaced the D4H access token value.");
+        expect(entries[0].changes).toEqual([
+            { type: "obj_mask", path: ["token"] },
+            { type: "obj_mod", path: ["status"], prev: "Unauthorized", curr: "OK" },
+        ]);
+        expect(JSON.stringify(entries[0])).not.toContain("brand-new-secret");
+
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.orgToken);
+        expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.orgToken);
+    });
+
+    it("rejects a value D4H refuses, saving and logging nothing", async () => {
+        vi.mocked(validateD4HCredential).mockResolvedValueOnce(rejected);
+        const before = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.rejectedToken },
+        });
+
+        await expect(
+            makeCaller().replaceOrganizationAccessToken({
+                organizationId: T.org,
+                tokenId: T.rejectedToken,
+                token: "bad-key",
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+        const after = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.rejectedToken },
+        });
+        expect(after).toEqual(before);
+        expect(await db.logEntry.count({ where: { objectId: T.rejectedToken } })).toBe(0);
+    });
+
+    it("replaces a token whose stored value can't be decrypted", async () => {
+        await makeCaller().replaceOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.undecryptableToken,
+            token: "fixed-secret",
+        });
+
+        expect(decryptDBValue).not.toHaveBeenCalled();
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.undecryptableToken },
+        });
+        expect(stored.token).toBe("encrypted:fixed-secret");
+    });
+});
+
+describe("d4hAccessTokensRouter.updateOrganizationAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: nanoId16(),
+        member: nanoId16(),
+        orgToken: ProviderCredentialId.create(),
+        labelOnlyToken: ProviderCredentialId.create(),
+        otherOrgToken: ProviderCredentialId.create(),
+        personalToken: ProviderCredentialId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const [id, name] of [
+            [T.org, "Acme"],
+            [T.otherOrg, "Other"],
+        ]) {
+            await db.organization.create({
+                data: { id, name, slug: id, createdAt: new Date() },
+            });
+        }
+        for (const id of [T.orgToken, T.labelOnlyToken]) {
+            await db.providerCredential.create({
+                data: credentialData({ id, organizationId: T.org, userId: null }),
+            });
+        }
+        await db.providerCredential.create({
+            data: credentialData({ id: T.otherOrgToken, organizationId: T.otherOrg, userId: null }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.member }),
+        });
+    });
+
+    function makeCaller(
+        permissions: { organization: ("view" | "update")[] } = {
+            organization: ["view", "update"],
+        },
+    ) {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.user }, permissions, prisma: db }),
+        );
+    }
+
+    it("throws FORBIDDEN without organization update", async () => {
+        await expect(
+            makeCaller({ organization: ["view"] }).updateOrganizationAccessToken({
+                organizationId: T.org,
+                tokenId: T.orgToken,
+                patch: { access: "ReadWrite" },
+            }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+
+    it("throws NOT_FOUND for another organization's token or a personal token", async () => {
+        for (const tokenId of [T.otherOrgToken, T.personalToken]) {
+            await expect(
+                makeCaller().updateOrganizationAccessToken({
+                    organizationId: T.org,
+                    tokenId,
+                    patch: { label: "Hijacked" },
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            const stored = await db.providerCredential.findUniqueOrThrow({
+                where: { id: tokenId },
+            });
+            expect(stored.label).toBe("Seeded token");
+        }
+    });
+
+    it("updates the label and access, logs the diff, and revalidates the credential", async () => {
+        const result = await makeCaller().updateOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.orgToken,
+            patch: { label: "Renamed", access: "ReadWrite" },
+        });
+
+        expect(result).toMatchObject({ id: T.orgToken, label: "Renamed", access: "ReadWrite" });
+        expect(result).not.toHaveProperty("token");
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.orgToken },
+        });
+        expect(stored.label).toBe("Renamed");
+        expect(stored.access).toBe("ReadWrite");
+        expect(stored.token).toBe("encrypted:seeded-secret");
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.orgToken } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].action).toBe("Update");
+        expect(entries[0].changes).toEqual(
+            expect.arrayContaining([
+                { type: "obj_mod", path: ["label"], prev: "Seeded token", curr: "Renamed" },
+                { type: "obj_mod", path: ["access"], prev: "ReadOnly", curr: "ReadWrite" },
+            ]),
+        );
+        expect(JSON.stringify(entries[0])).not.toContain("seeded-secret");
+
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.orgToken);
+    });
+
+    it("logs only the fields in the patch", async () => {
+        await makeCaller().updateOrganizationAccessToken({
+            organizationId: T.org,
+            tokenId: T.labelOnlyToken,
+            patch: { label: "Only the label" },
+        });
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.labelOnlyToken } });
+        expect(entries[0].changes).toEqual([
+            { type: "obj_mod", path: ["label"], prev: "Seeded token", curr: "Only the label" },
+        ]);
     });
 });
 

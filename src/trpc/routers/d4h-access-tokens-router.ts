@@ -12,9 +12,10 @@ import { TRPCError } from "@trpc/server";
 import { D4HServerCode } from "@/lib/d4h-servers";
 import { DiffChange, diffObject } from "@/lib/diff";
 import { D4HAccessToken, D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
+import { D4HAccessTokenMetadata, D4HProviderMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { OrganizationData } from "@/lib/schemas/organization";
 import {
+    ProviderCredentialAccess,
     ProviderCredentialId,
     type ProviderCredentialRecord,
 } from "@/lib/schemas/provider-credential";
@@ -106,6 +107,65 @@ async function refreshD4HCredential(
 }
 
 /**
+ * Replace a stored D4H credential's value, keeping its id (so every setting that points at it
+ * keeps pointing at it), label, access and server. Shared by `replaceOrganizationAccessToken` and
+ * `replacePersonalAccessToken`. Cache revalidation is left to the caller.
+ *
+ * Never decrypts the stored value, so it works on a credential whose stored value no longer
+ * decrypts. A value D4H rejects is never saved.
+ */
+async function replaceD4HCredentialValue(
+    ctx: AuthenticatedOrganizationContext,
+    record: ProviderCredentialRecord,
+    newValue: string,
+) {
+    const { serverCode, d4HTeams, d4HOrganisations } = D4HProviderMetadata.schema.parse(
+        record.metadata,
+    );
+
+    const token = D4HAccessToken_ServerOnly.schema.parse({
+        id: record.id,
+        organizationId: record.organizationId,
+        userId: record.userId,
+        label: record.label,
+        access: record.access,
+        serverCode,
+        token: newValue,
+        metadata: { d4HTeams, d4HOrganisations },
+    });
+
+    // Check the new value and fetch fresh metadata. A value D4H rejects is never saved.
+    const validation = await validateD4HCredential(token);
+    if (!validation.ok) throw credentialRejectedError(validation);
+
+    const status = credentialStatus(validation);
+    const metadata: D4HAccessTokenMetadata = validation.metadata ?? D4HAccessTokenMetadata.empty;
+
+    const changes: DiffChange[] = [
+        { type: "obj_mask", path: ["token"] },
+        ...diffObject({ status: record.status }, { status }),
+    ];
+
+    await ctx.prisma.$transaction([
+        ctx.prisma.providerCredential.update({
+            where: { id: record.id },
+            data: {
+                token: encryptDBValue(newValue),
+                status,
+                metadata: { provider: "D4H", serverCode, ...metadata },
+            },
+        }),
+        ctx.logEvent({
+            action: "Update",
+            objectType: "D4HAccessToken",
+            objectId: record.id,
+            changes,
+            description: "Replaced the D4H access token value.",
+        }),
+    ]);
+}
+
+/**
  * TRPC router for managing D4H access tokens. These tokens are used to sync data from D4H into AVUT.
  * Stored in the shared `ProviderCredential` table (#286), filtered/tagged with `provider: "D4H"`.
  */
@@ -122,6 +182,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 create: z.object({
                     serverCode: D4HServerCode.schema,
                     label: z.string(),
+                    access: ProviderCredentialAccess.schema,
                     token: z.string(),
                 }),
             }),
@@ -133,7 +194,6 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 id: tokenId,
                 organizationId: ctx.organizationId,
                 userId: null,
-                access: "ReadOnly",
                 metadata: { d4HTeams: [], d4HOrganisations: [] },
             } satisfies D4HAccessToken_ServerOnly;
 
@@ -159,7 +219,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         organizationId: ctx.organizationId,
                         userId: null,
                         label: create.label,
-                        access: "ReadOnly",
+                        access: create.access,
                         token: encryptDBValue(create.token),
                         status: credentialStatus(validation),
                         expiresAt: addYears(new Date(), 10),
@@ -527,5 +587,95 @@ export const d4hAccessTokensRouter = createTrpcRouter({
 
             revalidateD4HAccessToken(input.tokenId);
             revalidateD4HApiCache(input.tokenId);
+        }),
+
+    /**
+     * Replace the value of an organization access token, keeping its id, label, access and server.
+     * The new value is checked with D4H first; a value D4H rejects is never saved.
+     */
+    replaceOrganizationAccessToken: organizationProcedure({
+        organization: ["update"],
+    })
+        .input(
+            z.object({
+                tokenId: ProviderCredentialId.schema,
+                token: z.string(),
+            }),
+        )
+        .mutation(async ({ input, ctx }) => {
+            // `userId: null`: only organization tokens. A member's personal token is theirs to replace.
+            const record = await ctx.prisma.providerCredential.findUnique({
+                where: {
+                    id: input.tokenId,
+                    provider: "D4H",
+                    organizationId: ctx.organizationId,
+                    userId: null,
+                },
+            });
+
+            if (!record)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.d4HAccessTokenNotFound(input.tokenId),
+                });
+
+            await replaceD4HCredentialValue(ctx, record, input.token);
+
+            revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
+        }),
+
+    /**
+     * Update an organization access token's label or access level.
+     */
+    updateOrganizationAccessToken: organizationProcedure({
+        organization: ["update"],
+    })
+        .input(
+            z.object({
+                tokenId: ProviderCredentialId.schema,
+                patch: z.object({
+                    label: z.string().optional(),
+                    access: ProviderCredentialAccess.schema.optional(),
+                }),
+            }),
+        )
+        .output(D4HAccessToken.schema)
+        .mutation(async ({ input: { tokenId, patch }, ctx }) => {
+            // `userId: null`: only organization tokens. A member's personal token is theirs to edit.
+            const record = await ctx.prisma.providerCredential.findUnique({
+                where: {
+                    id: tokenId,
+                    provider: "D4H",
+                    organizationId: ctx.organizationId,
+                    userId: null,
+                },
+            });
+
+            if (!record)
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.d4HAccessTokenNotFound(tokenId),
+                });
+
+            const before = R.pick({ label: record.label, access: record.access }, R.keys(patch));
+
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.providerCredential.update({
+                    where: { id: tokenId },
+                    data: patch,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "D4HAccessToken",
+                    objectId: tokenId,
+                    changes: diffObject(before, patch),
+                }),
+            ]);
+
+            // The cached credential carries `access`, which the fetch client enforces.
+            revalidateD4HAccessToken(tokenId);
+
+            return D4HAccessToken.fromRecord(updated);
         }),
 });
