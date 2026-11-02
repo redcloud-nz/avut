@@ -55,6 +55,8 @@ export default async function D4HModule_Brand_Page(props: Props) {
 
     prefetch(trpc.d4hApi.listEquipmentBrands.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.d4hApi.listEquipmentModels.queryOptions({ organizationId: organization.id }));
+    // `useReachableTeamIds` reads the teams.
+    prefetch(trpc.d4hApi.listTeams.queryOptions({ organizationId: organization.id }));
 
     return (
         <HydrateClient>
