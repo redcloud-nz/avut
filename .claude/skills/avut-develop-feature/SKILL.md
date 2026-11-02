@@ -10,8 +10,8 @@ manual: true
 Takes a piece of work from "I want X" to a branch ready for `/avut-ship`. `$ARGUMENTS` is one of:
 
 - a GitHub issue (a bare number, `#123`, or an issue URL), a brainstorm in redcloud-nz/avut-ideas (`ideas#<n>` or its URL), or a text description of what to achieve: the full flow below
+- the first of those with **`--plan-only`**: write and review the plan, then stop. See [Plan only](#plan-only)
 - **a track**: several issues (`#475 #442`), or `track:<name>` from the active work plan. Built on one branch and shipped as one PR. See [Tracks](#tracks)
-- either of those with **`--plan-only`**: write and review the plan, then stop. See [Plan only](#plan-only)
 - **a plan to pick up**: a `docs/plans/…` path, a `plan/<slug>` branch, or a slug. See [Pick up a plan](#pick-up-a-plan)
 
 The checkpoints are deliberate, and there are few of them. Clarify only when the work is unclear. On the long path, get approval for the plan. Pause for visual checks on UI work. The final push confirmation belongs to `/avut-ship`. Between checkpoints, just work.
@@ -144,14 +144,17 @@ The user can override either way. "Just do it" on a parked item makes it fix-now
 
 ## Tracks
 
-A track is an ordered run of quick-path issues, built on one branch, one commit per issue, and shipped as **one PR**. It saves a branch, a CI wait and a cleanup per issue. Long-path items are never part of a track.
+A track is an ordered run of quick-path issues, built on one branch and shipped as **one PR**. Each issue's work sits in its own commits, never mixed with another issue's, and the first of them carries `Fixes #n`. It saves a branch, a CI wait and a cleanup per issue. Long-path items are never part of a track.
 
 Multi-issue work plans live in the Obsidian vault, not the repo: `~/Obsidian/Alex/AVUT/Plans/<version> <Name>.md` (`v0.13 Nucula.md`), with `status: Active` in the frontmatter while in use. Their `## Tracks` table gives each track's name, its items in order, where it runs (main checkout or a named worktree), and a status. The wave tables below it hold each item's notes. Those notes are part of the brief, so read them along with the issue.
 
-1. **Resolve the track.** `track:<name>` reads the row from the active plan. If more than one active plan has that name, ask which. A list of issues is used in the order given, and if each one is in the same track of an active plan, take that track's name and notes. Resolve every issue as in Step 1, and run the database preflight once.
-2. **Triage each item,** as in Steps 2 and 3. Take out any item that triages long, or that has an open decision. Ask all the decisions together in one `AskUserQuestion`. An item whose decision gets answered stays in. Then say, in one message: "Track `<name>`: #a, #b, #c on `track/<name>` in <where>", plus anything taken out and why. Carry on in the same turn.
-3. **Branch** where the track says. The main checkout follows the quick path's step 2, with the branch named `track/<name>`. A worktree follows L2: if `.claude/worktrees/<name>` exists, resume it with `EnterWorktree` and `path`; otherwise create it. If the track is already in progress on a branch (the plan says so, or the branch exists), continue on it from the first unfinished item. For a list of issues with no track name, derive a slug.
-4. **Build each item in order,** as the quick path's implement step. Finish each one with a commit before starting the next: a conventional subject for that issue, with `Fixes #n` in the body. Run `npm run check` before each commit. Side findings go on one [parked list](#side-findings-fix-now-or-park) for the whole track. If an item turns out bigger than quick, stop and ask: take it out of the track (it gets its own long path later), or carry on.
+1. **Resolve the track.** `track:<name>` reads the row from the active plan. If more than one active plan has that name, ask which. If none does (or there's no active plan), say so, list the active plans' track names, and stop. A list of issues is used in the order given, and if each one is in the same track of an active plan, take that track's name and notes. Resolve every issue as in Step 1, and run the database preflight once.
+2. **Triage each item,** as in Steps 2 and 3. If any item has an open decision, ask them all together in one `AskUserQuestion` and wait. Take out any item that triages long, or whose decision stays open. Then say, in one message: "Track `<name>`: #a, #b, #c on `track/<name>` in <where>", plus anything taken out and why, and carry on in the same turn.
+3. **Branch** where the plan's Where column says. For a list of issues with no track name, derive a slug and use the main checkout.
+   - **Main checkout:** the quick path's step 2, with the branch named `track/<name>`. If `track/<name>` already exists, switch to it instead.
+   - **A worktree** `<wt>` (named in the Where column, which may differ from the track name): if `.claude/worktrees/<wt>` exists, `EnterWorktree` with `path`. Otherwise, if `track/<name>` exists, `git worktree add .claude/worktrees/<wt> track/<name>`; if not, `git worktree add -b track/<name> .claude/worktrees/<wt> origin/integration`. Then `EnterWorktree` with `path`, and `npm run worktree:setup`. Don't use `EnterWorktree` with `name` here: it makes its own branch.
+   - **Already in progress** (the branch exists, or the plan names another branch for it): continue on that branch. The items already built are the ones with a `Fixes #n` commit in `git log origin/integration..HEAD`. Start from the first item without one.
+4. **Build each item in order,** as the quick path's implement step. Finish each one with a commit before starting the next: a conventional subject for that issue, with `Fixes #n` in the body. A fix-now side finding still gets its own commit. Run `npm run check` before each commit. Side findings go on one [parked list](#side-findings-fix-now-or-park) for the whole track. If an item turns out bigger than quick, stop and ask: take it out of the track (it gets its own long path later), or carry on.
 5. **One visual checkpoint** at the end, covering every item that changed UI. Give a URL and what to look at for each item. Iterate as usual. When it looks right, commit the tweaks once per item they belong to, naming the issue in the subject.
 6. **Finish:** settle the parked list, then continue into `/avut-ship` with the track name, the plan file, the issues in order, and each item's docs impact (or "none").
 
@@ -184,7 +187,7 @@ L5's approval happens at pickup.
 The user wants to see UI work and steer it before it's final.
 
 1. **Self-check first.** Use `avut-test-in-browser` to sign in and open the changed page(s). Take a screenshot and fix anything obviously broken (errors, a broken layout, missing data) before showing it. Don't make the user find crashes. If you can't self-check (the browser is held by another session, say), tell the user plainly that the page is unchecked, and why.
-2. **Pause.** Give the user the exact URL(s) on their dev server: the current checkout's port for the quick path, the worktree's port for the long path. Also give any state needed to see it (which org, which role, which record) and what to look at. Then wait.
+2. **Pause.** Give the user the exact URL(s) on their dev server: the port of the checkout the work is in (the current checkout on the quick path, the worktree on the long path or a worktree track). Also give any state needed to see it (which org, which role, which record) and what to look at. Then wait.
 3. **Iterate on feedback.** Apply changes in this session, even on the long path. Small visual tweaks aren't worth an implementer round-trip. **Don't commit after each round.** Keep the changes uncommitted until the user says it looks right, then commit once. Feedback that's a new feature rather than a tweak is a [side finding](#side-findings-fix-now-or-park): park it, or make it a plan task.
 4. **Resume.** Continue with the next group, or finish.
 
@@ -206,5 +209,5 @@ If there's no dev server running for the checkout, start one as AGENTS.md → De
 - A visual checkpoint that hands the user a crash, or one checkpoint per UI task instead of per group.
 - Committing every round of visual feedback.
 - Running a separate final review. `/avut-ship` does that.
-- Putting a long-path item in a track, or opening a PR per item. A track is one branch and one PR, with one commit per issue.
+- Putting a long-path item in a track, or opening a PR per item. A track is one branch and one PR. Keep each issue's work in its own commits, and don't squash them together.
 - Writing a multi-issue work plan into `docs/plans/`. Milestone plans live in the vault (`~/Obsidian/Alex/AVUT/Plans/`). `docs/plans/` is for one piece of work's plan, which ships on its branch.

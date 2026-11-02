@@ -105,7 +105,7 @@ _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed fro
 End-user guides (`content/docs/**` and its screenshots) aren't written per feature. Each PR with a user-facing change adds one item to its milestone's docs issue, and `/avut-docs` works through that issue once per milestone. Help cards (`content/help/**`) are different: they're updated in the feature branch itself. If the diff changes a screen that has a `<HelpButton>` and its card isn't in the diff, check whether the card still matches, and fix it before Step 6.
 
 1. **Decide the impact.** Use the plan's `Docs impact` line, or what `/avut-develop-feature` handed over. Failing both, judge from the diff whether user-visible behaviour, wording or layout changed. Internal refactors, tests and developer docs have no impact. If there's none, skip the rest of this step.
-2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. The user confirms it in Step 6, alongside everything else.
+2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. For a track, use the milestone its issues share. If they differ, propose the lowest of them and flag it. The user confirms it in Step 6, alongside everything else.
 3. **Draft the item text,** one line. The script adds the checkbox and the PR number in front:
 
    ```
@@ -161,7 +161,7 @@ npm run prisma migrate deploy        # apply the merged migration to avut
 
 ## Step 8 — Clean up after the merge
 
-Step 8 runs only when auto-merge was set in Step 7. Without auto-merge (`--no-merge`, a stacked PR, or a migration or UI change held back for a preview look), stop after reporting the PR. If it carries a migration, give the `db:unbranch` / `migrate deploy` commands from Step 7 as "once it merges".
+Step 8 runs only when auto-merge was set in Step 7. Without auto-merge (`--no-merge`, a stacked PR, or a migration or UI change held back for a preview look), stop after reporting the PR. If it carries a migration, give the `db:unbranch` / `migrate deploy` commands from Step 7 as "once it merges". If Step 7 set work-plan rows to `PR #n`, say they stay that way until the merge, and `/wrapup` marks them done after it.
 
 **Before the merge lands, while the branch still exists,** note two things for the prompt:
 
