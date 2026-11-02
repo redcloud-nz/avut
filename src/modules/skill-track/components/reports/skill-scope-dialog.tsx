@@ -6,12 +6,12 @@
 "use client";
 
 import { TelescopeIcon } from "lucide-react";
-import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useQueryState } from "nuqs";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { Button } from "@/components/ui/button";
+import { PickerDialog } from "@/components/picker-dialog";
 import {
     Command,
     CommandEmpty,
@@ -20,14 +20,6 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -36,9 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useDismissedThisVisit } from "@/hooks/use-dismissed-this-visit";
 import { useOrganization } from "@/hooks/use-organization";
-import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -57,52 +47,27 @@ export function SkillTrack_SkillScopeDialog({
     /** Hide the trigger button below `sm` — the report offers it in the dropdown menu instead. */
     compact?: boolean;
 }) {
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["select-scope"] as const),
-    );
     const [, setSkill] = useQueryState("skill");
 
-    // `forceOpen` (report has no scope yet) shows the dialog on arrival, but it stays
-    // dismissable — Escape leaves the blank report with its prompt and the trigger button to
-    // reopen. Once dismissed, it reopens only through `?action=select-scope` until the page is left and reached again, so a
-    // Back-button navigation that clears the param always closes it.
-    const [dismissed, setDismissed] = useDismissedThisVisit();
-    const open = action === "select-scope" || (forceOpen && !dismissed);
-
-    function handleOpenChange(next: boolean) {
-        if (!next) setDismissed(true);
-        void setAction(next ? "select-scope" : null, { history: next ? "push" : "replace" });
-    }
-
-    function handleSelectSkill(skillId: string) {
-        setDismissed(true);
-        void setSkill(skillId, { history: "push" });
-        void setAction(null, { history: "replace" });
-    }
-
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-            <Button
-                variant="outline"
-                onClick={() => handleOpenChange(true)}
-                className={cn(compact && "max-sm:hidden")}
-            >
-                <TelescopeIcon />
-                <span className="sr-only sm:not-sr-only">{label}</span>
-            </Button>
-            <DialogContent className="gap-0 p-0">
-                <DialogHeader className="border-b px-4 py-3">
-                    <DialogTitle>Select a skill</DialogTitle>
-                    <DialogDescription>
-                        Choose a skill to see who currently holds it.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogBoundary>
-                    <SkillScope_Picker onSelect={handleSelectSkill} />
-                </DialogBoundary>
-            </DialogContent>
-        </Dialog>
+        <PickerDialog
+            action="select-scope"
+            forceOpen={forceOpen}
+            icon={<TelescopeIcon />}
+            label={label}
+            compact={compact}
+            title="Select a skill"
+            description="Choose a skill to see who currently holds it."
+        >
+            {({ close }) => (
+                <SkillScope_Picker
+                    onSelect={(skillId) => {
+                        void setSkill(skillId, { history: "push" });
+                        close();
+                    }}
+                />
+            )}
+        </PickerDialog>
     );
 }
 
