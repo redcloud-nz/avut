@@ -61,7 +61,7 @@ Org D4H access tokens get the same management as personal tokens (add in a dialo
   - **Do:** Add an `EntityActionMenu` to the detail header, as `src/modules/user-settings/components/d4h-access-token-menu.tsx` does, with Edit, Replace token value, Delete, driven by `?action=` per `mutation-dialog.md` and gated per `docs/patterns/protect-permission-gating.md` (`organization: ["update"]`). Edit: Label and Access. Replace: one Token field, explaining the id and links are kept. Delete: `AlertDialog` with Decision 7's wording; on success go to the list. Show **Access** in the detail card's `DataList`, after Label.
   - **Done when:** `npm run check` passes; each dialog opens, submits and closes (self-check).
 
-- [ ] **Task 7: personal token Edit and Replace.** `visual` `mechanical`
+- [x] **Task 7: personal token Edit and Replace.** `visual` `mechanical`
   - **Files:** `src/modules/user-settings/components/d4h-access-token-menu.tsx`, `d4h-access-token-content.tsx`, new `edit-d4h-access-token-dialog.tsx` and `replace-d4h-access-token-dialog.tsx` in `src/modules/user-settings/components/`.
   - **Do:** Add Edit (label) and Replace token value to the personal menu, before Remove, with dialogs like Task 6's. Add Label and Access ("Read and write") rows to the personal detail page's `DataList`; today it shows neither, so a label edit would be invisible.
   - **Done when:** `npm run check` passes; both dialogs work on `/user/settings/d4h/…` (self-check).

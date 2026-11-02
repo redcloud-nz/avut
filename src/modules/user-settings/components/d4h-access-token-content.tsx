@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/table";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
-import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import { ProviderCredentialAccess, ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
 import { UserSettings_D4HAccessToken_Menu } from "./d4h-access-token-menu";
@@ -106,6 +106,16 @@ export function UserSettings_D4HAccessTokenContent({ tokenId }: { tokenId: Provi
                                         <DataItem inline>
                                             <DataItemTitle>Token ID</DataItemTitle>
                                             <DataItemValue>{token.id}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Label</DataItemTitle>
+                                            <DataItemValue>{token.label}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Access</DataItemTitle>
+                                            <DataItemValue>
+                                                {ProviderCredentialAccess.labels[token.access]}
+                                            </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Organisation</DataItemTitle>
