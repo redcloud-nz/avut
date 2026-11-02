@@ -7,6 +7,7 @@
 import { KeyRoundIcon, RefreshCwIcon } from "lucide-react";
 import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useRef } from "react";
 
 import { ObjectIcons } from "@/components/icons";
 import {
@@ -43,6 +44,8 @@ export function AdminModule_D4HAccessToken_Menu({
     const organization = useOrganization();
     const canManage = useHasPermission(TOKEN_PERMISSIONS);
     const [action, setAction] = useQueryState("action", D4HAccessTokenAction);
+    // The menu item that opens a dialog unmounts with the menu, so focus returns to the trigger.
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     function openAction(next: "edit" | "replace" | "delete") {
         void setAction(next, { history: "push" });
@@ -62,7 +65,7 @@ export function AdminModule_D4HAccessToken_Menu({
             disabled: !canManage,
         },
         {
-            verb: "import",
+            verb: "replace",
             label: "Replace token value",
             icon: <KeyRoundIcon />,
             onSelect: () => openAction("replace"),
@@ -83,6 +86,7 @@ export function AdminModule_D4HAccessToken_Menu({
             <EntityActionMenu
                 actions={actions}
                 category="D4H Access Token"
+                triggerRef={triggerRef}
                 before={
                     <>
                         <DropdownMenuGroup>
@@ -109,16 +113,19 @@ export function AdminModule_D4HAccessToken_Menu({
                 token={token}
                 open={action === "edit"}
                 onOpenChange={handleOpenChange}
+                returnFocusRef={triggerRef}
             />
             <AdminModule_ReplaceD4HAccessToken_Dialog
                 tokenId={token.id}
                 open={action === "replace"}
                 onOpenChange={handleOpenChange}
+                returnFocusRef={triggerRef}
             />
             <AdminModule_DeleteD4HAccessToken_Dialog
                 token={token}
                 open={action === "delete"}
                 onOpenChange={handleOpenChange}
+                returnFocusRef={triggerRef}
             />
         </>
     );

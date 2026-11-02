@@ -1021,6 +1021,18 @@ describe("d4hAccessTokensRouter.updateOrganizationAccessToken", () => {
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.orgToken);
     });
 
+    it("rejects an empty patch or a blank label", async () => {
+        for (const patch of [{}, { label: "" }]) {
+            await expect(
+                makeCaller().updateOrganizationAccessToken({
+                    organizationId: T.org,
+                    tokenId: T.orgToken,
+                    patch,
+                }),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+        }
+    });
+
     it("logs only the fields in the patch", async () => {
         await makeCaller().updateOrganizationAccessToken({
             organizationId: T.org,
@@ -1213,18 +1225,30 @@ describe("d4hAccessTokensRouter.updatePersonalAccessToken", () => {
         expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
     });
 
-    it("ignores an access change", async () => {
-        await makeCaller().updatePersonalAccessToken({
-            organizationId: T.org,
-            tokenId: T.personalToken,
-            // @ts-expect-error -- personal tokens have no access setting
-            patch: { access: "ReadOnly" },
-        });
+    it("rejects an access change, which leaves nothing to update", async () => {
+        await expect(
+            makeCaller().updatePersonalAccessToken({
+                organizationId: T.org,
+                tokenId: T.personalToken,
+                // @ts-expect-error -- personal tokens have no access setting
+                patch: { access: "ReadOnly" },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 
         const stored = await db.providerCredential.findUniqueOrThrow({
             where: { id: T.personalToken },
         });
         expect(stored.access).toBe("ReadWrite");
+    });
+
+    it("rejects a blank label", async () => {
+        await expect(
+            makeCaller().updatePersonalAccessToken({
+                organizationId: T.org,
+                tokenId: T.personalToken,
+                patch: { label: "" },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
 });
 

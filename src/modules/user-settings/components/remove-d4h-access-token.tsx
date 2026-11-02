@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ComponentProps } from "react";
+import { ComponentProps, type RefObject } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
@@ -29,9 +30,15 @@ type PersonalAccessToken = RouterOutput["d4hAccessTokens"]["listPersonalAccessTo
 
 export function UserSettings_RemoveD4HAccessToken_Dialog({
     token,
+    returnFocusRef,
     ...props
-}: ComponentProps<typeof AlertDialog> & { token: PersonalAccessToken }) {
+}: ComponentProps<typeof AlertDialog> & {
+    token: PersonalAccessToken;
+    /** Where focus goes on close when the control that opened the dialog is gone (a menu item). */
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
     const router = useRouter();
+    const returnFocus = useReturnFocus(returnFocusRef);
 
     const mutation = useMutation(
         trpc.d4hAccessTokens.deletePersonalAccessToken.mutationOptions({
@@ -53,7 +60,7 @@ export function UserSettings_RemoveD4HAccessToken_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent {...returnFocus}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Remove D4H Access Token</AlertDialogTitle>
                     <AlertDialogDescription>

@@ -13,9 +13,6 @@ export const Messages = {
 
     d4HAccessTokenNotFound: (tokenId: string) => `D4H Access Token(id=${tokenId}) not found.`,
 
-    d4HAccessTokenReadOnly: (label: string) =>
-        `${label} is read only in AVUT; it can't make changes in D4H.`,
-
     d4HAccessTokenRejected: (status: number) =>
         `D4H rejected the access token (HTTP ${status}). Check the token and server, then try again.`,
 

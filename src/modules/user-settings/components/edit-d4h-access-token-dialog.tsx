@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps, useId } from "react";
+import { ComponentProps, useId, type RefObject } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -27,6 +27,7 @@ import {
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useLogger } from "@/hooks/use-logger";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { trpc } from "@/trpc/client";
 import type { RouterOutput } from "@/trpc/routers/_app";
 
@@ -34,15 +35,20 @@ type PersonalAccessToken = RouterOutput["d4hAccessTokens"]["listPersonalAccessTo
 
 type EditD4HAccessTokenDialogProps = Omit<ComponentProps<typeof Dialog>, "children"> & {
     token: PersonalAccessToken;
+    /** Where focus goes on close when the control that opened the dialog is gone (a menu item). */
+    returnFocusRef?: RefObject<HTMLElement | null>;
 };
 
 export function UserSettings_EditD4HAccessToken_Dialog({
     token,
+    returnFocusRef,
     ...props
 }: EditD4HAccessTokenDialogProps) {
+    const returnFocus = useReturnFocus(returnFocusRef);
+
     return (
         <Dialog {...props}>
-            <DialogContent>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Edit D4H Access Token</DialogTitle>
                     <DialogDescription>

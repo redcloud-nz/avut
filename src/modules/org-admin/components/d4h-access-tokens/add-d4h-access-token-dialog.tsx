@@ -28,7 +28,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { DialogBoundary } from "@/components/ui/dialog-boundary";
 import {
     Field,
     FieldDescription,
@@ -89,9 +88,7 @@ export function AdminModule_AddD4HAccessToken_Dialog({
                         Allows {organization.name} to connect to D4H from AVUT.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogBoundary>
-                    <AddD4HAccessToken_Body organization={organization} />
-                </DialogBoundary>
+                <AddD4HAccessToken_Body organization={organization} />
             </DialogContent>
         </Dialog>
     );
@@ -105,9 +102,9 @@ function AddD4HAccessToken_Body({ organization }: AddD4HAccessTokenDialogProps) 
     const form = useForm({
         resolver: zodResolver(
             z.object({
-                label: z.string(),
+                label: z.string().min(1, "Label is required"),
                 serverCode: D4HServerCode.schema,
-                token: z.string().nonempty("Token is required"),
+                token: z.string().trim().min(1, "Token is required"),
                 access: ProviderCredentialAccess.schema,
             }),
         ),

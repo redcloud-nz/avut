@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ComponentProps } from "react";
+import { ComponentProps, type RefObject } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -23,15 +23,22 @@ import {
 import { MutationButton } from "@/components/ui/button";
 import { ObjectName } from "@/components/ui/typography";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { route } from "@/lib/routes";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_DeleteD4HAccessToken_Dialog({
     token,
+    returnFocusRef,
     ...props
-}: ComponentProps<typeof AlertDialog> & { token: { id: ProviderCredentialId; label: string } }) {
+}: ComponentProps<typeof AlertDialog> & {
+    token: { id: ProviderCredentialId; label: string };
+    /** Where focus goes on close when the control that opened the dialog is gone (a menu item). */
+    returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
     const organization = useOrganization();
+    const returnFocus = useReturnFocus(returnFocusRef);
     const router = useRouter();
 
     const mutation = useMutation(
@@ -54,7 +61,7 @@ export function AdminModule_DeleteD4HAccessToken_Dialog({
 
     return (
         <AlertDialog {...props}>
-            <AlertDialogContent>
+            <AlertDialogContent {...returnFocus}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Delete D4H Access Token</AlertDialogTitle>
                     <AlertDialogDescription>

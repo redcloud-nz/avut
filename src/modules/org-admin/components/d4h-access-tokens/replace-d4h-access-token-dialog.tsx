@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps, useId } from "react";
+import { ComponentProps, useId, type RefObject } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -28,20 +28,26 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Textarea } from "@/components/ui/textarea";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
+import { useReturnFocus } from "@/hooks/use-return-focus";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
 type ReplaceD4HAccessTokenDialogProps = Omit<ComponentProps<typeof Dialog>, "children"> & {
     tokenId: ProviderCredentialId;
+    /** Where focus goes on close when the control that opened the dialog is gone (a menu item). */
+    returnFocusRef?: RefObject<HTMLElement | null>;
 };
 
 export function AdminModule_ReplaceD4HAccessToken_Dialog({
     tokenId,
+    returnFocusRef,
     ...props
 }: ReplaceD4HAccessTokenDialogProps) {
+    const returnFocus = useReturnFocus(returnFocusRef);
+
     return (
         <Dialog {...props}>
-            <DialogContent>
+            <DialogContent {...returnFocus}>
                 <DialogHeader>
                     <DialogTitle>Replace Token Value</DialogTitle>
                     <DialogDescription>

@@ -6,6 +6,7 @@
 
 import { KeyRoundIcon, RefreshCwIcon } from "lucide-react";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
+import { useRef } from "react";
 
 import { ObjectIcons } from "@/components/icons";
 import {
@@ -36,6 +37,8 @@ export function UserSettings_D4HAccessToken_Menu({
     onRefresh: () => void;
 }) {
     const [action, setAction] = useQueryState("action", PersonalD4HAccessTokenAction);
+    // The menu item that opens a dialog unmounts with the menu, so focus returns to the trigger.
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     // The menu opens each dialog, so the edit and replace dialogs only ever ask to close.
     function handleOpenChange(open: boolean) {
@@ -50,7 +53,7 @@ export function UserSettings_D4HAccessToken_Menu({
             onSelect: () => setAction("edit", { history: "push" }),
         },
         {
-            verb: "import",
+            verb: "replace",
             label: "Replace token value",
             icon: <KeyRoundIcon />,
             onSelect: () => setAction("replace", { history: "push" }),
@@ -69,6 +72,7 @@ export function UserSettings_D4HAccessToken_Menu({
             <EntityActionMenu
                 actions={actions}
                 category="D4H Access Token"
+                triggerRef={triggerRef}
                 before={
                     <>
                         <DropdownMenuGroup>
@@ -85,16 +89,19 @@ export function UserSettings_D4HAccessToken_Menu({
                 token={token}
                 open={action === "edit"}
                 onOpenChange={handleOpenChange}
+                returnFocusRef={triggerRef}
             />
             <UserSettings_ReplaceD4HAccessToken_Dialog
                 tokenId={token.id}
                 organizationId={token.organization.id}
                 open={action === "replace"}
                 onOpenChange={handleOpenChange}
+                returnFocusRef={triggerRef}
             />
             <UserSettings_RemoveD4HAccessToken_Dialog
                 token={token}
                 open={action === "remove"}
+                returnFocusRef={triggerRef}
                 onOpenChange={(open) =>
                     setAction(open ? "remove" : null, { history: open ? "push" : "replace" })
                 }
