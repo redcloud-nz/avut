@@ -121,24 +121,11 @@ export function D4HModule_Member_Content({
                 header: "Model",
                 cell: (ctx) => {
                     const item = ctx.row.original;
-                    const { brand, model } = item;
-                    if (
-                        model?.id == null ||
-                        !model.title ||
-                        brand.id == null ||
-                        !isReachable(item)
-                    ) {
+                    const { model } = item;
+                    if (model?.id == null || !model.title || !isReachable(item)) {
                         return ctx.getValue() || "—";
                     }
-                    return (
-                        <D4HEquipmentModelLink
-                            model={{
-                                id: model.id,
-                                title: model.title,
-                                brand: { id: brand.id },
-                            }}
-                        />
-                    );
+                    return <D4HEquipmentModelLink model={{ id: model.id, title: model.title }} />;
                 },
                 enableGlobalFilter: true,
                 enableSorting: true,

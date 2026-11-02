@@ -126,23 +126,12 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                     id: "model",
                     header: "Model",
                     cell: (ctx) => {
-                        const { brand, model, team, owner } = ctx.row.original;
-                        if (
-                            team.id !== owner.id ||
-                            model?.id == null ||
-                            !model.title ||
-                            brand.id == null
-                        ) {
+                        const { model, team, owner } = ctx.row.original;
+                        if (team.id !== owner.id || model?.id == null || !model.title) {
                             return ctx.getValue() || "—";
                         }
                         return (
-                            <D4HEquipmentModelLink
-                                model={{
-                                    id: model.id,
-                                    title: model.title,
-                                    brand: { id: brand.id },
-                                }}
-                            />
+                            <D4HEquipmentModelLink model={{ id: model.id, title: model.title }} />
                         );
                     },
                     enableGlobalFilter: true,

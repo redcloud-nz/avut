@@ -46,9 +46,6 @@ export const D4HEquipmentModelRef = {
     schema: z.object({
         id: z.number(),
         title: z.string(),
-        brand: z.object({
-            id: z.number(),
-        }),
     }),
 } as const;
 
