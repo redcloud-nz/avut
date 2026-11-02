@@ -56,7 +56,7 @@ Org D4H access tokens get the same management as personal tokens (add in a dialo
   - **Do:** Uncomment the Admin index entry. Build the org Add dialog following `docs/patterns/mutation-dialog.md`, modelled on `src/modules/user-settings/components/add-d4h-access-token-dialog.tsx`, with Label, Server, Token and **Access** (_Read only_ default, _Read and write_; a description under it: "Read only stops AVUT from making any change in D4H with this token."). On success, navigate to the new token's page. Add an **Access** column to the list (labels "Read only" / "Read and write"), placed after Label.
   - **Done when:** `npm run check` passes; the index entry, list column and dialog render (self-check).
 
-- [ ] **Task 6: org token action menu.** `visual` `mechanical`
+- [x] **Task 6: org token action menu.** `visual` `mechanical`
   - **Files:** `src/modules/org-admin/components/d4h-access-tokens/access-token-content.tsx`, new `d4h-access-token-menu.tsx`, `edit-d4h-access-token-dialog.tsx`, `replace-d4h-access-token-dialog.tsx`, `delete-d4h-access-token-dialog.tsx` there.
   - **Do:** Add an `EntityActionMenu` to the detail header, as `src/modules/user-settings/components/d4h-access-token-menu.tsx` does, with Edit, Replace token value, Delete, driven by `?action=` per `mutation-dialog.md` and gated per `docs/patterns/protect-permission-gating.md` (`organization: ["update"]`). Edit: Label and Access. Replace: one Token field, explaining the id and links are kept. Delete: `AlertDialog` with Decision 7's wording; on success go to the list. Show **Access** in the detail card's `DataList`, after Label.
   - **Done when:** `npm run check` passes; each dialog opens, submits and closes (self-check).

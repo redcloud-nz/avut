@@ -35,8 +35,10 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
-import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
+import { ProviderCredentialAccess, ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_D4HAccessToken_Menu } from "./d4h-access-token-menu";
 
 export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: ProviderCredentialId }) {
     const organization = useOrganization();
@@ -114,6 +116,7 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                                     <RefreshCwIcon />
                                 </Button>
                             </Protect>
+                            <AdminModule_D4HAccessToken_Menu token={accessToken} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <Saratoga.Columns>
@@ -137,6 +140,16 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                                         <DataItem inline>
                                             <DataItemTitle>Label</DataItemTitle>
                                             <DataItemValue>{accessToken.label}</DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Access</DataItemTitle>
+                                            <DataItemValue>
+                                                {
+                                                    ProviderCredentialAccess.labels[
+                                                        accessToken.access
+                                                    ]
+                                                }
+                                            </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Status</DataItemTitle>
