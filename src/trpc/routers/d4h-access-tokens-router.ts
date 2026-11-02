@@ -181,7 +181,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 tokenId: ProviderCredentialId.schema,
                 create: z.object({
                     serverCode: D4HServerCode.schema,
-                    label: z.string().min(1),
+                    label: z.string().trim().min(1),
                     access: ProviderCredentialAccess.schema,
                     token: z.string(),
                 }),
@@ -674,7 +674,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 tokenId: ProviderCredentialId.schema,
                 patch: z
                     .object({
-                        label: z.string().min(1).optional(),
+                        label: z.string().trim().min(1).optional(),
                         access: ProviderCredentialAccess.schema.optional(),
                     })
                     .refine(
@@ -734,7 +734,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                 tokenId: ProviderCredentialId.schema,
                 patch: z
                     .object({
-                        label: z.string().min(1).optional(),
+                        label: z.string().trim().min(1).optional(),
                     })
                     .refine(
                         (patch) => Object.values(patch).some((value) => value !== undefined),

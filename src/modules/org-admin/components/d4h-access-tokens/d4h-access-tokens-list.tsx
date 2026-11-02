@@ -24,8 +24,9 @@ import { route } from "@/lib/routes";
 import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
 import { ProviderCredentialAccess } from "@/lib/schemas/provider-credential";
-import { AdminModule_AddD4HAccessToken_Dialog } from "@/modules/org-admin/components/d4h-access-tokens/add-d4h-access-token-dialog";
 import { trpc } from "@/trpc/client";
+
+import { AdminModule_AddD4HAccessToken_Dialog } from "./add-d4h-access-token-dialog";
 
 interface AdminModule_D4HAccessTokensListProps {
     organization: OrganizationData;

@@ -102,7 +102,7 @@ function AddD4HAccessToken_Body({ organization }: AddD4HAccessTokenDialogProps) 
     const form = useForm({
         resolver: zodResolver(
             z.object({
-                label: z.string().min(1, "Label is required"),
+                label: z.string().trim().min(1, "Label is required"),
                 serverCode: D4HServerCode.schema,
                 token: z.string().trim().min(1, "Token is required"),
                 access: ProviderCredentialAccess.schema,

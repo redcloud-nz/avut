@@ -66,8 +66,9 @@ export function AdminModule_DeleteD4HAccessToken_Dialog({
                     <AlertDialogTitle>Delete D4H Access Token</AlertDialogTitle>
                     <AlertDialogDescription>
                         Confirm deletion of <ObjectName>{token.label || token.id}</ObjectName>. The
-                        token is removed from AVUT but not revoked in D4H. D4H Attendance Reminders
-                        stops until another token is chosen. This cannot be undone.
+                        token is removed from AVUT but not revoked in D4H. If D4H Attendance
+                        Reminders uses this token, it stops until another is chosen. This cannot be
+                        undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

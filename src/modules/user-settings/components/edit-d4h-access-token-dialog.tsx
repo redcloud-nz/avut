@@ -74,7 +74,7 @@ function EditD4HAccessToken_Body({
     const form = useForm({
         resolver: zodResolver(
             z.object({
-                label: z.string().min(1, "Label is required"),
+                label: z.string().trim().min(1, "Label is required"),
             }),
         ),
         defaultValues: { label: token.label },
