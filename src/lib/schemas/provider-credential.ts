@@ -33,6 +33,7 @@ export type Provider = z.infer<typeof Provider.schema>;
  */
 export const ProviderCredentialAccess = {
     schema: z.enum(["ReadOnly", "ReadWrite"] as const),
+    labels: { ReadOnly: "Read only", ReadWrite: "Read and write" },
 } as const;
 
 export type ProviderCredentialAccess = z.infer<typeof ProviderCredentialAccess.schema>;

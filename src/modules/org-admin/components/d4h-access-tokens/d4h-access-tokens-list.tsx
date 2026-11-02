@@ -17,14 +17,14 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
-import { CreateNewIcon } from "@/components/icons";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import { usePreferences } from "@/hooks/use-preferences";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
 import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { OrganizationData } from "@/lib/schemas/organization";
+import { ProviderCredentialAccess } from "@/lib/schemas/provider-credential";
+import { AdminModule_AddD4HAccessToken_Dialog } from "@/modules/org-admin/components/d4h-access-tokens/add-d4h-access-token-dialog";
 import { trpc } from "@/trpc/client";
 
 interface AdminModule_D4HAccessTokensListProps {
@@ -68,6 +68,13 @@ export function AdminModule_D4HAccessTokensList({
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
+                columnHelper.accessor("access", {
+                    header: "Access",
+                    cell: (ctx) => ProviderCredentialAccess.labels[ctx.row.original.access],
+                    enableSorting: true,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: false,
+                }),
                 columnHelper.accessor("serverCode", {
                     header: "Server",
                     cell: (ctx) => getD4HServer(ctx.getValue())?.name,
@@ -101,15 +108,7 @@ export function AdminModule_D4HAccessTokensList({
                 <Saratoga.Title>D4H Access Tokens</Saratoga.Title>
                 <Saratoga.Actions>
                     <Protect permissions={{ organization: ["update"] }}>
-                        <Button variant="outline" asChild>
-                            <Link
-                                href={route("/orgs/[slug]/admin/d4h-access-tokens/--create", {
-                                    slug: organization.slug,
-                                })}
-                            >
-                                <CreateNewIcon /> New
-                            </Link>
-                        </Button>
+                        <AdminModule_AddD4HAccessToken_Dialog organization={organization} />
                     </Protect>
                 </Saratoga.Actions>
             </Saratoga.Header>

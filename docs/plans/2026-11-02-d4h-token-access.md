@@ -51,7 +51,7 @@ Org D4H access tokens get the same management as personal tokens (add in a dialo
 
 ### Review group B: UI (visual checkpoint after Task 7)
 
-- [ ] **Task 5: Admin index entry and the Add dialog.** `visual` `mechanical`
+- [x] **Task 5: Admin index entry and the Add dialog.** `visual` `mechanical`
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/page.tsx`, `src/modules/org-admin/components/d4h-access-tokens/d4h-access-tokens-list.tsx`, new `add-d4h-access-token-dialog.tsx` there, delete `d4h-access-tokens/--create/` and `create-d4h-access-token.tsx`, anything linking to `--create` (`git grep -- --create`).
   - **Do:** Uncomment the Admin index entry. Build the org Add dialog following `docs/patterns/mutation-dialog.md`, modelled on `src/modules/user-settings/components/add-d4h-access-token-dialog.tsx`, with Label, Server, Token and **Access** (_Read only_ default, _Read and write_; a description under it: "Read only stops AVUT from making any change in D4H with this token."). On success, navigate to the new token's page. Add an **Access** column to the list (labels "Read only" / "Read and write"), placed after Label.
   - **Done when:** `npm run check` passes; the index entry, list column and dialog render (self-check).
