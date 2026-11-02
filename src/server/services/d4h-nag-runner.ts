@@ -329,19 +329,11 @@ export async function executeRun(
                 continue;
             }
 
-            // Claim, then send (decision 14). The opt-out link's hash goes on with the claim, so the
-            // link works even if the `Sent` update is never recorded.
+            // Claim, then send (decision 14).
             const recipientId = D4HNagRecipientId.create();
-            const link = deps.createLinkToken();
             try {
                 await prisma.d4HNagRecipient.create({
-                    data: {
-                        id: recipientId,
-                        ...row,
-                        outcome: "Pending",
-                        dedupeKey,
-                        tokenHash: link.hash,
-                    },
+                    data: { id: recipientId, ...row, outcome: "Pending", dedupeKey },
                 });
             } catch (error) {
                 if (!isUniqueViolation(error)) throw error;
@@ -352,6 +344,14 @@ export async function executeRun(
 
             // Spacing goes between sends, not before the first (decision 16).
             if (sendAttempted) await deps.sleep(SEND_SPACING_MS);
+            // The opt-out link's hash goes on just before the send, so the link works even if the
+            // `Sent` update is never recorded. It also marks the claim as attempted: a `Pending`
+            // row without one was never sent, and the stuck-run cleanup releases it (decision 12).
+            const link = deps.createLinkToken();
+            await prisma.d4HNagRecipient.update({
+                where: { id: recipientId },
+                data: { tokenHash: link.hash },
+            });
             sendAttempted = true;
             const result: SendEmailResult = await deps.sendEmail({
                 from: NoReplyEmailAddress,
@@ -431,17 +431,37 @@ export async function executeRun(
                 },
                 data: { outcome: "Failed", dedupeKey: null, tokenHash: null },
             });
-            await prisma.d4HNagRun.update({
-                where: { id: runId },
-                data: {
-                    status: "Failed",
-                    completedAt: new Date(),
-                    error: message,
-                    ...counts,
-                    sentCount: counts.sentCount + (sentUnrecorded !== null ? 1 : 0),
-                    failedCount: counts.failedCount + released.count,
-                },
-            });
+            const failedCounts = {
+                ...counts,
+                sentCount: counts.sentCount + (sentUnrecorded !== null ? 1 : 0),
+                failedCount: counts.failedCount + released.count,
+            };
+            const failure = {
+                status: "Failed" as const,
+                completedAt: new Date(),
+                error: message,
+                ...failedCounts,
+            };
+            // A real run that got as far as sending is audited even though it failed, since
+            // members were emailed (decisions 24, 25). One that never sent has nothing to audit.
+            if (!run.dryRun && sendAttempted && run.ruleId) {
+                const { batchId, logCtx } = await openAuditBatch(ctx);
+                await prisma.$transaction([
+                    prisma.d4HNagRun.update({
+                        where: { id: runId },
+                        data: { ...failure, logBatchId: batchId },
+                    }),
+                    logCtx.logEvent({
+                        action: "Run",
+                        objectType: "D4HNagRule",
+                        objectId: run.ruleId,
+                        description: `${describeRun(run.teamName, failedCounts)}; failed: ${message}`,
+                        refs: [{ objectType: "Team", objectId: run.teamId, role: "context" }],
+                    }),
+                ]);
+            } else {
+                await prisma.d4HNagRun.update({ where: { id: runId }, data: failure });
+            }
         } catch (recordError) {
             // Recording the failure failed too; the stuck-run cleanup (decision 12) catches it.
             console.error(`Failed to record the failure of D4HNagRun(id=${runId}):`, recordError);
@@ -528,8 +548,8 @@ export interface RunDueResult {
 
 /**
  * The hourly tick (`/api/cron/d4h-nag`):
- * 1. Fail every run stuck in `Running` for `STUCK_RUN_MS`, releasing its `Pending` claims that
- *    hold no link token (decision 12).
+ * 1. Fail every run stuck in `Running` for `STUCK_RUN_MS`, releasing its `Pending` claims whose
+ *    send was never attempted (no link token yet) (decision 12).
  * 2. For each organization with the module on in its settings (decision 27), run every runnable
  *    rule whose latest slot hasn't been claimed yet, claiming the slot first (decisions 8, 9).
  *    Each organization is processed in its own try/catch, so one failing doesn't stop the rest.
@@ -595,9 +615,10 @@ function isNagModuleOn(settings: OrganizationSettings): boolean {
 
 /**
  * Fail every run still `Running` after `STUCK_RUN_MS` with `TIMED_OUT_ERROR`, and release its
- * `Pending` claims (outcome `Failed`, `dedupeKey` cleared) so those members can be retried. A
- * `Pending` claim with a `tokenHash` is left alone: its email may have gone out (sent,
- * unconfirmed), so it keeps holding the claim. Returns how many runs it failed.
+ * `Pending` claims that were never sent (no `tokenHash`: outcome `Failed`, `dedupeKey` cleared) so
+ * those members can be retried. A `Pending` claim with a `tokenHash` had its send attempted, so
+ * its email may have gone out (sent, unconfirmed): it keeps holding the claim. Returns how many
+ * runs it failed.
  */
 async function failStuckRuns(prisma: PrismaClient, now: Date): Promise<number> {
     const stuck = await prisma.d4HNagRun.findMany({

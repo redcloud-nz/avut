@@ -1094,7 +1094,9 @@ model D4HNagRecipient {
   memberName       String
   email            String?
   outcome          D4HNagOutcome
-  /// sha256 hex of the link token in the email. Only `Sent` rows have one.
+  /// sha256 hex of the link token in the email. Written just before the send, so `Sent` rows have
+  /// one, and a `Pending` row with one had its send attempted (sent, unconfirmed); a `Pending` row
+  /// without one was never sent. Cleared on failure.
   tokenHash        String?       @unique
   /// `<organizationId>:<d4hTeamId>:<exerciseId>:<memberId>` while the row holds the once-only
   /// claim (`Pending` or `Sent`). Cleared on failure so a later run can retry; never set by a dry run.

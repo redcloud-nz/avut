@@ -161,6 +161,21 @@ describe("d4h-nag-runner", () => {
         } satisfies Runner.RunnerDeps;
     }
 
+    /** Fail the next `times` updates that record a recipient as `Sent`; other updates go through. */
+    function failSentUpdates(times: number) {
+        const original = db.d4HNagRecipient.update.bind(db.d4HNagRecipient);
+        let left = times;
+        return vi.spyOn(db.d4HNagRecipient, "update").mockImplementation(((
+            args: Parameters<typeof original>[0],
+        ) => {
+            if (left > 0 && args.data.outcome === "Sent") {
+                left--;
+                return Promise.reject(new Error("Database is down"));
+            }
+            return original(args);
+        }) as never);
+    }
+
     const cronOptions = { trigger: "Cron" as const, dryRun: false, now: NOW, slot: SLOT };
 
     function cronCtx(organizationId: OrganizationId = T.org) {
@@ -524,9 +539,7 @@ describe("d4h-nag-runner", () => {
         });
 
         it("retries recording a sent email once", async () => {
-            const update = vi
-                .spyOn(db.d4HNagRecipient, "update")
-                .mockRejectedValueOnce(new Error("Database blipped"));
+            const update = failSentUpdates(1);
             const deps = makeDeps(514, [1]);
 
             try {
@@ -539,10 +552,7 @@ describe("d4h-nag-runner", () => {
         });
 
         it("keeps the claim of a sent email it couldn't record, so it isn't sent again", async () => {
-            const update = vi
-                .spyOn(db.d4HNagRecipient, "update")
-                .mockRejectedValueOnce(new Error("Database is down"))
-                .mockRejectedValueOnce(new Error("Database is down"));
+            const update = failSentUpdates(2);
             const deps = makeDeps(515, [1, 5]);
 
             let first: Runner.RunResult;
@@ -614,6 +624,47 @@ describe("d4h-nag-runner", () => {
                 userId: null,
                 actorLabel: Runner.CRON_ACTOR_LABEL,
             });
+        });
+
+        it("logs a real run that failed after sending, with the error", async () => {
+            const update = failSentUpdates(2);
+            let result: Runner.RunResult;
+            try {
+                result = await Runner.runRule(cronCtx(), T.ruleA, cronOptions, makeDeps(521, [1]));
+            } finally {
+                update.mockRestore();
+            }
+
+            expect(result).toMatchObject({ status: "Failed", sendAttempted: true });
+            const run = await db.d4HNagRun.findUniqueOrThrow({ where: { id: result.runId } });
+            expect(run.logBatchId).not.toBeNull();
+            const entry = await db.logEntry.findFirstOrThrow({
+                where: { batchId: run.logBatchId },
+            });
+            expect(entry).toMatchObject({
+                action: "Run",
+                objectType: "D4HNagRule",
+                objectId: T.ruleA,
+            });
+            expect(entry.description).toContain("1 sent");
+            expect(entry.description).toContain("failed: Database is down");
+        });
+
+        it("doesn't log a run that failed before sending anything", async () => {
+            const result = await Runner.runRule(
+                cronCtx(),
+                T.ruleA,
+                cronOptions,
+                makeDeps(522, [1], {
+                    fetchExercises: vi.fn(async () => {
+                        throw new Error("D4H is down");
+                    }),
+                }),
+            );
+
+            expect(result).toMatchObject({ status: "Failed", sendAttempted: false });
+            const run = await db.d4HNagRun.findUniqueOrThrow({ where: { id: result.runId } });
+            expect(run.logBatchId).toBeNull();
         });
 
         it("logs a manual run as the user who started it", async () => {

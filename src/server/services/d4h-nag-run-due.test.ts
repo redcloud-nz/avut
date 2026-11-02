@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
-import { D4HNagRecipientId, D4HNagRuleId, D4HNagRunId } from "@/lib/schemas/d4h-nag";
+import { D4HNagRuleId, D4HNagRunId } from "@/lib/schemas/d4h-nag";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { TeamId } from "@/lib/schemas/team";
@@ -295,75 +295,126 @@ describe("d4h-nag-runner.runDue", () => {
         expect(remaining.map((run) => run.id).sort()).toEqual([...kept].sort());
     });
 
-    it("fails a stuck Running run and releases its Pending claims without a link token", async () => {
+    it("fails a run cut off mid-send, releasing the claims it never sent and keeping the one it did", async () => {
         const org = await seedOrg({ nag: false });
-        const stuck = await seedRun(org, {
-            startedAt: new Date(NOW.getTime() - 20 * 60 * 1000),
-            status: "Running",
+        const ruleId = await seedRule(org);
+        const startedAt = new Date(NOW.getTime() - 20 * 60 * 1000);
+        const ctx = { prisma: db, organizationId: org.organizationId };
+        const members = [1, 2, 3].map((id) => ({
+            id,
+            resourceType: "Member" as const,
+            name: `Member ${id}`,
+            email: { value: `member${id}@example.com`, verified: true },
+            owner: { id: D4H_TEAM, resourceType: "Team" as const },
+            position: null,
+            ref: null,
+            role: { id: null, resourceType: "Role" as const },
+            status: "OPERATIONAL" as const,
+        }));
+        const never = new Promise<never>(() => {});
+        let tokens = 0;
+
+        /**
+         * D4H with one exercise and members 1–3 all `REQUESTED`. `hangAt` is where the run is cut
+         * off (the function killed at its time limit): never returning from that call.
+         */
+        function cutOffDeps(exerciseId: number, hangAt: { sendTo?: number; sleepBefore?: number }) {
+            const exercise = {
+                id: exerciseId,
+                reference: null,
+                referenceDescription: `Exercise ${exerciseId}`,
+                startsAt: new Date(startedAt.getTime() + 2 * HOUR_MS).toISOString(),
+                endsAt: new Date(startedAt.getTime() + 4 * HOUR_MS).toISOString(),
+                address: null,
+            };
+            let sends = 0;
+            return makeDeps({
+                fetchExercises: vi.fn(async () => [exercise]),
+                fetchRequestedAttendance: vi.fn(async () =>
+                    members.map((member) => ({
+                        id: exerciseId * 1000 + member.id,
+                        resourceType: "ActivityAttendance" as const,
+                        activity: { id: exerciseId, resourceType: "Exercise" as const },
+                        member: { id: member.id, resourceType: "Member" as const },
+                        status: "REQUESTED" as const,
+                        startsAt: exercise.startsAt,
+                        endsAt: exercise.endsAt,
+                    })),
+                ),
+                fetchMembersByIds: vi.fn(async () => members),
+                sendEmail: vi.fn(async () => {
+                    sends++;
+                    return sends === hangAt.sendTo ? never : { ok: true as const };
+                }),
+                sleep: vi.fn(async () => (sends + 1 === hangAt.sleepBefore ? never : undefined)),
+                createLinkToken: vi.fn(() => {
+                    tokens++;
+                    return { token: `token-${tokens}`, hash: `hash-${tokens}` };
+                }),
+            });
+        }
+
+        // Cut off while sending to member 2: member 1 sent, member 2's send attempted.
+        const attempted = await Runner.startRun(ctx, ruleId, {
+            trigger: "Manual",
+            dryRun: false,
+            now: startedAt,
         });
+        void Runner.executeRun(ctx, attempted, cutOffDeps(7, { sendTo: 2 }));
+        await vi.waitFor(async () => {
+            expect(await db.d4HNagRecipient.count({ where: { runId: attempted } })).toBe(2);
+            expect(
+                await db.d4HNagRecipient.count({
+                    where: { runId: attempted, tokenHash: { not: null }, outcome: "Pending" },
+                }),
+            ).toBe(1);
+        });
+
+        // Another exercise's run, cut off in the spacing before member 2's send: claimed, never
+        // attempted.
+        const unsent = await Runner.startRun(ctx, ruleId, {
+            trigger: "Manual",
+            dryRun: false,
+            now: startedAt,
+        });
+        void Runner.executeRun(ctx, unsent, cutOffDeps(8, { sleepBefore: 2 }));
+        await vi.waitFor(async () => {
+            expect(await db.d4HNagRecipient.count({ where: { runId: unsent } })).toBe(2);
+        });
+
+        const recipient = async (runId: string, memberId: number) =>
+            db.d4HNagRecipient.findFirstOrThrow({ where: { runId, d4hMemberId: memberId } });
+        expect(await recipient(unsent, 2)).toMatchObject({ outcome: "Pending", tokenHash: null });
+
+        // A run younger than `STUCK_RUN_MS` is left running.
         const recent = await seedRun(org, {
             startedAt: new Date(NOW.getTime() - 5 * 60 * 1000),
             status: "Running",
         });
-        const recipient = D4HNagRecipientId.create();
-        const dedupeKey = `${org.organizationId}:${D4H_TEAM}:7:1`;
-        await db.d4HNagRecipient.create({
-            data: {
-                id: recipient,
-                organizationId: org.organizationId,
-                runId: stuck,
-                d4hTeamId: D4H_TEAM,
-                d4hExerciseId: 7,
-                exerciseTitle: "Exercise 7",
-                exerciseStartsAt: new Date(NOW.getTime() + DAY_MS),
-                d4hMemberId: 1,
-                memberName: "Member 1",
-                email: "one@example.com",
-                outcome: "Pending",
-                dedupeKey,
-            },
-        });
-        // A claim holding a link token may have been sent (sent, unconfirmed): it's kept.
-        const sentUnconfirmed = D4HNagRecipientId.create();
-        await db.d4HNagRecipient.create({
-            data: {
-                id: sentUnconfirmed,
-                organizationId: org.organizationId,
-                runId: stuck,
-                d4hTeamId: D4H_TEAM,
-                d4hExerciseId: 7,
-                exerciseTitle: "Exercise 7",
-                exerciseStartsAt: new Date(NOW.getTime() + DAY_MS),
-                d4hMemberId: 2,
-                memberName: "Member 2",
-                email: "two@example.com",
-                outcome: "Pending",
-                dedupeKey: `${org.organizationId}:${D4H_TEAM}:7:2`,
-                tokenHash: "stuck-hash",
-            },
-        });
 
         const result = await Runner.runDue(db, NOW, makeDeps());
 
-        expect(result.timedOut).toBe(1);
-        expect(await db.d4HNagRun.findUniqueOrThrow({ where: { id: stuck } })).toMatchObject({
-            status: "Failed",
-            error: Runner.TIMED_OUT_ERROR,
-            completedAt: NOW,
-            failedCount: 1,
-        });
-        expect(
-            await db.d4HNagRecipient.findUniqueOrThrow({ where: { id: recipient } }),
-        ).toMatchObject({ outcome: "Failed", dedupeKey: null });
-        expect(
-            await db.d4HNagRecipient.findUniqueOrThrow({ where: { id: sentUnconfirmed } }),
-        ).toMatchObject({
-            outcome: "Pending",
-            dedupeKey: `${org.organizationId}:${D4H_TEAM}:7:2`,
-            tokenHash: "stuck-hash",
-        });
+        expect(result.timedOut).toBe(2);
         expect(await db.d4HNagRun.findUniqueOrThrow({ where: { id: recent } })).toMatchObject({
             status: "Running",
+        });
+        for (const runId of [attempted, unsent]) {
+            expect(await db.d4HNagRun.findUniqueOrThrow({ where: { id: runId } })).toMatchObject({
+                status: "Failed",
+                error: Runner.TIMED_OUT_ERROR,
+                completedAt: NOW,
+            });
+        }
+        // Sent, unconfirmed: the claim and the opt-out link are kept, so no later run resends.
+        expect(await recipient(attempted, 2)).toMatchObject({
+            outcome: "Pending",
+            dedupeKey: `${org.organizationId}:${D4H_TEAM}:7:2`,
+            tokenHash: expect.any(String),
+        });
+        // Never sent: released, so a later run can retry the member.
+        expect(await recipient(unsent, 2)).toMatchObject({ outcome: "Failed", dedupeKey: null });
+        expect(await db.d4HNagRun.findUniqueOrThrow({ where: { id: unsent } })).toMatchObject({
+            failedCount: 1,
         });
     });
 

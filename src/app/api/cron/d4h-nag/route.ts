@@ -12,8 +12,10 @@
 
 import { NextResponse } from "next/server";
 
+import { isModuleUsable } from "@/lib/module-flags";
 import { isAuthorizedCronRequest } from "@/server/cron/authorize";
 import { runD4HNagDue } from "@/server/cron/d4h-nag";
+import { resolveModuleFlags } from "@/server/module-flags";
 
 /**
  * Every organization's sends share this one invocation, at least 500 ms apart (decision 16). A
@@ -24,6 +26,16 @@ export const maxDuration = 300;
 export async function GET(request: Request): Promise<NextResponse> {
     if (!isAuthorizedCronRequest(request)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // The Vercel flag is per deployment, so it's evaluated once per tick (decision 27). Off, the
+    // tick does nothing at all: no sends, no stuck-run cleanup, no pruning. The settings are
+    // passed as all on, so only the flags of the module and the modules it requires are read;
+    // each organization's settings are checked by the runner.
+    const moduleFlags = await resolveModuleFlags();
+    if (!isModuleUsable(moduleFlags, "d4h-nag", () => true)) {
+        console.log("D4H attendance reminder tick skipped: the d4h-nag-module flag is off.");
+        return NextResponse.json({ skipped: "flag-off" }, { status: 200 });
     }
 
     const result = await runD4HNagDue();
