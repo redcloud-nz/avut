@@ -78,3 +78,8 @@ Org D4H access tokens are added in a dialog, can be edited, have their value rep
 - An Access setting on personal tokens.
 
 ## Parked
+
+## Review notes
+
+- Group A: `src/server/d4h-api/client.ts` imports `Messages` from `@/trpc/messages`, which points the layering the wrong way (`src/server/services/skill-checks.ts:173` keeps a local literal for this reason). Inline the read-only message in `client.ts` as `skill-checks.ts` does, and drop `Messages.d4HAccessTokenReadOnly` if nothing else uses it.
+- Group A: `updateOrganizationAccessToken` / `updatePersonalAccessToken` accept an empty `patch` (a no-op write plus an empty log entry) and a blank label. Use `label: z.string().min(1).optional()` and reject an empty patch (`.refine` on `patch`).
