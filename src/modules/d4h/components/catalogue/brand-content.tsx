@@ -20,6 +20,8 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
+import { HelpButton } from "@/components/docs/help-button";
+import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DataItem,
@@ -60,7 +62,7 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
             Kaga.defineColumns<D4HEquipmentModel>((columnHelper) => [
                 columnHelper.accessor("title", {
                     header: "Title",
-                    cell: (ctx) => ctx.getValue(),
+                    cell: (ctx) => <D4HEquipmentModelLink model={ctx.row.original} />,
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -103,6 +105,7 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
                     { label: "Equipment Brands", href: route("/orgs/[slug]/d4h/brands", { slug }) },
                     { label: brand.title },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

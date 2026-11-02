@@ -34,12 +34,12 @@ describe("D4HMemberLink", () => {
 });
 
 describe("D4HEquipmentModelLink", () => {
-    it("links to the model's brand page", () => {
+    it("links to the model's own page", () => {
         render(<D4HEquipmentModelLink model={{ id: 9, title: "Vector", brand: { id: 3 } }} />);
 
         expect(screen.getByRole("link", { name: "Vector" })).toHaveAttribute(
             "href",
-            "/orgs/acme/d4h/brands/3",
+            "/orgs/acme/d4h/models/9",
         );
     });
 });
