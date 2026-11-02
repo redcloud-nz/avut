@@ -83,3 +83,8 @@ Org D4H access tokens are added in a dialog, can be edited, have their value rep
 
 - Group A: `src/server/d4h-api/client.ts` imports `Messages` from `@/trpc/messages`, which points the layering the wrong way (`src/server/services/skill-checks.ts:173` keeps a local literal for this reason). Inline the read-only message in `client.ts` as `skill-checks.ts` does, and drop `Messages.d4HAccessTokenReadOnly` if nothing else uses it.
 - Group A: `updateOrganizationAccessToken` / `updatePersonalAccessToken` accept an empty `patch` (a no-op write plus an empty log entry) and a blank label. Use `label: z.string().min(1).optional()` and reject an empty patch (`.refine` on `patch`).
+- Group B: the org Add dialog (`add-d4h-access-token-dialog.tsx`) doesn't trim the token; use `z.string().trim().min(1, "Token is required")` as the Replace dialogs do.
+- Group B: require a label in the org Add dialog too (`min(1)`), matching Edit and the server change above.
+- Group B: the Edit/Replace/Delete dialogs (org and personal, plus the existing personal Remove) open from `EntityActionMenu` with no `DialogTrigger`, so focus drops to `<body>` on close. Pass a `triggerRef` to `EntityActionMenu` and spread `useReturnFocus(...)` onto each dialog's content, per `docs/patterns/mutation-dialog.md` ("Returning focus without a `DialogTrigger`").
+- Group B: add a `"replace"` verb to `ActionVerb` in `src/lib/hotkeys.ts` (no hotkey) and use it for Replace token value in both menus, instead of `"import"`.
+- Group B: the org Add dialog's `DialogBoundary` wraps a body that never suspends; render the body directly.
