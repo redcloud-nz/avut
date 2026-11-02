@@ -11,6 +11,8 @@ Takes a finished feature branch to a merged PR with one human checkpoint. The re
 
 `$ARGUMENTS` is optional free text: extra context for the PR description, or `--no-merge` to open the PR without auto-merge (e.g. something you want to look at in the Vercel preview first).
 
+**A track** (`/avut-develop-feature`'s several issues on one branch, one commit each) ships as one PR like any other branch. The steps below say where a track differs: the review intent, the PR title and body, the docs item, and the plan's status.
+
 For a PR that deserves a second, independent pass after it's open — auth, credentials, migrations, someone else's code — use `/avut-review-pr` instead of, or as well as, this. When you plan to run it as well, pass `--no-merge`. `integration` needs no approval, so auto-merge would merge on green CI before that review runs, or despite a "request changes".
 
 ## Step 1 — Preflight
@@ -41,6 +43,8 @@ If the branch adds a Prisma migration, confirm the checkout is on a branch datab
 Run the `avut-code-reviewer` subagent (`run_in_background: false`, because the next step depends on it). Its brief, two-pass checklist and output format live in `.claude/agents/avut-code-reviewer.md`. Give it only the diff range and the intent, not the authoring session's reasoning:
 
 > Diff range: `origin/<base>...HEAD`. The change is meant to: <one or two sentences, plus the issue number if there is one>.
+
+For a track, give the intent per issue, one line each with its commit subject, so the reviewer can check each commit against its own goal.
 
 ## Step 4 — Act on the findings
 
@@ -90,6 +94,8 @@ Fresh-context review (correctness + AVUT conventions) before push.
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
+**For a track:** the title names the set, with the type of its main change and the track's area as scope (`feat(skill-track): combined package labels and multi-day sessions`). In _Summary_, put one `Closes #n` line per issue (GitHub needs the keyword on each). Group _Changes_ by issue, with a `- **#n <short title>:**` bullet each, and the files and details nested under it.
+
 Leave out any section with nothing in it. _Decisions_ comes from a `Decisions` list in a commit body (`/avut-explore` writes one) or the plan doc's Decisions.
 
 _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed from its parked list (`- #n <title>`).
@@ -107,6 +113,8 @@ End-user guides (`content/docs/**` and its screenshots) aren't written per featu
    ```
 
    Screenshot ids are in `src/lib/screenshots.generated.json`. `git grep -n '<Screenshot id=' content/docs` shows which pages use which.
+
+   For a track, write one item for the PR that covers every user-facing issue (`#475: <change>; #442: <change>. Pages: … Screenshots: …`), not one item per issue, since `/avut-docs` ticks items by PR number.
 
 The item is posted in Step 7, once the PR number exists.
 
@@ -139,6 +147,8 @@ node .claude/skills/avut-docs/milestone.ts docs-add <milestone version> <PR numb
 ```
 
 It finds the milestone's `Docs: <milestone>` issue, creating it if needed, and adds the item as a marked comment. It never edits the body: several sessions ship in parallel, and a body edit by one would overwrite another's. Report the issue number it prints, and whether it created the issue.
+
+**Update the work plan,** if the branch's issues are rows in an active plan in the vault (`~/Obsidian/Alex/AVUT/Plans/*.md` with `status: Active`). Set each issue's Status cell to `PR #n`, and the track's Status cell too for a track. Change only Status cells. The vault isn't in git, so this needs no commit.
 
 Report the PR URL. Then watch CI (`gh pr checks <n> --repo redcloud-nz/avut --watch`, in the background) and report the result. If it fails, show why (`gh run view <run-id> --log-failed`), fix, commit and push. Auto-merge picks the new run up. The Step 6 yes covers a push that only fixes the CI failure. Anything more than that goes back to the user first.
 
@@ -193,6 +203,7 @@ Then **ask once**, listing exactly what will run. A yes is the explicit permissi
    - its `.env.local` has `POSTGRES_DATABASE="avut"`
 
    Then, in the main checkout: `npm run prisma migrate deploy`, followed by `npx prisma generate`. Otherwise, don't run it. Hand the user the command and the reason, because a deploy from any other tree or database would report success while `avut` stays without the migration.
+6. **Mark the plan's rows done,** if Step 7 updated a work plan: `PR #n` becomes `Done (PR #n)`. This one needs no yes, so it isn't in the prompt's list.
 
 **Report** what ran and what was skipped. The user's dev server on 3000 picks up pulled code by itself. Say it needs a restart when any of these happened:
 - `npm install` ran, or the Prisma client was regenerated
