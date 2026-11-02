@@ -18,6 +18,7 @@ import {
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
+    fetchD4HEquipmentItemsByModel,
     fetchD4HTeamEquipmentBrands,
     fetchD4HTeamEquipmentCategories,
     fetchD4HTeamEquipmentItems,
@@ -89,6 +90,7 @@ vi.mock("@/server/d4h-api/equipment", () => ({
     fetchD4HEquipmentItem: vi.fn(),
     fetchD4HEquipmentItemContents: vi.fn(),
     fetchD4HEquipmentItemsByKind: vi.fn(),
+    fetchD4HEquipmentItemsByModel: vi.fn(),
     fetchD4HTeamEquipmentBrands: vi.fn(),
     fetchD4HTeamEquipmentCategories: vi.fn(),
     fetchD4HTeamEquipmentItems: vi.fn(),
@@ -311,6 +313,105 @@ describe("d4hApiRouter equipment items", () => {
                     teamId: TEAM_ID,
                     itemId: ITEM_ID,
                 }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+    });
+
+    describe("getEquipmentModel", () => {
+        const MODEL_ID = 12;
+        const BRAND_ID = 5;
+        const updatedAt = "2026-01-01T00:00:00Z";
+        // Owned by the organisation, not a team, and listed by every team.
+        const orgOwner = { resourceType: "Organisation" as const, id: 900, title: "Acme D4H" };
+
+        beforeEach(() => {
+            vi.mocked(fetchD4HEquipmentItemsByModel).mockReset().mockResolvedValue([]);
+            vi.mocked(fetchD4HTeamEquipmentModels)
+                .mockReset()
+                .mockResolvedValue([
+                    {
+                        id: MODEL_ID,
+                        resourceType: "EquipmentModel",
+                        title: "Vector",
+                        owner: orgOwner,
+                        brand: { id: BRAND_ID, resourceType: "EquipmentBrand" },
+                        updatedAt,
+                    },
+                ]);
+            vi.mocked(fetchD4HTeamEquipmentBrands)
+                .mockReset()
+                .mockResolvedValue([
+                    {
+                        id: BRAND_ID,
+                        resourceType: "EquipmentBrand",
+                        title: "Petzl",
+                        owner: orgOwner,
+                        createdAt: updatedAt,
+                        updatedAt,
+                    },
+                ]);
+        });
+
+        it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No D4H access token configured."),
+            );
+
+            await expect(
+                viewer().getEquipmentModel({ organizationId: T.org, modelId: MODEL_ID }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+            expect(fetchD4HEquipmentItemsByModel).not.toHaveBeenCalled();
+        });
+
+        it("returns an organisation-owned model with its brand's title and its items across every team", async () => {
+            vi.mocked(fetchD4HEquipmentItemsByModel).mockImplementation(async (_token, teamId) =>
+                teamId === TEAM_ID
+                    ? [listItem(1, TEAM_ID, { location: { resourceType: "Member", id: 42 } })]
+                    : [listItem(2, OTHER_TEAM_ID)],
+            );
+
+            const { model, items } = await viewer().getEquipmentModel({
+                organizationId: T.org,
+                modelId: MODEL_ID,
+            });
+
+            expect(model).toMatchObject({
+                id: MODEL_ID,
+                title: "Vector",
+                owner: orgOwner,
+                brand: { id: BRAND_ID, title: "Petzl" },
+            });
+            for (const teamId of [TEAM_ID, OTHER_TEAM_ID]) {
+                expect(fetchD4HEquipmentItemsByModel).toHaveBeenCalledWith(
+                    accessToken,
+                    teamId,
+                    MODEL_ID,
+                );
+            }
+            expect(items.map((row) => [row.id, row.team, row.holder])).toEqual([
+                [1, { id: TEAM_ID, title: "Rescue Team" }, { id: 42, name: "John Smith" }],
+                [2, { id: OTHER_TEAM_ID, title: "Alpine Team" }, null],
+            ]);
+        });
+
+        it("leaves the brand's title null when no team lists the brand", async () => {
+            vi.mocked(fetchD4HTeamEquipmentBrands).mockResolvedValue([]);
+
+            const { model } = await viewer().getEquipmentModel({
+                organizationId: T.org,
+                modelId: MODEL_ID,
+            });
+
+            expect(model.brand).toEqual({
+                id: BRAND_ID,
+                resourceType: "EquipmentBrand",
+                title: null,
+            });
+        });
+
+        it("throws NOT_FOUND when no team lists the model", async () => {
+            await expect(
+                viewer().getEquipmentModel({ organizationId: T.org, modelId: 99 }),
             ).rejects.toMatchObject({ code: "NOT_FOUND" });
         });
     });

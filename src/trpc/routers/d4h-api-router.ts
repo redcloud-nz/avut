@@ -15,6 +15,7 @@ import {
 } from "@/lib/d4h-today";
 import { diffObject } from "@/lib/diff";
 import { NotFoundError } from "@/lib/errors";
+import type { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HTeamPermissions } from "@/lib/schemas/d4h-provider-metadata";
 import { D4HActivity, formatD4HActivityLocation } from "@/lib/schemas/d4h/activity";
 import { D4HEquipmentBrand } from "@/lib/schemas/d4h/equipment-brand";
@@ -43,6 +44,7 @@ import {
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
     fetchD4HEquipmentItemsByKind,
+    fetchD4HEquipmentItemsByModel,
     fetchD4HTeamEquipmentBrands,
     fetchD4HTeamEquipmentCategories,
     fetchD4HTeamEquipmentItems,
@@ -56,6 +58,83 @@ import { createTrpcRouter, organizationProcedure } from "../init";
 
 /** The item fields D4H's equipment PATCH can change, compared for the audit log. */
 const PATCHABLE_ITEM_FIELDS = ["status", "isCritical", "isMonitor", "barcode", "notes"] as const;
+
+/** A current item listed across teams, with the team it's attributed to and who holds it. */
+const D4HEquipmentItemRow = D4HEquipmentListItem.schema.extend({
+    team: z.object({ id: z.number(), title: z.string() }),
+    holder: z.object({ id: z.number(), name: z.string().nullable() }).nullable(),
+});
+
+/**
+ * The current items `fetchTeamItems` lists, in every D4H team the token reaches, each with the
+ * team that owns it and, when it's issued to a person, who holds it.
+ *
+ * An item listed under more than one team is kept once and attributed to its `owner` team, or to
+ * the team that listed it when the token can't reach the owner.
+ *
+ * Holder names come from the owning team's (cached) member list, never from the item's
+ * `location`, which keeps only the holder's type and id. A team's members are fetched only when
+ * one of its items is held by a member, and a name is `null` when the holder isn't in that list
+ * (e.g. a retired member) or the list can't be fetched.
+ */
+async function listItemsAcrossTeams(
+    accessToken: D4HAccessToken_ServerOnly,
+    fetchTeamItems: (teamId: number) => Promise<D4HEquipmentListItem[]>,
+): Promise<z.infer<typeof D4HEquipmentItemRow>[]> {
+    const credentialRef = toD4HCredentialRef(accessToken);
+    const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
+
+    const listed = (
+        await Promise.all(
+            d4HTeams.map(async (listingTeam) => {
+                const teamItems = await fetchTeamItems(listingTeam.id);
+                return teamItems.map((item) => ({
+                    item,
+                    team: d4HTeams.find((team) => team.id === item.owner.id) ?? listingTeam,
+                }));
+            }),
+        )
+    ).flat();
+
+    // Keep each item once, preferring a row attributed to the item's owner.
+    const rows = R.uniqueBy(
+        R.sortBy(listed, ({ item, team }) => (team.id === item.owner.id ? 0 : 1)),
+        ({ item }) => item.id,
+    );
+
+    const holderTeamIds = R.unique(
+        rows
+            .filter(({ item }) => item.location?.resourceType === "Member")
+            .map(({ team }) => team.id),
+    );
+    const nameByIdByTeam = new Map(
+        await Promise.all(
+            holderTeamIds.map(async (teamId) => {
+                const members = await getD4HTeamMembers(credentialRef, teamId).catch(() => []);
+                return [
+                    teamId,
+                    new Map(members.map((member) => [member.id, member.name])),
+                ] as const;
+            }),
+        ),
+    );
+
+    return rows.map(({ item, team }) => {
+        const holderId =
+            item.location?.resourceType === "Member" ? (item.location.id ?? null) : null;
+        return {
+            ...item,
+            team: { id: team.id, title: team.title },
+            holder:
+                holderId == null
+                    ? null
+                    : {
+                          id: holderId,
+                          name: nameByIdByTeam.get(team.id)?.get(holderId) ?? null,
+                      },
+        };
+    });
+}
 
 export const d4hApiRouter = createTrpcRouter({
     /**
@@ -104,6 +183,51 @@ export const d4hApiRouter = createTrpcRouter({
                               name: members.find((member) => member.id === holderId)?.name ?? null,
                           },
             };
+        }),
+
+    /**
+     * One equipment model, found in any D4H team the token reaches, with its brand's title and
+     * its current items across those teams (see {@link listItemsAcrossTeams}). A model owned by the
+     * organisation has no team, so none is asked for. The brand's title is `null` when no reachable
+     * team lists the brand.
+     */
+    getEquipmentModel: organizationProcedure({ d4hEquipment: ["view"] })
+        .input(z.object({ modelId: z.number() }))
+        .output(
+            z.object({
+                model: D4HEquipmentModel.schema.extend({
+                    brand: D4HEquipmentModel.schema.shape.brand.extend({
+                        title: z.string().nullable(),
+                    }),
+                }),
+                items: z.array(D4HEquipmentItemRow),
+            }),
+        )
+        .query(async ({ ctx, input: { modelId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const metadata = await getD4HTokenMetadata(toD4HCredentialRef(accessToken));
+
+            const [models, brands, items] = await Promise.all([
+                Promise.all(
+                    metadata.d4HTeams.map((team) =>
+                        fetchD4HTeamEquipmentModels(accessToken, team.id, metadata),
+                    ),
+                ).then((lists) => lists.flat()),
+                Promise.all(
+                    metadata.d4HTeams.map((team) =>
+                        fetchD4HTeamEquipmentBrands(accessToken, team.id, metadata),
+                    ),
+                ).then((lists) => lists.flat()),
+                listItemsAcrossTeams(accessToken, (teamId) =>
+                    fetchD4HEquipmentItemsByModel(accessToken, teamId, modelId),
+                ),
+            ]);
+
+            const model = models.find((m) => m.id === modelId);
+            if (!model) throw new NotFoundError(`Equipment model ${modelId} not found.`);
+
+            const brandTitle = brands.find((b) => b.id === model.brand.id)?.title ?? null;
+            return { model: { ...model, brand: { ...model.brand, title: brandTitle } }, items };
         }),
 
     /**
@@ -213,88 +337,18 @@ export const d4hApiRouter = createTrpcRouter({
         }),
 
     /**
-     * The current items of one equipment kind, in every D4H team the token reaches, each with
-     * the team that owns it and, when it's issued to a person, who holds it.
-     *
-     * An item listed under more than one team is kept once and attributed to its `owner` team,
-     * or to the team that listed it when the token can't reach the owner.
-     *
-     * Holder names come from the owning team's (cached) member list, never from the item's
-     * `location`, which keeps only the holder's type and id. A team's members are fetched only
-     * when one of its items is held by a member, and a name is `null` when the holder isn't in
-     * that list (e.g. a retired member) or the list can't be fetched.
+     * The current items of one equipment kind, in every D4H team the token reaches: see
+     * {@link listItemsAcrossTeams}.
      */
     listEquipmentKindItems: organizationProcedure({ d4hEquipment: ["view"] })
         .input(z.object({ kindId: z.number() }))
-        .output(
-            z.array(
-                D4HEquipmentListItem.schema.extend({
-                    team: z.object({ id: z.number(), title: z.string() }),
-                    holder: z.object({ id: z.number(), name: z.string().nullable() }).nullable(),
-                }),
-            ),
-        )
+        .output(z.array(D4HEquipmentItemRow))
         .query(async ({ ctx, input: { kindId } }) => {
             const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
-            const credentialRef = toD4HCredentialRef(accessToken);
-            const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
 
-            const listed = (
-                await Promise.all(
-                    d4HTeams.map(async (listingTeam) => {
-                        const teamItems = await fetchD4HEquipmentItemsByKind(
-                            accessToken,
-                            listingTeam.id,
-                            kindId,
-                        );
-                        return teamItems.map((item) => ({
-                            item,
-                            team: d4HTeams.find((team) => team.id === item.owner.id) ?? listingTeam,
-                        }));
-                    }),
-                )
-            ).flat();
-
-            // Keep each item once, preferring a row attributed to the item's owner.
-            const rows = R.uniqueBy(
-                R.sortBy(listed, ({ item, team }) => (team.id === item.owner.id ? 0 : 1)),
-                ({ item }) => item.id,
+            return listItemsAcrossTeams(accessToken, (teamId) =>
+                fetchD4HEquipmentItemsByKind(accessToken, teamId, kindId),
             );
-
-            const holderTeamIds = R.unique(
-                rows
-                    .filter(({ item }) => item.location?.resourceType === "Member")
-                    .map(({ team }) => team.id),
-            );
-            const nameByIdByTeam = new Map(
-                await Promise.all(
-                    holderTeamIds.map(async (teamId) => {
-                        const members = await getD4HTeamMembers(credentialRef, teamId).catch(
-                            () => [],
-                        );
-                        return [
-                            teamId,
-                            new Map(members.map((member) => [member.id, member.name])),
-                        ] as const;
-                    }),
-                ),
-            );
-
-            return rows.map(({ item, team }) => {
-                const holderId =
-                    item.location?.resourceType === "Member" ? (item.location.id ?? null) : null;
-                return {
-                    ...item,
-                    team: { id: team.id, title: team.title },
-                    holder:
-                        holderId == null
-                            ? null
-                            : {
-                                  id: holderId,
-                                  name: nameByIdByTeam.get(team.id)?.get(holderId) ?? null,
-                              },
-                };
-            });
         }),
 
     /**
