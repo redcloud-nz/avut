@@ -442,6 +442,8 @@ export async function executeRun(
                 error: message,
                 ...failedCounts,
             };
+            // Record the failure first, so the real error survives even if auditing it fails.
+            await prisma.d4HNagRun.update({ where: { id: runId }, data: failure });
             // A real run that got as far as sending is audited even though it failed, since
             // members were emailed (decisions 24, 25). One that never sent has nothing to audit.
             if (!run.dryRun && sendAttempted && run.ruleId) {
@@ -449,7 +451,7 @@ export async function executeRun(
                 await prisma.$transaction([
                     prisma.d4HNagRun.update({
                         where: { id: runId },
-                        data: { ...failure, logBatchId: batchId },
+                        data: { logBatchId: batchId },
                     }),
                     logCtx.logEvent({
                         action: "Run",
@@ -459,11 +461,10 @@ export async function executeRun(
                         refs: [{ objectType: "Team", objectId: run.teamId, role: "context" }],
                     }),
                 ]);
-            } else {
-                await prisma.d4HNagRun.update({ where: { id: runId }, data: failure });
             }
         } catch (recordError) {
-            // Recording the failure failed too; the stuck-run cleanup (decision 12) catches it.
+            // Recording or auditing the failure failed too. A run still `Running` is caught by the
+            // stuck-run cleanup (decision 12).
             console.error(`Failed to record the failure of D4HNagRun(id=${runId}):`, recordError);
         }
         return { runId, status: "Failed", sendAttempted, error: message };
