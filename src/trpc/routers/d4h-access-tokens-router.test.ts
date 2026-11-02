@@ -1035,6 +1035,199 @@ describe("d4hAccessTokensRouter.updateOrganizationAccessToken", () => {
     });
 });
 
+describe("d4hAccessTokensRouter.replacePersonalAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        otherUser: nanoId16(),
+        personalToken: ProviderCredentialId.create(),
+        otherUsersToken: ProviderCredentialId.create(),
+        orgToken: ProviderCredentialId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.user }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({
+                id: T.otherUsersToken,
+                organizationId: T.org,
+                userId: T.otherUser,
+            }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.orgToken, organizationId: T.org, userId: null }),
+        });
+    });
+
+    function makeCaller() {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("throws NOT_FOUND for another user's token or an organization token", async () => {
+        for (const tokenId of [T.otherUsersToken, T.orgToken]) {
+            await expect(
+                makeCaller().replacePersonalAccessToken({
+                    organizationId: T.org,
+                    tokenId,
+                    token: "new-secret",
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            const stored = await db.providerCredential.findUniqueOrThrow({
+                where: { id: tokenId },
+            });
+            expect(stored.token).toBe("encrypted:seeded-secret");
+        }
+
+        expect(validateD4HCredential).not.toHaveBeenCalled();
+    });
+
+    it("stores the new value, logs the change masked, and revalidates the caches", async () => {
+        await makeCaller().replacePersonalAccessToken({
+            organizationId: T.org,
+            tokenId: T.personalToken,
+            token: "brand-new-secret",
+        });
+
+        expect(validateD4HCredential).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: T.personalToken,
+                access: "ReadWrite",
+                token: "brand-new-secret",
+            }),
+        );
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.personalToken },
+        });
+        expect(stored.token).toBe("encrypted:brand-new-secret");
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.personalToken } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].action).toBe("Update");
+        expect(entries[0].changes).toEqual([{ type: "obj_mask", path: ["token"] }]);
+        expect(JSON.stringify(entries[0])).not.toContain("brand-new-secret");
+
+        expect(revalidatePersonalD4HAccessTokenForUser).toHaveBeenCalledWith(T.org, T.user);
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
+        expect(revalidateD4HApiCache).toHaveBeenCalledWith(T.personalToken);
+    });
+});
+
+describe("d4hAccessTokensRouter.updatePersonalAccessToken", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: nanoId16(),
+        otherUser: nanoId16(),
+        personalToken: ProviderCredentialId.create(),
+        otherUsersToken: ProviderCredentialId.create(),
+        orgToken: ProviderCredentialId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.personalToken, organizationId: T.org, userId: T.user }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({
+                id: T.otherUsersToken,
+                organizationId: T.org,
+                userId: T.otherUser,
+            }),
+        });
+        await db.providerCredential.create({
+            data: credentialData({ id: T.orgToken, organizationId: T.org, userId: null }),
+        });
+    });
+
+    function makeCaller() {
+        return d4hAccessTokensRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    it("throws NOT_FOUND for another user's token or an organization token", async () => {
+        for (const tokenId of [T.otherUsersToken, T.orgToken]) {
+            await expect(
+                makeCaller().updatePersonalAccessToken({
+                    organizationId: T.org,
+                    tokenId,
+                    patch: { label: "Hijacked" },
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            const stored = await db.providerCredential.findUniqueOrThrow({
+                where: { id: tokenId },
+            });
+            expect(stored.label).toBe("Seeded token");
+        }
+    });
+
+    it("updates the label, logs the diff without the token, and revalidates the caches", async () => {
+        const result = await makeCaller().updatePersonalAccessToken({
+            organizationId: T.org,
+            tokenId: T.personalToken,
+            patch: { label: "My token" },
+        });
+
+        expect(result).toMatchObject({ id: T.personalToken, label: "My token" });
+        expect(result).not.toHaveProperty("token");
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.personalToken },
+        });
+        expect(stored.label).toBe("My token");
+        expect(stored.access).toBe("ReadWrite");
+
+        const entries = await db.logEntry.findMany({ where: { objectId: T.personalToken } });
+        expect(entries).toHaveLength(1);
+        expect(entries[0].action).toBe("Update");
+        expect(entries[0].changes).toEqual([
+            { type: "obj_mod", path: ["label"], prev: "Seeded token", curr: "My token" },
+        ]);
+        expect(JSON.stringify(entries[0])).not.toContain("seeded-secret");
+
+        expect(revalidatePersonalD4HAccessTokenForUser).toHaveBeenCalledWith(T.org, T.user);
+        expect(revalidateD4HAccessToken).toHaveBeenCalledWith(T.personalToken);
+    });
+
+    it("ignores an access change", async () => {
+        await makeCaller().updatePersonalAccessToken({
+            organizationId: T.org,
+            tokenId: T.personalToken,
+            // @ts-expect-error -- personal tokens have no access setting
+            patch: { access: "ReadOnly" },
+        });
+
+        const stored = await db.providerCredential.findUniqueOrThrow({
+            where: { id: T.personalToken },
+        });
+        expect(stored.access).toBe("ReadWrite");
+    });
+});
+
 describe("d4hAccessTokensRouter queries never return the token", () => {
     const T = {
         org: OrganizationId.create(),

@@ -44,7 +44,7 @@ Org D4H access tokens get the same management as personal tokens (add in a dialo
     - Keep procedures alphabetical. Effects: `create…` (exists), `update…` and `replace…` invalidate `listOrganizationAccessTokens` and that token's `getOrganizationAccessToken`; add `deleteOrganizationAccessToken` (the list, plus the organization-settings query the d4h-nag settings card reads, since delete removes the `modules.d4h-nag.d4hTokenId` and `integrations.d4h.syncToken` settings).
   - **Done when:** router tests cover each new procedure: permission, other-org/personal token is `NOT_FOUND`, audit entry written in the transaction, token never in the log, rejected value saves nothing, and Replace succeeds when the stored value can't be decrypted; `npm run check` passes.
 
-- [ ] **Task 4: personal token procedures.**
+- [x] **Task 4: personal token procedures.** _feat(d4h): add personal token update and replace procedures_
   - **Files:** as Task 3.
   - **Do:** New `updatePersonalAccessToken` (label only) and `replacePersonalAccessToken` (`organization: ["view"]`, scoped to the caller like `refreshPersonalAccessToken`), reusing `replaceD4HCredentialValue`. Revalidate as `refreshPersonalAccessToken` does. Effects mirror `refreshPersonalAccessToken`'s.
   - **Done when:** router tests: another user's token is `NOT_FOUND`, audit written, value masked; `npm run check` passes.

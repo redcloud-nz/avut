@@ -626,6 +626,44 @@ export const d4hAccessTokensRouter = createTrpcRouter({
         }),
 
     /**
+     * Replace the value of the current user's personal access token, keeping its id, label and
+     * server. The new value is checked with D4H first; a value D4H rejects is never saved.
+     */
+    replacePersonalAccessToken: organizationProcedure({
+        organization: ["view"],
+    })
+        .input(
+            z.object({
+                tokenId: ProviderCredentialId.schema,
+                token: z.string(),
+            }),
+        )
+        .mutation(async ({ input, ctx }) => {
+            // Scoped to the caller and org: another user's token, or one in another org, is NOT_FOUND.
+            const record = await ctx.prisma.providerCredential.findFirst({
+                where: {
+                    id: input.tokenId,
+                    provider: "D4H",
+                    organizationId: ctx.organizationId,
+                    userId: ctx.userId,
+                },
+            });
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personalD4HAccessTokenNotFound(),
+                });
+            }
+
+            await replaceD4HCredentialValue(ctx, record, input.token);
+
+            revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+            revalidateD4HAccessToken(input.tokenId);
+            revalidateD4HApiCache(input.tokenId);
+        }),
+
+    /**
      * Update an organization access token's label or access level.
      */
     updateOrganizationAccessToken: organizationProcedure({
@@ -675,6 +713,62 @@ export const d4hAccessTokensRouter = createTrpcRouter({
 
             // The cached credential carries `access`, which the fetch client enforces.
             revalidateD4HAccessToken(tokenId);
+
+            return D4HAccessToken.fromRecord(updated);
+        }),
+
+    /**
+     * Update the label of the current user's personal access token. Personal tokens are always
+     * read and write, so the label is the only thing to edit.
+     */
+    updatePersonalAccessToken: organizationProcedure({
+        organization: ["view"],
+    })
+        .input(
+            z.object({
+                tokenId: ProviderCredentialId.schema,
+                patch: z.object({
+                    label: z.string().optional(),
+                }),
+            }),
+        )
+        .output(D4HAccessToken.schema)
+        .mutation(async ({ input: { tokenId, patch }, ctx }) => {
+            // Scoped to the caller and org: another user's token, or one in another org, is NOT_FOUND.
+            const record = await ctx.prisma.providerCredential.findFirst({
+                where: {
+                    id: tokenId,
+                    provider: "D4H",
+                    organizationId: ctx.organizationId,
+                    userId: ctx.userId,
+                },
+            });
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: Messages.personalD4HAccessTokenNotFound(),
+                });
+            }
+
+            const before = R.pick({ label: record.label }, R.keys(patch));
+
+            const [updated] = await ctx.prisma.$transaction([
+                ctx.prisma.providerCredential.update({
+                    where: { id: tokenId },
+                    data: patch,
+                }),
+                ctx.logEvent({
+                    action: "Update",
+                    objectType: "D4HAccessToken",
+                    objectId: tokenId,
+                    changes: diffObject(before, patch),
+                }),
+            ]);
+
+            revalidatePersonalD4HAccessTokenForUser(ctx.organizationId, ctx.userId);
+            revalidateD4HAccessToken(tokenId);
+            revalidateD4HApiCache(tokenId);
 
             return D4HAccessToken.fromRecord(updated);
         }),

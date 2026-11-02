@@ -68,6 +68,14 @@ export const d4hAccessTokensEffects = createEffects<"d4hAccessTokens">()({
             }),
         ),
     ],
+    replacePersonalAccessToken: (vars) => [
+        invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
+        invalidate(
+            trpc.d4hAccessTokens.getPersonalAccessToken.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+    ],
     updateOrganizationAccessToken: (vars) => [
         invalidate(
             trpc.d4hAccessTokens.listOrganizationAccessTokens.queryFilter({
@@ -78,6 +86,14 @@ export const d4hAccessTokensEffects = createEffects<"d4hAccessTokens">()({
             trpc.d4hAccessTokens.getOrganizationAccessToken.queryFilter({
                 organizationId: vars.organizationId,
                 tokenId: vars.tokenId,
+            }),
+        ),
+    ],
+    updatePersonalAccessToken: (vars) => [
+        invalidate(trpc.d4hAccessTokens.listPersonalAccessTokens.queryFilter()),
+        invalidate(
+            trpc.d4hAccessTokens.getPersonalAccessToken.queryFilter({
+                organizationId: vars.organizationId,
             }),
         ),
     ],
