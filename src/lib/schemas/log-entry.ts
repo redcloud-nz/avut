@@ -93,6 +93,7 @@ const logActionValues = [
     "Reopen",
     "Restore",
     "Revoke",
+    "Run", // a real (non-dry) d4h-nag reminder run, on its D4HNagRule
     "Subscribe",
     "Unban",
     "Unpublish",
@@ -118,6 +119,8 @@ const logObjectTypeValues = [
     "Account", // DORMANT — reverted databaseHooks wire
     "D4HAccessToken",
     "D4HEquipmentItem",
+    "D4HNagOptOut",
+    "D4HNagRule",
     "D4HTask",
     "I3Template",
     "I3TemplateVariant",
@@ -211,6 +214,8 @@ const moduleByObjectType: Record<LogObjectType, ModuleId | null> = {
     Account: null,
     D4HAccessToken: "org-admin",
     D4HEquipmentItem: "d4h-i3",
+    D4HNagOptOut: "d4h-nag",
+    D4HNagRule: "d4h-nag",
     D4HTask: "d4h-i3",
     I3Template: "d4h-i3",
     I3TemplateVariant: "d4h-i3",

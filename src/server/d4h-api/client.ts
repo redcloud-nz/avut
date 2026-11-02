@@ -14,6 +14,7 @@ import { getD4HServer } from "@/lib/d4h-servers";
 import { ForbiddenError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HAccessTokenMetadata } from "@/lib/schemas/d4h-provider-metadata";
+import { D4HActivity } from "@/lib/schemas/d4h/activity";
 import { D4HActivityAttendance } from "@/lib/schemas/d4h/activity-attendance";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { D4HOrganisation } from "@/lib/schemas/d4h/organisation";
@@ -247,7 +248,7 @@ function d4hGetWithUntypedPath(
 }
 
 /**
- * A single D4H member as `fetchD4HMember` returns it. `D4HMember.schema` requires an email, and
+ * A D4H member as `fetchD4HMember` and `fetchD4HMembersByIds` return it. `D4HMember.schema` requires an email, and
  * its callers (team sync, the members pages) rely on that, so this local variant accepts a null
  * or missing `email` (or `email.value`) instead and maps it to `email: null`.
  */
@@ -412,4 +413,160 @@ export async function fetchD4HMemberAttendance(
         );
     }
     return z.object({ results: D4HActivityAttendance.schema.array() }).parse(data).results;
+}
+
+/**
+ * How many ids one list request filters on. D4H takes the filter in the query string
+ * (`activity_id=1&activity_id=2…`), so a long list is split to keep the URL short.
+ */
+const D4H_ID_FILTER_CHUNK_SIZE = 100;
+
+/** Split `ids` into chunks of at most {@link D4H_ID_FILTER_CHUNK_SIZE}. */
+function chunkIds(ids: readonly number[]): number[][] {
+    const chunks: number[][] = [];
+    for (let i = 0; i < ids.length; i += D4H_ID_FILTER_CHUNK_SIZE) {
+        chunks.push(ids.slice(i, i + D4H_ID_FILTER_CHUNK_SIZE));
+    }
+    return chunks;
+}
+
+/**
+ * One team's exercises starting in `[startsAfter, startsBefore]` (inclusive at both ends, like
+ * `NagWindow`), in a single request, uncached. Filters on `starts_after` and `before` (which D4H
+ * applies to the start): `after` means _ends_ after, which is the wrong test here. `before` is
+ * exclusive, so it's sent 1ms past `startsBefore`. No `published` filter, like
+ * `myActivitiesToday`. Throws on any failure.
+ */
+export async function fetchD4HExercisesStartingBetween(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    { startsAfter, startsBefore }: { startsAfter: Date; startsBefore: Date },
+): Promise<D4HActivity[]> {
+    const { data, error, response } = await getD4HFetchClient(token).GET(
+        "/v3/{context}/{contextId}/exercises",
+        {
+            params: {
+                path: { context: "team", contextId: d4hTeamId },
+                query: {
+                    starts_after: startsAfter.toISOString(),
+                    before: new Date(startsBefore.getTime() + 1).toISOString(),
+                    size: 10000,
+                },
+            },
+        },
+    );
+
+    // `error` is undefined for a non-ok response with an empty body, so check the response.
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H exercises for team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+            { cause: error },
+        );
+    }
+    return (data as D4HListResponse).results.map((raw) => D4HActivity.schema.parse(raw));
+}
+
+/**
+ * The `REQUESTED` attendance records for the given exercises in one team, uncached. One request
+ * per {@link D4H_ID_FILTER_CHUNK_SIZE} exercises, each asking for the whole list (`size: 10000`).
+ * Returns `[]` without a request when `exerciseIds` is empty. Throws on any failure.
+ */
+export async function fetchD4HRequestedAttendance(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    exerciseIds: readonly number[],
+): Promise<D4HActivityAttendance[]> {
+    const fetchClient = getD4HFetchClient(token);
+
+    const chunks = await Promise.all(
+        chunkIds(exerciseIds).map(async (activityIds) => {
+            const { data, error, response } = await d4hGetWithUntypedPath(
+                fetchClient,
+                "/v3/{context}/{contextId}/attendance",
+                {
+                    path: { context: "team", contextId: d4hTeamId },
+                    query: { activity_id: activityIds, status: "REQUESTED", size: 10000 },
+                },
+            );
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to fetch D4H attendance for team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+                    { cause: error },
+                );
+            }
+            return (data as D4HListResponse).results.map((raw) =>
+                D4HActivityAttendance.schema.parse(raw),
+            );
+        }),
+    );
+    return chunks.flat();
+}
+
+/**
+ * The given members of one team, uncached, parsed so a member without an email comes back with
+ * `email: null` rather than failing the batch. One request per {@link D4H_ID_FILTER_CHUNK_SIZE}
+ * ids, each asking for the whole list (`size: 10000`). No `status` filter: a member is fetched
+ * because something already refers to them. Returns `[]` without a request when `memberIds` is
+ * empty. Throws on any failure.
+ */
+export async function fetchD4HMembersByIds(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+    memberIds: readonly number[],
+): Promise<D4HMemberWithOptionalEmail[]> {
+    const fetchClient = getD4HFetchClient(token);
+
+    const chunks = await Promise.all(
+        chunkIds(memberIds).map(async (ids) => {
+            const { data, error, response } = await fetchClient.GET(
+                "/v3/{context}/{contextId}/members",
+                {
+                    params: {
+                        path: { context: "team", contextId: d4hTeamId },
+                        query: { id: ids, size: 10000 },
+                    },
+                },
+            );
+            if (!response.ok) {
+                throw new Error(
+                    `Failed to fetch D4H members of team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+                    { cause: error },
+                );
+            }
+            return (data as D4HListResponse).results.map((raw) =>
+                D4HMemberWithOptionalEmailSchema.parse(raw),
+            );
+        }),
+    );
+    return chunks.flat();
+}
+
+/**
+ * A team's current members (`OPERATIONAL` + `NON_OPERATIONAL`, the roster team sync reconciles
+ * against), uncached, in one request for the whole list (`size: 10000`). Parsed like
+ * {@link fetchD4HMembersByIds}, so a member without an email doesn't fail the list. Throws on any
+ * failure.
+ */
+export async function fetchD4HCurrentTeamMembers(
+    token: D4HAccessToken_ServerOnly,
+    d4hTeamId: number,
+): Promise<D4HMemberWithOptionalEmail[]> {
+    const { data, error, response } = await getD4HFetchClient(token).GET(
+        "/v3/{context}/{contextId}/members",
+        {
+            params: {
+                path: { context: "team", contextId: d4hTeamId },
+                query: { status: ["OPERATIONAL", "NON_OPERATIONAL"], size: 10000 },
+            },
+        },
+    );
+    if (!response.ok) {
+        throw new Error(
+            `Failed to fetch D4H members of team ${d4hTeamId}: ${response.status} ${response.statusText}`,
+            { cause: error },
+        );
+    }
+    return (data as D4HListResponse).results.map((raw) =>
+        D4HMemberWithOptionalEmailSchema.parse(raw),
+    );
 }

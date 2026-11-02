@@ -302,6 +302,13 @@ export const d4hAccessTokensRouter = createTrpcRouter({
                         value: { equals: input.tokenId },
                     },
                 }),
+                ctx.prisma.organizationConfig.deleteMany({
+                    where: {
+                        organizationId: ctx.organizationId,
+                        key: `modules.d4h-nag.d4hTokenId`,
+                        value: { equals: input.tokenId },
+                    },
+                }),
             ]);
 
             // Neither is a Prisma operation, so they can't join the $transaction above.

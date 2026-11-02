@@ -88,13 +88,19 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
             // Email the org's and the returning member's team's notify lists, one copy each. The
             // tasks are already queued, so a failure here mustn't report the Return as failed (or
             // leave its draft un-Processed). Log it and carry on.
+            //
+            // The org's Reply-To comes back from the same settings read, and is handed on to the
+            // receipt. If that read fails the receipt goes out without one.
+            let replyTo: string | undefined;
             try {
-                const recipients = await I3Notifications.resolveNotifyRecipients(ctx, {
+                const resolved = await I3Notifications.resolveNotifyRecipients(ctx, {
                     d4hTeamId: ctx.formData.recipient.teamId,
                 });
-                await I3Notifications.sendEach(recipients, (recipient) => ({
+                replyTo = resolved.replyTo;
+                await I3Notifications.sendEach(resolved.recipients, (recipient) => ({
                     from: NoReplyEmailAddress,
                     to: recipient.email,
+                    replyTo,
                     subject: "Items Returned by " + ctx.formData.recipient.name,
                     react: createElement(I3ReturnItemsNotificationEmail, {
                         recordedBy: { name: ctx.auth.user.name },
@@ -107,11 +113,12 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
             } catch (err) {
                 ctx.logger.error("Failed to send the Return Items notification emails", err);
             }
+            return { replyTo };
         },
     })
     .stage({
         stageName: "SendReceipt",
-        stageFn: async (ctx, { accessToken, returnedItems }) => {
+        stageFn: async (ctx, { accessToken, returnedItems, replyTo }) => {
             // Send the member a receipt at their D4H email, listing only the items returned. A
             // failure is logged, not thrown.
             try {
@@ -128,6 +135,7 @@ export const I3ReturnItemsFormProcessor = FormProcessingPipeline.builder<
                 await sendEmail({
                     from: NoReplyEmailAddress,
                     to: address,
+                    replyTo,
                     subject: "Receipt for items you returned",
                     react: createElement(I3ReturnItemsReceiptEmail, {
                         recordedBy: { name: ctx.auth.user.name },

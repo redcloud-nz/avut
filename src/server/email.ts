@@ -7,9 +7,13 @@
  * The one place AVUT hands a message to Resend. Everything that emails — invitations, OTPs,
  * the email-changed notice, the I3 issue notification — comes through `sendEmail`, which is
  * what makes the guard rail below possible to enforce rather than merely remember.
+ *
+ * `sendEmail` never throws: it logs a failure and reports it in its result, so a caller that
+ * needs to know (and record) whether a message went out can, and one that doesn't can ignore it.
  */
 
 import { env } from "@/lib/env";
+import type { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { serverEnv } from "@/server/env";
 
 import "server-only";
@@ -22,6 +26,18 @@ function getResend(): Resend {
 }
 
 export const NoReplyEmailAddress = serverEnv.NOREPLY_EMAIL ?? "no-reply@mx.avut.nz";
+
+/**
+ * The Reply-To for an email the organization originates (`general.replyTo`), or `undefined` when
+ * the org hasn't set one. Never use it on account emails (verification codes, the email-changed
+ * notice): those come from AVUT, not the org.
+ */
+export function orgReplyTo(settings: Pick<OrganizationSettings, "general">): string | undefined {
+    return settings.general.replyTo ?? undefined;
+}
+
+/** What `sendEmail` reports: whether Resend accepted the message, and why not if it didn't. */
+export type SendEmailResult = { ok: true } | { ok: false; error: unknown };
 
 /** `live` puts the message on the wire as addressed; `redirect` sends it to Resend's sink. */
 export type EmailDelivery = "live" | "redirect";
@@ -117,7 +133,11 @@ export function redirectEmail(payload: CreateEmailOptions): CreateEmailOptions {
     } as CreateEmailOptions;
 }
 
-export async function sendEmail(payload: CreateEmailOptions): Promise<void> {
+/**
+ * Hand one message to Resend, redirected to the sink unless `emailDelivery()` says `live`.
+ * Never throws: a Resend error or a thrown exception is logged and returned as `{ ok: false }`.
+ */
+export async function sendEmail(payload: CreateEmailOptions): Promise<SendEmailResult> {
     const delivery = emailDelivery();
     const outgoing = delivery === "live" ? payload : redirectEmail(payload);
 
@@ -131,8 +151,13 @@ export async function sendEmail(payload: CreateEmailOptions): Promise<void> {
     try {
         const { error } = await getResend().emails.send(outgoing);
 
-        if (error) console.error("Error sending email:", error);
+        if (error) {
+            console.error("Error sending email:", error);
+            return { ok: false, error };
+        }
+        return { ok: true };
     } catch (error) {
         console.error("Error sending email:", error);
+        return { ok: false, error };
     }
 }

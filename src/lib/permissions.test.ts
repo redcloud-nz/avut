@@ -54,6 +54,13 @@ describe("Roles", () => {
         expect(can("member", { d4hEquipment: ["view"] })).toBe(true);
     });
 
+    it("gives D4H attendance reminders only to owner and admin", () => {
+        expect(roles.filter((role) => can(role, { d4hNag: ["view"] }))).toEqual(["owner", "admin"]);
+        expect(can("admin", { d4hNag: ["view", "update", "run"] })).toBe(true);
+        expect(can("owner", { d4hNag: ["view", "update", "run"] })).toBe(true);
+        expect(can("member", { d4hNag: ["view"] })).toBe(false);
+    });
+
     describe("i3-editor", () => {
         // getLinkedPerson / listPersonLinks / getLinkedUser all require both halves.
         it("can read the user↔person link", () => {

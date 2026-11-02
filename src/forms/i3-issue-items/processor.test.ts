@@ -49,6 +49,12 @@ const ORG_ID = 500;
 const NOTIFY_A = { personId: "person-a", name: "Alice", email: "alice@example.test" };
 const NOTIFY_B = { personId: "person-b", name: "Bob", email: "bob@example.test" };
 const MEMBER_EMAIL = "john.smith@example.test";
+const REPLY_TO = "training@example.test";
+
+/** What the stubbed `resolveNotifyRecipients` resolves to: these recipients, and a Reply-To. */
+function notify(recipients: (typeof NOTIFY_A)[], replyTo?: string) {
+    return { recipients, replyTo } as Awaited<ReturnType<typeof resolveNotifyRecipients>>;
+}
 const OTHER_TEAM_ID = 8;
 
 /** A catalogue record owned by D4H team `teamId`, or by the recipient team's organisation. */
@@ -112,7 +118,7 @@ vi.mock("@/server/services/i3-notifications", async (importOriginal) => ({
 
 vi.mock("@/server/email", () => ({
     NoReplyEmailAddress: "no-reply@example.test",
-    sendEmail: vi.fn(async () => {}),
+    sendEmail: vi.fn(async () => ({ ok: true as const })),
 }));
 
 describe("I3IssueItemsFormProcessor", () => {
@@ -167,7 +173,7 @@ describe("I3IssueItemsFormProcessor", () => {
         vi.mocked(getConfiguredD4HAccessToken).mockResolvedValue(accessToken as never);
         vi.mocked(fetchD4HWhoami).mockResolvedValue(whoami(true) as never);
         vi.mocked(getD4HTeamFitContext).mockResolvedValue(fitContext() as never);
-        vi.mocked(resolveNotifyRecipients).mockResolvedValue([NOTIFY_A] as never);
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue(notify([NOTIFY_A]));
         vi.mocked(fetchReceiptAddress).mockResolvedValue(MEMBER_EMAIL);
         POST.mockReset();
         POST.mockResolvedValue({ response: new Response(null, { status: 201 }) });
@@ -342,7 +348,7 @@ describe("I3IssueItemsFormProcessor", () => {
     });
 
     it("notifies each resolved recipient separately, at their own address", async () => {
-        vi.mocked(resolveNotifyRecipients).mockResolvedValue([NOTIFY_A, NOTIFY_B] as never);
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue(notify([NOTIFY_A, NOTIFY_B]));
 
         const results = await execute(1);
 
@@ -359,7 +365,7 @@ describe("I3IssueItemsFormProcessor", () => {
     });
 
     it("sends no notification when nobody is on the lists", async () => {
-        vi.mocked(resolveNotifyRecipients).mockResolvedValue([]);
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue(notify([]));
 
         const results = await execute(1);
 
@@ -418,6 +424,27 @@ describe("I3IssueItemsFormProcessor", () => {
         expect(results.every((r) => r.status !== "error")).toBe(true);
         expect(results.at(-1)).toMatchObject({ stageName: "SendReceipt", status: "success" });
         expect(sentTo(NOTIFY_A.email)).toHaveLength(1);
+    });
+
+    it("sets the org's Reply-To on the notifications and the receipt", async () => {
+        vi.mocked(resolveNotifyRecipients).mockResolvedValue(
+            notify([NOTIFY_A, NOTIFY_B], REPLY_TO),
+        );
+
+        await execute(1);
+
+        for (const email of [NOTIFY_A.email, NOTIFY_B.email, MEMBER_EMAIL]) {
+            expect(sentTo(email)[0][0].replyTo).toBe(REPLY_TO);
+        }
+    });
+
+    it("sends without a Reply-To when the org hasn't set one", async () => {
+        await execute(1);
+
+        expect(sendEmail).toHaveBeenCalledTimes(2);
+        for (const [options] of vi.mocked(sendEmail).mock.calls) {
+            expect(options.replyTo).toBeUndefined();
+        }
     });
 
     it("never sends to the old hardcoded notify address", async () => {

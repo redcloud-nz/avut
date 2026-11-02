@@ -75,6 +75,13 @@ const organizationSettingsSchema = z.object({
          * in this zone. Changing it doesn't re-anchor sessions already stored.
          */
         timeZone: TimeZone.schema.default("Pacific/Auckland"),
+        /*
+         * The Reply-To address on every email the organization originates (invitations, I3
+         * notifications and receipts), since replies to the no-reply sender reach nobody. `null`
+         * sends without one. Account emails (verification codes, the email-changed notice) never
+         * carry it.
+         */
+        replyTo: z.email().nullable().default(null),
     }),
 
     integrations: z.object({
@@ -151,6 +158,15 @@ const organizationSettingsSchema = z.object({
                 teams: z.record(TeamId.schema, z.array(PersonId.schema)).default({}),
             }),
         }),
+        "d4h-nag": z.object({
+            enabled: z.boolean().default(false),
+            /**
+             * The org-owned D4H credential the module's unattended (cron) runs use. Not validated
+             * on write: `getD4HNagAccessToken` treats anything that isn't one of this org's own D4H
+             * credentials as no token. Deleting the credential clears it.
+             */
+            d4hTokenId: z.string().nullable().default(null),
+        }),
         notes: z.object({
             enabled: z.boolean().default(false),
         }),
@@ -185,6 +201,7 @@ export const OrganizationSettingsSlices = defineSettingsSlices(organizationSetti
     "modules.d4h",
     "modules.forms",
     "modules.d4h-i3",
+    "modules.d4h-nag",
     "modules.notes",
     "modules.skill-track",
     "modules.skill-package-builder",

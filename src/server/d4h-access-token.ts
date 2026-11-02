@@ -7,14 +7,15 @@ import "server-only";
 
 import { revalidateTag } from "next/cache";
 
+import type { PrismaClient } from "@/generated/prisma/client";
 import { NotConfiguredError } from "@/lib/errors";
 import { D4HAccessToken_ServerOnly } from "@/lib/schemas/d4h-access-token";
 import { D4HProviderMetadata } from "@/lib/schemas/d4h-provider-metadata";
 import { OrganizationId } from "@/lib/schemas/organization";
-import type {
-    ProviderCredential_ServerOnly,
+import {
     ProviderCredentialId,
-    ProviderCredentialRecord,
+    type ProviderCredential_ServerOnly,
+    type ProviderCredentialRecord,
 } from "@/lib/schemas/provider-credential";
 import { UserId } from "@/lib/schemas/user";
 
@@ -28,6 +29,7 @@ import {
     toServerOnlyProviderCredential,
     type ProviderCredentialRef,
 } from "./provider-credential";
+import * as OrgSettings from "./services/organization-settings";
 
 /** Flattens a generic `ProviderCredential_ServerOnly` (D4H's metadata union member) back into
  * the flat `D4HAccessToken_ServerOnly` shape D4H's own code (`d4h-api/client.ts` etc.) expects. */
@@ -121,6 +123,27 @@ export async function getOrganizationD4HAccessToken({
     });
 
     return credential ? toD4HAccessToken_ServerOnly(credential) : null;
+}
+
+/**
+ * The D4H token the D4H Attendance Reminders module runs with (`modules.d4h-nag.d4hTokenId`),
+ * resolved with no session so the cron can call it.
+ * @returns the token, or `null` when the setting is unset or doesn't name one of this org's own
+ * D4H credentials (the slice write doesn't validate the id, so a personal or foreign credential's
+ * id can be stored).
+ * @remarks Reads the settings uncached, since the cron calls it. It doesn't check that the D4H
+ * integration is enabled; callers do.
+ */
+export async function getD4HNagAccessToken(
+    prisma: Pick<PrismaClient, "organizationConfig">,
+    organizationId: OrganizationId,
+): Promise<D4HAccessToken_ServerOnly | null> {
+    const settings = await OrgSettings.read(prisma, organizationId);
+    const tokenId = ProviderCredentialId.schema.safeParse(settings.modules["d4h-nag"].d4hTokenId);
+
+    if (!tokenId.success) return null;
+
+    return getOrganizationD4HAccessToken({ organizationId, tokenId: tokenId.data });
 }
 
 export function revalidateD4HAccessToken(tokenId: ProviderCredentialId) {

@@ -10,12 +10,19 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { SettingRow } from "./setting-row";
+import { OrganizationSettings_UpdateReplyTo_Dialog } from "./update-reply-to";
 import { OrganizationSettings_UpdateTimeZone_Dialog } from "./update-time-zone";
 
 const TIME_ZONE_DESCRIPTION =
     "The zone your organisation operates in. Skill check session start and end times are entered and shown in it.";
 
-/** Settings that apply across the organisation: today, the time zone sessions are timed in. */
+const REPLY_TO_DESCRIPTION =
+    "Where replies go when someone answers an email your organisation sends, such as an invitation, an I3 receipt or an attendance reminder. Those emails come from a no-reply address, so without one replies go nowhere.";
+
+/**
+ * Settings that apply across the organisation: the time zone sessions are timed in, and the
+ * Reply-To address on the emails it sends.
+ */
 export function General_SettingsCard({
     organizationId,
     settings,
@@ -25,7 +32,7 @@ export function General_SettingsCard({
     settings: OrganizationSettings;
     canEdit: boolean;
 }) {
-    const { timeZone } = settings.general;
+    const { timeZone, replyTo } = settings.general;
     const offset = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
         .formatToParts(new Date())
         .find((part) => part.type === "timeZoneName")?.value;
@@ -43,6 +50,20 @@ export function General_SettingsCard({
                                 organizationId={organizationId}
                                 settings={settings}
                                 description={TIME_ZONE_DESCRIPTION}
+                            />
+                        )
+                    }
+                />
+                <SettingRow
+                    title="Reply-To address"
+                    description={REPLY_TO_DESCRIPTION}
+                    value={replyTo ?? "Not set — replies aren't read"}
+                    action={
+                        canEdit && (
+                            <OrganizationSettings_UpdateReplyTo_Dialog
+                                organizationId={organizationId}
+                                settings={settings}
+                                description={REPLY_TO_DESCRIPTION}
                             />
                         )
                     }

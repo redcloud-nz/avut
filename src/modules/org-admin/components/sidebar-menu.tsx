@@ -18,6 +18,12 @@ export function Admin_Sidebar_Menu() {
 
     return (
         <>
+            <Protect permissions={{ organization: ["update"] }}>
+                <NavSubItem
+                    label="D4H Access Tokens"
+                    href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
+                />
+            </Protect>
             <Protect permissions={{ invitation: ["view"] }}>
                 <NavSubItem
                     label="Invitations"

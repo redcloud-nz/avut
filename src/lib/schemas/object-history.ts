@@ -85,6 +85,9 @@ export const HistoryObjects: Record<HistoryObjectType, { permissions: Permission
  * entries show up, unfiltered, on every page they mention.
  */
 export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>> = {
+    // d4h-nag rule and opt-out entries carry a context ref to their team.
+    D4HNagOptOut: { d4hNag: ["view"] },
+    D4HNagRule: { d4hNag: ["view"] },
     // Person ↔ user link entries carry a user id in their description.
     OrganizationMembership: { member: ["view"] },
     TeamMembership: { team: ["view"] },

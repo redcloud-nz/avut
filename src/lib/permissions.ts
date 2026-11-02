@@ -11,6 +11,9 @@ const statement = {
     ...defaultStatements,
     // `update` edits an equipment item in D4H.
     d4hEquipment: ["view", "update"],
+    // D4H Attendance Reminders. `view` covers rules, runs and opt-outs; `update` covers rule and
+    // opt-out changes; `run` covers Run now and Dry run.
+    d4hNag: ["view", "update", "run"],
     // `apply` checks or dismisses a queued D4H task.
     d4hTask: ["view", "apply"],
     i3Item: ["view", "issue", "inspect", "return"],
@@ -43,6 +46,7 @@ export const Roles = {
     owner: ac.newRole({
         ...memberAc.statements,
         d4hEquipment: ["view", "update"],
+        d4hNag: ["view", "update", "run"],
         d4hTask: ["view", "apply"],
         member: ["view", "create", "update", "delete", "owner"],
         invitation: ["view", "create", "update", "cancel"],
@@ -58,6 +62,7 @@ export const Roles = {
     admin: ac.newRole({
         ...memberAc.statements,
         d4hEquipment: ["view", "update"],
+        d4hNag: ["view", "update", "run"],
         d4hTask: ["view", "apply"],
         member: ["view", "create", "update", "delete"],
         invitation: ["view", "create", "update", "cancel"],

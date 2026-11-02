@@ -11,6 +11,7 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 
 import { D4HI3Module_SettingsCard } from "./d4h-i3-module-settings";
 import { D4HIntegration_SettingsCard } from "./d4h-integration-settings";
+import { D4HNagModule_SettingsCard } from "./d4h-nag-module-settings";
 import { Feature_SettingsCard } from "./feature-settings-card";
 import { General_SettingsCard } from "./general-settings";
 import { Personnel_SettingsCard } from "./personnel-settings";
@@ -50,7 +51,7 @@ export function OrganizationSettingsForm({
      */
     systemAdmin?: boolean;
 }) {
-    // For the module cards' `requires` rule (D4H I3 needs D4H): the settings, not module flags.
+    // For the module cards' `requires` rule (D4H I3 and D4H Attendance Reminders need D4H): the settings, not module flags.
     const isModuleEnabled = enabledInSettings(settings);
 
     return (
@@ -116,6 +117,17 @@ export function OrganizationSettingsForm({
                             />
                         </div>
                     )}
+                    {moduleFlags["d4h-nag"] !== false && (
+                        <div id="module-d4h-nag" className="scroll-mt-4">
+                            <D4HNagModule_SettingsCard
+                                organizationId={organizationId}
+                                settings={settings}
+                                canEdit={canEdit}
+                                isModuleEnabled={isModuleEnabled}
+                                systemAdmin={systemAdmin}
+                            />
+                        </div>
+                    )}
                     {moduleFlags.notes !== false && (
                         <div id="module-notes" className="scroll-mt-4">
                             <Feature_SettingsCard
@@ -156,7 +168,7 @@ export function OrganizationSettingsForm({
 /**
  * Matches the section (and, for "Modules", per-module card) `id`s above — passed to
  * `Saratoga.Contents` by the page. Takes `moduleFlags` so the "Modules" children stay in sync
- * with which cards the form itself actually renders (`d4h-i3` and `notes`, gated the same way above).
+ * with which cards the form itself actually renders (`d4h-i3`, `d4h-nag` and `notes`, gated the same way above).
  */
 export function getOrganizationSettingsFormSections(
     moduleFlags: ModuleFlagState,
@@ -173,6 +185,9 @@ export function getOrganizationSettingsFormSections(
                 { id: "module-d4h", label: "D4H" },
                 ...(moduleFlags["d4h-i3"] !== false
                     ? [{ id: "module-d4h-i3", label: "D4H I3" }]
+                    : []),
+                ...(moduleFlags["d4h-nag"] !== false
+                    ? [{ id: "module-d4h-nag", label: "D4H Attendance Reminders" }]
                     : []),
                 ...(moduleFlags.notes !== false ? [{ id: "module-notes", label: "Notes" }] : []),
                 { id: "module-skill-package-builder", label: "Skill Package Builder" },

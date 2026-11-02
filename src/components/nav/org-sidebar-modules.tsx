@@ -33,6 +33,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { orgModules, type OrganizationModuleId } from "@/lib/modules";
 import { route } from "@/lib/routes";
 import { D4HI3_Sidebar_Menu } from "@/modules/d4h-i3/components/sidebar-menu";
+import { D4HNag_Sidebar_Menu } from "@/modules/d4h-nag/components/sidebar-menu";
 import { D4H_Sidebar_Menu } from "@/modules/d4h/components/sidebar-menu";
 import { Admin_Sidebar_Menu } from "@/modules/org-admin/components/sidebar-menu";
 import { SkillTrack_Sidebar_Menu } from "@/modules/skill-track/components/sidebar-menu";
@@ -47,6 +48,7 @@ const MODULE_SIDEBAR: Partial<Record<OrganizationModuleId, ReactNode>> = {
     "org-admin": <Admin_Sidebar_Menu />,
     d4h: <D4H_Sidebar_Menu />,
     "d4h-i3": <D4HI3_Sidebar_Menu />,
+    "d4h-nag": <D4HNag_Sidebar_Menu />,
     "skill-track": <SkillTrack_Sidebar_Menu />,
 };
 
@@ -57,6 +59,9 @@ export function OrgSidebar_Modules() {
     // roles hold `skillPackageSubscription: ["view"]`, but the I3 roles and `skills-author` don't,
     // so a member holding only those doesn't see Skill Track.
     const canViewSkillTrack = useHasPermission({ skillPackageSubscription: ["view"] });
+    // Every D4H Attendance Reminders page needs `d4hNag: ["view"]`, which only owners and admins
+    // hold, so the module is hidden from everyone else.
+    const canViewD4HNag = useHasPermission({ d4hNag: ["view"] });
 
     return (
         <NavSection>
@@ -68,6 +73,7 @@ export function OrgSidebar_Modules() {
             {orgModules
                 .filter((mod) => organization.isModuleEnabled(mod.id))
                 .filter((mod) => mod.id !== "skill-track" || canViewSkillTrack)
+                .filter((mod) => mod.id !== "d4h-nag" || canViewD4HNag)
                 .map((mod) => {
                     const Icon = mod.icon;
                     const href = mod.href(organization.slug);
