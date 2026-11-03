@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { parseSessionDialog } from "./session-when-picker";
+import { parseSessionDialog, sessionWhenSchema, withSessionEndTime } from "./session-when-picker";
 
 const NZ = "Pacific/Auckland";
 
@@ -32,6 +32,17 @@ describe("parseSessionDialog", () => {
         });
     });
 
+    it("returns a timed session over several days", () => {
+        // Tue 3 Feb 2026 19:00 – Wed 4 Feb 19:00 NZDT: an end at the start's time is fine here.
+        const values = dialogValues("2026-02-03", "19:00", "19:00");
+        expect(
+            parseSessionDialog({ ...values, when: { ...values.when, days: 2 } }, NZ),
+        ).toMatchObject({
+            success: true,
+            data: { startsAt: "2026-02-03T06:00:00.000Z", endsAt: "2026-02-04T06:00:00.000Z" },
+        });
+    });
+
     // NZ clocks go forward 02:00 NZST → 03:00 NZDT on Sun 27 Sep 2026, so 02:15 is stored as 03:15.
     it.each([
         ["before", "03:00"],
@@ -48,5 +59,48 @@ describe("parseSessionDialog", () => {
             success: true,
             data: { startsAt: "2026-09-26T14:15:00.000Z", endsAt: "2026-09-26T15:00:00.000Z" },
         });
+    });
+});
+
+describe("sessionWhenSchema", () => {
+    const timed = { date: "2026-02-03", allDay: false, startTime: "19:00" };
+
+    it("refuses a one-day session ending at its start time", () => {
+        expect(sessionWhenSchema.safeParse({ ...timed, days: 1, endTime: "19:00" }).success).toBe(
+            false,
+        );
+    });
+
+    it("accepts a session over several days ending at its start time", () => {
+        expect(sessionWhenSchema.safeParse({ ...timed, days: 2, endTime: "19:00" }).success).toBe(
+            true,
+        );
+    });
+
+    it("refuses a one-day timed session with no end time", () => {
+        expect(sessionWhenSchema.safeParse({ ...timed, days: 1, endTime: null }).success).toBe(
+            false,
+        );
+    });
+
+    it("refuses a timed session over several days with no end time", () => {
+        expect(sessionWhenSchema.safeParse({ ...timed, days: 2, endTime: null }).success).toBe(
+            false,
+        );
+    });
+});
+
+describe("withSessionEndTime", () => {
+    const base = { date: "2026-02-03", days: 1, startTime: "19:00" };
+
+    it("gives a timed session with no end one 2h after its start", () => {
+        expect(withSessionEndTime({ ...base, allDay: false, endTime: null }).endTime).toBe("21:00");
+    });
+
+    it("leaves an end time, and an all-day session, alone", () => {
+        const timed = { ...base, allDay: false, endTime: "20:00" };
+        const allDay = { ...base, allDay: true, endTime: null };
+        expect(withSessionEndTime(timed)).toBe(timed);
+        expect(withSessionEndTime(allDay)).toBe(allDay);
     });
 });
