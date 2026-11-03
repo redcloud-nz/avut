@@ -45,6 +45,7 @@ function toD4HAccessToken_ServerOnly(
         organizationId: credential.organizationId,
         userId: credential.userId,
         label: credential.label,
+        access: credential.access,
         serverCode,
         token: credential.token,
         metadata: { d4HTeams, d4HOrganisations },

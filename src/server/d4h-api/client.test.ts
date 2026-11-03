@@ -47,6 +47,7 @@ describe("getD4HFetchClient", () => {
             organizationId: null,
             userId: null,
             label: "Test token",
+            access: "ReadOnly",
             serverCode: "us",
             token: "the-api-key",
             metadata: { d4HTeams: [], d4HOrganisations: [] },
@@ -59,6 +60,65 @@ describe("getD4HFetchClient", () => {
         const request = fetchMock.mock.calls[0][0];
         expect(request.headers.get("Authorization")).toBe("Bearer the-api-key");
     });
+
+    describe("access level", () => {
+        function makeToken(access: D4HAccessToken_ServerOnly["access"]): D4HAccessToken_ServerOnly {
+            return {
+                id: ProviderCredentialId.create(),
+                organizationId: null,
+                userId: null,
+                label: "Test token",
+                access,
+                serverCode: "us",
+                token: "the-api-key",
+                metadata: { d4HTeams: [], d4HOrganisations: [] },
+            };
+        }
+
+        function stubFetch() {
+            const fetchMock = vi.fn(async (_request: Request) => Response.json({}));
+            vi.stubGlobal("fetch", fetchMock);
+            return fetchMock;
+        }
+
+        it("lets a read-only token send a GET", async () => {
+            const fetchMock = stubFetch();
+
+            await getD4HFetchClient(makeToken("ReadOnly")).GET("/v3/whoami");
+
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+            expect(fetchMock.mock.calls[0][0].method).toBe("GET");
+        });
+
+        it.each(["POST", "PATCH", "DELETE"] as const)(
+            "stops a read-only token's %s before it reaches D4H",
+            async (method) => {
+                const fetchMock = stubFetch();
+                const client = getD4HFetchClient(makeToken("ReadOnly"));
+
+                const send = client.request(
+                    method.toLowerCase() as Lowercase<typeof method>,
+                    // An untyped path: the check runs before the path matters.
+                    "/v3/whoami" as never,
+                );
+
+                await expect(send).rejects.toBeInstanceOf(ForbiddenError);
+                await expect(send).rejects.toThrow(
+                    "Test token is read only in AVUT; it can't make changes in D4H.",
+                );
+                expect(fetchMock).not.toHaveBeenCalled();
+            },
+        );
+
+        it("lets a read-write token send a POST", async () => {
+            const fetchMock = stubFetch();
+
+            await getD4HFetchClient(makeToken("ReadWrite")).request("post", "/v3/whoami" as never);
+
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+            expect(fetchMock.mock.calls[0][0].method).toBe("POST");
+        });
+    });
 });
 
 describe("fetchD4HMember", () => {
@@ -67,6 +127,7 @@ describe("fetchD4HMember", () => {
         organizationId: null,
         userId: null,
         label: "Test token",
+        access: "ReadOnly",
         serverCode: "us",
         token: "the-api-key",
         metadata: { d4HTeams: [], d4HOrganisations: [] },
@@ -150,6 +211,7 @@ describe("D4H list fetches for attendance reminders", () => {
         organizationId: null,
         userId: null,
         label: "Test token",
+        access: "ReadOnly",
         serverCode: "ap",
         token: "the-api-key",
         metadata: { d4HTeams: [], d4HOrganisations: [] },

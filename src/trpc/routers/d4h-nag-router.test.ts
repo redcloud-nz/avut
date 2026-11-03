@@ -104,6 +104,7 @@ describe("d4hNagRouter", () => {
         organizationId: T.org,
         userId: null,
         label: "Nag token",
+        access: "ReadOnly",
         serverCode: "ap",
         token: "secret",
         metadata: { d4HTeams: [], d4HOrganisations: [] },

@@ -502,26 +502,34 @@ enum Provider {
   D4H
 }
 
+enum ProviderCredentialAccess {
+  ReadOnly
+  ReadWrite
+}
+
 /// Generalizes D4HAccessToken's former encrypted-credential storage across every
 /// external-service integration (see #286). D4H itself now runs on this table.
 model ProviderCredential {
-  id             String             @id
+  id             String                   @id
   provider       Provider
   organizationId String?
-  organization   Organization?      @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization?            @relation("provider_credential_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String?
-  user           User?              @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  user           User?                    @relation("provider_credential_to_user", fields: [userId], references: [id], onDelete: Cascade)
   /// Owning OrganizationGroup (avut#382). Nothing writes it yet: group-owned credentials arrive
   /// with redcloud-nz/avut-ideas#18.
   groupId        String?
-  group          OrganizationGroup? @relation("provider_credential_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
+  group          OrganizationGroup?       @relation("provider_credential_to_organization_group", fields: [groupId], references: [id], onDelete: Cascade)
   label          String
   token          String
   status         String
   expiresAt      DateTime
-  metadata       Json               @default("{}")
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  metadata       Json                     @default("{}")
+  /// What AVUT may do with the credential. Enforced by `getD4HFetchClient`
+  /// (`src/server/d4h-api/client.ts`): anything but ReadWrite can only GET/HEAD.
+  access         ProviderCredentialAccess @default(ReadOnly)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 
   linkedTeams          Team_D4H[]         @relation("team_d4h_link_token")
   syncingOrganizations Organization_D4H[] @relation("organization_d4h_sync_token")

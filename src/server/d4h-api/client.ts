@@ -36,9 +36,18 @@ export type D4HListResponse = {
     totalSize: number;
 };
 
+/** The HTTP methods a read-only token may send. */
+const READ_ONLY_METHODS = new Set(["GET", "HEAD"]);
+
 /**
  * Get a D4H Fetch client for the given access token. The client will automatically include the access token in the Authorization header of each request.
  * The bearer value comes from `getD4HAccessToken`, the one place the secret is read.
+ *
+ * This is also the one place a token's `access` level is enforced: unless the token is
+ * `ReadWrite`, any request other than `GET` or `HEAD` throws a `ForbiddenError` before it
+ * leaves AVUT (failing closed, so an unknown access level is treated as read only). Its message
+ * is a local literal rather than an entry in `src/trpc/messages.ts`: `src/server` can't depend on
+ * `src/trpc/`.
  */
 export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     const server = getD4HServer(token.serverCode)!;
@@ -48,6 +57,11 @@ export const getD4HFetchClient = cache((token: D4HAccessToken_ServerOnly) => {
     });
     fetchClient.use({
         async onRequest({ request }) {
+            if (token.access !== "ReadWrite" && !READ_ONLY_METHODS.has(request.method)) {
+                throw new ForbiddenError(
+                    `${token.label} is read only in AVUT; it can't make changes in D4H.`,
+                );
+            }
             request.headers.set("Authorization", `Bearer ${await getD4HAccessToken(token)}`);
             return request;
         },

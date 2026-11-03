@@ -40,6 +40,7 @@ const accessToken = {
     organizationId: null,
     userId: null,
     label: "Test token",
+    access: "ReadWrite",
     serverCode: "ap",
     token: "fake-token",
     metadata: { d4HTeams: [], d4HOrganisations: [] },
