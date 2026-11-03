@@ -133,7 +133,7 @@ export default function HomePage() {
                         </div>
                     </div>
                     <Image
-                        src="/mascot/artie-welcome-cutout.png"
+                        src="/mascot/artie-welcome.png"
                         alt="Artie the mascot, waving"
                         width={370}
                         height={270}

@@ -36,7 +36,9 @@ A clean, 2D vector illustration style with clear outlines and simple shading. Th
 
 - Shading: Uses simple "cel-shading" (solid blocks of darker color) to create depth, avoiding complex gradients.
 
-- Background: Always a plain, solid white background for easy integration into your website.
+- Background: Always a plain, solid white background, so it can be cut out cleanly.
+
+- Before adding an image here, cut it out to a transparent PNG: clear the background, including any enclosed gaps (between the legs, inside an arm on the hip, holes in a key), and turn the ground shadow into semi-transparent black. The pages behind Artie are tinted in light mode and dark in dark mode, so a baked-in white background shows as a box.
 
 # Purpose
 
