@@ -223,7 +223,9 @@ for (let i = 0; i < N; i++) {
     colour =
       a === 0
         ? [0, 0, 0]
-        : [r, g, b].map((c) => Math.round(Math.max(0, (c - PAPER * (1 - a / 255)) / (a / 255))));
+        : [r, g, b].map((c) =>
+            Math.round(Math.min(255, Math.max(0, (c - PAPER * (1 - a / 255)) / (a / 255)))),
+          );
   }
   out.set([...colour, a], i * 4);
 }
