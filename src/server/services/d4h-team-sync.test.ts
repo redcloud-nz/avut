@@ -1880,6 +1880,7 @@ describe("executeD4HSyncPlan", () => {
             organizationId: T.org,
             userId: T.user,
             label: "Test token",
+            access: "ReadWrite",
             serverCode: "us",
             token: "fake-token",
             metadata: { d4HTeams: [], d4HOrganisations: [] },

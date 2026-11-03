@@ -33,7 +33,7 @@ function notify(recipients: (typeof NOTIFY_A)[], replyTo?: string) {
 }
 
 /** The resolved token `getConfiguredD4HAccessToken` hands back. */
-const accessToken = { id: "token-1", serverCode: "ap", token: "secret" };
+const accessToken = { id: "token-1", serverCode: "ap", token: "secret", access: "ReadWrite" };
 
 /** A whoami for a member of the recipient team, with or without `Equipment.UPDATE`. */
 function whoami(canUpdate: boolean) {
