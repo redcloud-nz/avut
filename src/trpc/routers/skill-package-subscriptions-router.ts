@@ -293,7 +293,8 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
     /**
      * List the skills that are assessable for this organization based on their current skill package subscriptions.
      * Only available packages count (see `SkillPackage.isAvailable`): a withdrawn package's skills are left out.
-     * So is a skill in a Deleted group: deleting a group hides its skills without changing their own status.
+     * Only `Active` skills in `Active` groups count: archiving or deleting a group hides its skills without
+     * changing their own status, and archiving a skill withdraws it, as archiving the package does.
      */
     listAssessableSkills: organizationProcedure({ skillPackageSubscription: ["view"] })
         .output(
@@ -313,12 +314,9 @@ export const skillPackageSubscriptionsRouter = createTrpcRouter({
                     skillPackage: {
                         include: {
                             skills: {
-                                where: {
-                                    status: { not: "Deleted" },
-                                    skillGroup: { status: { not: "Deleted" } },
-                                },
+                                where: { status: "Active", skillGroup: { status: "Active" } },
                             },
-                            groups: { where: { status: { not: "Deleted" } } },
+                            groups: { where: { status: "Active" } },
                         },
                     },
                 },

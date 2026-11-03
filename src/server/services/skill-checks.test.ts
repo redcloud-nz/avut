@@ -120,6 +120,8 @@ describe("skill-checks", () => {
         //   archived     → published, Archived, subscribed  → not assessable
         //   unsubscribed → published, Active, not subscribed → not assessable
         //   inDeletedGroup → published, Active, subscribed, but its group Deleted → not assessable
+        //   inArchivedGroup → published, Active, subscribed, but its group Archived → not assessable
+        //   archivedSkill → published, Active, subscribed, but the skill itself Archived → not assessable
         const B = {
             org: OrganizationId.create(),
             available: SkillId.create(),
@@ -127,18 +129,22 @@ describe("skill-checks", () => {
             archived: SkillId.create(),
             unsubscribed: SkillId.create(),
             inDeletedGroup: SkillId.create(),
+            inArchivedGroup: SkillId.create(),
+            archivedSkill: SkillId.create(),
         };
 
         beforeAll(async () => {
             await db.organization.create({
                 data: { id: B.org, name: B.org, slug: B.org, createdAt: new Date() },
             });
-            for (const [skillId, published, status, subscribed, groupStatus] of [
-                [B.available, true, "Active", true, "Active"],
-                [B.unpublished, false, "Active", true, "Active"],
-                [B.archived, true, "Archived", true, "Active"],
-                [B.unsubscribed, true, "Active", false, "Active"],
-                [B.inDeletedGroup, true, "Active", true, "Deleted"],
+            for (const [skillId, published, status, subscribed, groupStatus, skillStatus] of [
+                [B.available, true, "Active", true, "Active", "Active"],
+                [B.unpublished, false, "Active", true, "Active", "Active"],
+                [B.archived, true, "Archived", true, "Active", "Active"],
+                [B.unsubscribed, true, "Active", false, "Active", "Active"],
+                [B.inDeletedGroup, true, "Active", true, "Deleted", "Active"],
+                [B.inArchivedGroup, true, "Active", true, "Archived", "Active"],
+                [B.archivedSkill, true, "Active", true, "Active", "Archived"],
             ] as const) {
                 const skillPackageId = SkillPackageId.create();
                 const skillGroupId = SkillGroupId.create();
@@ -171,6 +177,7 @@ describe("skill-checks", () => {
                         name: skillId,
                         description: "",
                         properties: {},
+                        status: skillStatus,
                     },
                 });
                 if (subscribed) {
@@ -211,8 +218,12 @@ describe("skill-checks", () => {
             expect((error as Error).message).not.toContain(B.available);
         });
 
-        it("rejects an Active skill whose group is Deleted", async () => {
-            await expect(assertAssessableSkills(ctxB(), [B.inDeletedGroup])).rejects.toThrow(
+        it.each([
+            ["an Active skill whose group is Deleted", B.inDeletedGroup],
+            ["an Active skill whose group is Archived", B.inArchivedGroup],
+            ["an Archived skill", B.archivedSkill],
+        ])("rejects %s", async (_, skillId) => {
+            await expect(assertAssessableSkills(ctxB(), [skillId])).rejects.toThrow(
                 ValidationError,
             );
         });
