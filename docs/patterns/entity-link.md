@@ -52,7 +52,6 @@ The D4H wrappers have a few quirks of their own:
 - A catalogue record's `owner` (category, type, brand, model) is the resolved owner with its
   `title`, which the hover card shows. A caller building the ref from a template's snapshot
   titles adds the owner it looked up, or leaves it out.
-- Equipment models have no page, so `D4HEquipmentModelLink` links to the model's brand page.
 - D4H brand and model ids on an item can be `null`; render those as plain text at the call
   site rather than building a link.
 
