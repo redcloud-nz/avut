@@ -66,6 +66,34 @@ describe("D4HEquipmentItemLink", () => {
         );
     });
 
+    it("links to the member-scoped page when given a member of the item's team", () => {
+        render(
+            <D4HEquipmentItemLink
+                item={{ id: 100, ref: "P5-1234", owner: { id: 7 } }}
+                member={{ id: 42, owner: { id: 7 } }}
+            />,
+        );
+
+        expect(screen.getByRole("link")).toHaveAttribute(
+            "href",
+            "/orgs/acme/d4h/teams/7/members/42/items/100",
+        );
+    });
+
+    it("keeps the team-level page when the member is in another team", () => {
+        render(
+            <D4HEquipmentItemLink
+                item={{ id: 100, ref: "P5-1234", owner: { id: 8 } }}
+                member={{ id: 42, owner: { id: 7 } }}
+            />,
+        );
+
+        expect(screen.getByRole("link")).toHaveAttribute(
+            "href",
+            "/orgs/acme/d4h/teams/8/items/100",
+        );
+    });
+
     it("renders the label when given", () => {
         render(
             <D4HEquipmentItemLink

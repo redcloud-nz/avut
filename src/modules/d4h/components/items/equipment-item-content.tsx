@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { Suspense, useMemo, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query";
 import {
     getCoreRowModel,
     getFilteredRowModel,
@@ -61,16 +61,20 @@ import {
  * Other modules add to the page through slots that `page.tsx` fills: `menuActions` and
  * `menuDialogs` go to the Actions menu (see `EntityActionMenu`), and `statusBadge` sits beside the
  * D4H Status value.
+ *
+ * `memberId` is set on the member-scoped route, and only changes the breadcrumbs.
  */
 export function D4HModule_EquipmentItem_Content({
     teamId,
     itemId,
+    memberId,
     menuActions,
     menuDialogs,
     statusBadge,
 }: {
     teamId: number;
     itemId: number;
+    memberId?: number;
     menuActions?: ReactNode;
     menuDialogs?: ReactNode;
     statusBadge?: ReactNode;
@@ -99,8 +103,41 @@ export function D4HModule_EquipmentItem_Content({
         ],
     });
 
+    // Prefetched by the member-scoped page; not asked for on the team-level one.
+    const { data: members } = useQuery({
+        ...trpc.d4hApi.listTeamMembers.queryOptions({ organizationId: organization.id, teamId }),
+        enabled: memberId !== undefined,
+    });
+
     const team = teams.find((t) => t.id === teamId);
     if (!team) notFound();
+
+    const teamHref = route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
+        slug,
+        d4h_team_id: String(teamId),
+    });
+    // The member from the URL, even if the item has since moved to another holder or the member
+    // is no longer in the list.
+    const memberBreadcrumbs =
+        memberId === undefined
+            ? []
+            : [
+                  {
+                      label: "Members",
+                      href: route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members", {
+                          slug,
+                          d4h_team_id: String(teamId),
+                      }),
+                  },
+                  {
+                      label: members?.find((m) => m.id === memberId)?.name ?? `Member #${memberId}`,
+                      href: route("/orgs/[slug]/d4h/teams/[d4h_team_id]/members/[member_id]", {
+                          slug,
+                          d4h_team_id: String(teamId),
+                          member_id: String(memberId),
+                      }),
+                  },
+              ];
 
     const category = categories.find((c) => c.id === item.category.id);
 
@@ -122,13 +159,8 @@ export function D4HModule_EquipmentItem_Content({
                 breadcrumbs={[
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
-                    {
-                        label: team.title,
-                        href: route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
-                            slug,
-                            d4h_team_id: String(teamId),
-                        }),
-                    },
+                    { label: team.title, href: teamHref },
+                    ...memberBreadcrumbs,
                     { label: `Item ${item.ref}` },
                 ]}
             />

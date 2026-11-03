@@ -21,7 +21,7 @@ directly:
 | ---------------------- | -------------------------- | ---------------------------------------------------------------------------------- |
 | D4H Equipment Brand    | `D4HEquipmentBrandLink`    | `brand: D4HEquipmentBrandRef & Partial<Pick<D4HEquipmentBrand, "owner">>`          |
 | D4H Equipment Category | `D4HEquipmentCategoryLink` | `category: D4HEquipmentCategoryRef & Partial<Pick<D4HEquipmentCategory, "owner">>` |
-| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                                      |
+| D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label` and `member`                         |
 | D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef & Partial<Pick<D4HEquipmentModel, "owner">>`          |
 | D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef & Partial<Pick<D4HEquipmentKind, "owner">>`             |
 | D4H Issued Type        | `D4HIssuedTypeLink`        | `teamId: number`, `type: D4HEquipmentKindRef`                                      |

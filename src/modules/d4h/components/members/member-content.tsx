@@ -80,11 +80,13 @@ export function D4HModule_Member_Content({
             columnHelper.accessor("ref", {
                 header: "Ref",
                 // An item held by this member can belong to another team. Its page lives under
-                // that team, so link there, and not at all when that team is out of reach.
+                // that team, so link there, and not at all when that team is out of reach. An item
+                // of this team links to the member-scoped page, which keeps the member in the
+                // breadcrumbs.
                 cell: (ctx) => {
                     const item = ctx.row.original;
                     if (!isReachable(item)) return <D4HItemRef value={item.ref} />;
-                    return <D4HEquipmentItemLink item={item} />;
+                    return <D4HEquipmentItemLink item={item} member={member} />;
                 },
                 enableGlobalFilter: true,
                 enableSorting: true,
@@ -146,7 +148,7 @@ export function D4HModule_Member_Content({
                 },
             }),
         ]);
-    }, [teams]);
+    }, [teams, member]);
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
