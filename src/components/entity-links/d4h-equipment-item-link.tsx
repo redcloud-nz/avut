@@ -29,7 +29,7 @@ export function D4HEquipmentItemLink({ item, label }: D4HEquipmentItemLinkProps)
                 item_id: String(item.id),
             })}
             title={label ?? <D4HItemRef value={item.ref} />}
-            type="Equipment Item"
+            type="D4H Equipment Item"
         />
     );
 }

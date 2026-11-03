@@ -9,6 +9,7 @@ import { render, screen } from "@testing-library/react";
 
 import { D4HEquipmentItemLink } from "./d4h-equipment-item-link";
 import { D4HEquipmentModelLink } from "./d4h-equipment-model-link";
+import { D4HIssuedTypeLink } from "./d4h-issued-type-link";
 import { D4HMemberLink } from "./d4h-member-link";
 
 vi.mock("@/hooks/use-organization", () => ({ useOrganization: () => ({ slug: "acme" }) }));
@@ -40,6 +41,17 @@ describe("D4HEquipmentModelLink", () => {
         expect(screen.getByRole("link", { name: "Vector" })).toHaveAttribute(
             "href",
             "/orgs/acme/d4h/models/9",
+        );
+    });
+});
+
+describe("D4HIssuedTypeLink", () => {
+    it("links to the type's issued items under the given team", () => {
+        render(<D4HIssuedTypeLink teamId={7} type={{ id: 12, title: "Helmet" }} />);
+
+        expect(screen.getByRole("link", { name: "Helmet" })).toHaveAttribute(
+            "href",
+            "/orgs/acme/d4h-i3/teams/7/issued-types/12",
         );
     });
 });

@@ -24,6 +24,7 @@ directly:
 | D4H Equipment Item     | `D4HEquipmentItemLink`     | `item: D4HEquipmentItemRef`, optional `label`                                      |
 | D4H Equipment Model    | `D4HEquipmentModelLink`    | `model: D4HEquipmentModelRef & Partial<Pick<D4HEquipmentModel, "owner">>`          |
 | D4H Equipment Type     | `D4HEquipmentTypeLink`     | `type: D4HEquipmentKindRef & Partial<Pick<D4HEquipmentKind, "owner">>`             |
+| D4H Issued Type        | `D4HIssuedTypeLink`        | `teamId: number`, `type: D4HEquipmentKindRef`                                      |
 | D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }`                    |
 | D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                                                 |
 | I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                                          |

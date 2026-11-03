@@ -30,7 +30,7 @@ export function D4HEquipmentCategoryLink({ category }: D4HEquipmentCategoryLinkP
                 category_id: String(category.id),
             })}
             title={category.title}
-            type="Equipment Category"
+            type="D4H Equipment Category"
         >
             {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
         </EntityLink>
