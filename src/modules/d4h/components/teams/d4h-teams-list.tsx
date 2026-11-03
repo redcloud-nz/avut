@@ -19,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -68,6 +69,7 @@ export function D4HModule_Teams_List() {
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
                     { label: "Teams" },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
