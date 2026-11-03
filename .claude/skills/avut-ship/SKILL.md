@@ -11,6 +11,8 @@ Takes a finished feature branch to a merged PR with one human checkpoint. The re
 
 `$ARGUMENTS` is optional free text: extra context for the PR description, or `--no-merge` to open the PR without auto-merge (e.g. something you want to look at in the Vercel preview first).
 
+**A track** (`/avut-develop-feature`'s several issues on one branch, one commit each) ships as one PR like any other branch. The steps below say where a track differs: the review intent, the PR title and body, and the docs item.
+
 For a PR that deserves a second, independent pass after it's open — auth, credentials, migrations, someone else's code — use `/avut-review-pr` instead of, or as well as, this. When you plan to run it as well, pass `--no-merge`. `integration` needs no approval, so auto-merge would merge on green CI before that review runs, or despite a "request changes".
 
 ## Step 1 — Preflight
@@ -41,6 +43,8 @@ If the branch adds a Prisma migration, confirm the checkout is on a branch datab
 Run the `avut-code-reviewer` subagent (`run_in_background: false`, because the next step depends on it). Its brief, two-pass checklist and output format live in `.claude/agents/avut-code-reviewer.md`. Give it only the diff range and the intent, not the authoring session's reasoning:
 
 > Diff range: `origin/<base>...HEAD`. The change is meant to: <one or two sentences, plus the issue number if there is one>.
+
+For a track, give the intent per issue, one line each with its commit subject, so the reviewer can check each commit against its own goal.
 
 ## Step 4 — Act on the findings
 
@@ -90,6 +94,8 @@ Fresh-context review (correctness + AVUT conventions) before push.
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
+**For a track:** the title names the set, with the type of its main change and the track's area as scope (`feat(skill-track): combined package labels and multi-day sessions`). In _Summary_, put one `Closes #n` line per issue (GitHub needs the keyword on each). Group _Changes_ by issue, with a `- **#n <short title>:**` bullet each, and the files and details nested under it.
+
 Leave out any section with nothing in it. _Decisions_ comes from a `Decisions` list in a commit body (`/avut-explore` writes one) or the plan doc's Decisions.
 
 _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed from its parked list (`- #n <title>`).
@@ -99,7 +105,7 @@ _Follow-ups_ also lists any `follow-up` issues `/avut-develop-feature` filed fro
 End-user guides (`content/docs/**` and its screenshots) aren't written per feature. Each PR with a user-facing change adds one item to its milestone's docs issue, and `/avut-docs` works through that issue once per milestone. Help cards (`content/help/**`) are different: they're updated in the feature branch itself. If the diff changes a screen that has a `<HelpButton>` and its card isn't in the diff, check whether the card still matches, and fix it before Step 6.
 
 1. **Decide the impact.** Use the plan's `Docs impact` line, or what `/avut-develop-feature` handed over. Failing both, judge from the diff whether user-visible behaviour, wording or layout changed. Internal refactors, tests and developer docs have no impact. If there's none, skip the rest of this step.
-2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. The user confirms it in Step 6, alongside everything else.
+2. **Find the milestone:** the source issue's (`gh issue view <n> --repo redcloud-nz/avut --json milestone`). If there's no source issue, or it has no milestone, propose the lowest open version milestone, which `node .claude/skills/avut-docs/milestone.ts show` prints. For a track, use the milestone its issues share. If they differ, propose the lowest of them and flag it. The user confirms it in Step 6, alongside everything else.
 3. **Draft the item text,** one line. The script adds the checkbox and the PR number in front:
 
    ```
@@ -107,6 +113,8 @@ End-user guides (`content/docs/**` and its screenshots) aren't written per featu
    ```
 
    Screenshot ids are in `src/lib/screenshots.generated.json`. `git grep -n '<Screenshot id=' content/docs` shows which pages use which.
+
+   For a track, write one item for the PR that covers every user-facing issue (`#475: <change>; #442: <change>. Pages: … Screenshots: …`), not one item per issue, since `/avut-docs` ticks items by PR number.
 
 The item is posted in Step 7, once the PR number exists.
 
