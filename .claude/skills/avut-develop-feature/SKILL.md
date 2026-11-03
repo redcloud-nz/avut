@@ -11,7 +11,7 @@ Takes a piece of work from "I want X" to a branch ready for `/avut-ship`. `$ARGU
 
 - a GitHub issue (a bare number, `#123`, or an issue URL), a brainstorm in redcloud-nz/avut-ideas (`ideas#<n>` or its URL), or a text description of what to achieve: the full flow below
 - the first of those with **`--plan-only`**: write and review the plan, then stop. See [Plan only](#plan-only)
-- **a track**: several issues (`#475 #442`, optionally `--track <name>` and `--worktree <wt>`). Built on one branch and shipped as one PR. See [Tracks](#tracks)
+- **a track**: several issues (`#475 #442`), or one or more with `--track <name>` or `--worktree <wt>`. Built on one branch and shipped as one PR. See [Tracks](#tracks)
 - **a plan to pick up**: a `docs/plans/…` path, a `plan/<slug>` branch, or a slug. See [Pick up a plan](#pick-up-a-plan)
 
 The checkpoints are deliberate, and there are few of them. Clarify only when the work is unclear. On the long path, get approval for the plan. Pause for visual checks on UI work. The final push confirmation belongs to `/avut-ship`. Between checkpoints, just work.
@@ -27,7 +27,7 @@ The checkpoints are deliberate, and there are few of them. Clarify only when the
   - **Finish in place:** the quick path from step 3, on the exploration's branch in the current checkout.
   - **Plan the rest:** the long path from L2, with the exploration's branch moved to a worktree (see L2). In L3, the exploration is **Task 0**, already done and ticked with its commits, and the gaps are the remaining tasks. The Decisions list goes into the plan's Decisions. L1 is covered by Keep's checkpoint.
 - **A plan** (a `docs/plans/` path, `plan/<slug>`, or a slug that matches a `plan/*` branch): skip everything and go to [Pick up a plan](#pick-up-a-plan).
-- **A track** (more than one issue): go to [Tracks](#tracks).
+- **A track** (more than one issue, or any issue with `--track` or `--worktree`): go to [Tracks](#tracks).
 - **Nothing given:** ask what to build and stop. Mention any waiting plans (`git branch --list 'plan/*'`).
 
 **Database preflight.** Run `npm run prisma migrate status` (read-only). The shared `avut` database falls behind `integration` whenever someone merges a migration, and the app then fails at the first visual check with a missing-column error. If migrations are pending, check each against `git ls-tree --name-only origin/integration prisma/migrations/`. Those already on `integration` mean `avut` fell behind: list them in your first message and ask the user to run `npm run prisma migrate deploy` from the main checkout. A migration that exists only on this branch must never reach shared `avut`. It needs `db:branch` (L2), not a deploy. Don't run either yourself: it mutates the shared database, and the permission classifier blocks it anyway. Carry on with reading and planning while they do. (`npm run dev` prints the same warning when it starts, but an agent doesn't always start a server, so check here regardless.)
@@ -146,11 +146,13 @@ The user can override either way. "Just do it" on a parked item makes it fix-now
 
 A track is an ordered run of quick-path issues, built on one branch and shipped as **one PR**. Each issue's work sits in its own commits, never mixed with another issue's, and the first of them carries `Fixes #n`. It saves a branch, a CI wait and a cleanup per issue. Long-path items are never part of a track.
 
-The input is the issues, in build order, plus optionally:
+The input is the issues in build order, then optionally:
 
 - `--track <name>`: the track's name, used for the branch. Without it, derive a slug.
 - `--worktree <wt>`: build in `.claude/worktrees/<wt>`. Without it, use the main checkout.
-- notes per item, handed over by whoever invoked this (a planning skill, say). They're part of the brief: read them along with the issue.
+- a `Notes:` block, last, from whoever invoked this (a planning skill, say): notes per item, and any branch the track is already in progress on. The notes are part of the brief, so read them along with each issue. Only the issues before `Notes:` are track items; issue numbers inside the notes are context, not more items.
+
+A track of one item is fine. It runs exactly as below.
 
 1. **Resolve the items.** Resolve every issue as in Step 1, in the order given, and run the database preflight once.
 2. **Triage each item,** as in Steps 2 and 3. If any item has an open decision, ask them all together in one `AskUserQuestion` and wait. Take out any item that triages long, or whose decision stays open. Then say, in one message: "Track `<name>`: #a, #b, #c on `track/<name>` in <where>", plus anything taken out and why, and carry on in the same turn.
