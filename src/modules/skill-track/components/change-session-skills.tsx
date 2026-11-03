@@ -39,11 +39,12 @@ import { useReturnFocus } from "@/hooks/use-return-focus";
 import { SkillId } from "@/lib/schemas/skill";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { useRefetchSessionOnConflict } from "@/modules/skill-track/components/use-refetch-session-on-conflict";
+import { groupSkillSections } from "@/modules/skill-track/lib/skill-sections";
 import { trpc } from "@/trpc/client";
 
 /**
- * Chooses the skills assessed in a skill check session: a collapsible package → group → skill
- * checklist. Ticks are staged locally and saved together; Cancel discards them.
+ * Chooses the skills assessed in a skill check session: a checklist with one collapsible
+ * "Package · Group" section per skill group. Ticks are staged locally and saved together; Cancel discards them.
  */
 export function SkillTrack_ChangeSessionSkills_Dialog({
     sessionId,
@@ -148,29 +149,14 @@ function ChangeSessionSkills_Body({
         });
     }
 
-    // Package -> group -> skills. Packages are ordered by name, groups by their authored
-    // sequence, skills by name. Groups and packages left with no skills are dropped.
-    const packageSections = R.pipe(
+    // One "Package · Group" section per skill group, skills by name.
+    const skillsByName: typeof skills = R.sortBy(skills, (skill) => skill.name);
+    const groupSections = groupSkillSections({
         skillPackages,
-        R.sortBy((skillPackage) => skillPackage.name),
-        R.map((skillPackage) => ({
-            skillPackage,
-            groups: R.pipe(
-                skillGroups,
-                R.filter((skillGroup) => skillGroup.skillPackageId === skillPackage.id),
-                R.sortBy((skillGroup) => skillGroup.sequence),
-                R.map((skillGroup) => ({
-                    skillGroup,
-                    skills: R.pipe(
-                        skills.filter((skill) => skill.skillGroupId === skillGroup.id),
-                        R.sortBy((skill) => skill.name),
-                    ),
-                })),
-                R.filter(({ skills }) => skills.length > 0),
-            ),
-        })),
-        R.filter(({ groups }) => groups.length > 0),
-    );
+        skillGroups,
+        items: skillsByName,
+        skillGroupIdOf: (skill) => skill.skillGroupId,
+    });
 
     // Assigned skills outside the assessable set: their package has been withdrawn (or they are
     // otherwise no longer assessable). Listed from the saved assignment, so a skill unticked here
@@ -214,39 +200,29 @@ function ChangeSessionSkills_Body({
                         Show skill descriptions
                     </FieldLabel>
                 </Field>
-                {packageSections.length === 0 && unavailableSkills.length === 0 && (
+                {groupSections.length === 0 && unavailableSkills.length === 0 && (
                     <p className="text-muted-foreground">
                         No assessable skills. Subscribe to a skill package first.
                     </p>
                 )}
-                {packageSections.map(({ skillPackage, groups }) => {
-                    const skillsInPackage = groups.flatMap(({ skills }) => skills);
-                    const packageSelectedCount = skillsInPackage.filter((s) =>
-                        isSelected(s.id),
-                    ).length;
+                {groupSections.map((section) => {
+                    const selectedCount = section.items.filter((s) => isSelected(s.id)).length;
 
                     return (
-                        <Collapsible key={skillPackage.id} defaultOpen>
+                        <Collapsible key={section.id} defaultOpen>
                             <CollapsibleTrigger className="group w-full flex items-center justify-between gap-2 font-semibold border-b pb-1 hover:text-accent-foreground">
-                                <span>{skillPackage.name}</span>
+                                <span>{section.label}</span>
                                 <span className="flex items-center gap-2 text-sm font-normal text-muted-foreground">
                                     <span>
-                                        {packageSelectedCount} of {skillsInPackage.length} selected
+                                        {selectedCount} of {section.items.length} selected
                                     </span>
                                     <ChevronDownIcon className="size-4 group-data-[state=open]:rotate-180" />
                                 </span>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                                <div className="space-y-6 pt-4">
-                                    {groups.map(({ skillGroup, skills }) => (
-                                        <div key={skillGroup.id}>
-                                            <div className="text-sm font-medium text-muted-foreground mb-2">
-                                                {skillGroup.name}
-                                            </div>
-                                            <FieldGroup>{skills.map(renderSkillField)}</FieldGroup>
-                                        </div>
-                                    ))}
-                                </div>
+                                <FieldGroup className="pt-4">
+                                    {section.items.map(renderSkillField)}
+                                </FieldGroup>
                             </CollapsibleContent>
                         </Collapsible>
                     );

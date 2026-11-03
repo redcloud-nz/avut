@@ -29,6 +29,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useOrganization } from "@/hooks/use-organization";
+import { skillSectionLabel } from "@/modules/skill-track/lib/skill-sections";
 import { trpc } from "@/trpc/client";
 
 /**
@@ -113,7 +114,7 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
                     return [
                         {
                             id: skillGroup.id,
-                            label: `${skillPackage.name} · ${skillGroup.name}`,
+                            label: skillSectionLabel(skillPackage, skillGroup),
                             skills: groupSkills,
                         },
                     ];
