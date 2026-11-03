@@ -27,6 +27,10 @@ import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/u
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentKind } from "@/lib/schemas/d4h/equipment-kind";
+import {
+    D4HModule_OpenRecordInD4H_Button,
+    ownerTeamId,
+} from "@/modules/d4h/components/open-in-d4h-button";
 import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
@@ -108,6 +112,13 @@ export function D4HModule_Category_Content({ categoryId }: { categoryId: number 
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{category.title}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="category"
+                                id={category.id}
+                                teamId={ownerTeamId(category.owner)}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
                         <Card>

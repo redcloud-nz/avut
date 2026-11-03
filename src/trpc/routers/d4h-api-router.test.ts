@@ -13,7 +13,11 @@ import type {
 } from "@/lib/schemas/d4h/equipment-item";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
-import { fetchD4HWhoami, getD4HTeamMembers } from "@/server/d4h-api/client";
+import {
+    fetchD4HTeamDetailCached,
+    fetchD4HWhoami,
+    getD4HTeamMembers,
+} from "@/server/d4h-api/client";
 import {
     fetchD4HEquipmentItem,
     fetchD4HEquipmentItemContents,
@@ -202,6 +206,62 @@ describe("d4hApiRouter equipment items", () => {
 
     const viewer = () => makeCaller({ d4hEquipment: ["view"] });
     const editor = () => makeCaller({ d4hEquipment: ["update"] });
+
+    describe("getD4HWebUrl", () => {
+        const teamOfDetail = () => vi.mocked(fetchD4HTeamDetailCached).mock.lastCall?.[1];
+
+        it("builds a member's URL on its team's subdomain", async () => {
+            const url = await viewer().getD4HWebUrl({
+                organizationId: T.org,
+                record: "member",
+                id: 42,
+                teamId: TEAM_ID,
+            });
+
+            expect(url).toBe("https://rescue.team-manager.ap.d4h.com/team/members/view/42");
+            expect(teamOfDetail()).toBe(TEAM_ID);
+        });
+
+        it("builds a team's URL as its dashboard", async () => {
+            const url = await viewer().getD4HWebUrl({
+                organizationId: T.org,
+                record: "team",
+                id: TEAM_ID,
+                teamId: TEAM_ID,
+            });
+
+            expect(url).toBe("https://rescue.team-manager.ap.d4h.com/dashboard");
+        });
+
+        it("uses the owning team for a team-owned catalogue record", async () => {
+            const url = await viewer().getD4HWebUrl({
+                organizationId: T.org,
+                record: "brand",
+                id: 744,
+                teamId: OTHER_TEAM_ID,
+            });
+
+            expect(url).toBe("https://rescue.team-manager.ap.d4h.com/equipment/brands/744/view");
+            expect(teamOfDetail()).toBe(OTHER_TEAM_ID);
+        });
+
+        it("falls back to the first reachable team for an organisation-owned record", async () => {
+            await viewer().getD4HWebUrl({ organizationId: T.org, record: "model", id: 5430 });
+
+            expect(teamOfDetail()).toBe(TEAM_ID);
+        });
+
+        it("throws NOT_FOUND for a member of a team out of reach", async () => {
+            await expect(
+                viewer().getD4HWebUrl({
+                    organizationId: T.org,
+                    record: "member",
+                    id: 42,
+                    teamId: 999,
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+        });
+    });
 
     describe("getEquipmentItem", () => {
         it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {

@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { CornerDownRightIcon, ExternalLinkIcon } from "lucide-react";
+import { CornerDownRightIcon } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Suspense, useMemo, type ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -31,7 +31,6 @@ import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-ty
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
 import {
     Card,
     CardAction,
@@ -48,6 +47,7 @@ import { route } from "@/lib/routes";
 import { D4HEquipmentListItem, D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { trpc } from "@/trpc/client";
 
+import { D4HModule_OpenInD4H_Button } from "../open-in-d4h-button";
 import { D4HModule_ItemTasks_Card } from "../tasks/item-tasks-card";
 
 import { D4HModule_EquipmentItem_Menu } from "./equipment-item-menu";
@@ -173,13 +173,7 @@ export function D4HModule_EquipmentItem_Content({
                             <D4HItemRef value={item.ref} /> {item.kind.title}
                         </Saratoga.Title>
                         <Saratoga.Actions>
-                            {/* Icon-only below `sm`, with the label kept for screen readers. */}
-                            <Button asChild variant="outline" className="max-sm:w-8 max-sm:px-0">
-                                <a href={d4hUrl} target="_blank" rel="noreferrer">
-                                    <ExternalLinkIcon />
-                                    <span className="sr-only sm:not-sr-only">Open in D4H</span>
-                                </a>
-                            </Button>
+                            <D4HModule_OpenInD4H_Button href={d4hUrl} />
                             <D4HModule_EquipmentItem_Menu
                                 canUpdateInD4H={canUpdateInD4H}
                                 extraActions={menuActions}

@@ -32,6 +32,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentItem, D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
+import { D4HModule_OpenRecordInD4H_Button } from "@/modules/d4h/components/open-in-d4h-button";
 import { trpc } from "@/trpc/client";
 
 /** A D4H member of one team: their details and the equipment they hold. */
@@ -193,6 +194,13 @@ export function D4HModule_Member_Content({
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{member.name}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="member"
+                                id={member.id}
+                                teamId={teamId}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
                         <Card>
