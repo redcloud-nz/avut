@@ -30,20 +30,21 @@ interface ArtieProps {
     alt?: string;
 }
 
-const poseToImage: Record<ArtiePose, string> = {
-    CheckThisOut: "/mascot/artie-check-this-out.png",
-    Empty: "/mascot/artie-empty-transparent.png",
-    Error: "/mascot/artie-error.png",
-    Login: "/mascot/artie-login.png",
-    NotAllowed: "/mascot/artie-not-allowed.png",
-    NotFound: "/mascot/artie-not-found.png",
-    Question: "/mascot/artie-question.png",
-    Searching: "/mascot/artie-searching.png",
-    Secure: "/mascot/artie-secure.png",
-    Success: "/mascot/artie-success.png",
-    Welcome: "/mascot/artie-welcome.png",
-    Working: "/mascot/artie-working.png",
-    Writing: "/mascot/artie-writing.png",
+// Transparent cutouts: the page background shows through, so they suit both themes.
+const poseToImage: Record<ArtiePose, { src: string; width: number; height: number }> = {
+    CheckThisOut: { src: "/mascot/artie-check-this-out.png", width: 1184, height: 864 },
+    Empty: { src: "/mascot/artie-empty.png", width: 1184, height: 864 },
+    Error: { src: "/mascot/artie-error.png", width: 1184, height: 864 },
+    Login: { src: "/mascot/artie-login.png", width: 1184, height: 864 },
+    NotAllowed: { src: "/mascot/artie-not-allowed.png", width: 1184, height: 864 },
+    NotFound: { src: "/mascot/artie-not-found.png", width: 1184, height: 864 },
+    Question: { src: "/mascot/artie-question.png", width: 1184, height: 864 },
+    Searching: { src: "/mascot/artie-searching.png", width: 1024, height: 1024 },
+    Secure: { src: "/mascot/artie-secure.png", width: 1184, height: 864 },
+    Success: { src: "/mascot/artie-success.png", width: 1184, height: 864 },
+    Welcome: { src: "/mascot/artie-welcome.png", width: 1184, height: 864 },
+    Working: { src: "/mascot/artie-working.png", width: 1184, height: 864 },
+    Writing: { src: "/mascot/artie-writing.png", width: 1184, height: 864 },
 };
 
 // const sizeConfig = {
@@ -56,7 +57,7 @@ const poseToImage: Record<ArtiePose, string> = {
  * Component to render Artie illustrations.
  */
 export default function Artie({ pose, alt, className, size = "md" }: ArtieProps) {
-    const imageSrc = poseToImage[pose];
+    const image = poseToImage[pose];
     const altText = alt || `Artie the mascot - ${pose}`;
 
     return (
@@ -70,10 +71,10 @@ export default function Artie({ pose, alt, className, size = "md" }: ArtieProps)
             )}
         >
             <Image
-                src={imageSrc}
+                src={image.src}
                 alt={altText}
-                width={1184}
-                height={864}
+                width={image.width}
+                height={image.height}
                 priority={false}
                 className={cn("object-contain select-none")}
                 loading="eager"
