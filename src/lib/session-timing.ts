@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { addDays, differenceInCalendarDays, format, isSameDay, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays, format, isSameDay } from "date-fns";
 
 import { TZDate } from "@date-fns/tz";
 
@@ -17,7 +17,7 @@ import { TIME_FORMAT_PATTERNS, type DisplayPreferences } from "@/lib/datetime";
  * | ------------------ | ------------------------------- | ------------------------------------- |
  * | All day, 1 day     | local midnight on the day       | local midnight the next day           |
  * | All day, N days    | local midnight on the first day | local midnight N calendar days later  |
- * | Timed, with end    | start time                      | end time (may cross midnight)         |
+ * | Timed, with end    | start time                      | end time (may be days later)          |
  * | Timed, no end      | start time                      | `null` (or `== startsAt`, legacy rows) |
  *
  * Calendar-day arithmetic is `addDays` on a `TZDate`, never `+24h`: NZ's DST days are 23 and 25
@@ -30,7 +30,7 @@ const QUARTER_HOUR_MS = 15 * 60_000;
 /** The written date pattern a session's day renders in. Fixed, not the viewer's `dateFormat`, because the weekday matters for a session. */
 export const SESSION_DATE_PATTERN = "EEE d MMM yyyy";
 
-/** The most days an all-day session can run, in the picker. */
+/** The most calendar days a session can span, in the picker. */
 export const MAX_SESSION_DAYS = 14;
 
 /** The form state's start time when the session it was built from has none (an all-day one). */
@@ -41,9 +41,20 @@ export type SessionTiming = { kind: "allDay"; days: number } | { kind: "timed"; 
 /**
  * The start/end picker's state. `date` and the times are wall-clock values in the org's zone.
  *
- * - `days` (1–14 in the picker) only matters when `allDay`.
- * - `startTime`/`endTime` only matter when not `allDay`. An `endTime` before `startTime` means the
- *   next day; one equal to `startTime` is invalid, so a timed session always lasts under 24h.
+ * The picker's four modes:
+ *
+ * | Mode                         | `allDay` | `days` | `endTime` |
+ * | ---------------------------- | -------- | ------ | --------- |
+ * | Start date only              | true     | 1      | –         |
+ * | Start and end date (all day) | true     | 2–14   | –         |
+ * | Start time, optional end     | false    | 1      | optional  |
+ * | Start time over end date     | false    | 2–14   | required  |
+ *
+ * - `days` (1–14 in the picker) is how many calendar days the session spans: the last day is
+ *   `date` plus `days − 1`.
+ * - `startTime`/`endTime` only matter when not `allDay`. With `days` 1, an `endTime` before
+ *   `startTime` means the next day, and one equal to `startTime` is invalid. With `days` 2 or more,
+ *   `endTime` is on the last day, at any time.
  */
 export type SessionFormState = {
     date: string;
@@ -159,30 +170,40 @@ export function formatSessionWhen(
  * day doesn't exist, so an all-day session starting or ending there is stored at 01:00 and reads
  * back as timed. NZ's change is at 02:00, so it isn't affected.
  *
- * @throws RangeError when a timed session's `endTime` equals its `startTime`, or an all-day
- *   session's `days` isn't a positive integer.
+ * @throws RangeError when `days` isn't a positive integer, a one-day timed session's `endTime`
+ *   equals its `startTime`, or a timed session over several days has no `endTime`.
  */
 export function sessionInstants(state: SessionFormState, orgZone: string): SessionInstants {
     const [year, month, day] = state.date.split("-").map(Number);
 
+    if (!Number.isInteger(state.days) || state.days < 1) {
+        throw new RangeError(`A session needs at least one day, got ${state.days}`);
+    }
+
     if (state.allDay) {
-        if (!Number.isInteger(state.days) || state.days < 1) {
-            throw new RangeError(`An all-day session needs at least one day, got ${state.days}`);
-        }
         const start = new TZDate(year, month - 1, day, orgZone);
         return { startsAt: toUtcIso(start), endsAt: toUtcIso(addDays(start, state.days)) };
     }
 
     const [startHour, startMinute] = state.startTime.split(":").map(Number);
     const start = new TZDate(year, month - 1, day, startHour, startMinute, orgZone);
-    if (state.endTime == null) return { startsAt: toUtcIso(start), endsAt: null };
-
-    if (state.endTime === state.startTime) {
-        throw new RangeError("A timed session's end time can't equal its start time");
+    if (state.endTime == null) {
+        if (state.days > 1) {
+            throw new RangeError("A timed session over several days needs an end time");
+        }
+        return { startsAt: toUtcIso(start), endsAt: null };
     }
+
     const [endHour, endMinute] = state.endTime.split(":").map(Number);
-    // "HH:mm" strings order the same as the times they hold.
-    const endDay = state.endTime < state.startTime ? day + 1 : day;
+    let endDay: number;
+    if (state.days > 1) {
+        endDay = day + state.days - 1;
+    } else if (state.endTime === state.startTime) {
+        throw new RangeError("A timed session's end time can't equal its start time");
+    } else {
+        // "HH:mm" strings order the same as the times they hold.
+        endDay = state.endTime < state.startTime ? day + 1 : day;
+    }
     const end = new TZDate(year, month - 1, endDay, endHour, endMinute, orgZone);
     return { startsAt: toUtcIso(start), endsAt: toUtcIso(end) };
 }
@@ -191,10 +212,10 @@ export function sessionInstants(state: SessionFormState, orgZone: string): Sessi
  * The picker's state for a stored session, in the org's zone. Snaps **both** ends to a quarter
  * hour first, so a legacy off-quarter time shows as the value that will be saved.
  *
- * A timed end that snaps onto the start reads as "no end". A timed session the picker can't hold
- * (24h or more, or an end at the start's time of day) comes back as an all-day one, both ends
- * snapped to the nearest local midnight. That's what an all-day session stored before the org's
- * zone changed looks like: midnight to midnight in the old zone, a whole number of days apart.
+ * A timed end that snaps onto the start reads as "no end". An end the next day, before the
+ * start's time of day, reads as a one-day session that crosses midnight, as the picker makes it;
+ * any other end on a later day reads as a session over several days. An all-day session stored
+ * before the org's zone changed (midnight to midnight in the old zone) reads back as timed.
  * `days` is clamped to 1–`MAX_SESSION_DAYS`.
  */
 export function sessionFormState(
@@ -211,23 +232,18 @@ export function sessionFormState(
         return allDayFormState(start, timing.days);
     }
     const end = timing.end && new TZDate(timing.end, orgZone);
-    // Judged on the clock, as the picker offers it (an end on the start's day, or the next day
-    // before the start's time), not in elapsed time: across the April fall-back, 04:00 to 03:45
-    // the next day is 24h45 of real time but a session the picker made.
+    const startTime = format(start, "HH:mm");
+    const endTime = end ? format(end, "HH:mm") : null;
+    // Judged on the clock, as the picker offers it, not in elapsed time: across the April
+    // fall-back, 04:00 to 03:45 the next day is 24h45 of real time but a one-day session.
     const endDay = end ? differenceInCalendarDays(end, start) : 0;
-    if (end && (endDay >= 2 || (endDay === 1 && format(end, "HH:mm") >= format(start, "HH:mm")))) {
-        const firstDay = nearestLocalMidnight(start);
-        return allDayFormState(
-            firstDay,
-            differenceInCalendarDays(nearestLocalMidnight(end), firstDay),
-        );
-    }
+    const crossesMidnight = endDay === 1 && endTime != null && endTime < startTime;
     return {
         date: format(start, "yyyy-MM-dd"),
         allDay: false,
-        days: 1,
-        startTime: format(start, "HH:mm"),
-        endTime: end ? format(end, "HH:mm") : null,
+        days: crossesMidnight ? 1 : Math.min(endDay + 1, MAX_SESSION_DAYS),
+        startTime,
+        endTime,
     };
 }
 
@@ -239,12 +255,6 @@ function allDayFormState(firstDay: TZDate, days: number): SessionFormState {
         startTime: DEFAULT_SESSION_START_TIME,
         endTime: null,
     };
-}
-
-/** The local midnight nearest `date`: its own day's before noon, the next day's from noon on. */
-function nearestLocalMidnight(date: TZDate): TZDate {
-    const midnight = startOfDay(date);
-    return date.getHours() >= 12 ? addDays(midnight, 1) : midnight;
 }
 
 function isLocalMidnight(date: TZDate): boolean {

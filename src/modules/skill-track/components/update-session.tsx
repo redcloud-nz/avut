@@ -40,6 +40,7 @@ import {
     parseSessionDialog,
     sessionDialogSchema,
     SkillTrack_SessionWhenPicker,
+    withSessionEndTime,
 } from "./session-when-picker";
 
 export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillCheckSession }) {
@@ -51,12 +52,13 @@ export function SkillsModule_UpdateSession_Dialog({ session }: { session: SkillC
 
     const orgZone = organization.settings.general.timeZone;
 
-    // `sessionFormState` snaps a legacy off-quarter start or end, which `inputSchema` refuses, so
-    // the dialog shows the value that will be saved.
+    // `sessionFormState` snaps a legacy off-quarter start or end, which `inputSchema` refuses, and
+    // `withSessionEndTime` gives a timed session stored with no end one, so the dialog shows the
+    // value that will be saved.
     const formValues = () => ({
         name: session.name,
         notes: session.notes,
-        when: sessionFormState(session.startsAt, session.endsAt, orgZone),
+        when: withSessionEndTime(sessionFormState(session.startsAt, session.endsAt, orgZone)),
     });
 
     const formId = useId();

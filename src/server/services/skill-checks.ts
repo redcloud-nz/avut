@@ -463,8 +463,9 @@ export async function assertAssessablePersonnel(
 
 /**
  * Check that every id is a skill the organization can assess, as `listAssessableSkills` lists
- * them: neither it nor its group `Deleted`, from an available package
- * (`availableSkillPackageWhere`) the organization subscribes to.
+ * them: it and its group both `Active`, from an available package (`availableSkillPackageWhere`)
+ * the organization subscribes to. Archiving a skill or its group withdraws it, as archiving the
+ * package does.
  * @throws ValidationError naming any id that isn't.
  */
 export async function assertAssessableSkills(
@@ -476,8 +477,8 @@ export async function assertAssessableSkills(
     const found = await ctx.prisma.skill.findMany({
         where: {
             id: { in: skillIds },
-            status: { not: "Deleted" },
-            skillGroup: { status: { not: "Deleted" } },
+            status: "Active",
+            skillGroup: { status: "Active" },
             skillPackage: {
                 ...availableSkillPackageWhere,
                 subscriptions: { some: { organizationId: ctx.organizationId } },

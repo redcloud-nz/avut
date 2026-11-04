@@ -45,12 +45,13 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
     // Only a subscriber can see a skill in a withdrawn (unpublished, archived or deleted) package.
     const withdrawn = !SkillPackage.isAvailable(skill.skillPackage);
 
-    // As in the Skills list: a skill counts as archived when it, or its group, is.
+    // A skill counts as archived when it, or its group, is. Either way it's out of the Skills
+    // list, sessions and reports.
     const archived = skill.status !== "Active" || skill.group.status !== "Active";
 
-    // The coverage report covers only Active skills in available packages the organization
-    // subscribes to; for anything else it would show "Unknown Skill".
-    const coverageAvailable = skill.subscribed && !withdrawn && skill.status === "Active";
+    // The coverage report covers only Active skills in Active groups of available packages the
+    // organization subscribes to; for anything else it would show "Unknown Skill".
+    const coverageAvailable = skill.subscribed && !withdrawn && !archived;
 
     return (
         <>
