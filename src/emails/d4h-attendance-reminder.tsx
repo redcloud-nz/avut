@@ -22,6 +22,8 @@ import {
     Text,
 } from "@react-email/components";
 
+import { PoweredByAvut } from "./powered-by-avut";
+
 export interface D4HAttendanceReminderEmailProps {
     organization: { name: string };
     team: { name: string };
@@ -139,9 +141,7 @@ export default function D4HAttendanceReminderEmail({
                             </Link>
                             .
                         </Text>
-                        <Text className="my-0 text-center text-[#999999] text-[11px] leading-5">
-                            Powered by AVUT
-                        </Text>
+                        <PoweredByAvut />
                     </Container>
                 </Body>
             </Tailwind>

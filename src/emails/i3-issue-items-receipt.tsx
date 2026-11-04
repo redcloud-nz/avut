@@ -10,7 +10,6 @@ import {
     Heading,
     Hr,
     Html,
-    Img,
     pixelBasedPreset,
     Preview,
     Row,
@@ -23,7 +22,7 @@ import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 
-import { assetBaseUrl } from "./base-url";
+import { PoweredByAvut } from "./powered-by-avut";
 
 interface I3IssueItemsReceiptEmailProps {
     /** The AVUT user who submitted the Issue ("Recorded by"). */
@@ -81,16 +80,7 @@ export default function I3IssueItemsReceiptEmail({
                 <Body className="mx-auto my-auto bg-white px-2 font-sans">
                     <Preview>Receipt for Items Issued</Preview>
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
-                        <Section className="mt-8">
-                            <Img
-                                src={`${assetBaseUrl}/avut-logo.png`}
-                                width="150"
-                                height="50"
-                                alt="AVUT Logo"
-                                className="mx-auto my-0"
-                            />
-                        </Section>
-                        <Heading className="max-0 my-[30px] p-0 text-center font-normal text-[24px] text-black">
+                        <Heading className="mx-0 mt-8 mb-[30px] p-0 text-center font-normal text-[24px] text-black">
                             Receipt for Items Issued
                         </Heading>
 
@@ -141,6 +131,7 @@ export default function I3IssueItemsReceiptEmail({
                             This email was sent to {emailTarget.email}. If you did not request this,
                             please ignore it.
                         </Text>
+                        <PoweredByAvut />
                     </Container>
                 </Body>
             </Tailwind>

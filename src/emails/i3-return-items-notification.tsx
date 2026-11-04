@@ -10,7 +10,6 @@ import {
     Heading,
     Hr,
     Html,
-    Img,
     pixelBasedPreset,
     Preview,
     Row,
@@ -21,8 +20,8 @@ import {
 
 import { I3ReturnedItemSummary, I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 
-import { assetBaseUrl } from "./base-url";
 import { ReturnedItemRow } from "./i3-return-items-receipt";
+import { PoweredByAvut } from "./powered-by-avut";
 
 interface I3ReturnItemsNotificationEmailProps {
     /** The AVUT user who submitted the Return ("Recorded by"). */
@@ -75,16 +74,7 @@ export default function I3ReturnItemsNotificationEmail({
                 <Body className="mx-auto my-auto bg-white px-2 font-sans">
                     <Preview>Items Returned by {formData.recipient.name}</Preview>
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
-                        <Section className="mt-8">
-                            <Img
-                                src={`${assetBaseUrl}/avut-logo.png`}
-                                width="150"
-                                height="50"
-                                alt="AVUT Logo"
-                                className="mx-auto my-0"
-                            />
-                        </Section>
-                        <Heading className="max-0 my-[30px] p-0 text-center font-normal text-[24px] text-black">
+                        <Heading className="mx-0 mt-8 mb-[30px] p-0 text-center font-normal text-[24px] text-black">
                             Items Returned by {formData.recipient.name}
                         </Heading>
 
@@ -146,6 +136,7 @@ export default function I3ReturnItemsNotificationEmail({
                             This email was sent to {emailTarget.email}. If you did not request this,
                             please ignore it.
                         </Text>
+                        <PoweredByAvut />
                     </Container>
                 </Body>
             </Tailwind>
