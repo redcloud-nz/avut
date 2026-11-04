@@ -89,13 +89,19 @@ export function SystemAdmin_SkillPackageImport_Content() {
                                 id="import-file"
                                 accept="application/json"
                                 aria-invalid={!!file.error}
+                                aria-describedby={file.error ? "import-file-error" : undefined}
                                 hint="Up to 1 MB · .json"
                                 onFileSelected={(selected) => {
                                     file.handleFile(selected);
                                     resetPlan();
                                 }}
                             />
-                            {file.error && <FieldError errors={[{ message: file.error }]} />}
+                            {file.error && (
+                                <FieldError
+                                    id="import-file-error"
+                                    errors={[{ message: file.error }]}
+                                />
+                            )}
                             {file.envelope && !file.error && (
                                 <p className="text-muted-foreground text-xs">
                                     {file.envelope.package.name} —{" "}
