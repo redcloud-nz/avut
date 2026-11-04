@@ -143,7 +143,7 @@ export const d4hApiRouter = createTrpcRouter({
      * passes its owning team when a team owns it; one the organisation owns, or whose team is out
      * of reach, opens under the first team the token reaches.
      */
-    getD4HWebUrl: organizationProcedure({})
+    getD4HWebUrl: organizationProcedure({ d4hEquipment: ["view"] })
         .input(
             z.object({
                 record: D4HWebRecord.schema,

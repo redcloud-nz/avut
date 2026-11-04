@@ -210,6 +210,16 @@ describe("d4hApiRouter equipment items", () => {
     describe("getD4HWebUrl", () => {
         const teamOfDetail = () => vi.mocked(fetchD4HTeamDetailCached).mock.lastCall?.[1];
 
+        it("throws PRECONDITION_FAILED when no D4H token is configured", async () => {
+            vi.mocked(getConfiguredD4HAccessToken).mockRejectedValue(
+                new NotConfiguredError("No personal D4H access token."),
+            );
+
+            await expect(
+                viewer().getD4HWebUrl({ organizationId: T.org, record: "team", id: TEAM_ID }),
+            ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+        });
+
         it("builds a member's URL on its team's subdomain", async () => {
             const url = await viewer().getD4HWebUrl({
                 organizationId: T.org,
@@ -247,6 +257,17 @@ describe("d4hApiRouter equipment items", () => {
 
         it("falls back to the first reachable team for an organisation-owned record", async () => {
             await viewer().getD4HWebUrl({ organizationId: T.org, record: "model", id: 5430 });
+
+            expect(teamOfDetail()).toBe(TEAM_ID);
+        });
+
+        it("falls back to the first reachable team when the owning team is out of reach", async () => {
+            await viewer().getD4HWebUrl({
+                organizationId: T.org,
+                record: "category",
+                id: 230,
+                teamId: 999,
+            });
 
             expect(teamOfDetail()).toBe(TEAM_ID);
         });
