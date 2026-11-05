@@ -47,6 +47,10 @@ const TUE_3_FEB_2100 = "2026-02-03T08:00:00.000Z";
 const FRI_6_FEB_2200 = "2026-02-06T09:00:00.000Z";
 /** Sat 7 Feb 2026 01:00 NZDT. */
 const SAT_7_FEB_0100 = "2026-02-06T12:00:00.000Z";
+/** Wed 4 Feb 2026 19:00 NZDT. */
+const WED_4_FEB_1900 = "2026-02-04T06:00:00.000Z";
+/** Wed 4 Feb 2026 21:00 NZDT. */
+const WED_4_FEB_2100 = "2026-02-04T08:00:00.000Z";
 
 /** Sat 4 Apr 2026 00:00 NZDT. */
 const SAT_4_APR = "2026-04-03T11:00:00.000Z";
@@ -320,6 +324,65 @@ describe("sessionInstants", () => {
         ).toEqual({ startsAt: TUE_3_FEB_1900, endsAt: null });
     });
 
+    it("timed over several days ends on the last day, at the end time", () => {
+        expect(
+            sessionInstants(
+                state({
+                    date: "2026-02-03",
+                    allDay: false,
+                    days: 2,
+                    startTime: "19:00",
+                    endTime: "21:00",
+                }),
+                NZ,
+            ),
+        ).toEqual({ startsAt: TUE_3_FEB_1900, endsAt: WED_4_FEB_2100 });
+    });
+
+    it("timed over several days may end at, or before, the start's time of day", () => {
+        const base = { date: "2026-02-03", allDay: false, days: 2, startTime: "19:00" };
+        expect(sessionInstants(state({ ...base, endTime: "19:00" }), NZ)).toEqual({
+            startsAt: TUE_3_FEB_1900,
+            endsAt: WED_4_FEB_1900,
+        });
+        // Tue 3 Feb 19:00 – Thu 5 Feb 01:00 NZDT
+        expect(sessionInstants(state({ ...base, days: 3, endTime: "01:00" }), NZ)).toEqual({
+            startsAt: TUE_3_FEB_1900,
+            endsAt: "2026-02-04T12:00:00.000Z",
+        });
+    });
+
+    it("timed over several days uses calendar days across a DST change, not 24h", () => {
+        // Sat 4 Apr 09:00 NZDT – Tue 7 Apr 09:00 NZST: 73 hours.
+        expect(
+            sessionInstants(
+                state({
+                    date: "2026-04-04",
+                    allDay: false,
+                    days: 4,
+                    startTime: "09:00",
+                    endTime: "09:00",
+                }),
+                NZ,
+            ),
+        ).toEqual({ startsAt: "2026-04-03T20:00:00.000Z", endsAt: "2026-04-06T21:00:00.000Z" });
+    });
+
+    it("rejects a timed session over several days with no end time", () => {
+        expect(() =>
+            sessionInstants(state({ allDay: false, days: 2, startTime: "19:00" }), NZ),
+        ).toThrow(RangeError);
+    });
+
+    it("rejects a timed session of zero days", () => {
+        expect(() =>
+            sessionInstants(
+                state({ allDay: false, days: 0, startTime: "19:00", endTime: "21:00" }),
+                NZ,
+            ),
+        ).toThrow(RangeError);
+    });
+
     it("returns UTC strings ending in Z", () => {
         const { startsAt, endsAt } = sessionInstants(
             state({ date: "2026-02-03", allDay: false, startTime: "19:00", endTime: "21:00" }),
@@ -424,38 +487,39 @@ describe("sessionFormState", () => {
         });
     });
 
-    describe("an all-day session stored before the org's zone changed", () => {
-        const allDay = (date: string, days: number) => ({
-            date,
-            allDay: true,
-            days,
-            startTime: DEFAULT_SESSION_START_TIME,
-            endTime: null,
-        });
-
-        it("reads back all day when the new zone is ahead", () => {
-            // Sat 7 – Sun 8 Feb midnight in Sydney (AEDT) is 02:00 – 02:00 NZDT.
-            expect(
-                sessionFormState("2026-02-06T13:00:00.000Z", "2026-02-07T13:00:00.000Z", NZ),
-            ).toEqual(allDay("2026-02-07", 1));
-        });
-
-        it("reads back all day when the new zone is behind", () => {
-            // Sat 7 – Mon 9 Feb midnight NZDT is Fri 22:00 – Sun 22:00 in Sydney.
-            expect(sessionFormState(SAT_7_FEB, MON_9_FEB, "Australia/Sydney")).toEqual(
-                allDay("2026-02-07", 2),
-            );
+    it("reads an all-day session stored before the org's zone changed as timed, over its days", () => {
+        // Sat 7 – Sun 8 Feb midnight in Sydney (AEDT) is 02:00 – 02:00 NZDT. Nothing tells it
+        // apart from a session that really runs 02:00 to 02:00.
+        expect(
+            sessionFormState("2026-02-06T13:00:00.000Z", "2026-02-07T13:00:00.000Z", NZ),
+        ).toEqual({
+            date: "2026-02-07",
+            allDay: false,
+            days: 2,
+            startTime: "02:00",
+            endTime: "02:00",
         });
     });
 
-    it("reads a timed session of 24h or more as all day", () => {
-        // Tue 3 Feb 19:00 – Wed 4 Feb 21:00 NZDT, 26 hours: Wed 4 Feb, the nearest midnights.
-        expect(sessionFormState(TUE_3_FEB_1900, "2026-02-04T08:00:00.000Z", NZ)).toEqual({
-            date: "2026-02-04",
-            allDay: true,
-            days: 1,
-            startTime: DEFAULT_SESSION_START_TIME,
-            endTime: null,
+    it("reads a timed session of 24h or more as timed over several days", () => {
+        // Tue 3 Feb 19:00 – Wed 4 Feb 21:00 NZDT, 26 hours.
+        expect(sessionFormState(TUE_3_FEB_1900, WED_4_FEB_2100, NZ)).toEqual({
+            date: "2026-02-03",
+            allDay: false,
+            days: 2,
+            startTime: "19:00",
+            endTime: "21:00",
+        });
+    });
+
+    it("reads an end on a later day before the start's time of day as over several days", () => {
+        // Tue 3 Feb 19:00 – Thu 5 Feb 01:00 NZDT: two days on, so not the picker's "next day".
+        expect(sessionFormState(TUE_3_FEB_1900, "2026-02-04T12:00:00.000Z", NZ)).toEqual({
+            date: "2026-02-03",
+            allDay: false,
+            days: 3,
+            startTime: "19:00",
+            endTime: "01:00",
         });
     });
 
@@ -472,17 +536,28 @@ describe("sessionFormState", () => {
         });
     });
 
-    it("reads a timed session ending at its start's time of day as all day, under 24h", () => {
+    it("reads a timed session ending at its start's time of day as over two days, under 24h", () => {
         // Sat 26 Sep 09:00 NZST – Sun 27 Sep 09:00 NZDT is 23 hours, across the spring-forward.
         expect(
             sessionFormState("2026-09-25T21:00:00.000Z", "2026-09-26T20:00:00.000Z", NZ),
-        ).toMatchObject({ date: "2026-09-26", allDay: true, days: 1, endTime: null });
+        ).toEqual({
+            date: "2026-09-26",
+            allDay: false,
+            days: 2,
+            startTime: "09:00",
+            endTime: "09:00",
+        });
     });
 
     it("clamps days to MAX_SESSION_DAYS", () => {
         // Sat 7 Feb – Mon 9 Mar midnight NZDT, 30 days.
         expect(sessionFormState(SAT_7_FEB, "2026-03-08T11:00:00.000Z", NZ)).toMatchObject({
             allDay: true,
+            days: MAX_SESSION_DAYS,
+        });
+        // Tue 3 Feb 19:00 – Mon 9 Mar 19:00 NZDT
+        expect(sessionFormState(TUE_3_FEB_1900, "2026-03-09T06:00:00.000Z", NZ)).toMatchObject({
+            allDay: false,
             days: MAX_SESSION_DAYS,
         });
     });
@@ -497,6 +572,13 @@ describe("sessionInstants ∘ sessionFormState", () => {
         ["timed, with end", TUE_3_FEB_1900, TUE_3_FEB_2100],
         ["timed, crossing midnight", FRI_6_FEB_2200, SAT_7_FEB_0100],
         ["timed, no end", TUE_3_FEB_1900, null],
+        ["timed over several days", TUE_3_FEB_1900, WED_4_FEB_2100],
+        ["timed over several days, ending at the start's time", TUE_3_FEB_1900, WED_4_FEB_1900],
+        [
+            "timed over several days across April DST",
+            "2026-04-03T20:00:00.000Z",
+            "2026-04-06T21:00:00.000Z",
+        ],
     ])("round-trips %s", (_label, startsAt, endsAt) => {
         expect(sessionInstants(sessionFormState(startsAt, endsAt, NZ), NZ)).toEqual({
             startsAt,

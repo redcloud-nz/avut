@@ -6,7 +6,6 @@
 
 import { ArrowLeftIcon, ArrowUpIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
-import * as R from "remeda";
 import { match } from "ts-pattern";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -57,6 +56,7 @@ import {
     useOtherAssessorChecks,
     useSessionChecksSync,
 } from "@/modules/skill-track/components/use-session-checks-sync";
+import { groupSkillSections } from "@/modules/skill-track/lib/skill-sections";
 import { trpc } from "@/trpc/client";
 
 /** The (assessee, skill) check the record dialog is open on. */
@@ -189,31 +189,16 @@ export function SkillTrack_SessionBySkill_Content({
 
     const [skillOrder, setSkillOrder] = useState<SessionSkillOrder>("by-package-group");
 
-    // Group the session skills (the left-hand picker) by skill package and group (for the
-    // "by-package-group" order). Packages are sorted by name, groups by sequence; skills keep the
-    // alphabetical order of `sessionSkills`. Packages/groups with no session skills are omitted.
+    // Group the session skills (the left-hand picker) into one "Package · Group" section per skill
+    // group (for the "by-package-group" order). Skills keep the alphabetical order of
+    // `sessionSkills`.
     const assessableSkillById = new Map(assessableSkills.map((skill) => [skill.id, skill]));
-    const packageSections = R.pipe(
+    const groupSections = groupSkillSections({
         skillPackages,
-        R.sortBy((skillPackage) => skillPackage.name),
-        R.map((skillPackage) => ({
-            skillPackage,
-            groups: R.pipe(
-                skillGroups,
-                R.filter((skillGroup) => skillGroup.skillPackageId === skillPackage.id),
-                R.sortBy((skillGroup) => skillGroup.sequence),
-                R.map((skillGroup) => ({
-                    skillGroup,
-                    skills: sessionSkills.filter(
-                        (skill) =>
-                            assessableSkillById.get(skill.id)?.skillGroupId === skillGroup.id,
-                    ),
-                })),
-                R.filter(({ skills }) => skills.length > 0),
-            ),
-        })),
-        R.filter(({ groups }) => groups.length > 0),
-    );
+        skillGroups,
+        items: sessionSkills,
+        skillGroupIdOf: (skill) => assessableSkillById.get(skill.id)?.skillGroupId,
+    });
 
     // Session skills that are no longer in the assessable set (e.g. subscription removed).
     const ungroupedSkills = sessionSkills.filter((skill) => !assessableSkillById.has(skill.id));
@@ -355,47 +340,23 @@ export function SkillTrack_SessionBySkill_Content({
                                                         )
                                                         .with("by-package-group", () => (
                                                             <>
-                                                                {packageSections.flatMap(
-                                                                    ({ skillPackage, groups }) =>
-                                                                        groups.map(
-                                                                            ({
-                                                                                skillGroup,
-                                                                                skills,
-                                                                            }) => (
-                                                                                <SelectGroup
-                                                                                    key={
-                                                                                        skillGroup.id
-                                                                                    }
+                                                                {groupSections.map((section) => (
+                                                                    <SelectGroup key={section.id}>
+                                                                        <SelectLabel>
+                                                                            {section.label}
+                                                                        </SelectLabel>
+                                                                        {section.items.map(
+                                                                            (skill) => (
+                                                                                <SelectItem
+                                                                                    key={skill.id}
+                                                                                    value={skill.id}
                                                                                 >
-                                                                                    <SelectLabel>
-                                                                                        {
-                                                                                            skillPackage.name
-                                                                                        }{" "}
-                                                                                        ·{" "}
-                                                                                        {
-                                                                                            skillGroup.name
-                                                                                        }
-                                                                                    </SelectLabel>
-                                                                                    {skills.map(
-                                                                                        (skill) => (
-                                                                                            <SelectItem
-                                                                                                key={
-                                                                                                    skill.id
-                                                                                                }
-                                                                                                value={
-                                                                                                    skill.id
-                                                                                                }
-                                                                                            >
-                                                                                                {
-                                                                                                    skill.name
-                                                                                                }
-                                                                                            </SelectItem>
-                                                                                        ),
-                                                                                    )}
-                                                                                </SelectGroup>
+                                                                                    {skill.name}
+                                                                                </SelectItem>
                                                                             ),
-                                                                        ),
-                                                                )}
+                                                                        )}
+                                                                    </SelectGroup>
+                                                                ))}
                                                                 {ungroupedSkills.length > 0 && (
                                                                     <SelectGroup>
                                                                         <SelectLabel>
@@ -427,33 +388,17 @@ export function SkillTrack_SessionBySkill_Content({
                                             )
                                             .with("by-package-group", () => (
                                                 <div className="space-y-6">
-                                                    {packageSections.map(
-                                                        ({ skillPackage, groups }) => (
-                                                            <div
-                                                                key={skillPackage.id}
-                                                                className="space-y-6"
-                                                            >
-                                                                <div className="font-semibold border-b pb-1">
-                                                                    {skillPackage.name}
-                                                                </div>
-                                                                {groups.map(
-                                                                    ({ skillGroup, skills }) => (
-                                                                        <div key={skillGroup.id}>
-                                                                            <div className="text-sm font-medium text-muted-foreground mb-2">
-                                                                                {skillGroup.name}
-                                                                            </div>
-                                                                            {skills.map(
-                                                                                renderSkillItem,
-                                                                            )}
-                                                                        </div>
-                                                                    ),
-                                                                )}
+                                                    {groupSections.map((section) => (
+                                                        <div key={section.id}>
+                                                            <div className="font-semibold border-b pb-1 mb-2">
+                                                                {section.label}
                                                             </div>
-                                                        ),
-                                                    )}
+                                                            {section.items.map(renderSkillItem)}
+                                                        </div>
+                                                    ))}
                                                     {ungroupedSkills.length > 0 && (
                                                         <div>
-                                                            <div className="px-2 pt-2 font-semibold border-b">
+                                                            <div className="font-semibold border-b pb-1 mb-2">
                                                                 No longer available
                                                             </div>
                                                             {ungroupedSkills.map(renderSkillItem)}

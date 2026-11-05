@@ -35,6 +35,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
     //                                                               → skill5 Deprecated (Archived)
     //                                        → grp2 "Advanced Skills" → skill3 Airway freq=12 (Active)
     //                                        → grp4 "Retired" (Deleted) → skill6 Splinting (Active, hidden)
+    //                                        → grp5 "Legacy" (Archived) → skill7 Slings (Active, hidden)
     //            pkg2 "Advanced" (not published) → grp3 → skill4 (Active but unreachable)
     //   Checks (fake now = 2026-01-01 for isCurrent tests):
     //     person1+skill1+assessor1: Include 2025-01-01 "Fail" (old, expired → de-duped away)
@@ -61,6 +62,8 @@ describe("skillChecks.getCompetencyMatrix", () => {
         grp2: SkillGroupId.create(),
         grp4: SkillGroupId.create(),
         skill6: SkillId.create(),
+        grp5: SkillGroupId.create(),
+        skill7: SkillId.create(),
         grp3: SkillGroupId.create(),
         skill1: SkillId.create(),
         skill2: SkillId.create(),
@@ -204,6 +207,26 @@ describe("skillChecks.getCompetencyMatrix", () => {
                 description: "",
                 properties: {},
                 status: "Deleted",
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: T.grp5,
+                skillPackageId: T.pkg1,
+                name: "Legacy",
+                description: "",
+                properties: {},
+                status: "Archived",
+            },
+        });
+        await db.skill.create({
+            data: {
+                id: T.skill7,
+                skillPackageId: T.pkg1,
+                skillGroupId: T.grp5,
+                name: "Slings",
+                description: "",
+                properties: {},
             },
         });
         await db.skillGroup.create({
@@ -445,6 +468,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
             expect(ids).not.toContain(T.skill4); // pkg2 not published
             expect(ids).not.toContain(T.skill5); // Archived
             expect(ids).not.toContain(T.skill6); // Active, but its group is Deleted
+            expect(ids).not.toContain(T.skill7); // Active, but its group is Archived
         });
 
         it("filters to a single skill when skillId is provided", async () => {
@@ -473,7 +497,7 @@ describe("skillChecks.getCompetencyMatrix", () => {
 
         it("filters skills by skillPackageId", async () => {
             // pkg1 has skill1, skill2, skill3 (Active), skill5 (Archived — excluded) and skill6
-            // (in Deleted grp4 — excluded)
+            // (in Deleted grp4 — excluded), skill7 (in Archived grp5 — excluded)
             const result = await makeCaller().getCompetencyMatrix({
                 organizationId: T.org,
                 skillPackageId: T.pkg1,
@@ -513,8 +537,8 @@ describe("skillChecks.getCompetencyMatrix", () => {
         });
 
         it("returns every group of a subscribed package that has active skills", async () => {
-            // pkg1 has grp1 (skill1, skill2), grp2 (skill3) and Deleted grp4; pkg2 is not
-            // published.
+            // pkg1 has grp1 (skill1, skill2), grp2 (skill3), Deleted grp4 and Archived grp5;
+            // pkg2 is not published.
             const result = await makeCaller().getCompetencyMatrix({ organizationId: T.org });
 
             expect(result.skillGroups.map((g) => g.id).sort()).toEqual([T.grp1, T.grp2].sort());

@@ -6,22 +6,14 @@
 "use client";
 
 import { addDays, differenceInCalendarDays, format, parse } from "date-fns";
-import { CalendarIcon, ClockIcon, PlusIcon, XIcon, type LucideIcon } from "lucide-react";
-import {
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    type ReactNode,
-    type Ref,
-    type RefObject,
-} from "react";
+import { CalendarIcon, ClockIcon, type LucideIcon } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import * as z from "zod";
 
 import { TZDate } from "@date-fns/tz";
 
-import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
     Select,
@@ -30,6 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { usePreferences } from "@/hooks/use-preferences";
 import { TIME_FORMAT_PATTERNS } from "@/lib/datetime";
 import {
@@ -53,7 +46,7 @@ const QUARTER_HOURS = Array.from({ length: 96 }, (_, index) => {
     return `${hours}:${minutes}`;
 });
 
-/** How long a newly added time runs, in quarter hours: "+ Add time" and "+ Add end time" end 2h after the start. */
+/** How long a newly timed session runs, in quarter hours: turning off "All day" ends it 2h after the start. */
 const DEFAULT_TIMED_QUARTERS = 8;
 
 /** The quarter-hour time `quarters` after `time`, wrapping past midnight. */
@@ -96,63 +89,21 @@ function TileBody({
 }
 
 /**
- * A tile with a × that removes what it holds. The × sits over the trigger's right edge rather
- * than inside it, since a button can't nest in another; give the trigger `pr-9` to clear it.
+ * Each tile's fixed cell in the 2×2 grid, so a tile stays put whether or not the others show:
+ * dates in the first column, times in the second.
  */
-function RemovableTile({
-    label,
-    onRemove,
-    children,
-}: {
-    label: string;
-    onRemove: () => void;
-    children: ReactNode;
-}) {
-    return (
-        <div className="relative">
-            {children}
-            <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                aria-label={`Remove ${label.toLowerCase()}`}
-                className="absolute top-1/2 right-1.5 -translate-y-1/2"
-                onClick={onRemove}
-            >
-                <XIcon />
-            </Button>
-        </div>
-    );
-}
+const TILE_CELL = {
+    startDate: "col-start-1 row-start-1",
+    startTime: "col-start-2 row-start-1",
+    endDate: "col-start-1 row-start-2",
+    endTime: "col-start-2 row-start-2",
+} as const;
 
-/** A small primary-coloured "+ Add …" (or "Remove …") link under the tiles. */
-function TileLink({
-    ref,
-    onClick,
-    plus = true,
-    children,
-}: {
-    ref?: Ref<HTMLButtonElement>;
-    onClick: () => void;
-    plus?: boolean;
-    children: ReactNode;
-}) {
-    return (
-        <Button
-            ref={ref}
-            type="button"
-            variant="link"
-            size="xs"
-            className="h-auto px-0"
-            onClick={onClick}
-        >
-            {plus && <PlusIcon />}
-            {children}
-        </Button>
-    );
-}
-
-/** The picker's state in a form. An end time equal to the start time isn't a session (`sessionInstants` refuses it). */
+/**
+ * The picker's state in a form. `sessionInstants` refuses a one-day session ending at its start
+ * time. The picker always gives a timed session an end time, though `sessionInstants` (and
+ * sessions stored before it did) allow none.
+ */
 export const sessionWhenSchema = z
     .object({
         date: z.iso.date(),
@@ -161,9 +112,21 @@ export const sessionWhenSchema = z
         startTime: z.string(),
         endTime: z.string().nullable(),
     })
-    .refine((state) => state.allDay || state.endTime !== state.startTime, {
+    .refine((state) => state.allDay || state.endTime != null, {
+        error: "A session with times needs an end time",
+    })
+    .refine((state) => state.allDay || state.days > 1 || state.endTime !== state.startTime, {
         error: "The end time can't be the same as the start time",
     });
+
+/**
+ * `state` with an end time when it's timed: a stored timed session with no end gets one 2h after
+ * its start, so the picker opens on a value it can save.
+ */
+export function withSessionEndTime(state: SessionFormState): SessionFormState {
+    if (state.allDay || state.endTime != null) return state;
+    return { ...state, endTime: laterTime(state.startTime, DEFAULT_TIMED_QUARTERS) };
+}
 
 /**
  * The create and update session dialogs' form: the picker's state in place of `startsAt`/`endsAt`,
@@ -210,14 +173,14 @@ export function defaultSessionWhen(orgZone: string): SessionFormState {
 }
 
 /**
- * When a skill check session runs, as a row of tiles in the style of Facebook's event form: a
- * start date, then either an end date (all day over several days) or a start time and an
- * optional end time, all in the org's zone. Controlled over `SessionFormState`;
- * `sessionInstants` turns the value into what's stored.
+ * When a skill check session runs, all in the org's zone: "All day" and "Multiple days" switches
+ * over a grid of tiles in the style of Facebook's event form. Tiles: a start date, an end date
+ * with "Multiple days", and with "All day" off a start time and an end time (optional on one day,
+ * required over several). Controlled over `SessionFormState`; `sessionInstants` turns the value
+ * into what's stored.
  *
- * Which tiles show follows from the value alone, so an edit dialog opens on the right ones: End
- * date when an all-day session runs more than one day, the time tiles when it's timed, End time
- * when it has an end.
+ * The switches and tiles follow from the value alone, so an edit dialog opens on the right ones.
+ * A timed session puts the dates in the first column and the times in the second.
  */
 export function SkillTrack_SessionWhenPicker({
     value,
@@ -238,25 +201,27 @@ export function SkillTrack_SessionWhenPicker({
     const day = parse(value.date, "yyyy-MM-dd", new Date());
     const lastDay = addDays(day, value.days - 1);
 
-    const hasEndDate = value.allDay && value.days > 1;
+    const hasEndDate = value.days > 1;
 
     const timeLabel = (time: string) => format(parse(time, "HH:mm", new Date()), timePattern);
 
-    // The end options run from just after the start round to just before it, so the list reads
-    // in order; those that wrap past midnight end the next day.
+    // On one day, the end options run from just after the start round to just before it, so the
+    // list reads in order; those that wrap past midnight end the next day. Over several days the
+    // end is on the end date, at any time.
     const endOptions = useMemo(() => {
+        if (hasEndDate) return QUARTER_HOURS.map((time) => ({ time, nextDay: false }));
         const startIndex = QUARTER_HOURS.indexOf(value.startTime);
         return QUARTER_HOURS.slice(startIndex + 1)
             .map((time) => ({ time, nextDay: false }))
             .concat(QUARTER_HOURS.slice(0, startIndex).map((time) => ({ time, nextDay: true })));
-    }, [value.startTime]);
+    }, [value.startTime, hasEndDate]);
 
     const zoneHint = useMemo(() => {
-        // Only the start matters here, so ask for a timed one with no end. It renders on every
-        // keystroke, so a half-formed value falls back to the bare zone rather than throwing.
+        // Only the start matters here, so ask for a one-day timed one with no end. It renders on
+        // every keystroke, so a half-formed value falls back to the bare zone rather than throwing.
         try {
             const { startsAt } = sessionInstants(
-                { ...value, allDay: false, endTime: null },
+                { ...value, allDay: false, days: 1, endTime: null },
                 orgZone,
             );
             return `Times in ${orgZone} (${zoneAbbreviation(new Date(startsAt), orgZone)})`;
@@ -265,25 +230,38 @@ export function SkillTrack_SessionWhenPicker({
         }
     }, [value, orgZone]);
 
-    // Every "+ Add …", "Remove time" and × removes itself, so each says which control takes the
-    // focus once the tiles have re-rendered, rather than leaving it to fall back to the dialog.
+    const allDayId = useId();
+    const multiDayId = useId();
+
+    // Picking the start day as the end date removes the End date tile, so the focus moves to the
+    // start date once it's gone, rather than falling back to the dialog. The switches keep their
+    // own focus.
     const startDateRef = useRef<HTMLButtonElement>(null);
-    const endDateRef = useRef<HTMLButtonElement>(null);
-    const startTimeRef = useRef<HTMLButtonElement>(null);
-    const endTimeRef = useRef<HTMLButtonElement>(null);
-    const addTimeRef = useRef<HTMLButtonElement>(null);
     const focusNext = useRef<RefObject<HTMLButtonElement | null> | null>(null);
 
     const timed = !value.allDay;
-    const hasEndTime = timed && value.endTime != null;
     useEffect(() => {
         focusNext.current?.current?.focus();
         focusNext.current = null;
-    }, [hasEndDate, timed, hasEndTime]);
+    }, [hasEndDate]);
 
     function update(patch: Partial<SessionFormState>, focus?: RefObject<HTMLButtonElement | null>) {
         if (focus) focusNext.current = focus;
         onChange({ ...value, ...patch });
+    }
+
+    /** Back to one day. A one-day end can't equal the start time, so such an end moves 2h later. */
+    function toOneDay(focus?: RefObject<HTMLButtonElement | null>) {
+        update(
+            {
+                days: 1,
+                endTime:
+                    value.endTime === value.startTime
+                        ? laterTime(value.startTime, DEFAULT_TIMED_QUARTERS)
+                        : value.endTime,
+            },
+            focus,
+        );
     }
 
     function calendarOpenChange(which: "start" | "end") {
@@ -292,49 +270,132 @@ export function SkillTrack_SessionWhenPicker({
 
     return (
         <div className="flex flex-col gap-2">
-            {/* Two equal columns: each tile takes exactly half the width, wrapping onto a second row. */}
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <div className="flex items-center gap-2">
+                    <Switch
+                        id={allDayId}
+                        checked={value.allDay}
+                        onCheckedChange={(allDay) =>
+                            update(
+                                allDay
+                                    ? { allDay: true }
+                                    : {
+                                          allDay: false,
+                                          endTime: laterTime(
+                                              value.startTime,
+                                              DEFAULT_TIMED_QUARTERS,
+                                          ),
+                                      },
+                            )
+                        }
+                    />
+                    <Label htmlFor={allDayId}>All day</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Switch
+                        id={multiDayId}
+                        checked={hasEndDate}
+                        onCheckedChange={(multiDay) =>
+                            multiDay ? update({ days: 2 }) : toOneDay()
+                        }
+                    />
+                    <Label htmlFor={multiDayId}>Multiple days</Label>
+                </div>
+            </div>
+
+            {/* Two equal columns: each tile takes exactly half the width, in its fixed cell. */}
             <div className="grid grid-cols-2 gap-2">
-                <Popover open={openCalendar === "start"} onOpenChange={calendarOpenChange("start")}>
-                    {/* No aria-label: the visible label and date name the button, so the date is announced. */}
-                    <PopoverTrigger
-                        ref={startDateRef}
-                        aria-invalid={invalid}
-                        className={TILE_CLASS}
+                <div className={TILE_CELL.startDate}>
+                    <Popover
+                        open={openCalendar === "start"}
+                        onOpenChange={calendarOpenChange("start")}
                     >
-                        <TileBody icon={CalendarIcon} label="Start date">
-                            {format(day, SESSION_DATE_PATTERN)}
-                        </TileBody>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto overflow-hidden p-0">
-                        <Calendar
-                            mode="single"
-                            selected={day}
-                            defaultMonth={day}
-                            captionLayout="dropdown"
-                            required
-                            onSelect={(selected) => {
-                                update({ date: format(selected, "yyyy-MM-dd") });
-                                setOpenCalendar(null);
+                        {/* No aria-label: the visible label and date name the button, so the date is announced. */}
+                        <PopoverTrigger
+                            ref={startDateRef}
+                            aria-invalid={invalid}
+                            className={TILE_CLASS}
+                        >
+                            <TileBody
+                                icon={CalendarIcon}
+                                label={hasEndDate ? "Start date" : "Date"}
+                            >
+                                {format(day, SESSION_DATE_PATTERN)}
+                            </TileBody>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto overflow-hidden p-0">
+                            <Calendar
+                                mode="single"
+                                selected={day}
+                                defaultMonth={day}
+                                captionLayout="dropdown"
+                                required
+                                onSelect={(selected) => {
+                                    update({ date: format(selected, "yyyy-MM-dd") });
+                                    setOpenCalendar(null);
+                                }}
+                                autoFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+
+                {timed && (
+                    <div className={TILE_CELL.startTime}>
+                        <Select
+                            value={value.startTime}
+                            onValueChange={(startTime) => {
+                                // Radix fires "" when it mounts or resets inside a form; that isn't a choice.
+                                if (!startTime) return;
+                                // Over several days the end has its own date and time, so it stays.
+                                if (hasEndDate) {
+                                    update({ startTime });
+                                    return;
+                                }
+                                // On one day, keep the session's length: the end moves with the
+                                // start, as in a calendar app. The length is 1–95 quarters (an end
+                                // never equals its start), so the moved end can't land on the new
+                                // start either.
+                                const length =
+                                    value.endTime === null
+                                        ? null
+                                        : (QUARTER_HOURS.indexOf(value.endTime) -
+                                              QUARTER_HOURS.indexOf(value.startTime) +
+                                              QUARTER_HOURS.length) %
+                                          QUARTER_HOURS.length;
+                                update({
+                                    startTime,
+                                    endTime: length ? laterTime(startTime, length) : null,
+                                });
                             }}
-                            autoFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                        >
+                            <SelectTrigger
+                                aria-label="Start time"
+                                aria-invalid={invalid}
+                                className={SELECT_TILE_CLASS}
+                            >
+                                <TileBody icon={ClockIcon} label="Start time">
+                                    <SelectValue />
+                                </TileBody>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {QUARTER_HOURS.map((time) => (
+                                    <SelectItem key={time} value={time}>
+                                        {timeLabel(time)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
 
                 {hasEndDate && (
-                    <RemovableTile
-                        label="End date"
-                        onRemove={() => update({ days: 1 }, startDateRef)}
-                    >
+                    <div className={TILE_CELL.endDate}>
                         <Popover
                             open={openCalendar === "end"}
                             onOpenChange={calendarOpenChange("end")}
                         >
-                            <PopoverTrigger
-                                ref={endDateRef}
-                                aria-invalid={invalid}
-                                className={cn(TILE_CLASS, "pr-9")}
-                            >
+                            <PopoverTrigger aria-invalid={invalid} className={TILE_CLASS}>
                                 <TileBody icon={CalendarIcon} label="End date">
                                     {format(lastDay, SESSION_DATE_PATTERN)}
                                 </TileBody>
@@ -351,77 +412,33 @@ export function SkillTrack_SessionWhenPicker({
                                     ]}
                                     onSelect={(selected) => {
                                         // Picking the start day itself makes it a one-day session
-                                        // again, removing this tile, as its × does.
+                                        // again, removing this tile, as turning off "Multiple
+                                        // days" does.
                                         const days = differenceInCalendarDays(selected, day) + 1;
-                                        update({ days }, days === 1 ? startDateRef : undefined);
+                                        if (days === 1) toOneDay(startDateRef);
+                                        else update({ days });
                                         setOpenCalendar(null);
                                     }}
                                     autoFocus
                                 />
                             </PopoverContent>
                         </Popover>
-                    </RemovableTile>
+                    </div>
                 )}
 
-                {!value.allDay && (
-                    <Select
-                        value={value.startTime}
-                        onValueChange={(startTime) => {
-                            // Radix fires "" when it mounts or resets inside a form; that isn't a choice.
-                            if (!startTime) return;
-                            // Keep the session's length: the end moves with the start, as in a
-                            // calendar app. The length is 1–95 quarters (an end never equals its
-                            // start), so the moved end can't land on the new start either.
-                            const length =
-                                value.endTime === null
-                                    ? null
-                                    : (QUARTER_HOURS.indexOf(value.endTime) -
-                                          QUARTER_HOURS.indexOf(value.startTime) +
-                                          QUARTER_HOURS.length) %
-                                      QUARTER_HOURS.length;
-                            update({
-                                startTime,
-                                endTime: length ? laterTime(startTime, length) : null,
-                            });
-                        }}
-                    >
-                        <SelectTrigger
-                            ref={startTimeRef}
-                            aria-label="Start time"
-                            aria-invalid={invalid}
-                            className={SELECT_TILE_CLASS}
-                        >
-                            <TileBody icon={ClockIcon} label="Start time">
-                                <SelectValue />
-                            </TileBody>
-                        </SelectTrigger>
-                        <SelectContent>
-                            {QUARTER_HOURS.map((time) => (
-                                <SelectItem key={time} value={time}>
-                                    {timeLabel(time)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-
-                {!value.allDay && value.endTime != null && (
-                    <RemovableTile
-                        label="End time"
-                        onRemove={() => update({ endTime: null }, startDateRef)}
-                    >
+                {timed && (
+                    <div className={TILE_CELL.endTime}>
                         <Select
-                            value={value.endTime}
+                            value={value.endTime ?? undefined}
                             onValueChange={(endTime) => {
                                 if (!endTime) return; // Radix's mount/reset "", as for the start time
                                 update({ endTime });
                             }}
                         >
                             <SelectTrigger
-                                ref={endTimeRef}
                                 aria-label="End time"
                                 aria-invalid={invalid}
-                                className={cn(SELECT_TILE_CLASS, "pr-9")}
+                                className={SELECT_TILE_CLASS}
                             >
                                 <TileBody icon={ClockIcon} label="End time">
                                     <SelectValue />
@@ -437,53 +454,7 @@ export function SkillTrack_SessionWhenPicker({
                                 ))}
                             </SelectContent>
                         </Select>
-                    </RemovableTile>
-                )}
-            </div>
-
-            <div className="flex flex-wrap gap-x-4">
-                {value.allDay && !hasEndDate && (
-                    <TileLink onClick={() => update({ days: 2 }, endDateRef)}>
-                        Add end date
-                    </TileLink>
-                )}
-                {value.allDay && (
-                    // An end date is all-day only, so adding a time clears it.
-                    <TileLink
-                        ref={addTimeRef}
-                        onClick={() =>
-                            update(
-                                {
-                                    allDay: false,
-                                    days: 1,
-                                    endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS),
-                                },
-                                startTimeRef,
-                            )
-                        }
-                    >
-                        Add time
-                    </TileLink>
-                )}
-                {!value.allDay && value.endTime == null && (
-                    <TileLink
-                        onClick={() =>
-                            update(
-                                { endTime: laterTime(value.startTime, DEFAULT_TIMED_QUARTERS) },
-                                endTimeRef,
-                            )
-                        }
-                    >
-                        Add end time
-                    </TileLink>
-                )}
-                {!value.allDay && (
-                    <TileLink
-                        plus={false}
-                        onClick={() => update({ allDay: true, days: 1 }, addTimeRef)}
-                    >
-                        Remove time
-                    </TileLink>
+                    </div>
                 )}
             </div>
 
