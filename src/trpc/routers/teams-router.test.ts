@@ -312,11 +312,6 @@ describe("teamsRouter D4H sync plans", () => {
                 }
                 return row;
             })()) as never);
-        const createSpy = vi.spyOn(db.teamMembership, "create").mockImplementationOnce((() => {
-            const raceError = new Error("Unique constraint failed on (teamId, personId)");
-            Object.assign(raceError, { code: "P2002" });
-            return Promise.reject(raceError);
-        }) as never);
 
         const { outcomes } = await caller.executeD4HTeamSyncPlan({
             organizationId: T.org,
@@ -324,7 +319,6 @@ describe("teamsRouter D4H sync plans", () => {
             skipItemIds: [],
         });
         findSpy.mockRestore();
-        createSpy.mockRestore();
 
         expect(outcomes).toContainEqual({ itemId: "add:501", result: "applied" });
         const grace = await db.person.findFirstOrThrow({

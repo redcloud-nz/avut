@@ -31,7 +31,8 @@ export function createMockPrisma(): PrismaClient {
     client.$transaction = (async (actions: unknown) => {
         if (!Array.isArray(actions)) return interactiveTransaction(actions);
 
-        const snapshot = client.$getInternalState();
+        // `$getInternalState` hands back the live store, so copy it.
+        const snapshot = structuredClone(client.$getInternalState());
         try {
             const results = [];
             for (const action of actions) results.push(await action);

@@ -18,7 +18,7 @@ import { createMockPrisma } from "@/test/create-prisma-mock";
 const db = createMockPrisma(); // fresh in-memory PrismaClient
 ```
 
-The wrapper also makes model calls lazy, like Prisma's own `PrismaPromise`: a call runs only once it's awaited. So an array `$transaction([...])` behaves as in Postgres: a write that throws rolls back the ones before it, and the ones after it never run. Tests can assert that a failed write's paired `ctx.logEvent` left no log entry. The rollback restores a snapshot of the whole store, so a "concurrent" write that a spy makes while the transaction runs is rolled back too. Simulate a race just before the transaction (e.g. after the lookup that precedes it), not inside it.
+The wrapper also makes model calls lazy, like Prisma's own `PrismaPromise`: a call runs only once it's awaited. So an array `$transaction([...])` behaves as in Postgres: a write that throws rolls back the ones before it, and the ones after it never run. Tests can assert that a failed write's paired `ctx.logEvent` left no log entry. The rollback restores a snapshot of the whole store, so a "concurrent" write that a spy makes while the transaction runs is rolled back too. Simulate a race just before the transaction (e.g. after the lookup that precedes it), not inside it. For the same reason, two array transactions running at once on one mock aren't isolated from each other.
 
 `prisma-mock` requires schema metadata at runtime. A generator in `prisma/schema.prisma` outputs `src/generated/dmmf.ts` — never edit it manually; regenerate with `npx prisma generate` after schema changes.
 
