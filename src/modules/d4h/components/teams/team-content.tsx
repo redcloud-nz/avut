@@ -13,6 +13,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
+import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
+import { D4HModule_OpenRecordInD4H_Button } from "@/modules/d4h/components/open-in-d4h-button";
 import { trpc } from "@/trpc/client";
 
 /** A D4H team's index: its details and links to its team-scoped sections. */
@@ -48,13 +50,19 @@ export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
                     { label: "Teams", href: route("/orgs/[slug]/d4h/teams", { slug }) },
                     { label: team.title },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{team.title}</Saratoga.Title>
-                        {teams.length > 1 && (
-                            <Saratoga.Actions>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="team"
+                                id={teamId}
+                                teamId={teamId}
+                            />
+                            {teams.length > 1 && (
                                 <D4HTeamPickerDialog
                                     section={(id) =>
                                         route("/orgs/[slug]/d4h/teams/[d4h_team_id]", {
@@ -63,8 +71,8 @@ export function D4HModule_Team_Content({ teamId }: { teamId: number }) {
                                         })
                                     }
                                 />
-                            </Saratoga.Actions>
-                        )}
+                            )}
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
                         <Card>

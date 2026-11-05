@@ -6,7 +6,7 @@
 import * as R from "remeda";
 import * as z from "zod";
 
-import { d4hEquipmentItemViewUrl } from "@/lib/d4h-servers";
+import { d4hEquipmentItemViewUrl, d4hRecordViewUrl, D4HWebRecord } from "@/lib/d4h-servers";
 import {
     buildD4HToday,
     D4HTodayActivityInput,
@@ -137,6 +137,35 @@ async function listItemsAcrossTeams(
 }
 
 export const d4hApiRouter = createTrpcRouter({
+    /**
+     * The URL of a team, member or catalogue record's page in D4H's web app. The host is a team's
+     * subdomain: `teamId`'s, which a team or member page must name and reach. A catalogue record
+     * passes its owning team when a team owns it; one the organisation owns, or whose team is out
+     * of reach, opens under the first team the token reaches.
+     */
+    getD4HWebUrl: organizationProcedure({ d4hEquipment: ["view"] })
+        .input(
+            z.object({
+                record: D4HWebRecord.schema,
+                id: z.number(),
+                teamId: z.number().optional(),
+            }),
+        )
+        .output(z.string())
+        .query(async ({ ctx, input: { record, id, teamId } }) => {
+            const accessToken = await getConfiguredD4HAccessToken(ctx.organizationId, ctx.userId);
+            const credentialRef = toD4HCredentialRef(accessToken);
+            const { d4HTeams } = await getD4HTokenMetadata(credentialRef);
+
+            const ownTeam = d4HTeams.find((team) => team.id === teamId);
+            const team =
+                record === "team" || record === "member" ? ownTeam : (ownTeam ?? d4HTeams[0]);
+            if (!team) throw new NotFoundError(`No reachable D4H team for this ${record}.`);
+
+            const { subdomain } = await fetchD4HTeamDetailCached(credentialRef, team.id);
+            return d4hRecordViewUrl(accessToken.serverCode, subdomain, record, id);
+        }),
+
     /**
      * One equipment item, fetched live from D4H, with the URL of its view page in D4H's web app
      * and, when it's issued to a person, who holds it. An item owned by a team other than

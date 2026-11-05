@@ -33,6 +33,10 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentModel } from "@/lib/schemas/d4h/equipment-model";
+import {
+    D4HModule_OpenRecordInD4H_Button,
+    ownerTeamId,
+} from "@/modules/d4h/components/open-in-d4h-button";
 import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
@@ -111,6 +115,13 @@ export function D4HModule_Brand_Content({ brandId }: { brandId: number }) {
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{brand.title}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="brand"
+                                id={brand.id}
+                                teamId={ownerTeamId(brand.owner)}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
                         <Card>

@@ -20,6 +20,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
@@ -31,6 +32,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentItem, D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
+import { D4HModule_OpenRecordInD4H_Button } from "@/modules/d4h/components/open-in-d4h-button";
 import { trpc } from "@/trpc/client";
 
 /** A D4H member of one team: their details and the equipment they hold. */
@@ -80,11 +82,13 @@ export function D4HModule_Member_Content({
             columnHelper.accessor("ref", {
                 header: "Ref",
                 // An item held by this member can belong to another team. Its page lives under
-                // that team, so link there, and not at all when that team is out of reach.
+                // that team, so link there, and not at all when that team is out of reach. An item
+                // of this team links to the member-scoped page, which keeps the member in the
+                // breadcrumbs.
                 cell: (ctx) => {
                     const item = ctx.row.original;
                     if (!isReachable(item)) return <D4HItemRef value={item.ref} />;
-                    return <D4HEquipmentItemLink item={item} />;
+                    return <D4HEquipmentItemLink item={item} member={member} />;
                 },
                 enableGlobalFilter: true,
                 enableSorting: true,
@@ -146,7 +150,7 @@ export function D4HModule_Member_Content({
                 },
             }),
         ]);
-    }, [teams]);
+    }, [teams, member]);
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions
     const table = useReactTable({
@@ -184,11 +188,19 @@ export function D4HModule_Member_Content({
                     },
                     { label: member.name },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{member.name}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="member"
+                                id={member.id}
+                                teamId={teamId}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
                         <Card>
