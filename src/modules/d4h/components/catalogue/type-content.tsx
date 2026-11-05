@@ -21,6 +21,7 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HItemRef } from "@/components/d4h/d4h-item-ref";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentBrandLink } from "@/components/entity-links/d4h-equipment-brand-link";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-item-link";
@@ -32,6 +33,10 @@ import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/u
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
+import {
+    D4HModule_OpenRecordInD4H_Button,
+    ownerTeamId,
+} from "@/modules/d4h/components/open-in-d4h-button";
 import { useReachableTeamIds } from "@/modules/d4h/lib/use-reachable-team-ids";
 import { trpc } from "@/trpc/client";
 
@@ -188,11 +193,19 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                     },
                     { label: kind.title },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
                         <Saratoga.Title>{kind.title}</Saratoga.Title>
+                        <Saratoga.Actions>
+                            <D4HModule_OpenRecordInD4H_Button
+                                record="type"
+                                id={kind.id}
+                                teamId={ownerTeamId(kind.owner)}
+                            />
+                        </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
                         <Card>

@@ -27,7 +27,7 @@ export function D4HEquipmentModelLink({ model }: D4HEquipmentModelLinkProps) {
                 model_id: String(model.id),
             })}
             title={model.title}
-            type="Equipment Model"
+            type="D4H Equipment Model"
         >
             {owner && <span className="text-muted-foreground">Owned by {owner.title}</span>}
         </EntityLink>

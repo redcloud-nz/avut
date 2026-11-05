@@ -19,6 +19,7 @@ import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { D4HOwner } from "@/components/d4h/d4h-owner";
+import { HelpButton } from "@/components/docs/help-button";
 import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -103,6 +104,7 @@ export function D4HModule_Categories_List() {
                     { label: "D4H", href: route("/orgs/[slug]/d4h", { slug }) },
                     { label: "Equipment Categories" },
                 ]}
+                actions={<HelpButton id="d4h" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

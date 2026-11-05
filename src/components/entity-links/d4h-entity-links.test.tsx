@@ -9,6 +9,7 @@ import { render, screen } from "@testing-library/react";
 
 import { D4HEquipmentItemLink } from "./d4h-equipment-item-link";
 import { D4HEquipmentModelLink } from "./d4h-equipment-model-link";
+import { D4HIssuedTypeLink } from "./d4h-issued-type-link";
 import { D4HMemberLink } from "./d4h-member-link";
 
 vi.mock("@/hooks/use-organization", () => ({ useOrganization: () => ({ slug: "acme" }) }));
@@ -44,6 +45,17 @@ describe("D4HEquipmentModelLink", () => {
     });
 });
 
+describe("D4HIssuedTypeLink", () => {
+    it("links to the type's issued items under the given team", () => {
+        render(<D4HIssuedTypeLink teamId={7} type={{ id: 12, title: "Helmet" }} />);
+
+        expect(screen.getByRole("link", { name: "Helmet" })).toHaveAttribute(
+            "href",
+            "/orgs/acme/d4h-i3/teams/7/issued-types/12",
+        );
+    });
+});
+
 describe("D4HEquipmentItemLink", () => {
     it("renders # + the ref by default, linking under the item's own team", () => {
         render(<D4HEquipmentItemLink item={{ id: 100, ref: "P5-1234", owner: { id: 7 } }} />);
@@ -51,6 +63,34 @@ describe("D4HEquipmentItemLink", () => {
         expect(screen.getByRole("link", { name: /^#\s?P5-1234$/ })).toHaveAttribute(
             "href",
             "/orgs/acme/d4h/teams/7/items/100",
+        );
+    });
+
+    it("links to the member-scoped page when given a member of the item's team", () => {
+        render(
+            <D4HEquipmentItemLink
+                item={{ id: 100, ref: "P5-1234", owner: { id: 7 } }}
+                member={{ id: 42, owner: { id: 7 } }}
+            />,
+        );
+
+        expect(screen.getByRole("link")).toHaveAttribute(
+            "href",
+            "/orgs/acme/d4h/teams/7/members/42/items/100",
+        );
+    });
+
+    it("keeps the team-level page when the member is in another team", () => {
+        render(
+            <D4HEquipmentItemLink
+                item={{ id: 100, ref: "P5-1234", owner: { id: 8 } }}
+                member={{ id: 42, owner: { id: 7 } }}
+            />,
+        );
+
+        expect(screen.getByRole("link")).toHaveAttribute(
+            "href",
+            "/orgs/acme/d4h/teams/8/items/100",
         );
     });
 
