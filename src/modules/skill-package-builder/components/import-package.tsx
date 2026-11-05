@@ -116,13 +116,21 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
                                 id="import-package-file"
                                 accept="application/json"
                                 aria-invalid={!!file.error}
+                                aria-describedby={
+                                    file.error ? "import-package-file-error" : undefined
+                                }
                                 hint="Up to 1 MB · .json"
                                 onFileSelected={(selected) => {
                                     file.handleFile(selected);
                                     setResult(null);
                                 }}
                             />
-                            {file.error && <FieldError errors={[{ message: file.error }]} />}
+                            {file.error && (
+                                <FieldError
+                                    id="import-package-file-error"
+                                    errors={[{ message: file.error }]}
+                                />
+                            )}
                             {file.envelope && !file.error && (
                                 <p className="text-muted-foreground text-xs">
                                     {file.envelope.package.name} —{" "}

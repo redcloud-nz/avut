@@ -281,37 +281,44 @@ describe("teamsRouter D4H sync plans", () => {
 
         const { planId } = await createPlan();
 
-        // Simulate a concurrent manual add winning the race: it creates an unlinked
+        // Simulate a concurrent manual add winning the race: it commits an unlinked
         // TeamMembership row for Grace between the executor's lookup and its own create, so the
-        // create loses to the unique constraint on (teamId, personId) — see issue #164.
+        // create loses to the unique constraint on (teamId, personId) — see issue #164. The row
+        // lands after the lookup rather than inside the create, because the executor's
+        // transaction rolls back whatever is written while it runs.
+        const originalFindUnique = db.teamMembership.findUnique.bind(db.teamMembership) as (
+            args: unknown,
+        ) => Promise<unknown>;
         const originalCreate = db.teamMembership.create.bind(db.teamMembership) as (
             args: unknown,
         ) => Promise<unknown>;
-        const createSpy = vi.spyOn(db.teamMembership, "create") as unknown as {
-            mockImplementationOnce: (
-                fn: (args: { data: Record<string, unknown> }) => unknown,
-            ) => void;
-            mockRestore: () => void;
-        };
-        createSpy.mockImplementationOnce((args) => {
-            return (async () => {
-                const { d4h: _linked, ...manual } = args.data;
-                await originalCreate({
-                    ...args,
-                    data: { ...manual, id: TeamMembershipId.create() },
-                });
-                const raceError = new Error("Unique constraint failed on (teamId, personId)");
-                Object.assign(raceError, { code: "P2002" });
-                throw raceError;
-            })();
-        });
+        let raced = false;
+        const findSpy = vi.spyOn(db.teamMembership, "findUnique").mockImplementation(((args: {
+            where: { teamId_personId?: { teamId: TeamId; personId: PersonId } };
+        }) =>
+            (async () => {
+                const row = await originalFindUnique(args);
+                const key = args.where.teamId_personId;
+                if (key && !raced) {
+                    raced = true;
+                    await originalCreate({
+                        data: {
+                            id: TeamMembershipId.create(),
+                            organizationId: T.org,
+                            ...key,
+                            status: "Active",
+                        },
+                    });
+                }
+                return row;
+            })()) as never);
 
         const { outcomes } = await caller.executeD4HTeamSyncPlan({
             organizationId: T.org,
             planId,
             skipItemIds: [],
         });
-        createSpy.mockRestore();
+        findSpy.mockRestore();
 
         expect(outcomes).toContainEqual({ itemId: "add:501", result: "applied" });
         const grace = await db.person.findFirstOrThrow({

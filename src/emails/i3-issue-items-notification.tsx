@@ -10,7 +10,6 @@ import {
     Heading,
     Hr,
     Html,
-    Img,
     pixelBasedPreset,
     Preview,
     Row,
@@ -23,7 +22,7 @@ import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 
-import { assetBaseUrl } from "./base-url";
+import { PoweredByAvut } from "./powered-by-avut";
 
 interface I3IssueItemsNotificationEmailProps {
     /** The AVUT user who submitted the Issue ("Recorded by"). */
@@ -87,16 +86,7 @@ export default function I3IssueItemsNotificationEmail({
                 <Body className="mx-auto my-auto bg-white px-2 font-sans">
                     <Preview>Items Issued to {formData.recipient.name}</Preview>
                     <Container className="mx-auto my-10 max-w-[465px] rounded border border-[#eaeaea] border-solid p-5">
-                        <Section className="mt-8">
-                            <Img
-                                src={`${assetBaseUrl}/avut-logo.png`}
-                                width="150"
-                                height="50"
-                                alt="AVUT Logo"
-                                className="mx-auto my-0"
-                            />
-                        </Section>
-                        <Heading className="max-0 my-[30px] p-0 text-center font-normal text-[24px] text-black">
+                        <Heading className="mx-0 mt-8 mb-[30px] p-0 text-center font-normal text-[24px] text-black">
                             Items Issued to {formData.recipient.name}
                         </Heading>
 
@@ -154,9 +144,10 @@ export default function I3IssueItemsNotificationEmail({
                         <Hr className="mx-0 my-[26px] w-full border border-[#eaeaea] border-solid" />
 
                         <Text className="text-[#666666] text-[12px] leading-6">
-                            This email was sent to {emailTarget.email}. If you did not request this,
-                            please ignore it.
+                            This email was sent to {emailTarget.email} because this address is set
+                            to receive D4H I3 notifications.
                         </Text>
+                        <PoweredByAvut />
                     </Container>
                 </Body>
             </Tailwind>

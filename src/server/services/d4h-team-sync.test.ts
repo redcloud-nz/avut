@@ -673,6 +673,10 @@ describe("executeD4HSyncPlan", () => {
     const outcomeOf = (result: { outcomes: D4HSyncItemOutcome[] }, itemId: string) =>
         result.outcomes.find((o) => o.itemId === itemId);
 
+    /** The run's log entries for one record: none when its write rolled back. */
+    const loggedFor = (result: { batchId: string }, objectId: string) =>
+        db.logEntry.findMany({ where: { batchId: result.batchId, objectId } });
+
     const addItem = (d4hMemberId: number, email: string): D4HSyncItemDraft => ({
         kind: "add",
         itemId: `add:${d4hMemberId}`,
@@ -821,6 +825,7 @@ describe("executeD4HSyncPlan", () => {
                 include: { d4h: true },
             });
             expect(membership).toMatchObject({ status: "Deleted", d4h: null });
+            expect(await loggedFor(result, membershipId)).toEqual([]);
         });
     });
 
@@ -946,6 +951,7 @@ describe("executeD4HSyncPlan", () => {
                 include: { d4h: true },
             });
             expect(membership).toMatchObject({ status: "Deleted", d4h: { d4hMemberId: 10 } });
+            expect(await loggedFor(result, membershipId)).toEqual([]);
         });
     });
 
@@ -1064,6 +1070,7 @@ describe("executeD4HSyncPlan", () => {
                 where: { teamMembershipId: membershipId },
             });
             expect(d4h.d4hPosition).toBe("Edited");
+            expect(await loggedFor(result, membershipId)).toEqual([]);
         });
     });
 
@@ -1224,6 +1231,7 @@ describe("executeD4HSyncPlan", () => {
                 where: { id: membershipId },
             });
             expect(membership.status).toBe("Deleted");
+            expect(await loggedFor(result, membershipId)).toEqual([]);
         });
 
         it("doesn't restore a membership binned between the reactivation's check and its write", async () => {
@@ -1251,6 +1259,7 @@ describe("executeD4HSyncPlan", () => {
                 where: { id: membershipId },
             });
             expect(membership.status).toBe("Deleted");
+            expect(await loggedFor(result, membershipId)).toEqual([]);
         });
     });
 
