@@ -128,8 +128,9 @@ export default function I3IssueItemsReceiptEmail({
                         <Hr className="mx-0 my-[26px] w-full border border-[#eaeaea] border-solid" />
 
                         <Text className="text-[#666666] text-[12px] leading-6">
-                            This email was sent to {emailTarget.email}. If you did not request this,
-                            please ignore it.
+                            This email was sent to {emailTarget.email} because {recordedBy.name}{" "}
+                            recorded these items as issued to you. If anything here is wrong, let
+                            them know.
                         </Text>
                         <PoweredByAvut />
                     </Container>
