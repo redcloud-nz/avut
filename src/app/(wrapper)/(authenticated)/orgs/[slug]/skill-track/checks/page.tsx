@@ -9,6 +9,10 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { route } from "@/lib/routes";
 import SkillTrack_ChecksList from "@/modules/skill-track/components/checks-list";
+import {
+    checkSearchInput,
+    loadCheckSearchParams,
+} from "@/modules/skill-track/lib/check-search-params";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
@@ -21,15 +25,9 @@ export default async function SkillTrack_Checks_Page(
 ) {
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
+    const params = await loadCheckSearchParams(props.searchParams);
 
-    prefetch(
-        trpc.skillChecks.searchChecks.queryOptions({
-            organizationId: organization.id,
-            filters: {},
-            page: 1,
-            pageSize: 100,
-        }),
-    );
+    prefetch(trpc.skillChecks.searchChecks.queryOptions(checkSearchInput(organization.id, params)));
 
     return (
         <HydrateClient>

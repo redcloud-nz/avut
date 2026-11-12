@@ -50,7 +50,7 @@ The Checks page (`/orgs/[slug]/skill-track/checks`) lists only the last month of
 
 ### Review group B: UI (visual checkpoint after Task 4)
 
-- [ ] **Task 2: search params and the server-paged table.** `visual`
+- [x] **Task 2: search params and the server-paged table.** `visual` _feat(skill-track): server-paged Checks table driven by search params_
   - **Files:** new `src/modules/skill-track/lib/check-search-params.ts`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-track/checks/page.tsx`, `src/modules/skill-track/components/checks-list.tsx`, `src/modules/skill-track/components/create-check.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/skill-track/page.tsx` (line ~88), `content/help/skill-track/checks.mdx`.
   - **Do:** Read `docs/patterns/detail-page-data-fetching.md` first.
     - `check-search-params.ts` (imports from `nuqs/server`): the parsers for Decision 5 (`parseAsString`, `parseAsStringLiteral` for `result`, ISO date strings for `from`/`to`, `parseAsInteger.withDefault(1)` for `page`), a `createLoader` for `page.tsx`, and one function turning the parsed params into `searchChecks` input. An id that fails its `Id` schema, or a bad date, is dropped, and `page` below 1 is clamped to 1, so a mangled link shows a valid view rather than erroring.
