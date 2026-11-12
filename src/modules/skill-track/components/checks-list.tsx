@@ -22,11 +22,13 @@ import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { assessorDisplayName, getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
+import { cn } from "@/lib/utils";
 import { SkillTrack_ChecksFilterBar } from "@/modules/skill-track/components/checks-filter-bar";
 import { SkillTrack_CreateCheck_Dialog } from "@/modules/skill-track/components/create-check";
 import {
     CHECK_SEARCH_PAGE_SIZE,
     checkSearchInput,
+    checkSearchPage,
     checkSearchParsers,
 } from "@/modules/skill-track/lib/check-search-params";
 import { trpc } from "@/trpc/client";
@@ -46,6 +48,9 @@ export default function SkillTrack_ChecksList() {
     // them) on screen until the new page arrives.
     const deferredParams = useDeferredValue(params);
     const input = checkSearchInput(organization.id, deferredParams);
+    // A filter or page change is in flight while the live params ask for something else.
+    const isPending =
+        JSON.stringify(checkSearchInput(organization.id, params)) !== JSON.stringify(input);
 
     const {
         data: { rows, total },
@@ -111,8 +116,10 @@ export default function SkillTrack_ChecksList() {
         [organization.slug, organization.settings, formatDate],
     );
 
+    // From the live page, not the deferred one, so paging again before the next page arrives
+    // steps on from where the user is rather than from what's on screen.
     const pagination: PaginationState = {
-        pageIndex: input.page - 1,
+        pageIndex: checkSearchPage(params.page) - 1,
         pageSize: CHECK_SEARCH_PAGE_SIZE,
     };
 
@@ -184,7 +191,7 @@ export default function SkillTrack_ChecksList() {
                 }
                 sampleRow={rows[0]}
             />
-            {results}
+            <div className={cn("transition-opacity", isPending && "opacity-60")}>{results}</div>
         </Saratoga.Root>
     );
 }

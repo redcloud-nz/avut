@@ -16,7 +16,7 @@ import {
 } from "nuqs/server";
 import * as z from "zod";
 
-import { Kaga } from "@/components/blocks/kaga";
+import { KAGA_DEFAULT_PAGE_SIZE } from "@/components/blocks/kaga-constants";
 import type { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
@@ -45,7 +45,7 @@ export type CheckSearchParams = inferParserType<typeof checkSearchParsers>;
 export const loadCheckSearchParams = createLoader(checkSearchParsers);
 
 /** Rows per page of the Checks table. */
-export const CHECK_SEARCH_PAGE_SIZE = Kaga.DEFAULT_PAGE_SIZE;
+export const CHECK_SEARCH_PAGE_SIZE = KAGA_DEFAULT_PAGE_SIZE;
 
 const IsoDate = z.iso.date();
 
@@ -86,12 +86,20 @@ export function checkSearchFilters(params: CheckSearchParams): CheckSearchFilter
     return filters;
 }
 
-/** The `skillChecks.searchChecks` input for the params. `page` below 1 is clamped to 1. */
+/**
+ * The 1-based page the params ask for. A page below 1, or one too large to be a safe integer (a
+ * hand-edited `?page=`), is treated as 1, so it can't fail `CheckSearchPage`.
+ */
+export function checkSearchPage(page: number): number {
+    return Number.isSafeInteger(page) && page >= 1 ? page : 1;
+}
+
+/** The `skillChecks.searchChecks` input for the params. */
 export function checkSearchInput(organizationId: OrganizationId, params: CheckSearchParams) {
     return {
         organizationId,
         filters: checkSearchFilters(params),
-        page: Math.max(1, params.page),
+        page: checkSearchPage(params.page),
         pageSize: CHECK_SEARCH_PAGE_SIZE,
     };
 }

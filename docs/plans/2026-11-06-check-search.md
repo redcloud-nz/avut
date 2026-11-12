@@ -85,6 +85,14 @@ The Checks page is now a filterable search over all checks, not the last month: 
 - A check detail page, or editing checks from this list.
 - Using the search anywhere but the Checks page and the skill page link (e.g. from a person's page).
 
+## Review notes
+
+From the group B review:
+
+- Fixed: **(blocking, Task 2)** `src/modules/skill-track/lib/check-search-params.ts` imports `Kaga` from `@/components/blocks/kaga` only for `DEFAULT_PAGE_SIZE`. `page.tsx` (a Server Component) imports this module, which pulls `kaga.tsx` (no `"use client"`, calls `useState`) into the server graph. Move `DEFAULT_PAGE_SIZE` into a plain constants module that both `kaga.tsx` and `check-search-params.ts` import (keep `Kaga.DEFAULT_PAGE_SIZE` working for its existing callers), so the params module never imports `kaga.tsx`.
+- Fixed: **(Task 2)** `page` is clamped below but not above: `?page=99999999999999999999` gets past `parseAsInteger` as an unsafe integer and fails `CheckSearchPage`'s `z.int()`, so the page errors. Treat a page that isn't a safe integer as 1 in `checkSearchInput`.
+- Fixed: **(Task 2)** In `checks-list.tsx`, the table's `pageIndex` and `onPaginationChange` come from the deferred `input.page`, so clicking Next twice before page 2 arrives lands on page 2, not 3. Build `pagination` from the live `params.page` (clamped the same way), and dim the results (e.g. `opacity-60` with a transition) while the live params differ from the deferred ones, so a pending filter or page change is visible.
+
 ## Parked
 
 - **`formatDate` on bare `YYYY-MM-DD` strings shows the day before west of UTC.** `formatDate` (`src/lib/datetime.ts`) parses its input as an instant, so a plain date string becomes UTC midnight. Task 3 added `formatPlainDate` in `src/lib/schemas/date-range.ts` for the date range picker but left `formatDate` alone. Other callers may pass plain dates, for example D4H `dateExpires` in `issued-type-content.tsx`. Audit the callers and route plain dates through `formatPlainDate`.
