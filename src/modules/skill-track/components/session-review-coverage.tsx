@@ -15,8 +15,8 @@ import { SkillId, SkillRef } from "@/lib/schemas/skill";
 import { SkillCheck, SkillCheckId } from "@/lib/schemas/skill-check";
 import { isCheckIncluded } from "@/lib/skill-check-conflicts";
 import { Coverage } from "@/lib/skill-check-coverage";
+import { SkillTrack_CardToggle } from "@/modules/skill-track/components/card-toggle";
 import { ReviewChecksSubject } from "@/modules/skill-track/components/review-checks-dialog";
-import { SkillTrack_SessionReview_CardToggle } from "@/modules/skill-track/components/session-review-card-toggle";
 
 /** The review page's Show options, in menu order: every check, or only those in a conflict or excluded by hand. */
 export const SESSION_REVIEW_SHOW_OPTIONS = ["all", "conflicts", "excluded"] as const;
@@ -160,7 +160,7 @@ function CoverageCard<Id extends string>({
                             Average {meanCovered.toFixed(1)} {coverageOf} ({meanPercent}% coverage)
                         </p>
                     </CardDescription>
-                    <SkillTrack_SessionReview_CardToggle title={title} />
+                    <SkillTrack_CardToggle title={title} />
                 </CardHeader>
                 <CollapsibleContent asChild>
                     <CardContent className="flex flex-col has-data-[slot=item]:-my-2.5 has-data-[slot=item]:px-1">

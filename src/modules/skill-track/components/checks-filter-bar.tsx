@@ -34,7 +34,7 @@ import {
     type SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { cn } from "@/lib/utils";
-import { SkillTrack_SessionReview_CardToggle } from "@/modules/skill-track/components/session-review-card-toggle";
+import { SkillTrack_CardToggle } from "@/modules/skill-track/components/card-toggle";
 import {
     checkSearchFilters,
     type CheckSearchParams,
@@ -113,18 +113,23 @@ export function SkillTrack_ChecksFilterBar({
     const resultOptions = getEnabledSkillCheckResultOptions(organization.settings);
 
     // An archived skill (linked from its skill page) isn't among the options: name it from the
-    // results, or fall back to its id. Likewise a session the options don't hold.
+    // results, or fall back to its id. Likewise a session the options don't hold. While the
+    // options are still loading, show an ellipsis rather than flash the id.
     const skillLabel =
         filters.skillId && !skillOptions.some((o) => o.value === filters.skillId)
             ? sampleRow?.skill.id === filters.skillId
                 ? sampleRow.skill.name
-                : filters.skillId
+                : skillsQuery.isSuccess
+                  ? filters.skillId
+                  : "…"
             : undefined;
     const sessionLabel =
         filters.sessionId && !sessionOptions.some((o) => o.value === filters.sessionId)
             ? sampleRow?.session?.id === filters.sessionId
                 ? sampleRow.session.name || sampleRow.session.id
-                : filters.sessionId
+                : sessionsQuery.isSuccess
+                  ? filters.sessionId
+                  : "…"
             : undefined;
 
     function personName(personId: string, sample: { id: string; name: string } | null | undefined) {
@@ -216,7 +221,7 @@ export function SkillTrack_ChecksFilterBar({
                 <CardHeader>
                     <CardTitle>Filters</CardTitle>
                     <CardDescription>{summary}</CardDescription>
-                    <SkillTrack_SessionReview_CardToggle title="Filters" />
+                    <SkillTrack_CardToggle title="Filters" />
                 </CardHeader>
                 <CollapsibleContent asChild>
                     <CardContent className="grid grid-cols-1 gap-x-2 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">

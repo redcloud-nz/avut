@@ -99,5 +99,8 @@ export const settingsEffects = createEffects<"settings">()({
     ],
     updateUserSettingsSlice: (_vars, updated) => [
         write(trpc.settings.getUserSettings.queryKey(), updated),
+        // The check search draws its date filter's day bounds in the viewer's display time zone,
+        // which isn't in its query key.
+        invalidate(trpc.skillChecks.searchChecks.queryFilter()),
     ],
 });
