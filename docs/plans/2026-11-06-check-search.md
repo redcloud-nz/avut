@@ -95,4 +95,4 @@ From the group B review:
 
 ## Parked
 
-- **`formatDate` on bare `YYYY-MM-DD` strings shows the day before west of UTC.** `formatDate` (`src/lib/datetime.ts`) parses its input as an instant, so a plain date string becomes UTC midnight. Task 3 added `formatPlainDate` in `src/lib/schemas/date-range.ts` for the date range picker but left `formatDate` alone. Other callers may pass plain dates, for example D4H `dateExpires` in `issued-type-content.tsx`. Audit the callers and route plain dates through `formatPlainDate`.
+- **`formatDate` on bare `YYYY-MM-DD` strings shows the day before west of UTC.** `formatDate` (`src/lib/datetime.ts`) parses its input as an instant, so a plain date string becomes UTC midnight. Task 3 added `formatPlainDate` in `src/lib/schemas/date-range.ts` for the date range picker but left `formatDate` alone. Other callers may pass plain dates, for example D4H `dateExpires` in `issued-type-content.tsx`. Audit the callers and route plain dates through `formatPlainDate`. Filed as #510.

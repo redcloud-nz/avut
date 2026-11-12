@@ -40,8 +40,8 @@ interface PersonPickerProps {
     "aria-invalid"?: boolean;
     /** Offer only Active personnel, and drop the status filter. */
     activeOnly?: boolean;
-    /** The status filter the picker opens on. Defaults to `active`. */
-    defaultStatusFilter?: StatusFilter;
+    /** Offer every person, Active or Archived, and drop the status filter. */
+    allStatuses?: boolean;
 }
 
 /**
@@ -59,11 +59,11 @@ export function PersonPicker({
     id,
     "aria-invalid": ariaInvalid,
     activeOnly = false,
-    defaultStatusFilter = "active",
+    allStatuses = false,
 }: PersonPickerProps) {
     const personnelQuery = useQuery(trpc.personnel.listPersonnel.queryOptions({ organizationId }));
-    const [chosenFilter, setStatusFilter] = useState<StatusFilter>(defaultStatusFilter);
-    const statusFilter = activeOnly ? "active" : chosenFilter;
+    const [chosenFilter, setStatusFilter] = useState<StatusFilter>("active");
+    const statusFilter = activeOnly ? "active" : allStatuses ? "all" : chosenFilter;
 
     const options = useMemo(
         () =>
@@ -85,22 +85,29 @@ export function PersonPicker({
     );
 
     if (personnelQuery.isPending) {
-        return <Skeleton className="h-9 w-full" />;
+        return <Skeleton className={cn("h-9 w-full", className)} />;
     }
+
+    const select = (
+        <SearchableSelect
+            className={allStatuses ? className : "flex-1"}
+            id={id}
+            value={value}
+            onValueChange={(next) => onValueChange((next as PersonId) || null)}
+            options={options}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-invalid={ariaInvalid}
+            emptyMessage={`No ${statusFilter === "all" ? "" : `${statusFilter} `}personnel in this organization.`}
+        />
+    );
+
+    // With no status filter to sit beside, the select stands alone and takes `className` itself.
+    if (allStatuses) return select;
 
     return (
         <ButtonGroup className={cn("w-full", className)}>
-            <SearchableSelect
-                className="flex-1"
-                id={id}
-                value={value}
-                onValueChange={(next) => onValueChange((next as PersonId) || null)}
-                options={options}
-                placeholder={placeholder}
-                disabled={disabled}
-                aria-invalid={ariaInvalid}
-                emptyMessage={`No ${statusFilter === "all" ? "" : `${statusFilter} `}personnel in this organization.`}
-            />
+            {select}
             {!activeOnly && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

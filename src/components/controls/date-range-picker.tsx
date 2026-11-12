@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 export interface DatePickerProps {
     className?: string;
+    id?: string;
     name?: string;
     onValueChange: (newValue: DateRange | undefined) => void;
     placeholder?: string;
@@ -25,6 +26,7 @@ export interface DatePickerProps {
 
 export function DateRangePicker({
     className,
+    id,
     onValueChange = () => {},
     placeholder = "Pick a date",
     value,
@@ -57,6 +59,7 @@ export function DateRangePicker({
     return (
         <Popover>
             <PopoverTrigger
+                id={id}
                 data-size={size}
                 className={cn(
                     "border-input flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color-box-shadow] outline-none",
