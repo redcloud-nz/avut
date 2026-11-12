@@ -61,7 +61,7 @@ The Checks page (`/orgs/[slug]/skill-track/checks`) lists only the last month of
     - Help card: drop the one-month wording, describe the filters (Task 3's set), and say a filtered view's URL can be shared.
   - **Done when:** `npm run check` passes; `/orgs/<slug>/skill-track/checks?page=2` shows the second page; hand-edited `?skill=`/`?person=` params filter the list; `?page=0` and `?page=999` don't error; paging keeps the old rows on screen until the new page arrives.
 
-- [ ] **Task 3: the filter bar.** `visual`
+- [x] **Task 3: the filter bar.** `visual` _feat(skill-track): filter bar on the Checks page_
   - **Files:** new `src/modules/skill-track/components/checks-filter-bar.tsx`, `checks-list.tsx`, `src/components/controls/date-range-picker.tsx`, `src/lib/schemas/date-range.ts`.
   - **Do:**
     - The filters in Decision 4, laid out as a wrapping row of compact controls above the table (`size="sm"` where the controls have it), each writing its param via the shared `useQueryStates` setters and resetting `page` to its default. Skill and Session options load with `useQuery` (not suspense) so the bar renders before they arrive. Clear filters resets every param.
@@ -87,4 +87,4 @@ The Checks page is now a filterable search over all checks, not the last month: 
 
 ## Parked
 
-(none yet)
+- **`formatDate` on bare `YYYY-MM-DD` strings shows the day before west of UTC.** `formatDate` (`src/lib/datetime.ts`) parses its input as an instant, so a plain date string becomes UTC midnight. Task 3 added `formatPlainDate` in `src/lib/schemas/date-range.ts` for the date range picker but left `formatDate` alone. Other callers may pass plain dates, for example D4H `dateExpires` in `issued-type-content.tsx`. Audit the callers and route plain dates through `formatPlainDate`.

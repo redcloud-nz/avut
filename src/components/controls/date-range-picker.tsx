@@ -45,12 +45,14 @@ export function DateRangePicker({
         onValueChange(strRange);
     }
 
-    const selected = value
-        ? {
-              from: value.from ? parseISO(value.from) : undefined,
-              to: value.to ? parseISO(value.to) : undefined,
-          }
-        : undefined;
+    // `parseISO` reads a plain date as local midnight, the day the calendar shows.
+    const selected =
+        value?.from || value?.to
+            ? {
+                  from: value.from ? parseISO(value.from) : undefined,
+                  to: value.to ? parseISO(value.to) : undefined,
+              }
+            : undefined;
 
     return (
         <Popover>
@@ -65,8 +67,8 @@ export function DateRangePicker({
                     className,
                 )}
             >
-                {selected ? (
-                    formatDateRange(selected, display)
+                {value && selected ? (
+                    formatDateRange(value, display)
                 ) : (
                     <span className="text-muted-foreground">{placeholder}</span>
                 )}
@@ -76,7 +78,6 @@ export function DateRangePicker({
                 <Calendar
                     mode="range"
                     selected={selected}
-                    disabled={{ before: new Date(2024, 0, 1) }}
                     captionLayout="dropdown"
                     onSelect={handleSelect}
                     autoFocus

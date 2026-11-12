@@ -40,6 +40,8 @@ interface PersonPickerProps {
     "aria-invalid"?: boolean;
     /** Offer only Active personnel, and drop the status filter. */
     activeOnly?: boolean;
+    /** The status filter the picker opens on. Defaults to `active`. */
+    defaultStatusFilter?: StatusFilter;
 }
 
 /**
@@ -57,9 +59,10 @@ export function PersonPicker({
     id,
     "aria-invalid": ariaInvalid,
     activeOnly = false,
+    defaultStatusFilter = "active",
 }: PersonPickerProps) {
     const personnelQuery = useQuery(trpc.personnel.listPersonnel.queryOptions({ organizationId }));
-    const [chosenFilter, setStatusFilter] = useState<StatusFilter>("active");
+    const [chosenFilter, setStatusFilter] = useState<StatusFilter>(defaultStatusFilter);
     const statusFilter = activeOnly ? "active" : chosenFilter;
 
     const options = useMemo(

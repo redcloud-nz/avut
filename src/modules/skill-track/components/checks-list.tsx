@@ -22,6 +22,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { assessorDisplayName, getSkillCheckResultLabel } from "@/lib/schemas/skill-check";
+import { SkillTrack_ChecksFilterBar } from "@/modules/skill-track/components/checks-filter-bar";
 import { SkillTrack_CreateCheck_Dialog } from "@/modules/skill-track/components/create-check";
 import {
     CHECK_SEARCH_PAGE_SIZE,
@@ -174,6 +175,15 @@ export default function SkillTrack_ChecksList() {
                     </Protect>
                 </Saratoga.Actions>
             </Saratoga.Header>
+            <SkillTrack_ChecksFilterBar
+                params={params}
+                onFiltersChange={(update) =>
+                    // Filters replace history (see `checkSearchParsers`); any change returns to
+                    // page 1. `null` clears every param, page included.
+                    void setParams(update && { ...update, page: null }, { history: "replace" })
+                }
+                sampleRow={rows[0]}
+            />
             {results}
         </Saratoga.Root>
     );
