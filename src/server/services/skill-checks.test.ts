@@ -10,6 +10,7 @@ import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
+import { SkillCheckId } from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
@@ -27,6 +28,7 @@ import {
     nextSessionNumber,
     requireSessionAssessor,
     requireSessionById,
+    search,
 } from "./skill-checks";
 
 // The service reaches server-only modules at import time. The functions exercised here use an
@@ -506,5 +508,369 @@ describe("skill-checks", () => {
 
             expect(created.sessionNumber).toBe(4);
         });
+    });
+});
+
+describe("skill-checks search", () => {
+    // Dataset (in S.org unless noted), checkedAt in UTC; NZ is +13 until 2026-04-05 03:00, +12
+    // after, so NZ's 2026-04-05 is 25 hours long:
+    //   early      alice / skill1 / dana, session,    Fail, 2026-03-10 00:00
+    //   standalone bob   / skill2 / eve,  no session, Fail, 2026-03-12 00:00
+    //   lateTo     alice / skill2 / dana, no session, Pass, 2026-03-15 10:30 (NZ 15th 23:30)
+    //   nextDay    bob   / skill1 / eve,  session,    Pass, 2026-03-15 11:30 (NZ 16th 00:30)
+    //   dstLate    alice / skill1 / eve,  session,    Pass, 2026-04-05 11:30 (NZ 5th 23:30)
+    //   dstNext    bob   / skill2 / dana, session,    Pass, 2026-04-05 12:30 (NZ 6th 00:30)
+    //   tieA       alice / skill1 / dana, no session, Pass, 2026-05-01 00:00
+    //   tieB       alice / skill1 / eve,  no session, Pass, 2026-05-01 00:00
+    //   deleted    bob   / skill1 / dana, session,    Pass, Deleted, 2026-05-02
+    //   outsider   (otherOrg) alice / skill1, 2026-05-03
+    const S = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        alice: PersonId.create(),
+        bob: PersonId.create(),
+        dana: PersonId.create(),
+        eve: PersonId.create(),
+        pkg: SkillPackageId.create(),
+        grp: SkillGroupId.create(),
+        skill1: SkillId.create(),
+        skill2: SkillId.create(),
+        session: SkillCheckSessionId.create(),
+        early: SkillCheckId.create(),
+        standalone: SkillCheckId.create(),
+        lateTo: SkillCheckId.create(),
+        nextDay: SkillCheckId.create(),
+        dstLate: SkillCheckId.create(),
+        dstNext: SkillCheckId.create(),
+        tieA: SkillCheckId.create(),
+        tieB: SkillCheckId.create(),
+        deleted: SkillCheckId.create(),
+        outsider: SkillCheckId.create(),
+    };
+    const NZ = "Pacific/Auckland";
+    const [tieHigh, tieLow] = [S.tieA, S.tieB].sort().reverse();
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [S.org, S.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        for (const [id, name] of [
+            [S.alice, "Alice"],
+            [S.bob, "Bob"],
+            [S.dana, "Dana"],
+            [S.eve, "Eve"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: S.org, name, email: `${id}@example.com` },
+            });
+        }
+        await db.skillPackage.create({
+            data: {
+                id: S.pkg,
+                organizationId: S.org,
+                name: "Pkg",
+                description: "",
+                properties: {},
+                published: true,
+            },
+        });
+        await db.skillGroup.create({
+            data: {
+                id: S.grp,
+                skillPackageId: S.pkg,
+                name: "Group",
+                description: "",
+                properties: {},
+            },
+        });
+        for (const [id, name] of [
+            [S.skill1, "Skill 1"],
+            [S.skill2, "Skill 2"],
+        ] as const) {
+            await db.skill.create({
+                data: {
+                    id,
+                    skillPackageId: S.pkg,
+                    skillGroupId: S.grp,
+                    name,
+                    description: "",
+                    properties: {},
+                },
+            });
+        }
+        await db.skillCheckSession.create({
+            data: {
+                id: S.session,
+                organizationId: S.org,
+                name: "Session",
+                sessionNumber: 1,
+                notes: "",
+            },
+        });
+
+        type Row = {
+            id: SkillCheckId;
+            organizationId?: OrganizationId;
+            assesseeId: PersonId;
+            skillId: SkillId;
+            assessorId: PersonId;
+            sessionId: SkillCheckSessionId | null;
+            result: "Pass" | "Fail";
+            status?: "Draft" | "Include" | "Deleted";
+            checkedAt: string;
+        };
+        const checks: Row[] = [
+            {
+                id: S.early,
+                assesseeId: S.alice,
+                skillId: S.skill1,
+                assessorId: S.dana,
+                sessionId: S.session,
+                result: "Fail",
+                checkedAt: "2026-03-10T00:00:00Z",
+            },
+            {
+                id: S.standalone,
+                assesseeId: S.bob,
+                skillId: S.skill2,
+                assessorId: S.eve,
+                sessionId: null,
+                result: "Fail",
+                checkedAt: "2026-03-12T00:00:00Z",
+            },
+            {
+                id: S.lateTo,
+                assesseeId: S.alice,
+                skillId: S.skill2,
+                assessorId: S.dana,
+                sessionId: null,
+                result: "Pass",
+                checkedAt: "2026-03-15T10:30:00Z",
+            },
+            {
+                id: S.nextDay,
+                assesseeId: S.bob,
+                skillId: S.skill1,
+                assessorId: S.eve,
+                sessionId: S.session,
+                result: "Pass",
+                checkedAt: "2026-03-15T11:30:00Z",
+            },
+            {
+                id: S.dstLate,
+                assesseeId: S.alice,
+                skillId: S.skill1,
+                assessorId: S.eve,
+                sessionId: S.session,
+                result: "Pass",
+                checkedAt: "2026-04-05T11:30:00Z",
+            },
+            {
+                id: S.dstNext,
+                assesseeId: S.bob,
+                skillId: S.skill2,
+                assessorId: S.dana,
+                sessionId: S.session,
+                result: "Pass",
+                checkedAt: "2026-04-05T12:30:00Z",
+            },
+            ...(
+                [
+                    [S.tieA, S.dana],
+                    [S.tieB, S.eve],
+                ] as const
+            ).map(
+                ([id, assessorId]): Row => ({
+                    id,
+                    assesseeId: S.alice,
+                    skillId: S.skill1,
+                    assessorId,
+                    sessionId: null,
+                    result: "Pass",
+                    checkedAt: "2026-05-01T00:00:00Z",
+                }),
+            ),
+            {
+                id: S.deleted,
+                assesseeId: S.bob,
+                skillId: S.skill1,
+                assessorId: S.dana,
+                sessionId: S.session,
+                result: "Pass",
+                status: "Deleted",
+                checkedAt: "2026-05-02T00:00:00Z",
+            },
+            {
+                id: S.outsider,
+                organizationId: S.otherOrg,
+                assesseeId: S.alice,
+                skillId: S.skill1,
+                assessorId: S.dana,
+                sessionId: null,
+                result: "Pass",
+                checkedAt: "2026-05-03T00:00:00Z",
+            },
+        ];
+        for (const { organizationId = S.org, status = "Include", checkedAt, ...rest } of checks) {
+            await db.skillCheck.create({
+                data: {
+                    ...rest,
+                    organizationId,
+                    status,
+                    notes: "",
+                    checkedAt: new Date(checkedAt),
+                },
+            });
+        }
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: S.org,
+            user: { id: S.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    async function ids(
+        filters: Parameters<typeof search>[1]["filters"],
+        { timeZone = NZ, page = 1, pageSize = 100 } = {},
+    ) {
+        const { rows } = await search(ctx(), { filters, page, pageSize, timeZone });
+        return rows.map((row) => row.id);
+    }
+
+    it("returns every non-Deleted check in the organization, newest first, ties by id", async () => {
+        expect(await ids({})).toEqual([
+            tieHigh,
+            tieLow,
+            S.dstNext,
+            S.dstLate,
+            S.nextDay,
+            S.lateTo,
+            S.standalone,
+            S.early,
+        ]);
+    });
+
+    it("never returns a Deleted check or another organization's check", async () => {
+        const all = await ids({});
+
+        expect(all).not.toContain(S.deleted);
+        expect(all).not.toContain(S.outsider);
+    });
+
+    it("resolves names for assessee, assessor, skill and session", async () => {
+        const { rows } = await search(ctx(), {
+            filters: { assesseeId: S.bob, skillId: S.skill1 },
+            page: 1,
+            pageSize: 10,
+            timeZone: NZ,
+        });
+
+        expect(rows).toEqual([
+            expect.objectContaining({
+                id: S.nextDay,
+                assessee: { id: S.bob, name: "Bob" },
+                assessor: { id: S.eve, name: "Eve" },
+                skill: { id: S.skill1, name: "Skill 1" },
+                session: { id: S.session, name: "Session" },
+            }),
+        ]);
+    });
+
+    it("filters by assessee", async () => {
+        expect(await ids({ assesseeId: S.bob })).toEqual([S.dstNext, S.nextDay, S.standalone]);
+    });
+
+    it("filters by assessor", async () => {
+        expect(await ids({ assessorId: S.eve })).toEqual([
+            S.tieB,
+            S.dstLate,
+            S.nextDay,
+            S.standalone,
+        ]);
+    });
+
+    it("filters by skill", async () => {
+        expect(await ids({ skillId: S.skill2 })).toEqual([S.dstNext, S.lateTo, S.standalone]);
+    });
+
+    it("filters by session", async () => {
+        expect(await ids({ sessionId: S.session })).toEqual([
+            S.dstNext,
+            S.dstLate,
+            S.nextDay,
+            S.early,
+        ]);
+    });
+
+    it('returns only standalone checks for session "none"', async () => {
+        expect(await ids({ sessionId: "none" })).toEqual([tieHigh, tieLow, S.lateTo, S.standalone]);
+    });
+
+    it("filters by result", async () => {
+        expect(await ids({ result: "Fail" })).toEqual([S.standalone, S.early]);
+    });
+
+    it("combines filters", async () => {
+        expect(await ids({ assesseeId: S.alice, skillId: S.skill2 })).toEqual([S.lateTo]);
+    });
+
+    it("includes both ends of the date range", async () => {
+        expect(await ids({ from: "2026-03-10", to: "2026-03-12" })).toEqual([
+            S.standalone,
+            S.early,
+        ]);
+    });
+
+    it("includes a check late on the to day in the viewer's zone, not one just after it", async () => {
+        expect(await ids({ from: "2026-03-15", to: "2026-03-15" })).toEqual([S.lateTo]);
+        expect(await ids({ from: "2026-03-16", to: "2026-03-16" })).toEqual([S.nextDay]);
+    });
+
+    it("judges the days in the given time zone", async () => {
+        // In UTC both checks fall on the 15th.
+        expect(await ids({ from: "2026-03-15", to: "2026-03-15" }, { timeZone: "UTC" })).toEqual([
+            S.nextDay,
+            S.lateTo,
+        ]);
+    });
+
+    it("bounds the to day by its real length across a DST change", async () => {
+        // NZ's 2026-04-05 is 25 hours long; a fixed 24 hours from its start would miss dstLate.
+        expect(await ids({ from: "2026-04-05", to: "2026-04-05" })).toEqual([S.dstLate]);
+        expect(await ids({ from: "2026-04-06" })).toEqual([tieHigh, tieLow, S.dstNext]);
+    });
+
+    it("slices pages and reports the total across them", async () => {
+        const page2 = await search(ctx(), { filters: {}, page: 2, pageSize: 3, timeZone: NZ });
+
+        expect(page2.total).toBe(8);
+        expect(page2.rows.map((row) => row.id)).toEqual([S.dstLate, S.nextDay, S.lateTo]);
+    });
+
+    it("counts the filtered total, not the organization's", async () => {
+        const result = await search(ctx(), {
+            filters: { assesseeId: S.bob },
+            page: 1,
+            pageSize: 1,
+            timeZone: NZ,
+        });
+
+        expect(result.total).toBe(3);
+        expect(result.rows.map((row) => row.id)).toEqual([S.dstNext]);
+    });
+
+    it("returns no rows and the real total for a page past the end", async () => {
+        const result = await search(ctx(), { filters: {}, page: 5, pageSize: 3, timeZone: NZ });
+
+        expect(result).toEqual({ rows: [], total: 8 });
     });
 });
