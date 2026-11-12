@@ -337,11 +337,16 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             sessionId: T.session,
         });
         const orgKey = trpc.skillChecks.listSkillChecks.queryKey({ organizationId: T.org });
-        const recentKey = trpc.skillChecks.listRecentChecks.queryKey({ organizationId: T.org });
+        const searchKey = trpc.skillChecks.searchChecks.queryKey({
+            organizationId: T.org,
+            filters: {},
+            page: 1,
+            pageSize: 20,
+        });
         const otherOrgKey = trpc.skillChecks.listSkillChecks.queryKey({
             organizationId: OrganizationId.create(),
         });
-        for (const key of [ownKey, sessionKey, orgKey, recentKey, otherOrgKey]) {
+        for (const key of [ownKey, sessionKey, orgKey, searchKey, otherOrgKey]) {
             queryClient.setQueryData(key, []);
         }
 
@@ -355,7 +360,7 @@ describe("skillCheckSessionsEffects (session check writes)", () => {
             .map((query) => query.queryKey);
 
         expect(matched).toHaveLength(3);
-        expect(matched).toEqual(expect.arrayContaining([sessionKey, orgKey, recentKey]));
+        expect(matched).toEqual(expect.arrayContaining([sessionKey, orgKey, searchKey]));
     });
 });
 
@@ -399,7 +404,12 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             }),
             sessions: trpc.skillCheckSessions.listSessions.queryKey({ organizationId: T.org }),
             matrix: trpc.skillChecks.getCompetencyMatrix.queryKey({ organizationId: T.org }),
-            recentChecks: trpc.skillChecks.listRecentChecks.queryKey({ organizationId: T.org }),
+            searchChecks: trpc.skillChecks.searchChecks.queryKey({
+                organizationId: T.org,
+                filters: {},
+                page: 1,
+                pageSize: 20,
+            }),
             otherOrgSessions: trpc.skillCheckSessions.listSessions.queryKey({
                 organizationId: T.otherOrg,
             }),
@@ -527,7 +537,7 @@ describe("skillCheckSessionsEffects (session status changes)", () => {
             expect(invalidatedKeys(effects)).toEqual([
                 "matrix",
                 "ownSessionChecks",
-                "recentChecks",
+                "searchChecks",
                 "sessionChecks",
                 "sessions",
             ]);

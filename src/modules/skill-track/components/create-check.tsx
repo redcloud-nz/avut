@@ -156,7 +156,7 @@ function CreateCheck_Body({ onDone }: { onDone: () => void }) {
                 toast.error(`Failed to add skill check: ${error.message}`);
             },
             onSuccess(created) {
-                // Recent Skill Checks shows only the last month (`listRecentChecks`), so a check
+                // Recent Skill Checks shows only the last month, so a check
                 // back-dated past that leaves the list as soon as it's added.
                 if (parseISO(created.checkedAt) < subMonths(new Date(), 1)) {
                     toast.success("Skill check added", {

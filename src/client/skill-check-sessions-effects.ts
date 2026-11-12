@@ -73,7 +73,7 @@ function writeSessionChecksStatus(
 /**
  * Invalidates every skill-check list for the org except the own-checks lists, which the caller
  * has just written: the session's Contents counts, Checks and Review, the org dashboard's stats,
- * the skill-checks collection and the recent-checks list.
+ * the skill-checks collection and every check search (the Checks page).
  *
  * The effector awaits these refetches before the mutation leaves `pending`, and the recording
  * rows stay dimmed while it's pending, so a predicate that also matched the own-checks list would
@@ -91,14 +91,14 @@ function invalidateOtherSkillCheckLists(organizationId: string): MutationEffect[
                 },
             ),
         ),
-        invalidate(trpc.skillChecks.listRecentChecks.queryFilter({ organizationId })),
+        invalidate(trpc.skillChecks.searchChecks.queryFilter({ organizationId })),
     ];
 }
 
 /**
  * Invalidates the org-wide reads that change with a session's status: the sessions list (its rows
  * carry `status`) and the competency matrix, which counts only approved sessions' `Include` checks.
- * Shared by `approveSession` and `reopenSession`. `listRecentChecks` and the org-wide
+ * Shared by `approveSession` and `reopenSession`. `searchChecks` and the org-wide
  * `listSkillChecks` aren't invalidated: nothing renders a check's status there.
  */
 function invalidateSessionStatusReaders(organizationId: string): MutationEffect[] {
@@ -252,7 +252,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
             }),
         ),
         // A start change re-stamps every check's `checkedAt` server-side, so the reads that show or
-        // order by it refetch: the session's check lists, the competency matrix and recent checks.
+        // order by it refetch: the session's check lists, the competency matrix and check searches.
         ...(startChanged
             ? [
                   invalidate(
@@ -267,7 +267,7 @@ export const skillCheckSessionsEffects = createEffects<"skillCheckSessions">()({
                       }),
                   ),
                   invalidate(
-                      trpc.skillChecks.listRecentChecks.queryFilter({
+                      trpc.skillChecks.searchChecks.queryFilter({
                           organizationId: vars.organizationId,
                       }),
                   ),

@@ -22,7 +22,14 @@ export default async function SkillTrack_Checks_Page(
     const { slug } = await props.params;
     const organization = await getOrganizationBySlug(slug);
 
-    prefetch(trpc.skillChecks.listRecentChecks.queryOptions({ organizationId: organization.id }));
+    prefetch(
+        trpc.skillChecks.searchChecks.queryOptions({
+            organizationId: organization.id,
+            filters: {},
+            page: 1,
+            pageSize: 100,
+        }),
+    );
 
     return (
         <HydrateClient>

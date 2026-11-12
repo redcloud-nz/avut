@@ -38,9 +38,14 @@ export default function SkillTrack_ChecksList() {
     const organization = useOrganization();
     const { formatDate } = usePreferences();
 
-    const { data: checks } = useSuspenseQuery(
-        trpc.skillChecks.listRecentChecks.queryOptions({
+    const {
+        data: { rows: checks },
+    } = useSuspenseQuery(
+        trpc.skillChecks.searchChecks.queryOptions({
             organizationId: organization.id,
+            filters: {},
+            page: 1,
+            pageSize: 100,
         }),
     );
 

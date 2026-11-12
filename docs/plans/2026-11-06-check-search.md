@@ -36,7 +36,7 @@ The Checks page (`/orgs/[slug]/skill-track/checks`) lists only the last month of
 
 ### Review group A: data layer
 
-- [ ] **Task 1: `searchChecks` service and procedure; remove `listRecentChecks`.**
+- [x] **Task 1: `searchChecks` service and procedure; remove `listRecentChecks`.** _feat(skill-track): searchChecks service and procedure, replacing listRecentChecks_
   - **Files:** `src/server/services/skill-checks.ts` and its test, `src/trpc/routers/skill-checks-router.ts` and its test, `src/client/skill-checks-effects.ts`, `src/client/skill-check-sessions-effects.ts` and its test (lines ~340 and ~402 name `listRecentChecks`), `src/lib/schemas/skill-check.ts` (the filters schema).
   - **Do:**
     - **Schema:** `CheckSearchFilters`: `assesseeId?`, `assessorId?`, `skillId?` (their `Id` schemas), `sessionId?` (a `SkillCheckSessionId` or the literal `"none"`), `result?` (`SkillCheckResultValue`), and `from?`/`to?` reused from `DateRange.schema` (`src/lib/schemas/date-range.ts`). Page input: `page` (int ≥ 1) and `pageSize` (int 1 to 100).
