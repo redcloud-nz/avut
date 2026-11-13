@@ -7,12 +7,15 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import { D4HTask } from "@/lib/schemas/d4h-task";
 import {
     FormInstance,
     FormInstanceId,
     FormInstanceItem,
     FormInstanceItemId,
+    FormInstancePage,
 } from "@/lib/schemas/form-instance";
+import * as D4HTasks from "@/server/services/d4h-tasks";
 import * as Forms from "@/server/services/forms";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
@@ -110,6 +113,26 @@ export const formsRouter = createTrpcRouter({
         }),
 
     /**
+     * Get one of the current user's form instances in the current organization, whatever its status.
+     *
+     * @param formInstanceId - The ID of the form instance.
+     * @param formKey - The key of the form the instance must belong to.
+     * @returns The form instance.
+     * @throws TRPCError(NOT_FOUND) if the form instance doesn't exist, belongs to another user or organization, or is a different form — thrown as `NotFoundError` from `Forms.requireInstanceById` and mapped by `mapDomainErrors`.
+     */
+    getFormInstance: organizationProcedure()
+        .input(
+            z.object({
+                formInstanceId: FormInstanceId.schema,
+                formKey: z.string(),
+            }),
+        )
+        .output(FormInstance.schema)
+        .query(async ({ ctx, input: { formInstanceId, formKey } }) => {
+            return Forms.requireInstanceById(ctx, { formInstanceId, formKey });
+        }),
+
+    /**
      * Get form instances for the current user and organization by form key.
      *
      * @param formKey - The key of the form to retrieve instances for.
@@ -156,6 +179,51 @@ export const formsRouter = createTrpcRouter({
             });
 
             return formInstanceItems.map(FormInstanceItem.fromRecord);
+        }),
+
+    /**
+     * The D4H tasks one of the current user's form instances queued (e.g. a Return Items form's
+     * retire tasks), oldest first, in any status. Reads AVUT records only, so it needs no D4H
+     * token: the gate is that the caller owns the instance.
+     *
+     * @param formInstanceId - The ID of the form instance.
+     * @returns The tasks the instance queued.
+     * @throws TRPCError(NOT_FOUND) if the form instance doesn't exist or isn't the user's in this organization — thrown as `NotFoundError` from `Forms.requireInstanceById` and mapped by `mapDomainErrors`.
+     */
+    listFormInstanceTasks: organizationProcedure({ d4hTask: ["view"] })
+        .input(
+            z.object({
+                formInstanceId: FormInstanceId.schema,
+            }),
+        )
+        .output(z.array(D4HTask.schema))
+        .query(async ({ ctx, input: { formInstanceId } }) => {
+            await Forms.requireInstanceById(ctx, { formInstanceId });
+
+            return D4HTasks.listForFormInstance(ctx, { formInstanceId });
+        }),
+
+    /**
+     * One page of the current user's submitted instances of a form in the current organization,
+     * newest first. "Submitted" is any status other than `Draft`.
+     *
+     * @param formKey - The key of the form to list instances of.
+     * @param cursor - The `nextCursor` of the previous page; omit for the first page.
+     * @param limit - The page size.
+     * @returns The page, with `nextCursor` `null` on the last page.
+     */
+    listSubmittedFormInstances: organizationProcedure()
+        .input(
+            z.object({
+                formKey: z.string(),
+                /** Named `cursor` so `infiniteQueryOptions` pages through it. */
+                cursor: FormInstanceId.schema.optional(),
+                limit: z.number().int().min(1).max(100).default(20),
+            }),
+        )
+        .output(FormInstancePage.schema)
+        .query(async ({ ctx, input: { formKey, cursor, limit } }) => {
+            return Forms.listSubmittedInstances(ctx, { formKey, cursor, limit });
         }),
 
     /**

@@ -5,8 +5,12 @@
 
 import "server-only";
 
-import { ConflictError } from "@/lib/errors";
-import { FormInstance, type FormInstanceId } from "@/lib/schemas/form-instance";
+import { ConflictError, NotFoundError } from "@/lib/errors";
+import {
+    FormInstance,
+    type FormInstanceId,
+    type FormInstancePage,
+} from "@/lib/schemas/form-instance";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -85,4 +89,61 @@ export async function saveInstance(
     });
 
     return FormInstance.fromRecord(updatedFormInstance);
+}
+
+/**
+ * Fetch one of the caller's own form instances in the current organization, whatever its status.
+ *
+ * @throws NotFoundError if the instance doesn't exist, belongs to another user or organization, or
+ * (when `formKey` is given) is a different form.
+ */
+export async function requireInstanceById(
+    ctx: OrgServiceContext,
+    { formInstanceId, formKey }: { formInstanceId: FormInstanceId; formKey?: string },
+): Promise<FormInstance> {
+    const record = await ctx.prisma.formInstance.findUnique({
+        where: {
+            id: formInstanceId,
+            organizationId: ctx.organizationId,
+            userId: ctx.userId,
+            ...(formKey === undefined ? {} : { formKey }),
+        },
+    });
+
+    if (!record) {
+        throw new NotFoundError(`FormInstance(${formInstanceId}) not found`);
+    }
+
+    return FormInstance.fromRecord(record);
+}
+
+/**
+ * One page of the caller's submitted instances of a form in the current organization, newest
+ * first. "Submitted" is any status other than `Draft`, and the submitted time is `updatedAt`
+ * (a non-draft is read-only, so nothing moves it afterwards).
+ *
+ * @param cursor - The id of the last instance on the previous page; omit for the first page.
+ */
+export async function listSubmittedInstances(
+    ctx: OrgServiceContext,
+    { formKey, cursor, limit }: { formKey: string; cursor?: FormInstanceId; limit: number },
+): Promise<FormInstancePage> {
+    const records = await ctx.prisma.formInstance.findMany({
+        where: {
+            organizationId: ctx.organizationId,
+            userId: ctx.userId,
+            formKey,
+            formStatus: { not: "Draft" },
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        ...(cursor === undefined ? {} : { cursor: { id: cursor }, skip: 1 }),
+        take: limit + 1,
+    });
+
+    const page = records.slice(0, limit).map(FormInstance.fromRecord);
+
+    return {
+        items: page,
+        nextCursor: records.length > limit ? page[page.length - 1].id : null,
+    };
 }

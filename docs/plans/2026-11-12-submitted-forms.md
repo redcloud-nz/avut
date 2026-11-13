@@ -72,7 +72,7 @@ submitted, the form processor marks it `Processed` and it disappears from the UI
     it untouched; each of the three router procedures returns `NOT_FOUND` for a `Processed`
     instance and still works for a draft. `npm run check` passes.
 
-- [ ] **Task 2: Queries for submitted forms and a form's D4H tasks**
+- [x] **Task 2: Queries for submitted forms and a form's D4H tasks** (feat(forms): add queries for submitted forms and a form's D4H tasks)
   - **Files:** `src/lib/schemas/form-instance.ts`, `src/server/services/forms.ts`,
     `src/server/services/forms.test.ts`, `src/trpc/routers/forms-router.ts`,
     `src/trpc/routers/forms-router.test.ts`.
