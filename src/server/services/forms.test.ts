@@ -145,6 +145,21 @@ describe("Forms.saveInstance", () => {
         expect(after.updatedAt).toEqual(before.updatedAt);
     });
 
+    it("throws ConflictError when a concurrent first save creates the instance first", async () => {
+        // The read sees no instance; by the time of the create another save has made it.
+        vi.spyOn(db.formInstance, "create").mockRejectedValueOnce(
+            Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
+        );
+
+        await expect(
+            Forms.saveInstance(ctx(), {
+                formInstanceId: FormInstanceId.create(),
+                formKey: "test-form",
+                formData: { a: 8 },
+            }),
+        ).rejects.toThrow(ConflictError);
+    });
+
     it("doesn't revert a status write that lands between its read and its write", async () => {
         const processed = await db.formInstance.findUniqueOrThrow({ where: { id: T.processed } });
         // The read still sees a draft; by the time of the write the processor has marked it.

@@ -25,6 +25,14 @@ import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
 
 /**
+ * An item count for a form list: "No items", "1 item" or "n items".
+ */
+export function formatItemCount(count: number): string {
+    if (count === 0) return "No items";
+    return count === 1 ? "1 item" : `${count} items`;
+}
+
+/**
  * Shows the signed-in user's name (the "Recorded by" field of an I3 form).
  *
  * @param className - Classes for the name, e.g. to line it up with the field beside it.
@@ -87,7 +95,9 @@ export function SubmittedAtFieldValue({ date }: { date: string }) {
  *
  * Call `handleChange(getValues())` from the form's change handler and wire `saveStatus` to a
  * `SaveStatusIndicator`. `handleDelete` runs `onDeleting` (to navigate away) and then deletes the draft.
- * Call `cancel()` before submitting, so a pending save can't land after the form is processed.
+ * Call `cancel()` before submitting, to drop a pending (debounced, not yet sent) save. A save
+ * already in flight can still land; the processor writes the submitted data again with the
+ * Processed status, so it can't leave stale data behind.
  */
 export function useDraftFormAutosave({
     formKey,

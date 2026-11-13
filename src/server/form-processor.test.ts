@@ -11,8 +11,9 @@ import { FormProcessingPipeline } from "./form-processor";
 
 // The pipeline marks the form instance processed through the real Prisma client once every
 // stage has run; stub it so nothing reaches a database.
+const { formInstanceUpdate } = vi.hoisted(() => ({ formInstanceUpdate: vi.fn(async () => ({})) }));
 vi.mock("@/server/prisma", () => ({
-    default: { formInstance: { update: vi.fn(async () => ({})) } },
+    default: { formInstance: { update: formInstanceUpdate } },
 }));
 
 describe("FormProcessingPipeline.executeWithOutput", () => {
@@ -66,5 +67,23 @@ describe("FormProcessingPipeline.executeWithOutput", () => {
 
         expect(results).toHaveLength(3);
         expect(results.every((r) => r.status === "success")).toBe(true);
+    });
+});
+
+describe("FormProcessingPipeline status write", () => {
+    it("marks the instance Processed with the submitted form data", async () => {
+        const pipeline = FormProcessingPipeline.builder<{ n: number }>("TestPipeline")
+            .stage({ stageName: "Noop", stageFn: async () => {} })
+            .build();
+        const formInstanceId = FormInstanceId.create();
+
+        await pipeline.execute(formInstanceId, { n: 5 }, {});
+
+        // The submitted data is written again, so an autosave that was in flight when the form
+        // was submitted can't leave stale data on the processed record.
+        expect(formInstanceUpdate).toHaveBeenCalledWith({
+            where: { id: formInstanceId },
+            data: { formStatus: "Processed", formData: { n: 5 } },
+        });
     });
 });

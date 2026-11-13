@@ -257,7 +257,7 @@ export const formsRouter = createTrpcRouter({
      * @param collectionKey - The key of the collection this item belongs to.
      * @param formData - The data for the form instance item.
      * @returns The saved or updated form instance item.
-     * @throws TRPCError(NOT_FOUND) if the specified form instance does not exist, does not belong to the user/organization, or isn't a draft.
+     * @throws TRPCError(NOT_FOUND) if the specified form instance does not exist, does not belong to the user/organization, or isn't a draft, or if the item exists on a different form instance.
      */
     saveFormInstanceItemData: organizationProcedure()
         .input(
@@ -293,6 +293,18 @@ export const formsRouter = createTrpcRouter({
                     throw new TRPCError({
                         code: "NOT_FOUND",
                         message: `FormInstance(${formInstanceId}) not found`,
+                    });
+
+                // The upsert is keyed on the item id alone, so check an existing item belongs to
+                // this draft, or a draft id would let the caller overwrite another instance's item.
+                const existingItem = await ctx.prisma.formInstanceItem.findUnique({
+                    where: { id: formInstanceItemId },
+                    select: { formInstanceId: true },
+                });
+                if (existingItem && existingItem.formInstanceId !== formInstanceId)
+                    throw new TRPCError({
+                        code: "NOT_FOUND",
+                        message: `FormInstanceItem(${formInstanceItemId}) not found`,
                     });
 
                 const updatedFormInstanceItem = await ctx.prisma.formInstanceItem.upsert({

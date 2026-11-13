@@ -25,6 +25,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/hooks/use-organization";
 import type { FormInstance, FormInstanceId } from "@/lib/schemas/form-instance";
+import { formatItemCount } from "@/modules/d4h-i3/components/form-shared";
 import { trpc } from "@/trpc/client";
 
 export interface D4HI3Module_SubmittedFormList_Props {
@@ -110,7 +111,6 @@ interface SubmittedFormData {
 
 function SubmittedFormItem({ instance, href }: { instance: FormInstance; href: Route }) {
     const formData = instance.formData as SubmittedFormData;
-    const itemCount = formData.items?.length ?? 0;
 
     return (
         <Item variant="outline" asChild>
@@ -119,11 +119,7 @@ function SubmittedFormItem({ instance, href }: { instance: FormInstance; href: R
                     <ItemTitle>{formData.recipient?.name || "No one selected"}</ItemTitle>
                     {/* The relative time can tick over between SSR and hydration. */}
                     <ItemDescription suppressHydrationWarning>
-                        {itemCount === 0
-                            ? "No items"
-                            : itemCount === 1
-                              ? "1 item"
-                              : `${itemCount} items`}
+                        {formatItemCount(formData.items?.length ?? 0)}
                         {", submitted "}
                         {formatDistanceToNow(new Date(instance.updatedAt), { addSuffix: true })}
                     </ItemDescription>

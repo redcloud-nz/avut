@@ -134,6 +134,25 @@ describe("formsRouter: draft-only mutations", () => {
             });
             expect(item.formData).toEqual({ original: true });
         });
+
+        it("throws NOT_FOUND for another instance's item on the caller's draft, leaving it untouched", async () => {
+            await expect(
+                makeCaller().saveFormInstanceItemData({
+                    organizationId: T.org,
+                    formInstanceId: T.draft,
+                    formInstanceItemId: T.processedItem,
+                    parentItemId: null,
+                    collectionKey: "items",
+                    formData: { updated: true },
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            const item = await db.formInstanceItem.findUniqueOrThrow({
+                where: { id: T.processedItem },
+            });
+            expect(item.formInstanceId).toBe(T.processed);
+            expect(item.formData).toEqual({ original: true });
+        });
     });
 
     describe("deleteFormInstanceItem", () => {

@@ -38,12 +38,8 @@ export default async function D4HI3Module_Return_FormInstance_Page(
 
     if (instance.formStatus !== "Draft") {
         prefetch(instanceQuery);
-        prefetch(
-            trpc.forms.listFormInstanceTasks.queryOptions({
-                organizationId: organization.id,
-                formInstanceId: instanceId,
-            }),
-        );
+        // No prefetch of `listFormInstanceTasks`: it needs `d4hTask` view, and its readers sit
+        // behind `<Protect>`, so they fetch it on demand rather than the page fetching a FORBIDDEN.
 
         return (
             <HydrateClient>

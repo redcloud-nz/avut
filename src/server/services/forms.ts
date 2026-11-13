@@ -11,6 +11,7 @@ import {
     type FormInstanceId,
     type FormInstancePage,
 } from "@/lib/schemas/form-instance";
+import { isUniqueViolation } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -22,7 +23,8 @@ import type { OrgServiceContext } from "./service-context";
  * write isn't reverted.
  *
  * @throws ConflictError if the instance belongs to a different user/organization, if `formKey`
- * doesn't match an existing instance with the same ID, or if the existing instance isn't a draft.
+ * doesn't match an existing instance with the same ID, if the existing instance isn't a draft, or
+ * if a concurrent save created the instance first.
  */
 export async function saveInstance(
     ctx: OrgServiceContext,
@@ -58,17 +60,27 @@ export async function saveInstance(
     }
 
     if (!existing) {
-        const created = await ctx.prisma.formInstance.create({
-            data: {
-                id: formInstanceId,
-                formKey,
-                organizationId: ctx.organizationId,
-                userId: ctx.userId,
-                formData: formData as object,
-                formStatus: "Draft",
-            },
-        });
-        return FormInstance.fromRecord(created);
+        try {
+            const created = await ctx.prisma.formInstance.create({
+                data: {
+                    id: formInstanceId,
+                    formKey,
+                    organizationId: ctx.organizationId,
+                    userId: ctx.userId,
+                    formData: formData as object,
+                    formStatus: "Draft",
+                },
+            });
+            return FormInstance.fromRecord(created);
+        } catch (error) {
+            // Another save of the same id created it between the read and the create.
+            if (isUniqueViolation(error)) {
+                throw new ConflictError(
+                    `FormInstance(${formInstanceId}) was created by a concurrent save`,
+                );
+            }
+            throw error;
+        }
     }
 
     const { count } = await ctx.prisma.formInstance.updateMany({

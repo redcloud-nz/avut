@@ -109,16 +109,19 @@ export function D4HI3Module_ReturnItems_SubmittedView({
                                                         {item.kindTitle}
                                                     </ItemTitle>
                                                 </ItemContent>
-                                                <Protect permissions={{ d4hTask: ["view"] }}>
-                                                    {/* Only the mark waits on the tasks, not the item. */}
-                                                    <Suspense fallback={null}>
-                                                        <NotReturnedMark
-                                                            organizationId={organization.id}
-                                                            instanceId={instanceId}
-                                                            itemId={item.itemId}
-                                                        />
-                                                    </Suspense>
-                                                </Protect>
+                                                {/* Only a processed Return has queued its tasks. */}
+                                                {instance.formStatus === "Processed" && (
+                                                    <Protect permissions={{ d4hTask: ["view"] }}>
+                                                        {/* Only the mark waits on the tasks, not the item. */}
+                                                        <Suspense fallback={null}>
+                                                            <NotReturnedMark
+                                                                organizationId={organization.id}
+                                                                instanceId={instanceId}
+                                                                itemId={item.itemId}
+                                                            />
+                                                        </Suspense>
+                                                    </Protect>
+                                                )}
                                             </Item>
                                         ))}
                                     </ItemGroup>

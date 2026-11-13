@@ -35,6 +35,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { I3IssueItemsForm } from "@/lib/forms";
 import { route } from "@/lib/routes";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
+import { formatItemCount } from "@/modules/d4h-i3/components/form-shared";
 import { D4HI3Module_SubmittedFormList } from "@/modules/d4h-i3/components/submitted-form-list";
 import { trpc } from "@/trpc/client";
 
@@ -184,11 +185,7 @@ export function D4HI3Module_IssueItems_FormInstanceList() {
                                                         </ItemTitle>
                                                         {/* The relative time can tick over between SSR and hydration. */}
                                                         <ItemDescription suppressHydrationWarning>
-                                                            {itemCount === 0
-                                                                ? "No items"
-                                                                : itemCount === 1
-                                                                  ? "1 item"
-                                                                  : `${itemCount} items`}
+                                                            {formatItemCount(itemCount)}
                                                             {", updated "}
                                                             {formatDistanceToNow(
                                                                 new Date(instance.updatedAt),
