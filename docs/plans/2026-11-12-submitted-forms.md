@@ -161,7 +161,7 @@ submitted, the form processor marks it `Processed` and it disappears from the UI
   - **Done when:** a processed Return shows its items and the tasks it queued, with current
     statuses; a draft still shows the editable form. `npm run check` passes.
 
-- [ ] **Task 6: Help cards for the Submitted tab** — `mechanical`
+- [x] **Task 6: Help cards for the Submitted tab** — `mechanical` (feat(forms): describe the Submitted tab in the I3 Issue and Return help cards)
   - **Files:** `content/help/d4h-i3/issue.mdx`, `content/help/d4h-i3/return.mdx`.
   - **Do:** In each card's opening paragraph, say the page has **Drafts** and **Submitted** tabs:
     Submitted lists the forms you've submitted, newest first, and opening one shows it read-only
