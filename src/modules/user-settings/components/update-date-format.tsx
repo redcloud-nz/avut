@@ -99,11 +99,11 @@ export function UserSettings_UpdateDateFormat_Dialog({ settings }: { settings: U
                                             DATE_FORMAT_PATTERNS,
                                         ) as (keyof typeof DATE_FORMAT_PATTERNS)[]
                                     ).map((preset) => (
-                                        <FieldLabel htmlFor={`date-format-${preset}`} key={preset}>
+                                        <FieldLabel htmlFor={`${formId}-${preset}`} key={preset}>
                                             <Field orientation="horizontal">
                                                 <RadioGroupItem
                                                     value={preset}
-                                                    id={`date-format-${preset}`}
+                                                    id={`${formId}-${preset}`}
                                                 />
 
                                                 <FieldTitle>

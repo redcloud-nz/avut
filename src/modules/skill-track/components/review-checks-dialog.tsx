@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps, useEffect, useState } from "react";
+import { ComponentProps, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -244,7 +244,8 @@ function CheckRow({
 }) {
     const organization = useOrganization();
     const { formatDateTime } = usePreferences();
-    const checkboxId = `check-${check.id}`;
+    const idPrefix = useId();
+    const checkboxId = `${idPrefix}-check-${check.id}`;
 
     return (
         <li className="flex items-start gap-3">

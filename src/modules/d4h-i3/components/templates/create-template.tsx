@@ -147,9 +147,9 @@ function CreateTemplate_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-name">Name</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                     <Input
-                                        id="template-name"
+                                        id={`${formId}-name`}
                                         autoFocus
                                         autoComplete="off"
                                         aria-invalid={fieldState.invalid}
@@ -164,11 +164,11 @@ function CreateTemplate_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-description">
+                                    <FieldLabel htmlFor={`${formId}-description`}>
                                         Description
                                     </FieldLabel>
                                     <Textarea
-                                        id="template-description"
+                                        id={`${formId}-description`}
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -182,7 +182,7 @@ function CreateTemplate_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-category">
+                                    <FieldLabel htmlFor={`${formId}-category`}>
                                         D4H Category
                                     </FieldLabel>
                                     <D4HEquipmentCategorySelect
@@ -196,7 +196,7 @@ function CreateTemplate_Body() {
                                         organisationOnlyId={organisationOnlyId}
                                         slotProps={{
                                             trigger: {
-                                                id: "template-category",
+                                                id: `${formId}-category`,
                                                 "aria-invalid": fieldState.invalid,
                                             },
                                         }}
@@ -210,7 +210,7 @@ function CreateTemplate_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-kind">D4H Type</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-kind`}>D4H Type</FieldLabel>
                                     <D4HEquipmentTypeSelect
                                         value={field.value}
                                         onChange={(kind) => {
@@ -222,7 +222,7 @@ function CreateTemplate_Body() {
                                         disabled={!selectedCategoryId}
                                         slotProps={{
                                             trigger: {
-                                                id: "template-kind",
+                                                id: `${formId}-kind`,
                                                 "aria-invalid": fieldState.invalid,
                                             },
                                         }}
@@ -236,7 +236,7 @@ function CreateTemplate_Body() {
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template-require-sn">
+                                    <FieldLabel htmlFor={`${formId}-require-sn`}>
                                         Require Serial Number
                                     </FieldLabel>
                                     <Select
@@ -244,7 +244,7 @@ function CreateTemplate_Body() {
                                         onValueChange={(v) => field.onChange(v === "yes")}
                                     >
                                         <SelectTrigger
-                                            id="template-require-sn"
+                                            id={`${formId}-require-sn`}
                                             aria-invalid={fieldState.invalid}
                                         >
                                             <SelectValue />

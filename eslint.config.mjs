@@ -347,6 +347,7 @@ const config = [
   {
     // A submit button outside its form points at it by a per-instance useId() id, never a literal:
     // a hidden copy of the form on a page Next keeps mounted would otherwise be the one submitted.
+    // Labels (`htmlFor`) and `aria-*` id references point at fields the same way.
     files: ["src/**/*.tsx"],
     plugins: { avut },
     rules: {

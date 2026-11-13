@@ -155,9 +155,9 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="group-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="group-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             aria-invalid={fieldState.invalid}
                                             {...field}
@@ -173,11 +173,11 @@ export function SkillPackageBuilder_CreateGroup_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="group-description">
+                                        <FieldLabel htmlFor={`${formId}-description`}>
                                             Description
                                         </FieldLabel>
                                         <Textarea
-                                            id="group-description"
+                                            id={`${formId}-description`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />

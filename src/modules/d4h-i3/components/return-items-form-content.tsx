@@ -6,7 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useId } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -53,6 +53,7 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
     instanceId: FormInstanceId;
 }) {
     const logger = useLogger("I3Module", "ReturnItems_FormInstance_Content");
+    const idPrefix = useId();
     const organization = useOrganization();
     const router = useRouter();
 
@@ -172,7 +173,7 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                                             name="recipient"
                                             render={({ field, fieldState }) => (
                                                 <Field data-invalid={fieldState.invalid}>
-                                                    <FieldLabel htmlFor="recipient">
+                                                    <FieldLabel htmlFor={`${idPrefix}-recipient`}>
                                                         Returned by
                                                     </FieldLabel>
                                                     <D4HTeamMemberSelect
@@ -184,7 +185,7 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                                                             handleChange();
                                                         }}
                                                         organizationId={organization.id}
-                                                        id="recipient"
+                                                        id={`${idPrefix}-recipient`}
                                                         aria-invalid={fieldState.invalid}
                                                     />
                                                     {fieldState.error && (
@@ -255,9 +256,11 @@ export function D4HI3Module_ReturnItems_FormInstance_Content({
                                         name="comments"
                                         render={({ field, fieldState }) => (
                                             <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor="comments">Comments</FieldLabel>
+                                                <FieldLabel htmlFor={`${idPrefix}-comments`}>
+                                                    Comments
+                                                </FieldLabel>
                                                 <Textarea
-                                                    id="comments"
+                                                    id={`${idPrefix}-comments`}
                                                     {...field}
                                                     aria-invalid={fieldState.invalid}
                                                 />
@@ -316,6 +319,7 @@ function D4HI3_Return_ItemChecklist({
     value: I3ReturnedItem[];
     onChange: (items: I3ReturnedItem[]) => void;
 }) {
+    const idPrefix = useId();
     const [{ data: memberEquipment }, { data: returnedItemIds }] = useSuspenseQueries({
         queries: [
             trpc.d4hApi.listMemberEquipment.queryOptions({ organizationId, teamId, memberId }),
@@ -348,7 +352,7 @@ function D4HI3_Return_ItemChecklist({
     return (
         <ItemGroup className="gap-0!">
             {items.map((item) => {
-                const checkboxId = `return-item-${item.id}`;
+                const checkboxId = `${idPrefix}-item-${item.id}`;
                 // The ref alone can be ambiguous (free text, often reused across types), so say
                 // what the item is.
                 const details = [

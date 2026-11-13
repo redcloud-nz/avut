@@ -5,7 +5,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
@@ -600,6 +600,7 @@ function SyncPlanView({
     onTickedChange: (itemId: string, ticked: boolean) => void;
     disabled: boolean;
 }) {
+    const idPrefix = useId();
     const items = selectableItems(plan);
     return (
         <div className="space-y-3 text-sm">
@@ -616,7 +617,7 @@ function SyncPlanView({
                         </FieldLegend>
                         <FieldGroup data-slot="checkbox-group" className="gap-1">
                             {rows.map((item) => {
-                                const id = `d4h-sync-item-${item.itemId}`;
+                                const id = `${idPrefix}-sync-item-${item.itemId}`;
                                 return (
                                     <Field orientation="horizontal" key={item.itemId}>
                                         <Checkbox

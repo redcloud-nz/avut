@@ -200,11 +200,11 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                                     name="code"
                                     render={({ field, fieldState }) => (
                                         <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel htmlFor="set-password-code">
+                                            <FieldLabel htmlFor={`${formId}-code`}>
                                                 Verification Code
                                             </FieldLabel>
                                             <InputOTP
-                                                id="set-password-code"
+                                                id={`${formId}-code`}
                                                 maxLength={6}
                                                 value={field.value}
                                                 onChange={field.onChange}
@@ -232,11 +232,11 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                                     name="newPassword"
                                     render={({ field, fieldState }) => (
                                         <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel htmlFor={field.name}>
+                                            <FieldLabel htmlFor={`${formId}-${field.name}`}>
                                                 New Password
                                             </FieldLabel>
                                             <PasswordInput
-                                                id={field.name}
+                                                id={`${formId}-${field.name}`}
                                                 autoComplete="new-password"
                                                 aria-invalid={fieldState.invalid}
                                                 {...field}
@@ -252,11 +252,11 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                                     name="confirmNewPassword"
                                     render={({ field, fieldState }) => (
                                         <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel htmlFor={field.name}>
+                                            <FieldLabel htmlFor={`${formId}-${field.name}`}>
                                                 Confirm New Password
                                             </FieldLabel>
                                             <PasswordInput
-                                                id={field.name}
+                                                id={`${formId}-${field.name}`}
                                                 autoComplete="new-password"
                                                 aria-invalid={fieldState.invalid}
                                                 {...field}
@@ -356,9 +356,11 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
                             name="currentPassword"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor={field.name}>Current Password</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-${field.name}`}>
+                                        Current Password
+                                    </FieldLabel>
                                     <PasswordInput
-                                        id={field.name}
+                                        id={`${formId}-${field.name}`}
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -371,9 +373,11 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
                             name="newPassword"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor={field.name}>New Password</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-${field.name}`}>
+                                        New Password
+                                    </FieldLabel>
                                     <PasswordInput
-                                        id={field.name}
+                                        id={`${formId}-${field.name}`}
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -386,11 +390,11 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
                             name="confirmNewPassword"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor={field.name}>
+                                    <FieldLabel htmlFor={`${formId}-${field.name}`}>
                                         Confirm New Password
                                     </FieldLabel>
                                     <PasswordInput
-                                        id={field.name}
+                                        id={`${formId}-${field.name}`}
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />
@@ -404,11 +408,11 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
                             render={({ field }) => (
                                 <Field orientation="horizontal">
                                     <Checkbox
-                                        id={field.name}
+                                        id={`${formId}-${field.name}`}
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                     />
-                                    <FieldLabel htmlFor={field.name}>
+                                    <FieldLabel htmlFor={`${formId}-${field.name}`}>
                                         Revoke other sessions
                                     </FieldLabel>
                                 </Field>

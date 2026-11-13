@@ -136,11 +136,11 @@ export function AdminModule_CreateInvitation_Dialog() {
                                     control={form.control}
                                     render={({ field, fieldState }) => (
                                         <Field data-invalid={fieldState.invalid}>
-                                            <FieldLabel htmlFor="invitation-email">
+                                            <FieldLabel htmlFor={`${formId}-email`}>
                                                 Email
                                             </FieldLabel>
                                             <Input
-                                                id="invitation-email"
+                                                id={`${formId}-email`}
                                                 autoFocus
                                                 ignorePasswordManagers
                                                 aria-invalid={fieldState.invalid}

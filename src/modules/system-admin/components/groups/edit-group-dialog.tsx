@@ -106,9 +106,9 @@ export function SystemAdmin_EditGroup_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="edit-group-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="edit-group-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
@@ -125,9 +125,9 @@ export function SystemAdmin_EditGroup_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="edit-group-slug">Slug</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-slug`}>Slug</FieldLabel>
                                         <Input
-                                            id="edit-group-slug"
+                                            id={`${formId}-slug`}
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
                                             {...field}

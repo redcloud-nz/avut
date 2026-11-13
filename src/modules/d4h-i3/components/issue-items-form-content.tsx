@@ -6,7 +6,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useFieldArray, useForm, UseFormReturn, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -79,6 +79,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
     instanceId: FormInstanceId;
 }) {
     const logger = useLogger("I3Module", "IssueItems_FormInstance_Content");
+    const idPrefix = useId();
     const organization = useOrganization();
     const router = useRouter();
     const slug = organization.slug;
@@ -214,7 +215,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                             name="recipient"
                                             render={({ field, fieldState }) => (
                                                 <Field data-invalid={fieldState.invalid}>
-                                                    <FieldLabel htmlFor="recipient">
+                                                    <FieldLabel htmlFor={`${idPrefix}-recipient`}>
                                                         Issued to
                                                     </FieldLabel>
                                                     <D4HTeamMemberSelect
@@ -224,7 +225,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                                             handleChange();
                                                         }}
                                                         organizationId={organization.id}
-                                                        id="recipient"
+                                                        id={`${idPrefix}-recipient`}
                                                         aria-invalid={fieldState.invalid}
                                                     />
                                                     {fieldState.error && (
@@ -291,9 +292,11 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
                                         name="comments"
                                         render={({ field, fieldState }) => (
                                             <Field data-invalid={fieldState.invalid}>
-                                                <FieldLabel htmlFor="comments">Comments</FieldLabel>
+                                                <FieldLabel htmlFor={`${idPrefix}-comments`}>
+                                                    Comments
+                                                </FieldLabel>
                                                 <Textarea
-                                                    id="comments"
+                                                    id={`${idPrefix}-comments`}
                                                     {...field}
                                                     aria-invalid={fieldState.invalid}
                                                 />
@@ -591,6 +594,7 @@ function AddItemDialog({
     teamTitle,
     ...props
 }: AddItemDialogProps) {
+    const idPrefix = useId();
     const { templateOptions, variantOptions } = offeredOptions(templates, variants, fits);
 
     const form = useForm({
@@ -637,7 +641,9 @@ function AddItemDialog({
                             name="template"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template">Template</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-template`}>
+                                        Template
+                                    </FieldLabel>
                                     {templateOptions.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">
                                             No templates can be issued to {teamTitle}.
@@ -660,7 +666,7 @@ function AddItemDialog({
                                             }}
                                         >
                                             <SelectTrigger
-                                                id="template"
+                                                id={`${idPrefix}-template`}
                                                 aria-invalid={fieldState.invalid}
                                             >
                                                 <SelectValue placeholder="Select a template" />
@@ -693,7 +699,9 @@ function AddItemDialog({
 
                                 return (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="variant">Variant</FieldLabel>
+                                        <FieldLabel htmlFor={`${idPrefix}-variant`}>
+                                            Variant
+                                        </FieldLabel>
 
                                         {noVariantsFit(
                                             currentTemplate,
@@ -722,7 +730,7 @@ function AddItemDialog({
                                                 disabled={!currentTemplate}
                                             >
                                                 <SelectTrigger
-                                                    id="variant"
+                                                    id={`${idPrefix}-variant`}
                                                     aria-invalid={fieldState.invalid}
                                                 >
                                                     <SelectValue placeholder="Select a variant" />
@@ -752,10 +760,12 @@ function AddItemDialog({
                             name="serialNumber"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-serialNumber`}>
+                                        Serial Number
+                                    </FieldLabel>
 
                                     <Input
-                                        id="serialNumber"
+                                        id={`${idPrefix}-serialNumber`}
                                         value={field.value ?? ""}
                                         onChange={field.onChange}
                                         aria-invalid={fieldState.invalid}
@@ -794,6 +804,7 @@ function EditItemDialog({
     teamTitle,
     ...props
 }: EditItemDialogProps) {
+    const idPrefix = useId();
     const { templateOptions, variantOptions, templateMisfit, variantMisfit } = offeredOptions(
         templates,
         variants,
@@ -844,7 +855,9 @@ function EditItemDialog({
                             name="template"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="template">Template</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-template`}>
+                                        Template
+                                    </FieldLabel>
                                     {templateOptions.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">
                                             No templates can be issued to {teamTitle}.
@@ -867,7 +880,7 @@ function EditItemDialog({
                                             }}
                                         >
                                             <SelectTrigger
-                                                id="template"
+                                                id={`${idPrefix}-template`}
                                                 aria-invalid={fieldState.invalid}
                                             >
                                                 <SelectValue placeholder="Select a template" />
@@ -903,7 +916,9 @@ function EditItemDialog({
 
                                 return (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="variant">Variant</FieldLabel>
+                                        <FieldLabel htmlFor={`${idPrefix}-variant`}>
+                                            Variant
+                                        </FieldLabel>
 
                                         {noVariantsFit(
                                             currentTemplate,
@@ -932,7 +947,7 @@ function EditItemDialog({
                                                 disabled={!currentTemplate}
                                             >
                                                 <SelectTrigger
-                                                    id="variant"
+                                                    id={`${idPrefix}-variant`}
                                                     aria-invalid={fieldState.invalid}
                                                 >
                                                     <SelectValue placeholder="Select a variant" />
@@ -967,10 +982,12 @@ function EditItemDialog({
                             name="serialNumber"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="serialNumber">Serial Number</FieldLabel>
+                                    <FieldLabel htmlFor={`${idPrefix}-serialNumber`}>
+                                        Serial Number
+                                    </FieldLabel>
 
                                     <Input
-                                        id="serialNumber"
+                                        id={`${idPrefix}-serialNumber`}
                                         value={field.value ?? ""}
                                         onChange={field.onChange}
                                         aria-invalid={fieldState.invalid}

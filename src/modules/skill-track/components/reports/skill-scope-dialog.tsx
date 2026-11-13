@@ -7,6 +7,7 @@
 
 import { TelescopeIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
+import { useId } from "react";
 import * as R from "remeda";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -77,6 +78,7 @@ export function SkillTrack_SkillScopeDialog({
  * the dialog opens — the dialog is always mounted in the report header.
  */
 function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }) {
+    const idPrefix = useId();
     const organization = useOrganization();
     const [teamParam, setTeamParam] = useQueryState("team");
 
@@ -136,7 +138,7 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
     return (
         <>
             <div className="flex items-center gap-2 border-b px-4 py-3">
-                <Label htmlFor="skill-scope-team" className="text-muted-foreground">
+                <Label htmlFor={`${idPrefix}-team`} className="text-muted-foreground">
                     Team
                 </Label>
                 <Select
@@ -147,7 +149,7 @@ function SkillScope_Picker({ onSelect }: { onSelect: (skillId: string) => void }
                         })
                     }
                 >
-                    <SelectTrigger id="skill-scope-team" size="sm" className="flex-1">
+                    <SelectTrigger id={`${idPrefix}-team`} size="sm" className="flex-1">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
