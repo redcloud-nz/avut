@@ -53,7 +53,7 @@ export function SubmittedFormHeader({ title }: { title: string }) {
         <Saratoga.Header>
             <Saratoga.Title className="flex items-center gap-2">
                 {title}
-                <Badge variant="secondary">Submitted</Badge>
+                <Badge variant="outline">Submitted</Badge>
             </Saratoga.Title>
         </Saratoga.Header>
     );

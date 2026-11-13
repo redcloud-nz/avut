@@ -138,7 +138,7 @@ export function D4HI3Module_ReturnItems_FormInstanceList() {
                             void setTab(value === "submitted" ? "submitted" : "drafts")
                         }
                     >
-                        <TabsList>
+                        <TabsList variant="line">
                             <TabsTrigger value="drafts">Drafts</TabsTrigger>
                             <TabsTrigger value="submitted">Submitted</TabsTrigger>
                         </TabsList>
