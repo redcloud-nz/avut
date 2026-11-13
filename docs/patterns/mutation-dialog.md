@@ -268,6 +268,13 @@ export function AdminModule_UpdatePerson_Dialog({ person }: { person: PersonData
   footer button submit a hidden copy of the same dialog from an earlier page, with
   that copy's props and stale field values, so it creates or updates the wrong
   record ([#465](https://github.com/redcloud-nz/avut/issues/465)).
+- **Field ids derive from it too** (lint): ``id={`${formId}-name`}`` with
+  ``<FieldLabel htmlFor={`${formId}-name`}>``, and the same for `aria-describedby` and
+  friends. A fixed field id makes the label focus or toggle the hidden copy's control
+  ([#476](https://github.com/redcloud-nz/avut/issues/476)). Ids built from a record
+  id (`` `assessor-${person.id}` ``) need the prefix as well, since the hidden copy lists
+  the same records. A component with labelled fields and no form id uses
+  `const idPrefix = useId()`.
 - **`form.handleSubmit(onValid, onInvalid)`** — always pass the second argument.
   A submit that silently does nothing because a field is invalid is hard to
   diagnose from a bug report; logging `onInvalid` surfaces it in the console.
