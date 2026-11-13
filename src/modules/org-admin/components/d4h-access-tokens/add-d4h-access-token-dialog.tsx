@@ -169,9 +169,9 @@ function AddD4HAccessToken_Body({ organization }: AddD4HAccessTokenDialogProps) 
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token-label">Label</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-label`}>Label</FieldLabel>
                                     <Input
-                                        id="access-token-label"
+                                        id={`${formId}-label`}
                                         placeholder="e.g. Shared read-only token"
                                         aria-invalid={fieldState.invalid}
                                         {...field}
@@ -185,12 +185,12 @@ function AddD4HAccessToken_Body({ organization }: AddD4HAccessTokenDialogProps) 
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token-server-code">
+                                    <FieldLabel htmlFor={`${formId}-server-code`}>
                                         D4H Server
                                     </FieldLabel>
                                     <Select {...field} onValueChange={field.onChange}>
                                         <SelectTrigger
-                                            id="access-token-server-code"
+                                            id={`${formId}-server-code`}
                                             aria-invalid={fieldState.invalid}
                                         >
                                             <SelectValue placeholder="Select D4H server" />
@@ -232,9 +232,9 @@ function AddD4HAccessToken_Body({ organization }: AddD4HAccessTokenDialogProps) 
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token">Token</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-token`}>Token</FieldLabel>
                                     <Textarea
-                                        id="access-token"
+                                        id={`${formId}-token`}
                                         aria-invalid={fieldState.invalid}
                                         placeholder="Paste token here"
                                         {...field}
@@ -248,10 +248,10 @@ function AddD4HAccessToken_Body({ organization }: AddD4HAccessTokenDialogProps) 
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="access-token-access">Access</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-access`}>Access</FieldLabel>
                                     <Select {...field} onValueChange={field.onChange}>
                                         <SelectTrigger
-                                            id="access-token-access"
+                                            id={`${formId}-access`}
                                             aria-invalid={fieldState.invalid}
                                         >
                                             <SelectValue />

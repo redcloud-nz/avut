@@ -135,9 +135,9 @@ export function AdminModule_CreateTeam_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="team-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="team-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
@@ -154,11 +154,11 @@ export function AdminModule_CreateTeam_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="team-description">
+                                        <FieldLabel htmlFor={`${formId}-description`}>
                                             Description
                                         </FieldLabel>
                                         <Textarea
-                                            id="team-description"
+                                            id={`${formId}-description`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />

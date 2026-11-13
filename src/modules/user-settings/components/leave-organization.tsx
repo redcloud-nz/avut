@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ComponentProps, useEffect, useState } from "react";
+import { ComponentProps, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -39,6 +39,7 @@ export function UserSettings_LeaveOrganization_Dialog({
     membership,
     ...props
 }: ComponentProps<typeof AlertDialog> & { membership: Membership }) {
+    const idPrefix = useId();
     const router = useRouter();
     const [confirmText, setConfirmText] = useState("");
     const organizationName = membership.organization.name;
@@ -96,12 +97,12 @@ export function UserSettings_LeaveOrganization_Dialog({
                             </AlertDescription>
                         </Alert>
                         <Field>
-                            <FieldLabel htmlFor="leave-organization-confirm">
+                            <FieldLabel htmlFor={`${idPrefix}-confirm`}>
                                 Type <span className="font-mono">{organizationName}</span> to
                                 confirm
                             </FieldLabel>
                             <Input
-                                id="leave-organization-confirm"
+                                id={`${idPrefix}-confirm`}
                                 autoComplete="off"
                                 value={confirmText}
                                 onChange={(e) => setConfirmText(e.target.value)}

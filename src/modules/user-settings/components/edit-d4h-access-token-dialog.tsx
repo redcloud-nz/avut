@@ -123,9 +123,9 @@ function EditD4HAccessToken_Body({
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="edit-access-token-label">Label</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-label`}>Label</FieldLabel>
                                     <Input
-                                        id="edit-access-token-label"
+                                        id={`${formId}-label`}
                                         aria-invalid={fieldState.invalid}
                                         {...field}
                                     />

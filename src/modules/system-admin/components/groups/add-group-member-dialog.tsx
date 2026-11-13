@@ -149,11 +149,11 @@ function AddGroupMember_Body({
                             name="organizationId"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="add-group-member-organization">
+                                    <FieldLabel htmlFor={`${formId}-organization`}>
                                         Organisation
                                     </FieldLabel>
                                     <SearchableSelect
-                                        id="add-group-member-organization"
+                                        id={`${formId}-organization`}
                                         value={field.value}
                                         onValueChange={(value) => field.onChange(value)}
                                         options={options}
@@ -171,10 +171,10 @@ function AddGroupMember_Body({
                             name="role"
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="add-group-member-role">Role</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-role`}>Role</FieldLabel>
                                     <Select value={field.value} onValueChange={field.onChange}>
                                         <SelectTrigger
-                                            id="add-group-member-role"
+                                            id={`${formId}-role`}
                                             aria-invalid={fieldState.invalid}
                                         >
                                             <SelectValue placeholder="Select a role" />

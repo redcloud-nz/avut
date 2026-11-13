@@ -179,9 +179,9 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                         data-invalid={fieldState.invalid}
                                         orientation="responsive"
                                     >
-                                        <FieldLabel htmlFor="skill-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="skill-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             aria-invalid={fieldState.invalid}
                                             {...field}
@@ -200,11 +200,11 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                         data-invalid={fieldState.invalid}
                                         orientation="responsive"
                                     >
-                                        <FieldLabel htmlFor="skill-description">
+                                        <FieldLabel htmlFor={`${formId}-description`}>
                                             Description
                                         </FieldLabel>
                                         <Textarea
-                                            id="skill-description"
+                                            id={`${formId}-description`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
@@ -222,7 +222,9 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                         data-invalid={fieldState.invalid}
                                         orientation="responsive"
                                     >
-                                        <FieldLabel htmlFor="default-required">Required</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-default-required`}>
+                                            Required
+                                        </FieldLabel>
                                         <Select
                                             value={field.value ? "true" : "false"}
                                             onValueChange={(value) =>
@@ -230,7 +232,7 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                             }
                                         >
                                             <SelectTrigger
-                                                id="default-required"
+                                                id={`${formId}-default-required`}
                                                 aria-invalid={fieldState.invalid}
                                             >
                                                 <SelectValue />
@@ -257,12 +259,12 @@ export function SkillPackageBuilder_CreateSkill_Dialog({
                                         data-invalid={fieldState.invalid}
                                         orientation="responsive"
                                     >
-                                        <FieldLabel htmlFor="frequency">
+                                        <FieldLabel htmlFor={`${formId}-frequency`}>
                                             Revalidation Frequency
                                         </FieldLabel>
                                         <InputGroup aria-invalid={fieldState.invalid}>
                                             <InputGroupInput
-                                                id="frequency"
+                                                id={`${formId}-frequency`}
                                                 type="number"
                                                 min={1}
                                                 max={48}

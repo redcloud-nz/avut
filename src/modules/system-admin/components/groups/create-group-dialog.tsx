@@ -121,9 +121,9 @@ export function SystemAdmin_CreateGroup_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="group-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="group-name"
+                                            id={`${formId}-name`}
                                             autoFocus
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
@@ -146,9 +146,9 @@ export function SystemAdmin_CreateGroup_Dialog() {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="group-slug">Slug</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-slug`}>Slug</FieldLabel>
                                         <Input
-                                            id="group-slug"
+                                            id={`${formId}-slug`}
                                             autoComplete="off"
                                             aria-invalid={fieldState.invalid}
                                             {...field}

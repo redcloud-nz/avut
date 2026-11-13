@@ -6,7 +6,7 @@
 "use client";
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -38,6 +38,7 @@ import type { RouterOutput } from "@/trpc/routers/_app";
 type ImportResult = RouterOutput["skillPackageBuilder"]["importPackage"];
 
 export function SkillPackageBuilder_ImportPackage_Dialog() {
+    const idPrefix = useId();
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["import"] as const));
@@ -111,14 +112,12 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
                 <DialogBody>
                     <div className="flex flex-col gap-4">
                         <Field data-invalid={!!file.error}>
-                            <FieldLabel htmlFor="import-package-file">Export file</FieldLabel>
+                            <FieldLabel htmlFor={`${idPrefix}-file`}>Export file</FieldLabel>
                             <FileDropzone
-                                id="import-package-file"
+                                id={`${idPrefix}-file`}
                                 accept="application/json"
                                 aria-invalid={!!file.error}
-                                aria-describedby={
-                                    file.error ? "import-package-file-error" : undefined
-                                }
+                                aria-describedby={file.error ? `${idPrefix}-file-error` : undefined}
                                 hint="Up to 1 MB · .json"
                                 onFileSelected={(selected) => {
                                     file.handleFile(selected);
@@ -127,7 +126,7 @@ export function SkillPackageBuilder_ImportPackage_Dialog() {
                             />
                             {file.error && (
                                 <FieldError
-                                    id="import-package-file-error"
+                                    id={`${idPrefix}-file-error`}
                                     errors={[{ message: file.error }]}
                                 />
                             )}

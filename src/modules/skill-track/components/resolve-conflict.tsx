@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { ComponentProps, useEffect, useState } from "react";
+import { ComponentProps, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { useMutation } from "@tanstack/react-query";
@@ -83,6 +83,7 @@ export function SkillsModule_ResolveConflict_Dialog({
      */
     onResolved(conflict: SkillCheckConflict<SkillCheck>): void;
 }) {
+    const idPrefix = useId();
     const organization = useOrganization();
     const { formatDateTime } = usePreferences();
 
@@ -172,8 +173,8 @@ export function SkillsModule_ResolveConflict_Dialog({
                                 const assessor = check.assessorId
                                     ? (assessorById.get(check.assessorId) ?? null)
                                     : null;
-                                const radioId = `resolve-${check.id}`;
-                                const detailsId = `resolve-${check.id}-details`;
+                                const radioId = `${idPrefix}-resolve-${check.id}`;
+                                const detailsId = `${idPrefix}-resolve-${check.id}-details`;
                                 return (
                                     <div
                                         key={check.id}
@@ -225,9 +226,11 @@ export function SkillsModule_ResolveConflict_Dialog({
                             <Field orientation="horizontal" className="px-3 py-2">
                                 <RadioGroupItem
                                     value={EXCLUDE_ALL}
-                                    id={`resolve-${conflict.key}-exclude-all`}
+                                    id={`${idPrefix}-resolve-${conflict.key}-exclude-all`}
                                 />
-                                <FieldLabel htmlFor={`resolve-${conflict.key}-exclude-all`}>
+                                <FieldLabel
+                                    htmlFor={`${idPrefix}-resolve-${conflict.key}-exclude-all`}
+                                >
                                     Exclude all
                                 </FieldLabel>
                             </Field>
