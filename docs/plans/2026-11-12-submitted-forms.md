@@ -203,3 +203,10 @@ Guides `d4h-i3/issuing` and `d4h-i3/returning`: Submitted tab and read-only view
   `cancel` doc comment as "pending".
 - (Task 1) `saveInstance`'s new find-then-`create` turns two racing first saves of one id into a
   raw P2002 (500). Map the unique violation to the conditional-update path or a `ConflictError`.
+- (Task 5) The Return page always prefetches `listFormInstanceTasks`, which is FORBIDDEN for a
+  viewer without `d4hTask` view (both readers sit behind `<Protect>`). Skip the prefetch so the
+  Protect-wrapped query fetches on demand, or comment why it's harmless.
+- (Task 5) `NotReturnedMark` marks items "Not returned" for any non-draft status, but only
+  `Processed` has queued its tasks. Render the marks only when `formStatus === "Processed"`.
+- (Tasks 3–5) The "No items / 1 item / n items" ternary is now in three places; move a
+  `formatItemCount(n)` into `form-shared.tsx`.
