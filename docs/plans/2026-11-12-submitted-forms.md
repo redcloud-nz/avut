@@ -188,3 +188,18 @@ Guides `d4h-i3/issuing` and `d4h-i3/returning`: Submitted tab and read-only view
   run the pipeline. Closing it needs an atomic Draft → in-progress claim before processing.
 - `forms-router`'s writes (save/delete instance and items) never call `ctx.logEvent`; predates
   this branch. Autosave would make per-save logging noisy, so it needs a decision on what to log.
+
+## Review notes
+
+- (Task 1) `saveFormInstanceItemData` checks the given instance is the caller's draft, but its
+  `upsert` by item id never checks the existing item belongs to that instance, so a draft id plus
+  another instance's item id overwrites that item. Look the item up first and `NOT_FOUND` on a
+  mismatched `formInstanceId` (or `updateMany` on `{ id, formInstanceId }`, create only when none
+  matched). Test: a draft id with a processed instance's item id.
+- (Task 1) `cancel` drops a pending autosave but not one already in flight, which can land between
+  submit's save and the `Processed` write and leave stale `formData` on the record the read-only
+  view shows. Make the processor's status write persist the submitted `formData` too
+  (`src/server/form-processor.ts`, `data: { formStatus: "Processed", formData }`), and word the
+  `cancel` doc comment as "pending".
+- (Task 1) `saveInstance`'s new find-then-`create` turns two racing first saves of one id into a
+  raw P2002 (500). Map the unique violation to the conditional-update path or a `ConflictError`.
