@@ -5,12 +5,22 @@
 
 import "server-only";
 
+import { addDays } from "date-fns";
+
+import { TZDate } from "@date-fns/tz";
+
 import type { Prisma } from "@/generated/prisma/client";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { hasAnyRoleWithPermissions, parseStoredRoles } from "@/lib/permissions";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
-import { SkillId } from "@/lib/schemas/skill";
-import type { SkillCheckId } from "@/lib/schemas/skill-check";
+import { SkillId, SkillRef } from "@/lib/schemas/skill";
+import {
+    SkillCheck,
+    type CheckSearchFilters,
+    type CheckSearchPage,
+    type CheckSearchResult,
+    type SkillCheckId,
+} from "@/lib/schemas/skill-check";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { availableSkillPackageWhere } from "@/lib/schemas/skill-package";
 import { findConflicts, isCheckIncluded } from "@/lib/skill-check-conflicts";
@@ -547,4 +557,84 @@ export async function createSession(
         }
     }
     throw new Error("unreachable");
+}
+
+/**
+ * The start of calendar day `date` (`YYYY-MM-DD`) in `timeZone`, as an instant. Built as a
+ * `TZDate` as `session-timing.ts` does, so a DST day starts where it really does.
+ */
+function startOfDayIn(date: string, timeZone: string): TZDate {
+    const [year, month, day] = date.split("-").map(Number);
+    return new TZDate(year, month - 1, day, timeZone);
+}
+
+/**
+ * Searches the organization's skill checks: every check that isn't `Deleted`, from sessions or
+ * standalone, whatever its session's approval, narrowed by the given filters. Returns one page,
+ * newest `checkedAt` first with ties broken by id (so paging is stable), and the number of checks
+ * matching across every page. A page past the end has no rows but still the real total.
+ *
+ * `from`/`to` are calendar days in `timeZone` (the viewer's display zone, the one the Checks page
+ * renders `checkedAt` in), both inclusive: `to` is bounded by the start of the day after it, via
+ * `addDays` on a `TZDate`, so a DST day keeps its real length.
+ */
+export async function search(
+    ctx: OrgServiceContext,
+    {
+        filters,
+        page,
+        pageSize,
+        timeZone,
+    }: CheckSearchPage & { filters: CheckSearchFilters; timeZone: string },
+): Promise<CheckSearchResult> {
+    const checkedAt: Prisma.DateTimeFilter = {};
+    if (filters.from) checkedAt.gte = new Date(startOfDayIn(filters.from, timeZone).getTime());
+    if (filters.to) {
+        checkedAt.lt = new Date(addDays(startOfDayIn(filters.to, timeZone), 1).getTime());
+    }
+
+    const where: Prisma.SkillCheckWhereInput = {
+        organizationId: ctx.organizationId,
+        status: { not: "Deleted" },
+        ...(filters.assesseeId && { assesseeId: filters.assesseeId }),
+        ...(filters.assessorId && { assessorId: filters.assessorId }),
+        ...(filters.skillId && { skillId: filters.skillId }),
+        ...(filters.sessionId && {
+            sessionId: filters.sessionId === "none" ? null : filters.sessionId,
+        }),
+        ...(filters.result && { result: filters.result }),
+        ...((filters.from || filters.to) && { checkedAt }),
+    };
+
+    const [total, checks] = await ctx.prisma.$transaction([
+        ctx.prisma.skillCheck.count({ where }),
+        ctx.prisma.skillCheck.findMany({
+            where,
+            include: {
+                assessee: { select: { id: true, name: true } },
+                assessor: { select: { id: true, name: true } },
+                skill: { select: { id: true, name: true } },
+                session: { select: { id: true, name: true } },
+            },
+            orderBy: [{ checkedAt: "desc" }, { id: "desc" }],
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+        }),
+    ]);
+
+    return {
+        total,
+        rows: checks.map((check) => ({
+            ...SkillCheck.fromRecord(check),
+            assessee: PersonRef.schema.parse(check.assessee),
+            assessor: check.assessor ? PersonRef.schema.parse(check.assessor) : null,
+            skill: SkillRef.schema.parse(check.skill),
+            session: check.session
+                ? {
+                      id: check.session.id as SkillCheckSessionId,
+                      name: check.session.name,
+                  }
+                : null,
+        })),
+    };
 }

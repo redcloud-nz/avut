@@ -115,9 +115,9 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="team-name">Name</FieldLabel>
+                                        <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                         <Input
-                                            id="team-name"
+                                            id={`${formId}-name`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
@@ -132,11 +132,11 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="team-description">
+                                        <FieldLabel htmlFor={`${formId}-description`}>
                                             Description
                                         </FieldLabel>
                                         <Textarea
-                                            id="team-description"
+                                            id={`${formId}-description`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />

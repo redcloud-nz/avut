@@ -116,11 +116,11 @@ export function OrganizationSettings_UpdateTimeZone_Dialog({
                                 name="timeZone"
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="org-time-zone-select">
+                                        <FieldLabel htmlFor={`${formId}-time-zone`}>
                                             Time Zone
                                         </FieldLabel>
                                         <SearchableSelect
-                                            id="org-time-zone-select"
+                                            id={`${formId}-time-zone`}
                                             value={field.value}
                                             onValueChange={field.onChange}
                                             options={options}

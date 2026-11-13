@@ -7,7 +7,7 @@
 
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -54,6 +54,7 @@ type ChangeEmailStep =
 
 /** `?action=change-email` — self-triggered (Recipe A): the trigger button lives in this dialog. */
 export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionData }) {
+    const idPrefix = useId();
     const queryClient = useQueryClient();
 
     const [action, setAction] = useQueryState(
@@ -176,11 +177,11 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                                             orientation="responsive"
                                             data-invalid={fieldState.invalid}
                                         >
-                                            <FieldLabel htmlFor="current-email-code">
+                                            <FieldLabel htmlFor={`${idPrefix}-code`}>
                                                 Verification Code
                                             </FieldLabel>
                                             <InputOTP
-                                                id="current-email-code"
+                                                id={`${idPrefix}-code`}
                                                 maxLength={6}
                                                 value={field.value}
                                                 onChange={field.onChange}
@@ -223,11 +224,11 @@ export function UserProfile_ChangeEmail_Dialog({ session }: { session: SessionDa
                                             orientation="responsive"
                                             data-invalid={fieldState.invalid}
                                         >
-                                            <FieldLabel htmlFor="user-new-email">
+                                            <FieldLabel htmlFor={`${idPrefix}-new-email`}>
                                                 New Email
                                             </FieldLabel>
                                             <Input
-                                                id="user-new-email"
+                                                id={`${idPrefix}-new-email`}
                                                 type="email"
                                                 aria-invalid={fieldState.invalid}
                                                 disabled={

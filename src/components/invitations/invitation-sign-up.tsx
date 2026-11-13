@@ -88,8 +88,8 @@ export function InvitationSignUp_Form({
             >
                 <FieldGroup>
                     <Field>
-                        <FieldLabel htmlFor="invitation-sign-up-email">Email Address</FieldLabel>
-                        <Input id="invitation-sign-up-email" type="email" value={email} disabled />
+                        <FieldLabel htmlFor={`${formId}-email`}>Email Address</FieldLabel>
+                        <Input id={`${formId}-email`} type="email" value={email} disabled />
                         <FieldDescription>
                             You&apos;re verified by following the link we emailed you.
                         </FieldDescription>
@@ -99,9 +99,9 @@ export function InvitationSignUp_Form({
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="invitation-sign-up-name">Name</FieldLabel>
+                                <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                                 <Input
-                                    id="invitation-sign-up-name"
+                                    id={`${formId}-name`}
                                     placeholder="Your full name"
                                     autoComplete="name"
                                     aria-invalid={fieldState.invalid}
@@ -117,11 +117,9 @@ export function InvitationSignUp_Form({
                         control={form.control}
                         render={({ field, fieldState }) => (
                             <Field data-invalid={fieldState.invalid}>
-                                <FieldLabel htmlFor="invitation-sign-up-password">
-                                    Password
-                                </FieldLabel>
+                                <FieldLabel htmlFor={`${formId}-password`}>Password</FieldLabel>
                                 <PasswordInput
-                                    id="invitation-sign-up-password"
+                                    id={`${formId}-password`}
                                     autoComplete="new-password"
                                     placeholder="Your password"
                                     aria-invalid={fieldState.invalid}

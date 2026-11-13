@@ -11,10 +11,11 @@ import { CardAction } from "@/components/ui/card";
 import { CollapsibleTrigger } from "@/components/ui/collapsible";
 
 /**
- * The collapse toggle in a review page card's header. The card is a `Collapsible` (`asChild` on
- * the `Card`) and its `CardContent` a `CollapsibleContent`; this goes in its `CardHeader`.
+ * The collapse toggle in a collapsible card's header (the session Review page's cards, the Checks
+ * page's Filters). The card is a `Collapsible` (`asChild` on the `Card`) and its `CardContent` a
+ * `CollapsibleContent`; this goes in its `CardHeader`.
  */
-export function SkillTrack_SessionReview_CardToggle({ title }: { title: string }) {
+export function SkillTrack_CardToggle({ title }: { title: string }) {
     return (
         <CardAction>
             <CollapsibleTrigger asChild>

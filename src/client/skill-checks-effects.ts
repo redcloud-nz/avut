@@ -13,10 +13,10 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  */
 export const skillChecksEffects = createEffects<"skillChecks">()({
     createSkillCheck: (vars) => [
-        // A standalone check adds a row to the recent-checks list and to any scoped
-        // listSkillChecks cache (e.g. the session matrices), so both need to refetch.
+        // A standalone check adds a row to every check search (the Checks page) and to any
+        // scoped listSkillChecks cache (e.g. the session matrices), so both need to refetch.
         invalidate(
-            trpc.skillChecks.listRecentChecks.queryFilter({ organizationId: vars.organizationId }),
+            trpc.skillChecks.searchChecks.queryFilter({ organizationId: vars.organizationId }),
         ),
         invalidate(
             trpc.skillChecks.listSkillChecks.queryFilter({ organizationId: vars.organizationId }),

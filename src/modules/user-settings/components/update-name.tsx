@@ -91,9 +91,9 @@ export function UserSettings_UpdateName_Dialog({ session }: { session: SessionDa
                 <DialogBody>
                     <form id={formId} onSubmit={handleSubmit}>
                         <Field data-invalid={!!form.formState.errors.name}>
-                            <FieldLabel htmlFor="update-name-input">Name</FieldLabel>
+                            <FieldLabel htmlFor={`${formId}-name`}>Name</FieldLabel>
                             <Input
-                                id="update-name-input"
+                                id={`${formId}-name`}
                                 aria-invalid={!!form.formState.errors.name}
                                 {...form.register("name")}
                             />

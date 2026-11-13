@@ -5,7 +5,7 @@
 "use client";
 
 import { ChevronDownIcon } from "lucide-react";
-import { useState, type RefObject } from "react";
+import { useId, useState, type RefObject } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
@@ -83,6 +83,7 @@ function ChangeSessionSkills_Body({
     sessionId: SkillCheckSessionId;
     onDone: () => void;
 }) {
+    const idPrefix = useId();
     const organization = useOrganization();
 
     const [
@@ -173,12 +174,12 @@ function ChangeSessionSkills_Body({
         return (
             <Field orientation="horizontal" key={skill.id}>
                 <Checkbox
-                    id={`skill-${skill.id}`}
+                    id={`${idPrefix}-skill-${skill.id}`}
                     checked={isSelected(skill.id)}
                     onCheckedChange={(checked) => handleChangeChecked(skill.id, checked === true)}
                 />
                 <FieldContent>
-                    <FieldLabel htmlFor={`skill-${skill.id}`}>{skill.name}</FieldLabel>
+                    <FieldLabel htmlFor={`${idPrefix}-skill-${skill.id}`}>{skill.name}</FieldLabel>
                     {showSkillDescriptions && skill.description && (
                         <FieldDescription>{skill.description}</FieldDescription>
                     )}
@@ -192,11 +193,11 @@ function ChangeSessionSkills_Body({
             <DialogBody>
                 <Field orientation="horizontal">
                     <Checkbox
-                        id="show-skill-descriptions"
+                        id={`${idPrefix}-show-skill-descriptions`}
                         checked={showSkillDescriptions}
                         onCheckedChange={(checked) => setShowSkillDescriptions(checked === true)}
                     />
-                    <FieldLabel htmlFor="show-skill-descriptions">
+                    <FieldLabel htmlFor={`${idPrefix}-show-skill-descriptions`}>
                         Show skill descriptions
                     </FieldLabel>
                 </Field>

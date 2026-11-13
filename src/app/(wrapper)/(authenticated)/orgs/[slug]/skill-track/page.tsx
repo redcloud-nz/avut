@@ -85,7 +85,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
                                     <ItemContent>
                                         <ItemTitle>Checks</ItemTitle>
                                         <ItemDescription>
-                                            View recent skill checks and their results.
+                                            Search skill checks and their results.
                                         </ItemDescription>
                                     </ItemContent>
                                     <ItemActions>

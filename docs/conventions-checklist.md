@@ -16,7 +16,7 @@ CI fails on `npm run lint` errors, so skip these; the rule message explains any 
 - ID creation via `<Model>Id.create()`; Zod import form and v3 string formats; `@/trpc/client` in a Next entry file without `"use client"`
 - `import "server-only"` in every `src/server` module, and the layering (`src/lib` is the leaf, server never imports UI, `client`/`hooks` import server code as types only, Prisma singleton only in `src/server` and `src/trpc/init.ts`, no module importing another module)
 - Hand-written `logEntry` writes
-- Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling, literal `form="…"` ids
+- Also: Resend, `process.env`, `auth.api`, `authClient.useSession`, deep relative imports, en-NZ spelling, literal `form="…"` ids, literal `htmlFor`/`aria-describedby`/`aria-labelledby`/`aria-controls` values
 
 Check only that an added `eslint-disable` for one of these has a genuine exemption and a stated reason.
 
@@ -81,6 +81,7 @@ The authoritative walkthrough (code + rationale) is [`docs/patterns/detail-page-
 - **`Protect` usage must comply with [`docs/patterns/protect-permission-gating.md`](patterns/protect-permission-gating.md)** — read it fresh for the full rationale and examples. The two things to check against every `<Protect>` the diff touches:
   1. Its `permissions` match what the mutation it guards actually requires — trace the wrapped element's `onClick`/`onSubmit` to the `useMutation(...)` it calls, then compare against that procedure's `organizationProcedure({...})` gate. Fewer/looser permissions on the `Protect` side than the procedure requires is the dangerous direction (a control the server will reject). Watch especially for one `Protect` wrapping several menu items that call _different_ mutations — it can only check one permission for all of them.
   2. Every permission-gated `DropdownMenuItem` uses the per-item `render` form, disabling rather than hiding — never `children`/`fallback`, and never one `Protect` wrapping multiple items. This is a hard rule for menus regardless of whether the permissions themselves are correct.
+- A field id that a label or `aria-*` attribute points at comes from `useId()` (`` `${formId}-name` ``), including ids built in a template from a fixed string plus a record id (`` `assessor-${person.id}` ``) or a react-hook-form `field.name`. Lint only catches plain literals. A hidden copy of the same form on a page Next keeps mounted would otherwise get the label's click — see [`docs/patterns/mutation-dialog.md`](patterns/mutation-dialog.md).
 - New modules (a new top-level feature area under `/orgs/[slug]/...`) should be registered in `src/lib/modules.ts` rather than having their routes/labels/icons hardcoded elsewhere — check `src/lib/modules.ts` was updated if the diff adds a genuinely new module rather than a page within an existing one.
 
 ## Tests

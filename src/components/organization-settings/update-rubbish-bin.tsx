@@ -135,12 +135,12 @@ export function OrganizationSettings_UpdateRubbishBin_Dialog({
                                 name="retentionDays"
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="rubbish-bin-retention-days">
+                                        <FieldLabel htmlFor={`${formId}-retention-days`}>
                                             Keep deleted records for
                                         </FieldLabel>
                                         <InputGroup aria-invalid={fieldState.invalid}>
                                             <InputGroupInput
-                                                id="rubbish-bin-retention-days"
+                                                id={`${formId}-retention-days`}
                                                 type="number"
                                                 {...numberInputProps(field)}
                                                 aria-invalid={fieldState.invalid}

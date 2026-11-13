@@ -22,7 +22,7 @@ import {
     isConflictResolved,
     SkillCheckConflict,
 } from "@/lib/skill-check-conflicts";
-import { SkillTrack_SessionReview_CardToggle } from "@/modules/skill-track/components/session-review-card-toggle";
+import { SkillTrack_CardToggle } from "@/modules/skill-track/components/card-toggle";
 
 interface SessionReviewConflictsProps {
     /** The card's element id, for in-page links to it. */
@@ -69,7 +69,7 @@ export function SkillTrack_SessionReview_Conflicts({
                 <CardHeader>
                     <CardTitle>Conflicts</CardTitle>
                     <CardDescription>{description}</CardDescription>
-                    <SkillTrack_SessionReview_CardToggle title="Conflicts" />
+                    <SkillTrack_CardToggle title="Conflicts" />
                 </CardHeader>
                 <CollapsibleContent asChild>
                     <CardContent className="flex flex-col has-data-[slot=item]:-my-2.5 has-data-[slot=item]:px-1">

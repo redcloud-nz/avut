@@ -159,15 +159,16 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                             </Card>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
-                            {/* Coverage is the only related view so far, so the card shows only
-                                when it does. */}
-                            {coverageAvailable && (
-                                <Protect permissions={{ skillCheck: ["view"] }}>
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle>Related</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="px-2 -my-2">
+                            {/* Recent checks shows for every skill, archived and withdrawn ones
+                                included, since their history is what it's for. Skill Coverage
+                                shows only for a skill that can still be assessed. */}
+                            <Protect permissions={{ skillCheck: ["view"] }}>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Related</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="px-2 -my-2">
+                                        {coverageAvailable && (
                                             <Item className="px-2" size="sm" asChild>
                                                 <Link
                                                     href={`${route("/orgs/[slug]/skill-track/reports/skill", { slug: organization.slug })}?skill=${skill.id}`}
@@ -183,10 +184,25 @@ export function SkillTrack_Skill_Content({ skillId }: { skillId: SkillId }) {
                                                     </ItemActions>
                                                 </Link>
                                             </Item>
-                                        </CardContent>
-                                    </Card>
-                                </Protect>
-                            )}
+                                        )}
+                                        <Item className="px-2" size="sm" asChild>
+                                            <Link
+                                                href={`${route("/orgs/[slug]/skill-track/checks", { slug: organization.slug })}?skill=${skill.id}`}
+                                            >
+                                                <ItemContent>
+                                                    <ItemTitle>Recent checks</ItemTitle>
+                                                    <ItemDescription>
+                                                        checks of this skill
+                                                    </ItemDescription>
+                                                </ItemContent>
+                                                <ItemActions>
+                                                    <ItemLinkActionIcon className="size-4" />
+                                                </ItemActions>
+                                            </Link>
+                                        </Item>
+                                    </CardContent>
+                                </Card>
+                            </Protect>
                             <Card>
                                 <CardContent>
                                     <DataList>

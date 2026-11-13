@@ -122,9 +122,9 @@ function ReplaceD4HAccessToken_Body({
                             control={form.control}
                             render={({ field, fieldState }) => (
                                 <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel htmlFor="replace-access-token">Token</FieldLabel>
+                                    <FieldLabel htmlFor={`${formId}-token`}>Token</FieldLabel>
                                     <Textarea
-                                        id="replace-access-token"
+                                        id={`${formId}-token`}
                                         aria-invalid={fieldState.invalid}
                                         placeholder="Paste new token here"
                                         {...field}

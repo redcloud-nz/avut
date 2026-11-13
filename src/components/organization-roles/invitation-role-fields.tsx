@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useId } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import * as z from "zod";
 
@@ -105,6 +106,7 @@ export function RoleFields({
     moduleGatedRoles: ModuleGatedRoleOptions;
     isOwner?: boolean;
 }) {
+    const idPrefix = useId();
     const { control } = useFormContext<InvitationRolesFormValues>();
 
     const gated = new Map(moduleGatedRoles.map(({ role, enabled }) => [role, enabled]));
@@ -129,11 +131,11 @@ export function RoleFields({
                                     // otherwise clips the ring when this card leads the dialog.
                                     className="first:mt-px"
                                     role="group"
-                                    aria-labelledby={`role-group-${group.moduleId ?? "organisation"}`}
+                                    aria-labelledby={`${idPrefix}-role-group-${group.moduleId ?? "organisation"}`}
                                 >
                                     <CardHeader>
                                         <CardTitle
-                                            id={`role-group-${group.moduleId ?? "organisation"}`}
+                                            id={`${idPrefix}-role-group-${group.moduleId ?? "organisation"}`}
                                         >
                                             {group.title}
                                         </CardTitle>
@@ -149,7 +151,7 @@ export function RoleFields({
                                                         data-disabled={!!coveringRole}
                                                     >
                                                         <Checkbox
-                                                            id={`role-${role}`}
+                                                            id={`${idPrefix}-role-${role}`}
                                                             checked={
                                                                 !!coveringRole ||
                                                                 field.value.includes(role)
@@ -166,7 +168,9 @@ export function RoleFields({
                                                             }
                                                         />
                                                         <FieldContent>
-                                                            <FieldLabel htmlFor={`role-${role}`}>
+                                                            <FieldLabel
+                                                                htmlFor={`${idPrefix}-role-${role}`}
+                                                            >
                                                                 {
                                                                     OrganizationRole.roles[role]
                                                                         .displayName

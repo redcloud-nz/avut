@@ -9,8 +9,15 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { PersonId, PersonRef } from "@/lib/schemas/person";
-import { Skill, SkillId, SkillRef } from "@/lib/schemas/skill";
-import { SkillCheck, SkillCheckId, SkillCheckResultValue } from "@/lib/schemas/skill-check";
+import { Skill, SkillId } from "@/lib/schemas/skill";
+import {
+    CheckSearchFilters,
+    CheckSearchPage,
+    CheckSearchResult,
+    SkillCheck,
+    SkillCheckId,
+    SkillCheckResultValue,
+} from "@/lib/schemas/skill-check";
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroup, SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackage, SkillPackageId } from "@/lib/schemas/skill-package";
@@ -18,6 +25,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import type { OrgServiceContext } from "@/server/services/service-context";
 import * as SkillChecks from "@/server/services/skill-checks";
+import { readUserSettings } from "@/server/user-settings-store";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
@@ -450,57 +458,6 @@ export const skillChecksRouter = createTrpcRouter({
         }),
 
     /**
-     * Lists skill checks recorded within the last month, with resolved names for assessee,
-     * assessor, skill, and session. Filtered and ordered (newest first) by `checkedAt`: these are
-     * assessments that happened, not data entry.
-     */
-    listRecentChecks: organizationProcedure({ skillCheck: ["view"] })
-        .output(
-            z.array(
-                SkillCheck.schema.extend({
-                    assessee: PersonRef.schema,
-                    assessor: PersonRef.schema.nullable(),
-                    skill: SkillRef.schema,
-                    session: z
-                        .object({ id: SkillCheckSessionId.schema, name: z.string() })
-                        .nullable(),
-                }),
-            ),
-        )
-        .query(async ({ ctx }) => {
-            const since = new Date();
-            since.setMonth(since.getMonth() - 1);
-
-            const checks = await ctx.prisma.skillCheck.findMany({
-                where: {
-                    organizationId: ctx.organizationId,
-                    checkedAt: { gte: since },
-                    status: { not: "Deleted" },
-                },
-                include: {
-                    assessee: { select: { id: true, name: true } },
-                    assessor: { select: { id: true, name: true } },
-                    skill: { select: { id: true, name: true } },
-                    session: { select: { id: true, name: true } },
-                },
-                orderBy: { checkedAt: "desc" },
-            });
-
-            return checks.map((check) => ({
-                ...SkillCheck.fromRecord(check),
-                assessee: PersonRef.schema.parse(check.assessee),
-                assessor: check.assessor ? PersonRef.schema.parse(check.assessor) : null,
-                skill: SkillRef.schema.parse(check.skill),
-                session: check.session
-                    ? {
-                          id: check.session.id as SkillCheckSessionId,
-                          name: check.session.name,
-                      }
-                    : null,
-            }));
-        }),
-
-    /**
      * Lists skill checks. Optionally filtered by sessionId, skillId, assesseeId, or assessorId.
      */
     listSkillChecks: organizationProcedure({ skillCheck: ["view"] })
@@ -539,6 +496,30 @@ export const skillChecksRouter = createTrpcRouter({
             });
 
             return checks.map((check) => SkillCheck.fromRecord(check));
+        }),
+
+    /**
+     * Searches the organization's skill checks (`SkillChecks.search`): one page of them, newest
+     * first, with resolved names for assessee, assessor, skill and session, plus the total number
+     * matching the filters. The date filter is judged in the caller's display time zone, the one
+     * the Checks page renders `checkedAt` in.
+     */
+    searchChecks: organizationProcedure({ skillCheck: ["view"] })
+        .input(
+            CheckSearchPage.schema.extend({
+                filters: CheckSearchFilters.schema,
+            }),
+        )
+        .output(CheckSearchResult.schema)
+        .query(async ({ ctx, input }) => {
+            const settings = await readUserSettings(ctx.prisma, ctx.userId);
+
+            return SkillChecks.search(ctx, {
+                filters: input.filters,
+                page: input.page,
+                pageSize: input.pageSize,
+                timeZone: settings.display.timeZone,
+            });
         }),
 
     /**

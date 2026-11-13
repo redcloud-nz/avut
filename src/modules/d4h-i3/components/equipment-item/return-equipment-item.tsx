@@ -145,11 +145,11 @@ export function D4HI3Module_ReturnEquipmentItem_Dialog({
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="return-equipment-item-comments">
+                                        <FieldLabel htmlFor={`${formId}-comments`}>
                                             Comments (optional)
                                         </FieldLabel>
                                         <Textarea
-                                            id="return-equipment-item-comments"
+                                            id={`${formId}-comments`}
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />

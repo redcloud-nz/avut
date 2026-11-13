@@ -31,6 +31,7 @@ import {
     Table as TanstackTable,
 } from "@tanstack/react-table";
 
+import { KAGA_DEFAULT_PAGE_SIZE } from "@/components/blocks/kaga-constants";
 import { KagaSearchHotkey } from "@/components/blocks/kaga-search-hotkey";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -428,7 +429,7 @@ const numericColumnMeta = {
 } as const;
 
 export const Kaga = {
-    DEFAULT_PAGE_SIZE: 50,
+    DEFAULT_PAGE_SIZE: KAGA_DEFAULT_PAGE_SIZE,
     Table: KagaTable,
     TableToolbar: KagaTableToolbar,
     TablePagination: KagaTablePagination,

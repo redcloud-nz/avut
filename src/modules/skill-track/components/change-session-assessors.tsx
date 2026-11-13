@@ -4,7 +4,7 @@
  */
 "use client";
 
-import { useState, type RefObject } from "react";
+import { useId, useState, type RefObject } from "react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
@@ -84,6 +84,7 @@ function ChangeSessionAssessors_Body({
     sessionId: SkillCheckSessionId;
     onDone: () => void;
 }) {
+    const idPrefix = useId();
     const organization = useOrganization();
 
     const [{ data: eligibleAssessors }, { data: assignedAssessors }, { data: personSelf }] =
@@ -194,14 +195,14 @@ function ChangeSessionAssessors_Body({
                         {candidates.map((person) => (
                             <Field orientation="horizontal" key={person.id}>
                                 <Checkbox
-                                    id={`assessor-${person.id}`}
+                                    id={`${idPrefix}-assessor-${person.id}`}
                                     checked={isSelected(person.id)}
                                     onCheckedChange={(checked) =>
                                         handleChangeChecked(person.id, checked === true)
                                     }
                                 />
                                 <FieldContent>
-                                    <FieldLabel htmlFor={`assessor-${person.id}`}>
+                                    <FieldLabel htmlFor={`${idPrefix}-assessor-${person.id}`}>
                                         {person.name}
                                     </FieldLabel>
                                     {!eligiblePersonIds.has(person.id) && (
