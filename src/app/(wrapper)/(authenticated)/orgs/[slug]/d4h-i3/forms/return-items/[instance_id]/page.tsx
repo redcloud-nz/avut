@@ -11,6 +11,7 @@ import { I3ReturnItemsFormData } from "@/forms/i3-return-items/schema";
 import { I3ReturnItemsForm } from "@/lib/forms";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { D4HI3Module_ReturnItems_FormInstance_Content } from "@/modules/d4h-i3/components/return-items-form-content";
+import { D4HI3Module_ReturnItems_SubmittedView } from "@/modules/d4h-i3/components/return-items-submitted-view";
 import { getOrganizationBySlug } from "@/server/cache/organization";
 import { isOrganizationModuleUsable } from "@/server/module-flags";
 import { fetchQuery, HydrateClient, prefetch, trpc } from "@/trpc/server";
@@ -26,16 +27,37 @@ export default async function D4HI3Module_Return_FormInstance_Page(
     if (!parsedId.success) notFound();
     const instanceId = parsedId.data;
 
-    // Awaited: a saved draft's "Returned by" decides which item queries to warm.
-    const instances = await fetchQuery(
+    // Awaited, so a missing (or another user's) form is a 404 rather than a client-side throw,
+    // and a draft's "Returned by" decides which item queries to warm.
+    const instanceQuery = trpc.forms.getFormInstance.queryOptions({
+        organizationId: organization.id,
+        formKey: I3ReturnItemsForm.formKey,
+        formInstanceId: instanceId,
+    });
+    const instance = await fetchQuery(instanceQuery);
+
+    if (instance.formStatus !== "Draft") {
+        prefetch(instanceQuery);
+        prefetch(
+            trpc.forms.listFormInstanceTasks.queryOptions({
+                organizationId: organization.id,
+                formInstanceId: instanceId,
+            }),
+        );
+
+        return (
+            <HydrateClient>
+                <D4HI3Module_ReturnItems_SubmittedView instanceId={instanceId} />
+            </HydrateClient>
+        );
+    }
+
+    prefetch(
         trpc.forms.listDraftFormInstances.queryOptions({
             organizationId: organization.id,
             formKey: I3ReturnItemsForm.formKey,
         }),
     );
-    const instance = instances.find((inst) => inst.id === instanceId);
-    if (!instance) notFound();
-
     prefetch(trpc.d4hApi.listTeams.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.d4hApi.listMembers.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId: organization.id }));

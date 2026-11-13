@@ -144,7 +144,7 @@ submitted, the form processor marks it `Processed` and it disappears from the UI
   - **Done when:** a processed Issue form's URL shows the view; a draft's still shows the editable
     form; another user's id 404s. `npm run check` passes.
 
-- [ ] **Task 5: Read-only view of a submitted Return Items form, with its D4H tasks** — `visual`
+- [x] **Task 5: Read-only view of a submitted Return Items form, with its D4H tasks** — `visual` (feat(forms): show a submitted Return Items form read-only, with its D4H tasks)
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-i3/forms/return-items/[instance_id]/page.tsx`,
     `src/modules/d4h-i3/components/return-items-submitted-view.tsx` (new).
   - **Do:** The page branches as in Task 4. A draft keeps today's prefetches, including the
