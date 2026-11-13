@@ -5,6 +5,8 @@
 
 "use client";
 
+import type { ReactNode } from "react";
+
 import { useDebouncer } from "@tanstack/react-pacer";
 import { useMutation } from "@tanstack/react-query";
 
@@ -13,8 +15,12 @@ import {
     deleteDraftFormInstanceMutation,
     saveDraftFormInstanceMutation,
 } from "@/client/form-queries";
+import { Saratoga } from "@/components/blocks/saratoga";
 import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Field, FieldTitle } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePreferences } from "@/hooks/use-preferences";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
 import { OrganizationId } from "@/lib/schemas/organization";
 
@@ -37,6 +43,43 @@ export function UserNameFieldValue({ className }: { className?: string }) {
     } else if (data) {
         return <div className={className}>{data.user.name}</div>;
     }
+}
+
+/**
+ * The header of a submitted (read-only) I3 form: the form's title and a "Submitted" badge.
+ */
+export function SubmittedFormHeader({ title }: { title: string }) {
+    return (
+        <Saratoga.Header>
+            <Saratoga.Title className="flex items-center gap-2">
+                {title}
+                <Badge variant="secondary">Submitted</Badge>
+            </Saratoga.Title>
+        </Saratoga.Header>
+    );
+}
+
+/**
+ * One read-only field of a submitted I3 form: its label with the value beneath, laid out like
+ * the editable form's fields.
+ */
+export function SubmittedFormField({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <Field>
+            <FieldTitle>{label}</FieldTitle>
+            <div className="text-sm">{children}</div>
+        </Field>
+    );
+}
+
+/**
+ * When a form was submitted (its `updatedAt`), as an absolute date and time in the viewer's
+ * display format.
+ */
+export function SubmittedAtFieldValue({ date }: { date: string }) {
+    const { formatDateTime } = usePreferences();
+
+    return <time dateTime={date}>{formatDateTime(date)}</time>;
 }
 
 /**

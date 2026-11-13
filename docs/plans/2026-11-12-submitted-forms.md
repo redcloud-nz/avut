@@ -126,7 +126,7 @@ submitted, the form processor marks it `Processed` and it disappears from the UI
   - **Done when:** both pages switch tabs, the tab survives a reload, a just-submitted form appears
     at the top of Submitted without a reload, Load more pages, and `npm run check` passes.
 
-- [ ] **Task 4: Read-only view of a submitted Issue Items form** — `visual`
+- [x] **Task 4: Read-only view of a submitted Issue Items form** — `visual` (feat(forms): show a submitted Issue Items form read-only)
   - **Files:** `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-i3/forms/issue-items/[instance_id]/page.tsx`,
     `src/modules/d4h-i3/components/issue-items-submitted-view.tsx` (new),
     `src/modules/d4h-i3/components/form-shared.tsx` (if a shared piece fits there).
