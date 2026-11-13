@@ -53,5 +53,7 @@ function invalidateTaskLists(organizationId: string) {
         invalidate(trpc.d4hTasks.listOpenTasks.queryFilter({ organizationId })),
         invalidate(trpc.d4hTasks.listItemTasks.queryFilter({ organizationId })),
         invalidate(trpc.d4hTasks.listReturnedItemIds.queryFilter({ organizationId })),
+        // A submitted Return's view lists the tasks it queued, with their status.
+        invalidate(trpc.forms.listFormInstanceTasks.queryFilter({ organizationId })),
     ];
 }

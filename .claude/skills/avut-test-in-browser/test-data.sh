@@ -29,7 +29,7 @@ url="${url%\'}"; url="${url#\'}"
 [[ -n "$url" ]] || { echo "error: POSTGRES_URL_NON_POOLING not set in .env.local" >&2; exit 1; }
 
 usage() {
-    echo "usage: test-data.sh orgs | admins | new-users | users|sessions|teams [--org <slug>]" >&2
+    echo "usage: test-data.sh orgs | admins | new-users | users|sessions|teams|forms [--org <slug>]" >&2
     exit 1
 }
 
@@ -90,6 +90,15 @@ SELECT t.id, o.slug AS org, t.name, t.status,
 FROM teams t JOIN organizations o ON o.id = t."organizationId"
 WHERE (:'org' = '' OR o.slug = :'org')
 ORDER BY o.slug, t.name LIMIT 60;
+SQL
+) ;;
+    forms) sql=$(cat <<'SQL'
+SELECT f.id, o.slug AS org, f."formKey", f."formStatus" AS status, u.email AS owner, f."updatedAt"::date AS updated,
+    (SELECT count(*) FROM d4h_tasks t WHERE t."formInstanceId" = f.id) AS tasks
+FROM form_instances f JOIN organizations o ON o.id = f."organizationId"
+LEFT JOIN users u ON u.id = f."userId"
+WHERE (:'org' = '' OR o.slug = :'org')
+ORDER BY f."updatedAt" DESC LIMIT 30;
 SQL
 ) ;;
     *) usage ;;

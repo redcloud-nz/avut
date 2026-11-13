@@ -136,6 +136,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
         saveStatus,
         handleChange: saveDraft,
         handleDelete,
+        cancel: cancelAutosave,
     } = useDraftFormAutosave({
         formKey: I3IssueItemsForm.formKey,
         instanceId,
@@ -163,6 +164,7 @@ export function D4HI3Module_IssueItems_FormInstance_Content({
 
     const handleSubmit = form.handleSubmit(
         (formData) => {
+            cancelAutosave();
             submitMutation.mutate({
                 formInstanceId: instanceId,
                 organizationId: organization.id,

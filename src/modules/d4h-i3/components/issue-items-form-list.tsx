@@ -7,6 +7,7 @@
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useTransition } from "react";
 
 import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
@@ -28,16 +29,28 @@ import {
     ItemTitle,
 } from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { I3IssueItemsFormData } from "@/forms/i3-issue-items/schema";
 import { useOrganization } from "@/hooks/use-organization";
 import { I3IssueItemsForm } from "@/lib/forms";
 import { route } from "@/lib/routes";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
+import { formatItemCount } from "@/modules/d4h-i3/components/form-shared";
+import { D4HI3Module_SubmittedFormList } from "@/modules/d4h-i3/components/submitted-form-list";
 import { trpc } from "@/trpc/client";
 
 export function D4HI3Module_IssueItems_FormInstanceList() {
     const organization = useOrganization();
     const router = useRouter();
+
+    // In the URL so a reload, or coming back from a form, keeps the tab. `replace` keeps tab
+    // switches out of the history. The page reads it too, to prefetch the Submitted list.
+    const [tab, setTab] = useQueryState(
+        "tab",
+        parseAsStringLiteral(["drafts", "submitted"] as const)
+            .withDefault("drafts")
+            .withOptions({ history: "replace", clearOnDefault: true }),
+    );
 
     const { data: instances } = useSuspenseQuery(
         trpc.forms.listDraftFormInstances.queryOptions({
@@ -120,66 +133,94 @@ export function D4HI3Module_IssueItems_FormInstanceList() {
                             </Button>
                         </Saratoga.Actions>
                     </Saratoga.Header>
-                    <Show
-                        when={sortedInstances.length > 0}
-                        fallback={
-                            <Empty>
-                                <EmptyHeader>
-                                    <EmptyTitle>No Draft Forms</EmptyTitle>
-                                    <EmptyDescription>Click New to start a form.</EmptyDescription>
-                                </EmptyHeader>
-                            </Empty>
+                    <Tabs
+                        value={tab}
+                        onValueChange={(value) =>
+                            void setTab(value === "submitted" ? "submitted" : "drafts")
                         }
                     >
-                        <p className="text-sm text-muted-foreground">
-                            Your draft forms are listed below. Click a form to continue editing, or
-                            New to start another.
-                        </p>
-                        <ItemGroup>
-                            {sortedInstances.map((instance) => {
-                                const itemCount = (instance.formData as I3IssueItemsFormData).items
-                                    .length;
-                                return (
-                                    <Item key={instance.id} variant="outline" asChild>
-                                        <Link
-                                            href={route(
-                                                "/orgs/[slug]/d4h-i3/forms/issue-items/[instance_id]",
-                                                {
-                                                    slug: organization.slug,
-                                                    instance_id: instance.id,
-                                                },
-                                            )}
-                                        >
-                                            <ItemContent>
-                                                <ItemTitle>
-                                                    {(instance.formData as I3IssueItemsFormData)
-                                                        .recipient?.name || "No one selected"}
-                                                </ItemTitle>
-                                                {/* The relative time can tick over between SSR and hydration. */}
-                                                <ItemDescription suppressHydrationWarning>
-                                                    {itemCount === 0
-                                                        ? "No items"
-                                                        : itemCount === 1
-                                                          ? "1 item"
-                                                          : `${itemCount} items`}
-                                                    {", updated "}
-                                                    {formatDistanceToNow(
-                                                        new Date(instance.updatedAt),
+                        <TabsList variant="line">
+                            <TabsTrigger value="drafts">Drafts</TabsTrigger>
+                            <TabsTrigger value="submitted">Submitted</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="drafts" className="space-y-2">
+                            <Show
+                                when={sortedInstances.length > 0}
+                                fallback={
+                                    <Empty>
+                                        <EmptyHeader>
+                                            <EmptyTitle>No Draft Forms</EmptyTitle>
+                                            <EmptyDescription>
+                                                Click New to start a form.
+                                            </EmptyDescription>
+                                        </EmptyHeader>
+                                    </Empty>
+                                }
+                            >
+                                <p className="text-sm text-muted-foreground">
+                                    Your draft forms are listed below. Click a form to continue
+                                    editing, or New to start another.
+                                </p>
+                                <ItemGroup>
+                                    {sortedInstances.map((instance) => {
+                                        const itemCount = (
+                                            instance.formData as I3IssueItemsFormData
+                                        ).items.length;
+                                        return (
+                                            <Item key={instance.id} variant="outline" asChild>
+                                                <Link
+                                                    href={route(
+                                                        "/orgs/[slug]/d4h-i3/forms/issue-items/[instance_id]",
                                                         {
-                                                            addSuffix: true,
+                                                            slug: organization.slug,
+                                                            instance_id: instance.id,
                                                         },
                                                     )}
-                                                </ItemDescription>
-                                            </ItemContent>
-                                            <ItemActions>
-                                                <ItemLinkActionIcon />
-                                            </ItemActions>
-                                        </Link>
-                                    </Item>
-                                );
-                            })}
-                        </ItemGroup>
-                    </Show>
+                                                >
+                                                    <ItemContent>
+                                                        <ItemTitle>
+                                                            {(
+                                                                instance.formData as I3IssueItemsFormData
+                                                            ).recipient?.name || "No one selected"}
+                                                        </ItemTitle>
+                                                        {/* The relative time can tick over between SSR and hydration. */}
+                                                        <ItemDescription suppressHydrationWarning>
+                                                            {formatItemCount(itemCount)}
+                                                            {", updated "}
+                                                            {formatDistanceToNow(
+                                                                new Date(instance.updatedAt),
+                                                                {
+                                                                    addSuffix: true,
+                                                                },
+                                                            )}
+                                                        </ItemDescription>
+                                                    </ItemContent>
+                                                    <ItemActions>
+                                                        <ItemLinkActionIcon />
+                                                    </ItemActions>
+                                                </Link>
+                                            </Item>
+                                        );
+                                    })}
+                                </ItemGroup>
+                            </Show>
+                        </TabsContent>
+                        <TabsContent value="submitted" className="space-y-2">
+                            <D4HI3Module_SubmittedFormList
+                                formKey={I3IssueItemsForm.formKey}
+                                instanceHref={(instanceId) =>
+                                    route("/orgs/[slug]/d4h-i3/forms/issue-items/[instance_id]", {
+                                        slug: organization.slug,
+                                        instance_id: instanceId,
+                                    })
+                                }
+                                empty={{
+                                    title: "No submitted forms",
+                                    description: "Forms you submit are listed here.",
+                                }}
+                            />
+                        </TabsContent>
+                    </Tabs>
                 </Saratoga.Root>
             </Std.ScrollContainer>
         </>
