@@ -11,10 +11,14 @@ import { FormInstance, type FormInstanceId } from "@/lib/schemas/form-instance";
 import type { OrgServiceContext } from "./service-context";
 
 /**
- * Save or update a form instance, ensuring it belongs to the current user and organization.
+ * Save or update a draft form instance, ensuring it belongs to the current user and organization.
  *
- * @throws ConflictError if the instance belongs to a different user/organization, or if
- * `formKey` doesn't match an existing instance with the same ID.
+ * Only a draft can be saved: once submitted, an instance is read-only. The update is conditional
+ * on the instance still being a draft, so a status write that lands between the read and the
+ * write isn't reverted.
+ *
+ * @throws ConflictError if the instance belongs to a different user/organization, if `formKey`
+ * doesn't match an existing instance with the same ID, or if the existing instance isn't a draft.
  */
 export async function saveInstance(
     ctx: OrgServiceContext,
@@ -43,21 +47,41 @@ export async function saveInstance(
         );
     }
 
-    const updatedFormInstance = await ctx.prisma.formInstance.upsert({
-        where: { id: formInstanceId },
-        update: {
+    if (existing && existing.formStatus !== "Draft") {
+        throw new ConflictError(
+            `FormInstance(${formInstanceId}) is ${existing.formStatus}, not a draft, and can't be changed`,
+        );
+    }
+
+    if (!existing) {
+        const created = await ctx.prisma.formInstance.create({
+            data: {
+                id: formInstanceId,
+                formKey,
+                organizationId: ctx.organizationId,
+                userId: ctx.userId,
+                formData: formData as object,
+                formStatus: "Draft",
+            },
+        });
+        return FormInstance.fromRecord(created);
+    }
+
+    const { count } = await ctx.prisma.formInstance.updateMany({
+        where: { id: formInstanceId, formStatus: "Draft" },
+        data: {
             formData: formData as object,
-            formStatus: "Draft",
             updatedAt: new Date(),
         },
-        create: {
-            id: formInstanceId,
-            formKey,
-            organizationId: ctx.organizationId,
-            userId: ctx.userId,
-            formData: formData as object,
-            formStatus: "Draft",
-        },
+    });
+    if (count === 0) {
+        throw new ConflictError(
+            `FormInstance(${formInstanceId}) is no longer a draft and can't be changed`,
+        );
+    }
+
+    const updatedFormInstance = await ctx.prisma.formInstance.findUniqueOrThrow({
+        where: { id: formInstanceId },
     });
 
     return FormInstance.fromRecord(updatedFormInstance);

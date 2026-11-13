@@ -19,10 +19,10 @@ import { createTrpcRouter, organizationProcedure } from "../init";
 
 export const formsRouter = createTrpcRouter({
     /**
-     * Delete a form instance by its ID, ensuring it belongs to the current user and organization.
+     * Delete a draft form instance by its ID, ensuring it belongs to the current user and organization.
      *
      * @param formInstanceId - The ID of the form instance to delete.
-     * @throws TRPCError(NOT_FOUND) if the form instance does not exist or does not belong to the user/organization.
+     * @throws TRPCError(NOT_FOUND) if the form instance does not exist, does not belong to the user/organization, or isn't a draft.
      */
     deleteFormInstance: organizationProcedure()
         .input(
@@ -38,6 +38,7 @@ export const formsRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                     userId: ctx.userId,
                     formKey,
+                    formStatus: "Draft",
                 },
             });
 
@@ -54,16 +55,18 @@ export const formsRouter = createTrpcRouter({
                     organizationId: ctx.organizationId,
                     userId: ctx.userId,
                     formKey,
+                    formStatus: "Draft",
                 },
             });
         }),
 
     /**
-     * Delete an item from a form instance by its ID, ensuring it belongs to the specified form instance.
+     * Delete an item from a draft form instance by its ID, ensuring it belongs to the specified form
+     * instance and that the instance belongs to the current user and organization.
      *
      * @param formInstanceId - The ID of the form instance the item belongs to.
      * @param formInstanceItemId - The ID of the form instance item to delete.
-     * @throws TRPCError(NOT_FOUND) if the form instance item does not exist or does not belong to the specified form instance.
+     * @throws TRPCError(NOT_FOUND) if the form instance item does not exist, does not belong to the specified form instance, or the instance isn't the user's draft in this organization.
      */
     deleteFormInstanceItem: organizationProcedure()
         .input(
@@ -76,7 +79,12 @@ export const formsRouter = createTrpcRouter({
             const existing = await ctx.prisma.formInstanceItem.findUnique({
                 where: {
                     id: formInstanceItemId,
-                    formInstanceId,
+                    formInstance: {
+                        id: formInstanceId,
+                        organizationId: ctx.organizationId,
+                        userId: ctx.userId,
+                        formStatus: "Draft",
+                    },
                 },
             });
 
@@ -95,6 +103,7 @@ export const formsRouter = createTrpcRouter({
                         id: formInstanceId,
                         organizationId: ctx.organizationId,
                         userId: ctx.userId,
+                        formStatus: "Draft",
                     },
                 },
             });
@@ -150,13 +159,13 @@ export const formsRouter = createTrpcRouter({
         }),
 
     /**
-     * Save or update a form instance, ensuring it belongs to the current user and organization.
+     * Save or update a draft form instance, ensuring it belongs to the current user and organization.
      *
      * @param formInstanceId - The ID of the form instance to save or update.
      * @param formKey - The key of the form this instance belongs to.
      * @param formData - The data for the form instance.
      * @returns The saved or updated form instance.
-     * @throws TRPCError(CONFLICT) if the form instance belongs to a different user or organization, or if the form key does not match an existing instance with the same ID — thrown as `ConflictError` from `Forms.saveInstance` and mapped by `mapDomainErrors`.
+     * @throws TRPCError(CONFLICT) if the form instance belongs to a different user or organization, if the form key does not match an existing instance with the same ID, or if the existing instance isn't a draft — thrown as `ConflictError` from `Forms.saveInstance` and mapped by `mapDomainErrors`.
      */
     saveFormInstanceData: organizationProcedure()
         .input(
@@ -180,7 +189,7 @@ export const formsRouter = createTrpcRouter({
      * @param collectionKey - The key of the collection this item belongs to.
      * @param formData - The data for the form instance item.
      * @returns The saved or updated form instance item.
-     * @throws TRPCError(NOT_FOUND) if the specified form instance does not exist or does not belong to the user/organization.
+     * @throws TRPCError(NOT_FOUND) if the specified form instance does not exist, does not belong to the user/organization, or isn't a draft.
      */
     saveFormInstanceItemData: organizationProcedure()
         .input(
@@ -209,6 +218,7 @@ export const formsRouter = createTrpcRouter({
                         id: formInstanceId,
                         organizationId: ctx.organizationId,
                         userId: ctx.userId,
+                        formStatus: "Draft",
                     },
                 });
                 if (!formInstance)

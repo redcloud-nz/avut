@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ConflictError } from "@/lib/errors";
 import { FormInstanceId } from "@/lib/schemas/form-instance";
@@ -21,6 +21,7 @@ describe("Forms.saveInstance", () => {
         user: UserId.create(),
         otherUser: UserId.create(),
         existing: FormInstanceId.create(),
+        processed: FormInstanceId.create(),
     };
 
     const db = createMockPrisma();
@@ -43,6 +44,16 @@ describe("Forms.saveInstance", () => {
                 userId: T.user,
                 formData: { a: 1 },
                 formStatus: "Draft",
+            },
+        });
+        await db.formInstance.create({
+            data: {
+                id: T.processed,
+                formKey: "test-form",
+                organizationId: T.org,
+                userId: T.user,
+                formData: { a: 1 },
+                formStatus: "Processed",
             },
         });
     });
@@ -115,5 +126,43 @@ describe("Forms.saveInstance", () => {
                 formData: { a: 5 },
             }),
         ).rejects.toThrow(ConflictError);
+    });
+
+    it("throws ConflictError when the instance isn't a draft, leaving it untouched", async () => {
+        const before = await db.formInstance.findUniqueOrThrow({ where: { id: T.processed } });
+
+        await expect(
+            Forms.saveInstance(ctx(), {
+                formInstanceId: T.processed,
+                formKey: "test-form",
+                formData: { a: 6 },
+            }),
+        ).rejects.toThrow(ConflictError);
+
+        const after = await db.formInstance.findUniqueOrThrow({ where: { id: T.processed } });
+        expect(after.formStatus).toBe("Processed");
+        expect(after.formData).toEqual({ a: 1 });
+        expect(after.updatedAt).toEqual(before.updatedAt);
+    });
+
+    it("doesn't revert a status write that lands between its read and its write", async () => {
+        const processed = await db.formInstance.findUniqueOrThrow({ where: { id: T.processed } });
+        // The read still sees a draft; by the time of the write the processor has marked it.
+        vi.spyOn(db.formInstance, "findUnique").mockResolvedValueOnce({
+            ...processed,
+            formStatus: "Draft",
+        } as never);
+
+        await expect(
+            Forms.saveInstance(ctx(), {
+                formInstanceId: T.processed,
+                formKey: "test-form",
+                formData: { a: 7 },
+            }),
+        ).rejects.toThrow(ConflictError);
+
+        const after = await db.formInstance.findUniqueOrThrow({ where: { id: T.processed } });
+        expect(after.formStatus).toBe("Processed");
+        expect(after.formData).toEqual({ a: 1 });
     });
 });

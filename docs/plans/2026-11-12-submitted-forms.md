@@ -50,7 +50,7 @@ submitted, the form processor marks it `Processed` and it disappears from the UI
 
 ### Review group A: data layer
 
-- [ ] **Task 1: Make non-draft form instances read-only on the server**
+- [x] **Task 1: Make non-draft form instances read-only on the server** (feat(forms): make submitted form instances read-only on the server)
   - **Files:** `src/server/services/forms.ts`, `src/server/services/forms.test.ts`,
     `src/trpc/routers/forms-router.ts`, `src/trpc/routers/forms-router.test.ts` (new),
     `src/modules/d4h-i3/components/form-shared.tsx`,
@@ -186,3 +186,5 @@ Guides `d4h-i3/issuing` and `d4h-i3/returning`: Submitted tab and read-only view
 
 - Two concurrent submits of the same draft both pass Task 1's guard (both read `Draft`) and both
   run the pipeline. Closing it needs an atomic Draft → in-progress claim before processing.
+- `forms-router`'s writes (save/delete instance and items) never call `ctx.logEvent`; predates
+  this branch. Autosave would make per-save logging noisy, so it needs a decision on what to log.

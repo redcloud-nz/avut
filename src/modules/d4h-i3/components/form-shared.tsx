@@ -44,6 +44,7 @@ export function UserNameFieldValue({ className }: { className?: string }) {
  *
  * Call `handleChange(getValues())` from the form's change handler and wire `saveStatus` to a
  * `SaveStatusIndicator`. `handleDelete` runs `onDeleting` (to navigate away) and then deletes the draft.
+ * Call `cancel()` before submitting, so a pending save can't land after the form is processed.
  */
 export function useDraftFormAutosave({
     formKey,
@@ -86,5 +87,9 @@ export function useDraftFormAutosave({
         debouncer.maybeExecute(formData);
     }
 
-    return { saveStatus: saveMutation.status, handleChange, handleDelete };
+    function cancel() {
+        debouncer.cancel();
+    }
+
+    return { saveStatus: saveMutation.status, handleChange, handleDelete, cancel };
 }
