@@ -103,6 +103,26 @@ describe("formsRouter: draft-only mutations", () => {
         });
     });
 
+    describe("listFormInstanceItems", () => {
+        it("lists the items of the caller's own instance", async () => {
+            const items = await makeCaller().listFormInstanceItems({
+                organizationId: T.org,
+                formInstanceId: T.processed,
+            });
+
+            expect(items.map((item) => item.id)).toEqual([T.processedItem]);
+        });
+
+        it("returns nothing for another user's instance", async () => {
+            const items = await makeCaller().listFormInstanceItems({
+                organizationId: T.org,
+                formInstanceId: T.othersDraft,
+            });
+
+            expect(items).toEqual([]);
+        });
+    });
+
     describe("saveFormInstanceItemData", () => {
         it("saves an item on the caller's draft", async () => {
             const item = await makeCaller().saveFormInstanceItemData({

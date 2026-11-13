@@ -174,7 +174,11 @@ export const formsRouter = createTrpcRouter({
         .query(async ({ ctx, input: { formInstanceId } }) => {
             const formInstanceItems = await ctx.prisma.formInstanceItem.findMany({
                 where: {
-                    formInstanceId,
+                    formInstance: {
+                        id: formInstanceId,
+                        organizationId: ctx.organizationId,
+                        userId: ctx.userId,
+                    },
                 },
             });
 

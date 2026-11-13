@@ -80,6 +80,13 @@ export function saveDraftFormInstanceMutation() {
                 formKey: data.formKey,
             });
 
+            // The form was submitted while this save was in flight: it's no longer a draft, so
+            // drop it from the list rather than restore the pre-submit snapshot, and say nothing.
+            if (error.data?.code === "CONFLICT") {
+                void context?.client.invalidateQueries({ queryKey });
+                return;
+            }
+
             if (context?.previous) {
                 context.client.setQueryData(queryKey, context.previous);
             }
