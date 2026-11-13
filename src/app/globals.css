@@ -78,6 +78,40 @@
   --page: oklch(0.975 0.0042 236.4993);
 }
 
+/* Glyph page background (src/components/page-background.tsx): a soft blur and wash behind a group of
+   cards, fading the glyphs right around them. It reaches --halo-reach past the group and fades to
+   nothing at its edges. The pseudo-element sits at z -1 in Std.SidebarInset's stacking context,
+   above the glyph layer (-10). */
+[data-page-background="glyph"] .glyph-halo {
+  --halo-reach: 1.5rem;
+  position: relative;
+}
+[data-page-background="glyph"] .glyph-halo::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--halo-reach) * -1);
+  z-index: -1;
+  background: color-mix(in oklch, var(--page) 20%, transparent);
+  backdrop-filter: blur(2px);
+  mask-image:
+    linear-gradient(
+      to right,
+      transparent,
+      black var(--halo-reach),
+      black calc(100% - var(--halo-reach)),
+      transparent
+    ),
+    linear-gradient(
+      to bottom,
+      transparent,
+      black var(--halo-reach),
+      black calc(100% - var(--halo-reach)),
+      transparent
+    );
+  mask-composite: intersect;
+  pointer-events: none;
+}
+
 :root:has([data-slot="impersonation-banner"]) {
   --impersonation-h: 2.25rem;
 }

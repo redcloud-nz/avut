@@ -13,6 +13,7 @@ import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
+import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -30,8 +31,11 @@ function SidebarInset({ children }: { children: ReactNode }) {
     return (
         <div
             data-component="StdSidebarInset"
-            className="relative flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
+            {...pageBackgroundAttributes}
+            // `isolate` makes this the stacking context the page background sits at the bottom of.
+            className="relative isolate flex w-full min-w-0 h-[calc(100svh-var(--impersonation-h))] flex-1 flex-col bg-page"
         >
+            <PageBackground />
             <Suspense fallback={<PageLoadingSpinner />}>{children}</Suspense>
         </div>
     );
