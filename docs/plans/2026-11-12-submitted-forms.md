@@ -101,7 +101,7 @@ submitted, the form processor marks it `Processed` and it disappears from the UI
 
 ### Review group B: UI (visual checkpoint at the end)
 
-- [ ] **Task 3: Drafts / Submitted tabs on the Issue and Return list pages** — `visual`
+- [x] **Task 3: Drafts / Submitted tabs on the Issue and Return list pages** — `visual` (feat(forms): add Drafts / Submitted tabs to the I3 Issue and Return lists)
   - **Files:** `src/modules/d4h-i3/components/issue-items-form-list.tsx`,
     `src/modules/d4h-i3/components/return-items-form-list.tsx`,
     `src/modules/d4h-i3/components/submitted-form-list.tsx` (new),

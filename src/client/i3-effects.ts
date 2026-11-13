@@ -85,6 +85,19 @@ export const i3Effects = createEffects<"i3">()({
                 formKey: I3IssueItemsForm.formKey,
             }),
         ),
+        // The submitted form joins the top of the Submitted tab, and its own page turns read-only.
+        invalidate(
+            trpc.forms.listSubmittedFormInstances.infiniteQueryFilter({
+                organizationId,
+                formKey: I3IssueItemsForm.formKey,
+            }),
+        ),
+        invalidate(
+            trpc.forms.getFormInstance.queryFilter({
+                organizationId,
+                formKey: I3IssueItemsForm.formKey,
+            }),
+        ),
     ],
     // The Return page navigates back to its list on success, so its call site sets `meta.navigates`.
     submitReturnItemsForm: ({ organizationId }) => [
@@ -97,6 +110,19 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.d4hTasks.listReturnedItemIds.queryFilter({ organizationId })),
         invalidate(
             trpc.forms.listDraftFormInstances.queryFilter({
+                organizationId,
+                formKey: I3ReturnItemsForm.formKey,
+            }),
+        ),
+        // The submitted form joins the top of the Submitted tab, and its own page turns read-only.
+        invalidate(
+            trpc.forms.listSubmittedFormInstances.infiniteQueryFilter({
+                organizationId,
+                formKey: I3ReturnItemsForm.formKey,
+            }),
+        ),
+        invalidate(
+            trpc.forms.getFormInstance.queryFilter({
                 organizationId,
                 formKey: I3ReturnItemsForm.formKey,
             }),
