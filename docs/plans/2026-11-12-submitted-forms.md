@@ -186,8 +186,9 @@ Guides `d4h-i3/issuing` and `d4h-i3/returning`: Submitted tab and read-only view
 
 - Two concurrent submits of the same draft both pass Task 1's guard (both read `Draft`) and both
   run the pipeline. Closing it needs an atomic Draft → in-progress claim before processing.
+  Filed as #513.
 - `forms-router`'s writes (save/delete instance and items) never call `ctx.logEvent`; predates
-  this branch. Autosave would make per-save logging noisy, so it needs a decision on what to log.
+  this branch. Autosave would make per-save logging noisy, so it needs a decision on what to log. Dropped.
 
 ## Review notes
 
