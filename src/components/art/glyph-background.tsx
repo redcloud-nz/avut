@@ -29,7 +29,8 @@ const WAVE_SPEED = 200;
 const WAVE_SLOWDOWN = 0.15;
 const WAVE_EDGE = 10;
 const WAVE_TAIL = 16;
-const DRIFT = [-30, 12] as const;
+/** How fast the glows drift across, in px/s (left, down). Still under reduced motion: nothing animates. */
+const DRIFT = [-12, 5] as const;
 const ACTIVITY_DECAY = 900;
 
 const VERTEX = `
@@ -43,6 +44,7 @@ const FRAGMENT = `
 precision highp float;
 uniform sampler2D atlas;
 uniform vec2 size;
+uniform vec2 origin;
 uniform vec2 cell;
 uniform float dpr;
 uniform float count;
@@ -83,7 +85,8 @@ float outline(float kind, float angle, float phase) {
 }
 
 void main() {
-  vec2 pixel = vec2(gl_FragCoord.x, size.y - gl_FragCoord.y);
+  // Viewport device pixels, so the field stays put when the box moves or resizes (e.g. the sidebar).
+  vec2 pixel = vec2(gl_FragCoord.x, size.y - gl_FragCoord.y) + origin;
   vec2 index = floor(pixel / cell);
   vec2 point = (index + 0.5) * cell / dpr;
 
@@ -199,6 +202,8 @@ function drawAtlas(cellWidth: number, cellHeight: number, font: string) {
 
 type Frame = {
     width: number;
+    /** The box's top-left in viewport device pixels. */
+    origin: [number, number];
     height: number;
     dpr: number;
     cell: [number, number];
@@ -240,6 +245,7 @@ function createRenderer(gl: WebGLRenderingContext) {
     const uniforms = {
         atlas: at("atlas"),
         size: at("size"),
+        origin: at("origin"),
         cell: at("cell"),
         dpr: at("dpr"),
         count: at("count"),
@@ -270,6 +276,7 @@ function createRenderer(gl: WebGLRenderingContext) {
         draw(frame: Frame) {
             gl.viewport(0, 0, frame.width, frame.height);
             gl.uniform2f(uniforms.size, frame.width, frame.height);
+            gl.uniform2f(uniforms.origin, ...frame.origin);
             gl.uniform2f(uniforms.cell, ...frame.cell);
             gl.uniform1f(uniforms.dpr, frame.dpr);
             gl.uniform1f(uniforms.time, frame.time);
@@ -374,6 +381,7 @@ export function GlyphBackground({
         let height = 0;
         let dpr = 1;
         let cell: [number, number] = [7, 13];
+        let atlasKey = "";
         let frames = 0;
         let colorKey = "";
         let color: Rgb = [0.5, 0.5, 0.5];
@@ -391,6 +399,10 @@ export function GlyphBackground({
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
             const { fontSize } = optionsRef.current;
+            // Only rebuild the atlas when it would change: the box resizes every frame while the sidebar animates.
+            const key = `${fontSize}|${dpr}`;
+            if (key === atlasKey) return;
+            atlasKey = key;
             const font = `${fontSize * dpr}px Menlo, ui-monospace, SFMono-Regular, Consolas, monospace`;
             const measure = document.createElement("canvas").getContext("2d")!;
             measure.font = font;
@@ -447,8 +459,10 @@ export function GlyphBackground({
             const energy = activityRef.current;
             const activity =
                 energy.value * Math.exp(-Math.max(0, time - energy.at) / ACTIVITY_DECAY);
+            const rect = container.getBoundingClientRect();
             renderer.draw({
                 activity,
+                origin: [rect.left * dpr, rect.top * dpr],
                 width: canvas.width,
                 height: canvas.height,
                 dpr,
@@ -472,8 +486,16 @@ export function GlyphBackground({
             draw(timeRef.current);
         });
         observer.observe(container);
+        // A theme switch changes the colours. The animation loop picks that up on its own, but a still
+        // field (reduced motion, or off screen) has to redraw for it.
+        const themeObserver = new MutationObserver(() => draw(timeRef.current));
+        themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
         return () => {
             observer.disconnect();
+            themeObserver.disconnect();
             drawRef.current = () => {};
             resizeRef.current = () => {};
             levelsRef.current = () => {};
@@ -513,12 +535,14 @@ export function GlyphBackground({
         const container = containerRef.current;
         if (!container) return;
 
-        /** The pointer relative to the box, or null when it's outside. */
+        /** The pointer in viewport coordinates (as the shader works in), or null when it's outside the box. */
         const point = (event: PointerEvent) => {
             const rect = container.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            return x < 0 || y < 0 || x > rect.width || y > rect.height ? null : { x, y };
+            const x = event.clientX;
+            const y = event.clientY;
+            return x < rect.left || y < rect.top || x > rect.right || y > rect.bottom
+                ? null
+                : { x, y };
         };
 
         const onPointerMove = (event: PointerEvent) => {

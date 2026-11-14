@@ -17,6 +17,7 @@ import {
 
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
@@ -79,8 +80,13 @@ function PackagesSection({ title, children }: { title: string; children: ReactNo
     );
 }
 
+/** An info alert in place of an empty table. `role="status"`: it's not urgent, so it shouldn't interrupt a screen reader. */
 function EmptyMessage({ children }: { children: ReactNode }) {
-    return <p className="text-muted-foreground text-sm">{children}</p>;
+    return (
+        <Alert role="status">
+            <AlertDescription>{children}</AlertDescription>
+        </Alert>
+    );
 }
 
 /** Subscribed packages can get a Status column for the Withdrawn badge; available ones get search. */

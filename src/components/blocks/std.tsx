@@ -117,6 +117,7 @@ function Navbar({ breadcrumbs, actions, children, sidebarTrigger = true }: Navba
     return (
         <header
             slot="header"
+            data-slot="std-navbar"
             className="bg-navbar sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md"
         >
             {sidebarTrigger && (
@@ -166,8 +167,13 @@ function IndexPage({
     ...props
 }: ComponentProps<"div"> & { title: string }) {
     return (
-        <div className={cn("w-full sm:w-lg sm:mx-auto", className)} {...props}>
-            <div className="flex flex-col items-center my-4 gap-4">
+        <div
+            data-slot="std-index-page"
+            className={cn("w-full sm:w-lg sm:mx-auto", className)}
+            {...props}
+        >
+            {/* Sized to its content so the glyph halo hugs the logo and title. */}
+            <div className="glyph-halo mx-auto my-4 flex w-fit flex-col items-center gap-4">
                 <AVUTLogo />
                 <div className="font-semibold">{title}</div>
             </div>

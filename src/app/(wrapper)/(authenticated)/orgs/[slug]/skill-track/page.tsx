@@ -33,7 +33,7 @@ export default async function SkillTrack_Index_Page(props: PageProps<`/orgs/[slu
             />
             <Std.ScrollContainer>
                 <Std.IndexPage title="Skill Track">
-                    <ItemGroup className="glyph-halo">
+                    <ItemGroup>
                         <Protect permissions={{ roleGrant: ["skills-assessor"] }}>
                             <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/skill-track/assessors", { slug })}>

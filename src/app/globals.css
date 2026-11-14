@@ -78,15 +78,61 @@
   --page: oklch(0.975 0.0042 236.4993);
 }
 
+/* Glyph page background colours. The ripple is the primary's hue (223) with far less chroma: a
+   grey-blue. Dark mode dims the glyphs so they sit as quietly on near-black as they do on the tint. */
+:root {
+  --glyph-glow: var(--muted-foreground);
+  --glyph-ripple: oklch(0.62 0.045 223);
+}
+.dark {
+  --glyph-glow: oklch(0.7 0 0);
+  --glyph-ripple: oklch(0.68 0.05 223);
+}
+
+/* Dark outline buttons are a translucent fill (bg-input/30), which lets the glyphs through. Over the
+   glyph background, give them the opaque card fill instead, hovered or not. */
+.dark [data-page-background="glyph"] [data-slot="button"][data-variant="outline"] {
+  background-color: var(--card);
+}
+
+/* Form fields are transparent (light) or bg-input/30 (dark), so the glyphs show through the text
+   being typed. Give them the card fill too. An input inside an InputGroup is an
+   `input-group-control` and stays transparent: the group carries the fill. */
+[data-page-background="glyph"]
+  :is(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="input-group"],
+    [data-slot="select-trigger"],
+    [data-slot="input-otp-slot"]
+  ) {
+  background-color: var(--card);
+}
+
 /* Glyph page background (src/components/page-background.tsx): a soft blur and wash behind a group of
    cards, fading the glyphs right around them. It reaches --halo-reach past the group and fades to
    nothing at its edges. The pseudo-element sits at z -1 in Std.SidebarInset's stacking context,
-   above the glyph layer (-10). */
-[data-page-background="glyph"] .glyph-halo {
+   above the glyph layer (-10). Index-page item groups, page headers, section headings,
+   and table footers get it without the class. */
+[data-page-background="glyph"]
+  :is(
+    .glyph-halo,
+    [data-slot="std-index-page"] [data-slot="item-group"],
+    [data-component="SaratogaHeader"],
+    [data-slot="kaga-table-pagination"],
+    [data-component="SaratogaRoot"] h2:not([data-slot="card"] *)
+  ) {
   --halo-reach: 1.5rem;
   position: relative;
 }
-[data-page-background="glyph"] .glyph-halo::before {
+[data-page-background="glyph"]
+  :is(
+    .glyph-halo,
+    [data-slot="std-index-page"] [data-slot="item-group"],
+    [data-component="SaratogaHeader"],
+    [data-slot="kaga-table-pagination"],
+    [data-component="SaratogaRoot"] h2:not([data-slot="card"] *)
+  )::before {
   content: "";
   position: absolute;
   inset: calc(var(--halo-reach) * -1);
@@ -110,6 +156,19 @@
     );
   mask-composite: intersect;
   pointer-events: none;
+}
+
+/* Section headings on the page (an h2 in Saratoga.Root, outside a card): fit the halo to the text
+   rather than the full row. */
+[data-page-background="glyph"] [data-component="SaratogaRoot"] h2:not([data-slot="card"] *) {
+  width: fit-content;
+}
+
+/* The same halo for opaque surfaces with overflow-hidden, which would clip the ::before above: a
+   soft glow of page colour in the shadow slot instead. Their ring-1 already composes box-shadow from
+   --tw-shadow, so the ring stays. A wash without the blur. */
+[data-page-background="glyph"] :is([data-slot="card"], [data-slot="table-panel"]) {
+  --tw-shadow: 0 0 1.5rem 0.5rem color-mix(in oklch, var(--page) 60%, transparent);
 }
 
 :root:has([data-slot="impersonation-banner"]) {

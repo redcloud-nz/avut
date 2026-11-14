@@ -38,7 +38,7 @@ export default async function SkillsTrack_Reports_Page(
                 <Std.IndexPage title="Skills Reports">
                     <ItemGroup>
                         <Protect permissions={{ skillCheck: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/skill-track/reports/person", {
                                         slug,
@@ -60,7 +60,7 @@ export default async function SkillsTrack_Reports_Page(
                         need `team: ["view"]` too — `skillCheck: ["view"]` alone would show
                         a link that then hits a FORBIDDEN error when it loads. */}
                         <Protect permissions={{ skillCheck: ["view"], team: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/skill-track/reports/team", { slug })}
                                 >
@@ -76,7 +76,7 @@ export default async function SkillsTrack_Reports_Page(
                                     </ItemActions>
                                 </Link>
                             </Item>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/skill-track/reports/matrix", {
                                         slug,
@@ -93,7 +93,7 @@ export default async function SkillsTrack_Reports_Page(
                                     </ItemActions>
                                 </Link>
                             </Item>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/skill-track/reports/skill", { slug })}
                                 >
