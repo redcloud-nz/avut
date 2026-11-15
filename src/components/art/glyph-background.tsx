@@ -4,6 +4,9 @@
  *
  * A field of monospace characters lit by drifting glows, a cursor trail and waves on click.
  *
+ * `clouds` picks the drifting light and `surface` what it falls on (characters, or a topographic
+ * map). The shader for each combination is assembled in glyph-background-shader.ts.
+ *
  * Adapted from animate-ui's Glyph Background (https://animate-ui.com/docs/backgrounds/glyph),
  * with its `motion` and `@animate-ui/react` dependencies replaced by a plain
  * requestAnimationFrame loop, IntersectionObserver, `visibilitychange` and the
@@ -17,123 +20,25 @@
 
 import { ComponentProps, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
+import {
+    fragmentShader,
+    MAX_WAVES,
+    TRAIL,
+    VERTEX_SHADER,
+    type GlyphClouds,
+    type GlyphSurface,
+} from "@/components/art/glyph-background-shader";
 import { cn } from "@/lib/utils";
 
 const CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-const MAX_WAVES = 12;
-const TRAIL = 12;
 const TRAIL_LIFE = 700;
 const WAVE_LIFE = 6;
 const WAVE_GAP = 0.6;
 const WAVE_SPEED = 200;
 const WAVE_SLOWDOWN = 0.15;
-const WAVE_EDGE = 10;
-const WAVE_TAIL = 16;
 /** How fast the glows drift across, in px/s (left, down). Still under reduced motion: nothing animates. */
 const DRIFT = [-12, 5] as const;
 const ACTIVITY_DECAY = 900;
-
-const VERTEX = `
-attribute vec2 position;
-void main() {
-  gl_Position = vec4(position, 0.0, 1.0);
-}
-`;
-
-const FRAGMENT = `
-precision highp float;
-uniform sampler2D atlas;
-uniform vec2 size;
-uniform vec2 origin;
-uniform vec2 cell;
-uniform float dpr;
-uniform float count;
-uniform float time;
-uniform float rest;
-uniform float haze;
-uniform float hoverInk;
-uniform float activity;
-uniform vec2 drift;
-uniform vec3 color;
-uniform vec3 accent;
-uniform vec4 waves[${MAX_WAVES * 2}];
-uniform vec4 trail[${TRAIL}];
-
-float hash(vec2 p) {
-  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
-float smoothNoise(vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(
-    mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
-    mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
-    u.y
-  );
-}
-
-float outline(float kind, float angle, float phase) {
-  if (kind < 0.5) return 1.0;
-  if (kind < 1.5) {
-    float s = sin(angle);
-    float c = cos(angle);
-    return (2.0 - 2.0 * s + s * sqrt(abs(c)) / (s + 1.4)) * 0.42;
-  }
-  return 1.0 + 0.14 * sin(3.0 * angle + phase) + 0.08 * sin(5.0 * angle - phase * 1.3);
-}
-
-void main() {
-  // Viewport device pixels, so the field stays put when the box moves or resizes (e.g. the sidebar).
-  vec2 pixel = vec2(gl_FragCoord.x, size.y - gl_FragCoord.y) + origin;
-  vec2 index = floor(pixel / cell);
-  vec2 point = (index + 0.5) * cell / dpr;
-
-  float ring = 0.0;
-  for (int i = 0; i < ${MAX_WAVES}; i++) {
-    vec4 a = waves[i * 2];
-    vec4 b = waves[i * 2 + 1];
-    if (a.w <= 0.0) continue;
-    vec2 v = point - a.xy;
-    float angle = atan(-v.y, v.x);
-    float shape = mix(1.0, outline(b.x, angle, b.z), b.y);
-    shape *= 1.0 + 0.07 * sin(3.0 * angle + b.z + b.w) + 0.05 * sin(5.0 * angle - b.z * 1.7 - b.w * 1.3) + 0.03 * sin(9.0 * angle + b.w * 2.1);
-    float d = length(v) - a.z * shape;
-    float k = d > 0.0 ? d / ${WAVE_EDGE.toFixed(1)} : d / ${WAVE_TAIL.toFixed(1)};
-    ring = max(ring, exp(-k * k) * a.w);
-  }
-
-  float hover = 0.0;
-  for (int i = 0; i < ${TRAIL}; i++) {
-    vec4 t = trail[i];
-    if (t.w <= 0.0) continue;
-    vec2 v = point - t.xy;
-    hover += t.w * exp(-dot(v, v) / (2.0 * t.z * t.z));
-  }
-  hover = min(hover, 1.0);
-
-  mat2 turn = mat2(0.82, 0.57, -0.57, 0.82);
-  vec2 q = turn * (point - drift);
-  float blob = smoothNoise(vec2(q.x / 140.0, q.y / 80.0) + vec2(time * 0.04, 0.0)) * 0.62
-    + smoothNoise(vec2(q.x / 62.0, q.y / 36.0) + vec2(3.7, time * 0.06)) * 0.38;
-  float grain = smoothNoise(vec2(q.x / 30.0, q.y / 14.0) + vec2(time * 0.2, 7.3));
-  float cloud = blob * (0.82 + 0.24 * grain);
-  float mask = pow(smoothstep(0.47 - 0.2 * activity, 0.84, cloud), 2.6);
-
-  float seed = hash(index);
-  float epoch = floor(time * 0.08 * (0.4 + seed) + seed * 97.0);
-  float character = floor(hash(index + epoch * 0.137) * count);
-  vec2 local = fract(pixel / cell);
-  float ink = pow(texture2D(atlas, vec2((character + local.x) / count, local.y)).a, 1.7);
-
-  float grey = ink * clamp(rest + haze * mask * (1.0 + 0.3 * activity) + hoverInk * hover * (0.6 + 0.4 * mask), 0.0, 1.0);
-  float blue = ink * ring * 0.25;
-  float alpha = grey + blue - grey * blue;
-  vec3 tint = color * grey * (1.0 - blue) + accent * blue;
-  gl_FragColor = vec4(tint, alpha);
-}
-`;
 
 type Wave = {
     x: number;
@@ -154,6 +59,12 @@ export type GlyphBackgroundProps = Omit<ComponentProps<"div">, "children"> & {
     shapeColor?: string;
     /** Character size in px. */
     fontSize?: number;
+    /** The characters the field is made of, picked at random per cell. Ignored by the `contours` surface. */
+    characters?: string;
+    /** The drifting light: see `GlyphClouds`. */
+    clouds?: GlyphClouds;
+    /** What the light falls on: see `GlyphSurface`. */
+    surface?: GlyphSurface;
     /** Base brightness of the drifting glows (0–1). */
     haze?: number;
     /** How strongly the cursor trail lights the glyphs (0–1). */
@@ -186,17 +97,17 @@ function resolveColor(element: Element, color: string | undefined, fallback: str
     return color;
 }
 
-function drawAtlas(cellWidth: number, cellHeight: number, font: string) {
+function drawAtlas(cellWidth: number, cellHeight: number, font: string, characters: string[]) {
     const atlas = document.createElement("canvas");
-    atlas.width = Math.ceil(cellWidth * CHARACTERS.length);
+    atlas.width = Math.ceil(cellWidth * characters.length);
     atlas.height = Math.ceil(cellHeight);
     const context = atlas.getContext("2d")!;
     context.font = font;
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillStyle = "#fff";
-    for (let i = 0; i < CHARACTERS.length; i++)
-        context.fillText(CHARACTERS[i]!, (i + 0.5) * cellWidth, cellHeight / 2);
+    for (let i = 0; i < characters.length; i++)
+        context.fillText(characters[i]!, (i + 0.5) * cellWidth, cellHeight / 2);
     return atlas;
 }
 
@@ -216,9 +127,9 @@ type Frame = {
     trail: Float32Array;
 };
 
-function createRenderer(gl: WebGLRenderingContext) {
-    const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX);
-    const fragment = compile(gl, gl.FRAGMENT_SHADER, FRAGMENT);
+function createRenderer(gl: WebGLRenderingContext, clouds: GlyphClouds, surface: GlyphSurface) {
+    const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
+    const fragment = compile(gl, gl.FRAGMENT_SHADER, fragmentShader(clouds, surface));
     const program = gl.createProgram();
     if (!vertex || !fragment || !program) return null;
     gl.attachShader(program, vertex);
@@ -261,11 +172,11 @@ function createRenderer(gl: WebGLRenderingContext) {
         trail: at("trail"),
     };
     gl.uniform1i(uniforms.atlas, 0);
-    gl.uniform1f(uniforms.count, CHARACTERS.length);
     gl.uniform1f(uniforms.rest, 0);
 
     return {
-        atlas(image: HTMLCanvasElement) {
+        atlas(image: HTMLCanvasElement, count: number) {
+            gl.uniform1f(uniforms.count, count);
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
         },
@@ -338,6 +249,9 @@ export function GlyphBackground({
     glowColor,
     shapeColor,
     fontSize = 10,
+    characters = CHARACTERS,
+    clouds = "layers",
+    surface = "glyphs",
     haze = 0.1,
     hoverInk = 0.3,
     interactive = true,
@@ -360,9 +274,9 @@ export function GlyphBackground({
     const levelsRef = useRef((_haze: number, _hoverInk: number) => {});
     const activityRef = useRef({ value: 0, at: 0 });
 
-    const optionsRef = useRef({ glowColor, shapeColor, fontSize });
+    const optionsRef = useRef({ glowColor, shapeColor, fontSize, characters, haze, hoverInk });
     useEffect(() => {
-        optionsRef.current = { glowColor, shapeColor, fontSize };
+        optionsRef.current = { glowColor, shapeColor, fontSize, characters, haze, hoverInk };
     });
 
     useEffect(() => {
@@ -374,7 +288,8 @@ export function GlyphBackground({
             preserveDrawingBuffer: true,
             antialias: false,
         });
-        const renderer = gl ? createRenderer(gl) : null;
+        // A new shader program per clouds/surface pair, so switching them rebuilds it.
+        const renderer = gl ? createRenderer(gl, clouds, surface) : null;
         if (!renderer) return;
 
         let width = 0;
@@ -398,16 +313,17 @@ export function GlyphBackground({
             canvas.height = Math.max(1, Math.round(height * dpr));
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
-            const { fontSize } = optionsRef.current;
+            const { fontSize, characters } = optionsRef.current;
             // Only rebuild the atlas when it would change: the box resizes every frame while the sidebar animates.
-            const key = `${fontSize}|${dpr}`;
+            const key = `${fontSize}|${dpr}|${characters}`;
             if (key === atlasKey) return;
             atlasKey = key;
             const font = `${fontSize * dpr}px Menlo, ui-monospace, SFMono-Regular, Consolas, monospace`;
             const measure = document.createElement("canvas").getContext("2d")!;
             measure.font = font;
             cell = [Math.round(measure.measureText("0").width), Math.round(fontSize * 1.25 * dpr)];
-            renderer.atlas(drawAtlas(cell[0], cell[1], font));
+            const glyphs = Array.from(characters);
+            renderer.atlas(drawAtlas(cell[0], cell[1], font, glyphs), glyphs.length);
         };
 
         const draw = (time: number, looping = false) => {
@@ -479,6 +395,7 @@ export function GlyphBackground({
         drawRef.current = draw;
         resizeRef.current = resize;
         levelsRef.current = renderer.levels;
+        renderer.levels(optionsRef.current.haze, optionsRef.current.hoverInk);
         resize();
         draw(timeRef.current);
         const observer = new ResizeObserver(() => {
@@ -500,12 +417,12 @@ export function GlyphBackground({
             resizeRef.current = () => {};
             levelsRef.current = () => {};
         };
-    }, []);
+    }, [clouds, surface]);
 
     useEffect(() => {
         resizeRef.current();
         drawRef.current(timeRef.current);
-    }, [fontSize]);
+    }, [fontSize, characters]);
 
     useEffect(() => {
         levelsRef.current(haze, hoverInk);

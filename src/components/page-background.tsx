@@ -5,7 +5,7 @@
  * The decorative layer behind every page in `Std.SidebarInset`.
  */
 
-import { GlyphBackground } from "@/components/art/glyph-background.explore-layers";
+import { GlyphBackground } from "@/components/art/glyph-background";
 
 /**
  * Switch for the animated glyph field behind every `Std` page. Off, pages sit on the plain `--page`
@@ -40,6 +40,10 @@ export function PageBackground() {
             haze={0.3}
             hoverInk={0.25}
             characters={BRAILLE}
+            // The alternatives that were tried: clouds "single" or "warped", surface "contours"
+            // (a topographic map, which needs its own tuning before it's subtle enough to use).
+            clouds="layers"
+            surface="glyphs"
         />
     );
 }
