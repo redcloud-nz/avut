@@ -35,8 +35,8 @@ describe("fragmentShader", () => {
     it("includes only the helpers a combination uses", () => {
         expect(fragmentShader("warped", "glyphs")).toContain("float fbm(");
         expect(fragmentShader("layers", "glyphs")).not.toContain("float fbm(");
-        expect(fragmentShader("layers", "contours")).toContain("vec3 land(");
-        expect(fragmentShader("layers", "glyphs")).not.toContain("vec3 land(");
+        expect(fragmentShader("layers", "contours")).toContain("float land(");
+        expect(fragmentShader("layers", "glyphs")).not.toContain("float land(");
     });
 
     it("samples the glyph atlas only for the glyphs surface", () => {

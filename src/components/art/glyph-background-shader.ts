@@ -23,7 +23,7 @@ export type GlyphClouds =
 export type GlyphSurface =
     /** A grid of characters, each picked at random and changing now and then. */
     | "glyphs"
-    /** A made-up topographic map: valleys with streams, contours (every 5th heavier), hillshade and a grid. */
+    /** A made-up topographic map: contours (every 5th heavier), hillshade and a grid. */
     | "contours";
 
 /** The most click waves alive at once. */
@@ -50,7 +50,7 @@ const LEVELS = 80;
 /** contours: terrain feature size, in px. Bigger is broader ranges. */
 const TERRAIN_SCALE = 500;
 /** contours: how visible the map is outside the clouds (0–1). */
-const BASE = 0.1;
+const BASE = 0.08;
 /** contours: map grid spacing, in px. */
 const GRID = 180;
 /** contours: hillshade strength (0–1), lit from the north-west. */
@@ -133,20 +133,22 @@ float fbm(vec2 p) {
     surface: {
         glyphs: "",
         contours: `
-// The landscape at p, as (height 0–1, main valley field, tributary field). Valleys are V-shaped
-// troughs along the 0.5 line of each valley field, so contours kink upstream where they cross them
-// and the streams (drawn along those same lines) always sit on a valley floor. A broad fBm sets the
-// overall height, and a light domain warp keeps the valleys from looking like noise.
-vec3 land(vec2 p) {
+// The terrain height (0–1) at p. Valleys are V-shaped troughs along the 0.5 line of two valley
+// fields (main and tributary), so contours kink upstream where they cross them. A broad fBm sets
+// the overall height, and a light domain warp keeps the valleys from looking like noise.
+float land(vec2 p) {
   mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
   vec2 w = vec2(smoothNoise(p * 0.7 + 1.3), smoothNoise(p * 0.7 + 7.1)) - 0.5;
   p += w * 0.8;
   float base = smoothNoise(p * 0.6) * 0.55 + smoothNoise(rot * p * 1.3 + 5.3) * 0.3 + smoothNoise(rot * p * 2.9 + 2.2) * 0.15;
-  float trunk = smoothNoise(rot * p * 1.5 + 11.0);
-  float side = smoothNoise(rot * rot * p * 3.6 + 23.0);
+  // Meander: nudge the valley fields with finer noise, so valleys wind
+  // instead of sweeping in long smooth arcs.
+  vec2 bend = vec2(smoothNoise(p * 6.0 + 41.0), smoothNoise(p * 6.0 + 47.0)) - 0.5;
+  float trunk = smoothNoise(rot * p * 1.5 + 11.0 + bend * 0.35);
+  float side = smoothNoise(rot * rot * p * 3.6 + 23.0 + bend * 0.5);
   float detail = smoothNoise(p * 7.0 + 31.0) * 0.6 + smoothNoise(rot * p * 15.0 + 37.0) * 0.4;
   float h = base * 0.55 + abs(2.0 * trunk - 1.0) * 0.28 + abs(2.0 * side - 1.0) * 0.12 * (0.5 + base) + detail * 0.05;
-  return vec3(h, trunk, side);
+  return h;
 }
 `,
     },
@@ -221,11 +223,8 @@ const SURFACE: Record<GlyphSurface, string> = {
     contours: `
   vec2 tp = point / ${f(TERRAIN_SCALE)};
   float px = 1.0 / ${f(TERRAIN_SCALE)};
-  vec3 f = land(tp);
-  vec3 fx = land(tp + vec2(px, 0.0)) - f;
-  vec3 fy = land(tp + vec2(0.0, px)) - f;
-  float h = f.x;
-  vec2 slope = vec2(fx.x, fy.x);
+  float h = land(tp);
+  vec2 slope = vec2(land(tp + vec2(px, 0.0)) - h, land(tp + vec2(0.0, px)) - h);
 
   // Contour lines: distance to the nearest level, in px (via the gradient), drawn ~1px wide.
   vec2 grad = slope * ${f(LEVELS)};
@@ -242,18 +241,13 @@ const SURFACE: Record<GlyphSurface, string> = {
   // Hillshade, lit from the north-west (screen up-left), only the shadowed side.
   float shade = clamp(dot(slope / px, vec2(0.5, 0.5)), 0.0, 1.0) * ${f(SHADE)};
 
-  // Streams along the valley floors: main valleys everywhere, tributaries only on lower ground.
-  float mainGap = abs(f.y - 0.5) / max(length(vec2(fx.y, fy.y)), 1e-5);
-  float sideGap = abs(f.z - 0.5) / max(length(vec2(fx.z, fy.z)), 1e-5);
-  float water = max(1.0 - smoothstep(0.8, 1.7, mainGap), (1.0 - smoothstep(0.5, 1.2, sideGap)) * 0.8 * (1.0 - smoothstep(0.4, 0.6, h)));
-
   // The map grid.
   vec2 g = abs(fract(point / ${f(GRID)} + 0.5) - 0.5) * ${f(GRID)};
   float grid = 1.0 - smoothstep(0.3, 1.0, min(g.x, g.y));
 
   float light = clamp(${f(BASE)} + rest + haze * mask * (1.0 + 0.3 * activity) + hoverInk * hover * (0.6 + 0.4 * mask), 0.0, 1.0);
   float grey = clamp(contour + shade, 0.0, 1.0) * light;
-  float blue = clamp(max(water * (0.3 + light), grid * 0.35 * light * 1.4) + max(contour, water) * ring * 0.25, 0.0, 1.0);
+  float blue = clamp(grid * 0.35 * light * 1.4 + contour * ring * 0.25, 0.0, 1.0);
 `,
 };
 
