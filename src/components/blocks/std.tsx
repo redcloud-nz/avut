@@ -117,7 +117,6 @@ function Navbar({ breadcrumbs, actions, children, sidebarTrigger = true }: Navba
     return (
         <header
             slot="header"
-            data-slot="std-navbar"
             className="bg-navbar sticky top-0 flex h-(--header-height) shrink-0 items-center gap-1 border-b px-2 z-5 backdrop-blur-md"
         >
             {sidebarTrigger && (

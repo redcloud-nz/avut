@@ -14,7 +14,8 @@ const buttonVariants = cva(
             variant: {
                 default: "bg-primary text-primary-foreground hover:bg-primary/80",
                 // Hover keeps the card fill and lays the translucent accent over it, so the page (or glyph
-                // background) doesn't show through. Dark mode has no card fill, so it stays transparent there.
+                // background) doesn't show through. Dark mode has no card fill, so it stays transparent there,
+                // except over the glyph background (globals.css).
                 outline: cn(
                     "border-border bg-card shadow-xs hover:text-accent-foreground aria-expanded:text-accent-foreground dark:border-input dark:bg-input/30",
                     "hover:bg-card hover:bg-[image:linear-gradient(var(--accent),var(--accent))] dark:hover:bg-transparent",

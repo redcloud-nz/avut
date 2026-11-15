@@ -74,7 +74,6 @@ uniform vec2 cell;
 uniform float dpr;
 uniform float count;
 uniform float time;
-uniform float rest;
 uniform float haze;
 uniform float hoverInk;
 uniform float activity;
@@ -217,7 +216,7 @@ const SURFACE: Record<GlyphSurface, string> = {
   vec2 local = fract(pixel / cell);
   float ink = pow(texture2D(atlas, vec2((character + local.x) / count, local.y)).a, 1.2);
 
-  float grey = ink * clamp(rest + haze * mask * (1.0 + 0.3 * activity) + hoverInk * hover * (0.6 + 0.4 * mask), 0.0, 1.0);
+  float grey = ink * clamp(haze * mask * (1.0 + 0.3 * activity) + hoverInk * hover * (0.6 + 0.4 * mask), 0.0, 1.0);
   float blue = ink * ring * 0.25;
 `,
     contours: `
@@ -245,7 +244,7 @@ const SURFACE: Record<GlyphSurface, string> = {
   vec2 g = abs(fract(point / ${f(GRID)} + 0.5) - 0.5) * ${f(GRID)};
   float grid = 1.0 - smoothstep(0.3, 1.0, min(g.x, g.y));
 
-  float light = clamp(${f(BASE)} + rest + haze * mask * (1.0 + 0.3 * activity) + hoverInk * hover * (0.6 + 0.4 * mask), 0.0, 1.0);
+  float light = clamp(${f(BASE)} + haze * mask * (1.0 + 0.3 * activity) + hoverInk * hover * (0.6 + 0.4 * mask), 0.0, 1.0);
   float grey = clamp(contour + shade, 0.0, 1.0) * light;
   float blue = clamp(grid * 0.35 * light * 1.4 + contour * ring * 0.25, 0.0, 1.0);
 `,

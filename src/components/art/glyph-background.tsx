@@ -39,6 +39,8 @@ const WAVE_SLOWDOWN = 0.15;
 /** How fast the glows drift across, in px/s (left, down). Still under reduced motion: nothing animates. */
 const DRIFT = [-12, 5] as const;
 const ACTIVITY_DECAY = 900;
+/** ~30 fps (with slack for a 60 Hz display's jitter): the field moves too slowly to gain from more. */
+const FRAME_INTERVAL = 31;
 
 type Wave = {
     x: number;
@@ -131,11 +133,22 @@ function createRenderer(gl: WebGLRenderingContext, clouds: GlyphClouds, surface:
     const vertex = compile(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
     const fragment = compile(gl, gl.FRAGMENT_SHADER, fragmentShader(clouds, surface));
     const program = gl.createProgram();
-    if (!vertex || !fragment || !program) return null;
+    const release = () => {
+        gl.deleteProgram(program);
+        gl.deleteShader(vertex);
+        gl.deleteShader(fragment);
+    };
+    if (!vertex || !fragment || !program) {
+        release();
+        return null;
+    }
     gl.attachShader(program, vertex);
     gl.attachShader(program, fragment);
     gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        release();
+        return null;
+    }
     gl.useProgram(program);
 
     const buffer = gl.createBuffer();
@@ -161,7 +174,6 @@ function createRenderer(gl: WebGLRenderingContext, clouds: GlyphClouds, surface:
         dpr: at("dpr"),
         count: at("count"),
         time: at("time"),
-        rest: at("rest"),
         haze: at("haze"),
         hoverInk: at("hoverInk"),
         activity: at("activity"),
@@ -172,7 +184,6 @@ function createRenderer(gl: WebGLRenderingContext, clouds: GlyphClouds, surface:
         trail: at("trail"),
     };
     gl.uniform1i(uniforms.atlas, 0);
-    gl.uniform1f(uniforms.rest, 0);
 
     return {
         atlas(image: HTMLCanvasElement, count: number) {
@@ -200,6 +211,12 @@ function createRenderer(gl: WebGLRenderingContext, clouds: GlyphClouds, surface:
             gl.clearColor(0, 0, 0, 0);
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.drawArrays(gl.TRIANGLES, 0, 3);
+        },
+        /** Free the GPU objects. The context itself is the canvas's, and outlives this renderer. */
+        dispose() {
+            release();
+            gl.deleteBuffer(buffer);
+            gl.deleteTexture(texture);
         },
     };
 }
@@ -265,6 +282,7 @@ export function GlyphBackground({
     const pageVisible = usePageVisible();
     const reduce = useReducedMotion();
     const playing = inView && pageVisible && !reduce;
+    const [contextGeneration, setContextGeneration] = useState(0);
 
     const wavesRef = useRef<Wave[]>([]);
     const trailRef = useRef<{ x: number; y: number; t: number }[]>([]);
@@ -285,12 +303,21 @@ export function GlyphBackground({
         if (!canvas || !container) return;
         const gl = canvas.getContext("webgl", {
             premultipliedAlpha: true,
-            preserveDrawingBuffer: true,
             antialias: false,
         });
         // A new shader program per clouds/surface pair, so switching them rebuilds it.
         const renderer = gl ? createRenderer(gl, clouds, surface) : null;
-        if (!renderer) return;
+        // A lost context (GPU reset, sleep) blanks the canvas; when the browser restores it, rebuild.
+        const onLost = (event: Event) => event.preventDefault();
+        const onRestored = () => setContextGeneration((generation) => generation + 1);
+        canvas.addEventListener("webglcontextlost", onLost);
+        canvas.addEventListener("webglcontextrestored", onRestored);
+        if (!renderer) {
+            return () => {
+                canvas.removeEventListener("webglcontextlost", onLost);
+                canvas.removeEventListener("webglcontextrestored", onRestored);
+            };
+        }
 
         let width = 0;
         let height = 0;
@@ -413,11 +440,14 @@ export function GlyphBackground({
         return () => {
             observer.disconnect();
             themeObserver.disconnect();
+            canvas.removeEventListener("webglcontextlost", onLost);
+            canvas.removeEventListener("webglcontextrestored", onRestored);
+            renderer.dispose();
             drawRef.current = () => {};
             resizeRef.current = () => {};
             levelsRef.current = () => {};
         };
-    }, [clouds, surface]);
+    }, [clouds, surface, contextGeneration]);
 
     useEffect(() => {
         resizeRef.current();
@@ -438,10 +468,11 @@ export function GlyphBackground({
         let handle = 0;
         let last = performance.now();
         const tick = (now: number) => {
+            handle = requestAnimationFrame(tick);
+            if (now - last < FRAME_INTERVAL) return;
             timeRef.current += Math.min(now - last, 64);
             last = now;
             drawRef.current(timeRef.current, true);
-            handle = requestAnimationFrame(tick);
         };
         handle = requestAnimationFrame(tick);
         return () => cancelAnimationFrame(handle);
