@@ -32,7 +32,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                 <Std.IndexPage title="Admin Module">
                     <ItemGroup>
                         <Protect permissions={{ organization: ["update"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/admin/d4h-access-tokens", { slug })}
                                 >
@@ -50,7 +50,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             </Item>
                         </Protect>
                         <Protect permissions={{ invitation: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/admin/invitations", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Invitations</ItemTitle>
@@ -65,7 +65,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             </Item>
                         </Protect>
                         <Protect permissions={{ organization: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/admin/organization", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Organisation</ItemTitle>
@@ -80,7 +80,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             </Item>
                         </Protect>
                         <Protect permissions={{ organization: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link
                                     href={route("/orgs/[slug]/admin/organization-settings", {
                                         slug,
@@ -100,7 +100,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                         </Protect>
 
                         <Protect permissions={{ person: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/admin/personnel", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Personnel</ItemTitle>
@@ -115,7 +115,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             </Item>
                         </Protect>
                         <Protect permissions={{ team: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/admin/teams", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Teams</ItemTitle>
@@ -130,7 +130,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             </Item>
                         </Protect>
                         <Protect permissions={{ member: ["view"] }}>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/admin/users", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Users</ItemTitle>
@@ -145,7 +145,7 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                             </Item>
                         </Protect>
                         <RubbishNavGate>
-                            <Item asChild>
+                            <Item variant="outline" asChild>
                                 <Link href={route("/orgs/[slug]/admin/rubbish-bin", { slug })}>
                                     <ItemContent>
                                         <ItemTitle>Rubbish</ItemTitle>

@@ -175,7 +175,14 @@ export function EntityActionMenu({
         <EntityActionMenuTriggerContext value={triggerRef}>
             <DropdownMenu open={open} onOpenChange={setOpen}>
                 <DropdownMenuTrigger asChild>
-                    <Button ref={triggerRef} variant="ghost" size="icon" aria-label="Actions">
+                    <Button
+                        ref={triggerRef}
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Actions"
+                        // Sits straight on the page: soften the glyph background behind it (globals.css).
+                        className="glyph-halo"
+                    >
                         <DropdownMenuTriggerIcon />
                     </Button>
                 </DropdownMenuTrigger>

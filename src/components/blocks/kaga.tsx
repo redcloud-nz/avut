@@ -341,7 +341,11 @@ function KagaTablePagination<TData extends RowData>({
     const endRowIndex = Math.min(startRowIndex + pagination.pageSize, rowCount);
 
     return (
-        <div className={cn("grid grid-cols-2 items-center text-sm p-2", className)} {...props}>
+        <div
+            data-slot="kaga-table-pagination"
+            className={cn("grid grid-cols-2 items-center text-sm p-2", className)}
+            {...props}
+        >
             <div
                 className={cn(
                     "flex gap-1 lg:gap-1.5 text-muted-foreground",

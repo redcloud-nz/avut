@@ -37,7 +37,10 @@ const itemVariants = cva(
             variant: {
                 default: "border-transparent",
                 // Linked (a control): raised at rest. Unlinked: a flat card.
-                outline: "border-border bg-card [a]:shadow-xs",
+                // The accent hover is translucent, so on its own it would let the page (or the glyph
+                // background) through the card. Keep the card fill and lay the accent over it.
+                outline:
+                    "border-border bg-card [a]:shadow-xs [a]:hover:bg-card [a]:hover:bg-[image:linear-gradient(var(--accent),var(--accent))] [button]:enabled:hover:bg-card [button]:enabled:hover:bg-[image:linear-gradient(var(--accent),var(--accent))]",
                 muted: "border-transparent bg-muted/50",
             },
             size: {
