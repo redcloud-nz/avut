@@ -47,7 +47,6 @@ const RECORD_COUNT_LABELS: Record<string, string> = {
     skillCheckSessions: "Skill check sessions",
     notes: "Notes",
     skillPackages: "Skill packages",
-    i3IssuedItems: "Issued equipment",
     formInstances: "Form submissions",
 };
 
