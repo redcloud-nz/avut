@@ -142,7 +142,6 @@ model Organization {
   providerCredentials       ProviderCredential[]       @relation("provider_credential_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
-  i3IssuedItems I3IssuedItem[] @relation("i3_issued_item_to_organization")
   i3Templates   I3Template[]   @relation("i3_template_to_organization")
   formInstances FormInstance[] @relation("form_instance_to_organization")
   d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
@@ -552,7 +551,6 @@ model Person {
   updatedAt  DateTime     @updatedAt
   status     RecordStatus @default(Active)
 
-  issuedItems                  I3IssuedItem[]           @relation("i3_issued_item_to_person")
   organizationInvitations      OrganizationInvitation[] @relation("organization_invitation_to_person")
   organizationUser             OrganizationUser?        @relation("person_to_organization_user")
   skillChecksAsAssessee        SkillCheck[]             @relation("skill_check_assessee")
@@ -845,24 +843,6 @@ model SkillOverride {
   @@index([subscriptionId])
   @@index([skillId])
   @@map("skill_overrides")
-}
-
-model I3IssuedItem {
-  id             String       @id
-  organizationId String
-  organization   Organization @relation("i3_issued_item_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
-  personId       String
-  person         Person       @relation("i3_issued_item_to_person", fields: [personId], references: [id], onDelete: Cascade)
-  name           String
-  description    String
-  properties     Json         @default("{}")
-  status         RecordStatus @default(Active)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@index([organizationId])
-  @@index([personId])
-  @@map("i3_issued_items")
 }
 
 model I3Template {
