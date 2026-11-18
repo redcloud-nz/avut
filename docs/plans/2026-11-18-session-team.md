@@ -49,7 +49,7 @@
   - **Do:** add a Team select between Name and When in both dialogs, built as in Decisions (sentinel field, options including the current team when it isn't active), fed by `trpc.teams.listTeams`. On create, a hint under the field: "Everyone in the team is added to the session's personnel." Follow `docs/patterns/mutation-dialog.md` and `docs/patterns/field-layout.md`; the select markup follows `src/modules/d4h-nag/components/rule-form.tsx`. Add a `parseSessionDialog` test for the sentinel → `null` mapping and a team id passing through.
   - **Done when:** creating with a team lands on a session whose Personnel tab lists the team's members; editing the team saves, shows the new team, and doesn't change personnel; `npm run check` passes.
 
-- [ ] **5. Team in the sessions list and session detail** — `visual`, `mechanical`
+- [x] **5. Team in the sessions list and session detail** — `visual`, `mechanical`
   - **Files:** `src/modules/skill-track/components/sessions-list.tsx`, `session-content.tsx`, `content/help/skill-track/sessions.mdx`, `content/help/skill-track/session.mdx`
   - **Do:** a Team column after Name, as in Decisions. Team on the detail card between When and Notes, as a `TeamLink` (`docs/patterns/entity-link.md`) or "—". Update the two help cards: a session can belong to a team, choosing one at creation adds its members, and the list can be filtered by team.
   - **Done when:** the column filters, including "No team"; the detail shows the team; `npm run check` passes.

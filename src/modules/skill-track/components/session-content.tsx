@@ -13,6 +13,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
+import { TeamLink } from "@/components/entity-links/team-link";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
 import {
@@ -179,6 +180,16 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                                 {formatSessionWhen(
                                                     session.startsAt,
                                                     session.endsAt,
+                                                )}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Team</DataItemTitle>
+                                            <DataItemValue>
+                                                {session.team ? (
+                                                    <TeamLink team={session.team} />
+                                                ) : (
+                                                    "—"
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
