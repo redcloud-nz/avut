@@ -26,7 +26,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FieldValue } from "@/components/ui/field-value";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,7 +43,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     const formId = useId();
     const form = useForm({
         resolver: zodResolver(TeamData.modifiableSchema),
-        defaultValues: team,
+        defaultValues: { ...team, slug: team.slug ?? "" },
     });
 
     const mutation = useMutation(
@@ -72,7 +72,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
 
     useEffect(() => {
         if (dialogOpen) {
-            form.reset(team);
+            form.reset({ ...team, slug: team.slug ?? "" });
             mutation.reset();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh state on the open transition only
@@ -140,6 +140,30 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="slug"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={`${formId}-slug`}>Slug</FieldLabel>
+                                        <Input
+                                            id={`${formId}-slug`}
+                                            autoComplete="off"
+                                            className="font-mono"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                            value={field.value ?? ""}
+                                        />
+                                        <FieldDescription>
+                                            Optional. Unique across AVUT. Setting one gives the team
+                                            its own space; leave it blank to keep it off.
+                                        </FieldDescription>
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}

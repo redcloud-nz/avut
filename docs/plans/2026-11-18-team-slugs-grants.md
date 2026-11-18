@@ -79,7 +79,7 @@ Both issues add team data with admin UI on the same page (`orgs/[slug]/admin/tea
 
 ### Review group C: admin UI (visual)
 
-- [ ] **Task 7: slug in the team dialogs and details** · `visual` · `mechanical`
+- [x] **Task 7: slug in the team dialogs and details** · `visual` · `mechanical`
   - **Files:** `src/modules/org-admin/components/teams/create-team.tsx`, `update-team.tsx`, `team-content.tsx`, `teams-list.tsx`
   - **Do:** Add an optional **Slug** field to the Create Team and Update Team forms, with a description like "Optional. Unique across AVUT. Setting one gives the team its own space; leave it blank to keep it off." Map the router's `FieldConflictError` on `slug` to the field, which both dialogs already do (`error.data.conflict.fieldName`). The update dialog uses `defaultValues: team` and `form.reset(team)`, so map `slug: null` to `""` there. The create dialog's `defaultValues` have no `slug`, and `modifiableSchema` rejects `undefined`, so until it's added the create form fails validation silently. Add `slug: ""` to them. Show the slug in the Team Details card (monospace, or "None" muted). Add a **Slug** column to the teams list, hidden by default if the table supports column visibility, otherwise shown.
   - **Done when:** a slug can be set, changed and cleared from the dialog. A taken slug shows the error on the field. `npm run check` passes. Visual check below.
@@ -115,3 +115,5 @@ Admin → Teams gains a Slug field and an Access card, and Admin → Users gains
 - (Group A, Task 2) `updateTeam`'s input still runs `TeamSlug.schema`, so a team whose stored slug later becomes reserved can't take a name-only edit: the resent slug fails validation. Accept an unchanged stored slug. For example, `modifiableSchema` validates only the slug's shape (characters and length), and the router (plus the dialog, for the error message) checks reserved words only when the slug changes. Extend the "since become reserved" test to cover a name-only edit.
 - (Group B, Task 4) `TeamUsers.listForUser` leaves out teams with status `Deleted` (in the Rubbish bin). Archived teams stay, and Task 9 shows them with a badge.
 - (Group B, Task 5) Add `recoverTeam` to the `teamsEffects` that invalidate `teamUsers.listUserTeams`, since `listForUser` hides Deleted teams.
+- (Group B, Task 5) The `onRoster` badge goes stale: `teamsEffects` `createTeamMembership`/`deleteTeamMembership`/`recoverTeamMembership` should invalidate `teamUsers.listTeamUsers` for that team, and `usersEffects` `linkPerson`/`unlinkPerson` should invalidate it org-wide.
+- (Group B, Task 4) `TeamUsers.grant` races: map a P2002 (`isUniqueViolation`) from its `$transaction` to the same duplicate-grant `ConflictError`. Also reword the non-Active error to "Only active teams can be granted access."

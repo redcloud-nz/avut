@@ -83,6 +83,18 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{team.name}</DataItemValue>
                                         </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Slug</DataItemTitle>
+                                            {team.slug ? (
+                                                <DataItemValue className="font-mono">
+                                                    {team.slug}
+                                                </DataItemValue>
+                                            ) : (
+                                                <DataItemValue className="text-muted-foreground">
+                                                    None
+                                                </DataItemValue>
+                                            )}
+                                        </DataItem>
                                         <DataItem>
                                             <DataItemTitle>Description</DataItemTitle>
                                             <DataItemValue>{team.description}</DataItemValue>

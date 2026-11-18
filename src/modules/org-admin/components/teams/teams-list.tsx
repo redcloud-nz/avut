@@ -50,6 +50,18 @@ export function AdminModule_Teams_List() {
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
                 }),
+                columnHelper.accessor("slug", {
+                    header: "Slug",
+                    cell: (ctx) =>
+                        ctx.getValue() ? (
+                            <span className="font-mono">{ctx.getValue()}</span>
+                        ) : (
+                            <span className="text-muted-foreground">None</span>
+                        ),
+                    enableSorting: true,
+                    enableGlobalFilter: true,
+                    enableColumnFilter: false,
+                }),
                 columnHelper.accessor("description", {
                     header: "Description",
                     cell: (ctx) => ctx.getValue(),
@@ -86,6 +98,7 @@ export function AdminModule_Teams_List() {
         globalFilterFn: "includesString",
         initialState: {
             columnFilters: [{ id: "status", value: ["Active"] }],
+            columnVisibility: { slug: false },
             sorting: [{ id: "name", desc: false }],
             pagination: { pageIndex: 0, pageSize: Kaga.DEFAULT_PAGE_SIZE },
         },
