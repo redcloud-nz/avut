@@ -37,7 +37,7 @@ Adds a fourth scope root, **team**, next to organization, user and system. A use
 
 ### Review group A: data layer
 
-- [ ] **Task 1: module registry**
+- [x] **Task 1: module registry** (feat(modules): add the team scope to the module registry)
   - **Files:** `src/lib/modules.ts`, `src/lib/modules.test.ts` (new or extended), `src/lib/schemas/log-entry.ts` (only its comment about `ModuleScope`'s values, if it stops being true)
   - **Do:** Per Decisions: `ModuleScope` gains `"team"`; add `TeamModuleId` (`never` for now), `TeamModuleDef` (always `alwaysOn`), the optional `team` entry on `OrganizationModuleDef`, the pure `deriveTeamModules(list)` and `teamModules`, `ScopeRef`, and `moduleHref(moduleId, ref)`. Update the comments that say "three scope roots".
   - **Done when:** tests cover `deriveTeamModules` (a `scope: "team"` fixture, an org fixture with `team`, one with a different team segment, one without, registry order kept) and `moduleHref` for both scopes and for a module absent from a scope. `teamModules` on the real registry is `[]`. `npm run check` passes.
