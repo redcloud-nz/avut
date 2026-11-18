@@ -1,0 +1,342 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { CircleCheckIcon, MinusIcon } from "lucide-react";
+import { notFound } from "next/navigation";
+import { Fragment } from "react";
+
+import { useSuspenseQuery } from "@tanstack/react-query";
+
+import { Glorious } from "@/components/blocks/glorious";
+import { Std } from "@/components/blocks/std";
+import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
+import { I3TemplateLink } from "@/components/entity-links/i3-template-link";
+import {
+    DiagonalColumnHeader,
+    DiagonalLeadColumnHeader,
+} from "@/components/ui/diagonal-column-header";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { useOrganization } from "@/hooks/use-organization";
+import { compareBundle, type ExcludedLine, type ExcludedReason } from "@/lib/i3-bundle-compare";
+import { route } from "@/lib/routes";
+import { I3BundleId, I3BundleLine } from "@/lib/schemas/i3-bundle";
+import { cn } from "@/lib/utils";
+import { trpc } from "@/trpc/client";
+
+// Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card
+// colour as a gradient, since a translucent background would let them show through.
+const stickyFirstCol =
+    "sticky left-0 z-10 bg-card group-hover/row:bg-linear-to-r group-hover/row:from-accent/50 group-hover/row:to-accent/50";
+
+// `HEADER_HEIGHT` must match the height `DiagonalColumnHeader` renders for `headerHeight`: it's
+// the offset the sticky category row pins beneath.
+const HEADER_HEIGHT = 130;
+const CATEGORY_ROW_HEIGHT = 28;
+const MEMBER_COL_WIDTH = 220;
+const LINE_COL_WIDTH = 50;
+
+const EXCLUDED_LABELS: Record<ExcludedReason, string> = {
+    deleted: "Deleted template",
+    "no-d4h-type": "No D4H type",
+    "not-in-team": "Not used by this team",
+};
+
+/**
+ * A bundle compared against one D4H team: a row per member and a column per comparable line,
+ * grouped by category, each cell held or missing. Lines that can't be compared are listed above
+ * the table. Reads D4H, so without a token the queries fail and the error boundary explains.
+ */
+export function D4HI3Module_BundleMatrix({
+    bundleId,
+    teamId,
+}: {
+    bundleId: I3BundleId;
+    teamId: number;
+}) {
+    const organization = useOrganization();
+    const { slug } = organization;
+    const organizationId = organization.id;
+
+    const {
+        data: { bundle, lines },
+    } = useSuspenseQuery(trpc.i3Bundles.getBundle.queryOptions({ organizationId, bundleId }));
+
+    const { data: teams } = useSuspenseQuery(
+        trpc.d4hApi.listAccessibleTeams.queryOptions({ organizationId }),
+    );
+
+    // Check the team before reading its members, so an unknown team shows the not-found panel.
+    const team = teams.find((t) => t.id === teamId);
+    if (!team) notFound();
+
+    const { data: members } = useSuspenseQuery(
+        trpc.d4hApi.listTeamMembers.queryOptions({ organizationId, teamId }),
+    );
+    const { data: items } = useSuspenseQuery(
+        trpc.d4hApi.listTeamIssuedEquipment.queryOptions({ organizationId, teamId }),
+    );
+    const {
+        data: { templateIds },
+    } = useSuspenseQuery(trpc.i3.listTemplateFits.queryOptions({ organizationId, teamId }));
+
+    const { columns, excluded, rows, columnTotals } = compareBundle({
+        lines,
+        members,
+        items,
+        fittingTemplateIds: templateIds,
+    });
+
+    // `getBundle` sorts lines by category title, and the comparison keeps that order, so each
+    // category's columns are contiguous.
+    const categoryGroups: { key: string; title: string; span: number; start: number }[] = [];
+    columns.forEach((column, index) => {
+        const { categoryId, categoryTitle } = column.template.d4h;
+        const last = categoryGroups.at(-1);
+        if (last && last.key === String(categoryId)) last.span++;
+        else
+            categoryGroups.push({
+                key: String(categoryId),
+                title: categoryTitle,
+                span: 1,
+                start: index,
+            });
+    });
+    const categoryStarts = new Set(categoryGroups.map((group) => group.start));
+
+    const memberCount = rows.length;
+
+    return (
+        <>
+            <Std.Navbar
+                breadcrumbs={[
+                    { label: "D4H I3", href: route("/orgs/[slug]/d4h-i3", { slug }) },
+                    { label: "Bundles", href: route("/orgs/[slug]/d4h-i3/bundles", { slug }) },
+                    {
+                        label: bundle.name,
+                        href: route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]", {
+                            slug,
+                            bundle_id: bundle.id,
+                        }),
+                    },
+                    { label: team.title },
+                ]}
+            />
+            <Glorious.Root>
+                <Glorious.Header>
+                    <Glorious.Title>
+                        {bundle.name} compared with {team.title}
+                    </Glorious.Title>
+                    <Glorious.Subtitle>
+                        {memberCount} {memberCount === 1 ? "member" : "members"} · {columns.length}{" "}
+                        {columns.length === 1 ? "template" : "templates"}
+                    </Glorious.Subtitle>
+                    {teams.length > 1 && (
+                        <Glorious.Actions>
+                            <D4HTeamPickerDialog
+                                section={(id) =>
+                                    route(
+                                        "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]",
+                                        {
+                                            slug,
+                                            bundle_id: bundle.id,
+                                            d4h_team_id: String(id),
+                                        },
+                                    )
+                                }
+                            />
+                        </Glorious.Actions>
+                    )}
+                </Glorious.Header>
+
+                {excluded.length > 0 && <ExcludedLinesNote excluded={excluded} />}
+
+                {columns.length === 0 ? (
+                    <Empty>
+                        <EmptyHeader>
+                            <EmptyTitle>Nothing to compare</EmptyTitle>
+                            <EmptyDescription>
+                                Add templates to this bundle to compare it.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                    </Empty>
+                ) : rows.length === 0 ? (
+                    <Empty>
+                        <EmptyHeader>
+                            <EmptyTitle>No members</EmptyTitle>
+                            <EmptyDescription>
+                                {team.title} has no members to compare.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                    </Empty>
+                ) : (
+                    <Glorious.ScrollFrame>
+                        <Glorious.Table>
+                            <colgroup>
+                                <col style={{ width: MEMBER_COL_WIDTH }} />
+                                {columns.map((column) => (
+                                    <col
+                                        key={column.template.id}
+                                        style={{ width: LINE_COL_WIDTH }}
+                                    />
+                                ))}
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th className={cn(stickyFirstCol, "top-0 z-30 p-0")}>
+                                        <DiagonalLeadColumnHeader
+                                            label="Member"
+                                            headerHeight={HEADER_HEIGHT}
+                                            columnWidth={MEMBER_COL_WIDTH}
+                                        />
+                                    </th>
+                                    {columns.map((column) => (
+                                        <th
+                                            key={column.template.id}
+                                            className="sticky top-0 z-20 p-0 font-medium"
+                                        >
+                                            <DiagonalColumnHeader
+                                                label={column.template.name}
+                                                headerHeight={HEADER_HEIGHT}
+                                                columnWidth={LINE_COL_WIDTH}
+                                            />
+                                        </th>
+                                    ))}
+                                </tr>
+                                <tr>
+                                    <th
+                                        style={{ top: HEADER_HEIGHT, height: CATEGORY_ROW_HEIGHT }}
+                                        className="sticky left-0 z-30 border-r border-b bg-card"
+                                    />
+                                    {categoryGroups.map((group) => (
+                                        <th
+                                            key={group.key}
+                                            colSpan={group.span}
+                                            style={{
+                                                top: HEADER_HEIGHT,
+                                                height: CATEGORY_ROW_HEIGHT,
+                                            }}
+                                            className="sticky z-20 border-b border-l bg-table-group px-1.5 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                                            title={group.title}
+                                        >
+                                            <div className="truncate">{group.title}</div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row) => (
+                                    <tr
+                                        key={row.member.id}
+                                        className="group/row hover:bg-accent/50"
+                                    >
+                                        <th
+                                            scope="row"
+                                            className={cn(
+                                                stickyFirstCol,
+                                                "border-r border-b px-3 py-1.5 text-left font-normal",
+                                            )}
+                                        >
+                                            <div className="flex items-baseline justify-between gap-2">
+                                                <span className="truncate" title={row.member.name}>
+                                                    {row.member.name}
+                                                </span>
+                                                <span className="shrink-0 text-xs text-muted-foreground">
+                                                    {row.heldCount} of {columns.length}
+                                                </span>
+                                            </div>
+                                        </th>
+                                        {row.cells.map((cell, i) => (
+                                            <td
+                                                key={columns[i].template.id}
+                                                className={cn(
+                                                    "border-b px-2 py-1.5 text-center",
+                                                    i > 0 && "border-l",
+                                                    categoryStarts.has(i) &&
+                                                        i > 0 &&
+                                                        "border-l-muted-foreground/40",
+                                                    i === columns.length - 1 && "border-r",
+                                                )}
+                                            >
+                                                <CellMark
+                                                    held={cell.state === "held"}
+                                                    label={`${row.member.name}: ${columns[i].template.name}`}
+                                                />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th
+                                        scope="row"
+                                        className="sticky bottom-0 left-0 z-30 border-r bg-card px-3 py-1.5 text-left font-medium"
+                                    >
+                                        Holding
+                                    </th>
+                                    {columnTotals.map((total, i) => (
+                                        <td
+                                            key={columns[i].template.id}
+                                            className={cn(
+                                                "sticky bottom-0 z-20 bg-card px-1 py-1.5 text-center text-xs text-muted-foreground",
+                                                i > 0 && "border-l",
+                                                i === columns.length - 1 && "border-r",
+                                            )}
+                                            title={`${total} of ${memberCount} hold ${columns[i].template.name}`}
+                                        >
+                                            {total}/{memberCount}
+                                        </td>
+                                    ))}
+                                </tr>
+                            </tfoot>
+                        </Glorious.Table>
+                    </Glorious.ScrollFrame>
+                )}
+            </Glorious.Root>
+        </>
+    );
+}
+
+function CellMark({ held, label }: { held: boolean; label: string }) {
+    return held ? (
+        <CircleCheckIcon
+            className="mx-auto size-4 text-green-600 dark:text-green-500"
+            aria-label={`${label}, held`}
+        />
+    ) : (
+        <MinusIcon
+            className="mx-auto size-4 text-muted-foreground/50"
+            aria-label={`${label}, missing`}
+        />
+    );
+}
+
+/** The lines left out of the comparison, by reason. */
+function ExcludedLinesNote({ excluded }: { excluded: ExcludedLine<I3BundleLine>[] }) {
+    const reasons = (Object.keys(EXCLUDED_LABELS) as ExcludedReason[]).flatMap((reason) => {
+        const reasonLines = excluded.filter((entry) => entry.reason === reason);
+        return reasonLines.length > 0 ? [{ reason, lines: reasonLines }] : [];
+    });
+
+    return (
+        <div className="text-sm text-muted-foreground">
+            <span>Left out of the comparison: </span>
+            {reasons.map(({ reason, lines }, reasonIndex) => (
+                <Fragment key={reason}>
+                    {reasonIndex > 0 && "; "}
+                    {lines.map(({ line }, lineIndex) => (
+                        <Fragment key={line.template.id}>
+                            {lineIndex > 0 && ", "}
+                            <I3TemplateLink template={line.template} />
+                        </Fragment>
+                    ))}{" "}
+                    ({EXCLUDED_LABELS[reason]})
+                </Fragment>
+            ))}
+            .
+        </div>
+    );
+}

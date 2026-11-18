@@ -10,6 +10,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -61,6 +62,28 @@ export function D4HI3Module_Bundle_Content({ bundleId }: { bundleId: I3BundleId 
                     <Saratoga.Header>
                         <Saratoga.Title>{bundle.name}</Saratoga.Title>
                         <Saratoga.Actions>
+                            {!deleted && (
+                                // Always the picker, never a one-team shortcut: knowing the teams
+                                // would need a D4H read, and this page has to work without a token.
+                                // The picker only queries D4H once it's opened.
+                                <Protect
+                                    permissions={{ d4hEquipment: ["view"], i3Item: ["issue"] }}
+                                >
+                                    <D4HTeamPickerDialog
+                                        label="Compare with a team"
+                                        section={(teamId) =>
+                                            route(
+                                                "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]",
+                                                {
+                                                    slug,
+                                                    bundle_id: bundle.id,
+                                                    d4h_team_id: String(teamId),
+                                                },
+                                            )
+                                        }
+                                    />
+                                </Protect>
+                            )}
                             <D4HI3Module_Bundle_Menu bundle={bundle} />
                         </Saratoga.Actions>
                     </Saratoga.Header>
