@@ -56,7 +56,7 @@ const organizationRoles = {
     "i3-admin": {
         displayName: "I3 Admin",
         description:
-            "Everything an I3 Editor can do, plus managing I3 templates — creating, editing and deleting them, including trash/restore/purge.",
+            "Everything an I3 Editor can do, plus managing I3 templates and bundles — creating, editing and deleting them, including trash/restore/purge.",
         isAdminAssignable: true,
         moduleId: "d4h-i3",
     },

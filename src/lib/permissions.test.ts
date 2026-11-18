@@ -72,11 +72,24 @@ describe("Roles", () => {
             expect(can("i3-editor", { i3Template: ["view"] })).toBe(true);
             expect(can("i3-editor", { i3Template: ["create"] })).toBe(false);
         });
+
+        it("can view bundles but not change them", () => {
+            expect(can("i3-editor", { i3Bundle: ["view"] })).toBe(true);
+            expect(can("i3-editor", { i3Bundle: ["create"] })).toBe(false);
+            expect(can("i3-editor", { i3Bundle: ["update"] })).toBe(false);
+            expect(can("i3-editor", { i3Bundle: ["delete"] })).toBe(false);
+        });
     });
 
     describe("i3-admin", () => {
         it("can author and delete templates, including through trash", () => {
             expect(can("i3-admin", { i3Template: ["view", "create", "update", "delete"] })).toBe(
+                true,
+            );
+        });
+
+        it("can manage bundles", () => {
+            expect(can("i3-admin", { i3Bundle: ["view", "create", "update", "delete"] })).toBe(
                 true,
             );
         });
@@ -210,6 +223,7 @@ describe("Roles", () => {
             for (const role of ["owner", "admin"] as const) {
                 expect(can(role, { i3Item: ["view"] })).toBe(false);
                 expect(can(role, { i3Template: ["view"] })).toBe(false);
+                expect(can(role, { i3Bundle: ["view"] })).toBe(false);
                 expect(can(role, { skillCheck: ["view"] })).toBe(false);
                 expect(can(role, { skillCheckSession: ["view"] })).toBe(false);
                 expect(can(role, { skillPackage: ["view"] })).toBe(false);
