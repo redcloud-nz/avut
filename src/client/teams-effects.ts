@@ -193,5 +193,12 @@ export const teamsEffects = createEffects<"teams">()({
         invalidate(
             trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
         ),
+        // Skill check sessions show their team's name.
+        invalidate(
+            trpc.skillCheckSessions.listSessions.queryFilter({
+                organizationId: vars.organizationId,
+            }),
+        ),
+        invalidate(trpc.skillCheckSessions.getSession.pathFilter()),
     ],
 });
