@@ -57,9 +57,42 @@ describe("TeamData.modifiableSchema slug", () => {
         expect(parseSlug("north-shore").data?.slug).toBe("north-shore");
     });
 
-    it("rejects an invalid or reserved slug", () => {
+    it("rejects a slug of the wrong shape", () => {
         expect(parseSlug("North").success).toBe(false);
-        expect(parseSlug("admin").success).toBe(false);
+        expect(parseSlug("a").success).toBe(false);
+    });
+
+    it("checks only the shape, so a stored slug that has since become reserved still parses", () => {
+        expect(parseSlug("admin").data?.slug).toBe("admin");
+    });
+});
+
+describe("TeamData.formSchema slug", () => {
+    const base = { name: "Team One", description: "", tags: [], properties: {} };
+
+    it("rejects a reserved slug on a new team", () => {
+        const result = TeamData.formSchema(null).safeParse({ ...base, slug: "admin" });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]).toMatchObject({
+            path: ["slug"],
+            message: "That slug is reserved.",
+        });
+    });
+
+    it("rejects changing to a reserved slug", () => {
+        expect(TeamData.formSchema("alpha").safeParse({ ...base, slug: "new" }).success).toBe(
+            false,
+        );
+    });
+
+    it("accepts the team's stored slug even if it has since become reserved", () => {
+        expect(TeamData.formSchema("admin").safeParse({ ...base, slug: "admin" }).success).toBe(
+            true,
+        );
+    });
+
+    it("accepts clearing the slug", () => {
+        expect(TeamData.formSchema("admin").safeParse({ ...base, slug: "" }).data?.slug).toBeNull();
     });
 });
 

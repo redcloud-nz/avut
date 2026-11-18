@@ -15,6 +15,7 @@ import {
 } from "@/lib/schemas/team-user";
 import type { UserId } from "@/lib/schemas/user";
 import type { LogEntryRef } from "@/server/log-entry";
+import { isUniqueViolation } from "@/server/prisma-errors";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -116,10 +117,17 @@ export async function listForTeam(ctx: OrgServiceContext, teamId: TeamId): Promi
         .sort((a, b) => a.user.name.localeCompare(b.user.name));
 }
 
-/** The teams a user has been granted access to in the organization, ordered by team name. */
+/**
+ * The teams a user has been granted access to in the organization, ordered by team name. Leaves out
+ * teams in the Rubbish bin (`Deleted`); archived teams stay, shown with their status.
+ */
 export async function listForUser(ctx: OrgServiceContext, userId: UserId): Promise<UserTeamData[]> {
     const grants = await ctx.prisma.teamUser.findMany({
-        where: { organizationId: ctx.organizationId, userId },
+        where: {
+            organizationId: ctx.organizationId,
+            userId,
+            team: { status: { not: "Deleted" } },
+        },
         select: {
             id: true,
             createdAt: true,
@@ -151,7 +159,7 @@ export async function grant(ctx: OrgServiceContext, teamId: TeamId, userId: User
     });
     if (!team) throw new NotFoundError(`Team(id=${teamId}) not found.`);
     if (team.status !== "Active") {
-        throw new ConflictError("Archived teams can't be granted access.");
+        throw new ConflictError("Only active teams can be granted access.");
     }
 
     const member = await ctx.prisma.organizationUser.findUnique({
@@ -166,23 +174,29 @@ export async function grant(ctx: OrgServiceContext, teamId: TeamId, userId: User
         where: { teamId_userId: { teamId, userId } },
         select: { id: true },
     });
-    if (existing) {
-        throw new ConflictError(`${member.user.name} already has access to ${team.name}.`);
-    }
+    const alreadyGranted = () =>
+        new ConflictError(`${member.user.name} already has access to ${team.name}.`);
+    if (existing) throw alreadyGranted();
 
     const id = TeamUserId.create();
-    const [created] = await ctx.prisma.$transaction([
-        ctx.prisma.teamUser.create({
-            data: { id, organizationId: ctx.organizationId, teamId, userId },
-        }),
-        ctx.logEvent({
-            action: "Create",
-            objectType: "TeamUser",
-            objectId: id,
-            description: `Granted ${member.user.name} access to team ${team.name}.`,
-            refs: grantRefs(teamId, userId),
-        }),
-    ]);
+    // A concurrent grant can land between the check above and the insert; the unique index on
+    // (teamId, userId) catches it, and it reads as the same duplicate grant.
+    const [created] = await ctx.prisma
+        .$transaction([
+            ctx.prisma.teamUser.create({
+                data: { id, organizationId: ctx.organizationId, teamId, userId },
+            }),
+            ctx.logEvent({
+                action: "Create",
+                objectType: "TeamUser",
+                objectId: id,
+                description: `Granted ${member.user.name} access to team ${team.name}.`,
+                refs: grantRefs(teamId, userId),
+            }),
+        ])
+        .catch((error: unknown) => {
+            throw isUniqueViolation(error) ? alreadyGranted() : error;
+        });
 
     return created;
 }

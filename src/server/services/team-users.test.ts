@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { nanoId16 } from "@/lib/id";
@@ -24,6 +24,7 @@ describe("team-users", () => {
         team: TeamId.create(),
         archivedTeam: TeamId.create(),
         emptyTeam: TeamId.create(),
+        binnedTeam: TeamId.create(),
         outsiderTeam: TeamId.create(),
         admin: UserId.create(),
         alice: UserId.create(),
@@ -39,6 +40,7 @@ describe("team-users", () => {
         carolGrant: TeamUserId.create(),
         deletedGrant: TeamUserId.create(),
         aliceArchivedGrant: TeamUserId.create(),
+        aliceBinnedGrant: TeamUserId.create(),
     };
 
     const db = createMockPrisma();
@@ -115,6 +117,7 @@ describe("team-users", () => {
             [T.team, T.org, "Rescue", "Active"],
             [T.archivedTeam, T.org, "Alpine", "Archived"],
             [T.emptyTeam, T.org, "Empty", "Active"],
+            [T.binnedTeam, T.org, "Binned", "Deleted"],
             [T.outsiderTeam, T.otherOrg, "Outsider", "Active"],
         ] as const) {
             await db.team.create({
@@ -146,6 +149,7 @@ describe("team-users", () => {
             [T.aliceGrant, T.team, T.alice],
             [T.deletedGrant, T.team, T.deleted],
             [T.aliceArchivedGrant, T.archivedTeam, T.alice],
+            [T.aliceBinnedGrant, T.binnedTeam, T.alice],
         ] as const) {
             await db.teamUser.create({
                 data: { id, organizationId: T.org, teamId, userId },
@@ -185,7 +189,7 @@ describe("team-users", () => {
     });
 
     describe("listForUser", () => {
-        it("lists the user's grants in the organization by team name, with slug and status", async () => {
+        it("lists the user's grants in the organization by team name, with slug and status, leaving out teams in the Rubbish bin", async () => {
             const rows = await TeamUsers.listForUser(ctx(), T.alice);
 
             expect(rows).toEqual([
@@ -258,7 +262,7 @@ describe("team-users", () => {
 
         it("throws ConflictError for a team that isn't Active", async () => {
             await expect(TeamUsers.grant(ctx(), T.archivedTeam, T.carol)).rejects.toThrow(
-                new ConflictError("Archived teams can't be granted access."),
+                new ConflictError("Only active teams can be granted access."),
             );
         });
 
@@ -278,6 +282,29 @@ describe("team-users", () => {
         it("throws ConflictError when the user already has access", async () => {
             await expect(TeamUsers.grant(ctx(), T.team, T.carol)).rejects.toThrow(ConflictError);
             expect(await entriesFor(T.carolGrant)).toHaveLength(0);
+        });
+
+        describe("when a concurrent grant wins the race", () => {
+            afterEach(() => {
+                vi.restoreAllMocks();
+            });
+
+            it("maps the unique violation to the same ConflictError", async () => {
+                vi.spyOn(db, "$transaction").mockRejectedValueOnce(
+                    Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
+                );
+
+                await expect(TeamUsers.grant(ctx(), T.emptyTeam, T.carol)).rejects.toThrow(
+                    new ConflictError("Carol already has access to Empty."),
+                );
+            });
+
+            it("rethrows any other failure unchanged", async () => {
+                const failure = new Error("connection lost");
+                vi.spyOn(db, "$transaction").mockRejectedValueOnce(failure);
+
+                await expect(TeamUsers.grant(ctx(), T.emptyTeam, T.carol)).rejects.toBe(failure);
+            });
         });
     });
 

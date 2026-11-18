@@ -1059,8 +1059,39 @@ describe("teamsRouter team slugs", () => {
         );
     });
 
+    it("refuses to create a team with a reserved slug", async () => {
+        await expect(
+            makeCaller().createTeam({
+                organizationId: T.org,
+                create: {
+                    name: "Foxtrot",
+                    slug: "admin",
+                    description: "",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "That slug is reserved." });
+        expect(await db.team.findMany({ where: { name: "Foxtrot" } })).toHaveLength(0);
+    });
+
+    it("refuses to change a team's slug to a reserved one", async () => {
+        await expect(updateAlpha("settings")).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: "That slug is reserved.",
+        });
+    });
+
     it("updates a team whose stored slug has since become reserved", async () => {
         await db.team.update({ where: { id: T.team }, data: { slug: "admin" } });
+
+        // A name-only edit resends the stored slug, which must still be accepted.
+        const { updated: renamed } = await makeCaller().updateTeam({
+            organizationId: T.org,
+            teamId: T.team,
+            update: { name: "Alpha 3", slug: "admin", description: "", tags: [], properties: {} },
+        });
+        expect(renamed).toMatchObject({ name: "Alpha 3", slug: "admin" });
 
         const { updated } = await updateAlpha(null);
 

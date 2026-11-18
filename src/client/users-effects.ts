@@ -13,6 +13,8 @@ const userBinCaches = (vars: { userId: string }) => [
     invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
     invalidate(trpc.organizations.listOrganizations.queryFilter()),
     invalidate(trpc.organizations.getOrganizationAsAdmin.queryFilter()),
+    // Soft-deleted users can't be granted team access, in any org.
+    invalidate(trpc.teamUsers.listGrantableUsers.queryFilter()),
 ];
 
 /**
@@ -60,6 +62,10 @@ export const usersEffects = createEffects<"users">()({
         invalidate(
             trpc.users.listUnlinkedMembers.queryFilter({ organizationId: vars.organizationId }),
         ),
+        // A team's access list marks users whose linked person is on its roster.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     purgeUser: (vars) => userBinCaches(vars),
     recoverUser: (vars) => userBinCaches(vars),
@@ -92,6 +98,10 @@ export const usersEffects = createEffects<"users">()({
         ),
         invalidate(
             trpc.users.listUnlinkedMembers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        // A team's access list marks users whose linked person is on its roster.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({ organizationId: vars.organizationId }),
         ),
         ...(data.personId
             ? [

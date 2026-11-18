@@ -58,7 +58,7 @@ export function AdminModule_CreateTeam_Dialog() {
 
     const formId = useId();
     const form = useForm({
-        resolver: zodResolver(TeamData.modifiableSchema),
+        resolver: zodResolver(TeamData.formSchema(null)),
         defaultValues: {
             name: "",
             slug: "",

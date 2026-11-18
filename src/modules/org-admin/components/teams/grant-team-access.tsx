@@ -35,6 +35,8 @@ import { TeamData } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { trpc } from "@/trpc/client";
 
+const SELECT_A_USER = "Select a user.";
+
 type GrantTeamAccessProps = DialogProps & {
     team: TeamData;
     /** Where focus goes on close when the control that opened the dialog is gone. */
@@ -87,7 +89,14 @@ function GrantTeamAccess_Body({ team, onDone }: { team: TeamData; onDone: () => 
 
     const formId = useId();
     const form = useForm({
-        resolver: zodResolver(z.object({ userId: UserId.schema })),
+        resolver: zodResolver(
+            z.object({
+                userId: z
+                    .string({ error: SELECT_A_USER })
+                    .min(1, SELECT_A_USER)
+                    .pipe(UserId.schema),
+            }),
+        ),
     });
 
     const mutation = useMutation(

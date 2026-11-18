@@ -98,6 +98,9 @@ export const organizationsEffects = createEffects<"organizations">()({
         ),
         // `removeOrganizationMember` deletes the member's team access grants.
         invalidate(
+            trpc.teamUsers.listGrantableUsers.queryFilter({ organizationId: vars.organizationId }),
+        ),
+        invalidate(
             trpc.teamUsers.listTeamUsers.queryFilter({ organizationId: vars.organizationId }),
         ),
         invalidate(

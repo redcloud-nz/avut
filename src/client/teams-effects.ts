@@ -66,6 +66,10 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        // `listUserTeams` leaves out teams in the Rubbish bin, so a recovered team reappears there.
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     createTeam: (vars) => [
@@ -118,6 +122,13 @@ export const teamsEffects = createEffects<"teams">()({
                 personId: vars.personId,
             }),
         ),
+        // The team's access list shows an "On roster" badge per user.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+        ),
     ],
     deleteTeamMembership: (vars) => [
         invalidate(
@@ -133,6 +144,13 @@ export const teamsEffects = createEffects<"teams">()({
             }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // The team's access list shows an "On roster" badge per user.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+        ),
     ],
     recoverTeamMembership: (vars) => [
         invalidate(
@@ -148,6 +166,13 @@ export const teamsEffects = createEffects<"teams">()({
             }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // The team's access list shows an "On roster" badge per user.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+        ),
     ],
     updateTeam: (vars, { updated }) => [
         write(

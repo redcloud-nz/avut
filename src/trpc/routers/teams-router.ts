@@ -14,7 +14,7 @@ import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { D4HSyncItemOutcome, D4HSyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
-import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
+import { TeamData, TeamId, TeamRef, TeamSlug } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
@@ -65,6 +65,16 @@ async function assertSlugAvailable(
     if (slug === null) return;
     const holder = await Teams.getBySlug(prisma, slug);
     if (holder && holder.id !== teamId) throw slugConflictError(slug);
+}
+
+/**
+ * Refuse a reserved slug, unless it's the team's stored slug: `modifiableSchema` checks only the
+ * slug's shape, so a team whose slug has since become reserved still takes an edit that resends it.
+ */
+function assertSlugAllowed(slug: string | null, storedSlug: string | null): void {
+    if (slug !== null && slug !== storedSlug && TeamSlug.isReserved(slug)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: TeamSlug.reservedMessage });
+    }
 }
 
 /**
@@ -151,6 +161,7 @@ export const teamsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { organizationId, create } }) => {
             const teamId = TeamId.create();
 
+            assertSlugAllowed(create.slug, null);
             await assertSlugAvailable(ctx.prisma, create.slug, teamId);
 
             const changes = diffObject({ tags: [], properties: {} }, create);
@@ -771,6 +782,7 @@ export const teamsRouter = createTrpcRouter({
 
             if (diff.length == 0) return { updated: existingTeam }; // No changes
 
+            assertSlugAllowed(update.slug, existingTeam.slug);
             await assertSlugAvailable(ctx.prisma, update.slug, teamId);
 
             const [updated] = await ctx.prisma

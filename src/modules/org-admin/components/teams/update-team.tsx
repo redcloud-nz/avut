@@ -42,7 +42,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
 
     const formId = useId();
     const form = useForm({
-        resolver: zodResolver(TeamData.modifiableSchema),
+        resolver: zodResolver(TeamData.formSchema(team.slug)),
         defaultValues: { ...team, slug: team.slug ?? "" },
     });
 

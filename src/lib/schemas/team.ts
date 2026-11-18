@@ -26,19 +26,37 @@ export type TeamId = string & z.BRAND<"TeamId">;
  */
 export const TEAM_SLUG_RESERVED = ["admin", "api", "create", "edit", "new", "settings"] as const;
 
+const TEAM_SLUG_RESERVED_MESSAGE = "That slug is reserved.";
+
+function isReservedTeamSlug(slug: string): boolean {
+    return (TEAM_SLUG_RESERVED as readonly string[]).includes(slug);
+}
+
+const teamSlugShapeSchema = z
+    .string()
+    .min(2)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, and hyphens only");
+
 export const TeamSlug = {
     /**
-     * Input schema for a team slug: the organization slug rule (2–50 lowercase letters,
+     * Input schema for a new team slug: the organization slug rule (2–50 lowercase letters,
      * digits and hyphens), minus the reserved words. Slugs are unique across all orgs.
      */
-    schema: z
-        .string()
-        .min(2)
-        .max(50)
-        .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, and hyphens only")
-        .refine((slug) => !(TEAM_SLUG_RESERVED as readonly string[]).includes(slug), {
-            message: "That slug is reserved.",
-        }),
+    schema: teamSlugShapeSchema.refine((slug) => !isReservedTeamSlug(slug), {
+        message: TEAM_SLUG_RESERVED_MESSAGE,
+    }),
+
+    /**
+     * The slug's shape only (characters and length), without the reserved-word check. A team
+     * whose stored slug has since become reserved must still take an edit that resends it, so
+     * `modifiableSchema` uses this and the reserved words are checked only when the slug changes.
+     */
+    shapeSchema: teamSlugShapeSchema,
+
+    reservedMessage: TEAM_SLUG_RESERVED_MESSAGE,
+
+    isReserved: isReservedTeamSlug,
 } as const;
 
 const teamSchema = z.object({
@@ -68,20 +86,38 @@ const teamSchema = z.object({
         .nullable(),
 });
 
+const teamModifiableSchema = teamSchema
+    .pick({
+        name: true,
+        slug: true,
+        description: true,
+        tags: true,
+        properties: true,
+    })
+    .extend({
+        // An empty field clears the slug. Shape only: reserved words are checked when the
+        // slug changes (`formSchema` in the dialogs, `assertSlugAllowed` in the router).
+        slug: z.union([z.literal("").transform(() => null), TeamSlug.shapeSchema]).nullable(),
+    });
+
 export const TeamData = {
     schema: teamSchema,
 
-    modifiableSchema: teamSchema
-        .pick({
-            name: true,
-            slug: true,
-            description: true,
-            tags: true,
-            properties: true,
-        })
-        .extend({
-            // An empty field clears the slug.
-            slug: z.union([z.literal("").transform(() => null), TeamSlug.schema]).nullable(),
+    modifiableSchema: teamModifiableSchema,
+
+    /**
+     * The team dialogs' form schema: `modifiableSchema`, plus the reserved-word check when the
+     * slug differs from `storedSlug` (the team's current slug, or null for a new team).
+     */
+    formSchema: (storedSlug: string | null) =>
+        teamModifiableSchema.superRefine((data, ctx) => {
+            if (data.slug !== null && data.slug !== storedSlug && isReservedTeamSlug(data.slug)) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["slug"],
+                    message: TEAM_SLUG_RESERVED_MESSAGE,
+                });
+            }
         }),
 
     fromRecord: (

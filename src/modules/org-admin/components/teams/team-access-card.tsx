@@ -51,6 +51,9 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
     );
 
     const grantButtonRef = useRef<HTMLButtonElement>(null);
+    // Always mounted, unlike the grant button (absent on an archived team or without
+    // `member: ["update"]`), so revoke's focus has somewhere to land.
+    const titleRef = useRef<HTMLDivElement>(null);
     const revokeGrant = grants.find((grant) => grant.userId === userId) ?? null;
 
     function openRevoke(id: string) {
@@ -65,7 +68,9 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Access</CardTitle>
+                <CardTitle ref={titleRef} tabIndex={-1}>
+                    Access
+                </CardTitle>
                 {team.status === "Active" && (
                     <CardAction>
                         <Protect permissions={{ member: ["update"] }}>
@@ -132,7 +137,7 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
                 <AdminModule_RevokeTeamAccess_Dialog
                     team={team}
                     grant={revokeGrant}
-                    returnFocusRef={grantButtonRef}
+                    returnFocusRef={titleRef}
                     open={action === "revoke-access"}
                     onOpenChange={(open) => (open ? undefined : closeRevoke())}
                 />

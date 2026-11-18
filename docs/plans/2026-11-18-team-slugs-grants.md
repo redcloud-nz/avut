@@ -112,11 +112,15 @@ Admin → Teams gains a Slug field and an Access card, and Admin → Users gains
 
 ## Parked
 
+- Make the Access card on a team's admin page match the look of the team members card (Related → Personnel). The user raised this at the visual checkpoint on 2026-11-18: the card works for now and can be harmonised later.
+
 ## Review notes
 
-- (Group A, Task 2) `updateTeam`'s input still runs `TeamSlug.schema`, so a team whose stored slug later becomes reserved can't take a name-only edit: the resent slug fails validation. Accept an unchanged stored slug. For example, `modifiableSchema` validates only the slug's shape (characters and length), and the router (plus the dialog, for the error message) checks reserved words only when the slug changes. Extend the "since become reserved" test to cover a name-only edit.
-- (Group B, Task 4) `TeamUsers.listForUser` leaves out teams with status `Deleted` (in the Rubbish bin). Archived teams stay, and Task 9 shows them with a badge.
-- (Group B, Task 5) Add `recoverTeam` to the `teamsEffects` that invalidate `teamUsers.listUserTeams`, since `listForUser` hides Deleted teams.
-- (Group B, Task 5) The `onRoster` badge goes stale: `teamsEffects` `createTeamMembership`/`deleteTeamMembership`/`recoverTeamMembership` should invalidate `teamUsers.listTeamUsers` for that team, and `usersEffects` `linkPerson`/`unlinkPerson` should invalidate it org-wide.
-- (Group B, Task 4) `TeamUsers.grant` races: map a P2002 (`isUniqueViolation`) from its `$transaction` to the same duplicate-grant `ConflictError`. Also reword the non-Active error to "Only active teams can be granted access."
-- (Group C, Task 8) Add `teamUsers.listGrantableUsers` (org-wide) to the effects of `removeOrganizationMember`, and of user delete and recover, where those have effects.
+- [x] (Group A, Task 2) `updateTeam`'s input still runs `TeamSlug.schema`, so a team whose stored slug later becomes reserved can't take a name-only edit: the resent slug fails validation. Accept an unchanged stored slug. For example, `modifiableSchema` validates only the slug's shape (characters and length), and the router (plus the dialog, for the error message) checks reserved words only when the slug changes. Extend the "since become reserved" test to cover a name-only edit.
+- [x] (Group B, Task 4) `TeamUsers.listForUser` leaves out teams with status `Deleted` (in the Rubbish bin). Archived teams stay, and Task 9 shows them with a badge.
+- [x] (Group B, Task 5) Add `recoverTeam` to the `teamsEffects` that invalidate `teamUsers.listUserTeams`, since `listForUser` hides Deleted teams.
+- [x] (Group B, Task 5) The `onRoster` badge goes stale: `teamsEffects` `createTeamMembership`/`deleteTeamMembership`/`recoverTeamMembership` should invalidate `teamUsers.listTeamUsers` for that team, and `usersEffects` `linkPerson`/`unlinkPerson` should invalidate it org-wide.
+- [x] (Group B, Task 4) `TeamUsers.grant` races: map a P2002 (`isUniqueViolation`) from its `$transaction` to the same duplicate-grant `ConflictError`. Also reword the non-Active error to "Only active teams can be granted access."
+- [x] (Group C, Task 8) Add `teamUsers.listGrantableUsers` (org-wide) to the effects of `removeOrganizationMember`, and of user delete and recover, where those have effects.
+- [x] (Group C, Task 8) The team page prefetches `teamUsers.listTeamUsers` for every viewer, but a viewer without `member: ["view"]` gets FORBIDDEN on every visit. Prefetch it only when the caller holds `member: ["view"]`.
+- [x] (Group C, Task 8) Revoke's `returnFocusRef` is the grant button, which isn't rendered on an archived team. Give the card a focus target that's always mounted (e.g. the `CardTitle` with `tabIndex={-1}`). Also give the grant picker a "Select a user." error in place of Zod's raw message.
