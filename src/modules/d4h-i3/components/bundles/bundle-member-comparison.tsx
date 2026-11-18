@@ -201,7 +201,7 @@ function CellItems({ cell, member }: { cell: BundleCell<IssuedItem>; member: D4H
     if (cell.state === "held") {
         return (
             <ul className="flex flex-col gap-1">
-                {cell.items.map((item) => (
+                {cell.items.map(({ item }) => (
                     <ItemLine key={item.id} item={item} member={member} />
                 ))}
             </ul>

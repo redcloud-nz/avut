@@ -5,17 +5,34 @@
 
 /**
  * Compare an I3 bundle against a D4H team: for each member and each comparable line, whether they
- * hold an item of the line's D4H type. Pure and structurally typed, so it runs on the client over
+ * hold an item of the line's D4H type, and how the held items fare against the line's template
+ * (`item-quality.ts`). Pure and structurally typed, so it runs on the client over
  * `i3Bundles.getBundle`, `d4hApi.listTeamMembers`, `d4hApi.listTeamIssuedEquipment` and
- * `i3.listTemplateFits`. See `docs/plans/2026-11-18-i3-bundles.md`, "What held means".
+ * `i3.listTemplateFits`. See `docs/plans/2026-11-18-i3-bundles.md`, "What held means", and
+ * `docs/plans/2026-11-19-i3-data-quality.md`, "Bundle cells".
  */
+
+import {
+    checkItemQuality,
+    worstQuality,
+    type ItemQualityItem,
+    type ItemQualityResult,
+    type ItemQualityRules,
+    type ItemQualityState,
+} from "./item-quality";
 
 /** A bundle line, as far as the comparison reads it (`I3BundleLine` fits). */
 export type BundleCompareLine = {
     template: {
         id: string;
         status: string;
-        d4h: { kindId: number } | null;
+        d4h: {
+            kindId: number;
+            requireSN: boolean;
+            brandModelRule: ItemQualityRules["brandModelRule"];
+        } | null;
+        /** The brand/model pairs of the template's D4H variants. */
+        variants: ItemQualityRules["variants"];
     };
 };
 
@@ -23,7 +40,7 @@ export type BundleCompareLine = {
 export type BundleCompareMember = { id: number; name: string };
 
 /** An issued item with its holder, as `d4hApi.listTeamIssuedEquipment` returns it. */
-export type BundleCompareItem = {
+export type BundleCompareItem = ItemQualityItem & {
     status: string;
     kind: { id: number };
     holder: { id: number };
@@ -39,13 +56,15 @@ export type ExcludedReason = "deleted" | "no-d4h-type" | "not-in-team";
 
 export type ExcludedLine<L extends BundleCompareLine> = { line: L; reason: ExcludedReason };
 
-/** A cell's state. #519 widens this with a data-quality state. */
+/** Whether the member has the kit. How good their records are is the cell's `quality`. */
 export type BundleCellState = "held" | "missing";
 
 export type BundleCell<I extends BundleCompareItem> = {
     state: BundleCellState;
-    /** The member's matching items that count. */
-    items: I[];
+    /** The worst quality among the counted items (one bad record isn't hidden); `null` when missing. */
+    quality: ItemQualityState | null;
+    /** The member's matching items that count, each judged against the line's template. */
+    items: { item: I; quality: ItemQualityResult }[];
     /** The member's matching items marked LOST: they don't count, but the member page names them. */
     lost: I[];
 };
@@ -156,6 +175,14 @@ export function compareBundle<
         else itemsByHolder.set(item.holder.id, [item]);
     }
 
+    const columnRules = columns.map(
+        ({ template }): ItemQualityRules => ({
+            requireSN: template.d4h.requireSN,
+            brandModelRule: template.d4h.brandModelRule,
+            variants: template.variants,
+        }),
+    );
+
     const columnTotals = columns.map(() => 0);
 
     const rows = [...members]
@@ -167,14 +194,17 @@ export function compareBundle<
                 const matching = memberItems.filter(
                     (item) => item.kind.id === column.template.d4h.kindId,
                 );
-                const counted = matching.filter((item) => item.status !== LOST_STATUS);
+                const counted = matching
+                    .filter((item) => item.status !== LOST_STATUS)
+                    .map((item) => ({ item, quality: checkItemQuality(item, columnRules[index]) }));
                 const lost = matching.filter((item) => item.status === LOST_STATUS);
                 const state: BundleCellState = counted.length > 0 ? "held" : "missing";
                 if (state === "held") {
                     heldCount++;
                     columnTotals[index]++;
                 }
-                return { state, items: counted, lost };
+                const quality = worstQuality(counted.map((entry) => entry.quality))?.state ?? null;
+                return { state, quality, items: counted, lost };
             });
             return { member, cells, heldCount };
         });

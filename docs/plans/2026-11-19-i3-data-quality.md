@@ -169,7 +169,7 @@ Issued Types page for a team, and the bundle comparison.
     plus a blank required serial (incomplete);
     incomplete winning over mismatch; best/worst ordering; the labels. `npm run check` passes.
 
-- [ ] **Task 4: The bundle comparison's quality states**
+- [x] **Task 4: The bundle comparison's quality states** (feat(d4h-i3): judge bundle cells against their line's template)
   - **Files:** `src/modules/d4h-i3/lib/bundle-compare.ts`,
     `src/modules/d4h-i3/lib/bundle-compare.test.ts`.
   - **Do:** Widen `BundleCompareLine.template.d4h` with `requireSN` and `brandModelRule`, and add
