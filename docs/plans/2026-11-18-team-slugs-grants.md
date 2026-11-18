@@ -72,7 +72,7 @@ Both issues add team data with admin UI on the same page (`orgs/[slug]/admin/tea
 
   - **Done when:** router tests show that a `member`-role caller (no `member: ["update"]`) is refused for grant and revoke, that an admin can grant and revoke, and that domain errors map to `NOT_FOUND`/`CONFLICT`. `npm run check` passes.
 
-- [ ] **Task 6: honour `OrganizationInvitation.teamId` on accept**
+- [x] **Task 6: honour `OrganizationInvitation.teamId` on accept**
   - **Files:** `src/trpc/routers/user-router.ts`, `src/trpc/routers/user-router.test.ts`
   - **Do:** Per Decisions. `findOwnPendingInvitation` already returns `teamId`, and better-auth ignores it with teams disabled. Hoist the `orgCtx` the person-linking block builds, then after person-linking, in its own try/catch: if `invitation.teamId` parses with `TeamId.schema.safeParse` (better-auth could store several comma-joined; skip if it doesn't parse), call `TeamUsers.grant(orgCtx, teamId, ctx.userId)`. The test must seed the `OrganizationUser`, because `acceptInvitationMock` doesn't create it. Catch `NotFoundError`/`ConflictError` quietly (a missing, archived or already-granted team is skipped), and `console.error` anything else. The accept still succeeds either way.
   - **Done when:** tests cover: an invitation with no `teamId` creates no grant; an invitation with an Active team's `teamId` creates a grant and its log entry; an archived team's `teamId` skips the grant and still accepts; a grant that throws unexpectedly still returns `organizationSlug`. `npm run check` passes.
@@ -114,3 +114,4 @@ Admin → Teams gains a Slug field and an Access card, and Admin → Users gains
 
 - (Group A, Task 2) `updateTeam`'s input still runs `TeamSlug.schema`, so a team whose stored slug later becomes reserved can't take a name-only edit: the resent slug fails validation. Accept an unchanged stored slug. For example, `modifiableSchema` validates only the slug's shape (characters and length), and the router (plus the dialog, for the error message) checks reserved words only when the slug changes. Extend the "since become reserved" test to cover a name-only edit.
 - (Group B, Task 4) `TeamUsers.listForUser` leaves out teams with status `Deleted` (in the Rubbish bin). Archived teams stay, and Task 9 shows them with a badge.
+- (Group B, Task 5) Add `recoverTeam` to the `teamsEffects` that invalidate `teamUsers.listUserTeams`, since `listForUser` hides Deleted teams.
