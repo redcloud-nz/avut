@@ -36,6 +36,9 @@ export function D4HI3_Sidebar_Menu() {
                     href={route("/orgs/[slug]/d4h-i3/issued-types", { slug })}
                 />
             </Protect>
+            <Protect permissions={{ i3Bundle: ["view"] }}>
+                <NavSubItem label="Bundles" href={route("/orgs/[slug]/d4h-i3/bundles", { slug })} />
+            </Protect>
             <Protect permissions={{ i3Template: ["view"] }}>
                 <NavSubItem
                     label="Templates"

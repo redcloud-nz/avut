@@ -142,6 +142,7 @@ model Organization {
   providerCredentials       ProviderCredential[]       @relation("provider_credential_to_organization")
   teamMemberships           TeamMembership[]           @relation("team_membership_to_organization")
 
+  i3Bundles     I3Bundle[]     @relation("i3_bundle_to_organization")
   i3Templates   I3Template[]   @relation("i3_template_to_organization")
   formInstances FormInstance[] @relation("form_instance_to_organization")
   d4hTasks      D4HTask[]      @relation("d4h_task_to_organization")
@@ -859,6 +860,8 @@ model I3Template {
   d4h      I3Template_D4H?     @relation("i3_template_d4h_to_i3_template")
   variants I3TemplateVariant[] @relation("i3_template_variant_to_i3_template")
 
+  bundleItems I3BundleItem[] @relation("i3_bundle_item_to_i3_template")
+
   @@index([organizationId])
   @@map("i3_templates")
 }
@@ -905,6 +908,36 @@ model I3TemplateVariant_D4H {
 
   @@unique([variantId])
   @@map("i3_template_variant_d4h")
+}
+
+model I3Bundle {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation("i3_bundle_to_organization", fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+
+  status    RecordStatus @default(Active)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  items I3BundleItem[] @relation("i3_bundle_item_to_i3_bundle")
+
+  @@index([organizationId])
+  @@map("i3_bundles")
+}
+
+model I3BundleItem {
+  bundleId   String
+  bundle     I3Bundle   @relation("i3_bundle_item_to_i3_bundle", fields: [bundleId], references: [id], onDelete: Cascade)
+  templateId String
+  template   I3Template @relation("i3_bundle_item_to_i3_template", fields: [templateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([bundleId, templateId])
+  @@index([templateId])
+  @@map("i3_bundle_items")
 }
 
 model FormInstance {

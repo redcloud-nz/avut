@@ -218,9 +218,10 @@ describe("history.listObjectHistory", () => {
         await makeCaller("admin").listObjectHistory(personInput);
 
         // `admin` holds neither `skillCheckSession:view` nor `skillPackage:view`, which gates
-        // `Skill` and `SkillGroup` as well as `SkillPackage`.
+        // `Skill` and `SkillGroup` as well as `SkillPackage`, nor `i3Bundle:view`.
         const expected = LogObjectType.values.filter(
             (type) =>
+                type !== "I3Bundle" &&
                 type !== "SkillCheckSession" &&
                 type !== "Skill" &&
                 type !== "SkillGroup" &&

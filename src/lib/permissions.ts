@@ -16,6 +16,8 @@ const statement = {
     d4hNag: ["view", "update", "run"],
     // `apply` checks or dismisses a queued D4H task.
     d4hTask: ["view", "apply"],
+    // Adding or removing a bundle's templates is `update`.
+    i3Bundle: ["view", "create", "update", "delete"],
     i3Item: ["view", "issue", "inspect", "return"],
     i3Template: ["view", "create", "update", "delete"],
     invitation: ["view", "create", "update", "cancel"],
@@ -85,6 +87,7 @@ export const Roles = {
     "i3-editor": ac.newRole({
         d4hEquipment: ["view", "update"],
         d4hTask: ["view", "apply"],
+        i3Bundle: ["view"],
         i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view"],
         // Paired with `person: ["view"]` — the user↔person link procedures require both.
@@ -93,11 +96,12 @@ export const Roles = {
         organizationNote: ["view", "create"],
         person: ["view"],
     }),
-    // The I3 module's admin role: everything `i3-editor` can do, plus managing I3 templates —
-    // creation, editing and deletion (incl. trash/restore/purge).
+    // The I3 module's admin role: everything `i3-editor` can do, plus managing I3 templates and
+    // bundles — creation, editing and deletion (incl. trash/restore/purge).
     "i3-admin": ac.newRole({
         d4hEquipment: ["view", "update"],
         d4hTask: ["view", "apply"],
+        i3Bundle: ["view", "create", "update", "delete"],
         i3Item: ["view", "issue", "inspect", "return"],
         i3Template: ["view", "create", "update", "delete"],
         member: ["view"],

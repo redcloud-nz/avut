@@ -21,6 +21,8 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // A bundle page flags its deleted templates.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     recoverTemplate: (vars, { updated }) => [
         write(
@@ -33,12 +35,15 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId: vars.organizationId })),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     updateTemplate: ({ organizationId, templateId }) => [
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId })),
         invalidate(trpc.i3.getTemplate.queryFilter({ organizationId, templateId })),
         // A changed D4H category/type changes which teams the template fits.
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page shows its templates' names and D4H types.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     createTemplateVariant: ({ organizationId, templateId }, { created }) => [
         write(trpc.i3.listTemplates.queryKey({ organizationId }), (old) =>

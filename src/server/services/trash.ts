@@ -20,6 +20,7 @@ import "server-only";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import { Operations } from "@/lib/operations";
+import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
@@ -31,6 +32,7 @@ import { TeamMembershipId } from "@/lib/schemas/team-membership";
 import { TrashableEntities, type TrashableEntityId } from "@/lib/trash-registry";
 import { createLogBatch, type LogEntryRef } from "@/server/log-entry";
 
+import * as I3Bundles from "./i3-bundles";
 import * as I3Templates from "./i3-templates";
 import * as OrgSettings from "./organization-settings";
 import * as Personnel from "./personnel";
@@ -249,6 +251,31 @@ const handlers: Record<TrashableEntityId, TrashHandler> = {
             await ctx.prisma.$transaction([
                 purgeLog(ctx, "i3Template", id, name),
                 ctx.prisma.i3Template.delete({ where: { id } }),
+            ]);
+        },
+    },
+    i3Bundle: {
+        async list(ctx) {
+            const rows = await ctx.prisma.i3Bundle.findMany({
+                where: deletedIn(ctx),
+                select: { id: true, name: true },
+            });
+            return rows.map((r) => ({ type: "i3Bundle", ...r }));
+        },
+        find: (ctx, id) =>
+            ctx.prisma.i3Bundle.findUnique({
+                where: { id, organizationId: ctx.organizationId },
+                select: { status: true, name: true },
+            }),
+        async recover(ctx, id) {
+            await I3Bundles.recover(ctx, I3BundleId.schema.parse(id));
+        },
+        purgeBlocker: async () => null,
+        async purge(ctx, id, name) {
+            // The bundle's lines go with it (`onDelete: Cascade`).
+            await ctx.prisma.$transaction([
+                purgeLog(ctx, "i3Bundle", id, name),
+                ctx.prisma.i3Bundle.delete({ where: { id } }),
             ]);
         },
     },
