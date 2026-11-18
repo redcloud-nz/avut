@@ -22,7 +22,7 @@ import {
 import { useOrganization } from "@/hooks/use-organization";
 import { usesOtherRecords } from "@/lib/i3-template-fit";
 import { route } from "@/lib/routes";
-import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3BrandModelRule, I3TemplateId } from "@/lib/schemas/i3-template";
 import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
@@ -141,6 +141,16 @@ export function D4HI3Module_Template_Content({ templateId }: { templateId: I3Tem
                                             <DataItemTitle>Require Serial Number</DataItemTitle>
                                             <DataItemValue>
                                                 {template.d4h?.requireSN ? "Yes" : "No"}
+                                            </DataItemValue>
+                                        </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Brand &amp; Model</DataItemTitle>
+                                            <DataItemValue>
+                                                {template.d4h
+                                                    ? I3BrandModelRule.label[
+                                                          template.d4h.brandModelRule
+                                                      ]
+                                                    : "—"}
                                             </DataItemValue>
                                         </DataItem>
                                         <DataItem inline>

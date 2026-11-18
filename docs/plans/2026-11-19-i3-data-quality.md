@@ -189,7 +189,7 @@ Issued Types page for a team, and the bundle comparison.
 
 ### Review group B: UI (visual)
 
-- [ ] **Task 5: Brand & Model on the template forms and page** — `visual`, `mechanical`
+- [x] **Task 5: Brand & Model on the template forms and page** (feat(d4h-i3): edit and show a template's brand & model rule) — `visual`, `mechanical`
   - **Files:** `src/modules/d4h-i3/components/templates/create-template.tsx`,
     `src/modules/d4h-i3/components/templates/update-template.tsx`,
     `src/modules/d4h-i3/components/templates/template-content.tsx`.
@@ -260,3 +260,10 @@ Brand & Model setting on templates, quality flags on Issued Types and the bundle
 ## Parked
 
 (none yet)
+
+## Review notes
+
+- `src/modules/d4h-i3/lib/item-quality.ts`: type `ItemQualityRules.brandModelRule` as
+  `I3BrandModelRule` (`import type` from `src/lib/schemas/i3-template.ts`) instead of the
+  hand-written union, and fix the `ItemQualityState` comment ("best to worst" doesn't match the
+  union order; point at `STATE_RANK` or reorder to `"ok" | "mismatch" | "incomplete"`).
