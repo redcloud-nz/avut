@@ -5,6 +5,7 @@
 "use client";
 
 import { CircleCheckIcon, MinusIcon } from "lucide-react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Fragment } from "react";
 
@@ -151,7 +152,7 @@ export function D4HI3Module_BundleMatrix({
                     )}
                 </Glorious.Header>
 
-                {excluded.length > 0 && <ExcludedLinesNote excluded={excluded} />}
+                {excluded.length > 0 && <D4HI3Module_BundleExcludedLines excluded={excluded} />}
 
                 {columns.length === 0 ? (
                     <Empty>
@@ -227,47 +228,67 @@ export function D4HI3Module_BundleMatrix({
                                 </tr>
                             </thead>
                             <tbody>
-                                {rows.map((row) => (
-                                    <tr
-                                        key={row.member.id}
-                                        className="group/row hover:bg-accent/50"
-                                    >
-                                        <th
-                                            scope="row"
-                                            className={cn(
-                                                stickyFirstCol,
-                                                "border-r border-b px-3 py-1.5 text-left font-normal",
-                                            )}
+                                {rows.map((row) => {
+                                    const memberHref = route(
+                                        "/orgs/[slug]/d4h-i3/bundles/[bundle_id]/teams/[d4h_team_id]/members/[member_id]",
+                                        {
+                                            slug,
+                                            bundle_id: bundle.id,
+                                            d4h_team_id: String(teamId),
+                                            member_id: String(row.member.id),
+                                        },
+                                    );
+                                    return (
+                                        <tr
+                                            key={row.member.id}
+                                            className="group/row hover:bg-accent/50"
                                         >
-                                            <div className="flex items-baseline justify-between gap-2">
-                                                <span className="truncate" title={row.member.name}>
-                                                    {row.member.name}
-                                                </span>
-                                                <span className="shrink-0 text-xs text-muted-foreground">
-                                                    {row.heldCount} of {columns.length}
-                                                </span>
-                                            </div>
-                                        </th>
-                                        {row.cells.map((cell, i) => (
-                                            <td
-                                                key={columns[i].template.id}
+                                            <th
+                                                scope="row"
                                                 className={cn(
-                                                    "border-b px-2 py-1.5 text-center",
-                                                    i > 0 && "border-l",
-                                                    categoryStarts.has(i) &&
-                                                        i > 0 &&
-                                                        "border-l-muted-foreground/40",
-                                                    i === columns.length - 1 && "border-r",
+                                                    stickyFirstCol,
+                                                    "border-r border-b px-3 py-1.5 text-left font-normal",
                                                 )}
                                             >
-                                                <CellMark
-                                                    held={cell.state === "held"}
-                                                    label={`${row.member.name}: ${columns[i].template.name}`}
-                                                />
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
+                                                <div className="flex items-baseline justify-between gap-2">
+                                                    <Link
+                                                        href={memberHref}
+                                                        className="truncate hover:underline"
+                                                        title={row.member.name}
+                                                    >
+                                                        {row.member.name}
+                                                    </Link>
+                                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                                        {row.heldCount} of {columns.length}
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            {row.cells.map((cell, i) => (
+                                                <td
+                                                    key={columns[i].template.id}
+                                                    className={cn(
+                                                        "border-b p-0 text-center",
+                                                        i > 0 && "border-l",
+                                                        categoryStarts.has(i) &&
+                                                            i > 0 &&
+                                                            "border-l-muted-foreground/40",
+                                                        i === columns.length - 1 && "border-r",
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={memberHref}
+                                                        className="block px-2 py-1.5 hover:bg-accent"
+                                                    >
+                                                        <CellMark
+                                                            held={cell.state === "held"}
+                                                            label={`${row.member.name}: ${columns[i].template.name}`}
+                                                        />
+                                                    </Link>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                             <tfoot>
                                 <tr>
@@ -314,8 +335,12 @@ function CellMark({ held, label }: { held: boolean; label: string }) {
     );
 }
 
-/** The lines left out of the comparison, by reason. */
-function ExcludedLinesNote({ excluded }: { excluded: ExcludedLine<I3BundleLine>[] }) {
+/** The lines left out of the comparison, by reason. The member comparison page shows it too. */
+export function D4HI3Module_BundleExcludedLines({
+    excluded,
+}: {
+    excluded: ExcludedLine<I3BundleLine>[];
+}) {
     const reasons = (Object.keys(EXCLUDED_LABELS) as ExcludedReason[]).flatMap((reason) => {
         const reasonLines = excluded.filter((entry) => entry.reason === reason);
         return reasonLines.length > 0 ? [{ reason, lines: reasonLines }] : [];
