@@ -10,19 +10,22 @@ Who may open a page under `(authenticated)`, and where that is enforced. Read th
 
 A page, layout or `generateMetadata` that reads data **outside tRPC** (Prisma, a `src/server` helper, a D4H client) is its own data layer. It needs its own check, right next to the read, requiring the same permission the equivalent procedure would.
 
+Team-scope reads go through `teamProcedure`, which runs the access check (`Teams.getGrantedBySlug`: a `TeamUser` grant on an Active team, else NOT_FOUND) on every call, then `ctx.hasPermission` for any org-wide permissions named.
+
 Route access is otherwise coarse, on purpose. A member can load the URL of any page in their org. If they lack the permission behind its data, the page shows "Not permitted" instead of the data.
 
 ---
 
 ## Layouts aren't guards
 
-Three layouts block with an `await`:
+Four layouts block with an `await`:
 
-| Layout                       | Calls                       | Effect on a full page load                    |
-| ---------------------------- | --------------------------- | --------------------------------------------- |
-| `(authenticated)/layout.tsx` | `requireSession()`          | Redirects to sign-in                          |
-| `orgs/[slug]/layout.tsx`     | `requireOrganization(slug)` | 404 for a non-member; loads the shell's roles |
-| `system/admin/layout.tsx`    | `requireSystemAdmin()`      | Forbidden for a non-admin                     |
+| Layout                       | Calls                       | Effect on a full page load                                 |
+| ---------------------------- | --------------------------- | ---------------------------------------------------------- |
+| `(authenticated)/layout.tsx` | `requireSession()`          | Redirects to sign-in                                       |
+| `orgs/[slug]/layout.tsx`     | `requireOrganization(slug)` | 404 for a non-member; loads the shell's roles              |
+| `teams/[slug]/layout.tsx`    | `requireTeam(slug)`         | 404 without a grant; loads the shell's team, org and roles |
+| `system/admin/layout.tsx`    | `requireSystemAdmin()`      | Forbidden for a non-admin                                  |
 
 They give the right response on a full page load and load what the shell needs. They don't protect the pages below them, because a layout doesn't run again on client-side navigation. From Next's authentication guide (`node_modules/next/dist/docs/01-app/02-guides/authentication.md`):
 
@@ -43,7 +46,7 @@ prefetch(trpc.teams.listTeams.queryOptions({ organizationId: organization.id }))
 
 `getOrganizationBySlug` checks nothing. It turns the slug into the org's id and name, which every procedure then checks against the caller. Don't add `requireOrganizationWith` to a page to get a Forbidden screen sooner; the procedure already produces one:
 
-- **`fetchQuery`** (awaited, e.g. in `generateMetadata`) turns a procedure's FORBIDDEN or NOT_FOUND into `forbidden()` or `notFound()`. The `forbidden.tsx` and `not-found.tsx` beside each scope's `error.tsx` (`orgs/[slug]`, `system`, `user`) show the panel inside the Sidebar/NavBar.
+- **`fetchQuery`** (awaited, e.g. in `generateMetadata`) turns a procedure's FORBIDDEN or NOT_FOUND into `forbidden()` or `notFound()`. The `forbidden.tsx` and `not-found.tsx` beside each scope's `error.tsx` (`orgs/[slug]`, `teams/[slug]`, `system`, `user`) show the panel inside the Sidebar/NavBar.
 - **`prefetch`** (fire-and-forget) rejects on the server, and React Query hands the client a redacted error. The client retries, the retry gets the real FORBIDDEN, and `error.tsx` shows the same panel through `describeError`.
 
 The `prefetch` path costs a user without permission one extra failed request and a retry delay of about a second. In development the server also logs "A query that was dehydrated as pending ended up rejecting" once per query. That's accepted: it only happens to someone opening a page they can't use, and it keeps the procedure the one place each permission is declared.

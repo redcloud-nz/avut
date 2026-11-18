@@ -12,7 +12,7 @@ UI code private to one module lives in `src/modules/<module-id>/`: components in
 
 - UI that more than one module uses lives in `src/components/` (the shared layer), never in either module. So do areas that aren't modules (`auth`, `invitations`, `docs`, `marketing`, the org dashboard).
 - Schemas stay in `src/lib/schemas/`: they're per domain, not per module.
-- A module never imports another module (lint). Outside `src/app`, which may import any module, only the sidebar-menu registry (`nav/{org,scope}-sidebar-modules.tsx`) and the docs demos (`docs/demo-*.tsx`) may import from `src/modules/`.
+- A module never imports another module (lint). Outside `src/app`, which may import any module, only the sidebar-menu registry (`nav/{org,team,scope}-sidebar-modules.tsx`) and the docs demos (`docs/demo-*.tsx`) may import from `src/modules/`.
 - No barrel `index.ts` files: import each file directly.
 
 `src/generated/` (the Prisma client and `dmmf.ts`) is generated and gitignored — never edit it manually. `npm install` regenerates it; after switching to a branch that changes `prisma/schema.prisma`, run `npx prisma generate` yourself or the client and mock metadata will be stale.
@@ -268,11 +268,13 @@ Render an entity's name as a link to its detail page with the wrappers in `src/c
 
 ## Scope roots and modules
 
-The app has three real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
+The app has four real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **team** (`/teams/[slug]/…`, reached through a `TeamUser` grant on a slugged, Active team and checked by `teamProcedure`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
 
-`src/lib/modules.ts` is the single source of truth for all three — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere. A module's UI code lives in `src/modules/<module-id>/` (see [Modules](#modules)).
+`src/lib/modules.ts` is the single source of truth for all four — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere. A module's UI code lives in `src/modules/<module-id>/` (see [Modules](#modules)).
 
 - A module's route segment can differ from its id — `skill-track` is the id _and_ segment, but don't assume they always match; read `segment` from the registry. The org-scoped `org-admin` and system-scoped `system-admin` modules both use segment `"admin"` — they don't collide because each scope's module lookup is scoped to its own `ModuleScope`
+- An org module can also live in team scope: it keeps its `OrganizationModuleId` and declares a `team` entry (`TeamScopeEntry`: an optional `segment` and `href(teamSlug)`), and is still enabled by its one org settings key. Team-only modules are `TeamModuleDef`s (`scope: "team"`, always on); there are none yet. `teamModules` is derived from both
+- A component used in both the org and team scopes builds its links with `scopedRoute(ref, { organization, team }, params)` (`src/lib/scoped-routes.ts`), or `useScopedRoute()` (`src/hooks/use-scoped-route.ts`) to bind it to `useCurrentScope()`. Both roots name their param `[slug]`, so both patterns stay typed routes
 - Only org-scoped modules are gated by org settings (`OrganizationSettings.modules`, keyed by `OrganizationModuleId`); `org-admin` is `alwaysOn`, as are all user and system modules
 - Only org modules with an `href` appear in the org nav switcher and dashboard (`orgModules`), which is why `forms` is absent from those
 - The `forms` id is inert: the public `/pub` form experiment was deleted, and the live form flows (`forms-router`, `src/forms/i3-issue-items/`, `form-processor`) are reached through `d4h-i3`. It's retained only because it's a settings-gated key
