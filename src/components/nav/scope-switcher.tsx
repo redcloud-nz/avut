@@ -118,7 +118,11 @@ export function ScopeSwitcher() {
                             <DropdownMenuLabel>Organisations</DropdownMenuLabel>
                             {memberships.map((membership) => (
                                 <DropdownMenuItem key={membership.organization.id} asChild>
-                                    <Link href={`/orgs/${membership.organization.slug}`}>
+                                    <Link
+                                        href={route("/orgs/[slug]", {
+                                            slug: membership.organization.slug,
+                                        })}
+                                    >
                                         <Building2Icon />
                                         {membership.organization.name}
                                     </Link>
