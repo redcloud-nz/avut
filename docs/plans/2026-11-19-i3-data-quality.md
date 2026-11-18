@@ -226,7 +226,7 @@ Issued Types page for a team, and the bundle comparison.
     with a brand or model set; the count and the filter agree;
     as a plain member, the page looks as it does today. `npm run check` passes.
 
-- [ ] **Task 7: Quality in the bundle comparison** — `visual`
+- [x] **Task 7: Quality in the bundle comparison** (feat(d4h-i3): flag incomplete and non-matching items in the bundle comparison) — `visual`
   - **Files:** `src/modules/d4h-i3/components/bundles/bundle-matrix.tsx`,
     `src/modules/d4h-i3/components/bundles/bundle-member-comparison.tsx`,
     `content/help/d4h-i3/bundles.mdx`.

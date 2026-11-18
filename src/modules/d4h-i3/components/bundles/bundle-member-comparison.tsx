@@ -31,11 +31,13 @@ import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
+import { D4HI3Module_ItemQuality_Badge } from "@/modules/d4h-i3/components/item-quality-badge";
 import {
     compareBundle,
     groupColumnsByCategory,
     type BundleCell,
 } from "@/modules/d4h-i3/lib/bundle-compare";
+import type { ItemQualityResult } from "@/modules/d4h-i3/lib/item-quality";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
 import { D4HI3Module_BundleExcludedLines } from "./bundle-matrix";
@@ -171,11 +173,7 @@ export function D4HI3Module_BundleMemberComparison({
                                                         />
                                                     </TableCell>
                                                     <TableCell className="align-top">
-                                                        {cell.state === "held" ? (
-                                                            <Badge variant="secondary">Held</Badge>
-                                                        ) : (
-                                                            <Badge variant="outline">Missing</Badge>
-                                                        )}
+                                                        <CellStatus cell={cell} />
                                                     </TableCell>
                                                     <TableCell className="align-top whitespace-normal">
                                                         <CellItems cell={cell} member={member} />
@@ -196,13 +194,21 @@ export function D4HI3Module_BundleMemberComparison({
     );
 }
 
+/** Held, Incomplete or Doesn't match (by the worst counted item's quality), or Missing. */
+function CellStatus({ cell }: { cell: BundleCell<IssuedItem> }) {
+    if (cell.state === "missing") return <Badge variant="outline">Missing</Badge>;
+    if (cell.quality === "incomplete") return <Badge variant="outline">Incomplete</Badge>;
+    if (cell.quality === "mismatch") return <Badge variant="outline">Doesn&apos;t match</Badge>;
+    return <Badge variant="secondary">Held</Badge>;
+}
+
 /** The items behind a cell: those that count, or for a missing line, any marked Lost. */
 function CellItems({ cell, member }: { cell: BundleCell<IssuedItem>; member: D4HMember }) {
     if (cell.state === "held") {
         return (
             <ul className="flex flex-col gap-1">
-                {cell.items.map(({ item }) => (
-                    <ItemLine key={item.id} item={item} member={member} />
+                {cell.items.map(({ item, quality }) => (
+                    <ItemLine key={item.id} item={item} member={member} quality={quality} />
                 ))}
             </ul>
         );
@@ -224,7 +230,16 @@ function CellItems({ cell, member }: { cell: BundleCell<IssuedItem>; member: D4H
     );
 }
 
-function ItemLine({ item, member }: { item: IssuedItem; member: D4HMember }) {
+/** One item, with its quality badge when it's a counted item (Lost items aren't judged). */
+function ItemLine({
+    item,
+    member,
+    quality,
+}: {
+    item: IssuedItem;
+    member: D4HMember;
+    quality?: ItemQualityResult;
+}) {
     const brandModel = [item.brand.title, item.model?.title].filter(Boolean).join(" ");
     const details = [brandModel, item.serial, D4HEquipmentStatus.label(item.status)].filter(
         Boolean,
@@ -235,6 +250,12 @@ function ItemLine({ item, member }: { item: IssuedItem; member: D4HMember }) {
             <D4HEquipmentItemLink item={item} member={member} />
             {details.length > 0 && (
                 <span className="text-muted-foreground"> · {details.join(" · ")}</span>
+            )}
+            {quality && quality.state !== "ok" && (
+                <>
+                    {" "}
+                    <D4HI3Module_ItemQuality_Badge result={quality} item={item} />
+                </>
             )}
         </li>
     );

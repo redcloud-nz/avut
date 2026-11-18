@@ -7,7 +7,7 @@
 import { CircleCheckIcon, MinusIcon } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
@@ -16,6 +16,7 @@ import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
 import { HelpButton } from "@/components/docs/help-button";
 import { I3TemplateLink } from "@/components/entity-links/i3-template-link";
+import { AlertWarningIcon } from "@/components/icons";
 import {
     DiagonalColumnHeader,
     DiagonalLeadColumnHeader,
@@ -28,9 +29,11 @@ import { cn } from "@/lib/utils";
 import {
     compareBundle,
     groupColumnsByCategory,
+    type BundleCellState,
     type ExcludedLine,
     type ExcludedReason,
 } from "@/modules/d4h-i3/lib/bundle-compare";
+import type { ItemQualityState } from "@/modules/d4h-i3/lib/item-quality";
 import { trpc } from "@/trpc/client";
 
 // Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card
@@ -53,7 +56,8 @@ const EXCLUDED_LABELS: Record<ExcludedReason, string> = {
 
 /**
  * A bundle compared against one D4H team: a row per member and a column per comparable line,
- * grouped by category, each cell held or missing. Lines that can't be compared are listed above
+ * grouped by category, each cell held (amber when its records fail the template's checks) or
+ * missing. Lines that can't be compared are listed above
  * the table. Reads D4H, so without a token the queries fail and the error boundary explains.
  */
 export function D4HI3Module_BundleMatrix({
@@ -144,6 +148,8 @@ export function D4HI3Module_BundleMatrix({
                         </Glorious.Actions>
                     )}
                 </Glorious.Header>
+
+                {columns.length > 0 && rows.length > 0 && <CellMarkLegend />}
 
                 {excluded.length > 0 && <D4HI3Module_BundleExcludedLines excluded={excluded} />}
 
@@ -275,7 +281,8 @@ export function D4HI3Module_BundleMatrix({
                                                         className="block px-2 py-1.5 hover:bg-accent"
                                                     >
                                                         <CellMark
-                                                            held={cell.state === "held"}
+                                                            state={cell.state}
+                                                            quality={cell.quality}
                                                             label={`${row.member.name}: ${columns[i].template.name}`}
                                                         />
                                                     </Link>
@@ -316,17 +323,69 @@ export function D4HI3Module_BundleMatrix({
     );
 }
 
-function CellMark({ held, label }: { held: boolean; label: string }) {
-    return held ? (
-        <CircleCheckIcon
-            className="mx-auto size-4 text-green-600 dark:text-green-500"
-            aria-label={`${label}, held`}
-        />
-    ) : (
-        <MinusIcon
-            className="mx-auto size-4 text-muted-foreground/50"
-            aria-label={`${label}, missing`}
-        />
+type CellMarkKind = "held" | "incomplete" | "mismatch" | "missing";
+
+const CELL_MARKS: Record<CellMarkKind, { icon: ReactNode; label: string }> = {
+    held: {
+        icon: <CircleCheckIcon className="mx-auto size-4 text-green-600 dark:text-green-500" />,
+        label: "held",
+    },
+    incomplete: {
+        icon: <AlertWarningIcon className="mx-auto size-4 text-amber-600 dark:text-amber-500" />,
+        label: "held, incomplete",
+    },
+    mismatch: {
+        icon: <AlertWarningIcon className="mx-auto size-4 text-amber-600 dark:text-amber-500" />,
+        label: "held, doesn't match",
+    },
+    missing: {
+        icon: <MinusIcon className="mx-auto size-4 text-muted-foreground/50" />,
+        label: "missing",
+    },
+};
+
+const LEGEND: { kind: CellMarkKind; label: string }[] = [
+    { kind: "held", label: "Held" },
+    { kind: "incomplete", label: "Incomplete" },
+    { kind: "mismatch", label: "Doesn't match" },
+    { kind: "missing", label: "Missing" },
+];
+
+/** A held cell is flagged by its worst item's quality; an `ok` one stays the green check. */
+function cellMarkKind(state: BundleCellState, quality: ItemQualityState | null): CellMarkKind {
+    if (state === "missing") return "missing";
+    return quality === "incomplete" || quality === "mismatch" ? quality : "held";
+}
+
+function CellMark({
+    state,
+    quality,
+    label,
+}: {
+    state: BundleCellState;
+    quality: ItemQualityState | null;
+    label: string;
+}) {
+    const mark = CELL_MARKS[cellMarkKind(state, quality)];
+    const text = `${label}, ${mark.label}`;
+    return (
+        <span role="img" aria-label={text} title={text} className="block">
+            {mark.icon}
+        </span>
+    );
+}
+
+/** What each matrix mark means. */
+function CellMarkLegend() {
+    return (
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {LEGEND.map(({ kind, label }) => (
+                <li key={kind} className="flex items-center gap-1.5">
+                    <span aria-hidden="true">{CELL_MARKS[kind].icon}</span>
+                    {label}
+                </li>
+            ))}
+        </ul>
     );
 }
 
