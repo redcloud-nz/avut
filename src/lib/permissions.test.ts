@@ -20,10 +20,9 @@ function can(role: keyof typeof Roles, permissions: Permissions): boolean {
 }
 
 describe("Roles", () => {
-    // `organizationProcedure` forces `organization: ["view"]` into every requirement, and
-    // the organization layout gates on it too. A role without it cannot reach anything —
-    // which is exactly how `skill-package-author` (now `skills-author`) once ended up
-    // non-functional.
+    // `organization: ["view"]` lets a role into the org scope. Every role keeps it until the
+    // scope narrows (#528), which takes it from `member` and `skills-assessor` and updates
+    // this test.
     it.each(roles)("%s can view the organization", (role) => {
         expect(can(role, { organization: ["view"] })).toBe(true);
     });
@@ -244,6 +243,18 @@ describe("hasAnyRoleWithPermissions", () => {
         expect(hasAnyRoleWithPermissions(["member", "owner"], { organization: ["delete"] })).toBe(
             true,
         );
+    });
+
+    // `organizationProcedure()` asks for nothing beyond membership (#523). Better Auth's
+    // `authorize` refuses an empty request, so this must not hand it one.
+    it("grants a request for nothing", () => {
+        expect(hasAnyRoleWithPermissions(["member"], {})).toBe(true);
+        expect(hasAnyRoleWithPermissions(["skills-assessor"], { person: [] })).toBe(true);
+    });
+
+    it("ignores empty action lists alongside real ones", () => {
+        expect(hasAnyRoleWithPermissions(["member"], { person: ["view"], team: [] })).toBe(true);
+        expect(hasAnyRoleWithPermissions(["member"], { person: ["delete"], team: [] })).toBe(false);
     });
 
     it("denies when no single role covers the full request", () => {

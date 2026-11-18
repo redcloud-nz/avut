@@ -136,8 +136,7 @@ export const Roles = {
     // Creates and publishes skill packages (assessment templates) for the org to subscribe
     // to — not to be confused with performing assessments.
     "skills-author": ac.newRole({
-        // `organizationProcedure` forces `organization: ["view"]` into every requirement, and
-        // the org layout gates on it too — without this the role cannot reach anything.
+        // `organization: ["view"]` is what lets a role into the org scope (#523, #528).
         organization: ["view"],
         organizationNote: ["view", "create"],
         skillPackage: ["view", "create", "update", "delete", "publish"],
@@ -214,10 +213,19 @@ export function roleCovers(role: Role, other: Role): boolean {
  * agreement is what makes evaluating locally, against a role lookup already in hand, a safe
  * substitute for a second `auth.api.hasPermission` round trip. Used by `createTrpcContext` and
  * `requireOrganizationWith`.
+ *
+ * Asking for nothing (`{}`, or only empty action lists) is granted: the caller has already
+ * checked membership, and `organizationProcedure()` means "any member" (#523). Better Auth's
+ * `authorize` refuses an empty request, so it never sees one.
  */
 export function hasAnyRoleWithPermissions(
     roles: Role[],
     requiredPermissions: Permissions,
 ): boolean {
-    return roles.some((role) => Roles[role].authorize(requiredPermissions).success);
+    const requested = Object.fromEntries(
+        Object.entries(requiredPermissions).filter(([, actions]) => actions && actions.length > 0),
+    ) as Permissions;
+    if (Object.keys(requested).length === 0) return true;
+
+    return roles.some((role) => Roles[role].authorize(requested).success);
 }

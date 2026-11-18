@@ -34,12 +34,10 @@ export function Admin_Sidebar_Menu() {
                 label="Organisation"
                 href={route("/orgs/[slug]/admin/organization", { slug })}
             />
-            <Protect permissions={{ organization: ["view"] }}>
-                <NavSubItem
-                    label="Organisation Settings"
-                    href={route("/orgs/[slug]/admin/organization-settings", { slug })}
-                />
-            </Protect>
+            <NavSubItem
+                label="Organisation Settings"
+                href={route("/orgs/[slug]/admin/organization-settings", { slug })}
+            />
             <Protect permissions={{ person: ["view"] }}>
                 <NavSubItem
                     label="Personnel"

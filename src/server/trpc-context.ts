@@ -38,8 +38,10 @@ export const createTrpcContext = cache(async () => {
             // see `src/lib/permissions.ts`) can compute in memory.
             const roles = await getOrganizationUserRolesOrNull(organizationId, authSession.user.id);
 
-            if (!roles) {
-                // Not a member of the organization at all.
+            if (!roles || roles.length === 0) {
+                // Not a member at all, or a membership whose stored roles all parse away
+                // (retired role names). Refused here because `organizationProcedure()` asks
+                // for nothing, and an empty request is granted (#523).
                 throw new TRPCError({
                     code: "FORBIDDEN",
                     message: "You are not a member of this organisation.",
