@@ -8,17 +8,19 @@ Loaded when working under `src/trpc/`. The repo-wide rules (always call `ctx.log
 - Register new routers in `src/trpc/routers/_app.ts`
 - Procedures within each router must be kept in alphabetical order
 - Use `organizationProcedure()` for org-scoped mutations/queries — it injects `organizationId` into input and checks permissions automatically
+- Use `teamProcedure()` for team-scoped (`/teams/[slug]`) queries/mutations — it takes `teamSlug` as input, refuses with `NOT_FOUND` unless the team is `Active` and the caller holds a `TeamUser` grant on it (no system-admin bypass), then checks the given permissions against the team's organization. `ctx` is an org context (`organizationId` is the team's org) plus `teamId` and `teamSlug`, so `OrgServiceContext` services work from it unchanged
 - Use `authenticatedProcedure` for user-scoped procedures
 - Use `publicProcedure` only for truly unauthenticated endpoints
 - A `systemAdminProcedure` that sits beside an org-scoped procedure doing the same job gets an `AsAdmin` suffix (`getOrganization` / `getOrganizationAsAdmin`, `importPackage` / `importPackageAsAdmin`). One with no org-scoped counterpart (`users.listUsers`, `organizations.createOrganization`) keeps its plain name
 
 ## Audit logging — which `logEvent` am I holding?
 
-All three procedure factories put a `logEvent` on `ctx`, and they differ only in which log the entry lands in. Each returns the un-awaited `PrismaPromise`, so all three compose into `$transaction([...])`.
+All four procedure factories put a `logEvent` on `ctx`, and they differ only in which log the entry lands in. Each returns the un-awaited `PrismaPromise`, so all four compose into `$transaction([...])`.
 
 | Procedure                | `ctx.logEvent` writes                                           | Extra options                                                    |
 | ------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `organizationProcedure`  | `scope: "organization"`, the org from the procedure's own input | none — the org is not a parameter                                |
+| `teamProcedure`          | `scope: "organization"`, the team's org                         | none — the org is not a parameter                                |
 | `authenticatedProcedure` | `scope: "user"`, owned by the **calling** user                  | none — the owner is not a parameter                              |
 | `systemAdminProcedure`   | whichever of the three the call chooses                         | exactly one of `organizationId`, `ownerId`, or `scope: "system"` |
 
