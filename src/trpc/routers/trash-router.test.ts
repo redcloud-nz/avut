@@ -23,6 +23,10 @@ import { trashRouter } from "./trash-router";
 // ctx.prisma (the injected mock), so an empty stub is enough to let them import in jsdom.
 vi.mock("server-only", () => ({}));
 
+// The routers clear a team's cached lookup after writes. `revalidateTag` throws outside a Next.js
+// request/render store, so stub it.
+vi.mock("@/server/cache/team-revalidate", () => ({ revalidateTeam: vi.fn(async () => {}) }));
+
 describe("trash.listTrash", () => {
     const T = {
         org: OrganizationId.create(),

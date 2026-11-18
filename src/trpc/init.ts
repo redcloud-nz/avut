@@ -20,8 +20,6 @@ import {
 import { Permissions } from "@/lib/permissions";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { TeamId, TeamSlug } from "@/lib/schemas/team";
-import type { TeamScopeTeamData } from "@/lib/schemas/team-scope";
 import { UserId } from "@/lib/schemas/user";
 
 // The same validation messages as the client, for procedure input errors.
@@ -32,7 +30,6 @@ import type { AuthSession } from "@/server/auth";
 import { recordLogEntry, resolveActor } from "@/server/log-entry";
 import prisma from "@/server/prisma";
 import type { LogEventOptions } from "@/server/services/service-context";
-import { getGrantedTeamCached } from "@/server/team-grant";
 
 import { formatTrpcError } from "./error-formatter";
 import { FieldConflictError } from "./errors";
@@ -347,7 +344,7 @@ export function organizationProcedure(
 
 /**
  * The `logEvent` an org-scoped context carries: every entry lands in `organizationId`'s log,
- * attributed to the calling user. Shared by `organizationProcedure` and `teamProcedure`.
+ * attributed to the calling user.
  */
 function organizationLogEvent(
     ctx: Pick<AuthenticatedContext, "auth" | "prisma">,
@@ -361,68 +358,6 @@ function organizationLogEvent(
             tx,
         );
     };
-}
-
-/**
- * An org context plus the team, so every `OrgServiceContext` service works unchanged from a
- * team procedure. `organizationId` is the team's org, and `isSystemAdmin` is always `false`:
- * team access is an explicit grant, with no admin bypass. `team` is the record the access check
- * already loaded, so a procedure that only needs the team (`teamScope.getTeam`) reads it from
- * here rather than querying again.
- */
-export type AuthenticatedTeamContext = AuthenticatedOrganizationContext & {
-    team: TeamScopeTeamData;
-    teamId: TeamId;
-    teamSlug: string;
-};
-
-/**
- * A team scoped procedure (`/teams/[slug]`), taking the team's slug as `teamSlug`.
- *
- * The caller gets in when the team exists, is `Active`, and they hold a `TeamUser` grant on it
- * (`Teams.getGrantedBySlug`). Any of those failing is the same `NOT_FOUND`, so a slug's
- * existence isn't revealed to someone without a grant. There's no system-admin bypass.
- *
- * `ctx.logEvent` writes to the team's organization's log, as `organizationProcedure`'s does.
- * @param requiredPermissions Org-wide permissions required on top of the grant, checked against
- *   the team's organization (which also confirms membership). `teamProcedure()` means "anyone
- *   granted the team".
- * @returns A tRPC procedure with team context and permission checks.
- */
-export function teamProcedure(requiredPermissions: Permissions = {}) {
-    return authenticatedProcedure
-        .meta({ requiresTeam: true, requiredPermissions })
-        .input(z.object({ teamSlug: TeamSlug.shapeSchema }))
-
-        .use(async (opts) => {
-            // Shared with `requireTeam` and the team layout's metadata within one server render.
-            const team = await getGrantedTeamCached(
-                opts.ctx.prisma,
-                opts.input.teamSlug,
-                opts.ctx.userId,
-            );
-            if (!team) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: `Team ${opts.input.teamSlug} not found.`,
-                });
-            }
-
-            const organizationId = team.organization.id;
-            await opts.ctx.hasPermission(organizationId, requiredPermissions);
-
-            return opts.next({
-                ctx: {
-                    ...opts.ctx,
-                    organizationId,
-                    isSystemAdmin: false,
-                    logEvent: organizationLogEvent(opts.ctx, organizationId),
-                    team,
-                    teamId: team.id,
-                    teamSlug: team.slug,
-                } satisfies AuthenticatedTeamContext,
-            });
-        });
 }
 
 /**

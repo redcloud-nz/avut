@@ -10,7 +10,7 @@ Who may open a page under `(authenticated)`, and where that is enforced. Read th
 
 A page, layout or `generateMetadata` that reads data **outside tRPC** (Prisma, a `src/server` helper, a D4H client) is its own data layer. It needs its own check, right next to the read, requiring the same permission the equivalent procedure would.
 
-Team-scope reads go through `teamProcedure`, which runs the access check (`Teams.getGrantedBySlug`: a `TeamUser` grant on an Active team, else NOT_FOUND) on every call, then `ctx.hasPermission` for any org-wide permissions named.
+Team pages (`/teams/[slug]`) are gated **on entry only**. `requireTeam(slug)` in the team layout lets the caller in when the team is Active and they hold a `TeamUser` grant on it. The pages then read through the ordinary org procedures (`teams.getTeam`, `teams.listTeamMemberships`, …) with the team's `organizationId` and `teamId`, and those check the caller's org roles, not the grant. So the grant isn't a data boundary: a member who can view teams can read any team's data through those procedures, in or out of team scope. That changes once team-only users' org-wide permissions are narrowed (#528).
 
 Route access is otherwise coarse, on purpose. A member can load the URL of any page in their org. If they lack the permission behind its data, the page shows "Not permitted" instead of the data.
 
@@ -20,12 +20,12 @@ Route access is otherwise coarse, on purpose. A member can load the URL of any p
 
 Four layouts block with an `await`:
 
-| Layout                       | Calls                       | Effect on a full page load                                 |
-| ---------------------------- | --------------------------- | ---------------------------------------------------------- |
-| `(authenticated)/layout.tsx` | `requireSession()`          | Redirects to sign-in                                       |
-| `orgs/[slug]/layout.tsx`     | `requireOrganization(slug)` | 404 for a non-member; loads the shell's roles              |
-| `teams/[slug]/layout.tsx`    | `requireTeam(slug)`         | 404 without a grant; loads the shell's team, org and roles |
-| `system/admin/layout.tsx`    | `requireSystemAdmin()`      | Forbidden for a non-admin                                  |
+| Layout                       | Calls                       | Effect on a full page load                    |
+| ---------------------------- | --------------------------- | --------------------------------------------- |
+| `(authenticated)/layout.tsx` | `requireSession()`          | Redirects to sign-in                          |
+| `orgs/[slug]/layout.tsx`     | `requireOrganization(slug)` | 404 for a non-member; loads the shell's roles |
+| `teams/[slug]/layout.tsx`    | `requireTeam(slug)`         | 404 unless the team is Active and granted     |
+| `system/admin/layout.tsx`    | `requireSystemAdmin()`      | Forbidden for a non-admin                     |
 
 They give the right response on a full page load and load what the shell needs. They don't protect the pages below them, because a layout doesn't run again on client-side navigation. From Next's authentication guide (`node_modules/next/dist/docs/01-app/02-guides/authentication.md`):
 
@@ -53,7 +53,7 @@ The `prefetch` path costs a user without permission one extra failed request and
 
 Client Component pages (`"use client"`) can't hold a server check at all. They fetch through tRPC like everything else.
 
-`generateMetadata` follows the same rule: `getOrganizationBySlug` plus `fetchQuery`. Avoid a `require…` call there: it can redirect, which `generateMetadata` mustn't do (see the comment in `orgs/[slug]/layout.tsx`). The team layout is the exception: its `generateMetadata` calls `getGrantedTeam(slug)` (`src/server/team-access.ts`), the same access check as `teamProcedure` but without the redirect, and returns `notFound()` on `null`. The check is cached per request, so the title, the layout and the page's procedures share one grant query.
+`generateMetadata` follows the same rule: `getOrganizationBySlug` plus `fetchQuery`. Avoid a `require…` call there: it can redirect, which `generateMetadata` mustn't do (see the comment in `orgs/[slug]/layout.tsx`). The team layout does the same with `getTeamBySlug(slug)` (`src/server/cache/team.ts`): a cached lookup that checks nothing. The entry gate is `requireTeam`, in the layout itself.
 
 ---
 
@@ -69,6 +69,7 @@ When it reads data outside tRPC. Put the check next to the read, with the permis
 ## Known and accepted
 
 - **Org name by slug.** `getOrganizationBySlug` in `orgs/[slug]/layout.tsx`'s `generateMetadata` can put an org's name in the tab title for any signed-in user who knows its slug.
+- **Team name by slug.** `getTeamBySlug` in `teams/[slug]/layout.tsx`'s `generateMetadata` can put a team's name in the tab title for any signed-in user who knows its slug, granted or not, and whatever the team's status.
 - **`system/admin` pages repeat `requireSystemAdmin()`** in each page and its `generateMetadata`, although they read only through `systemAdminProcedure`, and the `generateMetadata` call goes against the rule above. It's redundant under this rule, and left in place. Don't copy it into new org-scoped pages.
 
 ---

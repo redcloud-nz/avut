@@ -15,11 +15,13 @@ import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/comp
 import { useOrganization } from "@/hooks/use-organization";
 import { useTeam } from "@/hooks/use-team";
 import { getD4HServer } from "@/lib/d4h-servers";
-import type { TeamScopeTeamData } from "@/lib/schemas/team-scope";
+import type { OrganizationId } from "@/lib/schemas/organization";
+import type { TeamData, TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 /** The team scope's dashboard (`/teams/[slug]`): the team, its roster and its D4H link. */
 export function Team_Dashboard_Content() {
+    const organization = useOrganization();
     const team = useTeam();
 
     return (
@@ -30,21 +32,19 @@ export function Team_Dashboard_Content() {
                     <Saratoga.Header>
                         <div className="min-w-0">
                             <Saratoga.Title>{team.name}</Saratoga.Title>
-                            <p className="text-sm text-muted-foreground">
-                                {team.organization.name}
-                            </p>
+                            <p className="text-sm text-muted-foreground">{organization.name}</p>
                         </div>
                     </Saratoga.Header>
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <Protect permissions={{ team: ["view"] }}>
-                                <RosterCard teamSlug={team.slug} />
+                                <RosterCard organizationId={organization.id} teamId={team.id} />
                             </Protect>
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">
-                            <AboutCard team={team} />
+                            <AboutCard team={team} organizationName={organization.name} />
                             <D4HLinkCard team={team} />
                         </Saratoga.Column>
                     </Saratoga.Columns>
@@ -54,8 +54,18 @@ export function Team_Dashboard_Content() {
     );
 }
 
-function RosterCard({ teamSlug }: { teamSlug: string }) {
-    const { data: roster } = useSuspenseQuery(trpc.teamScope.listRoster.queryOptions({ teamSlug }));
+/** The team's `Active` memberships, read through the org procedure and its `team: ["view"]` check. */
+function RosterCard({
+    organizationId,
+    teamId,
+}: {
+    organizationId: OrganizationId;
+    teamId: TeamId;
+}) {
+    const { data: memberships } = useSuspenseQuery(
+        trpc.teams.listTeamMemberships.queryOptions({ organizationId, teamId }),
+    );
+    const roster = memberships.filter((membership) => membership.status === "Active");
 
     return (
         <Card>
@@ -95,7 +105,7 @@ function RosterCard({ teamSlug }: { teamSlug: string }) {
     );
 }
 
-function AboutCard({ team }: { team: TeamScopeTeamData }) {
+function AboutCard({ team, organizationName }: { team: TeamData; organizationName: string }) {
     return (
         <Card>
             <CardHeader>
@@ -105,7 +115,7 @@ function AboutCard({ team }: { team: TeamScopeTeamData }) {
                 <DataList>
                     <DataItem inline>
                         <DataItemTitle>Organisation</DataItemTitle>
-                        <DataItemValue>{team.organization.name}</DataItemValue>
+                        <DataItemValue>{organizationName}</DataItemValue>
                     </DataItem>
                     <DataItem>
                         <DataItemTitle>Description</DataItemTitle>
@@ -122,7 +132,7 @@ function AboutCard({ team }: { team: TeamScopeTeamData }) {
 }
 
 /** Hidden while the org has the D4H integration off, as Admin → Teams' D4H card is. */
-function D4HLinkCard({ team }: { team: TeamScopeTeamData }) {
+function D4HLinkCard({ team }: { team: TeamData }) {
     const organization = useOrganization();
     if (!organization.settings.integrations.d4h.enabled) return null;
 

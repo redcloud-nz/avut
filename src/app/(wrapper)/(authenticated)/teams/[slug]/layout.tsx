@@ -6,24 +6,23 @@
  */
 
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 import { SidebarPortal } from "@/components/nav/sidebar-portal";
 import { TeamSidebar_Modules } from "@/components/nav/team-sidebar-modules";
 import { OrganizationProvider } from "@/hooks/use-organization";
 import { TeamProvider } from "@/hooks/use-team";
 import { TITLE_SEPARATOR } from "@/lib/constants";
+import { getTeamBySlug } from "@/server/cache/team";
 import { resolveModuleFlags } from "@/server/module-flags";
-import { getGrantedTeam, requireTeam } from "@/server/team-access";
+import { requireTeam } from "@/server/team-access";
 import { getServerQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
-// NOTE: metadata generation calls `getGrantedTeam` rather than `requireTeam`: `generateMetadata`
-// must not redirect. Both share the request's one grant query. The layout below loads the shell's
-// data.
+// NOTE: metadata generation deliberately uses the plain cached lookup rather than `requireTeam`,
+// as the org layout does: `generateMetadata` must not redirect. The entry gate lives in the layout
+// below, which is what actually gates rendering.
 export async function generateMetadata(props: LayoutProps<"/teams/[slug]">): Promise<Metadata> {
     const { slug } = await props.params;
-    const team = await getGrantedTeam(slug);
-    if (!team) return notFound();
+    const team = await getTeamBySlug(slug);
 
     return {
         title: {
@@ -40,9 +39,14 @@ export default async function Team_Layout(props: LayoutProps<"/teams/[slug]">) {
 
     // `requireTeam` already loaded the team and its org's data, so seed the query cache with it
     // rather than re-fetching through `prefetch`: `useTeam` and `useOrganization` then read these
-    // entries on the client instead of firing their own requests.
+    // entries on the client instead of firing their own requests. The team is `teams.getTeam`'s
+    // output shape, except that the D4H link's `d4hOrganisationName` reads as null (the cached
+    // lookup doesn't join it); nothing in team scope shows it.
     const queryClient = getServerQueryClient();
-    queryClient.setQueryData(trpc.teamScope.getTeam.queryKey({ teamSlug: slug }), team);
+    queryClient.setQueryData(
+        trpc.teams.getTeam.queryKey({ organizationId: organization.id, teamId: team.id }),
+        team,
+    );
     queryClient.setQueryData(
         trpc.organizations.getOrganization.queryKey({ organizationId: organization.id }),
         organization,
@@ -59,7 +63,7 @@ export default async function Team_Layout(props: LayoutProps<"/teams/[slug]">) {
     return (
         <HydrateClient>
             <OrganizationProvider organizationId={organization.id} moduleFlags={moduleFlags}>
-                <TeamProvider teamSlug={slug}>
+                <TeamProvider organizationId={organization.id} teamId={team.id} teamSlug={slug}>
                     {/*
                      * Portals into the sidebar shell in `(authenticated)/layout.tsx`, as the org
                      * layout's does — see `sidebar-portal.tsx`.

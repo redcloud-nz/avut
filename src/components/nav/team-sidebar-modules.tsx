@@ -19,7 +19,7 @@ import { ReactNode } from "react";
 
 import { NavCollapsible, NavItem, NavSection } from "@/components/nav/nav-section";
 import { useOrganization } from "@/hooks/use-organization";
-import { useTeam } from "@/hooks/use-team";
+import { useTeamSlug } from "@/hooks/use-team";
 import { teamModules, type TeamScopedModule } from "@/lib/modules";
 import { route } from "@/lib/routes";
 
@@ -31,20 +31,20 @@ const TEAM_MODULE_SIDEBAR: Partial<Record<TeamScopedModule["id"], ReactNode>> = 
 
 export function TeamSidebar_Modules() {
     const organization = useOrganization();
-    const team = useTeam();
+    const teamSlug = useTeamSlug();
 
     return (
         <NavSection>
             <NavItem
                 icon={<LayoutDashboardIcon />}
                 label="Dashboard"
-                href={route("/teams/[slug]", { slug: team.slug })}
+                href={route("/teams/[slug]", { slug: teamSlug })}
             />
             {teamModules
                 .filter((mod) => mod.alwaysOn || organization.isModuleEnabled(mod.id))
                 .map((mod) => {
                     const Icon = mod.icon;
-                    const href = mod.href(team.slug);
+                    const href = mod.href(teamSlug);
                     const subItems = TEAM_MODULE_SIDEBAR[mod.id];
 
                     if (!subItems) {

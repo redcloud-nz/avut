@@ -268,7 +268,7 @@ Render an entity's name as a link to its detail page with the wrappers in `src/c
 
 ## Scope roots and modules
 
-The app has four real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **team** (`/teams/[slug]/…`, reached through a `TeamUser` grant on a slugged, Active team and checked by `teamProcedure`), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
+The app has four real scope roots, each with its own sidebar and module set: **organization** (`/orgs/[slug]/…`), **team** (`/teams/[slug]/…`, entered through `requireTeam`, an entry gate that needs a `TeamUser` grant on a slugged, Active team; its pages then read through the org procedures, checked by org roles — see [`route-access-control.md`](docs/patterns/route-access-control.md)), **user** (`/user/…`, always available), and **system** (`/system/…`, gated on the Better Auth `admin` role). `ScopeSwitcher` (`src/components/nav/scope-switcher.tsx`) is the persistent control for jumping between them.
 
 `src/lib/modules.ts` is the single source of truth for all four — module ids, labels, icons, route segments, and hrefs all come from the `Modules` registry there. Update it when adding a module; don't hardcode module paths elsewhere. A module's UI code lives in `src/modules/<module-id>/` (see [Modules](#modules)).
 

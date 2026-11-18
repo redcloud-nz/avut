@@ -7,11 +7,11 @@ import "server-only";
 
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import type { TeamId } from "@/lib/schemas/team";
-import { TeamScopeData, type TeamScopeGrantData } from "@/lib/schemas/team-scope";
 import {
     TeamUserData,
     TeamUserId,
     type GrantableUserData,
+    type TeamScopeGrantData,
     type UserTeamData,
 } from "@/lib/schemas/team-user";
 import type { UserId } from "@/lib/schemas/user";
@@ -169,7 +169,7 @@ export async function listForCaller(ctx: UserServiceContext): Promise<TeamScopeG
 
     return grants
         .map(({ team: { organization, ...team } }) =>
-            TeamScopeData.teamGrantSchema.parse({ team, organization }),
+            TeamUserData.scopeGrantSchema.parse({ team, organization }),
         )
         .sort(
             (a, b) =>

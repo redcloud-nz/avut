@@ -8,7 +8,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 
-import { getGrantedTeam, requireTeam } from "./team-access";
+import { requireTeam } from "./team-access";
 
 const mocks = vi.hoisted(() => ({
     notFound: vi.fn(() => {
@@ -16,21 +16,16 @@ const mocks = vi.hoisted(() => ({
         throw new Error("NEXT_NOT_FOUND");
     }),
     requireSession: vi.fn(),
-    getSession: vi.fn(),
-    getGrantedBySlug: vi.fn(),
-    getOrganizationBySlug: vi.fn(),
+    getTeamBySlug: vi.fn(),
     getOrganizationSettings: vi.fn(),
     getOrganizationUserRoles: vi.fn(),
+    teamUserFindUnique: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
-vi.mock("./prisma", () => ({ default: {} }));
-vi.mock("./session", () => ({
-    getSession: mocks.getSession,
-    requireSession: mocks.requireSession,
-}));
-vi.mock("./services/teams", () => ({ getGrantedBySlug: mocks.getGrantedBySlug }));
-vi.mock("./cache/organization", () => ({ getOrganizationBySlug: mocks.getOrganizationBySlug }));
+vi.mock("./prisma", () => ({ default: { teamUser: { findUnique: mocks.teamUserFindUnique } } }));
+vi.mock("./session", () => ({ requireSession: mocks.requireSession }));
+vi.mock("./cache/team", () => ({ getTeamBySlug: mocks.getTeamBySlug }));
 vi.mock("./cache/organization-settings", () => ({
     getOrganizationSettings: mocks.getOrganizationSettings,
 }));
@@ -42,85 +37,91 @@ const orgId = OrganizationId.create();
 const teamId = TeamId.create();
 const userId = UserId.create();
 
-const team = {
-    id: teamId,
-    name: "Alpha",
-    slug: "alpha",
-    description: "",
-    organization: { id: orgId, name: "Acme", slug: "acme" },
-    d4h: null,
-};
+const organization = { id: orgId, name: "Acme", slug: "acme" };
+const settings = { modules: {} };
+
+function teamRow(status: "Active" | "Archived" | "Deleted" = "Active") {
+    return {
+        id: teamId,
+        name: "Alpha",
+        slug: "alpha",
+        description: "",
+        status,
+        organizationId: orgId,
+        d4h: null,
+    };
+}
 
 describe("requireTeam", () => {
-    const organization = { id: orgId, name: "Acme", slug: "acme" };
-    const settings = { modules: {} };
-
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.requireSession.mockResolvedValue({ user: { id: userId } });
-        mocks.getSession.mockResolvedValue({ user: { id: userId } });
-        mocks.getOrganizationBySlug.mockResolvedValue(organization);
         mocks.getOrganizationSettings.mockResolvedValue(settings);
         mocks.getOrganizationUserRoles.mockResolvedValue(["member"]);
+        mocks.teamUserFindUnique.mockResolvedValue({ id: "grant" });
     });
 
-    it("returns the team, its org, settings and the caller's roles when granted", async () => {
-        mocks.getGrantedBySlug.mockResolvedValue(team);
+    it("returns the team, its org, settings and the caller's roles for a granted Active team", async () => {
+        mocks.getTeamBySlug.mockResolvedValue({ ...teamRow(), organization });
 
         const access = await requireTeam("alpha");
 
         expect(access).toEqual({
             session: { user: { id: userId } },
-            team,
+            team: teamRow(),
             organization,
             settings,
             roles: ["member"],
         });
-        expect(mocks.getGrantedBySlug).toHaveBeenCalledWith(expect.anything(), "alpha", userId);
-        // The org comes from the cached helper, keyed on the team's org.
-        expect(mocks.getOrganizationBySlug).toHaveBeenCalledWith("acme");
+        expect(mocks.getTeamBySlug).toHaveBeenCalledWith("alpha");
         expect(mocks.getOrganizationSettings).toHaveBeenCalledWith(orgId);
         expect(mocks.getOrganizationUserRoles).toHaveBeenCalledWith(orgId, userId);
+        expect(mocks.teamUserFindUnique).toHaveBeenCalledWith({
+            where: { teamId_userId: { teamId, userId } },
+            select: { id: true },
+        });
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
 
-    it("calls notFound() and loads nothing else when the access check returns null", async () => {
-        mocks.getGrantedBySlug.mockResolvedValue(null);
+    it.each(["Archived", "Deleted"] as const)(
+        "calls notFound() for a %s team without checking the grant",
+        async (status) => {
+            mocks.getTeamBySlug.mockResolvedValue({ ...teamRow(status), organization });
 
-        await expect(requireTeam("nobody")).rejects.toThrow("NEXT_NOT_FOUND");
+            await expect(requireTeam(`team-${status}`)).rejects.toThrow("NEXT_NOT_FOUND");
+            expect(mocks.notFound).toHaveBeenCalledOnce();
+            expect(mocks.teamUserFindUnique).not.toHaveBeenCalled();
+            expect(mocks.getOrganizationUserRoles).not.toHaveBeenCalled();
+        },
+    );
+
+    it("calls notFound() when the caller holds no grant on the team", async () => {
+        mocks.getTeamBySlug.mockResolvedValue({ ...teamRow(), organization });
+        mocks.teamUserFindUnique.mockResolvedValue(null);
+
+        await expect(requireTeam("ungranted")).rejects.toThrow("NEXT_NOT_FOUND");
         expect(mocks.notFound).toHaveBeenCalledOnce();
-        expect(mocks.getOrganizationBySlug).not.toHaveBeenCalled();
-        expect(mocks.getOrganizationSettings).not.toHaveBeenCalled();
-        expect(mocks.getOrganizationUserRoles).not.toHaveBeenCalled();
-    });
-});
-
-describe("getGrantedTeam", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
     });
 
-    it("returns the granted team for the session's user", async () => {
-        mocks.getSession.mockResolvedValue({ user: { id: userId } });
-        mocks.getGrantedBySlug.mockResolvedValue(team);
+    it("checks the grant alongside the settings and roles, not after them", async () => {
+        mocks.getTeamBySlug.mockResolvedValue({ ...teamRow(), organization });
+        let releaseSettings!: (value: unknown) => void;
+        mocks.getOrganizationSettings.mockReturnValue(
+            new Promise((resolve) => (releaseSettings = resolve)),
+        );
+        let releaseRoles!: (value: unknown) => void;
+        mocks.getOrganizationUserRoles.mockReturnValue(
+            new Promise((resolve) => (releaseRoles = resolve)),
+        );
 
-        await expect(getGrantedTeam("alpha")).resolves.toEqual(team);
-        expect(mocks.getGrantedBySlug).toHaveBeenCalledWith(expect.anything(), "alpha", userId);
-    });
+        const pending = requireTeam("concurrent");
+        await new Promise((resolve) => setTimeout(resolve, 0));
 
-    it("returns null for an ungranted slug, without calling notFound()", async () => {
-        mocks.getSession.mockResolvedValue({ user: { id: userId } });
-        mocks.getGrantedBySlug.mockResolvedValue(null);
+        // Settings and roles are still unresolved, yet the grant query has been issued.
+        expect(mocks.teamUserFindUnique).toHaveBeenCalledOnce();
 
-        await expect(getGrantedTeam("nobody")).resolves.toBeNull();
-        expect(mocks.notFound).not.toHaveBeenCalled();
-    });
-
-    it("returns null without querying when there's no session", async () => {
-        mocks.getSession.mockResolvedValue(null);
-
-        await expect(getGrantedTeam("alpha")).resolves.toBeNull();
-        expect(mocks.getGrantedBySlug).not.toHaveBeenCalled();
-        expect(mocks.requireSession).not.toHaveBeenCalled();
+        releaseSettings(settings);
+        releaseRoles(["member"]);
+        await expect(pending).resolves.toMatchObject({ roles: ["member"] });
     });
 });

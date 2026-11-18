@@ -12,14 +12,20 @@ import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export default async function Team_Index_Page(props: PageProps<"/teams/[slug]">) {
     const { slug } = await props.params;
-    // Cached per request, and already loaded by the team layout (which seeds `teamScope.getTeam`).
-    // Only for the roles here: it guards nothing, since `listRoster` checks `team: ["view"]` itself.
-    const { roles } = await requireTeam(slug);
+    // Cached per request, and already run by the team layout (which seeds `teams.getTeam`). Read
+    // here for the ids and roles; it guards nothing, since `listTeamMemberships` checks
+    // `team: ["view"]` itself.
+    const { organization, team, roles } = await requireTeam(slug);
 
     // The roster card shows only behind `team: ["view"]`. Without it the prefetch would fail
     // FORBIDDEN on every visit, for a query nothing on the page reads.
     if (hasAnyRoleWithPermissions(roles, { team: ["view"] })) {
-        prefetch(trpc.teamScope.listRoster.queryOptions({ teamSlug: slug }));
+        prefetch(
+            trpc.teams.listTeamMemberships.queryOptions({
+                organizationId: organization.id,
+                teamId: team.id,
+            }),
+        );
     }
 
     return (

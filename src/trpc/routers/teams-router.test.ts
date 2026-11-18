@@ -12,6 +12,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { EXECUTION_STALE_MS } from "@/server/services/batch-update-plans";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -23,6 +24,10 @@ import { teamsRouter } from "./teams-router";
 // ctx.prisma (the injected mock), so stubbing server-only is enough to let the module load
 // under jsdom.
 vi.mock("server-only", () => ({}));
+
+// The routers clear a team's cached lookup after writes. `revalidateTag` throws outside a Next.js
+// request/render store, so stub it.
+vi.mock("@/server/cache/team-revalidate", () => ({ revalidateTeam: vi.fn(async () => {}) }));
 
 // The D4H linking procedures touch only getConfiguredD4HAccessToken and the
 // cached fetch helpers in @/server/d4h-api/client — stubbed here (same pattern as
@@ -1022,6 +1027,7 @@ describe("teamsRouter team slugs", () => {
     });
 
     it("keeps the team's own slug without a conflict", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller().updateTeam({
             organizationId: T.org,
             teamId: T.team,
@@ -1029,6 +1035,8 @@ describe("teamsRouter team slugs", () => {
         });
 
         expect(updated).toMatchObject({ name: "Alpha 2", slug: "alpha" });
+        // The team's cached lookup (`getTeamBySlug`) is cleared once.
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
     });
 
     it("refuses to update to a slug held by a team in another org", async () => {
@@ -1042,7 +1050,11 @@ describe("teamsRouter team slugs", () => {
     });
 
     it("clears the slug with null and logs the change", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await updateAlpha(null);
+
+        // Both slugs: the old one's cached team, and the new (null, a no-op).
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"], [null]]);
 
         expect(updated.slug).toBeNull();
         expect(await db.team.findUnique({ where: { id: T.team } })).toMatchObject({ slug: null });

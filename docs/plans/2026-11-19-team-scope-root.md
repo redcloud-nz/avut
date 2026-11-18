@@ -98,6 +98,29 @@ _End of review group B._ Visual checkpoint: the dashboard, the not-found cases a
 
 **Checkpoint before `/avut-ship`: access-control review** (user, 2026-11-19). The user reviews the access-control code themselves, chiefly for DB round trips: `Teams.getGrantedBySlug`, `teamProcedure` (with `ctx.hasPermission`), `requireTeam`, and the team layout and dashboard page. Give them a round-trip count per path: one team procedure call, a full page load of `/teams/[slug]`, and a client-side navigation. Wait for their go-ahead before shipping.
 
+### Rework: the grant is an entry gate (user, 2026-11-19)
+
+At the access-control checkpoint the user chose **option A**. Team pages get the team, its org, the settings and the caller's roles from `requireTeam(slug)`, and read through the **existing organization procedures** with `organization.id`/`team.id`. The `TeamUser` grant is checked only on entry, by `requireTeam`. Before #528, `teamProcedure` added no real protection: a `member` holds `team: ["view"]` and can read any team's data through the org procedures anyway. The grant becomes a data boundary only once team-only users' org-wide permissions are narrowed (#528). `teamProcedure` can be rebuilt then. This supersedes the Decisions above on `teamProcedure`, `getGrantedBySlug`, `teamScope`, `useTeam` and the dashboard's data.
+
+- [x] **Task 11: rework team scope onto org procedures** (refactor(teams): gate the team scope on entry and read through org procedures)
+  - **Files:** `src/server/team-access.ts` and `src/server/cache/team.ts` (the user's work in progress; finish it, keep its shape), `src/server/team-access.test.ts`, the team layout and page, `src/hooks/use-team.tsx`, `src/components/team/dashboard-content.tsx`, `src/trpc/routers/teams-router.ts` (revalidation calls), and the removals and docs listed below
+  - **Do:**
+    - **`getTeamBySlug(slug)`** (`src/server/cache/team.ts`, `"use cache"`, tag `team-<slug>`): `include: { organization: true, d4h: true }`, built with `TeamData.fromRecord` and `OrganizationData.fromRecord`. It doesn't join `d4hOrganisationName` (`fromRecord` reads it as null), and `notFound()` if the slug is unknown. Drop `getAllTeamSlugs` unless something uses it.
+    - **`requireTeam(slug)`:** the session and `getTeamBySlug` run concurrently. `notFound()` unless `team.status === "Active"`. Then settings, roles and the grant check run concurrently. The grant check is an **uncached** `prisma.teamUser.findUnique({ where: { teamId_userId } , select: { id: true } })` (user: uncached, so a revoke takes effect on the next load), and `notFound()` without a grant. It returns `{ session, team, organization, settings, roles }`. Rewrite its docstring: it is the team scope's **entry gate**, and `/trpc` reads are checked by org permissions.
+    - **Revalidation:** call `revalidateTeam(slug)` in `teams-router.ts` wherever a team's cached row changes: `updateTeam` (old **and** new slug when the slug changes), `archiveTeam`, `restoreTeam`, `deleteTeam`, `recoverTeam`, `linkTeamToD4H`, `unlinkTeamFromD4H`, the D4H sync that updates `Team_D4H`, and the Rubbish bin's team recover and purge. Follow how `revalidateOrganization`/`revalidateUserSettings` are called (after the transaction). Skip a team without a slug.
+    - **Layout:** `generateMetadata` uses `getTeamBySlug` (as the org layout uses `getOrganizationBySlug`). The layout seeds `teams.getTeam({ organizationId, teamId })` with the team, plus the existing org seeds. `TeamProvider` carries `organizationId` and `teamId`, and `useTeam()` reads `teams.getTeam` with `useSuspenseQuery`. Check that the seeded value matches `teams.getTeam`'s output, so there's no refetch on hydrate.
+    - **Dashboard:** the roster reads `teams.listTeamMemberships({ organizationId, teamId })` (prefetched under the same `team: ["view"]` check), showing `status === "Active"` memberships. The cards read `TeamData`.
+    - **Remove:** the `teamScope` router (and its `_app.ts` entry and tests), `Teams.listRoster`, `Teams.getGrantedBySlug` (and its tests), `teamProcedure`, `AuthenticatedTeamContext` and their tests (keep the shared `organizationLogEvent` refactor), `src/server/team-grant.ts`, `getGrantedTeam`, and the team-scope schemas no longer used. `user.listTeamGrants` stays: keep its schema, moving it to `src/lib/schemas/team-user.ts` if `team-scope.ts` would otherwise hold only it.
+    - **Docs:**
+      - `src/trpc/CLAUDE.md`: drop the `teamProcedure` rows.
+      - `AGENTS.md` → Scope roots: the team root is reached through `requireTeam`, an entry gate, and pages read through org procedures.
+      - `docs/patterns/route-access-control.md`:
+        - the team layout row is `requireTeam(slug)` → "404 unless the team is Active and granted";
+        - a paragraph that team pages are gated on entry only, and that their reads go through org procedures checked by org roles, so the grant isn't a data boundary until #528;
+        - replace the `getGrantedTeam` paragraph;
+        - add "Team name by slug" to Known and accepted.
+  - **Done when:** `npm run check` passes. `team-access.test.ts` covers: granted Active team → the access shape; Archived → `notFound`; no grant → `notFound`; the grant check runs alongside settings and roles. `grep -r "teamScope\|teamProcedure\|getGrantedBySlug\|team-grant" src docs AGENTS.md` finds nothing outside this plan and history.
+
 ## Docs impact
 
 New: a team scope at `/teams/<slug>`, reached from the scope switcher's new Teams group, with a team dashboard (name, roster, D4H link). Likely a new guide page on team scope (or a section in the guide that covers the scope switcher), and the scope-switcher screenshot changes.

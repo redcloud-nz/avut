@@ -21,7 +21,6 @@ import {
     getById,
     getBySlug,
     getDeleteImpact,
-    getGrantedBySlug,
     recover,
     recoverMembership,
     requireById,
@@ -144,116 +143,6 @@ describe("teams", () => {
 
         it("returns null when no team holds the slug", async () => {
             expect(await getBySlug(db, "nobody")).toBeNull();
-        });
-    });
-
-    describe("getGrantedBySlug", () => {
-        const G = {
-            plainTeam: TeamId.create(),
-            linkedTeam: TeamId.create(),
-            archivedTeam: TeamId.create(),
-            deletedTeam: TeamId.create(),
-            ungrantedTeam: TeamId.create(),
-            caller: UserId.create(),
-            other: UserId.create(),
-        };
-
-        beforeAll(async () => {
-            for (const userId of [G.caller, G.other]) {
-                await db.user.create({
-                    data: { id: userId, name: userId, email: `${userId}@example.com` },
-                });
-                await db.organizationUser.create({
-                    data: { id: nanoId16(), organizationId: T.org, userId },
-                });
-            }
-
-            for (const [id, slug, status] of [
-                [G.plainTeam, "granted-plain", "Active"],
-                [G.linkedTeam, "granted-linked", "Active"],
-                [G.archivedTeam, "granted-archived", "Archived"],
-                [G.deletedTeam, "granted-deleted", "Deleted"],
-                [G.ungrantedTeam, "ungranted", "Active"],
-            ] as const) {
-                await db.team.create({
-                    data: {
-                        id,
-                        organizationId: T.org,
-                        name: `Team ${slug}`,
-                        slug,
-                        description: `About ${slug}`,
-                        status,
-                        tags: [],
-                        properties: {},
-                    },
-                });
-            }
-
-            await db.team_D4H.create({
-                data: {
-                    teamId: G.linkedTeam,
-                    d4hTeamId: 777,
-                    d4hTeamName: "Linked D4H Team",
-                    d4hServerCode: "ap",
-                },
-            });
-
-            // The caller is granted every team but `ungranted`; another user is granted that one.
-            for (const teamId of [G.plainTeam, G.linkedTeam, G.archivedTeam, G.deletedTeam]) {
-                await db.teamUser.create({
-                    data: { id: nanoId16(), organizationId: T.org, teamId, userId: G.caller },
-                });
-            }
-            await db.teamUser.create({
-                data: {
-                    id: nanoId16(),
-                    organizationId: T.org,
-                    teamId: G.ungrantedTeam,
-                    userId: G.other,
-                },
-            });
-        });
-
-        it("returns a granted Active team with its org and no D4H link", async () => {
-            expect(await getGrantedBySlug(db, "granted-plain", G.caller)).toEqual({
-                id: G.plainTeam,
-                name: "Team granted-plain",
-                slug: "granted-plain",
-                description: "About granted-plain",
-                organization: { id: T.org, name: T.org, slug: T.org },
-                d4h: null,
-            });
-        });
-
-        it("returns a granted team's D4H link", async () => {
-            const team = await getGrantedBySlug(db, "granted-linked", G.caller);
-
-            expect(team?.id).toBe(G.linkedTeam);
-            expect(team?.d4h).toEqual({
-                d4hTeamId: 777,
-                d4hTeamName: "Linked D4H Team",
-                d4hServerCode: "ap",
-            });
-        });
-
-        it("returns null for an unknown slug", async () => {
-            expect(await getGrantedBySlug(db, "nobody", G.caller)).toBeNull();
-        });
-
-        it("returns null for an Archived team, even with a grant", async () => {
-            expect(await getGrantedBySlug(db, "granted-archived", G.caller)).toBeNull();
-        });
-
-        it("returns null for a Deleted team, even with a grant", async () => {
-            expect(await getGrantedBySlug(db, "granted-deleted", G.caller)).toBeNull();
-        });
-
-        it("returns null for a user with no grant on the team", async () => {
-            expect(await getGrantedBySlug(db, "granted-plain", G.other)).toBeNull();
-        });
-
-        it("returns null when the caller's grant is on a different team", async () => {
-            expect(await getGrantedBySlug(db, "ungranted", G.caller)).toBeNull();
         });
     });
 

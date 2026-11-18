@@ -16,12 +16,6 @@ import {
     TeamMembershipId,
     type ModifiableTeamMembershipData,
 } from "@/lib/schemas/team-membership";
-import {
-    TeamScopeData,
-    type TeamScopeRosterEntryData,
-    type TeamScopeTeamData,
-} from "@/lib/schemas/team-scope";
-import type { UserId } from "@/lib/schemas/user";
 
 import type { OrgServiceContext } from "./service-context";
 
@@ -79,72 +73,6 @@ export async function getBySlug(
         id: TeamId.schema.parse(team.id),
         organizationId: OrganizationId.schema.parse(team.organizationId),
     };
-}
-
-/**
- * The team scope's access check: the team holding `slug`, in any organization, if it is `Active`
- * and `userId` holds a `TeamUser` grant on it; otherwise `null`, without saying which check
- * failed. Takes `prisma` rather than an org context because the lookup crosses orgs.
- *
- * One round trip: the grant is read through `Team.teamUsers`, filtered to the caller, in the same
- * query as the team, its org and its D4H link. Both checks then run in memory.
- */
-export async function getGrantedBySlug(
-    prisma: PrismaClient,
-    slug: string,
-    userId: UserId,
-): Promise<TeamScopeTeamData | null> {
-    const team = await prisma.team.findUnique({
-        where: { slug },
-        select: {
-            id: true,
-            name: true,
-            slug: true,
-            description: true,
-            status: true,
-            organization: { select: { id: true, name: true, slug: true } },
-            d4h: { select: { d4hTeamId: true, d4hTeamName: true, d4hServerCode: true } },
-            teamUsers: { where: { userId }, select: { id: true } },
-        },
-    });
-
-    if (!team || team.status !== "Active" || team.teamUsers.length === 0) return null;
-
-    return TeamScopeData.teamSchema.parse({
-        id: team.id,
-        name: team.name,
-        slug: team.slug,
-        description: team.description,
-        organization: team.organization,
-        d4h: team.d4h,
-    });
-}
-
-/**
- * A team's roster for the team scope: its `Active` memberships of `Active` people, ordered by
- * person name, each with the person's name and the membership's D4H position and ref when it is
- * D4H-managed. One query. A team outside the organization has an empty roster.
- */
-export async function listRoster(
-    ctx: OrgServiceContext,
-    teamId: TeamId,
-): Promise<TeamScopeRosterEntryData[]> {
-    const memberships = await ctx.prisma.teamMembership.findMany({
-        where: {
-            teamId,
-            organizationId: ctx.organizationId,
-            status: "Active",
-            person: { status: "Active" },
-        },
-        select: {
-            id: true,
-            person: { select: { id: true, name: true } },
-            d4h: { select: { d4hPosition: true, d4hRef: true } },
-        },
-        orderBy: { person: { name: "asc" } },
-    });
-
-    return memberships.map((membership) => TeamScopeData.rosterEntrySchema.parse(membership));
 }
 
 /**

@@ -14,7 +14,7 @@ import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { TeamId } from "@/lib/schemas/team";
-import { TeamScopeData } from "@/lib/schemas/team-scope";
+import { TeamUserData } from "@/lib/schemas/team-user";
 import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData } from "@/lib/schemas/user-session";
 import { auth } from "@/server/auth";
@@ -558,7 +558,7 @@ export const userRouter = createTrpcRouter({
      * scope switcher's Teams group lists them.
      */
     listTeamGrants: authenticatedProcedure
-        .output(z.array(TeamScopeData.teamGrantSchema))
+        .output(z.array(TeamUserData.scopeGrantSchema))
         .query(async ({ ctx }) => {
             return await TeamUsers.listForCaller(ctx);
         }),

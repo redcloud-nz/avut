@@ -3,12 +3,10 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import * as z from "zod";
 
-import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
-import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -18,7 +16,6 @@ import {
     createTrpcRouter,
     organizationProcedure,
     systemAdminProcedure,
-    teamProcedure,
 } from "./init";
 
 const T = {
@@ -70,24 +67,6 @@ const testRouter = createTrpcRouter({
                 await ctx.logEvent({ scope: "system", ...common });
             }
 
-            return { ok: true as const };
-        }),
-
-    teamMember: teamProcedure().query(({ ctx }) => ({
-        teamId: ctx.teamId,
-        teamSlug: ctx.teamSlug,
-        organizationId: ctx.organizationId,
-        isSystemAdmin: ctx.isSystemAdmin,
-    })),
-
-    teamWrite: teamProcedure({ person: ["update"] })
-        .input(z.object({ personId: z.string() }))
-        .mutation(async ({ ctx, input }) => {
-            await ctx.logEvent({
-                action: "Update",
-                objectType: "Person",
-                objectId: input.personId,
-            });
             return { ok: true as const };
         }),
 
@@ -269,123 +248,5 @@ describe("systemAdminProcedure.logEvent", () => {
         await expect(
             makeCaller().systemAdminWrite({ target: "system", objectId: "sysadmin_denied" }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
-});
-
-describe("teamProcedure", () => {
-    const G = {
-        org: OrganizationId.create(),
-        team: TeamId.create(),
-        member: UserId.create(),
-        ungranted: UserId.create(),
-        admin: UserId.create(),
-    };
-
-    beforeAll(async () => {
-        await db.organization.create({
-            data: { id: G.org, name: "Team Org", slug: "team-org", createdAt: new Date() },
-        });
-        for (const userId of [G.member, G.ungranted, G.admin]) {
-            await db.user.create({
-                data: { id: userId, name: userId, email: `${userId}@example.com` },
-            });
-            await db.organizationUser.create({
-                data: { id: nanoId16(), organizationId: G.org, userId },
-            });
-        }
-        await db.team.create({
-            data: {
-                id: G.team,
-                organizationId: G.org,
-                name: "Rescue Team",
-                slug: "rescue",
-                tags: [],
-                properties: {},
-            },
-        });
-        await db.teamUser.create({
-            data: { id: nanoId16(), organizationId: G.org, teamId: G.team, userId: G.member },
-        });
-    });
-
-    function callerFor(
-        userId: UserId,
-        options: { permissions?: Record<string, string[]>; role?: string } = {},
-    ) {
-        const ctx = createAuthenticatedMockContext({
-            user: {
-                id: userId,
-                name: "Grace Hopper",
-                email: "grace@example.com",
-                ...(options.role ? { role: options.role } : {}),
-            },
-            permissions: options.permissions ?? {},
-            prisma: db,
-        });
-        const hasPermission = vi.fn(ctx.hasPermission);
-        return { caller: testRouter.createCaller({ ...ctx, hasPermission }), hasPermission };
-    }
-
-    it("lets a granted member in with no permissions, with the team and its org on ctx", async () => {
-        const { caller, hasPermission } = callerFor(G.member);
-
-        await expect(caller.teamMember({ teamSlug: "rescue" })).resolves.toEqual({
-            teamId: G.team,
-            teamSlug: "rescue",
-            organizationId: G.org,
-            isSystemAdmin: false,
-        });
-        expect(hasPermission).toHaveBeenCalledWith(G.org, {});
-    });
-
-    it("refuses an unknown slug with NOT_FOUND", async () => {
-        const { caller } = callerFor(G.member);
-
-        await expect(caller.teamMember({ teamSlug: "nobody" })).rejects.toMatchObject({
-            code: "NOT_FOUND",
-        });
-    });
-
-    it("refuses an org member without a grant with NOT_FOUND, before any permission check", async () => {
-        const { caller, hasPermission } = callerFor(G.ungranted, {
-            permissions: { person: ["update"] },
-        });
-
-        await expect(caller.teamMember({ teamSlug: "rescue" })).rejects.toMatchObject({
-            code: "NOT_FOUND",
-        });
-        expect(hasPermission).not.toHaveBeenCalled();
-    });
-
-    it("refuses a system admin without a grant with NOT_FOUND", async () => {
-        const { caller } = callerFor(G.admin, { role: "admin" });
-
-        await expect(caller.teamMember({ teamSlug: "rescue" })).rejects.toMatchObject({
-            code: "NOT_FOUND",
-        });
-    });
-
-    it("refuses a granted member without the required permission with FORBIDDEN", async () => {
-        const { caller } = callerFor(G.member);
-
-        await expect(
-            caller.teamWrite({ teamSlug: "rescue", personId: "team_person_denied" }),
-        ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    });
-
-    it("writes ctx.logEvent entries to the team's organization log", async () => {
-        const { caller } = callerFor(G.member, { permissions: { person: ["update"] } });
-
-        await caller.teamWrite({ teamSlug: "rescue", personId: "team_person_1" });
-
-        const entries = await db.logEntry.findMany({ where: { objectId: "team_person_1" } });
-        expect(entries).toHaveLength(1);
-        expect(entries[0]).toMatchObject({
-            scope: "organization",
-            organizationId: G.org,
-            ownerId: null,
-            userId: G.member,
-            actorLabel: "Grace Hopper <grace@example.com>",
-        });
     });
 });
