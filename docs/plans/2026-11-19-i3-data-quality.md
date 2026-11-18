@@ -108,7 +108,7 @@ Issued Types page for a team, and the bundle comparison.
 
 ### Review group A: data layer
 
-- [ ] **Task 1: `brandModelRule` on the template** (schema, migration, zod)
+- [x] **Task 1: `brandModelRule` on the template** (feat(d4h-i3): add a brand & model rule to I3 templates)
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<ts>_i3_template_brand_model_rule/migration.sql`
     (new, generated), `src/lib/schemas/i3-template.ts`, and any test fixture that builds an
     `I3Template.d4h` object literally (e.g. `src/forms/i3-issue-items/processor.test.ts`,

@@ -911,9 +911,16 @@ model I3Template_D4H {
 
   outputRefFormat String
   requireSN       Boolean
+  brandModelRule  I3BrandModelRule @default(Optional)
 
   @@unique([templateId])
   @@map("i3_template_d4h")
+}
+
+enum I3BrandModelRule {
+  Required
+  Optional
+  None
 }
 
 model I3TemplateVariant {

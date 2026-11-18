@@ -21,6 +21,29 @@ export const I3TemplateId = {
 
 export type I3TemplateId = string & z.BRAND<"I3TemplateId">;
 
+const i3BrandModelRuleValues = ["Required", "Optional", "None"] as const;
+
+/**
+ * Whether a template's items carry a brand and model in D4H (the
+ * `I3BrandModelRule` Prisma enum). `Optional` is the default.
+ */
+export const I3BrandModelRule = {
+    values: i3BrandModelRuleValues,
+    schema: z.enum(i3BrandModelRuleValues),
+    label: {
+        Required: "Required",
+        Optional: "Optional",
+        None: "None",
+    },
+    description: {
+        Required: "Items need a model, and so a brand.",
+        Optional: "Brand and model may be blank. If set, they must be one of the variants.",
+        None: "This type has no meaningful brand or model. Leave them blank.",
+    },
+} as const;
+
+export type I3BrandModelRule = (typeof i3BrandModelRuleValues)[number];
+
 const i3TemplateSchema = z.object({
     id: I3TemplateId.schema,
     organizationId: z.string(),
@@ -47,6 +70,7 @@ const i3TemplateSchema = z.object({
                 "member.ref",
             ]),
             requireSN: z.boolean(),
+            brandModelRule: I3BrandModelRule.schema,
         })
         .nullable(),
     status: recordStatusSchema,
