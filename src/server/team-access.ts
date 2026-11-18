@@ -43,8 +43,9 @@ export interface TeamAccess {
  * Cached per request on the slug alone, like `requireOrganization`. Round trips: the session and
  * the team (`"use cache"`, cross-request) concurrently, then settings and roles (both
  * `"use cache"`) and the grant concurrently. The grant query is deliberately uncached, and it
- * reads the team's status too: that, not the cached team's, is what gates entry, so a revoked
- * grant or an archived team takes effect on the next load even if a `revalidateTeam` was missed.
+ * reads the team's status and slug too: those, not the cached team's, are what gate entry, so a
+ * revoked grant, an archived team or a renamed slug takes effect on the next load even if a
+ * `revalidateTeam` was missed.
  * The cached status is only an early exit.
  */
 export const requireTeam = cache(async (slug: string): Promise<TeamAccess> => {
@@ -60,11 +61,13 @@ export const requireTeam = cache(async (slug: string): Promise<TeamAccess> => {
         getOrganizationUserRoles(organization.id, session.user.id),
         prisma.teamUser.findUnique({
             where: { teamId_userId: { teamId: team.id, userId: session.user.id } },
-            select: { team: { select: { status: true } } },
+            select: { team: { select: { status: true, slug: true } } },
         }),
     ]);
 
-    if (!grant || grant.team.status !== "Active") return notFound();
+    // The slug check covers a rename whose old-slug cache entry wasn't cleared: the grant is
+    // looked up by team id, so without it a stale entry would still admit under the old slug.
+    if (!grant || grant.team.status !== "Active" || grant.team.slug !== slug) return notFound();
 
     return { session, team, organization, settings, roles };
 });

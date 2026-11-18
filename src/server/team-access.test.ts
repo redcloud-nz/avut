@@ -58,7 +58,7 @@ describe("requireTeam", () => {
         mocks.requireSession.mockResolvedValue({ user: { id: userId } });
         mocks.getOrganizationSettings.mockResolvedValue(settings);
         mocks.getOrganizationUserRoles.mockResolvedValue(["member"]);
-        mocks.teamUserFindUnique.mockResolvedValue({ team: { status: "Active" } });
+        mocks.teamUserFindUnique.mockResolvedValue({ team: { status: "Active", slug: "alpha" } });
     });
 
     it("returns the team, its org, settings and the caller's roles for a granted Active team", async () => {
@@ -78,7 +78,7 @@ describe("requireTeam", () => {
         expect(mocks.getOrganizationUserRoles).toHaveBeenCalledWith(orgId, userId);
         expect(mocks.teamUserFindUnique).toHaveBeenCalledWith({
             where: { teamId_userId: { teamId, userId } },
-            select: { team: { select: { status: true } } },
+            select: { team: { select: { status: true, slug: true } } },
         });
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
@@ -109,12 +109,22 @@ describe("requireTeam", () => {
         "calls notFound() for a team cached as Active but %s by the uncached grant query",
         async (status) => {
             mocks.getTeamBySlug.mockResolvedValue({ ...teamRow("Active"), organization });
-            mocks.teamUserFindUnique.mockResolvedValue({ team: { status } });
+            mocks.teamUserFindUnique.mockResolvedValue({ team: { status, slug: "alpha" } });
 
             await expect(requireTeam(`stale-${status}`)).rejects.toThrow("NEXT_NOT_FOUND");
             expect(mocks.notFound).toHaveBeenCalledOnce();
         },
     );
+
+    // A rename whose old-slug entry wasn't cleared: the cache still maps the old slug to the team,
+    // but the uncached grant query reads its new slug.
+    it("calls notFound() for a team cached under a slug it no longer has", async () => {
+        mocks.getTeamBySlug.mockResolvedValue({ ...teamRow(), organization });
+        mocks.teamUserFindUnique.mockResolvedValue({ team: { status: "Active", slug: "renamed" } });
+
+        await expect(requireTeam("alpha")).rejects.toThrow("NEXT_NOT_FOUND");
+        expect(mocks.notFound).toHaveBeenCalledOnce();
+    });
 
     it("checks the grant alongside the settings and roles, not after them", async () => {
         mocks.getTeamBySlug.mockResolvedValue({ ...teamRow(), organization });
@@ -127,7 +137,7 @@ describe("requireTeam", () => {
             new Promise((resolve) => (releaseRoles = resolve)),
         );
 
-        const pending = requireTeam("concurrent");
+        const pending = requireTeam("alpha");
         await new Promise((resolve) => setTimeout(resolve, 0));
 
         // Settings and roles are still unresolved, yet the grant query has been issued.
