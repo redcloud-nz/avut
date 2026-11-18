@@ -8,6 +8,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { nanoId16 } from "@/lib/id";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { OrganizationNoteId } from "@/lib/schemas/organization-note";
+import { TeamId } from "@/lib/schemas/team";
+import { TeamUserId } from "@/lib/schemas/team-user";
 import { UserId } from "@/lib/schemas/user";
 import { UserNoteId } from "@/lib/schemas/user-note";
 import { recordLogEntry } from "@/server/log-entry";
@@ -163,6 +165,29 @@ describe("UserAccounts", () => {
             authorId: null,
         });
         expect(await db.userNote.count({ where: { userId: id } })).toBe(0);
+    });
+
+    it("purge deletes the account's team access grants", async () => {
+        const id = UserId.create();
+        const org = OrganizationId.create();
+        const team = TeamId.create();
+        await db.user.create({
+            data: { id, name: "Grantee", email: `${id}@example.com`, status: "Deleted" },
+        });
+        await db.organization.create({
+            data: { id: org, name: "Grants SAR", slug: org, createdAt: new Date() },
+        });
+        await db.team.create({ data: { id: team, organizationId: org, name: "Grants Team" } });
+        await db.organizationUser.create({
+            data: { id: nanoId16(), organizationId: org, userId: id, role: "member" },
+        });
+        await db.teamUser.create({
+            data: { id: TeamUserId.create(), organizationId: org, teamId: team, userId: id },
+        });
+
+        await UserAccounts.purge(ctx, id);
+
+        expect(await db.teamUser.count({ where: { userId: id } })).toBe(0);
     });
 
     it("purge refuses an account that isn't in the Rubbish bin", async () => {

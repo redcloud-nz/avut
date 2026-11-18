@@ -215,6 +215,7 @@ export async function purge(ctx: SystemServiceContext, userId: UserId): Promise<
         ctx.prisma.formInstance.updateMany({ where: { userId }, data: { userId: null } }),
         ctx.prisma.session.deleteMany({ where: { userId } }),
         ctx.prisma.account.deleteMany({ where: { userId } }),
+        ctx.prisma.teamUser.deleteMany({ where: { userId } }),
         ctx.prisma.organizationUser.deleteMany({ where: { userId } }),
         ctx.prisma.organizationInvitation.deleteMany({ where: { inviterId: userId } }),
         ctx.prisma.providerCredential.deleteMany({ where: { userId } }),

@@ -409,7 +409,13 @@ export const userRouter = createTrpcRouter({
                     objectId: membership.id,
                     description: `Left ${membership.organization.name} (${input.organizationId}).`,
                 },
-                (tx) => tx.organizationUser.delete({ where: { id: membership.id } }),
+                async (tx) => {
+                    // Team access grants go with the membership (the composite FK cascades too).
+                    await tx.teamUser.deleteMany({
+                        where: { organizationId: input.organizationId, userId: ctx.userId },
+                    });
+                    await tx.organizationUser.delete({ where: { id: membership.id } });
+                },
             );
 
             // The caller's cached roles would otherwise keep granting access to the org.

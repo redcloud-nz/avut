@@ -50,6 +50,7 @@ describe("moduleIdForObjectType", () => {
     it("attributes org-admin entities to the org-admin module", () => {
         expect(moduleIdForObjectType("Person")).toBe("org-admin");
         expect(moduleIdForObjectType("Team")).toBe("org-admin");
+        expect(moduleIdForObjectType("TeamUser")).toBe("org-admin");
         expect(moduleIdForObjectType("D4HAccessToken")).toBe("org-admin");
     });
 

@@ -12,6 +12,7 @@ import { OrganizationNoteId } from "@/lib/schemas/organization-note";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
+import { TeamUserId } from "@/lib/schemas/team-user";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -1235,5 +1236,62 @@ describe("organizations.removeOwner — owner-only memberships", () => {
         ).rejects.toMatchObject({ code: "BAD_REQUEST" });
         const row = await db.organizationUser.findFirst({ where: { userId: T.target } });
         expect(row?.role).toBe("owner");
+    });
+});
+
+describe("organizationsRouter.removeOrganizationMember — team access grants", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        removed: UserId.create(),
+        team: TeamId.create(),
+        otherTeam: TeamId.create(),
+        grant: TeamUserId.create(),
+        otherGrant: TeamUserId.create(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: { id: T.removed, name: "Removed", email: `${T.removed}@x.test` },
+        });
+        for (const [org, team] of [
+            [T.org, T.team],
+            [T.otherOrg, T.otherTeam],
+        ] as const) {
+            await db.organization.create({
+                data: { id: org, name: `Org ${org}`, slug: org, createdAt: new Date() },
+            });
+            await db.team.create({ data: { id: team, organizationId: org, name: `Team ${team}` } });
+            await db.organizationUser.create({
+                data: { id: nanoId16(), organizationId: org, userId: T.removed, role: "member" },
+            });
+        }
+        await db.teamUser.create({
+            data: { id: T.grant, organizationId: T.org, teamId: T.team, userId: T.removed },
+        });
+        await db.teamUser.create({
+            data: {
+                id: T.otherGrant,
+                organizationId: T.otherOrg,
+                teamId: T.otherTeam,
+                userId: T.removed,
+            },
+        });
+    });
+
+    it("deletes the removed member's grants in this organization only", async () => {
+        const caller = organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: UserId.create() },
+                permissions: { organization: ["view"], member: ["view", "delete"] },
+                prisma: db,
+            }),
+        );
+
+        await caller.removeOrganizationMember({ organizationId: T.org, userId: T.removed });
+
+        expect(await db.teamUser.findUnique({ where: { id: T.grant } })).toBeNull();
+        expect(await db.teamUser.findUnique({ where: { id: T.otherGrant } })).not.toBeNull();
     });
 });

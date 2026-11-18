@@ -45,7 +45,7 @@ Both issues add team data with admin UI on the same page (`orgs/[slug]/admin/tea
 
 ### Review group B: access grants (data)
 
-- [ ] **Task 3: `TeamUser` model**
+- [x] **Task 3: `TeamUser` model**
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<ts>_add_team_users/`, `src/lib/schemas/team-user.ts` (new), `src/lib/schemas/log-entry.ts`, `src/server/services/user-accounts.ts`, `src/trpc/routers/organizations-router.ts`, `src/trpc/routers/user-router.ts` and their tests
   - **Do:** Add `TeamUser` per Decisions, including the direct `user` relation, with back-relations on `Team`, `OrganizationUser` and `User` (all `teamUsers`). Add the explicit cleanup from Decisions to purge, `removeOrganizationMember` and `leaveOrganization`. Run `npm run prisma migrate dev -- --name add_team_users` (ask first). Add `TeamUserId` (`create()` via `nanoId16`) and a `TeamUserData` read shape for the list rows: `{ id, teamId, userId, createdAt, user: { id, name, email, image }, onRoster: boolean }` for a team's grants, and `{ id, team: TeamRef & { slug, status }, createdAt }` for a user's teams. Add `"TeamUser"` to `logObjectTypeValues` and map it to `"org-admin"` in `moduleByObjectType`.
   - **Done when:** the migration creates `team_users` with both FKs (the composite one onto `organization_users ("organizationId", "userId")`, `ON DELETE CASCADE`), the unique index and the index. `npm run check` passes, including `log-entry.test.ts`.
@@ -81,7 +81,7 @@ Both issues add team data with admin UI on the same page (`orgs/[slug]/admin/tea
 
 - [ ] **Task 7: slug in the team dialogs and details** · `visual` · `mechanical`
   - **Files:** `src/modules/org-admin/components/teams/create-team.tsx`, `update-team.tsx`, `team-content.tsx`, `teams-list.tsx`
-  - **Do:** Add an optional **Slug** field to the Create Team and Update Team forms, with a description like "Optional. Unique across AVUT. Setting one gives the team its own space; leave it blank to keep it off." Map the router's `FieldConflictError` on `slug` to the field, which both dialogs already do (`error.data.conflict.fieldName`). Both use `defaultValues: team` and `form.reset(team)`, so map `slug: null` to `""` there. Show the slug in the Team Details card (monospace, or "None" muted). Add a **Slug** column to the teams list, hidden by default if the table supports column visibility, otherwise shown.
+  - **Do:** Add an optional **Slug** field to the Create Team and Update Team forms, with a description like "Optional. Unique across AVUT. Setting one gives the team its own space; leave it blank to keep it off." Map the router's `FieldConflictError` on `slug` to the field, which both dialogs already do (`error.data.conflict.fieldName`). The update dialog uses `defaultValues: team` and `form.reset(team)`, so map `slug: null` to `""` there. The create dialog's `defaultValues` have no `slug`, and `modifiableSchema` rejects `undefined`, so until it's added the create form fails validation silently. Add `slug: ""` to them. Show the slug in the Team Details card (monospace, or "None" muted). Add a **Slug** column to the teams list, hidden by default if the table supports column visibility, otherwise shown.
   - **Done when:** a slug can be set, changed and cleared from the dialog. A taken slug shows the error on the field. `npm run check` passes. Visual check below.
 
 - [ ] **Task 8: Team access card on a team's admin page** · `visual`
@@ -111,3 +111,5 @@ Admin → Teams gains a Slug field and an Access card, and Admin → Users gains
 ## Parked
 
 ## Review notes
+
+- (Group A, Task 2) `updateTeam`'s input still runs `TeamSlug.schema`, so a team whose stored slug later becomes reserved can't take a name-only edit: the resent slug fails validation. Accept an unchanged stored slug. For example, `modifiableSchema` validates only the slug's shape (characters and length), and the router (plus the dialog, for the error message) checks reserved words only when the slug changes. Extend the "since become reserved" test to cover a name-only edit.

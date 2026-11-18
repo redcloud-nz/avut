@@ -550,6 +550,10 @@ export const organizationsRouter = createTrpcRouter({
             }
 
             await ctx.prisma.$transaction([
+                // Team access grants go with the membership (the composite FK cascades too).
+                ctx.prisma.teamUser.deleteMany({
+                    where: { organizationId: ctx.organizationId, userId: input.userId },
+                }),
                 ctx.prisma.organizationUser.delete({ where: { id: membership.id } }),
                 ctx.logEvent({
                     action: "Delete",

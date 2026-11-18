@@ -9,6 +9,8 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId } from "@/lib/schemas/organization-invitation";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { PersonId } from "@/lib/schemas/person";
+import { TeamId } from "@/lib/schemas/team";
+import { TeamUserId } from "@/lib/schemas/team-user";
 import { UserId } from "@/lib/schemas/user";
 import { UserSessionId } from "@/lib/schemas/user-session";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -543,6 +545,10 @@ describe("userRouter.leaveOrganization", () => {
         outsider: UserId.create(),
         membership: OrganizationUserId.create(),
         ownership: OrganizationUserId.create(),
+        team: TeamId.create(),
+        ownedTeam: TeamId.create(),
+        grant: TeamUserId.create(),
+        ownedGrant: TeamUserId.create(),
     };
     const db = createMockPrisma();
 
@@ -564,6 +570,21 @@ describe("userRouter.leaveOrganization", () => {
         });
         await db.organizationUser.create({
             data: { id: T.ownership, organizationId: T.ownedOrg, userId: T.caller, role: "owner" },
+        });
+        await db.team.create({ data: { id: T.team, organizationId: T.org, name: "Leave Team" } });
+        await db.team.create({
+            data: { id: T.ownedTeam, organizationId: T.ownedOrg, name: "Owned Team" },
+        });
+        await db.teamUser.create({
+            data: { id: T.grant, organizationId: T.org, teamId: T.team, userId: T.caller },
+        });
+        await db.teamUser.create({
+            data: {
+                id: T.ownedGrant,
+                organizationId: T.ownedOrg,
+                teamId: T.ownedTeam,
+                userId: T.caller,
+            },
         });
     });
 
@@ -599,6 +620,10 @@ describe("userRouter.leaveOrganization", () => {
         expect(orgEntry?.batchId).toBe(userEntry?.batchId);
         const batch = await db.logBatch.findUnique({ where: { id: userEntry!.batchId! } });
         expect(batch).toMatchObject({ operationKey: "organization-leave", userId: T.caller });
+
+        // The caller's team access grants go too, in that organization only.
+        expect(await db.teamUser.findUnique({ where: { id: T.grant } })).toBeNull();
+        expect(await db.teamUser.findUnique({ where: { id: T.ownedGrant } })).not.toBeNull();
     });
 
     it("lets the only owner leave, leaving the organization with no owner", async () => {
