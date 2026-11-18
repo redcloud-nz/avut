@@ -68,3 +68,7 @@ Skill Track sessions gain an optional team: §1 "Create the session" in `content
 - Reworking `change-session-personnel.tsx` to put the session's team first (the work plan calls this "may need refining later").
 
 ## Parked
+
+## Review notes
+
+- `updateSession`'s no-op path makes a second round-trip to fetch `team` (`skill-check-sessions-router.ts` ~999–1007). Include `team` in the initial read instead (a local `findUnique`, or widen `requireSessionRecordById`) and drop the extra query.
