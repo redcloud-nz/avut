@@ -112,7 +112,7 @@ Admin → Teams gains a Slug field and an Access card, and Admin → Users gains
 
 ## Parked
 
-- Make the Access card on a team's admin page match the look of the team members card (Related → Personnel). The user raised this at the visual checkpoint on 2026-11-18: the card works for now and can be harmonised later.
+- Make the Access card on a team's admin page match the look of the team members card (Related → Personnel). The user raised this at the visual checkpoint on 2026-11-18: the card works for now and can be harmonised later. Filed as #535.
 
 ## Review notes
 

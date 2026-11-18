@@ -13,8 +13,10 @@ const userBinCaches = (vars: { userId: string }) => [
     invalidate(trpc.users.getUser.queryFilter({ userId: vars.userId })),
     invalidate(trpc.organizations.listOrganizations.queryFilter()),
     invalidate(trpc.organizations.getOrganizationAsAdmin.queryFilter()),
-    // Soft-deleted users can't be granted team access, in any org.
+    // Soft-deleted users can't be granted team access, in any org, and are hidden from every
+    // team's access list.
     invalidate(trpc.teamUsers.listGrantableUsers.queryFilter()),
+    invalidate(trpc.teamUsers.listTeamUsers.queryFilter()),
 ];
 
 /**
