@@ -64,40 +64,36 @@ export default async function AdminIndex_Page(props: PageProps<`/orgs/[slug]/adm
                                 </Link>
                             </Item>
                         </Protect>
-                        <Protect permissions={{ organization: ["view"] }}>
-                            <Item variant="outline" asChild>
-                                <Link href={route("/orgs/[slug]/admin/organization", { slug })}>
-                                    <ItemContent>
-                                        <ItemTitle>Organisation</ItemTitle>
-                                        <ItemDescription>
-                                            Manage your organisation&apos;s details.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
-                        <Protect permissions={{ organization: ["view"] }}>
-                            <Item variant="outline" asChild>
-                                <Link
-                                    href={route("/orgs/[slug]/admin/organization-settings", {
-                                        slug,
-                                    })}
-                                >
-                                    <ItemContent>
-                                        <ItemTitle>Organisation Settings</ItemTitle>
-                                        <ItemDescription>
-                                            Configure your organisation&apos;s settings and modules.
-                                        </ItemDescription>
-                                    </ItemContent>
-                                    <ItemActions>
-                                        <ChevronRightIcon className="size-4" />
-                                    </ItemActions>
-                                </Link>
-                            </Item>
-                        </Protect>
+                        <Item variant="outline" asChild>
+                            <Link href={route("/orgs/[slug]/admin/organization", { slug })}>
+                                <ItemContent>
+                                    <ItemTitle>Organisation</ItemTitle>
+                                    <ItemDescription>
+                                        Manage your organisation&apos;s details.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
+                        <Item variant="outline" asChild>
+                            <Link
+                                href={route("/orgs/[slug]/admin/organization-settings", {
+                                    slug,
+                                })}
+                            >
+                                <ItemContent>
+                                    <ItemTitle>Organisation Settings</ItemTitle>
+                                    <ItemDescription>
+                                        Configure your organisation&apos;s settings and modules.
+                                    </ItemDescription>
+                                </ItemContent>
+                                <ItemActions>
+                                    <ChevronRightIcon className="size-4" />
+                                </ItemActions>
+                            </Link>
+                        </Item>
 
                         <Protect permissions={{ person: ["view"] }}>
                             <Item variant="outline" asChild>

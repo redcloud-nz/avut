@@ -15,7 +15,7 @@ import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
 import { formsRouter } from "./forms-router";
 
-// `organizationProcedure` always folds in `organization: ["view"]`, and the mock's
+// Every role holds `organization: ["view"]`, so fixtures grant it too, and the mock's
 // `hasPermission` checks statements literally.
 const MEMBER: Permissions = { organization: ["view"] };
 

@@ -240,7 +240,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     /**
      * Create a personal D4H access token for the current user/organization. Each user can only have one personal access token per organization and it is not visible to other users.
      */
-    createPersonalAccessToken: organizationProcedure({ organization: ["view"] })
+    createPersonalAccessToken: organizationProcedure()
         .input(
             z.object({
                 tokenId: ProviderCredentialId.schema,
@@ -383,9 +383,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
             await revalidateOrganizationSettings(ctx.organizationId);
         }),
 
-    deletePersonalAccessToken: organizationProcedure({
-        organization: ["view"],
-    }).mutation(async ({ ctx }) => {
+    deletePersonalAccessToken: organizationProcedure().mutation(async ({ ctx }) => {
         const existing = await ctx.prisma.providerCredential.findFirst({
             where: {
                 provider: "D4H",
@@ -526,9 +524,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
     /**
      * Re-check the current user's personal D4H access token against D4H and update its status and metadata.
      */
-    refreshPersonalAccessToken: organizationProcedure({
-        organization: ["view"],
-    })
+    refreshPersonalAccessToken: organizationProcedure()
         .input(
             z.object({
                 tokenId: ProviderCredentialId.schema,
@@ -629,9 +625,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
      * Replace the value of the current user's personal access token, keeping its id, label and
      * server. The new value is checked with D4H first; a value D4H rejects is never saved.
      */
-    replacePersonalAccessToken: organizationProcedure({
-        organization: ["view"],
-    })
+    replacePersonalAccessToken: organizationProcedure()
         .input(
             z.object({
                 tokenId: ProviderCredentialId.schema,
@@ -726,9 +720,7 @@ export const d4hAccessTokensRouter = createTrpcRouter({
      * Update the label of the current user's personal access token. Personal tokens are always
      * read and write, so the label is the only thing to edit.
      */
-    updatePersonalAccessToken: organizationProcedure({
-        organization: ["view"],
-    })
+    updatePersonalAccessToken: organizationProcedure()
         .input(
             z.object({
                 tokenId: ProviderCredentialId.schema,

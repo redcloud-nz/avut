@@ -120,8 +120,6 @@ describe("teamsRouter.getTeam", () => {
         return teamsRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                // `organizationProcedure` always folds in `organization: ["view"]`, so the
-                // mock context has to grant it alongside the procedure's own permission.
                 permissions: { team: ["view"], organization: ["view"] },
                 prisma: db,
             }),
@@ -1601,7 +1599,11 @@ describe("teamsRouter.getOrganizationD4H", () => {
     /** A non-member who isn't a site admin: holds no permissions in the organization. */
     const asOutsider = () =>
         teamsRouter.createCaller(
-            createAuthenticatedMockContext({ user: { id: T.outsider }, prisma: db }),
+            createAuthenticatedMockContext({
+                user: { id: T.outsider },
+                permissions: null,
+                prisma: db,
+            }),
         );
 
     it("returns the link to a site admin who isn't a member", async () => {

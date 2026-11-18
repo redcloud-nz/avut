@@ -25,14 +25,14 @@ export interface OrganizationAccess {
 }
 
 /**
- * Resolve an organization by slug, verifying that the current user is signed in and can
- * view it. Returns the session, organization, settings and the caller's roles so callers
+ * Resolve an organization by slug, verifying that the current user is signed in and a
+ * member of it (a non-member gets not-found). Returns the session, organization, settings and the caller's roles so callers
  * need only one call.
  *
  * Cached per request on the slug alone — deliberately not parameterised by permissions,
  * because React `cache` keys by argument identity and a fresh object literal per call
  * would defeat deduplication every time. Use `requireOrganizationWith` for anything
- * beyond `organization:view`.
+ * that needs a permission.
  */
 export const requireOrganization = cache(async (slug: string): Promise<OrganizationAccess> => {
     const [session, organization] = await Promise.all([
@@ -53,8 +53,9 @@ export const requireOrganization = cache(async (slug: string): Promise<Organizat
  *
  * Evaluated in memory against the roles `requireOrganization` already loaded — the same
  * approach as `hasPermission` in `@/server/trpc-context` — rather than a second round trip
- * through Better Auth's `hasPermission`. `organization:view` is always required, as in
- * `organizationProcedure`.
+ * through Better Auth's `hasPermission`. As with `organizationProcedure`, only `permissions`
+ * is checked: `organization:view` is not added, since it means "can enter the org scope", not
+ * "is a member" (#523).
  *
  * Denial raises Next's `forbidden()` interrupt rather than throwing: a thrown error would reach
  * the client error boundary with its class dropped and, in production, its message replaced, so
@@ -67,13 +68,6 @@ export async function requireOrganizationWith(
 ): Promise<OrganizationAccess> {
     const access = await requireOrganization(slug);
 
-    const required: Permissions = {
-        ...permissions,
-        organization: permissions.organization?.includes("view")
-            ? permissions.organization
-            : [...(permissions.organization ?? []), "view"],
-    };
-
-    if (!hasAnyRoleWithPermissions(access.roles, required)) forbidden();
+    if (!hasAnyRoleWithPermissions(access.roles, permissions)) forbidden();
     return access;
 }

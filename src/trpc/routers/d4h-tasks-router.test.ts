@@ -159,7 +159,6 @@ describe("d4hTasksRouter", () => {
         return d4hTasksRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                // `organizationProcedure` always folds in `organization: ["view"]`.
                 permissions: { organization: ["view"], ...perms },
                 prisma: db,
             }),
