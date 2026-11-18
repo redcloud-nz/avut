@@ -790,7 +790,10 @@ export const organizationsRouter = createTrpcRouter({
                 changes,
             });
 
+            // Clear the old slug's entry too: after a rename it would otherwise keep serving the
+            // organization under a slug it no longer owns.
             await revalidateOrganization(update.slug);
+            if (existing.slug !== update.slug) await revalidateOrganization(existing.slug);
 
             return {
                 updated: OrganizationData.fromRecord({

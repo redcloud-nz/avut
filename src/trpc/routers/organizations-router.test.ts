@@ -14,6 +14,7 @@ import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamUserId } from "@/lib/schemas/team-user";
 import { UserId } from "@/lib/schemas/user";
+import { revalidateOrganization } from "@/server/cache/organization";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -24,6 +25,14 @@ import { organizationsRouter } from "./organizations-router";
 vi.mock("@/server/cache/organization-user-revalidate", () => ({
     organizationUserCacheTag: (id: string) => `organization-user-${id}`,
     revalidateOrganizationUser: vi.fn(async () => {}),
+}));
+vi.mock("@/server/cache/organization", () => ({
+    revalidateOrganization: vi.fn(async () => {}),
+}));
+
+// `updateOrganization` writes through Better Auth; the tests assert on what it clears afterwards.
+vi.mock("@/server/auth", () => ({
+    auth: { api: { updateOrganization: vi.fn(async () => {}) } },
 }));
 
 describe("organizations member management — permission gate", () => {
@@ -1293,5 +1302,55 @@ describe("organizationsRouter.removeOrganizationMember — team access grants", 
 
         expect(await db.teamUser.findUnique({ where: { id: T.grant } })).toBeNull();
         expect(await db.teamUser.findUnique({ where: { id: T.otherGrant } })).not.toBeNull();
+    });
+});
+
+describe("organizationsRouter.updateOrganization — cache invalidation", () => {
+    const T = {
+        owner: UserId.create(),
+        org: OrganizationId.create(),
+    };
+    const db = createMockPrisma();
+    const caller = () =>
+        organizationsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.owner },
+                permissions: { organization: ["update"] },
+                prisma: db,
+            }),
+        );
+
+    beforeAll(async () => {
+        await db.user.create({
+            data: { id: T.owner, name: "Owner", email: "owner@x.test", emailVerified: true },
+        });
+        await db.organization.create({
+            data: { id: T.org, name: "Acme Rescue", slug: "old-slug", createdAt: new Date() },
+        });
+        await db.organizationUser.create({
+            data: { id: nanoId16(), organizationId: T.org, userId: T.owner, role: "owner" },
+        });
+    });
+
+    beforeEach(() => {
+        vi.mocked(revalidateOrganization).mockClear();
+    });
+
+    it("clears the old slug's entry as well as the new one when the slug changes", async () => {
+        await caller().updateOrganization({
+            organizationId: T.org,
+            update: { name: "Acme Rescue", slug: "new-slug" },
+        });
+
+        expect(vi.mocked(revalidateOrganization).mock.calls).toEqual([["new-slug"], ["old-slug"]]);
+    });
+
+    it("clears the one entry when the slug is unchanged", async () => {
+        await caller().updateOrganization({
+            organizationId: T.org,
+            update: { name: "Acme Search", slug: "old-slug" },
+        });
+
+        expect(vi.mocked(revalidateOrganization).mock.calls).toEqual([["old-slug"]]);
     });
 });
