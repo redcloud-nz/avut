@@ -878,7 +878,7 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     it("creates a team and records a Create log entry", async () => {
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Rescue", description: "R", tags: [], properties: {} },
+            create: { name: "Rescue", slug: null, description: "R", tags: [], properties: {} },
         });
 
         expect(created.name).toBe("Rescue");
@@ -895,7 +895,7 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     it("soft-deletes a team and records a Delete log entry", async () => {
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Doomed", description: "", tags: [], properties: {} },
+            create: { name: "Doomed", slug: null, description: "", tags: [], properties: {} },
         });
 
         await makeCaller({ team: ["delete"] }).deleteTeam({

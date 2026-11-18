@@ -229,6 +229,7 @@ model UserConfig {
 model Team {
   id          String       @id
   name        String
+  slug        String?      @unique
   description String       @default("")
   tags        String[]     @default([])
   properties  Json         @default("{}")

@@ -33,7 +33,7 @@ Both issues add team data with admin UI on the same page (`orgs/[slug]/admin/tea
 
 ### Review group A: team slugs (data)
 
-- [ ] **Task 1: `Team.slug` column and `TeamSlug` schema**
+- [x] **Task 1: `Team.slug` column and `TeamSlug` schema**
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<ts>_add_team_slug/`, `src/lib/schemas/team.ts`, `src/lib/schemas/team.test.ts` (new)
   - **Do:** Add `slug String? @unique` to `Team`. Run `npm run prisma migrate dev -- --name add_team_slug` against the branch DB (ask first; `db:branch` is already done). In `team.ts`, add `TEAM_SLUG_RESERVED` and `TeamSlug = { schema }` per Decisions. In the **read** schema `teamSchema`, `slug` is a plain `z.string().nullable()`, so a word added to the reserved list later can't make existing rows fail `fromRecord` or `updateTeam`'s `modifiableSchema.parse(existingTeam)`. `modifiableSchema` picks `slug` and overrides it with the validating input: `z.union([z.literal("").transform(() => null), TeamSlug.schema]).nullable()` or equivalent. Don't use a bare `z.preprocess`: its Zod 4 input type is `unknown`, which breaks the typed `<Input {...field}>` binding. Update any test fixtures or `TeamData` literals that now fail to typecheck (`slug: null`).
   - **Done when:** the migration SQL is one `ALTER TABLE "teams" ADD COLUMN "slug" TEXT` plus a unique index. Tests cover valid slugs, bad characters, too short and too long, each reserved word, and `""` → `null`. `npm run check` passes.

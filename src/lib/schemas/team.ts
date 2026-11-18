@@ -21,9 +21,32 @@ export const TeamId = {
 
 export type TeamId = string & z.BRAND<"TeamId">;
 
+/**
+ * Words a team slug can't take, held back for static routes under `/teams/`.
+ */
+export const TEAM_SLUG_RESERVED = ["admin", "api", "create", "edit", "new", "settings"] as const;
+
+export const TeamSlug = {
+    /**
+     * Input schema for a team slug: the organization slug rule (2–50 lowercase letters,
+     * digits and hyphens), minus the reserved words. Slugs are unique across all orgs.
+     */
+    schema: z
+        .string()
+        .min(2)
+        .max(50)
+        .regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, and hyphens only")
+        .refine((slug) => !(TEAM_SLUG_RESERVED as readonly string[]).includes(slug), {
+            message: "That slug is reserved.",
+        }),
+} as const;
+
 const teamSchema = z.object({
     id: TeamId.schema,
     name: z.string().min(3).max(100),
+    // Read shape: any stored slug, so a word added to `TEAM_SLUG_RESERVED` later can't
+    // make existing rows fail to parse. Input is validated by `modifiableSchema`.
+    slug: z.string().nullable(),
     description: z.string().max(500),
     tags: tagsSchema,
     properties: propertiesSchema,
@@ -48,12 +71,18 @@ const teamSchema = z.object({
 export const TeamData = {
     schema: teamSchema,
 
-    modifiableSchema: teamSchema.pick({
-        name: true,
-        description: true,
-        tags: true,
-        properties: true,
-    }),
+    modifiableSchema: teamSchema
+        .pick({
+            name: true,
+            slug: true,
+            description: true,
+            tags: true,
+            properties: true,
+        })
+        .extend({
+            // An empty field clears the slug.
+            slug: z.union([z.literal("").transform(() => null), TeamSlug.schema]).nullable(),
+        }),
 
     fromRecord: (
         record: TeamRecord & {
