@@ -100,7 +100,7 @@ export const RelatedEntryPermissions: Partial<Record<LogObjectType, Permissions>
 };
 
 /** The record types an id-valued change field can name. */
-export type IdFieldTarget = "Person" | "Skill" | "SkillGroup" | "SkillPackage";
+export type IdFieldTarget = "Person" | "Skill" | "SkillGroup" | "SkillPackage" | "Team";
 
 /**
  * Change fields whose values are record ids, keyed by the **entry's own** `objectType`, then the
@@ -111,7 +111,12 @@ export type IdFieldTarget = "Person" | "Skill" | "SkillGroup" | "SkillPackage";
 export const IdFields: Partial<Record<LogObjectType, Record<string, IdFieldTarget>>> = {
     // `moveSkill` (#342): "Group: Medical → Rescue".
     Skill: { skillGroupId: "SkillGroup", skillPackageId: "SkillPackage" },
-    SkillCheckSession: { skills: "Skill", assessees: "Person", assessors: "Person" },
+    SkillCheckSession: {
+        skills: "Skill",
+        assessees: "Person",
+        assessors: "Person",
+        teamId: "Team",
+    },
 };
 
 /**
@@ -246,6 +251,7 @@ export const ObjectHistoryPage = {
             Skill: z.record(z.string(), z.string()),
             SkillGroup: z.record(z.string(), z.string()),
             SkillPackage: z.record(z.string(), z.string()),
+            Team: z.record(z.string(), z.string()),
         }),
     }),
 } as const;

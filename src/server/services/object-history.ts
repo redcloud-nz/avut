@@ -202,6 +202,7 @@ async function listPage(
             Skill: Object.fromEntries(names.idFields.Skill),
             SkillGroup: Object.fromEntries(names.idFields.SkillGroup),
             SkillPackage: Object.fromEntries(names.idFields.SkillPackage),
+            Team: Object.fromEntries(names.idFields.Team),
         },
     };
 }
@@ -221,6 +222,7 @@ function collectIdFieldIds(
         Skill: new Set(),
         SkillGroup: new Set(),
         SkillPackage: new Set(),
+        Team: new Set(),
     };
 
     for (const { row, changes } of rows) {
@@ -294,6 +296,7 @@ function emptyNames(): ResolvedNames {
             Skill: new Map(),
             SkillGroup: new Map(),
             SkillPackage: new Map(),
+            Team: new Map(),
         },
     };
 }
@@ -318,8 +321,8 @@ function namesIn(rows: { id: string; name: string }[], ids: Set<string>): Map<st
  *   may view, and only records in the org's own packages. A subscribed or session-linked skill
  *   never resolves here, even when the `IdFields` lookup below matches it.
  * - Ids in `IdFields` changes, with no extra gate: whoever can view the page's object already sees
- *   these names on its own detail page (a session lists its assessees and skills). Person ids share
- *   the ref lookup. A skill resolves when its package is the org's own, or one the org subscribes
+ *   these names on its own detail page (a session lists its assessees, skills and team). Person and
+ *   Team ids share the ref lookup. A skill resolves when its package is the org's own, or one the org subscribes
  *   to (a session can use a subscribed package's skills), or when it's linked to one of the org's
  *   own sessions — so an old entry still reads after the org unsubscribes. A stray id naming
  *   another org's skill matches none of these. `SkillGroup`/`SkillPackage` ids (a move's) resolve
@@ -348,7 +351,8 @@ async function resolveNames(
             : new Set<string>();
 
     const refPersonIds = refIdsOf("Person");
-    const teamIds = [...refIdsOf("Team")];
+    const refTeamIds = refIdsOf("Team");
+    const teamIds = [...new Set([...refTeamIds, ...idFieldIds.Team])];
     const personIds = [...new Set([...refPersonIds, ...idFieldIds.Person])];
 
     const objectSkillIds = objectIdsOf("Skill");
@@ -425,7 +429,13 @@ async function resolveNames(
                 .filter(({ id }) => refPersonIds.has(id))
                 .map(({ id, name }) => [id, { id: PersonId.schema.parse(id), name }]),
         ),
-        teams: new Map(teams.map(({ id, name }) => [id, { id: TeamId.schema.parse(id), name }])),
+        // Likewise for teams: a session's `teamId` change mustn't surface a Team ref the caller
+        // couldn't view.
+        teams: new Map(
+            teams
+                .filter(({ id }) => refTeamIds.has(id))
+                .map(({ id, name }) => [id, { id: TeamId.schema.parse(id), name }]),
+        ),
         objects: {
             Skill: namesIn(ownSkills, objectSkillIds),
             SkillGroup: namesIn(groups, objectGroupIds),
@@ -436,6 +446,7 @@ async function resolveNames(
             Skill: namesIn(skills, idFieldIds.Skill),
             SkillGroup: namesIn(groups, idFieldIds.SkillGroup),
             SkillPackage: namesIn(packages, idFieldIds.SkillPackage),
+            Team: namesIn(teams, idFieldIds.Team),
         },
     };
 }

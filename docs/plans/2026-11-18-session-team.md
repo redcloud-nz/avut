@@ -37,7 +37,7 @@
     - Tests (per `.claude/rules/testing.md`): create with a team seeds exactly the active, non-deleted members and logs them; create with no team seeds nobody; create or update with another org's team, or an archived one, is `BAD_REQUEST`; update changing the team logs a `teamId` change, returns the new `team`, and leaves assessees alone; update of a session whose team is archived but unchanged succeeds; `listSessions`/`getSession` return `team`; the effects test shows editing the team replaces the cached `team`.
   - **Done when:** `npm run check` passes with the new tests.
 
-- [ ] **3. History resolves a session's team by name**
+- [x] **3. History resolves a session's team by name** — feat(history): resolve a session's team id to its name
   - **Files:** `src/lib/schemas/object-history.ts`, `src/server/services/object-history.ts`, `src/components/history/object-history.tsx`, `src/server/services/object-history.test.ts`
   - **Do:** add `"Team"` to `IdFieldTarget` and `teamId: "Team"` to `IdFields.SkillCheckSession`. Carry it through `ObjectHistoryPage.schema.names` (a `Team` record), `collectIdFieldIds`, `emptyNames().idFields`, the `names` the service returns, and the client merge (`IdFieldNames`) in `object-history.tsx`. Team is already a ref type with its own permission gate, so mirror the Person split in `resolveNames`: one lookup for ref and IdField team ids, with the ref map restricted to the ref ids, so an IdField id can't surface a Team ref the caller couldn't view.
   - **Done when:** a test where a session entry's `teamId` `obj_mod` resolves in `names.Team`, plus the ref-restriction case, passes under `npm run check`.

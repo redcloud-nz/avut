@@ -151,7 +151,7 @@ describe("history.listObjectHistory", () => {
         await expect(caller.listObjectHistory(tokenInput)).resolves.toEqual({
             entries: [],
             nextCursor: null,
-            names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} },
+            names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {}, Team: {} },
         });
     });
 
@@ -238,7 +238,7 @@ describe("history.listObjectHistory", () => {
             await expect(makeCaller("skills-author").listObjectHistory(input)).resolves.toEqual({
                 entries: [],
                 nextCursor: null,
-                names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} },
+                names: { Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {}, Team: {} },
             });
             vi.mocked(ObjectHistory.list).mockClear();
 

@@ -398,6 +398,9 @@ describe("ObjectHistory.list names for IdFields changes", () => {
         subscribedSkill: SkillId.create(),
         foreignSkill: SkillId.create(),
         unsubscribedSkill: SkillId.create(),
+        oldTeam: TeamId.create(),
+        newTeam: TeamId.create(),
+        otherOrgTeam: TeamId.create(),
     };
 
     const db = createMockPrisma();
@@ -416,6 +419,12 @@ describe("ObjectHistory.list names for IdFields changes", () => {
         { type: "obj_mod", path: ["name"], prev: "Old", curr: T.bystander },
     ];
 
+    const teamChanges: DiffChange[] = [
+        { type: "obj_mod", path: ["teamId"], prev: T.oldTeam, curr: T.newTeam },
+        // A stray id naming another org's team.
+        { type: "obj_mod", path: ["teamId"], prev: null, curr: T.otherOrgTeam },
+    ];
+
     beforeAll(async () => {
         for (const id of [T.org, T.otherOrg]) {
             await db.organization.create({
@@ -423,6 +432,13 @@ describe("ObjectHistory.list names for IdFields changes", () => {
             });
         }
         await db.user.create({ data: { id: T.user, name: "Una User", email: "una@example.com" } });
+        for (const [id, organizationId, name] of [
+            [T.oldTeam, T.org, "Rescue"],
+            [T.newTeam, T.org, "Medical"],
+            [T.otherOrgTeam, T.otherOrg, "Elsewhere"],
+        ] as const) {
+            await db.team.create({ data: { id, organizationId, name } });
+        }
         for (const [id, organizationId, name] of [
             [T.assessee, T.org, "Ava Assessee"],
             [T.assessor, T.org, "Abe Assessor"],
@@ -510,6 +526,37 @@ describe("ObjectHistory.list names for IdFields changes", () => {
                 },
             },
         });
+        // An older entry changing the session's team. The new team is also a context ref, so the
+        // Team lookup is shared.
+        await db.logEntry.create({
+            data: {
+                id: LogEntryId.create(),
+                sequence: 0,
+                scope: "organization",
+                organizationId: T.org,
+                userId: T.user,
+                action: "Update",
+                objectType: "SkillCheckSession",
+                objectId: T.session,
+                changes: teamChanges as never,
+                objects: {
+                    create: [
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "SkillCheckSession",
+                            objectId: T.session,
+                            role: "primary",
+                        },
+                        {
+                            id: LogEntryObjectId.create(),
+                            objectType: "Team",
+                            objectId: T.newTeam,
+                            role: "context",
+                        },
+                    ],
+                },
+            },
+        });
     });
 
     const listSession = (relatedTypes: readonly LogObjectType[] = LogObjectType.values) =>
@@ -559,6 +606,24 @@ describe("ObjectHistory.list names for IdFields changes", () => {
             [T.subscribedSkill]: "Radio",
             [T.unsubscribedSkill]: "Ropes",
         });
+    });
+
+    it("resolves a teamId change's ids to team names, org-scoped", async () => {
+        const { entries, names } = await listSession();
+
+        expect(names.Team).toEqual({ [T.oldTeam]: "Rescue", [T.newTeam]: "Medical" });
+        expect(entries[1].refs).toEqual([
+            { objectType: "Team", role: "context", team: { id: T.newTeam, name: "Medical" } },
+        ]);
+    });
+
+    it("keeps a Team ref gated even when its id also resolves for a change", async () => {
+        const { entries, names } = await listSession(
+            LogObjectType.values.filter((t) => t !== "Team"),
+        );
+
+        expect(entries[1].refs).toEqual([{ objectType: "Team", role: "context", team: null }]);
+        expect(names.Team[T.newTeam]).toBe("Medical");
     });
 
     it("leaves a field not in IdFields alone", async () => {
@@ -991,7 +1056,13 @@ describe("ObjectHistory.listOwn", () => {
             refs: [],
         });
         expect(nextCursor).toBeNull();
-        expect(names).toEqual({ Person: {}, Skill: {}, SkillGroup: {}, SkillPackage: {} });
+        expect(names).toEqual({
+            Person: {},
+            Skill: {},
+            SkillGroup: {},
+            SkillPackage: {},
+            Team: {},
+        });
     });
 
     it("returns nothing for another user's note", async () => {
