@@ -23,7 +23,12 @@ const nowDate = new Date();
 interface CreateAuthenticatedMockContextOverrides {
     user: Partial<AuthSession["user"]> & Pick<AuthSession["user"], "id">;
     session?: Partial<AuthSession["session"]> & { impersonatedBy?: string | null };
-    permissions?: Permissions;
+    /**
+     * What the caller holds in the organization. `null` makes them a non-member, refused
+     * outright as in production, even by a procedure that asks for nothing
+     * (`organizationProcedure()`). Default `{}`: a member with no permissions.
+     */
+    permissions?: Permissions | null;
     prisma: PrismaClient;
 }
 
@@ -59,6 +64,12 @@ export const createAuthenticatedMockContext = ({
             },
         },
         hasPermission: async (organizationId: OrganizationId, requiredPermissions: Permissions) => {
+            if (permissions === null) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: "You are not a member of this organisation.",
+                });
+            }
             for (const key in requiredPermissions) {
                 const permKey = key as keyof Permissions;
                 const requiredPermValue: string[] = requiredPermissions[permKey] || [];

@@ -58,7 +58,7 @@ vi.mock("@/server/d4h-api/client", () => ({
     fetchD4HTeamDetailCached: vi.fn(),
 }));
 
-// `organizationProcedure` always folds in `organization: ["view"]`, and the mock's
+// Every role holds `organization: ["view"]`, so fixtures grant it too, and the mock's
 // `hasPermission` checks statements literally, so each fixture spells out its grants.
 const ADMIN: Permissions = { organization: ["view"], d4hNag: ["view", "update", "run"] };
 const MEMBER: Permissions = { organization: ["view"] };

@@ -108,7 +108,6 @@ describe("i3Router.getTemplate", () => {
         return i3Router.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                // `organizationProcedure` always folds in `organization: ["view"]`.
                 permissions: { i3Template: ["view"], organization: ["view"] },
                 prisma: db,
             }),

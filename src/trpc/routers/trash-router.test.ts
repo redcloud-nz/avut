@@ -218,14 +218,14 @@ describe("trash.listTrash", () => {
 
     function makeCaller(
         userId: string,
-        permissions: Record<string, string[]> = { organization: ["view"] },
+        permissions: Record<string, string[]> | null = { organization: ["view"] },
     ) {
         return trashRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: userId },
                 // `listTrash` filters per entity by reading `organizationUser.role` itself, not
-                // via `ctx.hasPermission` — the mock's `organization:view` here only satisfies
-                // `organizationProcedure`'s own base check.
+                // via `ctx.hasPermission`, which here only checks membership (`null` for a
+                // non-member).
                 permissions,
                 prisma: db,
             }),
@@ -285,9 +285,9 @@ describe("trash.listTrash", () => {
         expect(rows).toHaveLength(0);
     });
 
-    it("is forbidden without organization:view permission", async () => {
+    it("is forbidden to a non-member", async () => {
         await expect(
-            makeCaller(T.outsiderUser, {}).listTrash({ organizationId: T.org }),
+            makeCaller(T.outsiderUser, null).listTrash({ organizationId: T.org }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 });

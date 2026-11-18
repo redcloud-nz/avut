@@ -197,7 +197,6 @@ describe("d4hApiRouter equipment items", () => {
         return d4hApiRouter.createCaller(
             createAuthenticatedMockContext({
                 user: { id: T.user },
-                // `organizationProcedure` always folds in `organization: ["view"]`.
                 permissions: { organization: ["view"], ...perms },
                 prisma: db,
             }),
