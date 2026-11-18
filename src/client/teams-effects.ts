@@ -25,6 +25,13 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
             teamId: vars.teamId,
         }),
     ),
+    // A D4H sync adds and withdraws memberships, which drive the Access card's "On roster" badge.
+    invalidate(
+        trpc.teamUsers.listTeamUsers.queryFilter({
+            organizationId: vars.organizationId,
+            teamId: vars.teamId,
+        }),
+    ),
     // D4H team unlink/sync also drops or refreshes the org-level
     // `Organization_D4H` row and its cached metadata.
     invalidate(trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId })),

@@ -433,6 +433,7 @@ export const userRouter = createTrpcRouter({
                 },
                 async (tx) => {
                     // Team access grants go with the membership (the composite FK cascades too).
+                    // Deliberately unlogged: leaving is the event, and the grants can't outlive it.
                     await tx.teamUser.deleteMany({
                         where: { organizationId: input.organizationId, userId: ctx.userId },
                     });
