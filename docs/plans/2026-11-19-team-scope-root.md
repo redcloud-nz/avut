@@ -111,3 +111,13 @@ New: a team scope at `/teams/<slug>`, reached from the scope switcher's new Team
 - A system-admin way into a team without a grant.
 
 ## Parked
+
+## Review notes
+
+- (group A) `Teams.listRoster` filters only on membership `status: "Active"`, so an archived or binned person with an Active membership still shows. Add `person: { status: "Active" }` to the `where`, with a test (the `skill-checks-router.ts:282` pattern).
+- (group A) The grant query repeats within one request: `getGrantedBySlug` runs in `requireTeam` and again in each `teamProcedure` call (a team page that prefetches `getTeam` and `listRoster` runs it three times). Add a React `cache()`-wrapped `(slug, userId)` variant that both call. Outside RSC `cache` is a passthrough, so tests and the HTTP handler behave as before.
+
+For the access-control checkpoint (the user decides, not fixed by default):
+
+- `teamProcedure` makes two sequential round trips on a cold role cache (the grant query, then `hasPermission`'s role lookup). The roles could ride along in the grant query and be checked in memory with `hasAnyRoleWithPermissions`, at the cost of the cross-request `"use cache"` hit and some duplicated logic from `trpc-context.ts`.
+- `requireTeam` calls `getOrganizationBySlug` for an org the grant query already joined. It's a `"use cache"` lookup, so only a miss costs anything. Selecting the full org row in `getGrantedBySlug` would remove it, but widens `TeamScopeTeamData`.
