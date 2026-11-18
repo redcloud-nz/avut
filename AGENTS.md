@@ -51,6 +51,7 @@ There is **one** shared PostgreSQL dev database (`avut`), reached through `.env.
 - **Never run a command that mutates the shared database without explicit permission each time.** That covers, at least: `npm run prisma migrate dev` / `migrate deploy` / `migrate reset` / `db push`, `npm run prisma db execute`, `npm run seed:demo`, and `npm run build` (its first step is `prisma migrate deploy`). When one of these is the right next step, stop and ask.
 - Read-only Prisma commands are fine unprompted: `npm run prisma studio`, `prisma generate`, `prisma migrate status`, `prisma validate`.
 - Editing `prisma/schema.prisma` and running `npx prisma generate` (regenerates the client only, no DB contact) is fine; turning that into a migration is not — ask first.
+- A migration comes only from `npm run prisma migrate dev` against a `db:branch` copy, with permission. Never hand-write migration SQL or substitute `prisma migrate diff`. If local Postgres is down or unreachable, that's a fault: stop and tell the user, don't work around it.
 
 ### Branching the database for a migration
 
