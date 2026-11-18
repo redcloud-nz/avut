@@ -121,16 +121,21 @@ export async function getGrantedBySlug(
 }
 
 /**
- * A team's roster for the team scope: its `Active` memberships, ordered by person name, each with
- * the person's name and the membership's D4H position and ref when it is D4H-managed. One query.
- * A team outside the organization has an empty roster.
+ * A team's roster for the team scope: its `Active` memberships of `Active` people, ordered by
+ * person name, each with the person's name and the membership's D4H position and ref when it is
+ * D4H-managed. One query. A team outside the organization has an empty roster.
  */
 export async function listRoster(
     ctx: OrgServiceContext,
     teamId: TeamId,
 ): Promise<TeamScopeRosterEntryData[]> {
     const memberships = await ctx.prisma.teamMembership.findMany({
-        where: { teamId, organizationId: ctx.organizationId, status: "Active" },
+        where: {
+            teamId,
+            organizationId: ctx.organizationId,
+            status: "Active",
+            person: { status: "Active" },
+        },
         select: {
             id: true,
             person: { select: { id: true, name: true } },

@@ -33,10 +33,12 @@ export function scopedRoute<O extends OrgPattern, T extends TeamPattern>(
     params: ScopedRouteParams<O, T>,
 ): Route {
     let path: string = ref.scope === "team" ? patterns.team : patterns.organization;
-    const all: Record<string, string | string[]> = { ...params, slug: ref.slug };
+    // Only single `[key]` segments: neither root has a catch-all page (`route()` doesn't fill
+    // `[...key]` either), and typing this as `Record<string, string>` makes one fail to compile here.
+    const all: Record<string, string> = { ...params, slug: ref.slug };
 
     for (const [key, value] of Object.entries(all)) {
-        path = path.replace(`[${key}]`, Array.isArray(value) ? value.join("/") : value);
+        path = path.replace(`[${key}]`, value);
     }
 
     return path as Route;

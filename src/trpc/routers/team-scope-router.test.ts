@@ -20,7 +20,8 @@ import { teamScopeRouter } from "./team-scope-router";
 describe("teamScopeRouter", () => {
     // Dataset: one org with the "rescue" team (D4H-linked) and an unlinked "alpine" team. Grace
     // is granted both. Rescue's roster: Zara and Abe Active (Abe D4H-managed), Cleo Archived,
-    // Dan Deleted. Alpine's roster: Ed, to show the roster is per team.
+    // Dan Deleted, and Fay's membership Active but Fay herself Archived. Alpine's roster: Ed, to
+    // show the roster is per team.
     const T = {
         org: OrganizationId.create(),
         rescue: TeamId.create(),
@@ -30,6 +31,7 @@ describe("teamScopeRouter", () => {
         cleo: PersonId.create(),
         dan: PersonId.create(),
         ed: PersonId.create(),
+        fay: PersonId.create(),
         zara: PersonId.create(),
         abeMembership: TeamMembershipId.create(),
         zaraMembership: TeamMembershipId.create(),
@@ -76,18 +78,20 @@ describe("teamScopeRouter", () => {
             },
         });
 
-        for (const [id, name] of [
-            [T.abe, "Abe"],
-            [T.cleo, "Cleo"],
-            [T.dan, "Dan"],
-            [T.ed, "Ed"],
-            [T.zara, "Zara"],
+        for (const [id, name, status] of [
+            [T.abe, "Abe", "Active"],
+            [T.cleo, "Cleo", "Active"],
+            [T.dan, "Dan", "Active"],
+            [T.ed, "Ed", "Active"],
+            [T.fay, "Fay", "Archived"],
+            [T.zara, "Zara", "Active"],
         ] as const) {
             await db.person.create({
                 data: {
                     id,
                     organizationId: T.org,
                     name,
+                    status,
                     email: `${name.toLowerCase()}@example.com`,
                     tags: [],
                     properties: {},
@@ -100,6 +104,7 @@ describe("teamScopeRouter", () => {
             [T.abeMembership, T.rescue, T.abe, "Active"],
             [TeamMembershipId.create(), T.rescue, T.cleo, "Archived"],
             [TeamMembershipId.create(), T.rescue, T.dan, "Deleted"],
+            [TeamMembershipId.create(), T.rescue, T.fay, "Active"],
             [TeamMembershipId.create(), T.alpine, T.ed, "Active"],
         ] as const) {
             await db.teamMembership.create({
@@ -172,6 +177,12 @@ describe("teamScopeRouter", () => {
                     d4h: null,
                 },
             ]);
+        });
+
+        it("leaves out an Active membership whose person isn't Active", async () => {
+            const rows = await makeCaller({ team: ["view"] }).listRoster({ teamSlug: "rescue" });
+
+            expect(rows.map((row) => row.person.id)).not.toContain(T.fay);
         });
 
         it("refuses a granted user without team: view with FORBIDDEN", async () => {

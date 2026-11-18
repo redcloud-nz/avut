@@ -6,6 +6,7 @@
  */
 
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { SidebarPortal } from "@/components/nav/sidebar-portal";
 import { TeamSidebar_Modules } from "@/components/nav/team-sidebar-modules";
@@ -13,15 +14,16 @@ import { OrganizationProvider } from "@/hooks/use-organization";
 import { TeamProvider } from "@/hooks/use-team";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { resolveModuleFlags } from "@/server/module-flags";
-import { requireTeam } from "@/server/team-access";
-import { fetchQuery, getServerQueryClient, HydrateClient, trpc } from "@/trpc/server";
+import { getGrantedTeam, requireTeam } from "@/server/team-access";
+import { getServerQueryClient, HydrateClient, trpc } from "@/trpc/server";
 
-// NOTE: metadata generation reads through `teamProcedure` (`fetchQuery` maps its NOT_FOUND to
-// `notFound()`) rather than calling `requireTeam`: `generateMetadata` must not redirect. The
-// layout below loads the shell's data.
+// NOTE: metadata generation calls `getGrantedTeam` rather than `requireTeam`: `generateMetadata`
+// must not redirect. Both share the request's one grant query. The layout below loads the shell's
+// data.
 export async function generateMetadata(props: LayoutProps<"/teams/[slug]">): Promise<Metadata> {
     const { slug } = await props.params;
-    const team = await fetchQuery(trpc.teamScope.getTeam.queryOptions({ teamSlug: slug }));
+    const team = await getGrantedTeam(slug);
+    if (!team) return notFound();
 
     return {
         title: {

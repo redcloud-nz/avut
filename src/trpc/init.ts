@@ -32,7 +32,7 @@ import type { AuthSession } from "@/server/auth";
 import { recordLogEntry, resolveActor } from "@/server/log-entry";
 import prisma from "@/server/prisma";
 import type { LogEventOptions } from "@/server/services/service-context";
-import * as Teams from "@/server/services/teams";
+import { getGrantedTeamCached } from "@/server/team-grant";
 
 import { formatTrpcError } from "./error-formatter";
 import { FieldConflictError } from "./errors";
@@ -395,7 +395,8 @@ export function teamProcedure(requiredPermissions: Permissions = {}) {
         .input(z.object({ teamSlug: TeamSlug.shapeSchema }))
 
         .use(async (opts) => {
-            const team = await Teams.getGrantedBySlug(
+            // Shared with `requireTeam` and the team layout's metadata within one server render.
+            const team = await getGrantedTeamCached(
                 opts.ctx.prisma,
                 opts.input.teamSlug,
                 opts.ctx.userId,
