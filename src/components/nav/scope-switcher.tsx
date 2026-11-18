@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Building2Icon, ChevronsUpDown, ShieldIcon, UserIcon } from "lucide-react";
+import { Building2Icon, ChevronsUpDown, ShieldIcon, UserIcon, UsersIcon } from "lucide-react";
 import Link from "next/link";
 
 import { useSuspenseQueries } from "@tanstack/react-query";
@@ -28,12 +28,14 @@ const ScopeIcons = {
     user: UserIcon,
     system: ShieldIcon,
     organization: Building2Icon,
+    team: UsersIcon,
 } as const;
 
 const ScopeLabels = {
     user: "Personal Account",
     system: "System",
     organization: "Select organisation",
+    team: "Select team",
 } as const;
 
 /**
