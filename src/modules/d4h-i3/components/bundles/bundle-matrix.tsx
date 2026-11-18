@@ -14,6 +14,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Glorious } from "@/components/blocks/glorious";
 import { Std } from "@/components/blocks/std";
 import { D4HTeamPickerDialog } from "@/components/d4h/team-picker-dialog";
+import { HelpButton } from "@/components/docs/help-button";
 import { I3TemplateLink } from "@/components/entity-links/i3-template-link";
 import {
     DiagonalColumnHeader,
@@ -124,6 +125,7 @@ export function D4HI3Module_BundleMatrix({
                     },
                     { label: team.title },
                 ]}
+                actions={<HelpButton id="d4h-i3/bundles" />}
             />
             <Glorious.Root>
                 <Glorious.Header>
