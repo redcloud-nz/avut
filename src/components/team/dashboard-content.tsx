@@ -12,6 +12,7 @@ import { Protect } from "@/components/protect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
+import { useOrganization } from "@/hooks/use-organization";
 import { useTeam } from "@/hooks/use-team";
 import { getD4HServer } from "@/lib/d4h-servers";
 import type { TeamScopeTeamData } from "@/lib/schemas/team-scope";
@@ -120,7 +121,11 @@ function AboutCard({ team }: { team: TeamScopeTeamData }) {
     );
 }
 
+/** Hidden while the org has the D4H integration off, as Admin → Teams' D4H card is. */
 function D4HLinkCard({ team }: { team: TeamScopeTeamData }) {
+    const organization = useOrganization();
+    if (!organization.settings.integrations.d4h.enabled) return null;
+
     return (
         <Card>
             <CardHeader>
