@@ -36,7 +36,12 @@ directly:
 | Skill Package          | `SkillPackageLink`         | `skillPackage: SkillPackageRef`                                                    |
 | Team                   | `TeamLink`                 | `team: TeamRef & Partial<Pick<TeamData, "description">>`                           |
 | Team Membership        | `TeamMembershipLink`       | `teamMembership: TeamMembershipRef`                                                |
-| User                   | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
+| User (system admin)    | `UserLink`                 | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
+| User (org admin)       | `OrgUserLink`              | `user: UserRef & Partial<Pick<UserData, "email">>`                                 |
+
+`UserLink` goes to the system admin's user page (`/system/admin/users/[user_id]`), which only
+system admins can open. On an org-scoped page use `OrgUserLink`, which goes to the user's page in
+the current organization's admin (`/orgs/[slug]/admin/users/[user_id]`).
 
 The D4H wrappers have a few quirks of their own:
 

@@ -7,21 +7,24 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { ConflictError } from "@/lib/errors";
 import { BatchUpdatePlanId } from "@/lib/schemas/batch-update-plan";
 import { D4HSyncItemOutcome, D4HSyncPlan } from "@/lib/schemas/d4h-sync-plan";
 import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
-import { TeamData, TeamId, TeamRef } from "@/lib/schemas/team";
+import { TeamData, TeamId, TeamRef, TeamSlug } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
+import { isUniqueViolation } from "@/server/prisma-errors";
 import * as BatchUpdatePlans from "@/server/services/batch-update-plans";
 import * as D4HTeamSync from "@/server/services/d4h-team-sync";
 import * as Teams from "@/server/services/teams";
 
+import { FieldConflictError } from "../errors";
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
 
@@ -41,6 +44,48 @@ const teamMembershipRowInclude = {
     team: { select: { id: true, name: true } },
     person: { select: { id: true, name: true, email: true } },
 } as const;
+
+/**
+ * A taken team slug. Slugs are unique across all orgs, so the message deliberately names neither
+ * the team holding it nor that team's org.
+ */
+function slugConflictError(slug: string): FieldConflictError {
+    return new FieldConflictError("slug", `The slug "${slug}" is already taken.`);
+}
+
+/**
+ * Throw a slug conflict if `slug` is held by a team other than `teamId`, in any org. A null slug
+ * never conflicts.
+ */
+async function assertSlugAvailable(
+    prisma: PrismaClient,
+    slug: string | null,
+    teamId: TeamId,
+): Promise<void> {
+    if (slug === null) return;
+    const holder = await Teams.getBySlug(prisma, slug);
+    if (holder && holder.id !== teamId) throw slugConflictError(slug);
+}
+
+/**
+ * Refuse a reserved slug, unless it's the team's stored slug: `modifiableSchema` checks only the
+ * slug's shape, so a team whose slug has since become reserved still takes an edit that resends it.
+ */
+function assertSlugAllowed(slug: string | null, storedSlug: string | null): void {
+    if (slug !== null && slug !== storedSlug && TeamSlug.isReserved(slug)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: TeamSlug.reservedMessage });
+    }
+}
+
+/**
+ * Map a unique violation from a team write to the slug conflict the pre-check would have thrown,
+ * for when a concurrent write took the slug in between. The team's only other unique column is
+ * its freshly generated id, so a P2002 here is the slug.
+ */
+function mapSlugRace(error: unknown, slug: string | null): never {
+    if (slug !== null && isUniqueViolation(error)) throw slugConflictError(slug);
+    throw error;
+}
 
 export const teamsRouter = createTrpcRouter({
     /**
@@ -116,29 +161,35 @@ export const teamsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { organizationId, create } }) => {
             const teamId = TeamId.create();
 
+            assertSlugAllowed(create.slug, null);
+            await assertSlugAvailable(ctx.prisma, create.slug, teamId);
+
             const changes = diffObject({ tags: [], properties: {} }, create);
 
-            const [createdTeam] = await ctx.prisma.$transaction([
-                ctx.prisma.team.create({
-                    data: {
-                        id: teamId,
-                        organizationId,
-                        name: create.name,
-                        description: create.description,
-                        tags: create.tags,
-                        properties: create.properties,
-                    },
-                    include: {
-                        d4h: true,
-                    },
-                }),
-                ctx.logEvent({
-                    action: "Create",
-                    objectType: "Team",
-                    objectId: teamId,
-                    changes,
-                }),
-            ]);
+            const [createdTeam] = await ctx.prisma
+                .$transaction([
+                    ctx.prisma.team.create({
+                        data: {
+                            id: teamId,
+                            organizationId,
+                            name: create.name,
+                            slug: create.slug,
+                            description: create.description,
+                            tags: create.tags,
+                            properties: create.properties,
+                        },
+                        include: {
+                            d4h: true,
+                        },
+                    }),
+                    ctx.logEvent({
+                        action: "Create",
+                        objectType: "Team",
+                        objectId: teamId,
+                        changes,
+                    }),
+                ])
+                .catch((error: unknown) => mapSlugRace(error, create.slug));
 
             return { created: TeamData.fromRecord(createdTeam) };
         }),
@@ -715,27 +766,41 @@ export const teamsRouter = createTrpcRouter({
         .mutation(async ({ ctx, input: { teamId, update } }) => {
             const existingTeam = await Teams.requireById(ctx, teamId);
 
-            const diff = diffObject(TeamData.modifiableSchema.parse(existingTeam), update);
+            // Picked off the stored team rather than re-parsed with `modifiableSchema`, which would
+            // re-validate the stored slug and throw if it has since become a reserved word.
+            const before = {
+                name: existingTeam.name,
+                slug: existingTeam.slug,
+                description: existingTeam.description,
+                tags: existingTeam.tags,
+                properties: existingTeam.properties,
+            };
+            const diff = diffObject(before, update);
 
             if (diff.length == 0) return { updated: existingTeam }; // No changes
 
-            const [updated] = await ctx.prisma.$transaction([
-                // Apply the changes
-                ctx.prisma.team.update({
-                    where: { organizationId: ctx.organizationId, id: teamId },
-                    data: { ...update },
-                    include: {
-                        d4h: true,
-                    },
-                }),
-                // Record an event for the update
-                ctx.logEvent({
-                    action: "Update",
-                    objectType: "Team",
-                    objectId: teamId,
-                    changes: diff,
-                }),
-            ]);
+            assertSlugAllowed(update.slug, existingTeam.slug);
+            await assertSlugAvailable(ctx.prisma, update.slug, teamId);
+
+            const [updated] = await ctx.prisma
+                .$transaction([
+                    // Apply the changes
+                    ctx.prisma.team.update({
+                        where: { organizationId: ctx.organizationId, id: teamId },
+                        data: { ...update },
+                        include: {
+                            d4h: true,
+                        },
+                    }),
+                    // Record an event for the update
+                    ctx.logEvent({
+                        action: "Update",
+                        objectType: "Team",
+                        objectId: teamId,
+                        changes: diff,
+                    }),
+                ])
+                .catch((error: unknown) => mapSlugRace(error, update.slug));
 
             return { updated: TeamData.fromRecord(updated) };
         }),

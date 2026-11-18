@@ -8,10 +8,12 @@ import * as z from "zod";
 import { TRPCError } from "@trpc/server";
 
 import type { Prisma } from "@/generated/prisma/client";
+import { ConflictError, NotFoundError } from "@/lib/errors";
 import { type LogAction, type LogObjectType } from "@/lib/schemas/log-entry";
 import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
+import { TeamId } from "@/lib/schemas/team";
 import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData } from "@/lib/schemas/user-session";
 import { auth } from "@/server/auth";
@@ -19,6 +21,7 @@ import { revalidateOrganizationUser } from "@/server/cache/organization-user-rev
 import { createLogBatch, formatActorLabel, recordLogEntry, resolveActor } from "@/server/log-entry";
 import * as Personnel from "@/server/services/personnel";
 import type { OrgServiceContext } from "@/server/services/service-context";
+import * as TeamUsers from "@/server/services/team-users";
 import * as UserAccounts from "@/server/services/user-accounts";
 
 import {
@@ -147,29 +150,29 @@ export const userRouter = createTrpcRouter({
                 headers: await ctx.getHeaders(),
             });
 
+            const organizationId = OrganizationId.schema.parse(invitation.organizationId);
+            const orgCtx: OrgServiceContext = {
+                prisma: ctx.prisma,
+                organizationId,
+                userId: ctx.userId,
+                logEvent: (options, tx = ctx.prisma) =>
+                    recordLogEntry(
+                        {
+                            scope: "organization",
+                            organizationId,
+                            ...resolveActor(ctx.auth),
+                            ...options,
+                        },
+                        tx,
+                    ),
+            };
+
             // Attach a person record to the membership just created — the one named by the
             // invitation, or (when the organization opted in) one matching the accepting user's
             // email. Never allowed to fail the accept: the membership is already committed by
             // this point, so throwing would leave the user staring at an error for an invitation
             // that did in fact work.
             try {
-                const organizationId = OrganizationId.schema.parse(invitation.organizationId);
-                const orgCtx: OrgServiceContext = {
-                    prisma: ctx.prisma,
-                    organizationId,
-                    userId: ctx.userId,
-                    logEvent: (options, tx = ctx.prisma) =>
-                        recordLogEntry(
-                            {
-                                scope: "organization",
-                                organizationId,
-                                ...resolveActor(ctx.auth),
-                                ...options,
-                            },
-                            tx,
-                        ),
-                };
-
                 const linked = await Personnel.linkPersonOnInvitationAccept(orgCtx, {
                     invitationPersonId: invitation.personId ?? null,
                     email: ctx.auth.user.email,
@@ -185,6 +188,25 @@ export const userRouter = createTrpcRouter({
                     `Failed to link a person to User(${ctx.userId}) in Organization(${invitation.organizationId}) on invitation accept:`,
                     error,
                 );
+            }
+
+            // Grant access to the team the invitation names, if any. Nothing sets
+            // `invitation.teamId` yet, and Better Auth could store several comma-joined ids, so
+            // anything that isn't a single team id is skipped. A missing, archived or
+            // already-granted team is skipped quietly; like person-linking, this never fails the
+            // accept.
+            const teamId = TeamId.schema.safeParse(invitation.teamId);
+            if (teamId.success) {
+                try {
+                    await TeamUsers.grant(orgCtx, teamId.data, ctx.userId);
+                } catch (error) {
+                    if (!(error instanceof NotFoundError || error instanceof ConflictError)) {
+                        console.error(
+                            `Failed to grant User(${ctx.userId}) access to Team(${teamId.data}) on invitation accept:`,
+                            error,
+                        );
+                    }
+                }
             }
 
             await logMembershipEvent(ctx, {
@@ -409,7 +431,14 @@ export const userRouter = createTrpcRouter({
                     objectId: membership.id,
                     description: `Left ${membership.organization.name} (${input.organizationId}).`,
                 },
-                (tx) => tx.organizationUser.delete({ where: { id: membership.id } }),
+                async (tx) => {
+                    // Team access grants go with the membership (the composite FK cascades too).
+                    // Deliberately unlogged: leaving is the event, and the grants can't outlive it.
+                    await tx.teamUser.deleteMany({
+                        where: { organizationId: input.organizationId, userId: ctx.userId },
+                    });
+                    await tx.organizationUser.delete({ where: { id: membership.id } });
+                },
             );
 
             // The caller's cached roles would otherwise keep granting access to the org.

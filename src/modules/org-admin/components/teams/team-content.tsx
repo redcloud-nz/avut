@@ -24,6 +24,7 @@ import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_Team_D4HCard } from "./d4h-link-card";
+import { AdminModule_TeamAccess_Card } from "./team-access-card";
 import { AdminModule_TeamLinks_Card } from "./team-links";
 import { AdminModule_Team_Menu } from "./team-menu";
 import { AdminModule_UpdateTeam_Dialog } from "./update-team";
@@ -83,6 +84,18 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{team.name}</DataItemValue>
                                         </DataItem>
+                                        <DataItem inline>
+                                            <DataItemTitle>Slug</DataItemTitle>
+                                            {team.slug ? (
+                                                <DataItemValue className="font-mono">
+                                                    {team.slug}
+                                                </DataItemValue>
+                                            ) : (
+                                                <DataItemValue className="text-muted-foreground">
+                                                    None
+                                                </DataItemValue>
+                                            )}
+                                        </DataItem>
                                         <DataItem>
                                             <DataItemTitle>Description</DataItemTitle>
                                             <DataItemValue>{team.description}</DataItemValue>
@@ -94,6 +107,10 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                     </DataList>
                                 </CardContent>
                             </Card>
+
+                            <Protect permissions={{ member: ["view"] }}>
+                                <AdminModule_TeamAccess_Card team={team} />
+                            </Protect>
 
                             <AdminModule_Team_D4HCard team={team} />
                         </Saratoga.Column>

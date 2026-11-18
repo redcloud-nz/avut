@@ -28,7 +28,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useActionHotkeys } from "@/hooks/use-action-hotkeys";
@@ -58,9 +58,10 @@ export function AdminModule_CreateTeam_Dialog() {
 
     const formId = useId();
     const form = useForm({
-        resolver: zodResolver(TeamData.modifiableSchema),
+        resolver: zodResolver(TeamData.formSchema(null)),
         defaultValues: {
             name: "",
+            slug: "",
             description: "",
             tags: [],
             properties: {},
@@ -162,6 +163,30 @@ export function AdminModule_CreateTeam_Dialog() {
                                             aria-invalid={fieldState.invalid}
                                             {...field}
                                         />
+                                        {fieldState.error && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </Field>
+                                )}
+                            />
+                            <Controller
+                                name="slug"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor={`${formId}-slug`}>Slug</FieldLabel>
+                                        <Input
+                                            id={`${formId}-slug`}
+                                            autoComplete="off"
+                                            className="font-mono"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                            value={field.value ?? ""}
+                                        />
+                                        <FieldDescription>
+                                            Optional. Unique across AVUT. Setting one gives the team
+                                            its own space; leave it blank to keep it off.
+                                        </FieldDescription>
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}

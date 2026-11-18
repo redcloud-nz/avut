@@ -25,6 +25,13 @@ const teamCaches = (vars: { organizationId: string; teamId: string }) => [
             teamId: vars.teamId,
         }),
     ),
+    // A D4H sync adds and withdraws memberships, which drive the Access card's "On roster" badge.
+    invalidate(
+        trpc.teamUsers.listTeamUsers.queryFilter({
+            organizationId: vars.organizationId,
+            teamId: vars.teamId,
+        }),
+    ),
     // D4H team unlink/sync also drops or refreshes the org-level
     // `Organization_D4H` row and its cached metadata.
     invalidate(trpc.teams.getOrganizationD4H.queryFilter({ organizationId: vars.organizationId })),
@@ -40,6 +47,9 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     restoreTeam: (vars, { updated }) => [
         write(
@@ -50,6 +60,9 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     recoverTeam: (vars, { updated }) => [
         write(
@@ -60,6 +73,10 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        // `listUserTeams` leaves out teams in the Rubbish bin, so a recovered team reappears there.
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     createTeam: (vars) => [
@@ -67,6 +84,9 @@ export const teamsEffects = createEffects<"teams">()({
     ],
     deleteTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     // Linking imports nobody, so the memberships are untouched; the first sync refreshes them.
@@ -109,6 +129,13 @@ export const teamsEffects = createEffects<"teams">()({
                 personId: vars.personId,
             }),
         ),
+        // The team's access list shows an "On roster" badge per user.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+        ),
     ],
     deleteTeamMembership: (vars) => [
         invalidate(
@@ -124,6 +151,13 @@ export const teamsEffects = createEffects<"teams">()({
             }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // The team's access list shows an "On roster" badge per user.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+        ),
     ],
     recoverTeamMembership: (vars) => [
         invalidate(
@@ -139,6 +173,13 @@ export const teamsEffects = createEffects<"teams">()({
             }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // The team's access list shows an "On roster" badge per user.
+        invalidate(
+            trpc.teamUsers.listTeamUsers.queryFilter({
+                organizationId: vars.organizationId,
+                teamId: vars.teamId,
+            }),
+        ),
     ],
     updateTeam: (vars, { updated }) => [
         write(
@@ -149,5 +190,8 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
 });

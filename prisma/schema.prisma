@@ -61,6 +61,7 @@ model User {
   createdD4HNagRules        D4HNagRule[]       @relation("d4h_nag_rule_to_created_by")
   startedD4HNagRuns         D4HNagRun[]        @relation("d4h_nag_run_to_started_by")
   createdD4HNagOptOuts      D4HNagOptOut[]     @relation("d4h_nag_opt_out_to_created_by")
+  teamUsers                 TeamUser[]         @relation("team_user_to_user")
 
   @@unique([email])
   @@map("users")
@@ -230,6 +231,7 @@ model UserConfig {
 model Team {
   id          String       @id
   name        String
+  slug        String?      @unique
   description String       @default("")
   tags        String[]     @default([])
   properties  Json         @default("{}")
@@ -242,6 +244,7 @@ model Team {
   updatedAt       DateTime?        @updatedAt
   configs         TeamConfig[]     @relation("team_config_to_team")
   teamMemberships TeamMembership[] @relation("team_membership_to_team")
+  teamUsers       TeamUser[]       @relation("team_user_to_team")
 
   d4hNagRules   D4HNagRule[]   @relation("d4h_nag_rule_to_team")
   d4hNagRuns    D4HNagRun[]    @relation("d4h_nag_run_to_team")
@@ -325,9 +328,32 @@ model OrganizationUser {
   personId String? @unique
   person   Person? @relation("person_to_organization_user", fields: [personId], references: [id], onDelete: SetNull)
 
+  teamUsers TeamUser[] @relation("team_user_to_organization_user")
+
   @@unique([organizationId, userId])
   @@index([organizationId])
   @@map("organization_users")
+}
+
+/// A user's access grant to a team (#522). Separate from the roster (`TeamMembership`):
+/// a grant is what lets a user into the team's scope. Granting creates a row and revoking
+/// hard-deletes it. The composite relation onto `OrganizationUser` makes the database
+/// enforce that the user is a member of the team's organization, and removes the grant
+/// when they leave it. Don't traverse it in code (prisma-mock resolves relations by the
+/// first FK field only); use the direct `user` relation instead.
+model TeamUser {
+  id               String           @id
+  organizationId   String
+  teamId           String
+  team             Team             @relation("team_user_to_team", fields: [teamId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User             @relation("team_user_to_user", fields: [userId], references: [id], onDelete: Cascade)
+  organizationUser OrganizationUser @relation("team_user_to_organization_user", fields: [organizationId, userId], references: [organizationId, userId], onDelete: Cascade)
+  createdAt        DateTime         @default(now())
+
+  @@unique([teamId, userId])
+  @@index([organizationId, userId])
+  @@map("team_users")
 }
 
 model OrganizationInvitation {

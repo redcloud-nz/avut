@@ -876,7 +876,7 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     it("creates a team and records a Create log entry", async () => {
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Rescue", description: "R", tags: [], properties: {} },
+            create: { name: "Rescue", slug: null, description: "R", tags: [], properties: {} },
         });
 
         expect(created.name).toBe("Rescue");
@@ -893,7 +893,7 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     it("soft-deletes a team and records a Delete log entry", async () => {
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Doomed", description: "", tags: [], properties: {} },
+            create: { name: "Doomed", slug: null, description: "", tags: [], properties: {} },
         });
 
         await makeCaller({ team: ["delete"] }).deleteTeam({
@@ -916,6 +916,184 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
                 teamId: TeamId.create(),
             }),
         ).rejects.toThrow(/not found/i);
+    });
+});
+
+describe("teamsRouter team slugs", () => {
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        team: TeamId.create(),
+        otherOrgTeam: TeamId.create(),
+        user: nanoId16(),
+    };
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
+        });
+        await db.organization.create({
+            data: { id: T.otherOrg, name: "Other", slug: "other", createdAt: new Date() },
+        });
+        await db.team.create({
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                slug: "alpha",
+                properties: {},
+                tags: [],
+            },
+        });
+        await db.team.create({
+            data: {
+                id: T.otherOrgTeam,
+                organizationId: T.otherOrg,
+                name: "Bravo",
+                slug: "bravo",
+                properties: {},
+                tags: [],
+            },
+        });
+    });
+
+    function makeCaller() {
+        return teamsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: { organization: ["view"], team: ["create", "update"] },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function updateAlpha(slug: string | null) {
+        return makeCaller().updateTeam({
+            organizationId: T.org,
+            teamId: T.team,
+            update: { name: "Alpha", slug, description: "", tags: [], properties: {} },
+        });
+    }
+
+    it("creates a team with a slug", async () => {
+        const { created } = await makeCaller().createTeam({
+            organizationId: T.org,
+            create: { name: "Charlie", slug: "charlie", description: "", tags: [], properties: {} },
+        });
+
+        expect(created.slug).toBe("charlie");
+        expect(await db.team.findUnique({ where: { id: created.id } })).toMatchObject({
+            slug: "charlie",
+        });
+    });
+
+    it("refuses to create a team with a slug held by a team in another org", async () => {
+        const error = await makeCaller()
+            .createTeam({
+                organizationId: T.org,
+                create: { name: "Delta", slug: "bravo", description: "", tags: [], properties: {} },
+            })
+            .catch((e: unknown) => e);
+
+        expect(error).toMatchObject({
+            code: "CONFLICT",
+            cause: { name: "FieldConflictError", fieldName: "slug" },
+        });
+        // The message names neither the holding team nor its org.
+        expect((error as Error).message).toBe('The slug "bravo" is already taken.');
+        expect(await db.team.findMany({ where: { name: "Delta" } })).toHaveLength(0);
+    });
+
+    it("maps a unique violation from a racing write to the slug conflict", async () => {
+        vi.spyOn(db, "$transaction").mockRejectedValueOnce(
+            Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
+        );
+
+        await expect(
+            makeCaller().createTeam({
+                organizationId: T.org,
+                create: { name: "Echo", slug: "echo", description: "", tags: [], properties: {} },
+            }),
+        ).rejects.toMatchObject({
+            code: "CONFLICT",
+            cause: { name: "FieldConflictError", fieldName: "slug" },
+        });
+    });
+
+    it("keeps the team's own slug without a conflict", async () => {
+        const { updated } = await makeCaller().updateTeam({
+            organizationId: T.org,
+            teamId: T.team,
+            update: { name: "Alpha 2", slug: "alpha", description: "", tags: [], properties: {} },
+        });
+
+        expect(updated).toMatchObject({ name: "Alpha 2", slug: "alpha" });
+    });
+
+    it("refuses to update to a slug held by a team in another org", async () => {
+        await expect(updateAlpha("bravo")).rejects.toMatchObject({
+            code: "CONFLICT",
+            cause: { name: "FieldConflictError", fieldName: "slug" },
+        });
+        expect(await db.team.findUnique({ where: { id: T.team } })).toMatchObject({
+            slug: "alpha",
+        });
+    });
+
+    it("clears the slug with null and logs the change", async () => {
+        const { updated } = await updateAlpha(null);
+
+        expect(updated.slug).toBeNull();
+        expect(await db.team.findUnique({ where: { id: T.team } })).toMatchObject({ slug: null });
+
+        const entries = await db.logEntry.findMany({
+            where: { objectType: "Team", objectId: T.team, action: "Update" },
+        });
+        expect(entries.at(-1)?.changes).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ path: ["slug"], prev: "alpha", curr: null }),
+            ]),
+        );
+    });
+
+    it("refuses to create a team with a reserved slug", async () => {
+        await expect(
+            makeCaller().createTeam({
+                organizationId: T.org,
+                create: {
+                    name: "Foxtrot",
+                    slug: "admin",
+                    description: "",
+                    tags: [],
+                    properties: {},
+                },
+            }),
+        ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "That slug is reserved." });
+        expect(await db.team.findMany({ where: { name: "Foxtrot" } })).toHaveLength(0);
+    });
+
+    it("refuses to change a team's slug to a reserved one", async () => {
+        await expect(updateAlpha("settings")).rejects.toMatchObject({
+            code: "BAD_REQUEST",
+            message: "That slug is reserved.",
+        });
+    });
+
+    it("updates a team whose stored slug has since become reserved", async () => {
+        await db.team.update({ where: { id: T.team }, data: { slug: "admin" } });
+
+        // A name-only edit resends the stored slug, which must still be accepted.
+        const { updated: renamed } = await makeCaller().updateTeam({
+            organizationId: T.org,
+            teamId: T.team,
+            update: { name: "Alpha 3", slug: "admin", description: "", tags: [], properties: {} },
+        });
+        expect(renamed).toMatchObject({ name: "Alpha 3", slug: "admin" });
+
+        const { updated } = await updateAlpha(null);
+
+        expect(updated.slug).toBeNull();
     });
 });
 

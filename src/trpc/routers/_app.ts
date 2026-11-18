@@ -26,6 +26,7 @@ import { skillCheckSessionsRouter } from "./skill-check-sessions-router";
 import { skillChecksRouter } from "./skill-checks-router";
 import { skillPackageBuilderRouter } from "./skill-package-builder-router";
 import { skillPackageSubscriptionsRouter } from "./skill-package-subscriptions-router";
+import { teamUsersRouter } from "./team-users-router";
 import { teamsRouter } from "./teams-router";
 import { trashRouter } from "./trash-router";
 import { userNotesRouter } from "./user-notes-router";
@@ -53,6 +54,7 @@ export const appRouter = createTrpcRouter({
     skillChecks: skillChecksRouter,
     skillPackageBuilder: skillPackageBuilderRouter,
     skillPackageSubscriptions: skillPackageSubscriptionsRouter,
+    teamUsers: teamUsersRouter,
     teams: teamsRouter,
     trash: trashRouter,
     user: userRouter,

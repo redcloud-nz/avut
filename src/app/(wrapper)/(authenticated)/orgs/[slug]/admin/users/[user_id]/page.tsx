@@ -11,8 +11,8 @@ import { getOrganizationBySlug } from "@/server/cache/organization";
 import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 // A server page, so the `?action=` dialogs on this page don't remount it: a client page that read
-// its params with `use(props.params)` re-suspended and flashed the page spinner (#76). The member
-// list comes from the better-auth client, so it is fetched by the content component instead.
+// its params with `use(props.params)` re-suspended and flashed the page spinner (#76). Everything the
+// content component reads with `useSuspenseQuery` is prefetched here.
 export default async function AdminModule_User_Page(
     props: PageProps<"/orgs/[slug]/admin/users/[user_id]">,
 ) {
@@ -21,7 +21,11 @@ export default async function AdminModule_User_Page(
 
     const userId = UserId.schema.parse(user_id);
 
+    prefetch(trpc.organizations.listMembers.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.users.getLinkedPerson.queryOptions({ organizationId: organization.id, userId }));
+    prefetch(
+        trpc.teamUsers.listUserTeams.queryOptions({ organizationId: organization.id, userId }),
+    );
 
     return (
         <HydrateClient>
