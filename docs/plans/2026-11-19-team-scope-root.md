@@ -60,7 +60,7 @@ Adds a fourth scope root, **team**, next to organization, user and system. A use
     - `user.listTeamGrants`: `authenticatedProcedure`, calling a new `TeamUsers.listForCaller(ctx: UserServiceContext)`. The caller's grants whose team has a non-null slug and is `Active`, as `{ team: { id, name, slug }, organization: { id, name, slug } }`, ordered by org name then team name. No `include` through the composite relation.
   - **Done when:** tests cover each procedure's happy path; `listRoster` leaves out Archived/Deleted memberships and refuses a granted user without `team: ["view"]`; `listForCaller` leaves out unslugged and Archived teams and other users' grants, and spans two orgs. `npm run check` passes.
 
-- [ ] **Task 5: `requireTeam`**
+- [x] **Task 5: `requireTeam`** (feat(teams): add requireTeam for the team scope shell)
   - **Files:** `src/server/team-access.ts` (new), `src/server/team-access.test.ts` (new)
   - **Do:** Per Decisions, mirroring `src/server/organization-access.ts`: `import "server-only"`, React `cache` keyed on the slug alone, `requireSession()`, `Teams.getGrantedBySlug`, `notFound()` on `null`, then the org (by id, `OrganizationData.fromRecord`), `getOrganizationSettings` and `getOrganizationUserRoles`. Model the test on `src/server/organization-access.test.ts` (it `vi.mock`s `./session`, `./cache/*` and `next/navigation`).
   - **Done when:** tests cover granted (returns team, org, settings and roles) and `getGrantedBySlug` → null (calls `notFound()`). `npm run check` passes.
