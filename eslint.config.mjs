@@ -122,7 +122,7 @@ const config = [
         { category: "trpc-context", pattern: "src/trpc/init.ts", partialMatch: false },
         {
           category: "module-registry",
-          pattern: "src/components/nav/{org,scope}-sidebar-modules.tsx",
+          pattern: "src/components/nav/{org,scope,team}-sidebar-modules.tsx",
           partialMatch: false,
         },
         { category: "docs-demo", pattern: "src/components/docs/demo-*.tsx", partialMatch: false },

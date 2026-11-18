@@ -69,7 +69,7 @@ _End of review group A._
 
 ### Review group B: team scope UI
 
-- [ ] **Task 6: `/teams/[slug]` layout, providers and sidebar** · `visual`
+- [x] **Task 6: `/teams/[slug]` layout, providers and sidebar** (feat(teams): add the /teams/[slug] layout, providers and sidebar) · `visual`
   - **Files:** `src/app/(wrapper)/(authenticated)/teams/[slug]/layout.tsx`, `…/teams/[slug]/{error,forbidden,not-found,loading}.tsx` (new, modelled on `orgs/[slug]`'s), a placeholder `…/teams/[slug]/page.tsx`, `src/hooks/use-team.tsx` (new), `src/components/nav/team-sidebar-modules.tsx` (new), `eslint.config.mjs`
   - **Do:** The layout follows `orgs/[slug]/layout.tsx`: `generateMetadata` uses `fetchQuery(trpc.teamScope.getTeam…)` for the title template (`%s · <team> | AVUT`), never `requireTeam`. The layout calls `requireTeam(slug)` and `resolveModuleFlags()`, seeds `teamScope.getTeam`, `organizations.getOrganization`, `settings.getOrganizationSettings` and `organizations.getMyRoles` with `queryClient.setQueryData`, and renders `HydrateClient` › `OrganizationProvider` › `TeamProvider` › `SidebarPortal` with `TeamSidebar_Modules`, then children. The sidebar is per Decisions. Run `npx next typegen` after adding the route.
   - **Done when:** as a granted user, `/teams/<slug>` renders inside the app shell with the team sidebar (just Dashboard); an ungranted user, an unknown slug and an Archived team's slug get the not-found panel. `npm run check` passes.
