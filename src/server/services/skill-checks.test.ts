@@ -15,6 +15,7 @@ import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { SkillPackageSubscriptionId } from "@/lib/schemas/skill-package-subscription";
+import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createOrganizationMockContext } from "@/test/trpc-helpers";
@@ -22,6 +23,7 @@ import { createOrganizationMockContext } from "@/test/trpc-helpers";
 import {
     assertAssessableSkills,
     assertSessionCheckTarget,
+    assertSessionTeam,
     assertSessionUnlocked,
     createSession,
     listEligibleAssessors,
@@ -29,6 +31,7 @@ import {
     requireSessionAssessor,
     requireSessionById,
     search,
+    sessionTeamAssesseeIds,
 } from "./skill-checks";
 
 // The service reaches server-only modules at import time. The functions exercised here use an
@@ -507,6 +510,107 @@ describe("skill-checks", () => {
             }));
 
             expect(created.sessionNumber).toBe(4);
+        });
+
+        it("includes the session's team", async () => {
+            const teamId = TeamId.create();
+            await db.team.create({ data: { id: teamId, organizationId: T.org, name: "Rescue" } });
+
+            const created = await createSession(ctx(), (sessionNumber) => ({
+                id: SkillCheckSessionId.create(),
+                organizationId: T.org,
+                name: "Team Session",
+                sessionNumber,
+                teamId,
+            }));
+
+            expect(created.team).toEqual({ id: teamId, name: "Rescue" });
+        });
+    });
+});
+
+describe("skill-checks session team", () => {
+    // rescue (Active): alice (Active membership), bob (Active membership, Deleted person),
+    // carol (Archived membership). archived: an Archived team. foreign: another org's team.
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        alice: PersonId.create(),
+        bob: PersonId.create(),
+        carol: PersonId.create(),
+        rescue: TeamId.create(),
+        archived: TeamId.create(),
+        foreign: TeamId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: id, slug: id, createdAt: new Date() },
+            });
+        }
+        for (const [id, status] of [
+            [T.alice, "Active"],
+            [T.bob, "Deleted"],
+            [T.carol, "Active"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name: id, email: `${id}@example.com`, status },
+            });
+        }
+        for (const [id, organizationId, status] of [
+            [T.rescue, T.org, "Active"],
+            [T.archived, T.org, "Archived"],
+            [T.foreign, T.otherOrg, "Active"],
+        ] as const) {
+            await db.team.create({ data: { id, organizationId, name: id, status } });
+        }
+        for (const [personId, status] of [
+            [T.alice, "Active"],
+            [T.bob, "Active"],
+            [T.carol, "Archived"],
+        ] as const) {
+            await db.teamMembership.create({
+                data: { id: nanoId16(), organizationId: T.org, teamId: T.rescue, personId, status },
+            });
+        }
+    });
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: T.org,
+            user: { id: T.user },
+            permissions: {},
+            prisma: db,
+        });
+    }
+
+    describe("assertSessionTeam", () => {
+        it("accepts an active team in the organization, and no team", async () => {
+            await expect(assertSessionTeam(ctx(), T.rescue)).resolves.toBeUndefined();
+            await expect(assertSessionTeam(ctx(), null)).resolves.toBeUndefined();
+        });
+
+        it.each([
+            ["an archived team", "archived"],
+            ["another organization's team", "foreign"],
+            ["an unknown team", "unknown"],
+        ] as const)("refuses %s with ValidationError", async (_label, key) => {
+            const teamId = key === "unknown" ? TeamId.create() : T[key];
+            await expect(assertSessionTeam(ctx(), teamId)).rejects.toThrow(ValidationError);
+        });
+    });
+
+    describe("sessionTeamAssesseeIds", () => {
+        it("returns the people with an active membership whose person isn't deleted", async () => {
+            expect(await sessionTeamAssesseeIds(ctx(), T.rescue)).toEqual([T.alice]);
+        });
+
+        it("returns nobody for no team", async () => {
+            expect(await sessionTeamAssesseeIds(ctx(), null)).toEqual([]);
         });
     });
 });

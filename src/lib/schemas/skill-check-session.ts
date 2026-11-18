@@ -12,6 +12,7 @@ import { isQuarterHour } from "../session-timing";
 import { zodNanoId16 } from "../validation";
 
 import { OrganizationId } from "./organization";
+import { TeamId } from "./team";
 
 export const SkillCheckSessionId = {
     schema: zodNanoId16("SkillCheckSessionId expected").brand<"SkillCheckSessionId">(),
@@ -31,6 +32,8 @@ const skillCheckSessionSchema = z.object({
     /** When the session ends, or `null` for a timed session with no end. */
     endsAt: z.iso.datetime().nullable(),
     notes: z.string(),
+    /** The team the session belongs to, or `null` for an org-wide session. */
+    teamId: TeamId.schema.nullable(),
     status: z.enum(["Draft", "Include", "Exclude"]),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
@@ -44,6 +47,7 @@ const modifiableSchema = skillCheckSessionSchema.pick({
     startsAt: true,
     endsAt: true,
     notes: true,
+    teamId: true,
 });
 
 export const SkillCheckSession = {

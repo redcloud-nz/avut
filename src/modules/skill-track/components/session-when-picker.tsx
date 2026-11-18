@@ -148,7 +148,12 @@ export function parseSessionDialog(
     orgZone: string,
 ): { success: true; data: ModifiableSkillCheckSession } | { success: false; message: string } {
     const instants = sessionInstants(when, orgZone);
-    const parsed = SkillCheckSession.inputSchema.safeParse({ ...fields, ...instants });
+    // TODO(#526 task 4): the dialogs gain a Team field; until then they save no team.
+    const parsed = SkillCheckSession.inputSchema.safeParse({
+        teamId: null,
+        ...fields,
+        ...instants,
+    });
     if (parsed.success) return { success: true, data: parsed.data };
 
     const startMoved =

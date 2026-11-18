@@ -28,6 +28,7 @@ describe("parseSessionDialog", () => {
                 notes: "",
                 startsAt: "2026-02-03T06:00:00.000Z",
                 endsAt: "2026-02-03T08:00:00.000Z",
+                teamId: null,
             },
         });
     });

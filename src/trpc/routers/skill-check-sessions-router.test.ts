@@ -16,6 +16,7 @@ import { SESSION_CHECKS_LOOKBACK_MS, SkillCheckId } from "@/lib/schemas/skill-ch
 import { SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
+import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
@@ -669,6 +670,7 @@ describe("skillCheckSessions.createSession", () => {
                 startsAt: START,
                 endsAt: null,
                 notes: "",
+                teamId: null,
             },
         });
 
@@ -681,7 +683,7 @@ describe("skillCheckSessions.createSession", () => {
         const { created } = await makeCaller(T.linkedUser).createSession({
             organizationId: T.org,
             skillCheckSessionId: id,
-            create: { name: "No end", startsAt: START, endsAt: null, notes: "" },
+            create: { name: "No end", startsAt: START, endsAt: null, notes: "", teamId: null },
         });
 
         expect(created).toMatchObject({ startsAt: START, endsAt: null });
@@ -696,7 +698,7 @@ describe("skillCheckSessions.createSession", () => {
         const { created } = await makeCaller(T.linkedUser).createSession({
             organizationId: T.org,
             skillCheckSessionId: id,
-            create: { name: "With end", startsAt: START, endsAt: end, notes: "" },
+            create: { name: "With end", startsAt: START, endsAt: end, notes: "", teamId: null },
         });
 
         expect(created).toMatchObject({ startsAt: START, endsAt: end });
@@ -718,7 +720,7 @@ describe("skillCheckSessions.createSession", () => {
                 makeCaller(T.linkedUser).createSession({
                     organizationId: T.org,
                     skillCheckSessionId: id,
-                    create: { name: "Bad", ...times, notes: "" },
+                    create: { name: "Bad", ...times, notes: "", teamId: null },
                 }),
             ).rejects.toMatchObject({ code: "BAD_REQUEST" });
             expect(await db.skillCheckSession.findUnique({ where: { id } })).toBeNull();
@@ -735,6 +737,7 @@ describe("skillCheckSessions.createSession", () => {
                     startsAt: START,
                     endsAt: null,
                     notes: "",
+                    teamId: null,
                 },
             }),
         ).rejects.toThrow(TRPCError);
@@ -749,6 +752,7 @@ describe("skillCheckSessions.createSession", () => {
                 startsAt: START,
                 endsAt: null,
                 notes: "",
+                teamId: null,
             },
         });
         const { created: second } = await makeCaller(T.linkedUser).createSession({
@@ -759,6 +763,7 @@ describe("skillCheckSessions.createSession", () => {
                 startsAt: START,
                 endsAt: null,
                 notes: "",
+                teamId: null,
             },
         });
 
@@ -773,7 +778,7 @@ describe("skillCheckSessions.createSession", () => {
         const { created } = await makeCaller(T.linkedUser).createSession({
             organizationId: T.org,
             skillCheckSessionId: SkillCheckSessionId.create(),
-            create: { name: "", startsAt: START, endsAt: null, notes: "" },
+            create: { name: "", startsAt: START, endsAt: null, notes: "", teamId: null },
         });
 
         expect(created.name).toBe(`Session #${nextSessionNumber}`);
@@ -804,6 +809,7 @@ describe("skillCheckSessions.createSession", () => {
                 startsAt: START,
                 endsAt: null,
                 notes: "",
+                teamId: null,
             },
         });
 
@@ -865,6 +871,273 @@ describe("skillCheckSessions.listSessions", () => {
                 skillPackageSubscription: ["view"],
             }).listSessions({ organizationId: T.org }),
         ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    });
+});
+
+describe("skillCheckSessions session team", () => {
+    // Dataset:
+    //   user           → linked to assessor (the caller)
+    //   rescue         → Active team: alice (Active membership), bob (Active membership but
+    //                    Deleted person), carol (Archived membership)
+    //   swift          → Active team, no members
+    //   archived       → Archived team
+    //   foreign        → Active team in another org
+    //   rescueSession  → team rescue, assessee dave (not in rescue)
+    //   archivedSession → team archived
+    const T = {
+        org: OrganizationId.create(),
+        otherOrg: OrganizationId.create(),
+        user: UserId.create(),
+        assessor: PersonId.create(),
+        alice: PersonId.create(),
+        bob: PersonId.create(),
+        carol: PersonId.create(),
+        dave: PersonId.create(),
+        rescue: TeamId.create(),
+        swift: TeamId.create(),
+        archived: TeamId.create(),
+        foreign: TeamId.create(),
+        rescueSession: SkillCheckSessionId.create(),
+        archivedSession: SkillCheckSessionId.create(),
+    };
+    const START = "2026-03-14T06:15:00.000Z";
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        for (const id of [T.org, T.otherOrg]) {
+            await db.organization.create({
+                data: { id, name: "Org", slug: id, createdAt: new Date() },
+            });
+        }
+
+        for (const [id, name, status] of [
+            [T.assessor, "Assessor", "Active"],
+            [T.alice, "Alice", "Active"],
+            [T.bob, "Bob", "Deleted"],
+            [T.carol, "Carol", "Active"],
+            [T.dave, "Dave", "Active"],
+        ] as const) {
+            await db.person.create({
+                data: { id, organizationId: T.org, name, email: `${id}@example.com`, status },
+            });
+        }
+        await db.organizationUser.create({
+            data: {
+                id: nanoId16(),
+                organizationId: T.org,
+                userId: T.user,
+                role: "member",
+                personId: T.assessor,
+            },
+        });
+
+        for (const [id, organizationId, name, status] of [
+            [T.rescue, T.org, "Rescue", "Active"],
+            [T.swift, T.org, "Swiftwater", "Active"],
+            [T.archived, T.org, "Old Team", "Archived"],
+            [T.foreign, T.otherOrg, "Foreign", "Active"],
+        ] as const) {
+            await db.team.create({ data: { id, organizationId, name, status } });
+        }
+        for (const [personId, status] of [
+            [T.alice, "Active"],
+            [T.bob, "Active"],
+            [T.carol, "Archived"],
+        ] as const) {
+            await db.teamMembership.create({
+                data: { id: nanoId16(), organizationId: T.org, teamId: T.rescue, personId, status },
+            });
+        }
+
+        await db.skillCheckSession.create({
+            data: {
+                id: T.rescueSession,
+                organizationId: T.org,
+                name: "Rescue session",
+                sessionNumber: 100,
+                startsAt: new Date(START),
+                notes: "",
+                teamId: T.rescue,
+                assessees: { connect: [{ id: T.dave }] },
+            },
+        });
+        await db.skillCheckSession.create({
+            data: {
+                id: T.archivedSession,
+                organizationId: T.org,
+                name: "Archived team session",
+                sessionNumber: 101,
+                startsAt: new Date(START),
+                notes: "",
+                teamId: T.archived,
+            },
+        });
+    });
+
+    function makeCaller() {
+        return skillCheckSessionsRouter.createCaller(
+            createAuthenticatedMockContext({
+                user: { id: T.user },
+                permissions: {
+                    organization: ["view"],
+                    skillCheckSession: ["create", "update", "view"],
+                },
+                prisma: db,
+            }),
+        );
+    }
+
+    async function assesseeIds(sessionId: SkillCheckSessionId) {
+        const session = await db.skillCheckSession.findUniqueOrThrow({
+            where: { id: sessionId },
+            include: { assessees: { select: { id: true } } },
+        });
+        return session.assessees.map(({ id }) => id).sort();
+    }
+
+    async function logEntries(sessionId: SkillCheckSessionId, action: "Create" | "Update") {
+        return db.logEntry.findMany({
+            where: { objectType: "SkillCheckSession", objectId: sessionId, action },
+        });
+    }
+
+    const createInput = (id: SkillCheckSessionId, teamId: TeamId | null) => ({
+        organizationId: T.org,
+        skillCheckSessionId: id,
+        create: { name: "New", startsAt: START, endsAt: null, notes: "", teamId },
+    });
+
+    const updateInput = (id: SkillCheckSessionId, name: string, teamId: TeamId | null) => ({
+        organizationId: T.org,
+        skillCheckSessionId: id,
+        update: { name, startsAt: START, endsAt: null, notes: "", teamId },
+    });
+
+    it("seeds a session created with a team with its active, non-deleted members, and logs them", async () => {
+        const id = SkillCheckSessionId.create();
+        const { created } = await makeCaller().createSession(createInput(id, T.rescue));
+
+        expect(created.teamId).toBe(T.rescue);
+        expect(created.team).toEqual({ id: T.rescue, name: "Rescue" });
+        expect(await assesseeIds(id)).toEqual([T.alice]);
+
+        const entries = await logEntries(id, "Create");
+        expect(entries).toHaveLength(1);
+        expect(entries[0].changes).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ path: ["teamId"], curr: T.rescue }),
+                { path: ["assessees"], type: "arr_add", value: T.alice },
+            ]),
+        );
+        expect(
+            (entries[0].changes as { path: string[] }[]).filter(
+                ({ path }) => path[0] === "assessees",
+            ),
+        ).toHaveLength(1);
+    });
+
+    it("seeds nobody for a session created with no team", async () => {
+        const id = SkillCheckSessionId.create();
+        const { created } = await makeCaller().createSession(createInput(id, null));
+
+        expect(created).toMatchObject({ teamId: null, team: null });
+        expect(await assesseeIds(id)).toEqual([]);
+        const [entry] = await logEntries(id, "Create");
+        expect(
+            (entry.changes as { path: string[] }[]).filter(({ path }) => path[0] === "assessees"),
+        ).toEqual([]);
+    });
+
+    for (const [label, team] of [
+        ["another org's team", T.foreign],
+        ["an archived team", T.archived],
+    ] as const) {
+        it(`refuses to create a session with ${label} with BAD_REQUEST`, async () => {
+            const id = SkillCheckSessionId.create();
+            await expect(makeCaller().createSession(createInput(id, team))).rejects.toMatchObject({
+                code: "BAD_REQUEST",
+            });
+            expect(await db.skillCheckSession.findUnique({ where: { id } })).toBeNull();
+        });
+
+        it(`refuses to change a session's team to ${label} with BAD_REQUEST`, async () => {
+            await expect(
+                makeCaller().updateSession(updateInput(T.rescueSession, "Rescue session", team)),
+            ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+            const row = await db.skillCheckSession.findUniqueOrThrow({
+                where: { id: T.rescueSession },
+            });
+            expect(row.teamId).toBe(T.rescue);
+        });
+    }
+
+    it("changes the team, logs it, returns the new team, and leaves the assessees alone", async () => {
+        const id = SkillCheckSessionId.create();
+        await db.skillCheckSession.create({
+            data: {
+                id,
+                organizationId: T.org,
+                name: "Moving",
+                sessionNumber: 200,
+                startsAt: new Date(START),
+                notes: "",
+                teamId: T.rescue,
+                assessees: { connect: [{ id: T.dave }] },
+            },
+        });
+
+        const { updated } = await makeCaller().updateSession(updateInput(id, "Moving", T.swift));
+
+        expect(updated).toMatchObject({
+            teamId: T.swift,
+            team: { id: T.swift, name: "Swiftwater" },
+        });
+        expect(await assesseeIds(id)).toEqual([T.dave]);
+        const entries = await logEntries(id, "Update");
+        expect(entries).toHaveLength(1);
+        expect(entries[0].changes).toEqual([
+            { type: "obj_mod", path: ["teamId"], prev: T.rescue, curr: T.swift },
+        ]);
+    });
+
+    it("saves a session whose team is archived when the team is unchanged", async () => {
+        const { updated } = await makeCaller().updateSession(
+            updateInput(T.archivedSession, "Renamed", T.archived),
+        );
+
+        expect(updated).toMatchObject({
+            name: "Renamed",
+            teamId: T.archived,
+            team: { id: T.archived, name: "Old Team" },
+        });
+    });
+
+    it("returns the team from a no-op update", async () => {
+        const { updated } = await makeCaller().updateSession(
+            updateInput(T.rescueSession, "Rescue session", T.rescue),
+        );
+
+        expect(updated.team).toEqual({ id: T.rescue, name: "Rescue" });
+    });
+
+    it("returns the team from getSession and listSessions", async () => {
+        const session = await makeCaller().getSession({
+            organizationId: T.org,
+            skillCheckSessionId: T.rescueSession,
+        });
+        expect(session.team).toEqual({ id: T.rescue, name: "Rescue" });
+
+        const sessions = await makeCaller().listSessions({ organizationId: T.org });
+        expect(sessions.find(({ id }) => id === T.rescueSession)?.team).toEqual({
+            id: T.rescue,
+            name: "Rescue",
+        });
+        const created = await makeCaller().createSession(
+            createInput(SkillCheckSessionId.create(), null),
+        );
+        const listed = await makeCaller().listSessions({ organizationId: T.org });
+        expect(listed.find(({ id }) => id === created.created.id)?.team).toBeNull();
     });
 });
 
@@ -1500,6 +1773,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                         startsAt: existing.startsAt!.toISOString(),
                         endsAt: null,
                         notes: "After",
+                        teamId: null,
                     },
                 }),
             ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -1524,6 +1798,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                         startsAt: existing.startsAt!.toISOString(),
                         endsAt: null,
                         notes: existing.notes ?? "",
+                        teamId: null,
                     },
                 }),
             ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -1539,6 +1814,7 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                         startsAt: new Date("2020-01-01T00:00:00.000Z").toISOString(),
                         endsAt: null,
                         notes: "After",
+                        teamId: null,
                     },
                 }),
             ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -1550,12 +1826,14 @@ describe("skillCheckSessions approval lock on configuration and approval", () =>
                 startsAt: SESSION_DATE.toISOString(),
                 endsAt: null,
                 notes: "",
+                teamId: null,
             }),
             "a start change": () => ({
                 name: "Session 5",
                 startsAt: new Date("2020-01-01T00:00:00.000Z").toISOString(),
                 endsAt: null,
                 notes: "",
+                teamId: null,
             }),
         };
         for (const [edit, update] of Object.entries(racedUpdates)) {
@@ -1984,6 +2262,7 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
                 startsAt: SESSION_DATE.toISOString(),
                 endsAt: null,
                 notes: "",
+                teamId: null,
             },
         });
 
@@ -2002,7 +2281,13 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
         const { updated, startChanged } = await makeCaller().updateSession({
             organizationId: T.org,
             skillCheckSessionId: T.session,
-            update: { name: "Renamed", startsAt: SESSION_DATE.toISOString(), endsAt, notes: "" },
+            update: {
+                name: "Renamed",
+                startsAt: SESSION_DATE.toISOString(),
+                endsAt,
+                notes: "",
+                teamId: null,
+            },
         });
 
         expect(startChanged).toBe(false);
@@ -2023,6 +2308,7 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
                 startsAt,
                 endsAt: minutesAfter(SESSION_DATE, 180),
                 notes: "",
+                teamId: null,
             },
         });
 
@@ -2041,7 +2327,13 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
         const { updated, startChanged } = await makeCaller().updateSession({
             organizationId: T.org,
             skillCheckSessionId: T.session,
-            update: { name: "Renamed", startsAt: NEW_DATE.toISOString(), endsAt: null, notes: "" },
+            update: {
+                name: "Renamed",
+                startsAt: NEW_DATE.toISOString(),
+                endsAt: null,
+                notes: "",
+                teamId: null,
+            },
         });
 
         expect(startChanged).toBe(true);
@@ -2083,7 +2375,7 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
                 makeCaller().updateSession({
                     organizationId: T.org,
                     skillCheckSessionId: T.session,
-                    update: { name: "Invalid", ...times, notes: "" },
+                    update: { name: "Invalid", ...times, notes: "", teamId: null },
                 }),
             ).rejects.toMatchObject({ code: "BAD_REQUEST" });
             const after = await db.skillCheckSession.findUniqueOrThrow({
@@ -2098,7 +2390,13 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
         const { updated, startChanged } = await makeCaller().updateSession({
             organizationId: T.org,
             skillCheckSessionId: T.legacySession,
-            update: { name: "Legacy renamed", startsAt: snapped, endsAt: null, notes: "" },
+            update: {
+                name: "Legacy renamed",
+                startsAt: snapped,
+                endsAt: null,
+                notes: "",
+                teamId: null,
+            },
         });
 
         expect(startChanged).toBe(true);
@@ -2120,6 +2418,7 @@ describe("skillCheckSessions.updateSession re-stamps checkedAt", () => {
                 startsAt: NULL_CREATED_AT.toISOString(),
                 endsAt: null,
                 notes: "",
+                teamId: null,
             },
         });
 
