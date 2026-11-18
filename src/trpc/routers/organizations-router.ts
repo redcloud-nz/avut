@@ -287,7 +287,6 @@ export const organizationsRouter = createTrpcRouter({
                             skillCheckSessions: true,
                             notes: true,
                             skillPackages: true,
-                            i3IssuedItems: true,
                             formInstances: true,
                         },
                     },
@@ -330,7 +329,6 @@ export const organizationsRouter = createTrpcRouter({
                     skillCheckSessions: org._count.skillCheckSessions,
                     notes: org._count.notes,
                     skillPackages: org._count.skillPackages,
-                    i3IssuedItems: org._count.i3IssuedItems,
                     formInstances: org._count.formInstances,
                 } as Record<string, number>,
             };
