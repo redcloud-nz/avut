@@ -267,3 +267,11 @@ Brand & Model setting on templates, quality flags on Issued Types and the bundle
   `I3BrandModelRule` (`import type` from `src/lib/schemas/i3-template.ts`) instead of the
   hand-written union, and fix the `ItemQualityState` comment ("best to worst" doesn't match the
   union order; point at `STATE_RANK` or reorder to `"ok" | "mismatch" | "incomplete"`).
+- `src/modules/d4h-i3/components/bundles/bundle-member-comparison.tsx` (`CellStatus`): give the
+  Incomplete and Doesn't match status badges the amber treatment of
+  `D4HI3Module_ItemQuality_Badge` (share its class), so only Missing is a grey outline badge.
+- `src/modules/d4h-i3/components/issued-types/issued-type-content.tsx`: base the count line on
+  judged rows (`quality !== null`), so a type whose only items are LOST doesn't say "All items
+  pass the template's checks".
+- `src/modules/d4h-i3/components/bundles/bundle-matrix.tsx` (~line 59): re-wrap the doc comment
+  that breaks mid-sentence.

@@ -31,7 +31,10 @@ import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { D4HMember } from "@/lib/schemas/d4h/member";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
-import { D4HI3Module_ItemQuality_Badge } from "@/modules/d4h-i3/components/item-quality-badge";
+import {
+    D4HI3Module_ItemQuality_Badge,
+    ITEM_QUALITY_BADGE_CLASS,
+} from "@/modules/d4h-i3/components/item-quality-badge";
 import {
     compareBundle,
     groupColumnsByCategory,
@@ -197,8 +200,20 @@ export function D4HI3Module_BundleMemberComparison({
 /** Held, Incomplete or Doesn't match (by the worst counted item's quality), or Missing. */
 function CellStatus({ cell }: { cell: BundleCell<IssuedItem> }) {
     if (cell.state === "missing") return <Badge variant="outline">Missing</Badge>;
-    if (cell.quality === "incomplete") return <Badge variant="outline">Incomplete</Badge>;
-    if (cell.quality === "mismatch") return <Badge variant="outline">Doesn&apos;t match</Badge>;
+    if (cell.quality === "incomplete") {
+        return (
+            <Badge variant="outline" className={ITEM_QUALITY_BADGE_CLASS}>
+                Incomplete
+            </Badge>
+        );
+    }
+    if (cell.quality === "mismatch") {
+        return (
+            <Badge variant="outline" className={ITEM_QUALITY_BADGE_CLASS}>
+                Doesn&apos;t match
+            </Badge>
+        );
+    }
     return <Badge variant="secondary">Held</Badge>;
 }
 

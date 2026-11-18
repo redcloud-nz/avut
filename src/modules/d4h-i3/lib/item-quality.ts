@@ -10,13 +10,15 @@
  * `i3Bundles.getBundle` lines alike. See `docs/plans/2026-11-19-i3-data-quality.md`, "The states".
  */
 
-/** How an item fares against a template, from best to worst. */
-export type ItemQualityState = "ok" | "incomplete" | "mismatch";
+import type { I3BrandModelRule } from "@/lib/schemas/i3-template";
+
+/** How an item fares against a template, from best to worst (see `STATE_RANK`). */
+export type ItemQualityState = "ok" | "mismatch" | "incomplete";
 
 /** The rules one template sets for its items. `I3BundleLine.template` carries the same shape. */
 export type ItemQualityRules = {
     requireSN: boolean;
-    brandModelRule: "Required" | "Optional" | "None";
+    brandModelRule: I3BrandModelRule;
     /** The brand/model pairs of the template's variants that have D4H records. */
     variants: readonly { brandId: number; modelId: number }[];
 };

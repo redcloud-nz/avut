@@ -190,6 +190,7 @@ export function D4HI3Module_IssuedType_Content({
         ),
     );
 
+    const judgedCount = rows.filter((row) => row.quality !== null).length;
     const incompleteCount = rows.filter((row) => row.quality?.state === "incomplete").length;
     const mismatchCount = rows.filter((row) => row.quality?.state === "mismatch").length;
     const filterFlagged = hasRules && onlyFlagged;
@@ -267,7 +268,7 @@ export function D4HI3Module_IssuedType_Content({
                     <p className="text-muted-foreground text-sm">
                         D4H Type: <D4HEquipmentTypeLink type={kind} />
                     </p>
-                    {hasRules && rows.length > 0 && (
+                    {hasRules && judgedCount > 0 && (
                         <p className="text-sm">{qualitySummary(incompleteCount, mismatchCount)}</p>
                     )}
                     {visibleRows.length === 0 ? (

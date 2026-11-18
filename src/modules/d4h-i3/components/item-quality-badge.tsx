@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { missingPartsLabel, type ItemQualityResult } from "@/modules/d4h-i3/lib/item-quality";
 
-const BADGE_CLASS =
+/** The amber look of a data-quality flag, shared with the bundle comparison's cell status. */
+export const ITEM_QUALITY_BADGE_CLASS =
     "border-amber-600/40 font-normal text-amber-700 dark:border-amber-500/40 dark:text-amber-500";
 
 const MISMATCH_REASON: Record<NonNullable<ItemQualityResult["mismatch"]>, string> = {
@@ -33,7 +34,7 @@ export function D4HI3Module_ItemQuality_Badge({
 
     if (result.state === "incomplete") {
         return (
-            <Badge variant="outline" className={BADGE_CLASS}>
+            <Badge variant="outline" className={ITEM_QUALITY_BADGE_CLASS}>
                 <AlertWarningIcon />
                 {missingPartsLabel(result.missing)}
             </Badge>
@@ -45,7 +46,7 @@ export function D4HI3Module_ItemQuality_Badge({
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <Badge variant="outline" tabIndex={0} className={BADGE_CLASS}>
+                <Badge variant="outline" tabIndex={0} className={ITEM_QUALITY_BADGE_CLASS}>
                     <AlertWarningIcon />
                     Doesn&apos;t match
                 </Badge>

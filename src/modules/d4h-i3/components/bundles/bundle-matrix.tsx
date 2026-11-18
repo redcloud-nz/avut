@@ -57,8 +57,8 @@ const EXCLUDED_LABELS: Record<ExcludedReason, string> = {
 /**
  * A bundle compared against one D4H team: a row per member and a column per comparable line,
  * grouped by category, each cell held (amber when its records fail the template's checks) or
- * missing. Lines that can't be compared are listed above
- * the table. Reads D4H, so without a token the queries fail and the error boundary explains.
+ * missing. Lines that can't be compared are listed above the table. Reads D4H, so without a token
+ * the queries fail and the error boundary explains.
  */
 export function D4HI3Module_BundleMatrix({
     bundleId,
