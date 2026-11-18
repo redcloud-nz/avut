@@ -144,7 +144,7 @@ Issued Types page for a team, and the bundle comparison.
   - **Done when:** a service test shows `getWithLines` returning the rules and only D4H variants,
     and `npm run check` passes.
 
-- [ ] **Task 3: The item-quality helper**
+- [x] **Task 3: The item-quality helper** (feat(d4h-i3): add the issued-item quality helper)
   - **Files:** `src/modules/d4h-i3/lib/item-quality.ts` (new),
     `src/modules/d4h-i3/lib/item-quality.test.ts` (new).
   - **Do:** A pure module (no server or React imports), structurally typed like
