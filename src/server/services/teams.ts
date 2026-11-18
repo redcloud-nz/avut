@@ -16,7 +16,11 @@ import {
     TeamMembershipId,
     type ModifiableTeamMembershipData,
 } from "@/lib/schemas/team-membership";
-import { TeamScopeData, type TeamScopeTeamData } from "@/lib/schemas/team-scope";
+import {
+    TeamScopeData,
+    type TeamScopeRosterEntryData,
+    type TeamScopeTeamData,
+} from "@/lib/schemas/team-scope";
 import type { UserId } from "@/lib/schemas/user";
 
 import type { OrgServiceContext } from "./service-context";
@@ -114,6 +118,28 @@ export async function getGrantedBySlug(
         organization: team.organization,
         d4h: team.d4h,
     });
+}
+
+/**
+ * A team's roster for the team scope: its `Active` memberships, ordered by person name, each with
+ * the person's name and the membership's D4H position and ref when it is D4H-managed. One query.
+ * A team outside the organization has an empty roster.
+ */
+export async function listRoster(
+    ctx: OrgServiceContext,
+    teamId: TeamId,
+): Promise<TeamScopeRosterEntryData[]> {
+    const memberships = await ctx.prisma.teamMembership.findMany({
+        where: { teamId, organizationId: ctx.organizationId, status: "Active" },
+        select: {
+            id: true,
+            person: { select: { id: true, name: true } },
+            d4h: { select: { d4hPosition: true, d4hRef: true } },
+        },
+        orderBy: { person: { name: "asc" } },
+    });
+
+    return memberships.map((membership) => TeamScopeData.rosterEntrySchema.parse(membership));
 }
 
 /**

@@ -7,6 +7,7 @@ import "server-only";
 
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import type { TeamId } from "@/lib/schemas/team";
+import { TeamScopeData, type TeamScopeGrantData } from "@/lib/schemas/team-scope";
 import {
     TeamUserData,
     TeamUserId,
@@ -17,7 +18,7 @@ import type { UserId } from "@/lib/schemas/user";
 import type { LogEntryRef } from "@/server/log-entry";
 import { isUniqueViolation } from "@/server/prisma-errors";
 
-import type { OrgServiceContext } from "./service-context";
+import type { OrgServiceContext, UserServiceContext } from "./service-context";
 
 // Access grants (`TeamUser`) never `include` through the composite `organizationUser` relation:
 // prisma-mock resolves relations by the first FK field only, so in tests it would match the
@@ -144,6 +145,37 @@ export async function listForUser(ctx: OrgServiceContext, userId: UserId): Promi
             }),
         )
         .sort((a, b) => a.team.name.localeCompare(b.team.name));
+}
+
+/**
+ * The caller's grants that lead into a team scope, across all their organizations: those whose
+ * team has a slug and is `Active`, with the team's org, ordered by org name then team name. One
+ * query; the org comes through `Team.organization`, not the grant's composite relation.
+ */
+export async function listForCaller(ctx: UserServiceContext): Promise<TeamScopeGrantData[]> {
+    const grants = await ctx.prisma.teamUser.findMany({
+        where: { userId: ctx.userId, team: { slug: { not: null }, status: "Active" } },
+        select: {
+            team: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    organization: { select: { id: true, name: true, slug: true } },
+                },
+            },
+        },
+    });
+
+    return grants
+        .map(({ team: { organization, ...team } }) =>
+            TeamScopeData.teamGrantSchema.parse({ team, organization }),
+        )
+        .sort(
+            (a, b) =>
+                a.organization.name.localeCompare(b.organization.name) ||
+                a.team.name.localeCompare(b.team.name),
+        );
 }
 
 /**

@@ -21,6 +21,7 @@ import { Permissions } from "@/lib/permissions";
 import type { LogEntryRecord } from "@/lib/schemas/log-entry";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { TeamId, TeamSlug } from "@/lib/schemas/team";
+import type { TeamScopeTeamData } from "@/lib/schemas/team-scope";
 import { UserId } from "@/lib/schemas/user";
 
 // The same validation messages as the client, for procedure input errors.
@@ -365,9 +366,12 @@ function organizationLogEvent(
 /**
  * An org context plus the team, so every `OrgServiceContext` service works unchanged from a
  * team procedure. `organizationId` is the team's org, and `isSystemAdmin` is always `false`:
- * team access is an explicit grant, with no admin bypass.
+ * team access is an explicit grant, with no admin bypass. `team` is the record the access check
+ * already loaded, so a procedure that only needs the team (`teamScope.getTeam`) reads it from
+ * here rather than querying again.
  */
 export type AuthenticatedTeamContext = AuthenticatedOrganizationContext & {
+    team: TeamScopeTeamData;
     teamId: TeamId;
     teamSlug: string;
 };
@@ -412,6 +416,7 @@ export function teamProcedure(requiredPermissions: Permissions = {}) {
                     organizationId,
                     isSystemAdmin: false,
                     logEvent: organizationLogEvent(opts.ctx, organizationId),
+                    team,
                     teamId: team.id,
                     teamSlug: team.slug,
                 } satisfies AuthenticatedTeamContext,

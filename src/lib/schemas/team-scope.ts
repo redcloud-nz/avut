@@ -8,7 +8,9 @@ import * as z from "zod";
 import { D4HServerCode } from "../d4h-servers";
 
 import { OrganizationId } from "./organization";
+import { PersonId } from "./person";
 import { TeamId } from "./team";
+import { TeamMembershipId } from "./team-membership";
 
 export const TeamScopeData = {
     /**
@@ -33,7 +35,41 @@ export const TeamScopeData = {
             })
             .nullable(),
     }),
+
+    /**
+     * A row of a team's roster (its `Active` memberships), as the team dashboard shows it.
+     * Returned by `Teams.listRoster` and `teamScope.listRoster`.
+     */
+    rosterEntrySchema: z.object({
+        id: TeamMembershipId.schema,
+        person: z.object({ id: PersonId.schema, name: z.string() }),
+        d4h: z
+            .object({
+                d4hPosition: z.string().nullable(),
+                d4hRef: z.string().nullable(),
+            })
+            .nullable(),
+    }),
+
+    /**
+     * One of the caller's team grants that leads into a team scope: the team (slugged, `Active`)
+     * and its org. Returned by `TeamUsers.listForCaller` and `user.listTeamGrants`.
+     */
+    teamGrantSchema: z.object({
+        team: z.object({ id: TeamId.schema, name: z.string(), slug: z.string() }),
+        organization: z.object({
+            id: OrganizationId.schema,
+            name: z.string(),
+            slug: z.string(),
+        }),
+    }),
 } as const;
 
 /** The team a team-scope page is about. */
 export type TeamScopeTeamData = z.infer<typeof TeamScopeData.teamSchema>;
+
+/** A row of a team's roster. */
+export type TeamScopeRosterEntryData = z.infer<typeof TeamScopeData.rosterEntrySchema>;
+
+/** One of the caller's team grants that leads into a team scope. */
+export type TeamScopeGrantData = z.infer<typeof TeamScopeData.teamGrantSchema>;
