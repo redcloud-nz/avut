@@ -50,7 +50,7 @@ Both issues add team data with admin UI on the same page (`orgs/[slug]/admin/tea
   - **Do:** Add `TeamUser` per Decisions, including the direct `user` relation, with back-relations on `Team`, `OrganizationUser` and `User` (all `teamUsers`). Add the explicit cleanup from Decisions to purge, `removeOrganizationMember` and `leaveOrganization`. Run `npm run prisma migrate dev -- --name add_team_users` (ask first). Add `TeamUserId` (`create()` via `nanoId16`) and a `TeamUserData` read shape for the list rows: `{ id, teamId, userId, createdAt, user: { id, name, email, image }, onRoster: boolean }` for a team's grants, and `{ id, team: TeamRef & { slug, status }, createdAt }` for a user's teams. Add `"TeamUser"` to `logObjectTypeValues` and map it to `"org-admin"` in `moduleByObjectType`.
   - **Done when:** the migration creates `team_users` with both FKs (the composite one onto `organization_users ("organizationId", "userId")`, `ON DELETE CASCADE`), the unique index and the index. `npm run check` passes, including `log-entry.test.ts`.
 
-- [ ] **Task 4: `team-users` service**
+- [x] **Task 4: `team-users` service**
   - **Files:** `src/server/services/team-users.ts` (new), `src/server/services/team-users.test.ts` (new)
   - **Do:** Following `src/server/services/CLAUDE.md` and `docs/patterns/transactional-writes.md`, with `OrgServiceContext` throughout. Never `include` through the composite `organizationUser` relation (see Decisions).
     - `listForTeam(ctx, teamId)`: the team's grants with user details (through `user`), leaving out soft-deleted users, ordered by user name. `onRoster` is true when the user's `OrganizationUser.personId` has an `Active` `TeamMembership` in this team. Throws `NotFoundError` if the team isn't in the org.
