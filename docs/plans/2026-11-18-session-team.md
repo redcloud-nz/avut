@@ -69,6 +69,12 @@ Skill Track sessions gain an optional team: §1 "Create the session" in `content
 
 ## Parked
 
+- Record views (by person / by skill) come up as an empty list when the session has no skills, instead of an empty state that says to add skills. Predates this branch; a team-seeded session (personnel, no skills) makes it easy to hit. Found at the visual check, 2026-11-18. Filed as #533.
+
 ## Review notes
 
-- `updateSession`'s no-op path makes a second round-trip to fetch `team` (`skill-check-sessions-router.ts` ~999–1007). Include `team` in the initial read instead (a local `findUnique`, or widen `requireSessionRecordById`) and drop the extra query.
+- `updateSession`'s no-op path makes a second round-trip to fetch `team` (`skill-check-sessions-router.ts` ~999–1007). Include `team` in the initial read instead (a local `findUnique`, or widen `requireSessionRecordById`) and drop the extra query. — done
+- `session-team-select.tsx`: while `listTeams` is loading (or failed) the select offers only "No team", with no sign anything's missing. Minimal fix: `disabled={teamsQuery.isPending}` (or a "Loading teams…" placeholder). — done
+- `sessions-list.tsx`: import `NO_SESSION_TEAM` relatively (`./session-when-picker`), like `./create-session`. — done
+- `session-when-picker.tsx` ~143: rewrap the edited JSDoc paragraph to the 100-column wrap. — done
+- `content/help/skill-track/session.mdx` and `sessions.mdx`: rewrap the edited prose to the cards' ~80-column wrap. — done

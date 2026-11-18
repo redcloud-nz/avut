@@ -41,8 +41,9 @@ export async function requireSessionById(
 }
 
 /**
- * `requireSessionById`'s stored row, unparsed, for a caller that compares against a raw column:
- * `startsAt` may be null, which the parsed session hides behind `createdAt`.
+ * `requireSessionById`'s stored row, unparsed, with its team's ref, for a caller that compares
+ * against a raw column (`startsAt` may be null, which the parsed session hides behind
+ * `createdAt`) or returns the session's `team` (`updateSession`).
  * @throws NotFoundError if the session does not exist or does not belong to the organization.
  */
 export async function requireSessionRecordById(
@@ -54,6 +55,7 @@ export async function requireSessionRecordById(
             id: sessionId,
             organizationId: ctx.organizationId,
         },
+        include: { team: { select: { id: true, name: true } } },
     });
 
     if (!session) {

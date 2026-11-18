@@ -59,6 +59,7 @@ export function SkillTrack_SessionTeamSelect({
     return (
         <Select
             value={value}
+            disabled={teamsQuery.isPending}
             onValueChange={(next) => {
                 // Radix fires "" when it mounts or resets inside a form; that isn't a choice.
                 if (next) onChange(next);

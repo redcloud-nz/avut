@@ -997,13 +997,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             const startChanged = record.startsAt?.getTime() !== startsAt.getTime();
 
             if (changes.length == 0) {
-                const team = record.teamId
-                    ? await ctx.prisma.team.findUnique({
-                          where: { id: record.teamId, organizationId },
-                          select: { id: true, name: true },
-                      })
-                    : null;
-                return { updated: { ...existing, team: toTeamRef(team) }, startChanged };
+                return { updated: { ...existing, team: toTeamRef(record.team) }, startChanged };
             }
 
             const [, updated] = await ctx.prisma
