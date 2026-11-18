@@ -22,15 +22,15 @@ import {
 } from "@/components/ui/diagonal-column-header";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
+import { I3BundleId, I3BundleLine } from "@/lib/schemas/i3-bundle";
+import { cn } from "@/lib/utils";
 import {
     compareBundle,
     groupColumnsByCategory,
     type ExcludedLine,
     type ExcludedReason,
-} from "@/lib/i3-bundle-compare";
-import { route } from "@/lib/routes";
-import { I3BundleId, I3BundleLine } from "@/lib/schemas/i3-bundle";
-import { cn } from "@/lib/utils";
+} from "@/modules/d4h-i3/lib/bundle-compare";
 import { trpc } from "@/trpc/client";
 
 // Opaque so cells scrolled beneath it stay hidden; the row hover is layered over the card

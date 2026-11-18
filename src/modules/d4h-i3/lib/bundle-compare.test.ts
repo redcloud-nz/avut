@@ -10,7 +10,7 @@ import {
     groupColumnsByCategory,
     type BundleCompareItem,
     type BundleCompareLine,
-} from "./i3-bundle-compare";
+} from "./bundle-compare";
 
 const KIND_HELMET = 100;
 const KIND_JACKET = 200;

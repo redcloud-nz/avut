@@ -115,7 +115,8 @@ function AddBundleTemplates_Body({
 
     const inBundle = new Set(lines.map((line) => line.template.id));
 
-    // Category -> templates, both by title/name.
+    // Category -> templates, sorted by title then name. Grouped by category id, so two D4H
+    // categories that share a title stay apart.
     const sections = R.pipe(
         templates,
         R.filter(
@@ -124,10 +125,16 @@ function AddBundleTemplates_Body({
         ),
         R.sortBy(
             (template) => template.d4h?.categoryTitle ?? "",
+            (template) => template.d4h?.categoryId ?? 0,
             (template) => template.name,
         ),
-        R.groupBy((template) => template.d4h?.categoryTitle ?? ""),
-        R.entries(),
+        R.groupBy((template) => String(template.d4h?.categoryId ?? "")),
+        R.values(),
+        R.map((sectionTemplates) => ({
+            categoryId: sectionTemplates[0].d4h?.categoryId ?? 0,
+            categoryTitle: sectionTemplates[0].d4h?.categoryTitle ?? "",
+            templates: sectionTemplates,
+        })),
     );
 
     function handleCheckedChange(templateId: I3TemplateId, checked: boolean) {
@@ -148,11 +155,11 @@ function AddBundleTemplates_Body({
                     </p>
                 )}
                 <FieldGroup>
-                    {sections.map(([categoryTitle, sectionTemplates]) => (
-                        <FieldSet key={categoryTitle}>
-                            <FieldLegend variant="label">{categoryTitle}</FieldLegend>
+                    {sections.map((section) => (
+                        <FieldSet key={section.categoryId}>
+                            <FieldLegend variant="label">{section.categoryTitle}</FieldLegend>
                             <FieldGroup className="gap-3">
-                                {sectionTemplates.map((template) => (
+                                {section.templates.map((template) => (
                                     <Field orientation="horizontal" key={template.id}>
                                         <Checkbox
                                             id={`${idPrefix}-template-${template.id}`}

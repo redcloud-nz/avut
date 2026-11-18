@@ -178,7 +178,7 @@ When it ends:
 
 - `MERGED`: go on to the cleanup prompt below.
 - `CLOSED`: it closed without merging. Report that and stop.
-- `OPEN BEHIND`: `integration` moved on, and GitHub won't merge until the branch is up to date. Merge `origin/<base>` into the branch and push, then start the wait again. The Step 6 yes covers that push only when the merge is conflict-free and `npm run check -- --all` passes. Otherwise take it to the user, as in Step 1. With auto-merge set, the new CI run merges it. Without auto-merge, tell the user it's ready again.
+- `OPEN BEHIND`: `integration` moved on, and GitHub won't merge until the branch is up to date. Merge `origin/<base>` into the branch and push. Then wait until `gh pr view <n> --json headRefOid` shows the pushed commit before starting the wait again, since GitHub can report `BEHIND` for a moment after the push. The Step 6 yes covers that push only when the merge is conflict-free and `npm run check -- --all` passes. Otherwise take it to the user, as in Step 1. With auto-merge set, the new CI run merges it. Without auto-merge, tell the user it's ready again.
 
 If the user says they merged it and the poll hasn't reported, check the PR's state yourself and go on; don't wait for the poll. If it stays open well after CI went green and isn't `BEHIND`, check `mergeStateStatus` and report it to the user. Don't start the cleanup on green CI alone.
 
