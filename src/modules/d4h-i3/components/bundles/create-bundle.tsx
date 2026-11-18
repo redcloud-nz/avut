@@ -4,6 +4,7 @@
  */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -32,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
+import { route } from "@/lib/routes";
 import { I3Bundle, I3BundleId } from "@/lib/schemas/i3-bundle";
 import { trpc } from "@/trpc/client";
 
@@ -67,7 +69,7 @@ export function D4HI3Module_CreateBundle_Dialog() {
 function CreateBundle_Body() {
     const logger = useLogger("I3", "CreateBundle");
     const organization = useOrganization();
-    const [, setAction] = useQueryState("action", parseAsStringLiteral(["create"] as const));
+    const router = useRouter();
 
     const formId = useId();
     const form = useForm({
@@ -77,15 +79,18 @@ function CreateBundle_Body() {
 
     const mutation = useMutation(
         trpc.i3Bundles.createBundle.mutationOptions({
-            meta: { effects: i3BundlesEffects.createBundle },
+            meta: { effects: i3BundlesEffects.createBundle, navigates: true },
             onError(error) {
                 logger.error(`Failed to create bundle`, error);
                 toast.error(`Failed to create bundle: ${error.message}`);
             },
-            onSuccess() {
-                // Task 7: navigate to /orgs/[slug]/d4h-i3/bundles/[bundle_id] (and set
-                // `meta.navigates: true`) once that route exists. Until then, stay on the list.
-                void setAction(null, { history: "replace" });
+            onSuccess({ created }) {
+                router.push(
+                    route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]", {
+                        slug: organization.slug,
+                        bundle_id: created.id,
+                    }),
+                );
             },
         }),
     );

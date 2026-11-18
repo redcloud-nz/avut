@@ -20,8 +20,10 @@ export function I3BundleLink({ bundle }: I3BundleLinkProps) {
 
     return (
         <EntityLink
-            // Task 7: link to /orgs/[slug]/d4h-i3/bundles/[bundle_id] once that route exists.
-            href={route("/orgs/[slug]/d4h-i3/bundles", { slug: organization.slug })}
+            href={route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]", {
+                slug: organization.slug,
+                bundle_id: bundle.id,
+            })}
             title={bundle.name}
             type="Bundle"
         />

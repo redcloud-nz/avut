@@ -1,0 +1,193 @@
+/*
+ *  Copyright (c) 2026 A.V.U.T. Project.
+ *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
+ */
+"use client";
+
+import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+import { Fragment } from "react";
+
+import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
+import { I3TemplateLink } from "@/components/entity-links/i3-template-link";
+import { ObjectIcons } from "@/components/icons";
+import { Protect } from "@/components/protect";
+import { Show } from "@/components/show";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHeadCell,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { I3Bundle, I3BundleLine } from "@/lib/schemas/i3-bundle";
+import { cn } from "@/lib/utils";
+
+import { D4HI3Module_AddBundleTemplates_Dialog } from "./add-bundle-templates";
+import { D4HI3Module_RemoveBundleTemplate_Dialog } from "./remove-bundle-template";
+
+/** Section heading for lines whose template has no D4H type (so no category either). */
+const NO_CATEGORY = "No D4H category";
+
+/**
+ * A bundle's lines, grouped by category title. `lines` arrive sorted by category title then
+ * template name, with lines that have no D4H type last.
+ */
+export function D4HI3Module_Bundle_Lines({
+    bundle,
+    lines,
+}: {
+    bundle: I3Bundle;
+    lines: I3BundleLine[];
+}) {
+    const editable = bundle.status !== "Deleted";
+
+    const [action, setAction] = useQueryState(
+        "action",
+        parseAsStringLiteral(["remove-template"] as const),
+    );
+    const [templateId, setTemplateId] = useQueryState("templateId", parseAsString);
+    const activeLine = lines.find((line) => line.template.id === templateId) ?? null;
+
+    function openRemove(id: string) {
+        void setTemplateId(id, { history: "push" });
+        void setAction("remove-template", { history: "push" });
+    }
+    function closeRemove() {
+        void setAction(null, { history: "replace" });
+        void setTemplateId(null, { history: "replace" });
+    }
+
+    const sections: { categoryTitle: string; lines: I3BundleLine[] }[] = [];
+    for (const line of lines) {
+        const categoryTitle = line.template.d4h?.categoryTitle ?? NO_CATEGORY;
+        const last = sections.at(-1);
+        if (last && last.categoryTitle === categoryTitle) last.lines.push(line);
+        else sections.push({ categoryTitle, lines: [line] });
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Templates</CardTitle>
+                {editable && (
+                    <CardAction>
+                        <Protect permissions={{ i3Bundle: ["update"] }}>
+                            <D4HI3Module_AddBundleTemplates_Dialog bundle={bundle} lines={lines} />
+                        </Protect>
+                    </CardAction>
+                )}
+            </CardHeader>
+            <CardContent>
+                <Show
+                    when={lines.length > 0}
+                    fallback={
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyTitle>No templates yet</EmptyTitle>
+                                <EmptyDescription>
+                                    This bundle has no templates. Click the
+                                    <ObjectIcons.Create className="inline-block mx-1 size-4" />
+                                    button to add some.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    }
+                >
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHeadCell>Template</TableHeadCell>
+                                <TableHeadCell>D4H Type</TableHeadCell>
+                                {editable && <TableHeadCell></TableHeadCell>}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {sections.map((section) => (
+                                <Fragment key={section.categoryTitle}>
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableCell
+                                            colSpan={editable ? 3 : 2}
+                                            className="font-medium text-muted-foreground"
+                                        >
+                                            {section.categoryTitle}
+                                        </TableCell>
+                                    </TableRow>
+                                    {section.lines.map((line) => (
+                                        <BundleLineRow
+                                            key={line.template.id}
+                                            line={line}
+                                            editable={editable}
+                                            onRemove={() => openRemove(line.template.id)}
+                                        />
+                                    ))}
+                                </Fragment>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </Show>
+            </CardContent>
+            {activeLine && (
+                <D4HI3Module_RemoveBundleTemplate_Dialog
+                    bundle={bundle}
+                    line={activeLine}
+                    open={action === "remove-template"}
+                    onOpenChange={(open) => (open ? undefined : closeRemove())}
+                />
+            )}
+        </Card>
+    );
+}
+
+function BundleLineRow({
+    line,
+    editable,
+    onRemove,
+}: {
+    line: I3BundleLine;
+    editable: boolean;
+    onRemove: () => void;
+}) {
+    const { template } = line;
+    const deleted = template.status === "Deleted";
+    const noType = template.d4h === null;
+
+    return (
+        <TableRow>
+            <TableCell className={cn((deleted || noType) && "opacity-60")}>
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <I3TemplateLink template={template} />
+                    {deleted && <Badge variant="outline">Deleted template</Badge>}
+                    {noType && <Badge variant="outline">No D4H type</Badge>}
+                </span>
+            </TableCell>
+            <TableCell className={cn((deleted || noType) && "opacity-60")}>
+                {template.d4h ? (
+                    <D4HEquipmentTypeLink
+                        type={{ id: template.d4h.kindId, title: template.d4h.kindTitle }}
+                    />
+                ) : (
+                    "—"
+                )}
+            </TableCell>
+            {editable && (
+                <TableCell className="p-0 text-right">
+                    <Protect permissions={{ i3Bundle: ["update"] }}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Remove ${template.name}`}
+                            onClick={onRemove}
+                        >
+                            <ObjectIcons.Delete />
+                        </Button>
+                    </Protect>
+                </TableCell>
+            )}
+        </TableRow>
+    );
+}

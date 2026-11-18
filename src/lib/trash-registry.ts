@@ -101,8 +101,8 @@ export const TrashableEntities = {
         label: "I3 Bundle",
         objectType: "I3Bundle",
         permission: "i3Bundle",
-        // Set to the bundle page by Task 7 of the I3 bundles plan, once the route exists.
-        href: null,
+        href: (slug, id) =>
+            route("/orgs/[slug]/d4h-i3/bundles/[bundle_id]", { slug, bundle_id: id }),
     },
     skillPackage: {
         id: "skillPackage",

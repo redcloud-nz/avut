@@ -27,6 +27,7 @@ directly:
 | D4H Issued Type        | `D4HIssuedTypeLink`        | `teamId: number`, `type: D4HEquipmentKindRef`                                      |
 | D4H Member             | `D4HMemberLink`            | `member: Omit<D4HMemberRef, "name"> & { name: string \| null }`                    |
 | D4H Team               | `D4HTeamLink`              | `team: D4HTeamRef`                                                                 |
+| I3 Bundle              | `I3BundleLink`             | `bundle: I3BundleRef`                                                              |
 | I3 Template            | `I3TemplateLink`           | `template: I3TemplateRef`                                                          |
 | Organisation Group     | `OrganizationGroupLink`    | `group: OrganizationGroupRef`                                                      |
 | Person                 | `PersonLink`               | `person: PersonRef & Partial<Pick<PersonData, "email">>`                           |
