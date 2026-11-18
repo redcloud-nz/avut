@@ -226,7 +226,7 @@ export const organizationsRouter = createTrpcRouter({
      * Retrieves the calling user's role(s) within the organization, for client-side
      * permission checks (see `Protect`, `useOrganization`).
      */
-    getMyRoles: organizationProcedure({ organization: ["view"] })
+    getMyRoles: organizationProcedure()
         .output(z.array(roleSchema))
         .query(async ({ ctx }) => {
             return getOrganizationUserRoles(ctx.organizationId, ctx.userId);
@@ -238,7 +238,7 @@ export const organizationsRouter = createTrpcRouter({
      * @returns The organization object.
      * @throws TRPCError(NOT_FOUND) if the organization does not exist.
      */
-    getOrganization: organizationProcedure({ organization: ["view"] })
+    getOrganization: organizationProcedure()
         .output(OrganizationData.schema)
         .query(async ({ ctx }) => {
             const organization = await ctx.prisma.organization.findUnique({

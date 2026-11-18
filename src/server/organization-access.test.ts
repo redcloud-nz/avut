@@ -90,28 +90,18 @@ describe("requireOrganizationWith", () => {
         ).resolves.toBeDefined();
     });
 
-    it("always requires organization:view, even when the caller didn't ask for it", async () => {
+    // `organization:view` gates the org scope, not membership (#523), so it isn't added.
+    it("checks exactly the permissions asked for, without adding organization:view", async () => {
         asRoles(["admin"]);
 
         await requireOrganizationWith("acme", { person: ["update"] });
-
-        expect(mocks.hasAnyRoleWithPermissions).toHaveBeenCalledWith(["admin"], {
-            person: ["update"],
-            organization: ["view"],
-        });
-    });
-
-    it("appends view to an existing organization list, and doesn't duplicate it", async () => {
-        asRoles(["admin"]);
-
         await requireOrganizationWith("acme", { organization: ["update"] });
-        await requireOrganizationWith("acme", { organization: ["view", "update"] });
 
         expect(mocks.hasAnyRoleWithPermissions).toHaveBeenNthCalledWith(1, ["admin"], {
-            organization: ["update", "view"],
+            person: ["update"],
         });
         expect(mocks.hasAnyRoleWithPermissions).toHaveBeenNthCalledWith(2, ["admin"], {
-            organization: ["view", "update"],
+            organization: ["update"],
         });
     });
 

@@ -27,6 +27,12 @@ const T = {
 const db = createMockPrisma();
 
 const testRouter = createTrpcRouter({
+    orgMember: organizationProcedure().query(() => ({ ok: true as const })),
+
+    orgScope: organizationProcedure({ organization: ["view"] }).query(() => ({
+        ok: true as const,
+    })),
+
     orgWrite: organizationProcedure({ person: ["update"] })
         .input(z.object({ personId: z.string() }))
         .mutation(async ({ ctx, input }) => {
@@ -125,6 +131,40 @@ describe("organizationProcedure.logEvent", () => {
         const entry = (await db.logEntry.findMany({ where: { objectId: "person_3" } }))[0];
         expect(entry.userId).toBe(T.user);
         expect(entry.impersonatorId).toBe(T.admin);
+    });
+});
+
+describe("organizationProcedure permissions", () => {
+    // `organization: ["view"]` means "can enter the org scope", not "is a member" (#523), so
+    // the procedure adds nothing to what it's given.
+    function callerWith(permissions: Record<string, string[]>) {
+        return testRouter.createCaller(
+            createAuthenticatedMockContext({ user: { id: T.user }, permissions, prisma: db }),
+        );
+    }
+
+    it("lets in a member without organization:view when it asks for nothing", async () => {
+        await expect(callerWith({}).orgMember({ organizationId: T.org })).resolves.toEqual({
+            ok: true,
+        });
+    });
+
+    it("doesn't add organization:view to the permissions it asks for", async () => {
+        await expect(
+            callerWith({ person: ["update"] }).orgWrite({
+                organizationId: T.org,
+                personId: "person_4",
+            }),
+        ).resolves.toEqual({ ok: true });
+    });
+
+    it("refuses a member without organization:view when it asks for it", async () => {
+        await expect(callerWith({}).orgScope({ organizationId: T.org })).rejects.toMatchObject({
+            code: "FORBIDDEN",
+        });
+        await expect(
+            callerWith({ organization: ["view"] }).orgScope({ organizationId: T.org }),
+        ).resolves.toEqual({ ok: true });
     });
 });
 
