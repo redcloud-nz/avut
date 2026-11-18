@@ -7,7 +7,12 @@ import "server-only";
 
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import type { TeamId } from "@/lib/schemas/team";
-import { TeamUserData, TeamUserId, type UserTeamData } from "@/lib/schemas/team-user";
+import {
+    TeamUserData,
+    TeamUserId,
+    type GrantableUserData,
+    type UserTeamData,
+} from "@/lib/schemas/team-user";
 import type { UserId } from "@/lib/schemas/user";
 import type { LogEntryRef } from "@/server/log-entry";
 
@@ -17,6 +22,36 @@ import type { OrgServiceContext } from "./service-context";
 // prisma-mock resolves relations by the first FK field only, so in tests it would match the
 // wrong member. User details come through the direct `user` relation, and the member row from an
 // explicit `organizationUser.findUnique({ where: { organizationId_userId } })`.
+
+/**
+ * The organization's members who can be granted access to a team: those whose account isn't
+ * soft-deleted and who have no grant on it yet, ordered by name.
+ * @throws NotFoundError if the team isn't in the organization.
+ */
+export async function listGrantableUsers(
+    ctx: OrgServiceContext,
+    teamId: TeamId,
+): Promise<GrantableUserData[]> {
+    const team = await ctx.prisma.team.findUnique({
+        where: { id: teamId, organizationId: ctx.organizationId },
+        select: { id: true },
+    });
+    if (!team) throw new NotFoundError(`Team(id=${teamId}) not found.`);
+
+    const [members, grants] = await Promise.all([
+        ctx.prisma.organizationUser.findMany({
+            where: { organizationId: ctx.organizationId, user: { status: { not: "Deleted" } } },
+            select: { user: { select: { id: true, name: true, email: true } } },
+        }),
+        ctx.prisma.teamUser.findMany({ where: { teamId }, select: { userId: true } }),
+    ]);
+    const grantedUserIds = new Set(grants.map((grant) => grant.userId));
+
+    return members
+        .filter((member) => !grantedUserIds.has(member.user.id))
+        .map((member) => TeamUserData.grantableUserSchema.parse(member.user))
+        .sort((a, b) => a.name.localeCompare(b.name));
+}
 
 /**
  * The users granted access to a team, leaving out soft-deleted users, ordered by name. `onRoster`

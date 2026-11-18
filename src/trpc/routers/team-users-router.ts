@@ -32,6 +32,18 @@ export const teamUsersRouter = createTrpcRouter({
         }),
 
     /**
+     * The organization's members who can be granted access to a team: no grant on it yet, and
+     * an account that isn't soft-deleted.
+     * @throws TRPCError(NOT_FOUND) if the team isn't in the organization.
+     */
+    listGrantableUsers: organizationProcedure({ member: ["view"] })
+        .input(z.object({ teamId: TeamId.schema }))
+        .output(z.array(TeamUserData.grantableUserSchema))
+        .query(async ({ ctx, input: { teamId } }) => {
+            return await TeamUsers.listGrantableUsers(ctx, teamId);
+        }),
+
+    /**
      * The users granted access to a team.
      * @throws TRPCError(NOT_FOUND) if the team isn't in the organization.
      */

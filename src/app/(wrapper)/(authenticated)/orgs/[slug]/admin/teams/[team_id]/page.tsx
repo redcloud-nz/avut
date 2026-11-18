@@ -36,6 +36,9 @@ export default async function AdminModule_Team_Page(props: Props) {
     const teamId = TeamId.schema.parse(team_id);
 
     prefetch(trpc.teams.getTeam.queryOptions({ organizationId: organization.id, teamId }));
+    prefetch(
+        trpc.teamUsers.listTeamUsers.queryOptions({ organizationId: organization.id, teamId }),
+    );
 
     return (
         <HydrateClient>

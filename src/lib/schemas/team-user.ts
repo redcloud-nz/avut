@@ -20,6 +20,9 @@ export const TeamUserId = {
 export type TeamUserId = string & z.BRAND<"TeamUserId">;
 
 export const TeamUserData = {
+    /** A member of the organization who can be granted access to a team. */
+    grantableUserSchema: UserData.schema.pick({ id: true, name: true, email: true }),
+
     /**
      * A row of a team's access grants: the granted user, and whether they're also on the
      * team's roster (read-only; the roster is reached through `OrganizationUser.personId`).
@@ -43,6 +46,9 @@ export const TeamUserData = {
         createdAt: z.iso.datetime(),
     }),
 } as const;
+
+/** A member who can be granted access to a team. */
+export type GrantableUserData = z.infer<typeof TeamUserData.grantableUserSchema>;
 
 /** One of a team's access grants. */
 export type TeamUserData = z.infer<typeof TeamUserData.teamGrantSchema>;

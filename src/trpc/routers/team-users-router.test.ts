@@ -110,6 +110,12 @@ describe("teamUsersRouter", () => {
                 userId: T.alice,
             });
             expect(userTeams.map((row) => row.team.id)).toEqual([T.team]);
+
+            const grantable = await makeCaller(T.member, MEMBER).listGrantableUsers({
+                organizationId: T.org,
+                teamId: T.team,
+            });
+            expect(grantable.map((row) => row.id)).toEqual([T.admin, T.member]);
         });
 
         it("maps a repeat grant to CONFLICT", async () => {
@@ -159,6 +165,13 @@ describe("teamUsersRouter", () => {
 
             await expect(
                 makeCaller(T.member, MEMBER).listTeamUsers({
+                    organizationId: T.org,
+                    teamId: T.outsiderTeam,
+                }),
+            ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+            await expect(
+                makeCaller(T.member, MEMBER).listGrantableUsers({
                     organizationId: T.org,
                     teamId: T.outsiderTeam,
                 }),

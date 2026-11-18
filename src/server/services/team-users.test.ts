@@ -205,6 +205,29 @@ describe("team-users", () => {
         });
     });
 
+    describe("listGrantableUsers", () => {
+        it("lists members with no grant on the team by name, leaving out soft-deleted users and other orgs", async () => {
+            const rows = await TeamUsers.listGrantableUsers(ctx(), T.team);
+
+            expect(rows).toEqual([
+                { id: T.admin, name: "Admin", email: "admin@example.com" },
+                { id: T.newcomer, name: "Nina", email: "nina@example.com" },
+            ]);
+        });
+
+        it("lists every active member for a team with no grants", async () => {
+            const rows = await TeamUsers.listGrantableUsers(ctx(), T.emptyTeam);
+
+            expect(rows.map((row) => row.name)).toEqual(["Admin", "Alice", "Bob", "Carol", "Nina"]);
+        });
+
+        it("throws NotFoundError for a team in another organization", async () => {
+            await expect(TeamUsers.listGrantableUsers(ctx(), T.outsiderTeam)).rejects.toThrow(
+                NotFoundError,
+            );
+        });
+    });
+
     describe("grant", () => {
         it("creates the grant and a Create entry that refs the team and the user", async () => {
             const created = await TeamUsers.grant(ctx(), T.emptyTeam, T.newcomer);
