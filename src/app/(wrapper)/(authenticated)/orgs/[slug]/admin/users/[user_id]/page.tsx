@@ -21,6 +21,7 @@ export default async function AdminModule_User_Page(
 
     const userId = UserId.schema.parse(user_id);
 
+    prefetch(trpc.organizations.listMembers.queryOptions({ organizationId: organization.id }));
     prefetch(trpc.users.getLinkedPerson.queryOptions({ organizationId: organization.id, userId }));
     prefetch(
         trpc.teamUsers.listUserTeams.queryOptions({ organizationId: organization.id, userId }),
