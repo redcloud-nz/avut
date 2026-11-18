@@ -53,7 +53,7 @@ The `prefetch` path costs a user without permission one extra failed request and
 
 Client Component pages (`"use client"`) can't hold a server check at all. They fetch through tRPC like everything else.
 
-`generateMetadata` follows the same rule: `getOrganizationBySlug` plus `fetchQuery`. Avoid a `require…` call there: it can redirect, which `generateMetadata` mustn't do (see the comment in `orgs/[slug]/layout.tsx`).
+`generateMetadata` follows the same rule: `getOrganizationBySlug` plus `fetchQuery`. Avoid a `require…` call there: it can redirect, which `generateMetadata` mustn't do (see the comment in `orgs/[slug]/layout.tsx`). The team layout is the exception: its `generateMetadata` calls `getGrantedTeam(slug)` (`src/server/team-access.ts`), the same access check as `teamProcedure` but without the redirect, and returns `notFound()` on `null`. The check is cached per request, so the title, the layout and the page's procedures share one grant query.
 
 ---
 
