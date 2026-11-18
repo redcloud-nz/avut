@@ -129,7 +129,7 @@ Issued Types page for a team, and the bundle comparison.
   - **Done when:** the migration only adds the enum type and the column with its default `Optional`, `npx prisma migrate status`
     against the branch DB is clean, and `npm run check` passes.
 
-- [ ] **Task 2: Bundle lines carry the quality rules**
+- [x] **Task 2: Bundle lines carry the quality rules** (feat(d4h-i3): carry template quality rules on bundle lines)
   - **Files:** `src/lib/schemas/i3-bundle.ts`, `src/server/services/i3-bundles.ts`,
     `src/server/services/i3-bundles.test.ts`, `src/trpc/routers/i3-bundles-router.test.ts` if its
     fixtures build lines, `src/client/i3-effects.ts`.

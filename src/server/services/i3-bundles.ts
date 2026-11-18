@@ -27,7 +27,7 @@ export type I3BundleWithLines = {
 };
 
 const lineTemplateInclude = {
-    template: { include: { d4h: true } },
+    template: { include: { d4h: true, variants: { include: { d4h: true } } } },
 } as const satisfies Prisma.I3BundleItemInclude;
 
 type LineRecord = Prisma.I3BundleItemGetPayload<{ include: typeof lineTemplateInclude }>;
@@ -53,8 +53,14 @@ function toLine(record: LineRecord): I3BundleLine {
                       categoryTitle: template.d4h.categoryTitle,
                       kindId: template.d4h.kindId,
                       kindTitle: template.d4h.kindTitle,
+                      requireSN: template.d4h.requireSN,
+                      brandModelRule: template.d4h.brandModelRule,
                   }
                 : null,
+            // Variants without D4H records can't be matched against an item, so they're left out.
+            variants: template.variants.flatMap((variant) =>
+                variant.d4h ? [{ brandId: variant.d4h.brandId, modelId: variant.d4h.modelId }] : [],
+            ),
         },
     });
 }
