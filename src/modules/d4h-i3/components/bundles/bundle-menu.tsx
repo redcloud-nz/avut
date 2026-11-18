@@ -6,65 +6,65 @@
 
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
-import { DropdownMenuTriggerIcon, ObjectIcons } from "@/components/icons";
-import { Protect } from "@/components/protect";
-import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ObjectIcons } from "@/components/icons";
+import { EntityActionMenu, type MenuActionProps } from "@/components/ui/menu-action";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { I3Bundle } from "@/lib/schemas/i3-bundle";
 
 import { D4HI3Module_DeleteBundle_Dialog } from "./delete-bundle";
 import { D4HI3Module_RecoverBundle_Dialog } from "./recover-bundle";
 
+const ACTIONS = ["update", "delete", "recover"] as const;
+
+/**
+ * The bundle page's Actions menu. Edit opens the `?action=update` dialog that the Bundle Details
+ * card hosts, so it only works while the bundle isn't deleted (the card hides the dialog then).
+ */
 export function D4HI3Module_Bundle_Menu({ bundle }: { bundle: I3Bundle }) {
-    const [action, setAction] = useQueryState(
-        "action",
-        parseAsStringLiteral(["delete", "recover"] as const),
-    );
+    const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
+
+    const canUpdate = useHasPermission({ i3Bundle: ["update"] });
+    const canDelete = useHasPermission({ i3Bundle: ["delete"] });
+    const deleted = bundle.status === "Deleted";
+
+    const actions: MenuActionProps[] = [];
+    if (deleted) {
+        actions.push({
+            verb: "recover",
+            label: "Recover from rubbish",
+            icon: <ObjectIcons.Recover />,
+            onSelect: () => void setAction("recover", { history: "push" }),
+            disabled: !canDelete,
+        });
+    } else {
+        actions.push(
+            {
+                verb: "update",
+                label: "Edit",
+                icon: <ObjectIcons.Edit />,
+                onSelect: () => void setAction("update", { history: "push" }),
+                disabled: !canUpdate,
+            },
+            {
+                verb: "delete",
+                label: "Delete",
+                icon: <ObjectIcons.Delete />,
+                onSelect: () => void setAction("delete", { history: "push" }),
+                disabled: !canDelete,
+                destructive: true,
+            },
+        );
+    }
 
     return (
         <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Actions">
-                        <DropdownMenuTriggerIcon />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <Protect
-                        permissions={{ i3Bundle: ["delete"] }}
-                        render={(allowed) =>
-                            bundle.status === "Deleted" ? (
-                                <DropdownMenuItem
-                                    onClick={() => setAction("recover", { history: "push" })}
-                                    disabled={!allowed}
-                                >
-                                    <ObjectIcons.Recover /> Recover from rubbish
-                                </DropdownMenuItem>
-                            ) : (
-                                <DropdownMenuItem
-                                    onClick={() => setAction("delete", { history: "push" })}
-                                    disabled={!allowed}
-                                >
-                                    <ObjectIcons.Delete /> Delete
-                                </DropdownMenuItem>
-                            )
-                        }
-                    />
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <EntityActionMenu actions={actions} category="Bundles" />
 
             <D4HI3Module_DeleteBundle_Dialog
                 bundle={bundle}
                 open={action === "delete"}
                 onOpenChange={(open) =>
-                    setAction(open ? "delete" : null, { history: open ? "push" : "replace" })
+                    void setAction(open ? "delete" : null, { history: open ? "push" : "replace" })
                 }
             />
 
@@ -72,7 +72,9 @@ export function D4HI3Module_Bundle_Menu({ bundle }: { bundle: I3Bundle }) {
                 bundle={bundle}
                 open={action === "recover"}
                 onOpenChange={(open) =>
-                    setAction(open ? "recover" : null, { history: open ? "push" : "replace" })
+                    void setAction(open ? "recover" : null, {
+                        history: open ? "push" : "replace",
+                    })
                 }
             />
         </>

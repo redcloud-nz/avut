@@ -5,8 +5,8 @@
 "use client";
 
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
-import { Fragment } from "react";
 
+import { D4HEquipmentCategoryLink } from "@/components/entity-links/d4h-equipment-category-link";
 import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-type-link";
 import { I3TemplateLink } from "@/components/entity-links/i3-template-link";
 import { ObjectIcons } from "@/components/icons";
@@ -30,12 +30,9 @@ import { cn } from "@/lib/utils";
 import { D4HI3Module_AddBundleTemplates_Dialog } from "./add-bundle-templates";
 import { D4HI3Module_RemoveBundleTemplate_Dialog } from "./remove-bundle-template";
 
-/** Section heading for lines whose template has no D4H type (so no category either). */
-const NO_CATEGORY = "No D4H category";
-
 /**
- * A bundle's lines, grouped by category title. `lines` arrive sorted by category title then
- * template name, with lines that have no D4H type last.
+ * A bundle's lines, one row each with its category in the first column. `lines` arrive sorted by
+ * category title then template name, with lines that have no D4H type last.
  */
 export function D4HI3Module_Bundle_Lines({
     bundle,
@@ -60,14 +57,6 @@ export function D4HI3Module_Bundle_Lines({
     function closeRemove() {
         void setAction(null, { history: "replace" });
         void setTemplateId(null, { history: "replace" });
-    }
-
-    const sections: { categoryTitle: string; lines: I3BundleLine[] }[] = [];
-    for (const line of lines) {
-        const categoryTitle = line.template.d4h?.categoryTitle ?? NO_CATEGORY;
-        const last = sections.at(-1);
-        if (last && last.categoryTitle === categoryTitle) last.lines.push(line);
-        else sections.push({ categoryTitle, lines: [line] });
     }
 
     return (
@@ -101,31 +90,20 @@ export function D4HI3Module_Bundle_Lines({
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHeadCell>Category</TableHeadCell>
                                 <TableHeadCell>Template</TableHeadCell>
                                 <TableHeadCell>D4H Type</TableHeadCell>
                                 {editable && <TableHeadCell></TableHeadCell>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {sections.map((section) => (
-                                <Fragment key={section.categoryTitle}>
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableCell
-                                            colSpan={editable ? 3 : 2}
-                                            className="font-medium text-muted-foreground"
-                                        >
-                                            {section.categoryTitle}
-                                        </TableCell>
-                                    </TableRow>
-                                    {section.lines.map((line) => (
-                                        <BundleLineRow
-                                            key={line.template.id}
-                                            line={line}
-                                            editable={editable}
-                                            onRemove={() => openRemove(line.template.id)}
-                                        />
-                                    ))}
-                                </Fragment>
+                            {lines.map((line) => (
+                                <BundleLineRow
+                                    key={line.template.id}
+                                    line={line}
+                                    editable={editable}
+                                    onRemove={() => openRemove(line.template.id)}
+                                />
                             ))}
                         </TableBody>
                     </Table>
@@ -158,6 +136,18 @@ function BundleLineRow({
 
     return (
         <TableRow>
+            <TableCell className={cn((deleted || noType) && "opacity-60")}>
+                {template.d4h ? (
+                    <D4HEquipmentCategoryLink
+                        category={{
+                            id: template.d4h.categoryId,
+                            title: template.d4h.categoryTitle,
+                        }}
+                    />
+                ) : (
+                    "—"
+                )}
+            </TableCell>
             <TableCell className={cn((deleted || noType) && "opacity-60")}>
                 <span className="inline-flex flex-wrap items-center gap-1.5">
                     <I3TemplateLink template={template} />
