@@ -202,7 +202,7 @@ Issued Types page for a team, and the bundle comparison.
   - **Done when:** creating and editing a template saves the setting (it shows on the template page
     and in the template's history diff), and `npm run check` passes.
 
-- [ ] **Task 6: Quality on the Issued Types type page** — `visual`
+- [x] **Task 6: Quality on the Issued Types type page** (feat(d4h-i3): flag incomplete and non-matching items on Issued Types) — `visual`
   - **Files:** `src/modules/d4h-i3/components/item-quality-badge.tsx` (new),
     `src/modules/d4h-i3/components/issued-types/issued-type-content.tsx`,
     `src/app/(wrapper)/(authenticated)/orgs/[slug]/d4h-i3/teams/[d4h_team_id]/issued-types/[type_id]/page.tsx`.

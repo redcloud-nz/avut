@@ -65,6 +65,8 @@ export default async function D4HI3Module_IssuedType_Page(props: Props) {
     prefetch(
         trpc.d4hTasks.listReturnedItemIds.queryOptions({ organizationId: organization.id, teamId }),
     );
+    // Not i3.listTemplates: plain members can view this page but not templates, so the content
+    // reads it with a permission-gated, non-suspense query instead.
 
     return (
         <HydrateClient>

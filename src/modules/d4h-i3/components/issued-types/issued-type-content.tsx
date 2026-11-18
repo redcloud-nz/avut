@@ -8,7 +8,7 @@ import { notFound } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import * as R from "remeda";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
@@ -25,6 +25,7 @@ import {
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Empty, EmptyDescription } from "@/components/ui/empty";
@@ -37,11 +38,18 @@ import {
     TablePanel,
     TableRow,
 } from "@/components/ui/table";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
+import { D4HI3Module_ItemQuality_Badge } from "@/modules/d4h-i3/components/item-quality-badge";
 import { D4HI3Module_ReturnedBadge } from "@/modules/d4h-i3/components/returned-badge";
+import {
+    bestQuality,
+    checkItemQuality,
+    qualityRulesForTemplate,
+} from "@/modules/d4h-i3/lib/item-quality";
 import { trpc, type RouterOutput } from "@/trpc/client";
 
 /** The optional columns, in the order the Show Columns menu lists them. */
@@ -85,9 +93,22 @@ function optionalCell(
     }
 }
 
+/** "3 incomplete · 2 don't match", or a pass line when nothing is flagged. */
+function qualitySummary(incompleteCount: number, mismatchCount: number): string {
+    const parts = [
+        incompleteCount > 0 ? `${incompleteCount} incomplete` : null,
+        mismatchCount > 0
+            ? `${mismatchCount} ${mismatchCount === 1 ? "doesn't" : "don't"} match`
+            : null,
+    ].filter((part) => part !== null);
+    return parts.length === 0 ? "All items pass the template's checks" : parts.join(" · ");
+}
+
 /**
  * The items of one equipment type issued to one D4H team's members, one row per item sorted by
- * holder, with a Returned badge on items waiting for their Retire task to be applied.
+ * holder, with a Returned badge on items waiting for their Retire task to be applied. For a user
+ * who can read I3 templates, items are also judged against the type's Active templates: a Check
+ * column flags incomplete and non-matching records, with a count and an "only flagged" filter.
  */
 export function D4HI3Module_IssuedType_Content({
     teamId,
@@ -132,14 +153,49 @@ export function D4HI3Module_IssuedType_Content({
     );
     const returnedIds = new Set(returnedItemIds);
 
+    // The quality rules come from `i3.listTemplates`, which needs `i3Template: ["view"]`, but this
+    // page is open to plain members who can't read templates. So unlike the pattern in
+    // docs/patterns/detail-page-data-fetching.md this is a non-suspense query, enabled only for
+    // users who can read templates and not prefetched by page.tsx (that would run a FORBIDDEN call
+    // for every plain member). The table renders without the Check column until it lands.
+    const canViewTemplates = useHasPermission({ i3Template: ["view"] });
+    const { data: templates } = useQuery({
+        ...trpc.i3.listTemplates.queryOptions({ organizationId: organization.id }),
+        enabled: canViewTemplates,
+    });
+    const rules = canViewTemplates
+        ? (templates ?? [])
+              .filter((template) => template.status === "Active" && template.d4h?.kindId === typeId)
+              .flatMap((template) => qualityRulesForTemplate(template) ?? [])
+        : [];
+    const hasRules = rules.length > 0;
+
+    const [onlyFlagged, setOnlyFlagged] = useState(false);
+
     const rows = R.pipe(
         items.filter((item) => item.kind.id === typeId),
-        R.map((item) => ({ item, holderName: item.holder.name ?? `Member #${item.holder.id}` })),
+        R.map((item) => ({
+            item,
+            holderName: item.holder.name ?? `Member #${item.holder.id}`,
+            // Any one of the type's templates may be how the item was issued, so it takes the
+            // best result. LOST items aren't judged.
+            quality:
+                item.status === "LOST"
+                    ? null
+                    : bestQuality(rules.map((itemRules) => checkItemQuality(item, itemRules))),
+        })),
         R.sortBy(
             (row) => row.holderName,
             (row) => row.item.ref,
         ),
     );
+
+    const incompleteCount = rows.filter((row) => row.quality?.state === "incomplete").length;
+    const mismatchCount = rows.filter((row) => row.quality?.state === "mismatch").length;
+    const filterFlagged = hasRules && onlyFlagged;
+    const visibleRows = filterFlagged
+        ? rows.filter((row) => row.quality !== null && row.quality.state !== "ok")
+        : rows;
 
     const visibleColumns = OPTIONAL_COLUMNS.filter((column) => showColumns[column.key]);
 
@@ -191,6 +247,19 @@ export function D4HI3Module_IssuedType_Content({
                                             </DropdownMenuCheckboxItem>
                                         ))}
                                     </DropdownMenuGroup>
+                                    {hasRules && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuGroup>
+                                                <DropdownMenuCheckboxItem
+                                                    checked={onlyFlagged}
+                                                    onCheckedChange={setOnlyFlagged}
+                                                >
+                                                    Only show flagged items
+                                                </DropdownMenuCheckboxItem>
+                                            </DropdownMenuGroup>
+                                        </>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </Saratoga.Actions>
@@ -198,10 +267,15 @@ export function D4HI3Module_IssuedType_Content({
                     <p className="text-muted-foreground text-sm">
                         D4H Type: <D4HEquipmentTypeLink type={kind} />
                     </p>
-                    {rows.length === 0 ? (
+                    {hasRules && rows.length > 0 && (
+                        <p className="text-sm">{qualitySummary(incompleteCount, mismatchCount)}</p>
+                    )}
+                    {visibleRows.length === 0 ? (
                         <Empty>
                             <EmptyDescription>
-                                No {kind.title} is issued to members of {team.title}.
+                                {filterFlagged && rows.length > 0
+                                    ? "No flagged items."
+                                    : `No ${kind.title} is issued to members of ${team.title}.`}
                             </EmptyDescription>
                         </Empty>
                     ) : (
@@ -211,6 +285,7 @@ export function D4HI3Module_IssuedType_Content({
                                     <TableRow className="hover:bg-transparent">
                                         <TableHeadCell>Ref</TableHeadCell>
                                         <TableHeadCell>Issued To</TableHeadCell>
+                                        {hasRules && <TableHeadCell>Check</TableHeadCell>}
                                         {visibleColumns.map((column) => (
                                             <TableHeadCell
                                                 key={column.key}
@@ -222,7 +297,7 @@ export function D4HI3Module_IssuedType_Content({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {rows.map(({ item }) => (
+                                    {visibleRows.map(({ item, quality }) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
                                                 <D4HEquipmentItemLink item={item} />
@@ -241,6 +316,16 @@ export function D4HI3Module_IssuedType_Content({
                                                     }}
                                                 />
                                             </TableCell>
+                                            {hasRules && (
+                                                <TableCell>
+                                                    {quality && (
+                                                        <D4HI3Module_ItemQuality_Badge
+                                                            result={quality}
+                                                            item={item}
+                                                        />
+                                                    )}
+                                                </TableCell>
+                                            )}
                                             {visibleColumns.map((column) => (
                                                 <TableCell
                                                     key={column.key}
