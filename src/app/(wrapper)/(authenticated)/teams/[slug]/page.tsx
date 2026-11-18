@@ -5,20 +5,26 @@
  * Path: /teams/[slug]
  */
 
-import { Std } from "@/components/blocks/std";
+import { Team_Dashboard_Content } from "@/components/team/dashboard-content";
+import { hasAnyRoleWithPermissions } from "@/lib/permissions";
 import { requireTeam } from "@/server/team-access";
+import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
-// Placeholder: the team dashboard replaces this.
 export default async function Team_Index_Page(props: PageProps<"/teams/[slug]">) {
     const { slug } = await props.params;
-    const { team } = await requireTeam(slug);
+    // Cached per request, and already loaded by the team layout (which seeds `teamScope.getTeam`).
+    // Only for the roles here: it guards nothing, since `listRoster` checks `team: ["view"]` itself.
+    const { roles } = await requireTeam(slug);
+
+    // The roster card shows only behind `team: ["view"]`. Without it the prefetch would fail
+    // FORBIDDEN on every visit, for a query nothing on the page reads.
+    if (hasAnyRoleWithPermissions(roles, { team: ["view"] })) {
+        prefetch(trpc.teamScope.listRoster.queryOptions({ teamSlug: slug }));
+    }
 
     return (
-        <Std.SidebarInset>
-            <Std.Navbar breadcrumbs={[team.name]} />
-            <Std.ScrollContainer>
-                <p className="p-4 text-muted-foreground">Team dashboard coming soon.</p>
-            </Std.ScrollContainer>
-        </Std.SidebarInset>
+        <HydrateClient>
+            <Team_Dashboard_Content />
+        </HydrateClient>
     );
 }

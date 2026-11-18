@@ -79,7 +79,7 @@ _End of review group A._
   - **Do:** `useCurrentScope` returns `{ scope: "team"; slug }` for `/teams/<slug>…`. Add `scopedRoute` (typed with `AppRoutes`/`ParamMap` from `.next/types/routes`, like `route()` in `src/lib/routes.ts`; params are the patterns' params minus `slug`) and `useScopedRoute()`, per Decisions. After Task 6, `/teams/[slug]` exists as a typed route to test with.
   - **Done when:** tests cover `useCurrentScope` for `/teams/x`, `/teams/x/y`, `/orgs/x` and `/user`, and `scopedRoute` for both scopes. `npm run check` passes.
 
-- [ ] **Task 8: team dashboard** · `visual`
+- [x] **Task 8: team dashboard** (feat(teams): add the team dashboard) · `visual`
   - **Files:** `src/app/(wrapper)/(authenticated)/teams/[slug]/page.tsx`, `src/components/team/dashboard-content.tsx` (new)
   - **Do:** Follow `docs/patterns/detail-page-data-fetching.md`. The page prefetches `teamScope.listRoster` only when the caller's roles hold `team: ["view"]` (as the org dashboard does with `hasAnyRoleWithPermissions`), and renders the shell (`Std.Navbar` with the team as the breadcrumb, `Std.ScrollContainer`). The content component reads `useTeam()` and lays out `Saratoga.Root`/`Header`/`Title` (team name, org name beneath) and `Saratoga.Columns`: the roster card in `main` (inside `<Protect permissions={{ team: ["view"] }}>`, with an empty state), and the About and D4H link cards in `secondary`. Reuse the existing card and data-item components in `src/components/cards`/`ui`.
   - **Done when:** the dashboard shows the name, description, D4H link (both states) and roster for a granted team; a granted user without `team: ["view"]` sees no roster card and makes no failed request. `npm run check` passes.
