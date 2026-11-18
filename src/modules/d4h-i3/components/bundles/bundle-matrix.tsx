@@ -22,7 +22,12 @@ import {
 } from "@/components/ui/diagonal-column-header";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { useOrganization } from "@/hooks/use-organization";
-import { compareBundle, type ExcludedLine, type ExcludedReason } from "@/lib/i3-bundle-compare";
+import {
+    compareBundle,
+    groupColumnsByCategory,
+    type ExcludedLine,
+    type ExcludedReason,
+} from "@/lib/i3-bundle-compare";
 import { route } from "@/lib/routes";
 import { I3BundleId, I3BundleLine } from "@/lib/schemas/i3-bundle";
 import { cn } from "@/lib/utils";
@@ -91,21 +96,7 @@ export function D4HI3Module_BundleMatrix({
         fittingTemplateIds: templateIds,
     });
 
-    // `getBundle` sorts lines by category title, and the comparison keeps that order, so each
-    // category's columns are contiguous.
-    const categoryGroups: { key: string; title: string; span: number; start: number }[] = [];
-    columns.forEach((column, index) => {
-        const { categoryId, categoryTitle } = column.template.d4h;
-        const last = categoryGroups.at(-1);
-        if (last && last.key === String(categoryId)) last.span++;
-        else
-            categoryGroups.push({
-                key: String(categoryId),
-                title: categoryTitle,
-                span: 1,
-                start: index,
-            });
-    });
+    const categoryGroups = groupColumnsByCategory(columns);
     const categoryStarts = new Set(categoryGroups.map((group) => group.start));
 
     const memberCount = rows.length;
@@ -161,7 +152,9 @@ export function D4HI3Module_BundleMatrix({
                         <EmptyHeader>
                             <EmptyTitle>Nothing to compare</EmptyTitle>
                             <EmptyDescription>
-                                Add templates to this bundle to compare it.
+                                {lines.length === 0
+                                    ? "Add templates to this bundle to compare it."
+                                    : `None of this bundle's templates can be compared with ${team.title}.`}
                             </EmptyDescription>
                         </EmptyHeader>
                     </Empty>

@@ -5,7 +5,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { compareBundle, type BundleCompareItem, type BundleCompareLine } from "./i3-bundle-compare";
+import {
+    compareBundle,
+    groupColumnsByCategory,
+    type BundleCompareItem,
+    type BundleCompareLine,
+} from "./i3-bundle-compare";
 
 const KIND_HELMET = 100;
 const KIND_JACKET = 200;
@@ -183,5 +188,47 @@ describe("compareBundle", () => {
         });
 
         expect(result).toEqual({ columns: [helmet], excluded: [], rows: [], columnTotals: [0] });
+    });
+});
+
+describe("groupColumnsByCategory", () => {
+    function column(categoryId: number, categoryTitle: string) {
+        return { template: { d4h: { categoryId, categoryTitle } } };
+    }
+
+    it("groups adjacent columns of one category into a run", () => {
+        expect(
+            groupColumnsByCategory([
+                column(1, "Clothing"),
+                column(1, "Clothing"),
+                column(2, "PPE"),
+            ]),
+        ).toEqual([
+            { key: "1-0", categoryId: 1, title: "Clothing", start: 0, span: 2 },
+            { key: "2-2", categoryId: 2, title: "PPE", start: 2, span: 1 },
+        ]);
+    });
+
+    it("keeps two categories that share a title apart", () => {
+        expect(
+            groupColumnsByCategory([column(1, "Gear"), column(2, "Gear"), column(2, "Gear")]),
+        ).toEqual([
+            { key: "1-0", categoryId: 1, title: "Gear", start: 0, span: 1 },
+            { key: "2-1", categoryId: 2, title: "Gear", start: 1, span: 2 },
+        ]);
+    });
+
+    it("gives each run of a split category its own key", () => {
+        const groups = groupColumnsByCategory([
+            column(1, "Clothing"),
+            column(2, "Gear"),
+            column(1, "Clothing (old)"),
+        ]);
+
+        expect(groups.map((group) => group.key)).toEqual(["1-0", "2-1", "1-2"]);
+    });
+
+    it("returns no groups for no columns", () => {
+        expect(groupColumnsByCategory([])).toEqual([]);
     });
 });

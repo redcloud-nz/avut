@@ -24,15 +24,19 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { useHasPermission } from "@/hooks/use-has-permission";
+import type { Permissions } from "@/lib/permissions";
 import { I3Bundle, I3BundleLine } from "@/lib/schemas/i3-bundle";
 import { cn } from "@/lib/utils";
 
 import { D4HI3Module_AddBundleTemplates_Dialog } from "./add-bundle-templates";
 import { D4HI3Module_RemoveBundleTemplate_Dialog } from "./remove-bundle-template";
 
+const UPDATE_PERMISSION = { i3Bundle: ["update"] } as const satisfies Permissions;
+
 /**
  * A bundle's lines, one row each with its category in the first column. `lines` arrive sorted by
- * category title then template name, with lines that have no D4H type last.
+ * category title, category id, then template name, with lines that have no D4H type last.
  */
 export function D4HI3Module_Bundle_Lines({
     bundle,
@@ -41,7 +45,8 @@ export function D4HI3Module_Bundle_Lines({
     bundle: I3Bundle;
     lines: I3BundleLine[];
 }) {
-    const editable = bundle.status !== "Deleted";
+    const canUpdate = useHasPermission(UPDATE_PERMISSION);
+    const editable = bundle.status !== "Deleted" && canUpdate;
 
     const [action, setAction] = useQueryState(
         "action",
@@ -65,9 +70,7 @@ export function D4HI3Module_Bundle_Lines({
                 <CardTitle>Templates</CardTitle>
                 {editable && (
                     <CardAction>
-                        <Protect permissions={{ i3Bundle: ["update"] }}>
-                            <D4HI3Module_AddBundleTemplates_Dialog bundle={bundle} lines={lines} />
-                        </Protect>
+                        <D4HI3Module_AddBundleTemplates_Dialog bundle={bundle} lines={lines} />
                     </CardAction>
                 )}
             </CardHeader>
@@ -79,9 +82,15 @@ export function D4HI3Module_Bundle_Lines({
                             <EmptyHeader>
                                 <EmptyTitle>No templates yet</EmptyTitle>
                                 <EmptyDescription>
-                                    This bundle has no templates. Click the
-                                    <ObjectIcons.Create className="inline-block mx-1 size-4" />
-                                    button to add some.
+                                    This bundle has no templates.
+                                    {editable && (
+                                        <>
+                                            {" "}
+                                            Click the
+                                            <ObjectIcons.Create className="inline-block mx-1 size-4" />
+                                            button to add some.
+                                        </>
+                                    )}
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>
@@ -109,13 +118,15 @@ export function D4HI3Module_Bundle_Lines({
                     </Table>
                 </Show>
             </CardContent>
-            {activeLine && (
-                <D4HI3Module_RemoveBundleTemplate_Dialog
-                    bundle={bundle}
-                    line={activeLine}
-                    open={action === "remove-template"}
-                    onOpenChange={(open) => (open ? undefined : closeRemove())}
-                />
+            {editable && activeLine && (
+                <Protect permissions={UPDATE_PERMISSION}>
+                    <D4HI3Module_RemoveBundleTemplate_Dialog
+                        bundle={bundle}
+                        line={activeLine}
+                        open={action === "remove-template"}
+                        onOpenChange={(open) => (open ? undefined : closeRemove())}
+                    />
+                </Protect>
             )}
         </Card>
     );
@@ -166,16 +177,14 @@ function BundleLineRow({
             </TableCell>
             {editable && (
                 <TableCell className="p-0 text-right">
-                    <Protect permissions={{ i3Bundle: ["update"] }}>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Remove ${template.name}`}
-                            onClick={onRemove}
-                        >
-                            <ObjectIcons.Delete />
-                        </Button>
-                    </Protect>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove ${template.name}`}
+                        onClick={onRemove}
+                    >
+                        <ObjectIcons.Delete />
+                    </Button>
                 </TableCell>
             )}
         </TableRow>

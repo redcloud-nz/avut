@@ -7,23 +7,18 @@ import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
-import { NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import {
     I3Bundle,
     I3BundleLine,
     type I3BundleId,
+    type I3BundleSummary,
     type ModifiableI3Bundle,
 } from "@/lib/schemas/i3-bundle";
 import type { I3TemplateId } from "@/lib/schemas/i3-template";
 import type { LogEntryRef } from "@/server/log-entry";
 
 import type { OrgServiceContext } from "./service-context";
-
-/** A bundle as the list shows it, with the number of its lines that can be compared. */
-export type I3BundleSummary = I3Bundle & {
-    /** Lines whose template is Active and has a D4H type. */
-    templateCount: number;
-};
 
 /** A bundle and every one of its lines. */
 export type I3BundleWithLines = {
@@ -36,6 +31,10 @@ const lineTemplateInclude = {
 } as const satisfies Prisma.I3BundleItemInclude;
 
 type LineRecord = Prisma.I3BundleItemGetPayload<{ include: typeof lineTemplateInclude }>;
+
+function hasPrismaCode(e: unknown, code: string): boolean {
+    return e instanceof Object && "code" in e && e.code === code;
+}
 
 function templateRef(templateId: string): LogEntryRef {
     return { objectType: "I3Template", objectId: templateId, role: "context" };
@@ -60,14 +59,20 @@ function toLine(record: LineRecord): I3BundleLine {
     });
 }
 
-/** Lines by category title, then template name; lines with no D4H type last, by name. */
+/**
+ * Lines by category title, then category id (so each category's lines sit together even when two
+ * categories share a title), then template name; lines with no D4H type last, by name.
+ */
 function compareLines(a: I3BundleLine, b: I3BundleLine): number {
-    const aCategory = a.template.d4h?.categoryTitle;
-    const bCategory = b.template.d4h?.categoryTitle;
-    if (aCategory === undefined && bCategory !== undefined) return 1;
-    if (aCategory !== undefined && bCategory === undefined) return -1;
-    if (aCategory !== undefined && bCategory !== undefined && aCategory !== bCategory) {
-        return aCategory.localeCompare(bCategory);
+    const aD4H = a.template.d4h;
+    const bD4H = b.template.d4h;
+    if (aD4H === null && bD4H !== null) return 1;
+    if (aD4H !== null && bD4H === null) return -1;
+    if (aD4H !== null && bD4H !== null) {
+        if (aD4H.categoryTitle !== bD4H.categoryTitle) {
+            return aD4H.categoryTitle.localeCompare(bD4H.categoryTitle);
+        }
+        if (aD4H.categoryId !== bD4H.categoryId) return aD4H.categoryId - bD4H.categoryId;
     }
     return a.template.name.localeCompare(b.template.name);
 }
@@ -118,15 +123,19 @@ async function requireWritable(ctx: OrgServiceContext, bundleId: I3BundleId): Pr
 export async function list(ctx: OrgServiceContext): Promise<I3BundleSummary[]> {
     const bundles = await ctx.prisma.i3Bundle.findMany({
         where: { organizationId: ctx.organizationId, status: { not: "Deleted" } },
-        include: { items: { include: lineTemplateInclude } },
+        include: {
+            _count: {
+                select: {
+                    items: { where: { template: { status: "Active", d4h: { isNot: null } } } },
+                },
+            },
+        },
         orderBy: { name: "asc" },
     });
 
-    return bundles.map(({ items, ...bundle }) => ({
+    return bundles.map(({ _count, ...bundle }) => ({
         ...I3Bundle.fromRecord(bundle),
-        templateCount: items.filter(
-            (item) => item.template.status === "Active" && item.template.d4h !== null,
-        ).length,
+        templateCount: _count.items,
     }));
 }
 
@@ -212,7 +221,8 @@ export async function update(
  * written. Otherwise one `Update` entry names the added templates, with a context ref to each.
  * @throws NotFoundError if the bundle does not exist within the organization.
  * @throws ValidationError if the bundle is Deleted, or a template is not in the organization,
- * is Deleted, or has no D4H type.
+ * is not Active, or has no D4H type.
+ * @throws ConflictError if another request added one of the templates since the lookup.
  */
 export async function addTemplates(
     ctx: OrgServiceContext,
@@ -241,8 +251,8 @@ export async function addTemplates(
         if (!template) {
             throw new ValidationError(`I3Template(id=${templateId}) not found.`);
         }
-        if (template.status === "Deleted") {
-            throw new ValidationError(`I3Template(id=${templateId}) is Deleted.`);
+        if (template.status !== "Active") {
+            throw new ValidationError(`I3Template(id=${templateId}) is ${template.status}.`);
         }
         if (!template.d4h) {
             throw new ValidationError(`I3Template(id=${templateId}) has no D4H type.`);
@@ -252,22 +262,32 @@ export async function addTemplates(
 
     if (added.length === 0) return bundle;
 
-    const [, updated] = await ctx.prisma.$transaction([
-        ctx.prisma.i3BundleItem.createMany({
-            data: added.map((template) => ({ bundleId, templateId: template.id })),
-        }),
-        ctx.prisma.i3Bundle.update({
-            where: { id: bundleId, organizationId: ctx.organizationId },
-            data: { updatedAt: new Date() },
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "I3Bundle",
-            objectId: bundleId,
-            description: `Added ${added.length === 1 ? "template" : "templates"}: ${added.map((template) => template.name).join(", ")}`,
-            refs: added.map((template) => templateRef(template.id)),
-        }),
-    ]);
+    const [, updated] = await ctx.prisma
+        .$transaction([
+            ctx.prisma.i3BundleItem.createMany({
+                data: added.map((template) => ({ bundleId, templateId: template.id })),
+            }),
+            ctx.prisma.i3Bundle.update({
+                where: { id: bundleId, organizationId: ctx.organizationId },
+                data: { updatedAt: new Date() },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "I3Bundle",
+                objectId: bundleId,
+                description: `Added ${added.length === 1 ? "template" : "templates"}: ${added.map((template) => template.name).join(", ")}`,
+                refs: added.map((template) => templateRef(template.id)),
+            }),
+        ])
+        .catch((e: unknown) => {
+            // Another request added one of these templates since the lookup above.
+            if (hasPrismaCode(e, "P2002")) {
+                throw new ConflictError(
+                    `A template was added to I3Bundle(id=${bundleId}) at the same time; try again.`,
+                );
+            }
+            throw e;
+        });
 
     return I3Bundle.fromRecord(updated);
 }
@@ -275,7 +295,7 @@ export async function addTemplates(
 /**
  * Remove one template from a bundle, logged as an `Update` naming it, with a context ref to it.
  * @throws NotFoundError if the bundle does not exist within the organization, or the template is
- * not in it.
+ * not in it (including when another request removed it since the lookup).
  * @throws ValidationError if the bundle is Deleted.
  */
 export async function removeTemplate(
@@ -293,22 +313,32 @@ export async function removeTemplate(
         throw new NotFoundError(`I3Template(id=${templateId}) is not in I3Bundle(id=${bundleId}).`);
     }
 
-    const [, updated] = await ctx.prisma.$transaction([
-        ctx.prisma.i3BundleItem.delete({
-            where: { bundleId_templateId: { bundleId, templateId } },
-        }),
-        ctx.prisma.i3Bundle.update({
-            where: { id: bundleId, organizationId: ctx.organizationId },
-            data: { updatedAt: new Date() },
-        }),
-        ctx.logEvent({
-            action: "Update",
-            objectType: "I3Bundle",
-            objectId: bundleId,
-            description: `Removed template: ${line.template.name}`,
-            refs: [templateRef(templateId)],
-        }),
-    ]);
+    const [, updated] = await ctx.prisma
+        .$transaction([
+            ctx.prisma.i3BundleItem.delete({
+                where: { bundleId_templateId: { bundleId, templateId } },
+            }),
+            ctx.prisma.i3Bundle.update({
+                where: { id: bundleId, organizationId: ctx.organizationId },
+                data: { updatedAt: new Date() },
+            }),
+            ctx.logEvent({
+                action: "Update",
+                objectType: "I3Bundle",
+                objectId: bundleId,
+                description: `Removed template: ${line.template.name}`,
+                refs: [templateRef(templateId)],
+            }),
+        ])
+        .catch((e: unknown) => {
+            // Another request removed the line since the lookup above.
+            if (hasPrismaCode(e, "P2025")) {
+                throw new NotFoundError(
+                    `I3Template(id=${templateId}) is not in I3Bundle(id=${bundleId}).`,
+                );
+            }
+            throw e;
+        });
 
     return I3Bundle.fromRecord(updated);
 }

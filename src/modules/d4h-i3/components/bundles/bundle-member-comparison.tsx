@@ -27,7 +27,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { useOrganization } from "@/hooks/use-organization";
-import { compareBundle, type BundleCell } from "@/lib/i3-bundle-compare";
+import { compareBundle, groupColumnsByCategory, type BundleCell } from "@/lib/i3-bundle-compare";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
 import { D4HMember } from "@/lib/schemas/d4h/member";
@@ -89,25 +89,12 @@ export function D4HI3Module_BundleMemberComparison({
     if (!row) notFound();
     const { member } = row;
 
-    // `getBundle` sorts lines by category title, and the comparison keeps that order, so each
-    // category's lines are contiguous.
-    const categoryGroups: {
-        key: string;
-        title: string;
-        entries: { column: (typeof columns)[number]; cell: BundleCell<IssuedItem> }[];
-    }[] = [];
-    columns.forEach((column, index) => {
-        const { categoryId, categoryTitle } = column.template.d4h;
-        const entry = { column, cell: row.cells[index] };
-        const last = categoryGroups.at(-1);
-        if (last && last.key === String(categoryId)) last.entries.push(entry);
-        else
-            categoryGroups.push({
-                key: String(categoryId),
-                title: categoryTitle,
-                entries: [entry],
-            });
-    });
+    const categoryGroups = groupColumnsByCategory(columns).map((group) => ({
+        ...group,
+        entries: columns
+            .slice(group.start, group.start + group.span)
+            .map((column, offset) => ({ column, cell: row.cells[group.start + offset] })),
+    }));
 
     return (
         <>
@@ -150,7 +137,9 @@ export function D4HI3Module_BundleMemberComparison({
                             <EmptyHeader>
                                 <EmptyTitle>Nothing to compare</EmptyTitle>
                                 <EmptyDescription>
-                                    Add templates to this bundle to compare it.
+                                    {lines.length === 0
+                                        ? "Add templates to this bundle to compare it."
+                                        : `None of this bundle's templates can be compared with ${team.title}.`}
                                 </EmptyDescription>
                             </EmptyHeader>
                         </Empty>

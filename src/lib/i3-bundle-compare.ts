@@ -78,10 +78,49 @@ function excludedReason(
     line: BundleCompareLine,
     fittingTemplateIds: ReadonlySet<string>,
 ): ExcludedReason | null {
+    // I3 templates have no archive, so a template that isn't Active is Deleted.
     if (line.template.status !== "Active") return "deleted";
     if (line.template.d4h === null) return "no-d4h-type";
     if (!fittingTemplateIds.has(line.template.id)) return "not-in-team";
     return null;
+}
+
+/** A run of adjacent columns in one D4H category. */
+export type BundleCategoryGroup = {
+    /** Unique among the groups, even when a category appears in more than one run. */
+    key: string;
+    categoryId: number;
+    title: string;
+    /** Index of the group's first column. */
+    start: number;
+    /** How many columns the group spans. */
+    span: number;
+};
+
+/**
+ * Group columns into runs of adjacent columns with the same category id. `getBundle` sorts lines by
+ * category title then category id, and `compareBundle` keeps that order, so each category's
+ * columns normally form one run. A category whose lines carry different title snapshots can
+ * still split into several runs; each gets its own key.
+ */
+export function groupColumnsByCategory(
+    columns: readonly { template: { d4h: { categoryId: number; categoryTitle: string } } }[],
+): BundleCategoryGroup[] {
+    const groups: BundleCategoryGroup[] = [];
+    columns.forEach((column, index) => {
+        const { categoryId, categoryTitle } = column.template.d4h;
+        const last = groups.at(-1);
+        if (last && last.categoryId === categoryId) last.span++;
+        else
+            groups.push({
+                key: `${categoryId}-${index}`,
+                categoryId,
+                title: categoryTitle,
+                start: index,
+                span: 1,
+            });
+    });
+    return groups;
 }
 
 export function compareBundle<

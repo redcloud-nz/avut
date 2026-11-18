@@ -106,9 +106,8 @@ function AddBundleTemplates_Body({
                 toast.error(`Failed to add templates: ${error.message}`);
             },
             onSuccess() {
-                toast.success(
-                    selected.size === 1 ? "Template added" : `${selected.size} templates added`,
-                );
+                // The server skips templates already in the bundle, so don't count the selection.
+                toast.success("Templates added");
                 onDone();
             },
         }),

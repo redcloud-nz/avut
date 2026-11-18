@@ -6,7 +6,7 @@
 import * as z from "zod";
 
 import { NotFoundError } from "@/lib/errors";
-import { I3Bundle, I3BundleId, I3BundleLine } from "@/lib/schemas/i3-bundle";
+import { I3Bundle, I3BundleId, I3BundleLine, I3BundleSummary } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import * as I3Bundles from "@/server/services/i3-bundles";
 
@@ -19,7 +19,8 @@ export const i3BundlesRouter = createTrpcRouter({
      *
      * @throws TRPCError(NOT_FOUND) if the bundle does not exist in the organization.
      * @throws TRPCError(BAD_REQUEST) if the bundle is Deleted, or a template is not in the
-     * organization, is Deleted, or has no D4H type.
+     * organization, is not Active, or has no D4H type.
+     * @throws TRPCError(CONFLICT) if another request added one of the templates at the same time.
      */
     addTemplates: organizationProcedure({ i3Bundle: ["update"] })
         .input(
@@ -82,7 +83,7 @@ export const i3BundlesRouter = createTrpcRouter({
      * can be compared.
      */
     listBundles: organizationProcedure({ i3Bundle: ["view"] })
-        .output(z.array(I3Bundle.schema.extend({ templateCount: z.number() })))
+        .output(z.array(I3BundleSummary.schema))
         .query(async ({ ctx }) => {
             return I3Bundles.list(ctx);
         }),

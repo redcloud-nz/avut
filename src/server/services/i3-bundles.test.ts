@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  */
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
@@ -41,6 +41,7 @@ describe("i3-bundles", () => {
         radio: I3TemplateId.create(), // no D4H type
         oldRope: I3TemplateId.create(), // Deleted, Rope / Old Rope
         torch: I3TemplateId.create(), // PPE / Torch, not in any bundle
+        archivedLamp: I3TemplateId.create(), // Archived, PPE / Lamp
         // Template in T.otherOrg.
         outsider: I3TemplateId.create(),
     };
@@ -52,7 +53,8 @@ describe("i3-bundles", () => {
         organizationId: OrganizationId,
         name: string,
         category: string | null,
-        status: "Active" | "Deleted" = "Active",
+        status: "Active" | "Archived" | "Deleted" = "Active",
+        categoryId = 1,
     ) {
         await db.i3Template.create({
             data: {
@@ -64,7 +66,7 @@ describe("i3-bundles", () => {
                 d4h: category
                     ? {
                           create: {
-                              categoryId: 1,
+                              categoryId,
                               categoryTitle: category,
                               kindId: 10,
                               kindTitle: name,
@@ -90,6 +92,7 @@ describe("i3-bundles", () => {
         await createTemplate(T.radio, T.org, "Radio", null);
         await createTemplate(T.oldRope, T.org, "Old Rope", "Rope", "Deleted");
         await createTemplate(T.torch, T.org, "Torch", "PPE");
+        await createTemplate(T.archivedLamp, T.org, "Lamp", "PPE", "Archived");
         await createTemplate(T.outsider, T.otherOrg, "Outsider", "PPE");
 
         await db.i3Bundle.create({
@@ -155,12 +158,33 @@ describe("i3-bundles", () => {
     });
 
     describe("list", () => {
-        it("lists the organization's non-Deleted bundles with their comparable line count", async () => {
+        it("lists the organization's non-Deleted bundles", async () => {
             const bundles = await list(ctx());
 
             expect(bundles.map((bundle) => bundle.id)).toEqual([T.bundle]);
-            // Radio has no D4H type and Old Rope is Deleted.
-            expect(bundles[0].templateCount).toBe(3);
+        });
+
+        // prisma-mock ignores the `where` of a filtered relation `_count`, so check the query's
+        // shape, and that the count is read from it, rather than the count itself.
+        it("counts comparable lines with a filtered _count rather than loading the lines", async () => {
+            const findMany = vi.spyOn(db.i3Bundle, "findMany");
+            try {
+                const bundles = await list(ctx());
+
+                expect(bundles[0].templateCount).toBe(
+                    await db.i3BundleItem.count({ where: { bundleId: T.bundle } }),
+                );
+
+                const args = findMany.mock.calls[0][0];
+                expect(args?.include).not.toHaveProperty("items");
+                expect(args?.include?._count).toEqual({
+                    select: {
+                        items: { where: { template: { status: "Active", d4h: { isNot: null } } } },
+                    },
+                });
+            } finally {
+                findMany.mockRestore();
+            }
         });
     });
 
@@ -182,6 +206,33 @@ describe("i3-bundles", () => {
                 categoryTitle: "Clothing",
                 kindTitle: "Boots",
             });
+        });
+
+        it("keeps each category's lines together when two categories share a title", async () => {
+            const S = {
+                bundle: I3BundleId.create(),
+                alpha: I3TemplateId.create(),
+                bravo: I3TemplateId.create(),
+                charlie: I3TemplateId.create(),
+            };
+            await createTemplate(S.alpha, T.org, "Alpha", "Gear", "Active", 2);
+            await createTemplate(S.bravo, T.org, "Bravo", "Gear", "Active", 1);
+            await createTemplate(S.charlie, T.org, "Charlie", "Gear", "Active", 2);
+            await db.i3Bundle.create({
+                data: { id: S.bundle, organizationId: T.org, name: "Sort", description: "" },
+            });
+            for (const templateId of [S.alpha, S.bravo, S.charlie]) {
+                await db.i3BundleItem.create({ data: { bundleId: S.bundle, templateId } });
+            }
+
+            const result = await getWithLines(ctx(), S.bundle);
+
+            // By name alone Bravo would sit between Alpha and Charlie, splitting category 2.
+            expect(result?.lines.map((line) => line.template.name)).toEqual([
+                "Bravo",
+                "Alpha",
+                "Charlie",
+            ]);
         });
 
         it("returns null for a bundle in another organization", async () => {
@@ -284,6 +335,7 @@ describe("i3-bundles", () => {
         it.each([
             ["in another organization", () => T.outsider],
             ["Deleted", () => T.oldRope],
+            ["Archived", () => T.archivedLamp],
             ["without a D4H type", () => T.radio],
             ["that does not exist", () => I3TemplateId.create()],
         ])("rejects a template %s and adds nothing", async (_label, templateId) => {
@@ -303,6 +355,24 @@ describe("i3-bundles", () => {
             await expect(addTemplates(ctx(), T.outsiderBundle, [T.helmet])).rejects.toThrow(
                 NotFoundError,
             );
+        });
+
+        it("throws ConflictError when a concurrent add creates the line first", async () => {
+            // The lookup sees no line; by the time of the write another request has added it.
+            const createMany = vi
+                .spyOn(db.i3BundleItem, "createMany")
+                .mockRejectedValueOnce(
+                    Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
+                );
+            try {
+                await expect(addTemplates(ctx(), A.bundle, [T.jacket])).rejects.toThrow(
+                    ConflictError,
+                );
+            } finally {
+                createMany.mockRestore();
+            }
+
+            expect(await entriesFor(A.bundle)).toHaveLength(1);
         });
     });
 
@@ -350,6 +420,25 @@ describe("i3-bundles", () => {
             await expect(removeTemplate(ctx(), T.outsiderBundle, T.helmet)).rejects.toThrow(
                 NotFoundError,
             );
+        });
+
+        it("throws NotFoundError when a concurrent remove deletes the line first", async () => {
+            await db.i3BundleItem.create({ data: { bundleId: R.bundle, templateId: T.boots } });
+            // The lookup sees the line; by the time of the write another request has removed it.
+            const del = vi.spyOn(db.i3BundleItem, "delete").mockRejectedValueOnce(
+                Object.assign(new Error("Record to delete does not exist."), {
+                    code: "P2025",
+                }),
+            );
+            try {
+                await expect(removeTemplate(ctx(), R.bundle, T.boots)).rejects.toThrow(
+                    NotFoundError,
+                );
+            } finally {
+                del.mockRestore();
+            }
+
+            expect(await entriesFor(R.bundle)).toHaveLength(2);
         });
     });
 

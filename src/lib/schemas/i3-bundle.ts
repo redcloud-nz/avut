@@ -51,6 +51,16 @@ export type I3Bundle = z.infer<typeof i3BundleSchema>;
 
 export type ModifiableI3Bundle = z.infer<typeof I3Bundle.modifiableSchema>;
 
+/** A bundle as the list shows it, with the number of its lines that can be compared. */
+export const I3BundleSummary = {
+    schema: i3BundleSchema.extend({
+        /** Lines whose template is Active and has a D4H type. */
+        templateCount: z.number(),
+    }),
+} as const;
+
+export type I3BundleSummary = z.infer<typeof I3BundleSummary.schema>;
+
 export const I3BundleRef = {
     schema: i3BundleSchema.pick({
         id: true,
