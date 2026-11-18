@@ -13,6 +13,7 @@ import { d4hNagRouter } from "./d4h-nag-router";
 import { d4hTasksRouter } from "./d4h-tasks-router";
 import { formsRouter } from "./forms-router";
 import { historyRouter } from "./history-router";
+import { i3BundlesRouter } from "./i3-bundles-router";
 import { i3Router } from "./i3-router";
 import { invitationsRouter } from "./invitations-router";
 import { notificationsRouter } from "./notification-router";
@@ -41,6 +42,7 @@ export const appRouter = createTrpcRouter({
     forms: formsRouter,
     history: historyRouter,
     i3: i3Router,
+    i3Bundles: i3BundlesRouter,
     invitations: invitationsRouter,
     notifications: notificationsRouter,
     organizationGroups: organizationGroupsRouter,
