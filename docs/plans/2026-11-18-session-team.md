@@ -44,7 +44,7 @@
 
 ### Review group 2: UI (`visual`)
 
-- [ ] **4. Team field in the create and edit dialogs** — `visual`
+- [x] **4. Team field in the create and edit dialogs** — `visual`
   - **Files:** `src/modules/skill-track/components/session-when-picker.tsx` (`sessionDialogSchema`, `parseSessionDialog`), `session-when-picker.test.ts`, `create-session.tsx`, `update-session.tsx`, probably a shared `session-team-select.tsx` in the same folder
   - **Do:** add a Team select between Name and When in both dialogs, built as in Decisions (sentinel field, options including the current team when it isn't active), fed by `trpc.teams.listTeams`. On create, a hint under the field: "Everyone in the team is added to the session's personnel." Follow `docs/patterns/mutation-dialog.md` and `docs/patterns/field-layout.md`; the select markup follows `src/modules/d4h-nag/components/rule-form.tsx`. Add a `parseSessionDialog` test for the sentinel → `null` mapping and a team id passing through.
   - **Done when:** creating with a team lands on a session whose Personnel tab lists the team's members; editing the team saves, shows the new team, and doesn't change personnel; `npm run check` passes.
