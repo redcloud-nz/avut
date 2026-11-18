@@ -135,8 +135,8 @@ New: a team scope at `/teams/<slug>`, reached from the scope switcher's new Team
 
 ## Parked
 
-- Admin → Teams → members (`teams.listTeamMemberships`) shows archived or binned people whose membership is Active. Decide whether Admin should hide them. Proposed issue: "Team members list shows archived and binned people".
-- `route()` (`src/lib/routes.ts`) only fills `[key]` segments, so a catch-all page such as `/docs/[[...slug]]` would come out unfilled. It predates this branch. Proposed issue: "route() doesn't fill catch-all segments".
+- Admin → Teams → members (`teams.listTeamMemberships`) shows archived or binned people whose membership is Active. Decide whether Admin should hide them. Filed as #540.
+- `route()` (`src/lib/routes.ts`) only fills `[key]` segments, so a catch-all page such as `/docs/[[...slug]]` would come out unfilled. It predates this branch. Filed as #541.
 
 ## Review notes
 
