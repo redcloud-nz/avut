@@ -5,7 +5,14 @@
 
 import { describe, expect, it } from "vitest";
 
-import { parseSessionDialog, sessionWhenSchema, withSessionEndTime } from "./session-when-picker";
+import { TeamId } from "@/lib/schemas/team";
+
+import {
+    NO_SESSION_TEAM,
+    parseSessionDialog,
+    sessionWhenSchema,
+    withSessionEndTime,
+} from "./session-when-picker";
 
 const NZ = "Pacific/Auckland";
 
@@ -14,12 +21,13 @@ function dialogValues(date: string, startTime: string, endTime: string | null) {
     return {
         name: "Session",
         notes: "",
+        teamId: NO_SESSION_TEAM,
         when: { date, allDay: false, days: 1, startTime, endTime },
     };
 }
 
 describe("parseSessionDialog", () => {
-    it("returns what the API takes", () => {
+    it("returns what the API takes, with no team as null", () => {
         // Tue 3 Feb 2026 19:00 – 21:00 NZDT.
         expect(parseSessionDialog(dialogValues("2026-02-03", "19:00", "21:00"), NZ)).toEqual({
             success: true,
@@ -28,8 +36,16 @@ describe("parseSessionDialog", () => {
                 notes: "",
                 startsAt: "2026-02-03T06:00:00.000Z",
                 endsAt: "2026-02-03T08:00:00.000Z",
+                teamId: null,
             },
         });
+    });
+
+    it("passes a team id through", () => {
+        const teamId = TeamId.create();
+        expect(
+            parseSessionDialog({ ...dialogValues("2026-02-03", "19:00", "21:00"), teamId }, NZ),
+        ).toMatchObject({ success: true, data: { teamId } });
     });
 
     it("returns a timed session over several days", () => {

@@ -23,6 +23,7 @@ import {
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, type SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
 import { availableSkillPackageWhere } from "@/lib/schemas/skill-package";
+import type { TeamId } from "@/lib/schemas/team";
 import { findConflicts, isCheckIncluded } from "@/lib/skill-check-conflicts";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 
@@ -40,8 +41,9 @@ export async function requireSessionById(
 }
 
 /**
- * `requireSessionById`'s stored row, unparsed, for a caller that compares against a raw column:
- * `startsAt` may be null, which the parsed session hides behind `createdAt`.
+ * `requireSessionById`'s stored row, unparsed, with its team's ref, for a caller that compares
+ * against a raw column (`startsAt` may be null, which the parsed session hides behind
+ * `createdAt`) or returns the session's `team` (`updateSession`).
  * @throws NotFoundError if the session does not exist or does not belong to the organization.
  */
 export async function requireSessionRecordById(
@@ -53,6 +55,7 @@ export async function requireSessionRecordById(
             id: sessionId,
             organizationId: ctx.organizationId,
         },
+        include: { team: { select: { id: true, name: true } } },
     });
 
     if (!session) {
@@ -506,6 +509,53 @@ export async function assertAssessableSkills(
 }
 
 /**
+ * Check that a session may be given this team: an `Active` team in the organization. `null` (an
+ * org-wide session) always passes. `updateSession` calls it only when the team changes, so a
+ * session whose team has since been archived or binned can still be saved.
+ * @throws ValidationError if the team isn't in the organization or isn't `Active`.
+ */
+export async function assertSessionTeam(
+    ctx: OrgServiceContext,
+    teamId: TeamId | null,
+): Promise<void> {
+    if (teamId === null) return;
+
+    const team = await ctx.prisma.team.findUnique({
+        where: { id: teamId, organizationId: ctx.organizationId, status: "Active" },
+        select: { id: true },
+    });
+    if (!team) {
+        throw new ValidationError(
+            `Team(id=${teamId}) can't be a session's team: it must be an active team in this organisation.`,
+        );
+    }
+}
+
+/**
+ * The people a session created with this team starts with as assessees: those with an `Active`
+ * membership in the team whose person isn't `Deleted` (the person rule
+ * `assertAssessablePersonnel` applies).
+ * @returns Their person ids, or none for `null` (an org-wide session).
+ */
+export async function sessionTeamAssesseeIds(
+    ctx: OrgServiceContext,
+    teamId: TeamId | null,
+): Promise<PersonId[]> {
+    if (teamId === null) return [];
+
+    const memberships = await ctx.prisma.teamMembership.findMany({
+        where: {
+            organizationId: ctx.organizationId,
+            teamId,
+            status: "Active",
+            person: { status: { not: "Deleted" } },
+        },
+        select: { personId: true },
+    });
+    return memberships.map(({ personId }) => PersonId.schema.parse(personId));
+}
+
+/**
  * Determine the next available session number for the organization, i.e. one greater than the
  * highest `sessionNumber` currently in use (or 1 if the organization has no sessions yet).
  */
@@ -524,14 +574,17 @@ const MAX_SESSION_NUMBER_ATTEMPTS = 5;
  * organization. Two concurrent creates can race for the same number; if the unique constraint on
  * `[organizationId, sessionNumber]` is violated, retries with the next number instead.
  * @param buildData Builds the full create payload given the session number assigned to it.
- * @returns The created session, including its assessors.
+ * @returns The created session, including its assessors and its team.
  */
 export async function createSession(
     ctx: OrgServiceContext,
     buildData: (sessionNumber: number) => Prisma.SkillCheckSessionUncheckedCreateInput,
 ): Promise<
     Prisma.SkillCheckSessionGetPayload<{
-        include: { assessors: { select: { id: true; name: true } } };
+        include: {
+            assessors: { select: { id: true; name: true } };
+            team: { select: { id: true; name: true } };
+        };
     }>
 > {
     let sessionNumber = await nextSessionNumber(ctx);
@@ -544,6 +597,7 @@ export async function createSession(
                     assessors: {
                         select: { id: true, name: true },
                     },
+                    team: { select: { id: true, name: true } },
                 },
             });
         } catch (error) {

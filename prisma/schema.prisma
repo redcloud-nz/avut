@@ -250,6 +250,8 @@ model Team {
   d4hNagRuns    D4HNagRun[]    @relation("d4h_nag_run_to_team")
   d4hNagOptOuts D4HNagOptOut[] @relation("d4h_nag_opt_out_to_team")
 
+  skillCheckSessions SkillCheckSession[] @relation("skill_check_session_to_team")
+
   @@index([organizationId])
   @@map("teams")
 }
@@ -762,6 +764,11 @@ model SkillCheckSession {
   assessees      Person[]         @relation("skill_check_session_assessees")
   assessors      Person[]         @relation("skill_check_session_assessors")
   skills         Skill[]          @relation("skill_check_session_skills")
+  /// The team the session is for, or null for an org-wide session (a combined training weekend).
+  /// Creating a session with a team seeds its assessees from the team's active members; changing
+  /// it later doesn't touch them. A team purged from the Rubbish bin leaves its sessions org-wide.
+  teamId         String?
+  team           Team?            @relation("skill_check_session_to_team", fields: [teamId], references: [id], onDelete: SetNull)
   name           String
   sessionNumber  Int
   /// When the session starts, read in the org's time zone (`OrganizationSettings.general.timeZone`):
@@ -782,6 +789,7 @@ model SkillCheckSession {
 
   @@unique([organizationId, sessionNumber])
   @@index([organizationId])
+  @@index([teamId])
   @@map("skill_check_sessions")
 }
 

@@ -128,27 +128,35 @@ export function withSessionEndTime(state: SessionFormState): SessionFormState {
     return { ...state, endTime: laterTime(state.startTime, DEFAULT_TIMED_QUARTERS) };
 }
 
+/** The Team field's value for no team: Radix `Select` can't hold an empty value. */
+export const NO_SESSION_TEAM = "__none__";
+
 /**
  * The create and update session dialogs' form: the picker's state in place of `startsAt`/`endsAt`,
- * which `sessionInstants` derives on submit.
+ * which `sessionInstants` derives on submit, and `teamId` as a team id or `NO_SESSION_TEAM`.
  */
 export const sessionDialogSchema = SkillCheckSession.modifiableSchema
     .pick({ name: true, notes: true })
-    .extend({ when: sessionWhenSchema });
+    .extend({ teamId: z.string(), when: sessionWhenSchema });
 
 /**
- * A session dialog's values as `createSession`/`updateSession` take them: `sessionInstants`
- * checked against `SkillCheckSession.inputSchema`, so a refusal shows on the "When" field rather
- * than as the server's BAD_REQUEST. `sessionWhenSchema` already rules out the rest, so what's left
- * is a start inside a spring-forward gap (02:15 on NZ's last Sunday of September): it moves
- * forward by the gap, onto or past an end that was after it on the clock.
+ * A session dialog's values as `createSession`/`updateSession` take them: `NO_SESSION_TEAM` as a
+ * null `teamId`, and `sessionInstants` checked against `SkillCheckSession.inputSchema`, so a
+ * refusal shows on the "When" field rather than as the server's BAD_REQUEST. `sessionWhenSchema`
+ * already rules out the rest, so what's left is a start inside a spring-forward gap (02:15 on NZ's
+ * last Sunday of September): it moves forward by the gap, onto or past an end that was after it on
+ * the clock.
  */
 export function parseSessionDialog(
-    { when, ...fields }: z.infer<typeof sessionDialogSchema>,
+    { when, teamId, ...fields }: z.infer<typeof sessionDialogSchema>,
     orgZone: string,
 ): { success: true; data: ModifiableSkillCheckSession } | { success: false; message: string } {
     const instants = sessionInstants(when, orgZone);
-    const parsed = SkillCheckSession.inputSchema.safeParse({ ...fields, ...instants });
+    const parsed = SkillCheckSession.inputSchema.safeParse({
+        ...fields,
+        teamId: teamId === NO_SESSION_TEAM ? null : teamId,
+        ...instants,
+    });
     if (parsed.success) return { success: true, data: parsed.data };
 
     const startMoved =

@@ -28,10 +28,12 @@ import { route } from "@/lib/routes";
 import { PersonRef } from "@/lib/schemas/person";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
 import { SkillCheckSession } from "@/lib/schemas/skill-check-session";
+import { TeamRef } from "@/lib/schemas/team";
 import { useFormatSessionWhen } from "@/modules/skill-track/lib/use-format-session-when";
 import { trpc } from "@/trpc/client";
 
 import { SkillTrack_CreateSession_Dialog } from "./create-session";
+import { NO_SESSION_TEAM } from "./session-when-picker";
 
 export default function SkillTrack_Sessions_List() {
     const organization = useOrganization();
@@ -44,7 +46,21 @@ export default function SkillTrack_Sessions_List() {
         }),
     );
 
-    type RowData = SkillCheckSession & { assessors: PersonRef[] };
+    type RowData = SkillCheckSession & { assessors: PersonRef[]; team: TeamRef | null };
+
+    const teamOptions = useMemo(() => {
+        const teams = new Map<TeamRef["id"], string>();
+        for (const session of sessions) {
+            if (session.team) teams.set(session.team.id, session.team.name);
+        }
+        const options: { label: string; value: TeamRef["id"] | typeof NO_SESSION_TEAM }[] = [
+            ...[...teams]
+                .map(([value, label]) => ({ label, value }))
+                .sort((a, b) => a.label.localeCompare(b.label)),
+            { label: "No team", value: NO_SESSION_TEAM },
+        ];
+        return options;
+    }, [sessions]);
 
     const columns = useMemo(
         () =>
@@ -64,6 +80,16 @@ export default function SkillTrack_Sessions_List() {
                     enableSorting: true,
                     enableGlobalFilter: true,
                     enableColumnFilter: false,
+                }),
+                columnHelper.accessor((row) => row.team?.id ?? NO_SESSION_TEAM, {
+                    id: "team",
+                    header: "Team",
+                    cell: (ctx) => ctx.row.original.team?.name ?? "—",
+                    enableSorting: false,
+                    enableGlobalFilter: false,
+                    enableColumnFilter: true,
+                    filterFn: Kaga.filterFns.oneOf,
+                    meta: { columnOptions: teamOptions },
                 }),
                 columnHelper.accessor("startsAt", {
                     header: "When",
@@ -103,7 +129,7 @@ export default function SkillTrack_Sessions_List() {
                     },
                 }),
             ]),
-        [organization.slug, formatDate, formatSessionWhen],
+        [organization.slug, formatDate, formatSessionWhen, teamOptions],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

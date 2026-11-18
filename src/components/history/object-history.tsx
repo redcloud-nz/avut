@@ -147,6 +147,7 @@ function ObjectHistoryList({
             Skill: Object.assign({}, ...data.pages.map((page) => page.names.Skill)),
             SkillGroup: Object.assign({}, ...data.pages.map((page) => page.names.SkillGroup)),
             SkillPackage: Object.assign({}, ...data.pages.map((page) => page.names.SkillPackage)),
+            Team: Object.assign({}, ...data.pages.map((page) => page.names.Team)),
         }),
         [data.pages],
     );

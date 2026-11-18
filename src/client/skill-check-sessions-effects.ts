@@ -112,11 +112,13 @@ function invalidateSessionStatusReaders(organizationId: string): MutationEffect[
  * Cache effects for `skillCheckSessions` router mutations, keyed by procedure name.
  *
  * Passed as `meta.effects` on the corresponding `useMutation` call — see `useMutationEffector`.
- * `createSession`'s response matches `getSession` exactly, so it writes wholesale.
+ * `createSession`'s `created` has `getSession`'s shape (assessors and team), so it writes wholesale.
  * `approveSession`, `reopenSession`, `updateSession` and the session halves of
- * `updateSessionAssessees`/`updateSessionSkills` return a bare `SkillCheckSession` without the
+ * `updateSessionAssessees`/`updateSessionSkills` return a `SkillCheckSession` without the
  * `assessors` extension `getSession` carries, so they merge into whatever's already cached instead
- * of replacing it. `updateSessionAssessors` merges its
+ * of replacing it. `updateSession`'s `updated` carries `team`, the one of them that can change it,
+ * so the merge replaces the cached `team` too; the others leave it as cached.
+ * `updateSessionAssessors` merges its
  * `updatedAssessors` in as that `assessors` extension too. `setSessionSkillCheck` and
  * `deleteSessionSkillCheck` edit the caller's own-checks list in place, matching on the
  * (assessee, skill) pair, merge the returned row into the session cache (`listSessionChecks`), and

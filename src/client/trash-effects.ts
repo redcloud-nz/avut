@@ -14,7 +14,8 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
  */
 const owningRouter = {
     person: () => [trpc.personnel.pathFilter()],
-    team: () => [trpc.teams.pathFilter()],
+    // Skill check sessions show their team; purging it leaves them org-wide (`SetNull`).
+    team: () => [trpc.teams.pathFilter(), trpc.skillCheckSessions.pathFilter()],
     teamMembership: () => [trpc.teams.pathFilter()],
     // A bundle page shows its templates' names, status and D4H type.
     i3Template: () => [trpc.i3.pathFilter(), trpc.i3Bundles.pathFilter()],

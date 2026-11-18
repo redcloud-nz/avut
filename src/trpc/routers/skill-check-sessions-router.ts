@@ -8,6 +8,7 @@ import * as z from "zod";
 
 import { TRPCError } from "@trpc/server";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { ConflictError, ValidationError } from "@/lib/errors";
 import { PersonId, PersonRef } from "@/lib/schemas/person";
@@ -21,11 +22,24 @@ import {
     SkillCheckResultValue,
 } from "@/lib/schemas/skill-check";
 import { SkillCheckSession, SkillCheckSessionId } from "@/lib/schemas/skill-check-session";
+import { TeamRef } from "@/lib/schemas/team";
 import { isPrismaRecordNotFound } from "@/server/prisma-errors";
 import * as SkillChecks from "@/server/services/skill-checks";
 
 import { createTrpcRouter, organizationProcedure } from "../init";
 import { Messages } from "../messages";
+
+/** What `getSession`, `listSessions` and `createSession` load beside the session row. */
+const sessionWithAssessorsInclude = {
+    assessors: { select: { id: true, name: true } },
+    team: { select: { id: true, name: true } },
+} as const;
+
+/** A session as `getSession`, `listSessions` and `createSession` return it. */
+const sessionWithAssessorsSchema = SkillCheckSession.schema.extend({
+    assessors: z.array(PersonRef.schema),
+    team: TeamRef.schema.nullable(),
+});
 
 export const skillCheckSessionsRouter = createTrpcRouter({
     /**
@@ -163,16 +177,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
 
     /**
      * Create a new skill check session for the organization. The caller is assigned as the
-     * session's sole assessor, so they must have a linked person record.
+     * session's sole assessor, so they must have a linked person record. A session created with a
+     * team starts with that team's members as its assessees (`SkillChecks.sessionTeamAssesseeIds`),
+     * and its log entry records each of them as an `assessees` addition.
      * @param skillCheckSessionId The ID for the new session.
      * @param create.name The name of the session; blank gives `Session #<number>`.
      * @param create.startsAt When the session starts, on a quarter hour.
      * @param create.endsAt When it ends, on a quarter hour and after `startsAt`, or `null` for no
      *   end.
      * @param create.notes Notes for the session.
-     * @returns The created skill check session, in `Draft` status.
-     * @throws TRPCError(BAD_REQUEST) if the caller has no linked person record, or the times are
-     *   off-quarter or out of order.
+     * @param create.teamId The session's team, an `Active` team in the organization, or `null` for
+     *   an org-wide session.
+     * @returns The created skill check session, in `Draft` status, with its assessors and team.
+     * @throws TRPCError(BAD_REQUEST) if the caller has no linked person record, the times are
+     *   off-quarter or out of order, or the team isn't an active team in the organization.
      */
     createSession: organizationProcedure({ skillCheckSession: ["create"] })
         .input(
@@ -181,11 +199,7 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 create: SkillCheckSession.inputSchema,
             }),
         )
-        .output(
-            z.object({
-                created: SkillCheckSession.schema.extend({ assessors: z.array(PersonRef.schema) }),
-            }),
-        )
+        .output(z.object({ created: sessionWithAssessorsSchema }))
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, create } }) => {
             const orgUser = await ctx.prisma.organizationUser.findFirst({
                 where: { organizationId, userId: ctx.userId },
@@ -199,6 +213,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             }
             const assessorPersonId = orgUser.personId;
 
+            await SkillChecks.assertSessionTeam(ctx, create.teamId);
+            const assesseeIds = await SkillChecks.sessionTeamAssesseeIds(ctx, create.teamId);
+
             const session = await SkillChecks.createSession(ctx, (sessionNumber) => ({
                 id: skillCheckSessionId,
                 organizationId,
@@ -207,23 +224,28 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 startsAt: new Date(create.startsAt),
                 endsAt: create.endsAt === null ? null : new Date(create.endsAt),
                 notes: create.notes,
+                teamId: create.teamId,
                 status: "Draft",
                 assessors: { connect: [{ id: assessorPersonId }] },
+                assessees: { connect: assesseeIds.map((id) => ({ id })) },
             }));
 
             await ctx.logEvent({
                 action: "Create",
                 objectType: "SkillCheckSession",
                 objectId: skillCheckSessionId,
-                changes: diffObject({}, create),
+                changes: [
+                    ...diffObject({}, create),
+                    // The same shape `updateSessionAssessees` logs.
+                    ...assesseeIds.map((id) => ({
+                        path: ["assessees"],
+                        type: "arr_add" as const,
+                        value: id,
+                    })),
+                ],
             });
 
-            return {
-                created: {
-                    ...SkillCheckSession.fromRecord(session),
-                    assessors: session.assessors.map((person) => PersonRef.schema.parse(person)),
-                },
-            };
+            return { created: toSessionWithAssessors(session) };
         }),
 
     /**
@@ -341,12 +363,12 @@ export const skillCheckSessionsRouter = createTrpcRouter({
     /**
      * Get a skill check session by ID.
      * @param skillCheckSessionId The ID of the skill check session to retrieve.
-     * @returns The skill check session.
+     * @returns The skill check session, with its assessors and its team (`null` for none).
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
      */
     getSession: organizationProcedure({ skillCheckSession: ["view"] })
         .input(z.object({ skillCheckSessionId: SkillCheckSessionId.schema }))
-        .output(SkillCheckSession.schema.extend({ assessors: z.array(PersonRef.schema) }))
+        .output(sessionWithAssessorsSchema)
         .query(async ({ ctx, input: { skillCheckSessionId } }) => {
             const session =
                 (await ctx.prisma.skillCheckSession.findUnique({
@@ -354,17 +376,10 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                         id: skillCheckSessionId,
                         organizationId: ctx.organizationId,
                     },
-                    include: {
-                        assessors: {
-                            select: { id: true, name: true },
-                        },
-                    },
+                    include: sessionWithAssessorsInclude,
                 })) ?? sessionNotFound(skillCheckSessionId);
 
-            return {
-                ...SkillCheckSession.fromRecord(session),
-                assessors: session.assessors.map((person) => PersonRef.schema.parse(person)),
-            };
+            return toSessionWithAssessors(session);
         }),
 
     /**
@@ -709,28 +724,22 @@ export const skillCheckSessionsRouter = createTrpcRouter({
 
     /**
      * List all skill check sessions for the organization. Requires "view" skill on "Skills" module.
-     * @returns An array of skill check sessions associated with the organization.
+     * @returns An array of skill check sessions associated with the organization, each with its
+     *   assessors and its team (`null` for none).
      */
     listSessions: organizationProcedure({
         skillCheckSession: ["view"],
     })
-        .output(z.array(SkillCheckSession.schema.extend({ assessors: z.array(PersonRef.schema) })))
+        .output(z.array(sessionWithAssessorsSchema))
         .query(async ({ ctx, input: { organizationId } }) => {
             const sessions = await ctx.prisma.skillCheckSession.findMany({
                 where: {
                     organizationId,
                 },
-                include: {
-                    assessors: {
-                        select: { id: true, name: true },
-                    },
-                },
+                include: sessionWithAssessorsInclude,
             });
 
-            return sessions.map((session) => ({
-                ...SkillCheckSession.fromRecord(session),
-                assessors: session.assessors.map((person) => PersonRef.schema.parse(person)),
-            }));
+            return sessions.map(toSessionWithAssessors);
         }),
 
     /**
@@ -916,9 +925,14 @@ export const skillCheckSessionsRouter = createTrpcRouter({
         }),
 
     /**
-     * Update a skill check session's name, start, end and notes. An approved session is
+     * Update a skill check session's name, start, end, notes and team. An approved session is
      * read-only, even for a no-op update: changing it means reopening it, which goes back through
      * review.
+     *
+     * A changed team must be an `Active` team in the organization
+     * (`SkillChecks.assertSessionTeam`); an unchanged one isn't checked, so a session whose team
+     * has since been archived or binned can still be saved. Changing the team leaves the
+     * session's assessees alone.
      *
      * Every write runs in one transaction that opens with `SkillChecks.lockUnapprovedSession`, so
      * an approval landing after the pre-check refuses it rather than editing an approved session.
@@ -932,10 +946,11 @@ export const skillCheckSessionsRouter = createTrpcRouter({
      * and re-stamps its checks.
      * @param skillCheckSessionId The ID of the skill check session to update.
      * @param update The fields to update on the skill check session; `endsAt: null` for no end.
-     * @returns The updated skill check session, and whether its start (and so its checks'
-     *   `checkedAt`) changed.
+     * @returns The updated skill check session with its team (`null` for none), and whether its
+     *   start (and so its checks' `checkedAt`) changed.
      * @throws TRPCError(NOT_FOUND) if the skill check session does not exist.
-     * @throws TRPCError(BAD_REQUEST) if the times are off-quarter or out of order.
+     * @throws TRPCError(BAD_REQUEST) if the times are off-quarter or out of order, or a changed
+     *   team isn't an active team in the organization.
      * @throws TRPCError(CONFLICT) if the session is approved, up front or by the time the write
      * runs, or another save moved its start since this one read it.
      */
@@ -946,11 +961,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 update: SkillCheckSession.inputSchema,
             }),
         )
-        .output(z.object({ updated: SkillCheckSession.schema, startChanged: z.boolean() }))
+        .output(
+            z.object({
+                updated: SkillCheckSession.schema.extend({ team: TeamRef.schema.nullable() }),
+                startChanged: z.boolean(),
+            }),
+        )
         .mutation(async ({ ctx, input: { organizationId, skillCheckSessionId, update } }) => {
             const record = await SkillChecks.requireSessionRecordById(ctx, skillCheckSessionId);
             const existing = SkillCheckSession.fromRecord(record);
             SkillChecks.assertSessionUnlocked(existing);
+
+            if (update.teamId !== existing.teamId) {
+                await SkillChecks.assertSessionTeam(ctx, update.teamId);
+            }
 
             const startsAt = new Date(update.startsAt);
             const endsAt = update.endsAt === null ? null : new Date(update.endsAt);
@@ -972,7 +996,9 @@ export const skillCheckSessionsRouter = createTrpcRouter({
 
             const startChanged = record.startsAt?.getTime() !== startsAt.getTime();
 
-            if (changes.length == 0) return { updated: existing, startChanged };
+            if (changes.length == 0) {
+                return { updated: { ...existing, team: toTeamRef(record.team) }, startChanged };
+            }
 
             const [, updated] = await ctx.prisma
                 .$transaction([
@@ -990,12 +1016,13 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                             id: skillCheckSessionId,
                             organizationId,
                         },
-                        include: {},
+                        include: { team: { select: { id: true, name: true } } },
                         data: {
                             name: update.name,
                             startsAt,
                             endsAt,
                             notes: update.notes,
+                            teamId: update.teamId,
                         },
                     }),
                     ...(startChanged
@@ -1015,7 +1042,13 @@ export const skillCheckSessionsRouter = createTrpcRouter({
                 ])
                 .catch(SkillChecks.rethrowSessionChanged(skillCheckSessionId));
 
-            return { updated: SkillCheckSession.fromRecord(updated), startChanged };
+            return {
+                updated: {
+                    ...SkillCheckSession.fromRecord(updated),
+                    team: toTeamRef(updated.team),
+                },
+                startChanged,
+            };
         }),
 
     /**
@@ -1287,6 +1320,20 @@ export const skillCheckSessionsRouter = createTrpcRouter({
             },
         ),
 });
+
+function toSessionWithAssessors(
+    session: Prisma.SkillCheckSessionGetPayload<{ include: typeof sessionWithAssessorsInclude }>,
+): z.infer<typeof sessionWithAssessorsSchema> {
+    return {
+        ...SkillCheckSession.fromRecord(session),
+        assessors: session.assessors.map((person) => PersonRef.schema.parse(person)),
+        team: toTeamRef(session.team),
+    };
+}
+
+function toTeamRef(team: { id: string; name: string } | null): TeamRef | null {
+    return team ? TeamRef.schema.parse(team) : null;
+}
 
 function sessionNotFound(sessionId: SkillCheckSessionId): never {
     throw new TRPCError({
