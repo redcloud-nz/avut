@@ -22,7 +22,7 @@
 
 ### Review group 1: data layer
 
-- [ ] **1. Schema and migration**
+- [x] **1. Schema and migration** — feat(skill-track): add an optional team to skill check sessions
   - **Files:** `prisma/schema.prisma`, `prisma/migrations/<ts>_skill_check_session_team/migration.sql`
   - **Do:** add `teamId String?`, `team Team? @relation("skill_check_session_to_team", fields: [teamId], references: [id], onDelete: SetNull)` and `@@index([teamId])` to `SkillCheckSession`, and the back-relation `skillCheckSessions SkillCheckSession[] @relation("skill_check_session_to_team")` on `Team`. Run `npm run db:branch session-team` first (stop the worktree's dev server; ask the user to stop theirs and Prisma Studio), then, with permission, `npm run prisma migrate dev --name skill_check_session_team`.
   - **Done when:** the migration only adds the column, FK and index; `npx prisma generate` is clean; `npm run prisma migrate status` on the branch DB is up to date.
