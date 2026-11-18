@@ -32,10 +32,12 @@ export const i3BundlesEffects = createEffects<"i3Bundles">()({
     deleteBundle: ({ organizationId }, { deleted }) => [
         writeBundle(organizationId, deleted),
         invalidate(trpc.i3Bundles.listBundles.queryFilter({ organizationId })),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId })),
     ],
     recoverBundle: ({ organizationId }, { updated }) => [
         writeBundle(organizationId, updated),
         invalidate(trpc.i3Bundles.listBundles.queryFilter({ organizationId })),
+        invalidate(trpc.trash.listTrash.queryFilter({ organizationId })),
     ],
     removeTemplate: ({ organizationId, bundleId }) => [
         invalidate(trpc.i3Bundles.listBundles.queryFilter({ organizationId })),

@@ -18,6 +18,7 @@ export type TrashableEntityId =
     | "team"
     | "teamMembership"
     | "i3Template"
+    | "i3Bundle"
     | "skillPackage"
     | "skillGroup"
     | "skill";
@@ -27,6 +28,7 @@ export const TrashableEntityIdSchema = z.enum([
     "team",
     "teamMembership",
     "i3Template",
+    "i3Bundle",
     "skillPackage",
     "skillGroup",
     "skill",
@@ -45,11 +47,12 @@ interface TrashableEntityDef {
         | "Team"
         | "TeamMembership"
         | "I3Template"
+        | "I3Bundle"
         | "SkillPackage"
         | "SkillGroup"
         | "Skill";
     /** The permission resource name — restoring or listing a row gates on `{ [permission]: ["delete"] }`. */
-    permission: "person" | "team" | "i3Template" | "skillPackage";
+    permission: "person" | "team" | "i3Template" | "i3Bundle" | "skillPackage";
     /**
      * Link to the entity's own detail page, or `null` if it isn't addressable by a single id —
      * `SkillGroup`/`Skill`'s detail page is keyed by (packageId, id), not a single id, so the
@@ -92,6 +95,14 @@ export const TrashableEntities = {
         permission: "i3Template",
         href: (slug, id) =>
             route("/orgs/[slug]/d4h-i3/templates/[template_id]", { slug, template_id: id }),
+    },
+    i3Bundle: {
+        id: "i3Bundle",
+        label: "I3 Bundle",
+        objectType: "I3Bundle",
+        permission: "i3Bundle",
+        // Set to the bundle page by Task 7 of the I3 bundles plan, once the route exists.
+        href: null,
     },
     skillPackage: {
         id: "skillPackage",

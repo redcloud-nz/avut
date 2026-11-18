@@ -6,6 +6,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { nanoId16 } from "@/lib/id";
+import { I3BundleId } from "@/lib/schemas/i3-bundle";
+import { I3TemplateId } from "@/lib/schemas/i3-template";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { SkillId } from "@/lib/schemas/skill";
@@ -308,6 +310,93 @@ describe("Trash service", () => {
     it("recover moves a Deleted row back to Active through the entity's service", async () => {
         await Trash.recover(ctx(), "team", T.freshTeam);
         expect((await db.team.findUnique({ where: { id: T.freshTeam } }))?.status).toBe("Active");
+    });
+});
+
+describe("Trash service: I3 bundles", () => {
+    const T = {
+        org: OrganizationId.create(),
+        user: UserId.create(),
+        template: I3TemplateId.create(),
+        toRecover: I3BundleId.create(),
+        toPurge: I3BundleId.create(),
+        active: I3BundleId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    function ctx() {
+        return createOrganizationMockContext({
+            organizationId: T.org,
+            user: { id: T.user },
+            prisma: db,
+        });
+    }
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: T.org, slug: T.org, createdAt: new Date() },
+        });
+        await db.i3Template.create({
+            data: { id: T.template, organizationId: T.org, name: "Helmet", description: "" },
+        });
+        for (const [id, name, status] of [
+            [T.toRecover, "Recruit", "Deleted"],
+            [T.toPurge, "Responder", "Deleted"],
+            [T.active, "Driver", "Active"],
+        ] as const) {
+            await db.i3Bundle.create({
+                data: { id, organizationId: T.org, name, description: "", status },
+            });
+            await db.i3BundleItem.create({ data: { bundleId: id, templateId: T.template } });
+        }
+    });
+
+    it("lists Deleted bundles only", async () => {
+        const items = await Trash.list(ctx(), ["i3Bundle"]);
+        expect(items.map((i) => [i.type, i.id, i.name]).sort()).toEqual(
+            [
+                ["i3Bundle", T.toPurge, "Responder"],
+                ["i3Bundle", T.toRecover, "Recruit"],
+            ].sort(),
+        );
+    });
+
+    it("recovers a bundle through I3Bundles, keeping its lines", async () => {
+        await Trash.recover(ctx(), "i3Bundle", T.toRecover);
+
+        expect((await db.i3Bundle.findUnique({ where: { id: T.toRecover } }))?.status).toBe(
+            "Active",
+        );
+        expect(await db.i3BundleItem.findMany({ where: { bundleId: T.toRecover } })).toHaveLength(
+            1,
+        );
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "I3Bundle", objectId: T.toRecover, action: "Recover" },
+            }),
+        ).toHaveLength(1);
+    });
+
+    it("refuses to purge a bundle that isn't in the Rubbish bin", async () => {
+        await expect(Trash.purge(ctx(), "i3Bundle", T.active)).rejects.toThrow(
+            /only a Deleted record is in the Rubbish bin/,
+        );
+    });
+
+    it("purging a bundle removes it and its lines, and logs the Purge", async () => {
+        await Trash.purge(ctx(), "i3Bundle", T.toPurge);
+
+        expect(await db.i3Bundle.findUnique({ where: { id: T.toPurge } })).toBeNull();
+        expect(await db.i3BundleItem.findMany({ where: { bundleId: T.toPurge } })).toEqual([]);
+        // The template and other bundles' lines are untouched.
+        expect(await db.i3Template.findUnique({ where: { id: T.template } })).not.toBeNull();
+        expect(await db.i3BundleItem.findMany({ where: { bundleId: T.active } })).toHaveLength(1);
+        expect(
+            await db.logEntry.findMany({
+                where: { objectType: "I3Bundle", objectId: T.toPurge, action: "Purge" },
+            }),
+        ).toHaveLength(1);
     });
 });
 
