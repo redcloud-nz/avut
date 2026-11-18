@@ -6,66 +6,49 @@
 
 import { createContext, ReactNode, useContext, useMemo } from "react";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import type { TeamData } from "@/lib/schemas/team";
 
-import type { OrganizationId } from "@/lib/schemas/organization";
-import type { TeamData, TeamId } from "@/lib/schemas/team";
-import { trpc } from "@/trpc/client";
-
-interface TeamIdentity {
-    organizationId: OrganizationId;
-    teamId: TeamId;
+interface TeamScope {
+    team: TeamData;
     /** The URL's slug: unlike `TeamData.slug`, never null in team scope. */
     teamSlug: string;
 }
 
-const TeamContext = createContext<TeamIdentity | null>(null);
+const TeamContext = createContext<TeamScope | null>(null);
 
 /**
- * Provides the team-scoped subtree (`/teams/[slug]`) with the team's ids and slug, just enough to
- * key `useTeam`'s query. Like `OrganizationProvider`, it carries no fetched data: the team layout
- * seeds `teams.getTeam` from `requireTeam` with `queryClient.setQueryData`.
+ * Provides the team-scoped subtree (`/teams/[slug]`) with the team, as `requireTeam` loaded it in
+ * the team layout, and the URL's slug. Unlike `OrganizationProvider`, it carries the data itself
+ * rather than keying a query: the team is a server snapshot, so a team-scope edit must call
+ * `router.refresh()` to show its change here.
  *
  * Team pages also sit inside an `OrganizationProvider` for the team's org, so `<Protect>`,
  * `useHasPermission` and `useOrganization` work there as in org scope.
  */
-export function TeamProvider({
-    children,
-    organizationId,
-    teamId,
-    teamSlug,
-}: TeamIdentity & { children: ReactNode }) {
-    const identity = useMemo(
-        () => ({ organizationId, teamId, teamSlug }),
-        [organizationId, teamId, teamSlug],
-    );
+export function TeamProvider({ children, team, teamSlug }: TeamScope & { children: ReactNode }) {
+    const scope = useMemo(() => ({ team, teamSlug }), [team, teamSlug]);
 
-    return <TeamContext.Provider value={identity}>{children}</TeamContext.Provider>;
+    return <TeamContext.Provider value={scope}>{children}</TeamContext.Provider>;
 }
 
-function useTeamIdentity(): TeamIdentity {
-    const identity = useContext(TeamContext);
-    if (!identity) {
+function useTeamScope(): TeamScope {
+    const scope = useContext(TeamContext);
+    if (!scope) {
         throw new Error("useTeam must be used within a TeamProvider");
     }
-    return identity;
+    return scope;
 }
 
 /**
- * The team the current team-scope page is about, with its stored D4H link, read through the org
- * procedure `teams.getTeam` (checked by the caller's org permissions, not the team grant).
+ * The team the current team-scope page is about, with its stored D4H link (whose
+ * `d4hOrganisationName` reads as null), from the team layout's `requireTeam`. No query: see
+ * `TeamProvider`.
  */
 export function useTeam(): TeamData {
-    const { organizationId, teamId } = useTeamIdentity();
-
-    const { data: team } = useSuspenseQuery(
-        trpc.teams.getTeam.queryOptions({ organizationId, teamId }),
-    );
-
-    return team;
+    return useTeamScope().team;
 }
 
 /** The current team scope's slug, from the URL (never null, unlike `TeamData.slug`). */
 export function useTeamSlug(): string {
-    return useTeamIdentity().teamSlug;
+    return useTeamScope().teamSlug;
 }

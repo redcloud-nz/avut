@@ -32,17 +32,20 @@ export interface TeamAccess {
  * `/teams/[slug]`. Not-found unless the team exists, is `Active`, and the caller holds a
  * `TeamUser` grant on it (a non-member of its org also gets not-found, from
  * `getOrganizationUserRoles`). Returns the session, the team, and its organization, settings and
- * the caller's roles in it, which the team layout seeds into the query cache.
+ * the caller's roles in it. The team layout hands the team to `TeamProvider` and seeds the rest
+ * into the query cache.
  *
- * The grant is checked here, on entry, and nowhere else. Team pages read through the ordinary
- * organization procedures (`teams.getTeam`, `teams.listTeamMemberships`, …) with the team's
+ * The grant is checked here, on entry, and nowhere else. Beyond the team itself, team pages read
+ * through the ordinary organization procedures (`teams.listTeamMemberships`, …) with the team's
  * `organizationId` and `teamId`, and those are checked by the caller's org permissions. So the
  * grant isn't a data boundary until team-only users' org-wide permissions are narrowed (#528).
  *
  * Cached per request on the slug alone, like `requireOrganization`. Round trips: the session and
  * the team (`"use cache"`, cross-request) concurrently, then settings and roles (both
- * `"use cache"`) and the grant concurrently. The grant query is deliberately uncached, so a
- * revoked grant takes effect on the next load.
+ * `"use cache"`) and the grant concurrently. The grant query is deliberately uncached, and it
+ * reads the team's status too: that, not the cached team's, is what gates entry, so a revoked
+ * grant or an archived team takes effect on the next load even if a `revalidateTeam` was missed.
+ * The cached status is only an early exit.
  */
 export const requireTeam = cache(async (slug: string): Promise<TeamAccess> => {
     const [session, { organization, ...team }] = await Promise.all([
@@ -57,11 +60,11 @@ export const requireTeam = cache(async (slug: string): Promise<TeamAccess> => {
         getOrganizationUserRoles(organization.id, session.user.id),
         prisma.teamUser.findUnique({
             where: { teamId_userId: { teamId: team.id, userId: session.user.id } },
-            select: { id: true },
+            select: { team: { select: { status: true } } },
         }),
     ]);
 
-    if (!grant) return notFound();
+    if (!grant || grant.team.status !== "Active") return notFound();
 
     return { session, team, organization, settings, roles };
 });

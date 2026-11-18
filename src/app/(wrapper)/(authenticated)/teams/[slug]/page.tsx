@@ -12,7 +12,7 @@ import { HydrateClient, prefetch, trpc } from "@/trpc/server";
 
 export default async function Team_Index_Page(props: PageProps<"/teams/[slug]">) {
     const { slug } = await props.params;
-    // Cached per request, and already run by the team layout (which seeds `teams.getTeam`). Read
+    // Cached per request, and already run by the team layout. Read
     // here for the ids and roles; it guards nothing, since `listTeamMemberships` checks
     // `team: ["view"]` itself.
     const { organization, team, roles } = await requireTeam(slug);

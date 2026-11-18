@@ -54,8 +54,11 @@ export function Team_Dashboard_Content() {
     );
 }
 
-/** The team's `Active` memberships, read through the org procedure and its `team: ["view"]` check. */
-function RosterCard({
+/**
+ * The team's `Active` memberships of `Active` people (an archived or binned person keeps their
+ * membership's status), read through the org procedure and its `team: ["view"]` check.
+ */
+export function RosterCard({
     organizationId,
     teamId,
 }: {
@@ -65,7 +68,9 @@ function RosterCard({
     const { data: memberships } = useSuspenseQuery(
         trpc.teams.listTeamMemberships.queryOptions({ organizationId, teamId }),
     );
-    const roster = memberships.filter((membership) => membership.status === "Active");
+    const roster = memberships.filter(
+        (membership) => membership.status === "Active" && membership.person.status === "Active",
+    );
 
     return (
         <Card>

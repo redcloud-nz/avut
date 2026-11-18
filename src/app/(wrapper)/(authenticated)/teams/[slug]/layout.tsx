@@ -37,16 +37,11 @@ export default async function Team_Layout(props: LayoutProps<"/teams/[slug]">) {
     const { team, organization, settings, roles } = await requireTeam(slug);
     const moduleFlags = await resolveModuleFlags();
 
-    // `requireTeam` already loaded the team and its org's data, so seed the query cache with it
-    // rather than re-fetching through `prefetch`: `useTeam` and `useOrganization` then read these
-    // entries on the client instead of firing their own requests. The team is `teams.getTeam`'s
-    // output shape, except that the D4H link's `d4hOrganisationName` reads as null (the cached
-    // lookup doesn't join it); nothing in team scope shows it.
+    // `requireTeam` already loaded the org's data, so seed the query cache with it rather than
+    // re-fetching through `prefetch`: `useOrganization` then reads these entries on the client
+    // instead of firing its own requests. The team itself goes to `TeamProvider` as a prop, which
+    // `useTeam` returns without a query.
     const queryClient = getServerQueryClient();
-    queryClient.setQueryData(
-        trpc.teams.getTeam.queryKey({ organizationId: organization.id, teamId: team.id }),
-        team,
-    );
     queryClient.setQueryData(
         trpc.organizations.getOrganization.queryKey({ organizationId: organization.id }),
         organization,
@@ -63,7 +58,7 @@ export default async function Team_Layout(props: LayoutProps<"/teams/[slug]">) {
     return (
         <HydrateClient>
             <OrganizationProvider organizationId={organization.id} moduleFlags={moduleFlags}>
-                <TeamProvider organizationId={organization.id} teamId={team.id} teamSlug={slug}>
+                <TeamProvider team={team} teamSlug={slug}>
                     {/*
                      * Portals into the sidebar shell in `(authenticated)/layout.tsx`, as the org
                      * layout's does — see `sidebar-portal.tsx`.

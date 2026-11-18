@@ -33,17 +33,18 @@ import { Messages } from "../messages";
  * A team-membership row as returned by `listTeamMemberships`, `getTeamMembership` and
  * `getTeamMembershipById` — the membership plus a thin `team` / `person` ref. The
  * `d4h` sub-object (with `d4hRef` / `d4hRoleId`) rides along from
- * `TeamMembershipData.schema`.
+ * `TeamMembershipData.schema`. The person's `status` is there so a reader can leave out
+ * archived or binned people whose membership is still Active (the team dashboard's roster).
  */
 const teamMembershipRowSchema = TeamMembershipData.schema.extend({
     team: TeamData.schema.pick({ id: true, name: true }),
-    person: PersonData.schema.pick({ id: true, name: true, email: true }),
+    person: PersonData.schema.pick({ id: true, name: true, email: true, status: true }),
 });
 
 const teamMembershipRowInclude = {
     d4h: true,
     team: { select: { id: true, name: true } },
-    person: { select: { id: true, name: true, email: true } },
+    person: { select: { id: true, name: true, email: true, status: true } },
 } as const;
 
 /**
@@ -193,6 +194,9 @@ export const teamsRouter = createTrpcRouter({
                     }),
                 ])
                 .catch((error: unknown) => mapSlugRace(error, create.slug));
+            // A slug can be freed without its cached team being cleared (an auto-purge, say), so
+            // clear the new slug's entry here rather than at every path that frees one.
+            await revalidateTeam(createdTeam.slug);
 
             return { created: TeamData.fromRecord(createdTeam) };
         }),

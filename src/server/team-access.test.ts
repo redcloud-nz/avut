@@ -58,7 +58,7 @@ describe("requireTeam", () => {
         mocks.requireSession.mockResolvedValue({ user: { id: userId } });
         mocks.getOrganizationSettings.mockResolvedValue(settings);
         mocks.getOrganizationUserRoles.mockResolvedValue(["member"]);
-        mocks.teamUserFindUnique.mockResolvedValue({ id: "grant" });
+        mocks.teamUserFindUnique.mockResolvedValue({ team: { status: "Active" } });
     });
 
     it("returns the team, its org, settings and the caller's roles for a granted Active team", async () => {
@@ -78,7 +78,7 @@ describe("requireTeam", () => {
         expect(mocks.getOrganizationUserRoles).toHaveBeenCalledWith(orgId, userId);
         expect(mocks.teamUserFindUnique).toHaveBeenCalledWith({
             where: { teamId_userId: { teamId, userId } },
-            select: { id: true },
+            select: { team: { select: { status: true } } },
         });
         expect(mocks.notFound).not.toHaveBeenCalled();
     });
@@ -102,6 +102,19 @@ describe("requireTeam", () => {
         await expect(requireTeam("ungranted")).rejects.toThrow("NEXT_NOT_FOUND");
         expect(mocks.notFound).toHaveBeenCalledOnce();
     });
+
+    // The cached team is only an early exit: a missed `revalidateTeam` mustn't let anyone into a
+    // team archived or deleted since it was cached.
+    it.each(["Archived", "Deleted"] as const)(
+        "calls notFound() for a team cached as Active but %s by the uncached grant query",
+        async (status) => {
+            mocks.getTeamBySlug.mockResolvedValue({ ...teamRow("Active"), organization });
+            mocks.teamUserFindUnique.mockResolvedValue({ team: { status } });
+
+            await expect(requireTeam(`stale-${status}`)).rejects.toThrow("NEXT_NOT_FOUND");
+            expect(mocks.notFound).toHaveBeenCalledOnce();
+        },
+    );
 
     it("checks the grant alongside the settings and roles, not after them", async () => {
         mocks.getTeamBySlug.mockResolvedValue({ ...teamRow(), organization });

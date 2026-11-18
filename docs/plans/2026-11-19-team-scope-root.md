@@ -135,6 +135,7 @@ New: a team scope at `/teams/<slug>`, reached from the scope switcher's new Team
 
 ## Parked
 
+- Admin → Teams → members (`teams.listTeamMemberships`) shows archived or binned people whose membership is Active. Decide whether Admin should hide them. Proposed issue: "Team members list shows archived and binned people".
 - `route()` (`src/lib/routes.ts`) only fills `[key]` segments, so a catch-all page such as `/docs/[[...slug]]` would come out unfilled. It predates this branch. Proposed issue: "route() doesn't fill catch-all segments".
 
 ## Review notes
@@ -151,3 +152,13 @@ For the access-control checkpoint (the user decides, not fixed by default):
 
 - `teamProcedure` makes two sequential round trips on a cold role cache (the grant query, then `hasPermission`'s role lookup). The roles could ride along in the grant query and be checked in memory with `hasAnyRoleWithPermissions`, at the cost of the cross-request `"use cache"` hit and some duplicated logic from `trpc-context.ts`.
 - `requireTeam` calls `getOrganizationBySlug` for an org the grant query already joined. It's a `"use cache"` lookup, so only a miss costs anything. Selecting the full org row in `getGrantedBySlug` would remove it, but widens `TeamScopeTeamData`.
+
+### Task 11 review (user approved the fix list, 2026-11-19)
+
+1. `requireTeam` gates on `team.status` read through the **uncached** grant query (`teamUser.findUnique({ where: { teamId_userId }, select: { team: { select: { status: true } } } })`); the cached status is only an early exit.
+2. `getTeamBySlug` adds a second cache tag keyed on the org id (e.g. `organization-teams-<organizationId>`), cleared by `updateOrganization` through a helper next to `revalidateOrganization`.
+3. `createTeam` calls `revalidateTeam` on its new slug, which covers every path that frees a slug, auto-purge included.
+4. One `revalidateTeam` assertion per write site: archive, restore, delete, recover, D4H link, D4H unlink, the D4H sync (including its failure path), trash recover and purge (the slug read before the delete), and `createTeam`.
+5. Fix-now, own commit: `updateOrganization` also clears the org's **old** slug entry (`organization-<existing.slug>`) when the slug changes.
+6. Stop seeding `teams.getTeam`. `TeamProvider` carries the `TeamData` from `requireTeam`, and `useTeam()` returns it with no query. Team-scope edits (#525) will need `router.refresh()`.
+7. (blocking) Roster: `teamMembershipRowSchema`/`teamMembershipRowInclude` add `person.status`, and `RosterCard` shows rows whose membership **and** person are `Active`, with a test. Admin's members list is unchanged (parked).

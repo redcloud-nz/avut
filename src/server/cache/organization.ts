@@ -27,6 +27,22 @@ export async function revalidateOrganization(slug: string) {
     revalidateTag(`organization-${slug}`, { expire: 0 });
 }
 
+/**
+ * The cache tag on every cached entry that embeds an organization's data alongside a record of its
+ * own, such as a team looked up by slug (`getTeamBySlug`), which carries its organization.
+ */
+export function organizationTeamsCacheTag(organizationId: string) {
+    return `organization-teams-${organizationId}`;
+}
+
+/**
+ * Invalidate every cached team of an organization (`organizationTeamsCacheTag`). Must be called
+ * after a write to the organization's own row, alongside `revalidateOrganization`.
+ */
+export async function revalidateOrganizationTeams(organizationId: string) {
+    revalidateTag(organizationTeamsCacheTag(organizationId), { expire: 0 });
+}
+
 export async function getAllOrganizationSlugs(): Promise<string[]> {
     const records = await prisma.organization.findMany({
         select: { slug: true },

@@ -14,7 +14,7 @@ import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamUserId } from "@/lib/schemas/team-user";
 import { UserId } from "@/lib/schemas/user";
-import { revalidateOrganization } from "@/server/cache/organization";
+import { revalidateOrganization, revalidateOrganizationTeams } from "@/server/cache/organization";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -28,6 +28,7 @@ vi.mock("@/server/cache/organization-user-revalidate", () => ({
 }));
 vi.mock("@/server/cache/organization", () => ({
     revalidateOrganization: vi.fn(async () => {}),
+    revalidateOrganizationTeams: vi.fn(async () => {}),
 }));
 
 // `updateOrganization` writes through Better Auth; the tests assert on what it clears afterwards.
@@ -1334,6 +1335,7 @@ describe("organizationsRouter.updateOrganization — cache invalidation", () => 
 
     beforeEach(() => {
         vi.mocked(revalidateOrganization).mockClear();
+        vi.mocked(revalidateOrganizationTeams).mockClear();
     });
 
     it("clears the old slug's entry as well as the new one when the slug changes", async () => {
@@ -1352,5 +1354,14 @@ describe("organizationsRouter.updateOrganization — cache invalidation", () => 
         });
 
         expect(vi.mocked(revalidateOrganization).mock.calls).toEqual([["old-slug"]]);
+    });
+
+    it("clears the organization's cached teams, which embed its name and slug", async () => {
+        await caller().updateOrganization({
+            organizationId: T.org,
+            update: { name: "Acme Rescue", slug: "old-slug" },
+        });
+
+        expect(vi.mocked(revalidateOrganizationTeams).mock.calls).toEqual([[T.org]]);
     });
 });

@@ -14,6 +14,7 @@ import { SkillGroupId } from "@/lib/schemas/skill-group";
 import { SkillPackageId } from "@/lib/schemas/skill-package";
 import { TeamId } from "@/lib/schemas/team";
 import { UserId } from "@/lib/schemas/user";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import { createMockPrisma } from "@/test/create-prisma-mock";
 import { createAuthenticatedMockContext } from "@/test/trpc-helpers";
 
@@ -311,12 +312,16 @@ describe("trash.recoverRecord / trash.purgeRecord", () => {
         await db.organization.create({
             data: { id: T.org, name: "Acme", slug: "acme-2", createdAt: new Date() },
         });
-        for (const id of [T.recoverTeam, T.purgeTeam]) {
+        for (const [id, slug] of [
+            [T.recoverTeam, "recover-me"],
+            [T.purgeTeam, "purge-me"],
+        ] as const) {
             await db.team.create({
                 data: {
                     id,
                     organizationId: T.org,
                     name: id,
+                    slug,
                     tags: [],
                     properties: {},
                     status: "Deleted",
@@ -355,21 +360,26 @@ describe("trash.recoverRecord / trash.purgeRecord", () => {
     });
 
     it("recoverRecord brings a Deleted team back to Active", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller(T.adminUser).recoverRecord({
             organizationId: T.org,
             type: "team",
             id: T.recoverTeam,
         });
         expect((await db.team.findUnique({ where: { id: T.recoverTeam } }))?.status).toBe("Active");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["recover-me"]]);
     });
 
     it("purgeRecord permanently deletes a Deleted team, and rejects an Active one", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller(T.adminUser).purgeRecord({
             organizationId: T.org,
             type: "team",
             id: T.purgeTeam,
         });
         expect(await db.team.findUnique({ where: { id: T.purgeTeam } })).toBeNull();
+        // The slug was read before the row went.
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["purge-me"]]);
 
         await expect(
             makeCaller(T.adminUser).purgeRecord({
