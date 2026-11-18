@@ -22,6 +22,9 @@ export default async function AdminModule_User_Page(
     const userId = UserId.schema.parse(user_id);
 
     prefetch(trpc.users.getLinkedPerson.queryOptions({ organizationId: organization.id, userId }));
+    prefetch(
+        trpc.teamUsers.listUserTeams.queryOptions({ organizationId: organization.id, userId }),
+    );
 
     return (
         <HydrateClient>

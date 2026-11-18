@@ -28,6 +28,7 @@ import { OrganizationRole } from "@/lib/schemas/organization-role";
 import { UserId } from "@/lib/schemas/user";
 import { AdminModule_UpdateUser_Dialog } from "@/modules/org-admin/components/users/update-user";
 import { AdminModule_User_Menu } from "@/modules/org-admin/components/users/user-menu";
+import { AdminModule_UserTeams_Card } from "@/modules/org-admin/components/users/user-teams-card";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_User_Content({ userId }: { userId: UserId }) {
@@ -149,6 +150,7 @@ export function AdminModule_User_Content({ userId }: { userId: UserId }) {
                                     </CardContent>
                                 </Card>
                             )}
+                            <AdminModule_UserTeams_Card userId={userId} />
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Card>
