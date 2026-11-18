@@ -8,6 +8,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { I3BundleId } from "@/lib/schemas/i3-bundle";
 import { I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3TemplateVariantId } from "@/lib/schemas/i3-template-variant";
 import { OrganizationId } from "@/lib/schemas/organization";
 import { UserId } from "@/lib/schemas/user";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -233,6 +234,69 @@ describe("i3-bundles", () => {
                 "Alpha",
                 "Charlie",
             ]);
+        });
+
+        it("carries each line's quality rules, with only the variants that have D4H records", async () => {
+            const S = {
+                bundle: I3BundleId.create(),
+                gloves: I3TemplateId.create(),
+            };
+            await db.i3Template.create({
+                data: {
+                    id: S.gloves,
+                    organizationId: T.org,
+                    name: "Gloves",
+                    description: "",
+                    d4h: {
+                        create: {
+                            categoryId: 1,
+                            categoryTitle: "PPE",
+                            kindId: 20,
+                            kindTitle: "Gloves",
+                            outputRefFormat: "",
+                            requireSN: true,
+                            brandModelRule: "Required",
+                        },
+                    },
+                    variants: {
+                        create: [
+                            {
+                                id: I3TemplateVariantId.create(),
+                                name: "Leather",
+                                d4h: {
+                                    create: {
+                                        brandId: 1,
+                                        brandTitle: "Acme",
+                                        modelId: 11,
+                                        modelTitle: "Leather",
+                                    },
+                                },
+                            },
+                            { id: I3TemplateVariantId.create(), name: "Any" },
+                        ],
+                    },
+                },
+            });
+            await db.i3Bundle.create({
+                data: { id: S.bundle, organizationId: T.org, name: "Rules", description: "" },
+            });
+            await db.i3BundleItem.create({ data: { bundleId: S.bundle, templateId: S.gloves } });
+
+            const result = await getWithLines(ctx(), S.bundle);
+
+            expect(result?.lines[0].template).toMatchObject({
+                d4h: { requireSN: true, brandModelRule: "Required" },
+                variants: [{ brandId: 1, modelId: 11 }],
+            });
+        });
+
+        it("defaults a line's brand & model rule to Optional, with no variants", async () => {
+            const result = await getWithLines(ctx(), T.bundle);
+
+            expect(result?.lines[0].template).toMatchObject({
+                d4h: { requireSN: false, brandModelRule: "Optional" },
+                variants: [],
+            });
         });
 
         it("returns null for a bundle in another organization", async () => {

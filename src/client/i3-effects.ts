@@ -42,7 +42,8 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.getTemplate.queryFilter({ organizationId, templateId })),
         // A changed D4H category/type changes which teams the template fits.
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
-        // A bundle page shows its templates' names and D4H types.
+        // A bundle page shows its templates' names and D4H types, and checks items against their
+        // serial number and brand & model rules.
         invalidate(trpc.i3Bundles.pathFilter()),
     ],
     createTemplateVariant: ({ organizationId, templateId }, { created }) => [
@@ -54,6 +55,8 @@ export const i3Effects = createEffects<"i3">()({
         // Org-wide, so the Issue form's unfiltered variant list is refreshed too.
         invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page checks items' brands and models against their templates' variants.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     updateTemplateVariant: ({ organizationId }) => [
         // listTemplates embeds each template's variants.
@@ -61,11 +64,15 @@ export const i3Effects = createEffects<"i3">()({
         invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         // A changed D4H brand/model changes which teams the variant fits.
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page checks items' brands and models against their templates' variants.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     deleteTemplateVariant: ({ organizationId }) => [
         invalidate(trpc.i3.listTemplates.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateVariants.queryFilter({ organizationId })),
         invalidate(trpc.i3.listTemplateFits.queryFilter({ organizationId })),
+        // A bundle page checks items' brands and models against their templates' variants.
+        invalidate(trpc.i3Bundles.pathFilter()),
     ],
     returnItem: ({ organizationId }) => [
         invalidate(trpc.d4hTasks.listItemTasks.queryFilter({ organizationId })),

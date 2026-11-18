@@ -10,7 +10,7 @@ import type { I3Bundle as I3BundleRecord } from "@/generated/prisma/client";
 import { nanoId16 } from "../id";
 import { recordStatusSchema, zodNanoId16 } from "../validation";
 
-import { I3TemplateId } from "./i3-template";
+import { I3BrandModelRule, I3TemplateId } from "./i3-template";
 
 export const I3BundleId = {
     schema: zodNanoId16("I3BundleId expected").brand<"I3BundleId">(),
@@ -71,8 +71,9 @@ export const I3BundleRef = {
 export type I3BundleRef = z.infer<typeof I3BundleRef.schema>;
 
 /**
- * One line of a bundle: the template it names. The template may be soft-deleted or have lost its
- * D4H type; such lines are kept but can't be compared.
+ * One line of a bundle: the template it names, with the rules its items are checked against. The
+ * template may be soft-deleted or have lost its D4H type; such lines are kept but can't be
+ * compared.
  */
 const i3BundleLineSchema = z.object({
     template: z.object({
@@ -85,8 +86,12 @@ const i3BundleLineSchema = z.object({
                 categoryTitle: z.string(),
                 kindId: z.number(),
                 kindTitle: z.string(),
+                requireSN: z.boolean(),
+                brandModelRule: I3BrandModelRule.schema,
             })
             .nullable(),
+        /** The brand/model pairs of the template's variants that have D4H records. */
+        variants: z.array(z.object({ brandId: z.number(), modelId: z.number() })),
     }),
 });
 

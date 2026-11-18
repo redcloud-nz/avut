@@ -30,7 +30,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -43,7 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useLogger } from "@/hooks/use-logger";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
-import { I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
+import { I3BrandModelRule, I3Template, I3TemplateId } from "@/lib/schemas/i3-template";
 import { useOrganisationOnlyId } from "@/modules/d4h-i3/lib/use-organisation-only-id";
 import { trpc } from "@/trpc/client";
 
@@ -95,6 +95,7 @@ function CreateTemplate_Body() {
                 kindId: 0,
                 kindTitle: "",
                 requireSN: false,
+                brandModelRule: "Optional",
                 outputRefFormat: "{{team.prefix}} {{kind.title}} {{member.ref}}",
             },
         },
@@ -254,6 +255,36 @@ function CreateTemplate_Body() {
                                             <SelectItem value="no">No</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            name="d4h.brandModelRule"
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor={`${formId}-brand-model-rule`}>
+                                        Brand &amp; Model
+                                    </FieldLabel>
+                                    <Select value={field.value} onValueChange={field.onChange}>
+                                        <SelectTrigger
+                                            id={`${formId}-brand-model-rule`}
+                                            aria-invalid={fieldState.invalid}
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {I3BrandModelRule.values.map((rule) => (
+                                                <SelectItem key={rule} value={rule}>
+                                                    {I3BrandModelRule.label[rule]}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldDescription>
+                                        {I3BrandModelRule.description[field.value]}
+                                    </FieldDescription>
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
                                 </Field>
                             )}
                         />

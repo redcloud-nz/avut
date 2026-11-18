@@ -11,6 +11,7 @@ import {
     type BundleCompareItem,
     type BundleCompareLine,
 } from "./bundle-compare";
+import type { ItemQualityResult, ItemQualityRules } from "./item-quality";
 
 const KIND_HELMET = 100;
 const KIND_JACKET = 200;
@@ -20,12 +21,31 @@ const ALICE = { id: 1, name: "Alice" };
 const BOB = { id: 2, name: "Bob" };
 const CAROL = { id: 3, name: "Carol" };
 
+const BRAND_ACME = 10;
+const MODEL_ACME_PRO = 11;
+const BRAND_OTHER = 20;
+const MODEL_OTHER = 21;
+
+/** The default rules ask for nothing, so every item is OK. */
+const NO_RULES: ItemQualityRules = { requireSN: false, brandModelRule: "Optional", variants: [] };
+
 function line(
     id: string,
     kindId: number | null,
     status: "Active" | "Deleted" = "Active",
+    rules: ItemQualityRules = NO_RULES,
 ): BundleCompareLine {
-    return { template: { id, status, d4h: kindId === null ? null : { kindId } } };
+    return {
+        template: {
+            id,
+            status,
+            d4h:
+                kindId === null
+                    ? null
+                    : { kindId, requireSN: rules.requireSN, brandModelRule: rules.brandModelRule },
+            variants: rules.variants,
+        },
+    };
 }
 
 let nextItemId = 1;
@@ -33,8 +53,30 @@ function item(
     holderId: number,
     kindId: number,
     status = "OPERATIONAL",
+    record: Partial<Pick<BundleCompareItem, "serial" | "brand" | "model">> = {},
 ): BundleCompareItem & { id: number } {
-    return { id: nextItemId++, status, kind: { id: kindId }, holder: { id: holderId } };
+    return {
+        id: nextItemId++,
+        status,
+        kind: { id: kindId },
+        holder: { id: holderId },
+        serial: null,
+        brand: { id: null },
+        model: null,
+        ...record,
+    };
+}
+
+const OK: ItemQualityResult = { state: "ok", missing: [], mismatch: null };
+const NOT_A_VARIANT: ItemQualityResult = {
+    state: "mismatch",
+    missing: [],
+    mismatch: "not-a-variant",
+};
+
+/** A counted item judged OK. */
+function ok<I>(counted: I) {
+    return { item: counted, quality: OK };
 }
 
 const helmet = line("helmet", KIND_HELMET);
@@ -56,8 +98,8 @@ describe("compareBundle", () => {
             {
                 member: ALICE,
                 cells: [
-                    { state: "held", items: [aliceHelmet], lost: [] },
-                    { state: "missing", items: [], lost: [] },
+                    { state: "held", quality: "ok", items: [ok(aliceHelmet)], lost: [] },
+                    { state: "missing", quality: null, items: [], lost: [] },
                 ],
                 heldCount: 1,
             },
@@ -76,6 +118,7 @@ describe("compareBundle", () => {
 
         expect(result.rows[0].cells[0]).toEqual({
             state: "missing",
+            quality: null,
             items: [],
             lost: [lostHelmet],
         });
@@ -95,7 +138,8 @@ describe("compareBundle", () => {
 
         expect(result.rows[0].cells[0]).toEqual({
             state: "held",
-            items: [spareHelmet],
+            quality: "ok",
+            items: [ok(spareHelmet)],
             lost: [lostHelmet],
         });
     });
@@ -108,7 +152,12 @@ describe("compareBundle", () => {
             fittingTemplateIds: ["helmet"],
         });
 
-        expect(result.rows[0].cells[0]).toEqual({ state: "missing", items: [], lost: [] });
+        expect(result.rows[0].cells[0]).toEqual({
+            state: "missing",
+            quality: null,
+            items: [],
+            lost: [],
+        });
     });
 
     it("excludes deleted, no-D4H-type and not-in-team lines, keeping line order", () => {
@@ -188,6 +237,138 @@ describe("compareBundle", () => {
         });
 
         expect(result).toEqual({ columns: [helmet], excluded: [], rows: [], columnTotals: [0] });
+    });
+});
+
+describe("compareBundle quality", () => {
+    const acmeOnly: ItemQualityRules = {
+        requireSN: false,
+        brandModelRule: "Optional",
+        variants: [{ brandId: BRAND_ACME, modelId: MODEL_ACME_PRO }],
+    };
+    const strict: ItemQualityRules = { requireSN: true, brandModelRule: "Required", variants: [] };
+
+    function judge(rules: ItemQualityRules, items: (BundleCompareItem & { id: number })[]) {
+        return compareBundle({
+            lines: [line("helmet", KIND_HELMET, "Active", rules)],
+            members: [ALICE],
+            items,
+            fittingTemplateIds: ["helmet"],
+        });
+    }
+
+    it("marks a held cell ok when its item passes", () => {
+        const acmeHelmet = item(ALICE.id, KIND_HELMET, "OPERATIONAL", {
+            brand: { id: BRAND_ACME },
+            model: { id: MODEL_ACME_PRO },
+        });
+        const cell = judge(acmeOnly, [acmeHelmet]).rows[0].cells[0];
+
+        expect(cell).toEqual({
+            state: "held",
+            quality: "ok",
+            items: [{ item: acmeHelmet, quality: OK }],
+            lost: [],
+        });
+    });
+
+    it("marks a held cell incomplete when a required part is blank, and still counts it", () => {
+        const blankHelmet = item(ALICE.id, KIND_HELMET);
+        const result = judge(strict, [blankHelmet]);
+
+        expect(result.rows[0].cells[0]).toEqual({
+            state: "held",
+            quality: "incomplete",
+            items: [
+                {
+                    item: blankHelmet,
+                    quality: {
+                        state: "incomplete",
+                        missing: ["brand", "model", "serial"],
+                        mismatch: null,
+                    },
+                },
+            ],
+            lost: [],
+        });
+        expect(result.rows[0].heldCount).toBe(1);
+        expect(result.columnTotals).toEqual([1]);
+    });
+
+    it("marks a held cell mismatch when its item isn't a variant, and still counts it", () => {
+        const otherHelmet = item(ALICE.id, KIND_HELMET, "OPERATIONAL", {
+            brand: { id: BRAND_OTHER },
+            model: { id: MODEL_OTHER },
+        });
+        const result = judge(acmeOnly, [otherHelmet]);
+
+        expect(result.rows[0].cells[0]).toEqual({
+            state: "held",
+            quality: "mismatch",
+            items: [{ item: otherHelmet, quality: NOT_A_VARIANT }],
+            lost: [],
+        });
+        expect(result.rows[0].heldCount).toBe(1);
+        expect(result.columnTotals).toEqual([1]);
+    });
+
+    it("leaves a missing cell's quality null", () => {
+        const cell = judge(strict, []).rows[0].cells[0];
+
+        expect(cell.state).toBe("missing");
+        expect(cell.quality).toBeNull();
+    });
+
+    it("doesn't judge a LOST item", () => {
+        const lostHelmet = item(ALICE.id, KIND_HELMET, "LOST");
+        const cell = judge(strict, [lostHelmet]).rows[0].cells[0];
+
+        expect(cell).toEqual({ state: "missing", quality: null, items: [], lost: [lostHelmet] });
+    });
+
+    it("takes the worst quality across a cell's items", () => {
+        const goodHelmet = item(ALICE.id, KIND_HELMET, "OPERATIONAL", {
+            brand: { id: BRAND_ACME },
+            model: { id: MODEL_ACME_PRO },
+        });
+        const otherHelmet = item(ALICE.id, KIND_HELMET, "OPERATIONAL", {
+            brand: { id: BRAND_OTHER },
+            model: { id: MODEL_OTHER },
+        });
+        const cell = judge(acmeOnly, [goodHelmet, otherHelmet]).rows[0].cells[0];
+
+        expect(cell.quality).toBe("mismatch");
+        expect(cell.items.map((entry) => entry.quality.state)).toEqual(["ok", "mismatch"]);
+    });
+
+    it("judges one item against each line's own template when two lines share a kind", () => {
+        const leather = line("boots-leather", KIND_BOOTS, "Active", {
+            requireSN: false,
+            brandModelRule: "Optional",
+            variants: [{ brandId: BRAND_ACME, modelId: MODEL_ACME_PRO }],
+        });
+        const rubber = line("boots-rubber", KIND_BOOTS, "Active", {
+            requireSN: false,
+            brandModelRule: "Optional",
+            variants: [{ brandId: BRAND_OTHER, modelId: MODEL_OTHER }],
+        });
+        const leatherBoots = item(ALICE.id, KIND_BOOTS, "OPERATIONAL", {
+            brand: { id: BRAND_ACME },
+            model: { id: MODEL_ACME_PRO },
+        });
+        const result = compareBundle({
+            lines: [leather, rubber],
+            members: [ALICE],
+            items: [leatherBoots],
+            fittingTemplateIds: ["boots-leather", "boots-rubber"],
+        });
+
+        expect(result.rows[0].cells.map((cell) => [cell.state, cell.quality])).toEqual([
+            ["held", "ok"],
+            ["held", "mismatch"],
+        ]);
+        expect(result.rows[0].heldCount).toBe(2);
+        expect(result.columnTotals).toEqual([1, 1]);
     });
 });
 
