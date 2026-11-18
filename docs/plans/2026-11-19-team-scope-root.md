@@ -112,12 +112,16 @@ New: a team scope at `/teams/<slug>`, reached from the scope switcher's new Team
 
 ## Parked
 
+- `route()` (`src/lib/routes.ts`) only fills `[key]` segments, so a catch-all page such as `/docs/[[...slug]]` would come out unfilled. It predates this branch. Proposed issue: "route() doesn't fill catch-all segments".
+
 ## Review notes
+
+Fixed in "fix(teams): one grant query per request, and an Active-only roster", except where marked.
 
 - (group A) `Teams.listRoster` filters only on membership `status: "Active"`, so an archived or binned person with an Active membership still shows. Add `person: { status: "Active" }` to the `where`, with a test (the `skill-checks-router.ts:282` pattern).
 - (group A) The grant query repeats within one request: `getGrantedBySlug` runs in `requireTeam` and again in each `teamProcedure` call (a team page that prefetches `getTeam` and `listRoster` runs it three times). Add a React `cache()`-wrapped `(slug, userId)` variant that both call. Outside RSC `cache` is a passthrough, so tests and the HTTP handler behave as before.
 - (group B) The team layout's `generateMetadata` runs the grant query again through `fetchQuery(teamScope.getTeam)`, on top of `requireTeam`'s. Same fix as the note above: a React-`cache`d `getGrantedTeam(slug)` in `src/server/team-access.ts` (session read without redirect, returns the team or `null`) that `requireTeam` and `generateMetadata` both call, sharing the cached `(slug, userId)` lookup with `teamProcedure`. One grant query per server request.
-- (group B) `scopedRoute` joins array values with `/` but only replaces `[key]`, so catch-all segments (`[...key]`, `[[...key]]`) wouldn't be filled. Handle them as `route()` in `src/lib/routes.ts` does.
+- (group B) `scopedRoute` joins array values with `/` but only replaces `[key]`, so catch-all segments (`[...key]`, `[[...key]]`) wouldn't be filled. Handle them as `route()` in `src/lib/routes.ts` does. (Fixed by dropping the array branch: `route()` doesn't handle them either, and no page under either root has one.)
 - (group B, no change now) The dashboard page calls `requireTeam` only for `roles`. That costs nothing on a hard load, but on a client navigation back from a sibling team page it runs the grant query again. With `getGrantedTeam`, the page can read the roles directly. It matters once the first sibling page lands (#525).
 
 For the access-control checkpoint (the user decides, not fixed by default):
