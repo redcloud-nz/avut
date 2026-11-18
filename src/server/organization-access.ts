@@ -26,8 +26,8 @@ export interface OrganizationAccess {
 
 /**
  * Resolve an organization by slug, verifying that the current user is signed in and a
- * member of it (a non-member gets not-found). Returns the session, organization, settings and the caller's roles so callers
- * need only one call.
+ * member of it (a non-member gets not-found). Returns the session, organization, settings
+ * and the caller's roles so callers need only one call.
  *
  * Cached per request on the slug alone — deliberately not parameterised by permissions,
  * because React `cache` keys by argument identity and a fresh object literal per call
