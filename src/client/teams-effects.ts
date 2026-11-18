@@ -40,6 +40,9 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     restoreTeam: (vars, { updated }) => [
         write(
@@ -50,6 +53,9 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
     recoverTeam: (vars, { updated }) => [
         write(
@@ -67,6 +73,9 @@ export const teamsEffects = createEffects<"teams">()({
     ],
     deleteTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
     ],
     // Linking imports nobody, so the memberships are untouched; the first sync refreshes them.
@@ -149,5 +158,8 @@ export const teamsEffects = createEffects<"teams">()({
             updated,
         ),
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
+        invalidate(
+            trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
+        ),
     ],
 });

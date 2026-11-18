@@ -60,7 +60,7 @@ Both issues add team data with admin UI on the same page (`orgs/[slug]/admin/tea
     - `getById` is not needed. Add only what callers use.
   - **Done when:** service tests (prisma-mock, per `.claude/rules/testing.md`) cover each function's happy path and each error, including a team in another org → `NotFoundError`, a soft-deleted user → `NotFoundError`, and `onRoster` true and false. `npm run check` passes.
 
-- [ ] **Task 5: `teamUsers` router**
+- [x] **Task 5: `teamUsers` router**
   - **Files:** `src/trpc/routers/team-users-router.ts` (new), `src/trpc/routers/team-users-router.test.ts` (new), `src/trpc/routers/_app.ts`, `src/client/team-users-effects.ts` (new), `src/client/teams-effects.ts`, and the effects file for `removeOrganizationMember`
   - **Do:** Procedures in alphabetical order, each a thin call into `TeamUsers.*`:
     - `grantTeamAccess`: `organizationProcedure({ member: ["update"] })`, `{ teamId, userId }`
@@ -113,3 +113,4 @@ Admin → Teams gains a Slug field and an Access card, and Admin → Users gains
 ## Review notes
 
 - (Group A, Task 2) `updateTeam`'s input still runs `TeamSlug.schema`, so a team whose stored slug later becomes reserved can't take a name-only edit: the resent slug fails validation. Accept an unchanged stored slug. For example, `modifiableSchema` validates only the slug's shape (characters and length), and the router (plus the dialog, for the error message) checks reserved words only when the slug changes. Extend the "since become reserved" test to cover a name-only edit.
+- (Group B, Task 4) `TeamUsers.listForUser` leaves out teams with status `Deleted` (in the Rubbish bin). Archived teams stay, and Task 9 shows them with a badge.
