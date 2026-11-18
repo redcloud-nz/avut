@@ -5,10 +5,12 @@
 
 import "server-only";
 
+import type { PrismaClient } from "@/generated/prisma/client";
 import { diffObject } from "@/lib/diff";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
+import { OrganizationId } from "@/lib/schemas/organization";
 import type { PersonId } from "@/lib/schemas/person";
-import { TeamData, type TeamId } from "@/lib/schemas/team";
+import { TeamData, TeamId } from "@/lib/schemas/team";
 import {
     TeamMembershipData,
     TeamMembershipId,
@@ -49,6 +51,28 @@ export async function getById(ctx: OrgServiceContext, teamId: TeamId): Promise<T
             ? { ...team.d4h, d4hOrganisationName: orgD4H?.d4hOrganisationName ?? null }
             : null,
     });
+}
+
+/**
+ * Find the team holding `slug`, in any organization (slugs are globally unique), or `null` if no
+ * team holds it. Takes `prisma` rather than an org context because the lookup crosses orgs.
+ * A `Deleted` team still holds its slug, so it is returned too.
+ */
+export async function getBySlug(
+    prisma: PrismaClient,
+    slug: string,
+): Promise<{ id: TeamId; organizationId: OrganizationId } | null> {
+    const team = await prisma.team.findUnique({
+        where: { slug },
+        select: { id: true, organizationId: true },
+    });
+
+    if (!team) return null;
+
+    return {
+        id: TeamId.schema.parse(team.id),
+        organizationId: OrganizationId.schema.parse(team.organizationId),
+    };
 }
 
 /**
