@@ -4,47 +4,54 @@
  */
 "use client";
 
+import type { Route } from "next";
 import type { ComponentProps } from "react";
 
 import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { TeamData } from "@/lib/schemas/team";
 
 import { Teams_UpdateTeam_Dialog } from "./update-team";
 
+/**
+ * The team's own record card ("Team"), shared by the org team page and team admin. The team's
+ * status isn't a row: the org team page shows a non-Active status as a title badge.
+ */
 export function Teams_Details_Card({
     team,
+    historyHref,
     requireSlug,
     onUpdated,
 }: {
     team: TeamData;
+    /** The team's History page, where the scope has one: the footer's Updated line links to it. */
+    historyHref?: Route;
 } & Pick<ComponentProps<typeof Teams_UpdateTeam_Dialog>, "requireSlug" | "onUpdated">) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Team Details</CardTitle>
-                <CardAction>
-                    <Protect permissions={{ team: ["update"] }}>
-                        <Teams_UpdateTeam_Dialog
-                            team={team}
-                            requireSlug={requireSlug}
-                            onUpdated={onUpdated}
-                        />
-                    </Protect>
-                </CardAction>
-            </CardHeader>
+        <RecordCard
+            label="Team"
+            updatedAt={team.updatedAt ?? undefined}
+            historyHref={historyHref}
+            action={
+                <Protect permissions={{ team: ["update"] }}>
+                    <Teams_UpdateTeam_Dialog
+                        team={team}
+                        requireSlug={requireSlug}
+                        onUpdated={onUpdated}
+                    />
+                </Protect>
+            }
+        >
             <CardContent>
                 <DataList>
-                    <DataItem inline>
-                        <DataItemTitle>Team ID</DataItemTitle>
-                        <DataItemValue className="font-mono">{team.id}</DataItemValue>
-                    </DataItem>
-                    <DataItem inline>
+                    <RecordCardId label="Team ID" id={team.id} />
+                    <DataItem>
                         <DataItemTitle>Name</DataItemTitle>
                         <DataItemValue>{team.name}</DataItemValue>
                     </DataItem>
-                    <DataItem inline>
+                    <DataItem>
                         <DataItemTitle>Slug</DataItemTitle>
                         {team.slug ? (
                             <DataItemValue className="font-mono">{team.slug}</DataItemValue>
@@ -56,12 +63,8 @@ export function Teams_Details_Card({
                         <DataItemTitle>Description</DataItemTitle>
                         <DataItemValue>{team.description}</DataItemValue>
                     </DataItem>
-                    <DataItem inline>
-                        <DataItemTitle>Status</DataItemTitle>
-                        <DataItemValue>{team.status}</DataItemValue>
-                    </DataItem>
                 </DataList>
             </CardContent>
-        </Card>
+        </RecordCard>
     );
 }

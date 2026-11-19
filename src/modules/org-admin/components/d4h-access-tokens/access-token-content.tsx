@@ -15,22 +15,11 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import {
     Table,
     TableBody,
@@ -99,7 +88,13 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                accessToken.status !== "OK" && (
+                                    <Badge variant="outline">{accessToken.status}</Badge>
+                                )
+                            }
+                        >
                             {accessToken.label || `Access Token: ${accessToken.id}`}
                         </Saratoga.Title>
                         <Saratoga.Actions>
@@ -126,41 +121,42 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>D4H Access Token</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ organization: ["update"] }}>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                aria-label="Edit access token"
-                                                onClick={() =>
-                                                    void setAction("edit", { history: "push" })
-                                                }
-                                            >
-                                                <ObjectIcons.Edit />
-                                            </Button>
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="D4H Access Token"
+                                updatedAt={accessToken.updatedAt}
+                                historyHref={route(
+                                    "/orgs/[slug]/admin/d4h-access-tokens/[token_id]/history",
+                                    { slug: organization.slug, token_id: accessToken.id },
+                                )}
+                                action={
+                                    <Protect permissions={{ organization: ["update"] }}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Edit access token"
+                                            onClick={() =>
+                                                void setAction("edit", { history: "push" })
+                                            }
+                                        >
+                                            <ObjectIcons.Edit />
+                                        </Button>
+                                    </Protect>
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Token ID</DataItemTitle>
-                                            <DataItemValue>{accessToken.id}</DataItemValue>
+                                        <RecordCardId label="Token ID" id={accessToken.id} />
+                                        <DataItem>
+                                            <DataItemTitle>Label</DataItemTitle>
+                                            <DataItemValue>{accessToken.label}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Server</DataItemTitle>
                                             <DataItemValue>
                                                 {getD4HServer(accessToken.serverCode)?.name}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Label</DataItemTitle>
-                                            <DataItemValue>{accessToken.label}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Access</DataItemTitle>
                                             <DataItemValue>
                                                 {
@@ -170,13 +166,9 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                                                 }
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{accessToken.status}</DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             {/* <Card>
                                 <CardHeader>
                                     <CardTitle>Organizations</CardTitle>
@@ -242,22 +234,6 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                                             ))}
                                         </TableBody>
                                     </Table>
-                                </CardContent>
-                            </Card>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={accessToken.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={accessToken.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
                                 </CardContent>
                             </Card>
                         </Saratoga.Column>

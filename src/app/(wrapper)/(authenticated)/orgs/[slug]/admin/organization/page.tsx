@@ -13,14 +13,9 @@ import { HelpButton } from "@/components/docs/help-button";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { route } from "@/lib/routes";
 import { AdminModule_Organization_D4HCard } from "@/modules/org-admin/components/organization/d4h-org-card";
 import { AdminModule_OrganizationMenu } from "@/modules/org-admin/components/organization/organization-menu";
@@ -51,59 +46,48 @@ export default async function AdminModule_Organization_Page(
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>{organization.name}</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ organization: ["update"] }}>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                aria-label="Update organisation"
-                                                asChild
+                            <RecordCard
+                                label="Organisation"
+                                action={
+                                    <Protect permissions={{ organization: ["update"] }}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            aria-label="Update organisation"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={route(
+                                                    "/orgs/[slug]/admin/organization/--update",
+                                                    { slug },
+                                                )}
                                             >
-                                                <Link
-                                                    href={route(
-                                                        "/orgs/[slug]/admin/organization/--update",
-                                                        { slug },
-                                                    )}
-                                                >
-                                                    <ObjectIcons.Edit />
-                                                </Link>
-                                            </Button>
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
+                                                <ObjectIcons.Edit />
+                                            </Link>
+                                        </Button>
+                                    </Protect>
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Organisation ID</DataItemTitle>
-                                            <DataItemValue>{organization.id}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId
+                                            label="Organisation ID"
+                                            id={organization.id}
+                                        />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{organization.name}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Slug</DataItemTitle>
-                                            <DataItemValue>{organization.slug}</DataItemValue>
+                                            <DataItemValue className="font-mono">
+                                                {organization.slug}
+                                            </DataItemValue>
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             <AdminModule_Organization_D4HCard />
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={organization.createdAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

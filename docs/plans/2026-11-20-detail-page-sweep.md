@@ -46,7 +46,7 @@ The shape, settled with the user at the Task 1 checkpoint (2026-11-20):
 
 For every page in Tasks 2–7: replace the "… Details"/"… Information"/"Identity" card with a `RecordCard` per record, apply the status rule and the Alert rule, drop Created, and move Updated into the footer (with `historyHref` where the record has a History page: check `src/app/**/history/page.tsx`). Split a card that mixes records. Convert related-record list cards in the secondary column to the Team Memberships pattern where they list records the user clicks through to. Follow `src/modules/org-admin/components/personnel/` and `skill-track/components/package-content.tsx` as the worked examples.
 
-- [ ] **Task 2: org-admin and the shared team card** `visual`
+- [x] **Task 2: org-admin and the shared team card** `visual` — feat(org-admin): record cards on the org-admin detail pages (#434)
   - **Files:** `src/modules/org-admin/components/users/user-content.tsx`, `teams/team-content.tsx`, `teams/team-membership-content.tsx`, `d4h-access-tokens/access-token-content.tsx`, `src/components/teams/team-details-card.tsx`, `src/modules/team-admin/components/team-admin-content.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/organization/page.tsx`, `content/help/team-admin.mdx`
   - **Do:** per page:
     - **org user:** a "User" card (User ID, Name, Email, Roles); its Linked Person card becomes a "Linked Person" `RecordCard` with an ↗ to the person, as the person page's Linked User card does.
@@ -103,3 +103,5 @@ Every detail page's cards change (record cards with a small type label, collapsi
 - The detail page's ⋮ Actions menu (`EntityActionMenu` in `Saratoga.Actions`): the user is unsure about the button and what it holds now that each record card carries its own edit pencil (and the package's Unsubscribe could sit on the Subscription card). Separate design question, raised at the #434 design pass (2026-11-20). Area: shared detail-page actions.
 
 ## Review notes
+
+- Task 2 implementer calls, for the checkpoint: token status badge shows when D4H's status text isn't "OK" (it's never "Active"; an empty status text would store "HTTP 200" and badge); no Updated footer on the org User card (`organizations.listMembers` lacks `updatedAt`) or the Organisation card (`OrganizationData` lacks it); the user page's Teams list became the tile pattern (`user-teams-card.tsx`, name still ends `_Card`); Linked Person shows a Status row only when not Active; emptied secondary columns removed (membership, token, organisation pages); organisation slug now mono.
