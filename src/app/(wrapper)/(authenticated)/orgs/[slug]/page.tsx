@@ -5,6 +5,7 @@
  * Path: /orgs/[slug]
  */
 
+import { GlyphPage } from "@/components/glyph-page";
 import { Organization_Dashboard_Content } from "@/components/organization/dashboard-content";
 import { enabledInSettings, isModuleUsable } from "@/lib/module-flags";
 import { hasAnyRoleWithPermissions, Permissions } from "@/lib/permissions";
@@ -48,6 +49,7 @@ export default async function Organization_Index_Page(props: PageProps<"/orgs/[s
 
     return (
         <HydrateClient>
+            <GlyphPage />
             <Organization_Dashboard_Content />
         </HydrateClient>
     );

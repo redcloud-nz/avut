@@ -13,6 +13,7 @@ import Link from "next/link";
 import { ComponentProps, Fragment, ReactNode, Suspense } from "react";
 
 import { AVUTLogo } from "@/components/art/avut-logo";
+import { GlyphPage } from "@/components/glyph-page";
 import { PageBackground, pageBackgroundAttributes } from "@/components/page-background";
 import {
     Breadcrumb,
@@ -171,6 +172,8 @@ function IndexPage({
             className={cn("w-full sm:w-lg sm:mx-auto", className)}
             {...props}
         >
+            {/* Index pages are low-traffic, so they show the glyph background. */}
+            <GlyphPage />
             {/* Sized to its content so the glyph halo hugs the logo and title. */}
             <div className="glyph-halo mx-auto my-4 flex w-fit flex-col items-center gap-4">
                 <AVUTLogo />
