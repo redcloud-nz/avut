@@ -6,7 +6,7 @@
  *
  */
 
-import { ComponentProps } from "react";
+import { ComponentProps, ReactNode } from "react";
 import { tv, VariantProps } from "tailwind-variants";
 
 import { cn } from "@/lib/utils";
@@ -37,8 +37,20 @@ function SaratogaHeader({ children, className, ...props }: ComponentProps<"heade
     );
 }
 
-function SaratogaTitle({ children, className, ...props }: ComponentProps<"h1">) {
-    return (
+/**
+ * The page's `<h1>`. A long title truncates with an ellipsis.
+ *
+ * `badges` (e.g. a record's non-normal status: "Archived", "Withdrawn") render beside the `<h1>`,
+ * not inside it, so they stay visible when the title truncates and stay out of the heading's
+ * accessible name.
+ */
+function SaratogaTitle({
+    children,
+    className,
+    badges,
+    ...props
+}: ComponentProps<"h1"> & { badges?: ReactNode }) {
+    const title = (
         <h1
             data-component="SaratogaTitle"
             className={cn(
@@ -49,6 +61,15 @@ function SaratogaTitle({ children, className, ...props }: ComponentProps<"h1">) 
         >
             {children}
         </h1>
+    );
+
+    if (!badges) return title;
+
+    return (
+        <div data-component="SaratogaTitleGroup" className="flex min-w-0 items-center gap-2">
+            {title}
+            <div className="flex shrink-0 items-center gap-2">{badges}</div>
+        </div>
     );
 }
 

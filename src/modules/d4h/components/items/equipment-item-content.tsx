@@ -31,15 +31,14 @@ import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-ty
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Protect } from "@/components/protect";
+import { Card, CardContent, CardLoadingFallback } from "@/components/ui/card";
 import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardLoadingFallback,
-    CardTitle,
-} from "@/components/ui/card";
-import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+    DataItem,
+    DataItemAction,
+    DataItemTitle,
+    DataItemValue,
+    DataList,
+} from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
@@ -185,40 +184,31 @@ export function D4HModule_EquipmentItem_Content({
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Item Information</CardTitle>
-                                    <CardAction>
-                                        <Protect
-                                            permissions={{ d4hEquipment: ["update"] }}
-                                            render={(hasPermission) => (
-                                                <D4HModule_UpdateEquipmentItem_Dialog
-                                                    teamId={teamId}
-                                                    item={item}
-                                                    disabledReason={updateEquipmentItemDisabledReason(
-                                                        {
-                                                            hasPermission,
-                                                            canUpdateInD4H,
-                                                            teamTitle: team.title,
-                                                        },
-                                                    )}
-                                                />
-                                            )}
-                                        />
-                                    </CardAction>
-                                </CardHeader>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Ref</DataItemTitle>
-                                            <DataItemValue>
-                                                <D4HItemRef value={item.ref} />
-                                            </DataItemValue>
-                                        </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Team</DataItemTitle>
                                             <DataItemValue>
                                                 <D4HTeamLink team={team} />
                                             </DataItemValue>
+                                            <DataItemAction className="-my-1">
+                                                <Protect
+                                                    permissions={{ d4hEquipment: ["update"] }}
+                                                    render={(hasPermission) => (
+                                                        <D4HModule_UpdateEquipmentItem_Dialog
+                                                            teamId={teamId}
+                                                            item={item}
+                                                            disabledReason={updateEquipmentItemDisabledReason(
+                                                                {
+                                                                    hasPermission,
+                                                                    canUpdateInD4H,
+                                                                    teamTitle: team.title,
+                                                                },
+                                                            )}
+                                                        />
+                                                    )}
+                                                />
+                                            </DataItemAction>
                                         </DataItem>
                                         <DataItem inline>
                                             <DataItemTitle>Type</DataItemTitle>

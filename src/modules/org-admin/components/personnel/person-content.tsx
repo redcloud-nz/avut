@@ -10,19 +10,14 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { RecordInfo_Card } from "@/components/cards/record-info-card";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardLoadingFallback,
-    CardTitle,
-} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardLoadingFallback } from "@/components/ui/card";
 import {
     DataItem,
-    DataItemDateValue,
+    DataItemAction,
     DataItemTitle,
     DataItemValue,
     DataList,
@@ -63,7 +58,15 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{person.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                person.status !== "Active" && (
+                                    <Badge variant="outline">{person.status}</Badge>
+                                )
+                            }
+                        >
+                            {person.name}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <AdminModule_PersonMenu person={person} />
                         </Saratoga.Actions>
@@ -72,33 +75,18 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Person Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ person: ["update"] }}>
-                                            <AdminModule_UpdatePerson_Dialog person={person} />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Person ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {person.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{person.name}</DataItemValue>
-                                        </DataItem>
                                         <DataItem>
                                             <DataItemTitle>Email</DataItemTitle>
                                             <DataItemValue>{person.email}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{person.status}</DataItemValue>
+                                            <DataItemAction className="-my-1">
+                                                <Protect permissions={{ person: ["update"] }}>
+                                                    <AdminModule_UpdatePerson_Dialog
+                                                        person={person}
+                                                    />
+                                                </Protect>
+                                            </DataItemAction>
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
@@ -113,20 +101,12 @@ export function AdminModule_Person_Content({ personId }: { personId: PersonId })
                             <Suspense fallback={<CardLoadingFallback />}>
                                 <AdminModule_Person_TeamMemberships_Card person={person} />
                             </Suspense>
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={person.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={person.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            <RecordInfo_Card
+                                id={person.id}
+                                idLabel="Person ID"
+                                createdAt={person.createdAt}
+                                updatedAt={person.updatedAt}
+                            />
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
