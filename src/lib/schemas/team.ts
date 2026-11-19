@@ -28,6 +28,9 @@ export const TEAM_SLUG_RESERVED = ["admin", "api", "create", "edit", "new", "set
 
 const TEAM_SLUG_RESERVED_MESSAGE = "That slug is reserved.";
 
+const TEAM_SLUG_REQUIRED_MESSAGE =
+    "A team with its own space needs a slug. To clear it, use the organisation's Admin → Teams.";
+
 function isReservedTeamSlug(slug: string): boolean {
     return (TEAM_SLUG_RESERVED as readonly string[]).includes(slug);
 }
@@ -108,9 +111,23 @@ export const TeamData = {
     /**
      * The team dialogs' form schema: `modifiableSchema`, plus the reserved-word check when the
      * slug differs from `storedSlug` (the team's current slug, or null for a new team).
+     *
+     * With `requireSlug` (editing from the team's own space), the slug can't be cleared: that
+     * would take the team out of team scope under the person using it. A UI rule only; the
+     * procedure still accepts a null slug from org admin.
      */
-    formSchema: (storedSlug: string | null) =>
+    formSchema: (
+        storedSlug: string | null,
+        { requireSlug = false }: { requireSlug?: boolean } = {},
+    ) =>
         teamModifiableSchema.superRefine((data, ctx) => {
+            if (requireSlug && data.slug === null) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["slug"],
+                    message: TEAM_SLUG_REQUIRED_MESSAGE,
+                });
+            }
             if (data.slug !== null && data.slug !== storedSlug && isReservedTeamSlug(data.slug)) {
                 ctx.addIssue({
                     code: "custom",

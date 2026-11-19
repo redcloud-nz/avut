@@ -4,6 +4,8 @@
  */
 "use client";
 
+import type { ComponentProps } from "react";
+
 import { Protect } from "@/components/protect";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
@@ -11,14 +13,24 @@ import { TeamData } from "@/lib/schemas/team";
 
 import { Teams_UpdateTeam_Dialog } from "./update-team";
 
-export function Teams_Details_Card({ team }: { team: TeamData }) {
+export function Teams_Details_Card({
+    team,
+    requireSlug,
+    onUpdated,
+}: {
+    team: TeamData;
+} & Pick<ComponentProps<typeof Teams_UpdateTeam_Dialog>, "requireSlug" | "onUpdated">) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Team Details</CardTitle>
                 <CardAction>
                     <Protect permissions={{ team: ["update"] }}>
-                        <Teams_UpdateTeam_Dialog team={team} />
+                        <Teams_UpdateTeam_Dialog
+                            team={team}
+                            requireSlug={requireSlug}
+                            onUpdated={onUpdated}
+                        />
                     </Protect>
                 </CardAction>
             </CardHeader>

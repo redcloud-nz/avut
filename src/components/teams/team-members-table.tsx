@@ -39,9 +39,16 @@ interface Teams_Members_TableProps {
     memberships: Teams_MembershipRow[];
     /** The last column's content for each row. Pass a stable function (`useCallback`): it's a column dependency. */
     rowAction: (row: Teams_MembershipRow) => ReactNode;
+    /** Render names as links to org admin's person pages (default), or as plain text. */
+    linkPeople?: boolean;
 }
 
-export function Teams_Members_Table({ team, memberships, rowAction }: Teams_Members_TableProps) {
+export function Teams_Members_Table({
+    team,
+    memberships,
+    rowAction,
+    linkPeople = true,
+}: Teams_Members_TableProps) {
     const organization = useOrganization();
 
     const teamIsD4HLinked = team.d4h != null;
@@ -53,7 +60,12 @@ export function Teams_Members_Table({ team, memberships, rowAction }: Teams_Memb
                 columnHelper.accessor((row) => `${row.person.name} ${row.person.email}`, {
                     id: "name",
                     header: "Name",
-                    cell: (ctx) => <PersonLink person={ctx.row.original.person} />,
+                    cell: (ctx) =>
+                        linkPeople ? (
+                            <PersonLink person={ctx.row.original.person} />
+                        ) : (
+                            ctx.row.original.person.name
+                        ),
                     enableGlobalFilter: true,
                     enableSorting: true,
                     enableColumnFilter: false,
@@ -132,7 +144,7 @@ export function Teams_Members_Table({ team, memberships, rowAction }: Teams_Memb
                     meta: { cellProps: { className: "w-9 p-0" } },
                 }),
             ]),
-        [teamIsD4HLinked, lastSyncedAt, rowAction],
+        [teamIsD4HLinked, lastSyncedAt, rowAction, linkPeople],
     );
 
     // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable functions

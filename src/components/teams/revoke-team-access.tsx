@@ -32,6 +32,10 @@ type RevokeTeamAccessProps = ComponentProps<typeof AlertDialog> & {
     grant: TeamUserData;
     /** Where focus goes on close, since the revoked row's button is gone by then. */
     returnFocusRef?: RefObject<HTMLElement | null>;
+    /** The grant is the signed-in user's own: the dialog warns they'll lose access. */
+    isSelf?: boolean;
+    /** Called after a successful revoke in place of closing the dialog — e.g. to navigate away. */
+    onRevoked?: () => void;
 };
 
 /**
@@ -42,6 +46,8 @@ export function Teams_RevokeTeamAccess_Dialog({
     team,
     grant,
     returnFocusRef,
+    isSelf = false,
+    onRevoked,
     ...props
 }: RevokeTeamAccessProps) {
     const organization = useOrganization();
@@ -61,7 +67,8 @@ export function Teams_RevokeTeamAccess_Dialog({
                         <ObjectName>{team.name}</ObjectName>.
                     </>,
                 );
-                props.onOpenChange?.(false);
+                if (onRevoked) onRevoked();
+                else props.onOpenChange?.(false);
             },
         }),
     );
@@ -81,6 +88,7 @@ export function Teams_RevokeTeamAccess_Dialog({
                     <AlertDialogDescription>
                         Confirm removing <ObjectName>{grant.user.name}</ObjectName>&apos;s access to{" "}
                         <ObjectName>{team.name}</ObjectName>.
+                        {isSelf && <> You&apos;ll lose access to this team&apos;s space.</>}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

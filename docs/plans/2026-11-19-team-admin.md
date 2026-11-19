@@ -57,7 +57,7 @@ Adds the first team-only module, `team-admin`, at `/teams/[slug]/admin`. People 
   - **Do:** Extract `Teams_Details_Card` (the Team Details card with its `<Protect>`ed update dialog), `Teams_Members_Table` (`team-members-list.tsx`'s `columns`/`useReactTable`/toolbar/table/pagination; it takes `team`, `memberships` and `rowAction: (row) => ReactNode` for the last column) and `Teams_D4HMenuGroup` (`team-menu.tsx`'s `after` content; it takes `team` and the `setAction` it calls). Org admin uses all three and passes its chevron link as `rowAction`.
   - **Done when:** `npm run check` passes; Admin → Teams → a team, its members and a membership render and behave as before (spot-checked in the browser at the group's end).
 
-- [ ] **Task 2: scope options on the shared team UI** (feat(teams): let the shared team UI run outside org admin)
+- [x] **Task 2: scope options on the shared team UI** (feat(teams): let the shared team UI run outside org admin)
   - **Files:** `src/lib/schemas/team.ts`, `src/lib/schemas/team.test.ts`, `src/components/teams/{update-team,team-details-card,team-access-card,revoke-team-access,d4h-link-card,team-members-table}.tsx`
   - **Do:** Per Decisions → "Shared components stay scope-agnostic" and "Revoking your own grant":
     - `TeamData.formSchema(storedSlug, { requireSlug = false } = {})`: with `requireSlug`, a null/empty slug fails with a message saying a team in its own space needs a slug, and that clearing it is done from the organisation's Admin → Teams.

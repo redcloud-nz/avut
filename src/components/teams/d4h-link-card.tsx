@@ -123,7 +123,17 @@ export function Teams_D4HMenuGroup({
     );
 }
 
-export function Teams_D4HCard({ team }: { team: TeamData }) {
+export function Teams_D4HCard({
+    team,
+    onChanged,
+}: {
+    team: TeamData;
+    /**
+     * Called after a successful link, unlink or sync. For link and unlink, only once the
+     * `?action` change has landed, so a `router.refresh()` here can't reopen a dialog.
+     */
+    onChanged?: () => void;
+}) {
     const organization = useOrganization();
     const settings = organization.settings;
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
@@ -206,17 +216,25 @@ export function Teams_D4HCard({ team }: { team: TeamData }) {
                 onClose={() => void setAction(null, { history: "replace" })}
                 // The link imports nobody: the sync preview takes over, in place of the link
                 // dialog's history entry, so Back closes it rather than reopening the link dialog.
-                onLinked={() => void setAction("d4h-sync", { history: "replace" })}
+                onLinked={async () => {
+                    await setAction("d4h-sync", { history: "replace" });
+                    onChanged?.();
+                }}
             />
             <SyncDialog
                 team={team}
                 open={action === "d4h-sync"}
                 onClose={() => void setAction(null, { history: "replace" })}
+                onSynced={onChanged}
             />
             <UnlinkDialog
                 team={team}
                 open={action === "d4h-unlink"}
                 onClose={() => void setAction(null, { history: "replace" })}
+                onUnlinked={async () => {
+                    await setAction(null, { history: "replace" });
+                    onChanged?.();
+                }}
             />
         </Protect>
     );
@@ -226,10 +244,13 @@ function UnlinkDialog({
     team,
     open,
     onClose,
+    onUnlinked,
 }: {
     team: TeamData;
     open: boolean;
     onClose: () => void;
+    /** Closes the dialog after a successful unlink, in place of `onClose`. */
+    onUnlinked: () => void;
 }) {
     const organization = useOrganization();
 
@@ -239,7 +260,7 @@ function UnlinkDialog({
             onError: (error) => toast.error(`Failed to unlink: ${error.message}`),
             onSuccess: () => {
                 toast.success("Unlinked from D4H");
-                onClose();
+                onUnlinked();
             },
         }),
     );
@@ -370,10 +391,12 @@ function SyncDialog({
     team,
     open,
     onClose,
+    onSynced,
 }: {
     team: TeamData;
     open: boolean;
     onClose: () => void;
+    onSynced?: () => void;
 }) {
     const organization = useOrganization();
 
@@ -394,6 +417,7 @@ function SyncDialog({
                 }
             },
             onSuccess: ({ plan, outcomes }) => {
+                onSynced?.();
                 // The dialog shows the results; only a dialog closed mid-apply needs a toast.
                 if (openRef.current) return;
                 // Count the items the user could tick, as the result view does (not a no-op
