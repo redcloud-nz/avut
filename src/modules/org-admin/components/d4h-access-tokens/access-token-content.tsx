@@ -32,6 +32,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import { route } from "@/lib/routes";
+import { D4HAccessToken } from "@/lib/schemas/d4h-access-token";
 import { ProviderCredentialAccess, ProviderCredentialId } from "@/lib/schemas/provider-credential";
 import { trpc } from "@/trpc/client";
 
@@ -90,7 +91,7 @@ export function AdminModule_D4HAccessToken_Content({ tokenId }: { tokenId: Provi
                     <Saratoga.Header>
                         <Saratoga.Title
                             badges={
-                                accessToken.status !== "OK" && (
+                                !D4HAccessToken.isStatusOk(accessToken.status) && (
                                     <Badge variant="outline">{accessToken.status}</Badge>
                                 )
                             }
