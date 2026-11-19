@@ -216,7 +216,11 @@ export const personnelRouter = createTrpcRouter({
         )
         .output(
             OrganizationUser.schema
-                .extend({ user: UserData.schema.pick({ id: true, name: true, email: true }) })
+                .extend({
+                    user: UserData.schema
+                        .pick({ id: true, name: true, email: true })
+                        .extend({ updatedAt: z.iso.datetime() }),
+                })
                 .nullable(),
         )
         .query(async ({ ctx, input: { personId } }) => {
@@ -227,7 +231,10 @@ export const personnelRouter = createTrpcRouter({
             return person.organizationUser
                 ? {
                       ...OrganizationUser.fromRecord(person.organizationUser),
-                      user: UserData.fromRecord(person.organizationUser.user),
+                      user: {
+                          ...UserData.fromRecord(person.organizationUser.user),
+                          updatedAt: person.organizationUser.user.updatedAt.toISOString(),
+                      },
                   }
                 : null;
         }),

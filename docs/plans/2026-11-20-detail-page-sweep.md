@@ -1,108 +1,105 @@
-# Detail-page sweep: no repeated title card, one status style, IDs in the record card
+# Detail-page sweep: one record-card shape, status shown one way
 
 **Date:** 2026-11-20
-**Issues:** [#434](https://github.com/redcloud-nz/avut/issues/434) (drop the repeated title card, show status one way) and [#417](https://github.com/redcloud-nz/avut/issues/417) (move record IDs to the Created/Updated card). Milestone v0.13. One PR, `Fixes #434` and `Fixes #417`.
+**Issue:** [#434](https://github.com/redcloud-nz/avut/issues/434) (rewritten 2026-11-20 after the design pass). Milestone v0.13. One PR, `Fixes #434`. [#417](https://github.com/redcloud-nz/avut/issues/417) was closed as not planned: the ID stays at the top of the record card.
 **Branch:** `feat/detail-page-sweep`, worktree `.claude/worktrees/detail-page-sweep` (dev server on its `.dev-port`, 3102)
 **DB:** no migration. Shared `avut` is fine.
 **Written against:** integration @ 4855a185
 
-Every detail page opens with an `<h1>` naming the record, then a card titled "… Details" or "… Information" whose first rows are the record's ID and its Name again. Status shows three different ways. This sweep settles one shape on three representative pages, then applies it to every detail page.
+Every detail page opens with an `<h1>` naming the record, then a card titled "… Details" or "… Information", with the record's ID, timestamps and status scattered across cards in different ways. The design pass (Task 1, iterated with the user on the person and Skill Track package pages) settled one shape. Tasks 2–7 apply it to every other detail page.
 
 ## Decisions
 
-- **One commit per module area, each doing both issues on its files.** The two issues edit the same lines (the info card's header and its first rows), so splitting them by issue would touch every file twice. Commit subjects name both issues where both apply.
-- **Info card** (#434): no `CardHeader` title, and no Name row when the `<h1>` already shows the name. It keeps everything else (description, properties, external IDs such as `D4H ID`). A card that holds more than the name and ID keeps its content; a card left empty goes. A card whose title names something other than the record (`Linked User Account`, `Members`, `Teams`, `D4H`, `Related`, `Roster`) keeps its title: the rule is about restating the `<h1>`, not about every heading.
-- **The edit pencil stays on the info card** (memory: keep the card pencil alongside the Actions menu's Edit). **Settled in Task 1 (pending the user's look):** option (b). The pencil goes in the first row's `DataItemAction`, as `<DataItemAction className="-my-1">` (the `-my-1` keeps a `size-8` icon button from making that row taller than the others). The shared pieces need no change: `DataList`'s action track already pins it top-right level with the first row, and it stays there below `sm` whether the row is `inline` or stacked (person's first row is now the stacked Email row: title and pencil on one line, value below). `Protect` renders a fragment, so it can sit inside the `DataItemAction`. Option (a) was not taken: an absolutely placed `CardAction` without a `CardHeader` needs `relative` on every `Card` plus reserved space so a long first value doesn't run under the button, which is more shared change for the same look.
-- **Record ID** (#417): moves from the info card to the secondary column's Created/Updated card, as its first row, mono. That card becomes a shared component, `RecordInfo_Card` in `src/components/cards/record-info-card.tsx`: props `id` and `idLabel` (both optional), `createdAt` and `updatedAt` (both optional), and `children` for extra rows rendered between the ID and Created. It stays server-safe (no `"use client"`; `DataItemDateValue` is already the client island), because the org-admin organisation page is a Server Component. Every page that has a Created/Updated card uses it. A page with no Created/Updated card today doesn't gain one (no new fields: team admin, D4H equipment item).
-- **D4H-backed pages get no `RecordInfo_Card`.** D4H member, D4H team and the four catalogue pages don't use `Saratoga.Columns`. Their `D4H ID` is an external ID and D4H's Updated is D4H's, so both stay in the info card; only the card title and the Title/Name row go.
-- **Related-record IDs** are a per-page call, recorded in the task's commit body and in the PR. The default: an ID of a related record stays with that record's card (Linked User Account keeps its User ID; the D4H card on a team membership keeps Member ID and Role ID). An ID of something attached to this record with no card of its own (the Subscription ID on a catalogue package) goes in `RecordInfo_Card`'s children.
-- **Status badges go next to the title only**, never in `Saratoga.Actions` or inside a row. `Saratoga.Title` gets a `badges` prop that renders them as a sibling of the `<h1>` in a `min-w-0` flex wrapper, so a long name still truncates (the `<h1>` is `whitespace-nowrap overflow-hidden text-ellipsis`), the badge stays visible, and the badge text stays out of the heading's accessible name. It replaces the ad-hoc `className="flex items-center gap-2"` in skill-track's `skill-content.tsx` and `group-content.tsx` and in `d4h-i3/components/form-shared.tsx` (`SubmittedFormHeader`).
-- **Status rule, by value** (user, 2026-11-20): a record's own lifecycle status (`RecordStatus`, a package's publish state, a session's approval, a token's status) shows as a title badge **when it isn't the normal state**, and its `Status` row is dropped on every page. Active (or Published, or an open session) shows no badge. Archived, Deleted (Rubbish bin), Withdrawn, Draft/Unpublished, Approved/Submitted and an invalid token each get a badge. **D4H Status** rows are D4H's data, not the record's lifecycle, so they stay rows; the I3 "Returned" `statusBadge` inside the equipment item's D4H Status row stays there too (it describes the D4H status). Each of Tasks 2–7 names the pages that gain or lose a badge.
-- **Explanations go in an `Alert variant="warning"`** directly under `Saratoga.Header`, not a muted `<p>`. Shape follows the existing one in `d4h-i3/…/bundle-content.tsx` (`AlertTitle` + `AlertDescription`). The d4h-nag rule's "Paused: …" `Alert` moves from the secondary column to under the header to match.
-- **`src/components/cards/user-profile-info.tsx` is deleted**, not swept: nothing imports `UserProfileInfo_Card`.
-- **Pages that aren't record detail pages are left alone:** settings pages (`organization-settings-content.tsx` ×2, `user-settings-content.tsx`, `user/settings/account`), dashboards (`user/page.tsx`, `team/dashboard-content.tsx`) and the run summary's status alert in `d4h-nag/…/run-content.tsx` (already an `Alert`). Task 7 checks they stayed unchanged.
+The shape, settled with the user at the Task 1 checkpoint (2026-11-20):
+
+- **Cards are organised around conceptual records.** Each record the page shows gets its own `RecordCard`: the page's own record, plus related records shown in full (the person page's **Linked User**; the package page's **Subscription**, split out of the package card). A card that mixes two records is split.
+- **`RecordCard`** (`src/components/ui/record-card.tsx`):
+  - **Header strip,** the height of an icon button (32px), ruled off from the body: a small muted uppercase label naming the record type (**"Person"**, **"Package"**, **"Linked User"**, **"Subscription"**, not "… record", not "… Details"). The label is the collapse toggle, with a chevron after it. The card's `action` sits at the strip's right: the edit pencil (the same 32px ghost icon button as the page's other icon buttons), or an ↗ open-in arrow on a related record's card.
+  - **Body:** `CardContent` + `DataList`, starting with a **`RecordCardId`** row (normal label, muted mono value, inline at every width), then **Name**, then the record's other properties.
+  - **Footer strip,** the same height as the header: **"Updated <date> · <relative>"** (`RecordCardTimestamp`), small and muted. **Created is not shown.** With `historyHref` the line links to the record's History page; records without one (org users, packages) show it as plain text.
+  - **Collapsible,** open by default, state not remembered. Collapsing keeps the header and its action.
+  - Server-safe: `Collapsible` and the timestamp are its client islands, so Server Component pages can use it.
+- **Phone layout:** on phones only the ID row stays on one line; every other property stacks (title, then value below). From `sm` up every row is on one line.
+- **The Name row stays** in the record card, even though the `<h1>` repeats it (user, after trying it without).
+- **Related-record lists** in the secondary column (the person's **Team Memberships**) are not cards: a heading on the page background (no count), an outline **"+ Add"** button following the list pages' pattern (`+` only below `md`), and each related record as a clickable outline `Item` (whole tile links to it) with a muted right chevron. Source badges such as D4H are dropped from the tile.
+- **Metrics** (the package's Skills and Subscribers counts) go in the secondary column as compact tiles (number over a small muted label). For now they're a private `Metric` helper in `skill-track/…/package-content.tsx` (user: stay put until another page needs them).
+- **Status badges go next to the title only**, never in `Saratoga.Actions` or inside a row. `Saratoga.Title` has a `badges` prop that renders them as a sibling of the `<h1>` in a `min-w-0` flex wrapper, so a long name still truncates and the badge text stays out of the heading's accessible name. It replaces the ad-hoc `className="flex items-center gap-2"` in skill-track's `skill-content.tsx` and `group-content.tsx` and in `d4h-i3/components/form-shared.tsx` (`SubmittedFormHeader`).
+- **Status rule, by value** (user, 2026-11-20): a record's own lifecycle status (`RecordStatus`, a package's publish state, a session's approval, a token's status) shows as a title badge **when it isn't the normal state**, and its `Status` row is dropped. Active (or Published, or an open session) shows no badge. Archived, Deleted (Rubbish bin), Withdrawn, Draft/Unpublished, Approved/Submitted and an invalid token each get a badge. **D4H Status** rows are D4H's data, so they stay rows; the I3 "Returned" `statusBadge` in the equipment item's D4H Status row stays there too.
+- **Explanations go in an `Alert variant="warning"`** directly under `Saratoga.Header`, not a muted `<p>` (shape: `d4h-i3/…/bundle-content.tsx`). The d4h-nag rule's "Paused: …" `Alert` moves from the secondary column to under the header.
+- **D4H-backed pages** (D4H member, D4H team, the four catalogue pages, the equipment item) use `RecordCard` with their `D4H ID` as the `RecordCardId` row and no footer: their Updated is D4H's, and stays a row where shown today.
+- **`getLinkedUser` returns the user's `updatedAt`** (added in Task 1) for the Linked User card's footer. It's the user account's own timestamp: a role change in this org updates the membership, not the user.
+- **`src/components/cards/` is gone:** `user-profile-info.tsx` was unused and deleted; the record card lives in `ui`.
+- **Pages that aren't record detail pages are left alone:** settings pages (`organization-settings-content.tsx` ×2, `user-settings-content.tsx`, `user/settings/account`), dashboards (`user/page.tsx`, `team/dashboard-content.tsx`).
+- **One commit per module area.** Each commit applies the shape to its files.
 
 ## Tasks
 
 ### Review group 1: design pass (visual)
 
-- [x] **Task 1: design pass on three representative pages** `visual` — feat(ui): settle the detail-page shape on three pages (#434, #417)
-  - **Files:** `src/components/cards/record-info-card.tsx` (new), `src/components/blocks/saratoga.tsx`, possibly `src/components/ui/card.tsx` + `src/components/ui/README.md`, `src/modules/org-admin/components/personnel/person-content.tsx`, `src/modules/skill-track/components/package-content.tsx`, `src/modules/d4h/components/items/equipment-item-content.tsx`, `src/components/cards/user-profile-info.tsx` (deleted)
-  - **Do:** Build `RecordInfo_Card`, `Saratoga.Title`'s `badges` prop, and the pencil placement for a title-less card (weigh the two alternatives in Decisions), per the Decisions. Apply them to three pages:
-    - **person:** pencil kept; Name row goes; Person ID → `RecordInfo_Card`; Status row goes, Archived/Deleted shows as a title badge; the Linked User Account card is untouched.
-    - **skill-track catalogue package:** "Subscribed · Withdrawn" leaves `Saratoga.Actions` for a title badge ("Withdrawn", or "Deleted" for a deleted package); the muted explanation becomes a warning `Alert`; Name row goes; Package ID → `RecordInfo_Card`, with Subscription ID in its children.
-    - **D4H equipment item:** card title "Item Information" goes; pencil kept; the `Ref` row goes (the `<h1>` is `<ref> <kind>`); no `RecordInfo_Card` (the page has no Created/Updated card). The I3 `statusBadge` stays in the D4H Status row.
+- [x] **Task 1: design pass on the person and Skill Track package pages** `visual` — feat(ui): settle the detail-page shape on three pages (#434, #417); feat(ui): RecordCard, the record-card shape for detail pages (#434)
+  - **Files:** `src/components/ui/record-card.tsx`, `src/components/ui/record-card-timestamp.tsx`, `src/components/ui/README.md`, `src/components/blocks/saratoga.tsx`, `src/modules/org-admin/components/personnel/{person-content,linked-user-card,team-memberships}.tsx`, `src/modules/skill-track/components/package-content.tsx`, `src/modules/d4h/components/items/equipment-item-content.tsx` (first pass, redone in Task 6), `src/trpc/routers/personnel-router.ts`, `src/components/cards/user-profile-info.tsx` (deleted)
+  - **Done:** iterated live with the user; the shape is in Decisions.
 
-    Delete `user-profile-info.tsx`. The page shape (`docs/patterns/detail-page-data-fetching.md`) is unchanged.
-
-  - **Done when:** the three pages render with no card title restating the `<h1>`, no Name row, the ID first in the secondary card, status only next to the title, the explanation in an Alert, and a long title still truncating with a badge; `npm run check` passes; the user approves the look at the checkpoint. Record the settled pencil placement in Decisions before Task 2 starts.
-
-**Checkpoint:** visual, on the three pages.
+**Checkpoint:** done (2026-11-20).
 
 ### Review group 2: sweep (org-admin, skill-track, skill-package-builder)
 
-- [ ] **Task 2: org-admin and the shared team card**
+For every page in Tasks 2–7: replace the "… Details"/"… Information"/"Identity" card with a `RecordCard` per record, apply the status rule and the Alert rule, drop Created, and move Updated into the footer (with `historyHref` where the record has a History page: check `src/app/**/history/page.tsx`). Split a card that mixes records. Convert related-record list cards in the secondary column to the Team Memberships pattern where they list records the user clicks through to. Follow `src/modules/org-admin/components/personnel/` and `skill-track/components/package-content.tsx` as the worked examples.
+
+- [ ] **Task 2: org-admin and the shared team card** `visual`
   - **Files:** `src/modules/org-admin/components/users/user-content.tsx`, `teams/team-content.tsx`, `teams/team-membership-content.tsx`, `d4h-access-tokens/access-token-content.tsx`, `src/components/teams/team-details-card.tsx`, `src/modules/team-admin/components/team-admin-content.tsx`, `src/app/(wrapper)/(authenticated)/orgs/[slug]/admin/organization/page.tsx`, `content/help/team-admin.mdx`
-  - **Do:** Apply Task 1's shape. Per page:
-    - **org user:** "User Details" title and Name row go. User ID stays in the info card with the user's fields, because the secondary card's Created is the org membership's (`member.createdAt`), not the user's; that card becomes `RecordInfo_Card` with no ID and its Created relabelled "Joined". The Linked Person card keeps its title and its Person ID (related record).
-    - **team membership:** the `<h1>` is "Team Membership", so the info card loses only its "Details" title; Membership ID → `RecordInfo_Card`; Status row → title badge when not Active; the D4H card keeps Member ID, Role ID and D4H Status.
-    - **org access token:** "D4H Access Token" title goes; Token ID → `RecordInfo_Card`. The Label row stays (the `<h1>` falls back to `Access Token: <id>` when there's no label). Status row → title badge when not Active.
-    - **`Teams_Details_Card`:** title and Team ID go; Status row → title badge on the org team page. Add `showName` (default false): org-admin's team page omits it (its `<h1>` is the name), team admin passes it (its `<h1>` is "Team Admin"). Team ID → `RecordInfo_Card` on the org team page only; team admin has no Created/Updated card and doesn't gain one. Rename the help card's "**Team Details**" in `content/help/team-admin.mdx` to describe the card without that title.
-    - **organisation page:** the card titled with the org name under the `<h1>` "Organisation" loses the title, keeps Name (the `<h1>` doesn't say it), and Organisation ID → `RecordInfo_Card` (server-rendered).
-    - `personnel/linked-user-card.tsx` is unchanged.
+  - **Do:** per page:
+    - **org user:** a "User" card (User ID, Name, Email, Roles); its Linked Person card becomes a "Linked Person" `RecordCard` with an ↗ to the person, as the person page's Linked User card does.
+    - **team membership:** a "Membership" card; the D4H card becomes a "D4H Member" `RecordCard` (Member ID as its ID row, Role ID, D4H Status, Position, Ref, Team last synced).
+    - **org access token:** a "D4H Access Token" card; Label stays; Status → title badge when not Active.
+    - **`Teams_Details_Card`** → a "Team" `RecordCard` (Team ID, Name, Slug, Description) with the pencil; Status → title badge on the org team page. Team admin shows the same card (its `<h1>` is "Team Admin"). Update `content/help/team-admin.mdx` where it names "Team Details".
+    - **organisation page** (Server Component): an "Organisation" card.
   - **Done when:** each page follows the Decisions; `npm run check` passes.
 
-- [ ] **Task 3: skill-track** `mechanical`
+- [ ] **Task 3: skill-track** `visual`
   - **Files:** `src/modules/skill-track/components/session-content.tsx`, `skill-content.tsx`, `group-content.tsx`
-  - **Do:** Apply Task 1's shape. Title and Name rows go; IDs → `RecordInfo_Card`. Archived badges move to the `badges` prop; the muted explanation `<p>`s under the header become warning `Alert`s. The skill page's `Related` card keeps its title. Session: Status row goes, "Approved" (or whatever non-open state it shows) becomes a title badge; the `<h1>` gets the breadcrumb's fallback, `session.name || session.id`, since an unnamed session would otherwise have an empty heading.
+  - **Do:** "Session", "Skill", "Group" cards. Archived badges move to the `badges` prop; explanation `<p>`s become warning `Alert`s. The skill page's `Related` card keeps its title (it's a list, not a record). Session: Status row → title badge for a non-open state; the `<h1>` gets the breadcrumb's fallback, `session.name || session.id`.
   - **Done when:** as Task 2.
 
-- [ ] **Task 4: skill-package-builder** `mechanical`
+- [ ] **Task 4: skill-package-builder** `visual`
   - **Files:** `src/modules/skill-package-builder/components/package-content.tsx`, `group-content.tsx`, `skill-content.tsx`
-  - **Do:** Apply Task 1's shape. Title and Name rows go; IDs → `RecordInfo_Card`; Status rows → title badges when not the normal state (package: not Published; group/skill: not Active). Keep the remaining row order (Package/Group rows first).
+  - **Do:** "Package", "Group", "Skill" cards with the pencil; Status rows → title badges when not the normal state (package: not Published; group/skill: not Active). Keep the remaining row order.
   - **Done when:** as Task 2.
+
+**Checkpoint:** visual, one page per module.
 
 ### Review group 3: sweep (system-admin, user-settings, D4H modules)
 
-- [ ] **Task 5: system-admin and user-settings**
+- [ ] **Task 5: system-admin and user-settings** `visual`
   - **Files:** `src/modules/system-admin/components/users/user-content.tsx`, `groups/group-content.tsx`, `organizations/organization-content.tsx`, `src/modules/user-settings/components/d4h-access-token-content.tsx`, `organization-content.tsx`
-  - **Do:** Apply Task 1's shape. Per page:
-    - **system user:** "Identity" title and Name row go; User ID → the existing secondary Created card, which becomes `RecordInfo_Card`; Status row → title badge when not the normal state.
-    - **system group:** title and Name row go; Group ID → `RecordInfo_Card`.
-    - **system organisation:** "Identity" title and Name row go; Organisation ID and Created → `RecordInfo_Card` at the top of the existing secondary column. Members, Teams, Groups, Enabled Modules and Record Counts keep their titles.
-    - **user-settings token:** the `<h1>` is the fixed "D4H Personal Access Token", so the card drops "Token Details" but keeps Label; Token ID → `RecordInfo_Card`; the Status row's outline badge becomes a title badge when not Active.
-    - **user-settings organisation:** "Organisation" title and Name row go; its secondary "Joined" card becomes `RecordInfo_Card` with no ID.
+  - **Do:** "User", "Group", "Organisation" cards. The system organisation page's Members, Teams, Groups, Enabled Modules and Record Counts keep their titles (Record Counts may become metric tiles if it reads better). User-settings token: a "D4H Access Token" card keeping Label; its Status badge → title badge when not Active. User-settings organisation: an "Organisation" card; its "Joined" card becomes the footer or a row.
   - **Done when:** as Task 2.
 
-- [ ] **Task 6: D4H** `mechanical`
-  - **Files:** `src/modules/d4h/components/members/member-content.tsx`, `teams/team-content.tsx`, `catalogue/brand-content.tsx`, `model-content.tsx`, `category-content.tsx`, `type-content.tsx`
-  - **Do:** Card titles and Name/Title rows go. D4H ID, D4H Status and D4H's Updated stay in the info card; no `RecordInfo_Card` (Decisions: D4H-backed pages).
+- [ ] **Task 6: D4H** `visual`
+  - **Files:** `src/modules/d4h/components/members/member-content.tsx`, `teams/team-content.tsx`, `items/equipment-item-content.tsx`, `catalogue/brand-content.tsx`, `model-content.tsx`, `category-content.tsx`, `type-content.tsx`
+  - **Do:** "Member", "Team", "Item", "Brand", "Model", "Category", "Type" cards per the D4H-backed decision. The equipment item's Task 1 pencil (on the first row's `DataItemAction`) moves to the card header.
   - **Done when:** as Task 2.
 
-- [ ] **Task 7: D4H I3 and D4H nag**
+- [ ] **Task 7: D4H I3 and D4H nag** `visual`
   - **Files:** `src/modules/d4h-i3/components/bundles/bundle-content.tsx`, `templates/template-content.tsx`, `src/modules/d4h-i3/components/form-shared.tsx`, `src/modules/d4h-nag/components/rule-content.tsx`, `run-content.tsx`
-  - **Do:** Per page:
-    - **bundle:** "Bundle Details" title and Name row go; Status row → title badge when not Active (Rubbish bin keeps its `Alert` too); the Created/Updated card becomes `RecordInfo_Card` with no ID.
-    - **template:** the card title and Name row go. `D4HI3Module_OtherRecords_Badge` (now inside the `CardTitle`) moves to the `badges` prop. Created/Updated → `RecordInfo_Card` with no ID.
-    - **`SubmittedFormHeader`** in `form-shared.tsx`: its "Submitted" badge moves to the `badges` prop.
-    - **rule:** "Rule Details" title goes; the "Paused: …" `Alert` moves under `Saratoga.Header`; the Status row → title badge when paused; Created → `RecordInfo_Card` with no ID.
-    - **run:** "Run Details" stays: it summarises the run beside a status `Alert`, and the `<h1>` is a generated title it doesn't restate.
-  - **Done when:** as Task 2. Then check every file in this plan's task lists for a `CardTitle` (including multi-line ones) that restates its `<h1>`, and that none of the excluded pages changed.
+  - **Do:** "Bundle", "Template", "Rule" cards. Template: `D4HI3Module_OtherRecords_Badge` (inside the `CardTitle` now) moves to the title `badges`. `SubmittedFormHeader`: its "Submitted" badge moves to `badges`. Rule: the "Paused: …" `Alert` moves under the header; Status → title badge when paused. Run: a "Run" card if it reads as a record, otherwise leave "Run Details" beside its status `Alert`.
+  - **Done when:** as Task 2. Then check every file in this plan for a `CardTitle` that restates its `<h1>`, and that the excluded pages didn't change.
 
-**Checkpoint:** visual, one page per module from groups 2 and 3.
+**Checkpoint:** visual, one page per module.
 
 ## Docs impact
 
-Detail pages lose their "… Details" card title, Name row and Status row (now a title badge), and IDs move to the Created/Updated card: re-shoot detail-page screenshots in `content/docs/admin/{personnel,teams,users,organization}.mdx`, `skill-track/{packages,sessions}.mdx`, `skill-package-builder/index.mdx`, `d4h-i3/index.mdx`, `d4h/index.mdx`, and fix any "Details card" wording; note it on #494.
+Every detail page's cards change (record cards with a small type label, collapsible, Updated footer; status as a title badge; related lists as tiles): re-shoot detail-page screenshots in `content/docs/admin/{personnel,teams,users,organization}.mdx`, `skill-track/{packages,sessions}.mdx`, `skill-package-builder/index.mdx`, `d4h-i3/index.mdx`, `d4h/index.mdx`, fix "Details card" wording, and the "Subscribed · Withdrawn" text in `skill-track/packages.mdx` and `skill-package-builder/index.mdx` (now a Withdrawn/Deleted title badge and a warning box); note it on #494.
 
 ## Out of scope
 
-- Settings pages and dashboards (see Decisions), and list pages.
-- Changing what a record shows (no new fields, no removed properties beyond Name and the moved ID).
-- Edit/Delete menu changes (`EntityActionMenu` is already in place).
+- Settings pages and dashboards, and list pages.
+- New History pages (org users, packages): the footer stays plain text where there's none.
+- Edit/Delete menu changes (see Parked).
 
 ## Parked
 
 - Person page logs "personnel.getLinkedUser was called during the server render, where nothing was hydrated for it" and falls back to client rendering (linked-user card spins on desktop). Pre-existing; the page needs a prefetch for it. Area: org-admin personnel.
+- The detail page's ⋮ Actions menu (`EntityActionMenu` in `Saratoga.Actions`): the user is unsure about the button and what it holds now that each record card carries its own edit pencil (and the package's Unsubscribe could sit on the Subscription card). Separate design question, raised at the #434 design pass (2026-11-20). Area: shared detail-page actions.
 
 ## Review notes
