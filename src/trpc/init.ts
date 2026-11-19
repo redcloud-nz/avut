@@ -331,33 +331,33 @@ export function organizationProcedure(
                 await opts.ctx.hasPermission(opts.input.organizationId, requiredPermissions);
             }
 
-            function logEvent(
-                options: LogEventOptions,
-                tx: Prisma.TransactionClient = opts.ctx.prisma,
-            ) {
-                const { actor, actorLabel } = resolveActor(opts.ctx.auth);
-
-                return recordLogEntry(
-                    {
-                        scope: "organization",
-                        organizationId: opts.input.organizationId,
-                        actor,
-                        actorLabel,
-                        ...options,
-                    },
-                    tx,
-                );
-            }
-
             return opts.next({
                 ctx: {
                     ...opts.ctx,
                     organizationId: opts.input.organizationId,
                     isSystemAdmin,
-                    logEvent,
+                    logEvent: organizationLogEvent(opts.ctx, opts.input.organizationId),
                 } satisfies AuthenticatedOrganizationContext,
             });
         });
+}
+
+/**
+ * The `logEvent` an org-scoped context carries: every entry lands in `organizationId`'s log,
+ * attributed to the calling user.
+ */
+function organizationLogEvent(
+    ctx: Pick<AuthenticatedContext, "auth" | "prisma">,
+    organizationId: OrganizationId,
+): AuthenticatedOrganizationContext["logEvent"] {
+    return function logEvent(options: LogEventOptions, tx: Prisma.TransactionClient = ctx.prisma) {
+        const { actor, actorLabel } = resolveActor(ctx.auth);
+
+        return recordLogEntry(
+            { scope: "organization", organizationId, actor, actorLabel, ...options },
+            tx,
+        );
+    };
 }
 
 /**

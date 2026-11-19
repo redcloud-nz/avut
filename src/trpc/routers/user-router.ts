@@ -14,6 +14,7 @@ import { OrganizationData, OrganizationId } from "@/lib/schemas/organization";
 import { InvitationId, OrganizationInvitationData } from "@/lib/schemas/organization-invitation";
 import { OrganizationUser } from "@/lib/schemas/organization-user";
 import { TeamId } from "@/lib/schemas/team";
+import { TeamUserData } from "@/lib/schemas/team-user";
 import { UserData, UserId } from "@/lib/schemas/user";
 import { UserSessionData } from "@/lib/schemas/user-session";
 import { auth } from "@/server/auth";
@@ -549,6 +550,17 @@ export const userRouter = createTrpcRouter({
         .query(async ({ ctx }) => {
             const orgs = await UserAccounts.getSoleOwnedOrganizations(ctx, ctx.userId);
             return orgs.map((o) => ({ ...o, id: OrganizationId.schema.parse(o.id) }));
+        }),
+
+    /**
+     * The caller's team grants that lead into a team scope (`/teams/[slug]`), across all their
+     * organizations: teams with a slug that are Active, ordered by org name then team name. The
+     * scope switcher's Teams group lists them.
+     */
+    listTeamGrants: authenticatedProcedure
+        .output(z.array(TeamUserData.scopeGrantSchema))
+        .query(async ({ ctx }) => {
+            return await TeamUsers.listForCaller(ctx);
         }),
 
     /**

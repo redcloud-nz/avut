@@ -50,6 +50,8 @@ export const teamsEffects = createEffects<"teams">()({
         invalidate(
             trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
         ),
+        // The scope switcher's Teams group lists Active, slugged teams by name.
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
     ],
     restoreTeam: (vars, { updated }) => [
         write(
@@ -63,6 +65,8 @@ export const teamsEffects = createEffects<"teams">()({
         invalidate(
             trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
         ),
+        // The scope switcher's Teams group lists Active, slugged teams by name.
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
     ],
     recoverTeam: (vars, { updated }) => [
         write(
@@ -78,6 +82,8 @@ export const teamsEffects = createEffects<"teams">()({
             trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // The scope switcher's Teams group lists Active, slugged teams by name.
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
     ],
     createTeam: (vars) => [
         invalidate(trpc.teams.listTeams.queryFilter({ organizationId: vars.organizationId })),
@@ -88,6 +94,8 @@ export const teamsEffects = createEffects<"teams">()({
             trpc.teamUsers.listUserTeams.queryFilter({ organizationId: vars.organizationId }),
         ),
         invalidate(trpc.trash.listTrash.queryFilter({ organizationId: vars.organizationId })),
+        // The scope switcher's Teams group lists Active, slugged teams by name.
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
     ],
     // Linking imports nobody, so the memberships are untouched; the first sync refreshes them.
     linkTeamToD4H: (vars, { updated }) => [
@@ -200,5 +208,7 @@ export const teamsEffects = createEffects<"teams">()({
             }),
         ),
         invalidate(trpc.skillCheckSessions.getSession.pathFilter()),
+        // The scope switcher's Teams group lists Active, slugged teams by name.
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
     ],
 });

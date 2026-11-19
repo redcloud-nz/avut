@@ -23,7 +23,7 @@ import { OrganizationSettings } from "@/lib/schemas/organization-settings";
 import { OrganizationUserId } from "@/lib/schemas/organization-user";
 import { UserId } from "@/lib/schemas/user";
 import { auth, type AuthOrganizationMember } from "@/server/auth";
-import { revalidateOrganization } from "@/server/cache/organization";
+import { revalidateOrganization, revalidateOrganizationTeams } from "@/server/cache/organization";
 import { getOrganizationUserRoles } from "@/server/cache/organization-user";
 import { revalidateOrganizationUser } from "@/server/cache/organization-user-revalidate";
 import { isUniqueViolation } from "@/server/prisma-errors";
@@ -790,7 +790,12 @@ export const organizationsRouter = createTrpcRouter({
                 changes,
             });
 
+            // Clear the old slug's entry too: after a rename it would otherwise keep serving the
+            // organization under a slug it no longer owns.
             await revalidateOrganization(update.slug);
+            if (existing.slug !== update.slug) await revalidateOrganization(existing.slug);
+            // Each cached team embeds its organization's name and slug.
+            await revalidateOrganizationTeams(ctx.organizationId);
 
             return {
                 updated: OrganizationData.fromRecord({
