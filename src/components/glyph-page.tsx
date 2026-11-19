@@ -4,22 +4,24 @@
  */
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 /**
  * Render anywhere in a page to show the glyph background behind it (see page-background.tsx). Only
  * low-traffic pages opt in: index pages (`Std.IndexPage` renders one) and the org dashboard.
  *
- * It marks the hosting `Std.SidebarInset` with `data-glyph-pages` from an effect rather than by its
- * presence in the DOM: Next keeps a route it has navigated away from mounted inside a hidden React
- * `<Activity>`, so a DOM marker (and a `:has()` on it) would outlive its page. A hidden Activity
- * runs its effects' cleanups, so the attribute tracks the pages actually on screen. It is a count,
- * because the incoming page mounts before the outgoing one cleans up.
+ * It marks the hosting `Std.SidebarInset` with `data-glyph-pages` from a layout effect rather than
+ * by its presence in the DOM: Next keeps a route it has navigated away from mounted inside a hidden
+ * React `<Activity>`, so a DOM marker (and a `:has()` on it) would outlive its page. A hidden
+ * Activity runs its layout effects' cleanups, so the attribute tracks the pages actually on screen.
+ * A layout effect changes it in the same commit as the navigation, before paint, so neither page
+ * shows a frame with the other's background. It is a count, so two opted-in pages swapping (one
+ * cleaning up, one mounting) never drop it in between.
  */
 export function GlyphPage() {
     const ref = useRef<HTMLSpanElement>(null);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const host = ref.current?.closest<HTMLElement>("[data-page-background]");
         if (!host) return;
 
