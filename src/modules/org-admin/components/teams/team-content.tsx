@@ -12,15 +12,9 @@ import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
 import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
 import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
-import { Teams_UpdateTeam_Dialog } from "@/components/teams/update-team";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Teams_Details_Card } from "@/components/teams/team-details-card";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataItem, DataItemDateValue, DataItemTitle, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
@@ -63,50 +57,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Team Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ team: ["update"] }}>
-                                            <Teams_UpdateTeam_Dialog team={team} />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Team ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {team.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{team.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Slug</DataItemTitle>
-                                            {team.slug ? (
-                                                <DataItemValue className="font-mono">
-                                                    {team.slug}
-                                                </DataItemValue>
-                                            ) : (
-                                                <DataItemValue className="text-muted-foreground">
-                                                    None
-                                                </DataItemValue>
-                                            )}
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Description</DataItemTitle>
-                                            <DataItemValue>{team.description}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{team.status}</DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            <Teams_Details_Card team={team} />
 
                             <Protect permissions={{ member: ["view"] }}>
                                 <Teams_TeamAccess_Card team={team} />

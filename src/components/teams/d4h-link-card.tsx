@@ -34,6 +34,12 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import {
     Select,
@@ -42,6 +48,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import {
@@ -57,6 +64,64 @@ import { TeamData } from "@/lib/schemas/team";
 import { trpc, trpcClient } from "@/trpc/client";
 
 const ACTIONS = ["d4h-link", "d4h-sync", "d4h-unlink"] as const;
+
+export type Teams_D4HAction = (typeof ACTIONS)[number];
+
+/**
+ * The D4H group of a team's action menu (Link / Sync / Unlink), for an `EntityActionMenu`'s
+ * `after`. Each item sets `?action=` through the menu's own `setAction`; `Teams_D4HCard`
+ * renders the dialogs.
+ */
+export function Teams_D4HMenuGroup({
+    team,
+    setAction,
+}: {
+    team: TeamData;
+    setAction: (action: Teams_D4HAction, options: { history: "push" }) => unknown;
+}) {
+    const organization = useOrganization();
+    const d4hEnabled = organization.settings.integrations.d4h.enabled;
+    const canUpdate = useHasPermission({ team: ["update"] });
+    const linked = team.d4h !== null;
+    const isActive = team.status === "Active";
+
+    // An unlinked archived team has no D4H action left to offer.
+    if (!d4hEnabled || !(linked || isActive)) return null;
+
+    return (
+        <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>D4H</DropdownMenuLabel>
+            <DropdownMenuGroup>
+                {!linked && isActive && (
+                    <DropdownMenuItem
+                        disabled={!canUpdate}
+                        onClick={() => void setAction("d4h-link", { history: "push" })}
+                    >
+                        <D4HIcons.Link /> Link to D4H
+                    </DropdownMenuItem>
+                )}
+                {linked && isActive && (
+                    <DropdownMenuItem
+                        disabled={!canUpdate}
+                        onClick={() => void setAction("d4h-sync", { history: "push" })}
+                    >
+                        <D4HIcons.Sync /> Sync with D4H
+                    </DropdownMenuItem>
+                )}
+                {linked && (
+                    <DropdownMenuItem
+                        disabled={!canUpdate}
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => void setAction("d4h-unlink", { history: "push" })}
+                    >
+                        <D4HIcons.Unlink /> Unlink from D4H
+                    </DropdownMenuItem>
+                )}
+            </DropdownMenuGroup>
+        </>
+    );
+}
 
 export function Teams_D4HCard({ team }: { team: TeamData }) {
     const organization = useOrganization();
