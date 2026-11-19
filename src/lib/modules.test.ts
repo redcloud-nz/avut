@@ -22,9 +22,8 @@ const teamHref = (segment: string) => (teamSlug: string) =>
     `/teams/${teamSlug}/${segment}` as Route;
 const orgHref = (segment: string) => (slug: string) => `/orgs/${slug}/${segment}` as Route;
 
-// `TeamModuleId` is `never` until the first team-only module lands, so the fixture casts its id.
 const teamOnly = {
-    id: "team-admin" as never,
+    id: "team-admin",
     label: "Team Admin",
     icon: WrenchIcon,
     segment: "admin",
@@ -126,8 +125,8 @@ describe("deriveTeamModules", () => {
         });
     });
 
-    it("is empty on the real registry for now", () => {
-        expect(teamModules).toEqual([]);
+    it("is just team-admin on the real registry", () => {
+        expect(teamModules.map((m) => m.id)).toEqual(["team-admin"]);
     });
 });
 
@@ -160,6 +159,13 @@ describe("moduleHref", () => {
         expect(moduleHref("notes", { scope: "organization", slug: "acme" })).toBe(
             "/orgs/acme/notes",
         );
+    });
+
+    it("gives team-admin's href in team scope only", () => {
+        expect(moduleHref("team-admin", { scope: "team", slug: "rescue" })).toBe(
+            "/teams/rescue/admin",
+        );
+        expect(moduleHref("team-admin", { scope: "organization", slug: "acme" })).toBeUndefined();
     });
 
     it("is undefined for a module that isn't in team scope", () => {

@@ -71,7 +71,7 @@ _End of review group A._ Browser spot-check: Admin → Teams → a team and its 
 
 ### Review group B: the team admin pages
 
-- [ ] **Task 3: register `team-admin` and add the overview page** (feat(team-admin): add the team admin overview) · `visual`
+- [x] **Task 3: register `team-admin` and add the overview page** (feat(team-admin): add the team admin overview) · `visual`
   - **Files:** `src/lib/modules.ts`, `src/lib/modules.test.ts`, `src/app/(wrapper)/(authenticated)/teams/[slug]/admin/page.tsx` (new), `src/modules/team-admin/components/team-admin-content.tsx` (new), `src/modules/team-admin/components/team-menu.tsx` (new), `src/modules/team-admin/components/members-link-card.tsx` (new), `content/help/team-admin.mdx` (new)
   - **Do:**
     - Registry per Decisions → "Registry". Update the comments that say no team module exists yet. `modules.test.ts`: `teamModules` on the real registry is now the one `team-admin` entry, and `moduleHref("team-admin", …)` gives `/teams/<slug>/admin` in team scope and `undefined` in org scope. Run `npx next typegen` after adding the page (the registry's `route()` needs it).
@@ -112,3 +112,8 @@ New: team scope gains **Admin** (`/teams/<slug>/admin`, with Details, Access, D4
 ## Parked
 
 (none yet)
+
+## Review notes
+
+- (group A) `src/components/teams/revoke-team-access.tsx`: the self-revoke sentence "You'll lose access to this team's space." also shows in org admin for a team with no slug, which has no space. Show it only when `team.slug` is set.
+- (group A, watch only) `d4h-link-card.tsx`: `onSynced` fires as soon as the sync succeeds, possibly before a mid-apply close has cleared `?action=d4h-sync`. If the Task 3 browser check shows the sync dialog reopening after a close mid-apply, wait for the URL change there too.

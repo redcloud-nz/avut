@@ -44,11 +44,11 @@ export type UserModuleId = "user-dashboard" | "user-notes";
 export type SystemModuleId = "system-admin";
 
 /**
- * Identifier for a team-only module (lives under `/teams/[slug]/…`). None yet. An org module
- * that also lives in team scope keeps its `OrganizationModuleId` and declares a `team` entry
- * instead (see {@link OrganizationModuleDef}).
+ * Identifier for a team-only module (lives under `/teams/[slug]/…`). An org module that also
+ * lives in team scope keeps its `OrganizationModuleId` and declares a `team` entry instead (see
+ * {@link OrganizationModuleDef}).
  */
-export type TeamModuleId = never;
+export type TeamModuleId = "team-admin";
 
 /** Canonical identifier for any module. */
 export type ModuleId = OrganizationModuleId | TeamModuleId | UserModuleId | SystemModuleId;
@@ -202,6 +202,15 @@ export const Modules = {
         segment: "skill-package-builder",
         scope: "organization",
         href: (slug) => route("/orgs/[slug]/skill-package-builder", { slug }),
+    },
+    "team-admin": {
+        id: "team-admin",
+        label: "Admin",
+        icon: WrenchIcon,
+        segment: "admin",
+        alwaysOn: true,
+        scope: "team",
+        href: (teamSlug) => route("/teams/[slug]/admin", { slug: teamSlug }),
     },
     "user-dashboard": {
         id: "user-dashboard",
