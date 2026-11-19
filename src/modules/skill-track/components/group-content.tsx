@@ -10,15 +10,11 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { SkillPackageLink } from "@/components/entity-links/skill-package-link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { CardContent } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SkillGroupId } from "@/lib/schemas/skill-group";
@@ -73,31 +69,37 @@ export function SkillTrack_SkillGroup_Content({
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title className="flex items-center gap-2">
+                        <Saratoga.Title
+                            badges={
+                                group.status !== "Active" && (
+                                    <Badge variant="outline">Archived</Badge>
+                                )
+                            }
+                        >
                             {group.name}
-                            {group.status !== "Active" && <Badge variant="outline">Archived</Badge>}
                         </Saratoga.Title>
                     </Saratoga.Header>
                     {withdrawn && (
-                        <p className="text-muted-foreground text-sm">
-                            {group.skillPackage.status === "Deleted"
-                                ? "Its author has deleted this group's package. Its skills are out of your sessions and reports. Checks already recorded are kept."
-                                : "Its author has withdrawn this group's package. Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
-                        </p>
+                        <Alert variant="warning">
+                            <AlertTitle>
+                                {group.skillPackage.status === "Deleted"
+                                    ? "Its author has deleted this group's package"
+                                    : "Its author has withdrawn this group's package"}
+                            </AlertTitle>
+                            <AlertDescription>
+                                {group.skillPackage.status === "Deleted"
+                                    ? "Its skills are out of your sessions and reports. Checks already recorded are kept."
+                                    : "Its skills are out of your sessions and reports until it's published again. Checks already recorded are kept."}
+                            </AlertDescription>
+                        </Alert>
                     )}
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Group Information</CardTitle>
-                                </CardHeader>
+                            <RecordCard label="Group" updatedAt={group.updatedAt}>
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Group ID</DataItemTitle>
-                                            <DataItemValue>{group.id}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="Group ID" id={group.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{group.name}</DataItemValue>
                                         </DataItem>
@@ -105,7 +107,7 @@ export function SkillTrack_SkillGroup_Content({
                                             <DataItemTitle>Description</DataItemTitle>
                                             <DataItemValue>{group.description}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Package</DataItemTitle>
                                             <DataItemValue>
                                                 <SkillPackageLink
@@ -113,7 +115,7 @@ export function SkillTrack_SkillGroup_Content({
                                                 />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Tags</DataItemTitle>
                                             <DataItemValue>
                                                 {group.tags.length > 0 ? (
@@ -129,7 +131,7 @@ export function SkillTrack_SkillGroup_Content({
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Included</DataItemTitle>
                                             <DataItemValue>
                                                 {group.defaultInclude ? "Yes" : "No"}
@@ -137,27 +139,11 @@ export function SkillTrack_SkillGroup_Content({
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             <section className="space-y-3 pt-4">
                                 <h2 className="text-lg font-semibold tracking-tight">Skills</h2>
                                 <SkillTrack_SkillList skills={group.skills} />
                             </section>
-                        </Saratoga.Column>
-                        <Saratoga.Column slot="secondary">
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={group.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={group.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>

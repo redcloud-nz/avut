@@ -56,7 +56,7 @@ For every page in Tasks 2–7: replace the "… Details"/"… Information"/"Iden
     - **organisation page** (Server Component): an "Organisation" card.
   - **Done when:** each page follows the Decisions; `npm run check` passes.
 
-- [ ] **Task 3: skill-track** `visual`
+- [x] **Task 3: skill-track** `visual` — feat(skill-track): record cards on the skill-track detail pages (#434)
   - **Files:** `src/modules/skill-track/components/session-content.tsx`, `skill-content.tsx`, `group-content.tsx`
   - **Do:** "Session", "Skill", "Group" cards. Archived badges move to the `badges` prop; explanation `<p>`s become warning `Alert`s. The skill page's `Related` card keeps its title (it's a list, not a record). Session: Status row → title badge for a non-open state; the `<h1>` gets the breadcrumb's fallback, `session.name || session.id`.
   - **Done when:** as Task 2.
@@ -105,3 +105,4 @@ Every detail page's cards change (record cards with a small type label, collapsi
 ## Review notes
 
 - Task 2 implementer calls, for the checkpoint: token status badge shows when D4H's status text isn't "OK" (it's never "Active"; an empty status text would store "HTTP 200" and badge); no Updated footer on the org User card (`organizations.listMembers` lacks `updatedAt`) or the Organisation card (`OrganizationData` lacks it); the user page's Teams list became the tile pattern (`user-teams-card.tsx`, name still ends `_Card`); Linked Person shows a Status row only when not Active; emptied secondary columns removed (membership, token, organisation pages); organisation slug now mono.
+- Task 3 implementer calls: a session badges "Approved"/"Excluded" for Include/Exclude, none for Draft; skill and group pages show only their own Archived badge (a withdrawn package gets the Alert but no title badge there); skill and group cards have no pencil (read-only subscriber views).

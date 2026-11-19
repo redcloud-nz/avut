@@ -15,22 +15,10 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Protect } from "@/components/protect";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardHeader,
-    CardLoadingFallback,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { CardContent, CardLoadingFallback } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -39,6 +27,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { SKILL_CHECK_STATUS_LABELS } from "@/lib/schemas/skill-check";
@@ -83,7 +72,18 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
             <Std.ScrollContainer>
                 <Saratoga.Root>
                     <Saratoga.Header>
-                        <Saratoga.Title>{session.name}</Saratoga.Title>
+                        <Saratoga.Title
+                            badges={
+                                session.status !== "Draft" && (
+                                    <Badge variant="outline">
+                                        {SKILL_CHECK_STATUS_LABELS[session.status] ??
+                                            session.status}
+                                    </Badge>
+                                )
+                            }
+                        >
+                            {session.name || session.id}
+                        </Saratoga.Title>
                         <Saratoga.Actions>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -146,35 +146,30 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                     </Saratoga.Header>
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Session Details</CardTitle>
-                                    <CardAction>
-                                        {/* Not mounted when approved, so ?action=update can't open it either. */}
-                                        {!isApproved && (
-                                            <Protect
-                                                permissions={{ skillCheckSession: ["update"] }}
-                                            >
-                                                <SkillsModule_UpdateSession_Dialog
-                                                    session={session}
-                                                />
-                                            </Protect>
-                                        )}
-                                    </CardAction>
-                                </CardHeader>
+                            <RecordCard
+                                label="Session"
+                                updatedAt={session.updatedAt}
+                                historyHref={route(
+                                    "/orgs/[slug]/skill-track/sessions/[session_id]/history",
+                                    { slug: organization.slug, session_id: session.id },
+                                )}
+                                action={
+                                    // Not mounted when approved, so ?action=update can't open it either.
+                                    !isApproved && (
+                                        <Protect permissions={{ skillCheckSession: ["update"] }}>
+                                            <SkillsModule_UpdateSession_Dialog session={session} />
+                                        </Protect>
+                                    )
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Session ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {session.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
+                                        <RecordCardId label="Session ID" id={session.id} />
+                                        <DataItem>
                                             <DataItemTitle>Name</DataItemTitle>
                                             <DataItemValue>{session.name}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>When</DataItemTitle>
                                             <DataItemValue>
                                                 {formatSessionWhen(
@@ -183,7 +178,7 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Team</DataItemTitle>
                                             <DataItemValue>
                                                 {session.team ? (
@@ -197,35 +192,14 @@ export function SkillTrack_Session_Content({ sessionId }: { sessionId: SkillChec
                                             <DataItemTitle>Notes</DataItemTitle>
                                             <DataItemValue>{session.notes}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>
-                                                {SKILL_CHECK_STATUS_LABELS[session.status] ??
-                                                    session.status}
-                                            </DataItemValue>
-                                        </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                         </Saratoga.Column>
                         <Saratoga.Column slot="secondary">
                             <Suspense fallback={<CardLoadingFallback />}>
                                 <SkillsModule_Session_Contents_Card sessionId={session.id} />
                             </Suspense>
-                            <Card>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Created</DataItemTitle>
-                                            <DataItemDateValue date={session.createdAt} />
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Updated</DataItemTitle>
-                                            <DataItemDateValue date={session.updatedAt} />
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
                         </Saratoga.Column>
                     </Saratoga.Columns>
                 </Saratoga.Root>
