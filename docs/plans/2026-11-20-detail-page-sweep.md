@@ -61,7 +61,7 @@ For every page in Tasks 2–7: replace the "… Details"/"… Information"/"Iden
   - **Do:** "Session", "Skill", "Group" cards. Archived badges move to the `badges` prop; explanation `<p>`s become warning `Alert`s. The skill page's `Related` card keeps its title (it's a list, not a record). Session: Status row → title badge for a non-open state; the `<h1>` gets the breadcrumb's fallback, `session.name || session.id`.
   - **Done when:** as Task 2.
 
-- [ ] **Task 4: skill-package-builder** `visual`
+- [x] **Task 4: skill-package-builder** `visual` — feat(skill-package-builder): record cards on the builder detail pages (#434)
   - **Files:** `src/modules/skill-package-builder/components/package-content.tsx`, `group-content.tsx`, `skill-content.tsx`
   - **Do:** "Package", "Group", "Skill" cards with the pencil; Status rows → title badges when not the normal state (package: not Published; group/skill: not Active). Keep the remaining row order.
   - **Done when:** as Task 2.
@@ -106,3 +106,4 @@ Every detail page's cards change (record cards with a small type label, collapsi
 
 - Task 2 implementer calls, for the checkpoint: token status badge shows when D4H's status text isn't "OK" (it's never "Active"; an empty status text would store "HTTP 200" and badge); no Updated footer on the org User card (`organizations.listMembers` lacks `updatedAt`) or the Organisation card (`OrganizationData` lacks it); the user page's Teams list became the tile pattern (`user-teams-card.tsx`, name still ends `_Card`); Linked Person shows a Status row only when not Active; emptied secondary columns removed (membership, token, organisation pages); organisation slug now mono.
 - Task 3 implementer calls: a session badges "Approved"/"Excluded" for Include/Exclude, none for Draft; skill and group pages show only their own Archived badge (a withdrawn package gets the Alert but no title badge there); skill and group cards have no pencil (read-only subscriber views).
+- Task 4 implementer calls: the package's Published row is its publish state, so it became an "Unpublished" title badge (beside a non-Active status badge, so an archived draft shows both); Name moved up to second row on the group and skill cards (was after Package/Group); the three builder update dialogs' pencils became `size="icon"` with an aria-label to match the header strip.

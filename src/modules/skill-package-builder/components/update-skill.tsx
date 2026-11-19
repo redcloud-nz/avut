@@ -113,7 +113,7 @@ export function SkillPackageBuilder_UpdateSkill_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost">
+                <Button variant="ghost" size="icon" aria-label="Update skill">
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>

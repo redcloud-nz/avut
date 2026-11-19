@@ -97,7 +97,7 @@ export function SkillPackageBuilder_UpdatePackage_Dialog({
     return (
         <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost">
+                <Button variant="ghost" size="icon" aria-label="Update package">
                     <ObjectIcons.Edit />
                 </Button>
             </DialogTrigger>
