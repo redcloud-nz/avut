@@ -8,6 +8,7 @@ import Link from "next/link";
 import { parseAsStringLiteral, useQueryState } from "nuqs";
 
 import { D4HIcons, ObjectIcons } from "@/components/icons";
+import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -19,7 +20,6 @@ import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamData } from "@/lib/schemas/team";
-import { AdminModule_AddTeamMembership_Dialog } from "@/modules/org-admin/components/teams/add-team-membership";
 
 import { AdminModule_ArchiveTeam_Dialog } from "./archive-team";
 import { AdminModule_DeleteTeam_Dialog } from "./delete-team";
@@ -183,7 +183,7 @@ export function AdminModule_Team_Menu({ team }: AdminModule_TeamMenuProps) {
                 }
             />
 
-            <AdminModule_AddTeamMembership_Dialog
+            <Teams_AddTeamMembership_Dialog
                 team={team}
                 open={action === "add-membership"}
                 onOpenChange={(open) =>

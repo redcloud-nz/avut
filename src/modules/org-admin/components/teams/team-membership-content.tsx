@@ -11,6 +11,7 @@ import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { TeamLink } from "@/components/entity-links/team-link";
+import { D4HMemberStatusBadge } from "@/components/teams/d4h-member-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DataItem,
@@ -25,7 +26,6 @@ import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-import { D4HMemberStatusBadge } from "./d4h-member-status-badge";
 import { AdminModule_TeamMembership_Menu } from "./team-membership-menu";
 
 export function AdminModule_TeamMembership_Content({

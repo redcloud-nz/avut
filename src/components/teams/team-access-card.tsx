@@ -27,14 +27,14 @@ import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_GrantTeamAccess_Dialog } from "./grant-team-access";
-import { AdminModule_RevokeTeamAccess_Dialog } from "./revoke-team-access";
+import { Teams_GrantTeamAccess_Dialog } from "./grant-team-access";
+import { Teams_RevokeTeamAccess_Dialog } from "./revoke-team-access";
 
 /**
  * The users granted access to a team (`TeamUser`), with grant and revoke. Owns the
  * `?action=grant-access` and `?action=revoke-access&userId=…` params for its dialogs.
  */
-export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
+export function Teams_TeamAccess_Card({ team }: { team: TeamData }) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState(
@@ -123,7 +123,7 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
                 )}
             </CardContent>
 
-            <AdminModule_GrantTeamAccess_Dialog
+            <Teams_GrantTeamAccess_Dialog
                 team={team}
                 returnFocusRef={grantButtonRef}
                 open={action === "grant-access" && team.status === "Active"}
@@ -134,7 +134,7 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
                 }
             />
             {revokeGrant && (
-                <AdminModule_RevokeTeamAccess_Dialog
+                <Teams_RevokeTeamAccess_Dialog
                     team={team}
                     grant={revokeGrant}
                     returnFocusRef={titleRef}

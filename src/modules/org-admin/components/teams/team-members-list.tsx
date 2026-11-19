@@ -25,16 +25,15 @@ import { HelpButton } from "@/components/docs/help-button";
 import { PersonLink } from "@/components/entity-links/person-link";
 import { ItemLinkActionIcon, ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
+import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
+import { D4HMemberStatusBadge } from "@/components/teams/d4h-member-status-badge";
+import { MembershipSourceBadge } from "@/components/teams/membership-source-badge";
 import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HMemberStatus, formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { TeamId } from "@/lib/schemas/team";
 import { RouterOutput, trpc } from "@/trpc/client";
-
-import { AdminModule_AddTeamMembership_Dialog } from "./add-team-membership";
-import { D4HMemberStatusBadge } from "./d4h-member-status-badge";
-import { MembershipSourceBadge } from "./membership-source-badge";
 
 type MembershipRow = RouterOutput["teams"]["listTeamMemberships"][number];
 
@@ -258,7 +257,7 @@ export function AdminModule_TeamMembers_List({ teamId }: { teamId: TeamId }) {
                 </Saratoga.Root>
             </Std.ScrollContainer>
 
-            <AdminModule_AddTeamMembership_Dialog
+            <Teams_AddTeamMembership_Dialog
                 team={team}
                 open={action === "add-membership"}
                 onOpenChange={(open) =>

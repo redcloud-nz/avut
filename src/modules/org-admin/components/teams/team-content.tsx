@@ -10,6 +10,9 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
+import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
+import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
+import { Teams_UpdateTeam_Dialog } from "@/components/teams/update-team";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     DataItem,
@@ -23,11 +26,8 @@ import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_Team_D4HCard } from "./d4h-link-card";
-import { AdminModule_TeamAccess_Card } from "./team-access-card";
 import { AdminModule_TeamLinks_Card } from "./team-links";
 import { AdminModule_Team_Menu } from "./team-menu";
-import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
 export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
@@ -68,7 +68,7 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                                     <CardTitle>Team Details</CardTitle>
                                     <CardAction>
                                         <Protect permissions={{ team: ["update"] }}>
-                                            <AdminModule_UpdateTeam_Dialog team={team} />
+                                            <Teams_UpdateTeam_Dialog team={team} />
                                         </Protect>
                                     </CardAction>
                                 </CardHeader>
@@ -109,10 +109,10 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
                             </Card>
 
                             <Protect permissions={{ member: ["view"] }}>
-                                <AdminModule_TeamAccess_Card team={team} />
+                                <Teams_TeamAccess_Card team={team} />
                             </Protect>
 
-                            <AdminModule_Team_D4HCard team={team} />
+                            <Teams_D4HCard team={team} />
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">

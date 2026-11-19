@@ -34,7 +34,7 @@ import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
+export function Teams_UpdateTeam_Dialog({ team }: { team: TeamData }) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));

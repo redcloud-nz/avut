@@ -38,7 +38,7 @@ type RevokeTeamAccessProps = ComponentProps<typeof AlertDialog> & {
  * Revokes a user's access to a team (`?action=revoke-access&userId=…`). Host-driven: the Access
  * card owns both params and resolves `grant` from its list.
  */
-export function AdminModule_RevokeTeamAccess_Dialog({
+export function Teams_RevokeTeamAccess_Dialog({
     team,
     grant,
     returnFocusRef,

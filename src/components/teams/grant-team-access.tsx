@@ -47,7 +47,7 @@ type GrantTeamAccessProps = DialogProps & {
  * Grants a member of the organization access to a team (`?action=grant-access`), picking from the
  * members who don't have it yet. Host-driven: the Access card owns the param.
  */
-export function AdminModule_GrantTeamAccess_Dialog({
+export function Teams_GrantTeamAccess_Dialog({
     team,
     returnFocusRef,
     ...props

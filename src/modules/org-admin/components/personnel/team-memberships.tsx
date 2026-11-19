@@ -12,13 +12,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { TeamMembershipLink } from "@/components/entity-links/team-membership-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
+import { MembershipSourceBadge } from "@/components/teams/membership-source-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
 import { PersonRef } from "@/lib/schemas/person";
-import { MembershipSourceBadge } from "@/modules/org-admin/components/teams/membership-source-badge";
 import { trpc } from "@/trpc/client";
 
 export function AdminModule_Person_TeamMemberships_Card({ person }: { person: PersonRef }) {

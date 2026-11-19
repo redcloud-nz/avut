@@ -47,7 +47,7 @@ Adds the first team-only module, `team-admin`, at `/teams/[slug]/admin`. People 
 
 ### Review group A: shared team UI
 
-- [ ] **Task 1a: move the shared team UI to `src/components/teams/`** (refactor(teams): move Admin → Teams' cards and dialogs to the shared layer) · `mechanical`
+- [x] **Task 1a: move the shared team UI to `src/components/teams/`** (refactor(teams): move Admin → Teams' cards and dialogs to the shared layer) · `mechanical`
   - **Files:** the nine moved files above (`git mv` from `src/modules/org-admin/components/teams/` to `src/components/teams/`), and their importers: `src/modules/org-admin/components/teams/{team-content,team-members-list,team-menu,team-membership-content,team-membership-menu}.tsx`, `src/modules/org-admin/components/personnel/{team-memberships,person-menu}.tsx`
   - **Do:** A pure move with no change in behaviour, per Decisions → "The shared team UI moves": `git mv`, rename each moved export's `AdminModule_` prefix to `Teams_`, and fix the imports. Moved files import each other relatively within `src/components/teams/`. No extractions here.
   - **Done when:** `npm run check` passes; `grep -rn "org-admin/components/teams/\(update-team\|team-access-card\|grant-team-access\|revoke-team-access\|d4h-link-card\|add-team-membership\|remove-team-member\|membership-source-badge\|d4h-member-status-badge\)" src` finds nothing.

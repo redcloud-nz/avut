@@ -58,7 +58,7 @@ import { trpc, trpcClient } from "@/trpc/client";
 
 const ACTIONS = ["d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
-export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
+export function Teams_D4HCard({ team }: { team: TeamData }) {
     const organization = useOrganization();
     const settings = organization.settings;
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
