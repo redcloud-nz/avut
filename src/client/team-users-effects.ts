@@ -8,7 +8,8 @@ import { createEffects, invalidate } from "@/trpc/mutation-effector";
 
 /**
  * A grant or revoke changes the team's list of users, who can still be granted access to it, and
- * the user's list of teams.
+ * the user's list of teams. It can also change the caller's own grants, listed in the scope
+ * switcher's Teams group.
  */
 function grantCaches(vars: { organizationId: string; teamId: string; userId: string }) {
     return [
@@ -30,6 +31,7 @@ function grantCaches(vars: { organizationId: string; teamId: string; userId: str
                 userId: vars.userId,
             }),
         ),
+        invalidate(trpc.user.listTeamGrants.queryFilter()),
     ];
 }
 

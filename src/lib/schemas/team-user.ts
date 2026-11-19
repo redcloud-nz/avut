@@ -8,6 +8,7 @@ import * as z from "zod";
 import { nanoId16 } from "../id";
 import { recordStatusSchema, zodNanoId16 } from "../validation";
 
+import { OrganizationId } from "./organization";
 import { TeamId, TeamRef } from "./team";
 import { UserData, UserId } from "./user";
 
@@ -45,6 +46,19 @@ export const TeamUserData = {
         }),
         createdAt: z.iso.datetime(),
     }),
+
+    /**
+     * One of the caller's grants that leads into a team scope: the team (slugged, `Active`) and
+     * its org. Returned by `TeamUsers.listForCaller` and `user.listTeamGrants`.
+     */
+    scopeGrantSchema: z.object({
+        team: z.object({ id: TeamId.schema, name: z.string(), slug: z.string() }),
+        organization: z.object({
+            id: OrganizationId.schema,
+            name: z.string(),
+            slug: z.string(),
+        }),
+    }),
 } as const;
 
 /** A member who can be granted access to a team. */
@@ -55,3 +69,6 @@ export type TeamUserData = z.infer<typeof TeamUserData.teamGrantSchema>;
 
 /** One of a user's access grants. */
 export type UserTeamData = z.infer<typeof TeamUserData.userGrantSchema>;
+
+/** One of the caller's grants that leads into a team scope. */
+export type TeamScopeGrantData = z.infer<typeof TeamUserData.scopeGrantSchema>;

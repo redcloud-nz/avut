@@ -46,10 +46,11 @@ export type LogBatchId = z.infer<typeof LogBatchId.schema>;
  * owner invariant can be guarded on write and the per-scope feeds can be
  * indexed.
  *
- * `modules.ts`'s `ModuleScope` now uses the same three values, but the two
- * types remain intentionally separate — a log entry's scope is a fact about
- * where the entry lives (which FK is set, which feed it appears in), not a
- * derived property of the module that produced it. Don't collapse them into
+ * `modules.ts`'s `ModuleScope` shares these three values and adds `"team"`,
+ * which has no log of its own: a team-scope write logs to its organization.
+ * The two types remain intentionally separate — a log entry's scope is a fact
+ * about where the entry lives (which FK is set, which feed it appears in), not
+ * a derived property of the module that produced it. Don't collapse them into
  * one shared type without checking that invariant still holds.
  */
 const logScopeValues = ["organization", "user", "system"] as const;

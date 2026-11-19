@@ -1645,7 +1645,7 @@ describe("executeD4HSyncPlan", () => {
             expect(logged.map((e) => e.description)).toEqual(["Refreshed D4H team metadata."]);
         });
 
-        it("opens its batch only once the plan is claimed, with the team's name", async () => {
+        it("opens its batch only once the plan is claimed, with the team's name and slug", async () => {
             const teamId = await seedTeam();
             const planId = await seedPlan(teamId, []);
             await execute(planId);
@@ -1664,7 +1664,7 @@ describe("executeD4HSyncPlan", () => {
                 skipItemIds: [],
                 openBatch: opened,
             });
-            expect(opened).toHaveBeenCalledWith({ id: teamId, name: `Team ${teamId}` });
+            expect(opened).toHaveBeenCalledWith({ id: teamId, name: `Team ${teamId}`, slug: null });
         });
 
         it("says a sync of this team is running when another plan for it executes", async () => {

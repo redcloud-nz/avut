@@ -232,6 +232,60 @@ describe("userRouter.listMemberships", () => {
     });
 });
 
+describe("userRouter.listTeamGrants", () => {
+    // Dataset: the caller is granted a slugged Active team and an unslugged one; the filtering
+    // and ordering rules are covered by `TeamUsers.listForCaller`'s tests.
+    const T = {
+        org: OrganizationId.create(),
+        caller: UserId.create(),
+        team: TeamId.create(),
+        unslugged: TeamId.create(),
+    };
+
+    const db = createMockPrisma();
+
+    beforeAll(async () => {
+        await db.organization.create({
+            data: { id: T.org, name: "First Org", slug: "first-org", createdAt: new Date() },
+        });
+        await db.user.create({
+            data: { id: T.caller, name: "Caller", email: "caller@example.com" },
+        });
+        await db.organizationUser.create({
+            data: { id: OrganizationUserId.create(), organizationId: T.org, userId: T.caller },
+        });
+        for (const [id, name, slug] of [
+            [T.team, "Rescue", "rescue"],
+            [T.unslugged, "Unslugged", null],
+        ] as const) {
+            await db.team.create({
+                data: { id, organizationId: T.org, name, slug, tags: [], properties: {} },
+            });
+            await db.teamUser.create({
+                data: {
+                    id: TeamUserId.create(),
+                    organizationId: T.org,
+                    teamId: id,
+                    userId: T.caller,
+                },
+            });
+        }
+    });
+
+    it("lists the caller's slugged, Active teams with their org", async () => {
+        const rows = await userRouter
+            .createCaller(createAuthenticatedMockContext({ user: { id: T.caller }, prisma: db }))
+            .listTeamGrants();
+
+        expect(rows).toEqual([
+            {
+                team: { id: T.team, name: "Rescue", slug: "rescue" },
+                organization: { id: T.org, name: "First Org", slug: "first-org" },
+            },
+        ]);
+    });
+});
+
 describe("userRouter.getSession", () => {
     const db = createMockPrisma();
 

@@ -12,6 +12,7 @@ import { OrganizationId } from "@/lib/schemas/organization";
 import { PersonId } from "@/lib/schemas/person";
 import { TeamId } from "@/lib/schemas/team";
 import { TeamMembershipId } from "@/lib/schemas/team-membership";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { EXECUTION_STALE_MS } from "@/server/services/batch-update-plans";
 import { createMockPrisma } from "@/test/create-prisma-mock";
@@ -23,6 +24,10 @@ import { teamsRouter } from "./teams-router";
 // ctx.prisma (the injected mock), so stubbing server-only is enough to let the module load
 // under jsdom.
 vi.mock("server-only", () => ({}));
+
+// The routers clear a team's cached lookup after writes. `revalidateTag` throws outside a Next.js
+// request/render store, so stub it.
+vi.mock("@/server/cache/team-revalidate", () => ({ revalidateTeam: vi.fn(async () => {}) }));
 
 // The D4H linking procedures touch only getConfiguredD4HAccessToken and the
 // cached fetch helpers in @/server/d4h-api/client — stubbed here (same pattern as
@@ -172,6 +177,7 @@ describe("teamsRouter D4H sync plans", () => {
                 id: T.team,
                 organizationId: T.org,
                 name: "Alpha",
+                slug: "alpha",
                 description: "First team",
                 properties: {},
                 tags: [],
@@ -236,12 +242,14 @@ describe("teamsRouter D4H sync plans", () => {
         const { db, T, caller, createPlan } = await seed();
 
         const { planId } = await createPlan();
+        vi.mocked(revalidateTeam).mockClear();
         const { plan: executed } = await caller.executeD4HTeamSyncPlan({
             organizationId: T.org,
             planId,
             skipItemIds: [],
         });
 
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
         expect(executed).toMatchObject({ id: planId, teamId: T.team });
         expect(executed.payload.counts).toMatchObject({ additions: 1, archivals: 1 });
 
@@ -272,6 +280,35 @@ describe("teamsRouter D4H sync plans", () => {
 
         const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
         expect(row).toMatchObject({ status: "Completed", logBatchId: batch!.id });
+    });
+
+    it("clears the team's cache when a claimed sync fails after its items ran", async () => {
+        const { T, db, caller, createPlan } = await seed();
+        const { planId } = await createPlan();
+
+        // The executor reads the link (with a `select`) twice: after the claim, then after the
+        // items ran. Report a different link the second time, so the run fails once claimed.
+        const originalFindUnique = db.team_D4H.findUnique.bind(db.team_D4H) as (
+            args: unknown,
+        ) => Promise<unknown>;
+        let linkChecks = 0;
+        const findSpy = vi
+            .spyOn(db.team_D4H, "findUnique")
+            .mockImplementation(((args: { select?: unknown }) =>
+                args.select && ++linkChecks === 2
+                    ? Promise.resolve({ d4hTeamId: 1 })
+                    : originalFindUnique(args)) as never);
+        vi.mocked(revalidateTeam).mockClear();
+        try {
+            await expect(
+                caller.executeD4HTeamSyncPlan({ organizationId: T.org, planId, skipItemIds: [] }),
+            ).rejects.toMatchObject({ code: "CONFLICT" });
+        } finally {
+            findSpy.mockRestore();
+        }
+
+        expect(linkChecks).toBe(2);
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
     });
 
     it("takes over a membership a concurrent manual add created first instead of crashing", async () => {
@@ -426,7 +463,9 @@ describe("teamsRouter D4H sync plans", () => {
         const { db, T, caller, createPlan } = await seed();
         const { planId } = await createPlan();
 
+        vi.mocked(revalidateTeam).mockClear();
         await caller.unlinkTeamFromD4H({ organizationId: T.org, teamId: T.team });
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const row = await db.batchUpdatePlan.findUniqueOrThrow({ where: { id: planId } });
         expect(row.status).toBe("Superseded");
@@ -493,7 +532,14 @@ describe("teamsRouter link to D4H", () => {
             data: { id: T.org, name: "Acme", slug: "acme", createdAt: new Date() },
         });
         await db.team.create({
-            data: { id: T.team, organizationId: T.org, name: "Alpha", properties: {}, tags: [] },
+            data: {
+                id: T.team,
+                organizationId: T.org,
+                name: "Alpha",
+                slug: "alpha",
+                properties: {},
+                tags: [],
+            },
         });
         const caller = teamsRouter.createCaller(
             createAuthenticatedMockContext({
@@ -527,6 +573,7 @@ describe("teamsRouter link to D4H", () => {
     it("linkTeamToD4H links the team and imports nobody", async () => {
         const { db, T, caller } = await seed();
 
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await caller.linkTeamToD4H({
             organizationId: T.org,
             teamId: T.team,
@@ -534,6 +581,7 @@ describe("teamsRouter link to D4H", () => {
         });
 
         expect(updated.d4h?.d4hTeamId).toBe(4242);
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
         await expectLinkedWithoutImport(db, T.team);
     });
 });
@@ -645,6 +693,15 @@ describe("teamsRouter.listTeamMemberships", () => {
         });
 
         expect(amy.person.email).toBe("amy@example.com");
+    });
+
+    it("includes the person's status", async () => {
+        const [amy] = await makeCaller().listTeamMemberships({
+            organizationId: T.org,
+            teamId: T.team,
+        });
+
+        expect(amy.person.status).toBe("Active");
     });
 
     it("maps the D4H snapshot when present and null otherwise", async () => {
@@ -874,12 +931,15 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     }
 
     it("creates a team and records a Create log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Rescue", slug: null, description: "R", tags: [], properties: {} },
+            create: { name: "Rescue", slug: "rescue", description: "R", tags: [], properties: {} },
         });
 
         expect(created.name).toBe("Rescue");
+        // Clears whatever a team that held the slug before left cached.
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["rescue"]]);
         const row = await db.team.findUnique({ where: { id: created.id } });
         expect(row).toMatchObject({ organizationId: T.org, name: "Rescue" });
 
@@ -893,13 +953,15 @@ describe("teamsRouter.createTeam / deleteTeam", () => {
     it("soft-deletes a team and records a Delete log entry", async () => {
         const { created } = await makeCaller({ team: ["create"] }).createTeam({
             organizationId: T.org,
-            create: { name: "Doomed", slug: null, description: "", tags: [], properties: {} },
+            create: { name: "Doomed", slug: "doomed", description: "", tags: [], properties: {} },
         });
 
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller({ team: ["delete"] }).deleteTeam({
             organizationId: T.org,
             teamId: created.id,
         });
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["doomed"]]);
 
         const row = await db.team.findUnique({ where: { id: created.id } });
         expect(row).toMatchObject({ status: "Deleted" });
@@ -1022,6 +1084,7 @@ describe("teamsRouter team slugs", () => {
     });
 
     it("keeps the team's own slug without a conflict", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller().updateTeam({
             organizationId: T.org,
             teamId: T.team,
@@ -1029,6 +1092,8 @@ describe("teamsRouter team slugs", () => {
         });
 
         expect(updated).toMatchObject({ name: "Alpha 2", slug: "alpha" });
+        // The team's cached lookup (`getTeamBySlug`) is cleared once.
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
     });
 
     it("refuses to update to a slug held by a team in another org", async () => {
@@ -1042,7 +1107,11 @@ describe("teamsRouter team slugs", () => {
     });
 
     it("clears the slug with null and logs the change", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await updateAlpha(null);
+
+        // Both slugs: the old one's cached team, and the new (null, a no-op).
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"], [null]]);
 
         expect(updated.slug).toBeNull();
         expect(await db.team.findUnique({ where: { id: T.team } })).toMatchObject({ slug: null });
@@ -1120,6 +1189,7 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
                 id: T.team,
                 organizationId: T.org,
                 name: "Alpha",
+                slug: "alpha",
                 description: "First team",
                 properties: {},
                 tags: [],
@@ -1147,11 +1217,13 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
     }
 
     it("archives an active team and records an Archive log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller().archiveTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Archived");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: T.team, action: "Archive" },
@@ -1173,11 +1245,13 @@ describe("teamsRouter.archiveTeam / restoreTeam", () => {
     });
 
     it("restores an archived team and records a Restore log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller().restoreTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Active");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: T.team, action: "Restore" },
@@ -1230,6 +1304,7 @@ describe("teamsRouter.deleteTeam / recoverTeam", () => {
                 id: T.team,
                 organizationId: T.org,
                 name: "Alpha",
+                slug: "alpha",
                 description: "",
                 properties: {},
                 tags: [],
@@ -1276,10 +1351,12 @@ describe("teamsRouter.deleteTeam / recoverTeam", () => {
     });
 
     it("soft-deletes the team without touching its memberships", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         await makeCaller({ team: ["delete"] }).deleteTeam({
             organizationId: T.org,
             teamId: T.team,
         });
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const team = await db.team.findUnique({ where: { id: T.team } });
         expect(team).toMatchObject({ status: "Deleted" });
@@ -1304,11 +1381,13 @@ describe("teamsRouter.deleteTeam / recoverTeam", () => {
     });
 
     it("recovers a deleted team back to Active and records a Recover log entry", async () => {
+        vi.mocked(revalidateTeam).mockClear();
         const { updated } = await makeCaller({ team: ["delete"] }).recoverTeam({
             organizationId: T.org,
             teamId: T.team,
         });
         expect(updated.status).toBe("Active");
+        expect(vi.mocked(revalidateTeam).mock.calls).toEqual([["alpha"]]);
 
         const entries = await db.logEntry.findMany({
             where: { objectType: "Team", objectId: T.team, action: "Recover" },

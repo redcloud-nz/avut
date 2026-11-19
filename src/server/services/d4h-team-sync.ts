@@ -1080,7 +1080,7 @@ function executeItem(ctx: OrgServiceContext, teamId: string, d4hTeamId: number, 
  *
  * The batch comes from `openBatch`, called only once the guards have passed and the plan is
  * claimed, so a refused execute leaves no empty batch behind. It's given the team, for the batch's
- * description.
+ * description (and its slug, so the caller can clear the team's cache once items may have run).
  *
  * On success the plan is `Completed`, and `Team_D4H.lastSyncedAt` (and `Organization_D4H`'s, for
  * an org-bearing team, unless it's already later) is set to the plan's `createdAt`, the time of
@@ -1100,7 +1100,7 @@ export async function executeD4HSyncPlan(
     args: {
         planId: BatchUpdatePlanId;
         skipItemIds: readonly string[];
-        openBatch: (team: { id: TeamId; name: string }) => Promise<string>;
+        openBatch: (team: { id: TeamId; name: string; slug: string | null }) => Promise<string>;
     },
 ): Promise<{
     plan: { id: BatchUpdatePlanId; teamId: TeamId; payload: D4HSyncPlan };
@@ -1155,7 +1155,7 @@ export async function executeD4HSyncPlan(
             );
         }
 
-        batchId = await args.openBatch({ id: teamId, name: team.name });
+        batchId = await args.openBatch({ id: teamId, name: team.name, slug: team.slug });
         const ctxBatch = withBatch(ctx, batchId);
         const payload = D4HSyncPlan.schema.parse(row.payload);
         const items = EXECUTION_ORDER.flatMap((kind) =>

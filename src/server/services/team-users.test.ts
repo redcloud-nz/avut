@@ -157,6 +157,112 @@ describe("team-users", () => {
         }
     });
 
+    describe("listForCaller", () => {
+        // Gina belongs to two orgs (named so "Beta" sorts after "Alpha"). Her grants: two slugged
+        // Active teams in Beta, one in Alpha, an unslugged team and an Archived one. Hank holds a
+        // grant on a slugged team Gina has none on.
+        const G = {
+            alpha: OrganizationId.create(),
+            beta: OrganizationId.create(),
+            gina: UserId.create(),
+            hank: UserId.create(),
+            alphaTeam: TeamId.create(),
+            betaRescue: TeamId.create(),
+            betaAlpine: TeamId.create(),
+            unslugged: TeamId.create(),
+            archived: TeamId.create(),
+            hankTeam: TeamId.create(),
+        };
+
+        function callerCtx(userId: UserId) {
+            const { prisma, logEvent } = createOrganizationMockContext({
+                organizationId: G.alpha,
+                user: { id: userId },
+                prisma: db,
+            });
+            return { prisma, userId, logEvent };
+        }
+
+        beforeAll(async () => {
+            for (const [id, name] of [
+                [G.beta, "Beta Org"],
+                [G.alpha, "Alpha Org"],
+            ] as const) {
+                await db.organization.create({
+                    data: { id, name, slug: `org-${id}`, createdAt: new Date() },
+                });
+            }
+            for (const [id, name] of [
+                [G.gina, "Gina"],
+                [G.hank, "Hank"],
+            ] as const) {
+                await db.user.create({
+                    data: { id, name, email: `${name.toLowerCase()}@example.com` },
+                });
+            }
+            for (const [userId, organizationId] of [
+                [G.gina, G.alpha],
+                [G.gina, G.beta],
+                [G.hank, G.beta],
+            ] as const) {
+                await db.organizationUser.create({
+                    data: { id: nanoId16(), organizationId, userId },
+                });
+            }
+            for (const [id, organizationId, name, slug, status] of [
+                [G.betaRescue, G.beta, "Rescue", "beta-rescue", "Active"],
+                [G.betaAlpine, G.beta, "Alpine", "beta-alpine", "Active"],
+                [G.alphaTeam, G.alpha, "Zulu", "alpha-zulu", "Active"],
+                [G.unslugged, G.alpha, "Unslugged", null, "Active"],
+                [G.archived, G.beta, "Archived", "beta-archived", "Archived"],
+                [G.hankTeam, G.beta, "Hank's", "beta-hank", "Active"],
+            ] as const) {
+                await db.team.create({
+                    data: { id, organizationId, name, slug, status, tags: [], properties: {} },
+                });
+            }
+            for (const [teamId, organizationId, userId] of [
+                [G.betaRescue, G.beta, G.gina],
+                [G.alphaTeam, G.alpha, G.gina],
+                [G.betaAlpine, G.beta, G.gina],
+                [G.unslugged, G.alpha, G.gina],
+                [G.archived, G.beta, G.gina],
+                [G.hankTeam, G.beta, G.hank],
+            ] as const) {
+                await db.teamUser.create({
+                    data: { id: TeamUserId.create(), organizationId, teamId, userId },
+                });
+            }
+        });
+
+        it("lists the caller's slugged, Active teams across orgs, by org name then team name", async () => {
+            expect(await TeamUsers.listForCaller(callerCtx(G.gina))).toEqual([
+                {
+                    team: { id: G.alphaTeam, name: "Zulu", slug: "alpha-zulu" },
+                    organization: { id: G.alpha, name: "Alpha Org", slug: `org-${G.alpha}` },
+                },
+                {
+                    team: { id: G.betaAlpine, name: "Alpine", slug: "beta-alpine" },
+                    organization: { id: G.beta, name: "Beta Org", slug: `org-${G.beta}` },
+                },
+                {
+                    team: { id: G.betaRescue, name: "Rescue", slug: "beta-rescue" },
+                    organization: { id: G.beta, name: "Beta Org", slug: `org-${G.beta}` },
+                },
+            ]);
+        });
+
+        it("returns only the caller's own grants", async () => {
+            const rows = await TeamUsers.listForCaller(callerCtx(G.hank));
+
+            expect(rows.map((row) => row.team.id)).toEqual([G.hankTeam]);
+        });
+
+        it("returns an empty list for a user with no grants", async () => {
+            expect(await TeamUsers.listForCaller(callerCtx(T.newcomer))).toEqual([]);
+        });
+    });
+
     describe("listForTeam", () => {
         it("lists the team's grants by user name, leaving out soft-deleted users", async () => {
             const rows = await TeamUsers.listForTeam(ctx(), T.team);

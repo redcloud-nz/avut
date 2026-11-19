@@ -16,6 +16,7 @@ import { OrganizationD4HData } from "@/lib/schemas/organization-d4h";
 import { PersonData, PersonId, PersonRef } from "@/lib/schemas/person";
 import { TeamData, TeamId, TeamRef, TeamSlug } from "@/lib/schemas/team";
 import { TeamMembershipData, TeamMembershipId } from "@/lib/schemas/team-membership";
+import { revalidateTeam } from "@/server/cache/team-revalidate";
 import { getConfiguredD4HAccessToken } from "@/server/d4h-access-token";
 import { assertD4HLinkAllowed } from "@/server/d4h-link-invariants";
 import { createLogBatch, formatActorLabel } from "@/server/log-entry";
@@ -32,17 +33,18 @@ import { Messages } from "../messages";
  * A team-membership row as returned by `listTeamMemberships`, `getTeamMembership` and
  * `getTeamMembershipById` — the membership plus a thin `team` / `person` ref. The
  * `d4h` sub-object (with `d4hRef` / `d4hRoleId`) rides along from
- * `TeamMembershipData.schema`.
+ * `TeamMembershipData.schema`. The person's `status` is there so a reader can leave out
+ * archived or binned people whose membership is still Active (the team dashboard's roster).
  */
 const teamMembershipRowSchema = TeamMembershipData.schema.extend({
     team: TeamData.schema.pick({ id: true, name: true }),
-    person: PersonData.schema.pick({ id: true, name: true, email: true }),
+    person: PersonData.schema.pick({ id: true, name: true, email: true, status: true }),
 });
 
 const teamMembershipRowInclude = {
     d4h: true,
     team: { select: { id: true, name: true } },
-    person: { select: { id: true, name: true, email: true } },
+    person: { select: { id: true, name: true, email: true, status: true } },
 } as const;
 
 /**
@@ -97,7 +99,9 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.archive(ctx, teamId) };
+            const updated = await Teams.archive(ctx, teamId);
+            await revalidateTeam(updated.slug);
+            return { updated };
         }),
 
     /**
@@ -190,6 +194,9 @@ export const teamsRouter = createTrpcRouter({
                     }),
                 ])
                 .catch((error: unknown) => mapSlugRace(error, create.slug));
+            // A slug can be freed without its cached team being cleared (an auto-purge, say), so
+            // clear the new slug's entry here rather than at every path that frees one.
+            await revalidateTeam(createdTeam.slug);
 
             return { created: TeamData.fromRecord(createdTeam) };
         }),
@@ -276,7 +283,8 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ input: { teamId }, ctx }) => {
-            await Teams.deleteRecord(ctx, teamId);
+            const deleted = await Teams.deleteRecord(ctx, teamId);
+            await revalidateTeam(deleted.slug);
         }),
 
     /**
@@ -321,23 +329,34 @@ export const teamsRouter = createTrpcRouter({
             }),
         )
         .mutation(async ({ ctx, input: { planId, skipItemIds } }) => {
-            return D4HTeamSync.executeD4HSyncPlan(ctx, {
-                planId,
-                skipItemIds,
-                // Opened only once the plan is claimed, so a refused execute leaves no batch.
-                openBatch: async (team) => {
-                    const batch = await createLogBatch(
-                        {
-                            operationKey: "d4h-team-sync",
-                            userId: ctx.userId,
-                            actorLabel: formatActorLabel(ctx.auth.user.name, ctx.auth.user.email),
-                            description: `Synchronised team "${team.name}" from its linked D4H team`,
-                        },
-                        ctx.prisma,
-                    );
-                    return batch.id;
-                },
-            });
+            // Set once the plan is claimed (`openBatch`). From then on items may write the team's
+            // `Team_D4H` row (metadata, `lastSyncedAt`), even if a later item fails.
+            let claimedTeamSlug: string | null = null;
+            try {
+                return await D4HTeamSync.executeD4HSyncPlan(ctx, {
+                    planId,
+                    skipItemIds,
+                    // Opened only once the plan is claimed, so a refused execute leaves no batch.
+                    openBatch: async (team) => {
+                        claimedTeamSlug = team.slug;
+                        const batch = await createLogBatch(
+                            {
+                                operationKey: "d4h-team-sync",
+                                userId: ctx.userId,
+                                actorLabel: formatActorLabel(
+                                    ctx.auth.user.name,
+                                    ctx.auth.user.email,
+                                ),
+                                description: `Synchronised team "${team.name}" from its linked D4H team`,
+                            },
+                            ctx.prisma,
+                        );
+                        return batch.id;
+                    },
+                });
+            } finally {
+                await revalidateTeam(claimedTeamSlug);
+            }
         }),
 
     /**
@@ -532,6 +551,7 @@ export const teamsRouter = createTrpcRouter({
                     batchId: batch.id,
                 }),
             ]);
+            await revalidateTeam(team.slug);
 
             return { updated: await Teams.requireById(ctx, teamId) };
         }),
@@ -604,7 +624,9 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.recover(ctx, teamId) };
+            const updated = await Teams.recover(ctx, teamId);
+            await revalidateTeam(updated.slug);
+            return { updated };
         }),
 
     /**
@@ -630,7 +652,9 @@ export const teamsRouter = createTrpcRouter({
         .input(z.object({ teamId: TeamId.schema }))
         .output(z.object({ updated: TeamData.schema }))
         .mutation(async ({ ctx, input: { teamId } }) => {
-            return { updated: await Teams.restore(ctx, teamId) };
+            const updated = await Teams.restore(ctx, teamId);
+            await revalidateTeam(updated.slug);
+            return { updated };
         }),
 
     /**
@@ -742,6 +766,7 @@ export const teamsRouter = createTrpcRouter({
                     description: "Unlinked from D4H.",
                 }),
             ]);
+            await revalidateTeam(team.slug);
         }),
 
     /**
@@ -801,6 +826,11 @@ export const teamsRouter = createTrpcRouter({
                     }),
                 ])
                 .catch((error: unknown) => mapSlugRace(error, update.slug));
+
+            // Both slugs: the old one's cached team is stale, and the new one may have cached a
+            // team that held it before.
+            await revalidateTeam(existingTeam.slug);
+            if (updated.slug !== existingTeam.slug) await revalidateTeam(updated.slug);
 
             return { updated: TeamData.fromRecord(updated) };
         }),
