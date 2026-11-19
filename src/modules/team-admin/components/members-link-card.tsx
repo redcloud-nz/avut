@@ -4,7 +4,6 @@
  */
 "use client";
 
-import type { Route } from "next";
 import Link from "next/link";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -14,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item";
 import { useOrganization } from "@/hooks/use-organization";
 import { useTeamSlug } from "@/hooks/use-team";
+import { route } from "@/lib/routes";
 import type { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
@@ -33,8 +33,7 @@ export function TeamAdmin_MembersLink_Card({ teamId }: { teamId: TeamId }) {
             </CardHeader>
             <CardContent className="px-2 -my-2">
                 <Item className="px-2" size="sm" asChild>
-                    {/* Cast until the members page exists (Task 4 of the team-admin plan), then `route()`. */}
-                    <Link href={`/teams/${teamSlug}/admin/members` as Route}>
+                    <Link href={route("/teams/[slug]/admin/members", { slug: teamSlug })}>
                         <ItemContent>
                             <ItemTitle>{memberships.length} Personnel</ItemTitle>
                             <ItemDescription>assigned to this team</ItemDescription>
