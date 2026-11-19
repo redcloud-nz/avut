@@ -90,7 +90,7 @@ _End of review group A._ Browser spot-check: Admin → Teams → a team and its 
     - **Sidebar** per Decisions → "Sidebar".
   - **Done when:** the sidebar shows Admin with Members under it, in team scope only; `/teams/<slug>/admin/members` lists the roster with plain names; New Member adds someone, and they show on the table and the team dashboard's roster without a reload; Remove takes them off; without `team: ["delete"]` the Remove buttons are absent. `npm run check` passes.
 
-- [ ] **Task 5: developer docs** (docs(team-admin): document the team admin module) · `mechanical`
+- [x] **Task 5: developer docs** (docs(team-admin): document the team admin module) · `mechanical`
   - **Files:** `AGENTS.md`
   - **Do:** In → Scope roots and modules, name `team-admin` as the first team-only module (`/teams/[slug]/admin`) and say it writes through the org procedures with the team's ids, like every team page. In → Modules, add that `src/components/teams/` holds the team record cards and dialogs that org-admin and team-admin share, as distinct from `src/components/team/` (the team scope root's own UI).
   - **Done when:** the docs match the code. `npm run check` passes.
