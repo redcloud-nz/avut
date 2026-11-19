@@ -129,8 +129,8 @@ export function Teams_D4HCard({
 }: {
     team: TeamData;
     /**
-     * Called after a successful link, unlink or sync. For link and unlink, only once the
-     * `?action` change has landed, so a `router.refresh()` here can't reopen a dialog.
+     * Called after a successful link, unlink or sync, only once the `?action` change has landed
+     * (for a sync, when its dialog closes), so a `router.refresh()` here can't reopen a dialog.
      */
     onChanged?: () => void;
 }) {
@@ -224,7 +224,7 @@ export function Teams_D4HCard({
             <SyncDialog
                 team={team}
                 open={action === "d4h-sync"}
-                onClose={() => void setAction(null, { history: "replace" })}
+                onClose={() => setAction(null, { history: "replace" })}
                 onSynced={onChanged}
             />
             <UnlinkDialog
@@ -395,7 +395,9 @@ function SyncDialog({
 }: {
     team: TeamData;
     open: boolean;
-    onClose: () => void;
+    /** Clears `?action`; resolves once the URL has changed. */
+    onClose: () => Promise<unknown>;
+    /** Called when the dialog closes after a successful sync, once `?action` is cleared. */
     onSynced?: () => void;
 }) {
     const organization = useOrganization();
@@ -405,6 +407,16 @@ function SyncDialog({
 
     // Whether the dialog is open, for the execute callbacks, which outlive a Back-button close.
     const openRef = useRef(open);
+
+    // A sync succeeded while the dialog was open: `onSynced` waits for the close.
+    const syncedRef = useRef(false);
+
+    async function close() {
+        const synced = syncedRef.current;
+        syncedRef.current = false;
+        await onClose();
+        if (synced) onSynced?.();
+    }
 
     const execute = useMutation(
         trpc.teams.executeD4HTeamSyncPlan.mutationOptions({
@@ -417,9 +429,13 @@ function SyncDialog({
                 }
             },
             onSuccess: ({ plan, outcomes }) => {
+                // The dialog shows the results; `onSynced` waits until it closes.
+                if (openRef.current) {
+                    syncedRef.current = true;
+                    return;
+                }
+                // Closed mid-apply: `?action` is already gone.
                 onSynced?.();
-                // The dialog shows the results; only a dialog closed mid-apply needs a toast.
-                if (openRef.current) return;
                 // Count the items the user could tick, as the result view does (not a no-op
                 // metadata item).
                 const counted = new Set(selectableItems(plan.payload).map((i) => i.itemId));
@@ -479,6 +495,11 @@ function SyncDialog({
         openRef.current = open;
         if (!open) {
             wasOpen.current = false;
+            // Closed by the Back button after a sync: the URL has already changed.
+            if (syncedRef.current) {
+                syncedRef.current = false;
+                onSynced?.();
+            }
             // A close mid-apply (the Back button) keeps the apply, and a reopen picks it back up.
             if (!execute.isPending) execute.reset();
             return;
@@ -520,7 +541,7 @@ function SyncDialog({
         <Dialog
             open={open}
             // Not dismissable while applying: closing would hide the run, not stop it.
-            onOpenChange={(o) => (o || applying ? undefined : onClose())}
+            onOpenChange={(o) => (o || applying ? undefined : void close())}
         >
             <DialogContent showCloseButton={!applying}>
                 <DialogHeader>

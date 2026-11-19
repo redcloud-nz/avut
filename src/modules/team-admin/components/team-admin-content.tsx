@@ -47,7 +47,9 @@ export function TeamAdmin_Overview_Content() {
 
     async function handleUpdated(updated: TeamData) {
         if (updated.slug && updated.slug !== teamSlug) {
-            // Navigating drops `?action=update`, so there's no param to clear first.
+            // Navigating drops `?action=update`, so there's no param to clear first. The replace
+            // swaps only the dialog's `?action=update` entry: Back still reaches the old slug's
+            // admin URL, now a not-found. That extra entry is accepted.
             router.replace(route("/teams/[slug]/admin", { slug: updated.slug }));
             return;
         }
@@ -87,6 +89,8 @@ export function TeamAdmin_Overview_Content() {
                                 <Teams_TeamAccess_Card
                                     team={team}
                                     linkPeople={false}
+                                    // Replaces only the dialog's `?action=` entry, so Back
+                                    // still reaches this (now not-found) page. Accepted.
                                     onSelfRevoked={() => router.replace("/user")}
                                 />
                             </Protect>
