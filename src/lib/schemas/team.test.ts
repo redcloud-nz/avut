@@ -94,6 +94,32 @@ describe("TeamData.formSchema slug", () => {
     it("accepts clearing the slug", () => {
         expect(TeamData.formSchema("admin").safeParse({ ...base, slug: "" }).data?.slug).toBeNull();
     });
+
+    it("accepts a null slug without requireSlug", () => {
+        expect(TeamData.formSchema("alpha").safeParse({ ...base, slug: null }).success).toBe(true);
+    });
+});
+
+describe("TeamData.formSchema with requireSlug", () => {
+    const base = { name: "Team One", description: "", tags: [], properties: {} };
+    const schema = TeamData.formSchema("alpha", { requireSlug: true });
+
+    it.each([null, ""])("rejects a cleared slug (%j)", (slug) => {
+        const result = schema.safeParse({ ...base, slug });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.path).toEqual(["slug"]);
+        expect(result.error?.issues[0]?.message).toMatch(/needs a slug/);
+    });
+
+    it("accepts a changed slug", () => {
+        expect(schema.safeParse({ ...base, slug: "beta" }).data?.slug).toBe("beta");
+    });
+
+    it("still rejects changing to a reserved slug", () => {
+        const result = schema.safeParse({ ...base, slug: "admin" });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.message).toBe("That slug is reserved.");
+    });
 });
 
 describe("TeamData.schema slug", () => {

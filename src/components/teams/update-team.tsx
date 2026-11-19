@@ -34,7 +34,17 @@ import { useOrganization } from "@/hooks/use-organization";
 import { ModifiableTeamData, TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
+export function Teams_UpdateTeam_Dialog({
+    team,
+    requireSlug = false,
+    onUpdated,
+}: {
+    team: TeamData;
+    /** The slug can be changed but not cleared (editing from the team's own space). */
+    requireSlug?: boolean;
+    /** Called after a successful update in place of closing the dialog — e.g. to navigate away. */
+    onUpdated?: (updated: TeamData) => void;
+}) {
     const organization = useOrganization();
 
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(["update"] as const));
@@ -42,7 +52,7 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
 
     const formId = useId();
     const form = useForm({
-        resolver: zodResolver(TeamData.formSchema(team.slug)),
+        resolver: zodResolver(TeamData.formSchema(team.slug, { requireSlug })),
         defaultValues: { ...team, slug: team.slug ?? "" },
     });
 
@@ -59,9 +69,10 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                     toast.error(`Failed to update team: ${error.message}`);
                 }
             },
-            async onSuccess() {
+            async onSuccess({ updated }) {
                 toast.success("Team updated");
-                handleDialogOpenChange(false);
+                if (onUpdated) onUpdated(updated);
+                else handleDialogOpenChange(false);
             },
         }),
     );
@@ -161,8 +172,9 @@ export function AdminModule_UpdateTeam_Dialog({ team }: { team: TeamData }) {
                                             value={field.value ?? ""}
                                         />
                                         <FieldDescription>
-                                            Optional. Unique across AVUT. Setting one gives the team
-                                            its own space; leave it blank to keep it off.
+                                            {requireSlug
+                                                ? "Unique across AVUT. It can be changed here but not cleared, since that would close this team's space; clearing it is done from the organisation's Admin → Teams."
+                                                : "Optional. Unique across AVUT. Setting one gives the team its own space; leave it blank to keep it off."}
                                         </FieldDescription>
                                         {fieldState.error && (
                                             <FieldError errors={[fieldState.error]} />

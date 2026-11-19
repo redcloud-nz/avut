@@ -10,6 +10,7 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useQuery } from "@tanstack/react-query";
 
 import { ObjectIcons } from "@/components/icons";
+import { Teams_AddTeamMembership_Dialog } from "@/components/teams/add-team-membership";
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -22,7 +23,6 @@ import { route } from "@/lib/routes";
 import { PersonData } from "@/lib/schemas/person";
 import { AdminModule_LinkUser_Dialog } from "@/modules/org-admin/components/person-user-link/link-user";
 import { AdminModule_UnlinkPerson_Dialog } from "@/modules/org-admin/components/person-user-link/unlink-person";
-import { AdminModule_AddTeamMembership_Dialog } from "@/modules/org-admin/components/teams/add-team-membership";
 import { trpc } from "@/trpc/client";
 
 import { AdminModule_ArchivePerson_Dialog } from "./archive-person";
@@ -262,7 +262,7 @@ export function AdminModule_PersonMenu({ person }: AdminModule_PersonMenuProps) 
             )}
 
             {/* Add Team Membership dialog */}
-            <AdminModule_AddTeamMembership_Dialog
+            <Teams_AddTeamMembership_Dialog
                 person={person}
                 open={action === "add-membership"}
                 onOpenChange={(open) =>

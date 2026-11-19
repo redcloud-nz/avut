@@ -34,6 +34,12 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { DialogBoundary } from "@/components/ui/dialog-boundary";
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { Field, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import {
     Select,
@@ -42,6 +48,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { useHasPermission } from "@/hooks/use-has-permission";
 import { useOrganization } from "@/hooks/use-organization";
 import { getD4HServer } from "@/lib/d4h-servers";
 import {
@@ -58,7 +65,75 @@ import { trpc, trpcClient } from "@/trpc/client";
 
 const ACTIONS = ["d4h-link", "d4h-sync", "d4h-unlink"] as const;
 
-export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
+export type Teams_D4HAction = (typeof ACTIONS)[number];
+
+/**
+ * The D4H group of a team's action menu (Link / Sync / Unlink), for an `EntityActionMenu`'s
+ * `after`. Each item sets `?action=` through the menu's own `setAction`; `Teams_D4HCard`
+ * renders the dialogs.
+ */
+export function Teams_D4HMenuGroup({
+    team,
+    setAction,
+}: {
+    team: TeamData;
+    setAction: (action: Teams_D4HAction, options: { history: "push" }) => unknown;
+}) {
+    const organization = useOrganization();
+    const d4hEnabled = organization.settings.integrations.d4h.enabled;
+    const canUpdate = useHasPermission({ team: ["update"] });
+    const linked = team.d4h !== null;
+    const isActive = team.status === "Active";
+
+    // An unlinked archived team has no D4H action left to offer.
+    if (!d4hEnabled || !(linked || isActive)) return null;
+
+    return (
+        <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>D4H</DropdownMenuLabel>
+            <DropdownMenuGroup>
+                {!linked && isActive && (
+                    <DropdownMenuItem
+                        disabled={!canUpdate}
+                        onClick={() => void setAction("d4h-link", { history: "push" })}
+                    >
+                        <D4HIcons.Link /> Link to D4H
+                    </DropdownMenuItem>
+                )}
+                {linked && isActive && (
+                    <DropdownMenuItem
+                        disabled={!canUpdate}
+                        onClick={() => void setAction("d4h-sync", { history: "push" })}
+                    >
+                        <D4HIcons.Sync /> Sync with D4H
+                    </DropdownMenuItem>
+                )}
+                {linked && (
+                    <DropdownMenuItem
+                        disabled={!canUpdate}
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => void setAction("d4h-unlink", { history: "push" })}
+                    >
+                        <D4HIcons.Unlink /> Unlink from D4H
+                    </DropdownMenuItem>
+                )}
+            </DropdownMenuGroup>
+        </>
+    );
+}
+
+export function Teams_D4HCard({
+    team,
+    onChanged,
+}: {
+    team: TeamData;
+    /**
+     * Called after a successful link, unlink or sync, only once the `?action` change has landed
+     * (for a sync, when its dialog closes), so a `router.refresh()` here can't reopen a dialog.
+     */
+    onChanged?: () => void;
+}) {
     const organization = useOrganization();
     const settings = organization.settings;
     const [action, setAction] = useQueryState("action", parseAsStringLiteral(ACTIONS));
@@ -141,17 +216,25 @@ export function AdminModule_Team_D4HCard({ team }: { team: TeamData }) {
                 onClose={() => void setAction(null, { history: "replace" })}
                 // The link imports nobody: the sync preview takes over, in place of the link
                 // dialog's history entry, so Back closes it rather than reopening the link dialog.
-                onLinked={() => void setAction("d4h-sync", { history: "replace" })}
+                onLinked={async () => {
+                    await setAction("d4h-sync", { history: "replace" });
+                    onChanged?.();
+                }}
             />
             <SyncDialog
                 team={team}
                 open={action === "d4h-sync"}
-                onClose={() => void setAction(null, { history: "replace" })}
+                onClose={() => setAction(null, { history: "replace" })}
+                onSynced={onChanged}
             />
             <UnlinkDialog
                 team={team}
                 open={action === "d4h-unlink"}
                 onClose={() => void setAction(null, { history: "replace" })}
+                onUnlinked={async () => {
+                    await setAction(null, { history: "replace" });
+                    onChanged?.();
+                }}
             />
         </Protect>
     );
@@ -161,10 +244,13 @@ function UnlinkDialog({
     team,
     open,
     onClose,
+    onUnlinked,
 }: {
     team: TeamData;
     open: boolean;
     onClose: () => void;
+    /** Closes the dialog after a successful unlink, in place of `onClose`. */
+    onUnlinked: () => void;
 }) {
     const organization = useOrganization();
 
@@ -174,7 +260,7 @@ function UnlinkDialog({
             onError: (error) => toast.error(`Failed to unlink: ${error.message}`),
             onSuccess: () => {
                 toast.success("Unlinked from D4H");
-                onClose();
+                onUnlinked();
             },
         }),
     );
@@ -305,10 +391,14 @@ function SyncDialog({
     team,
     open,
     onClose,
+    onSynced,
 }: {
     team: TeamData;
     open: boolean;
-    onClose: () => void;
+    /** Clears `?action`; resolves once the URL has changed. */
+    onClose: () => Promise<unknown>;
+    /** Called when the dialog closes after a successful sync, once `?action` is cleared. */
+    onSynced?: () => void;
 }) {
     const organization = useOrganization();
 
@@ -317,6 +407,16 @@ function SyncDialog({
 
     // Whether the dialog is open, for the execute callbacks, which outlive a Back-button close.
     const openRef = useRef(open);
+
+    // A sync succeeded while the dialog was open: `onSynced` waits for the close.
+    const syncedRef = useRef(false);
+
+    async function close() {
+        const synced = syncedRef.current;
+        syncedRef.current = false;
+        await onClose();
+        if (synced) onSynced?.();
+    }
 
     const execute = useMutation(
         trpc.teams.executeD4HTeamSyncPlan.mutationOptions({
@@ -329,8 +429,13 @@ function SyncDialog({
                 }
             },
             onSuccess: ({ plan, outcomes }) => {
-                // The dialog shows the results; only a dialog closed mid-apply needs a toast.
-                if (openRef.current) return;
+                // The dialog shows the results; `onSynced` waits until it closes.
+                if (openRef.current) {
+                    syncedRef.current = true;
+                    return;
+                }
+                // Closed mid-apply: `?action` is already gone.
+                onSynced?.();
                 // Count the items the user could tick, as the result view does (not a no-op
                 // metadata item).
                 const counted = new Set(selectableItems(plan.payload).map((i) => i.itemId));
@@ -390,6 +495,11 @@ function SyncDialog({
         openRef.current = open;
         if (!open) {
             wasOpen.current = false;
+            // Closed by the Back button after a sync: the URL has already changed.
+            if (syncedRef.current) {
+                syncedRef.current = false;
+                onSynced?.();
+            }
             // A close mid-apply (the Back button) keeps the apply, and a reopen picks it back up.
             if (!execute.isPending) execute.reset();
             return;
@@ -431,7 +541,7 @@ function SyncDialog({
         <Dialog
             open={open}
             // Not dismissable while applying: closing would hide the run, not stop it.
-            onOpenChange={(o) => (o || applying ? undefined : onClose())}
+            onOpenChange={(o) => (o || applying ? undefined : void close())}
         >
             <DialogContent showCloseButton={!applying}>
                 <DialogHeader>

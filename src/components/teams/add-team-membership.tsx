@@ -43,11 +43,7 @@ type AddTeamMembershipProps = DialogProps &
  * than the two separately-drifting pickers this replaces (`add-person-to-team.tsx`,
  * `add-team-member.tsx`).
  */
-export function AdminModule_AddTeamMembership_Dialog({
-    person,
-    team,
-    ...props
-}: AddTeamMembershipProps) {
+export function Teams_AddTeamMembership_Dialog({ person, team, ...props }: AddTeamMembershipProps) {
     const title = person ? "Add to Team" : "Add Person to Team";
     const description = person ? (
         <>

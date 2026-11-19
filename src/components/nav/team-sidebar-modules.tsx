@@ -22,12 +22,15 @@ import { useOrganization } from "@/hooks/use-organization";
 import { useTeamSlug } from "@/hooks/use-team";
 import { teamModules, type TeamScopedModule } from "@/lib/modules";
 import { route } from "@/lib/routes";
+import { TeamAdmin_Sidebar_Menu } from "@/modules/team-admin/components/sidebar-menu";
 
 /**
  * Sub-pages for a team-scope module's `NavCollapsible`, keyed by module id. A module absent here
- * renders as a plain `NavItem`. Empty until a module joins team scope.
+ * renders as a plain `NavItem`.
  */
-const TEAM_MODULE_SIDEBAR: Partial<Record<TeamScopedModule["id"], ReactNode>> = {};
+const TEAM_MODULE_SIDEBAR: Partial<Record<TeamScopedModule["id"], ReactNode>> = {
+    "team-admin": <TeamAdmin_Sidebar_Menu />,
+};
 
 export function TeamSidebar_Modules() {
     const organization = useOrganization();

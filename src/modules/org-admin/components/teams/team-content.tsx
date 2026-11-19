@@ -10,24 +10,18 @@ import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
 import { HelpButton } from "@/components/docs/help-button";
 import { Protect } from "@/components/protect";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemDateValue,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { Teams_D4HCard } from "@/components/teams/d4h-link-card";
+import { Teams_TeamAccess_Card } from "@/components/teams/team-access-card";
+import { Teams_Details_Card } from "@/components/teams/team-details-card";
+import { Card, CardContent } from "@/components/ui/card";
+import { DataItem, DataItemDateValue, DataItemTitle, DataList } from "@/components/ui/data-item";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { TeamId } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_Team_D4HCard } from "./d4h-link-card";
-import { AdminModule_TeamAccess_Card } from "./team-access-card";
 import { AdminModule_TeamLinks_Card } from "./team-links";
 import { AdminModule_Team_Menu } from "./team-menu";
-import { AdminModule_UpdateTeam_Dialog } from "./update-team";
 
 export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
     const organization = useOrganization();
@@ -63,56 +57,13 @@ export function AdminModule_Team_Content({ teamId }: { teamId: TeamId }) {
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Team Details</CardTitle>
-                                    <CardAction>
-                                        <Protect permissions={{ team: ["update"] }}>
-                                            <AdminModule_UpdateTeam_Dialog team={team} />
-                                        </Protect>
-                                    </CardAction>
-                                </CardHeader>
-                                <CardContent>
-                                    <DataList>
-                                        <DataItem inline>
-                                            <DataItemTitle>Team ID</DataItemTitle>
-                                            <DataItemValue className="font-mono">
-                                                {team.id}
-                                            </DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Name</DataItemTitle>
-                                            <DataItemValue>{team.name}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Slug</DataItemTitle>
-                                            {team.slug ? (
-                                                <DataItemValue className="font-mono">
-                                                    {team.slug}
-                                                </DataItemValue>
-                                            ) : (
-                                                <DataItemValue className="text-muted-foreground">
-                                                    None
-                                                </DataItemValue>
-                                            )}
-                                        </DataItem>
-                                        <DataItem>
-                                            <DataItemTitle>Description</DataItemTitle>
-                                            <DataItemValue>{team.description}</DataItemValue>
-                                        </DataItem>
-                                        <DataItem inline>
-                                            <DataItemTitle>Status</DataItemTitle>
-                                            <DataItemValue>{team.status}</DataItemValue>
-                                        </DataItem>
-                                    </DataList>
-                                </CardContent>
-                            </Card>
+                            <Teams_Details_Card team={team} />
 
                             <Protect permissions={{ member: ["view"] }}>
-                                <AdminModule_TeamAccess_Card team={team} />
+                                <Teams_TeamAccess_Card team={team} />
                             </Protect>
 
-                            <AdminModule_Team_D4HCard team={team} />
+                            <Teams_D4HCard team={team} />
                         </Saratoga.Column>
 
                         <Saratoga.Column slot="secondary">

@@ -9,6 +9,7 @@ import { useRef } from "react";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
+import { useUser } from "@/client/auth-queries";
 import { OrgUserLink } from "@/components/entity-links/org-user-link";
 import { ObjectIcons } from "@/components/icons";
 import { Protect } from "@/components/protect";
@@ -27,15 +28,26 @@ import { useOrganization } from "@/hooks/use-organization";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-import { AdminModule_GrantTeamAccess_Dialog } from "./grant-team-access";
-import { AdminModule_RevokeTeamAccess_Dialog } from "./revoke-team-access";
+import { Teams_GrantTeamAccess_Dialog } from "./grant-team-access";
+import { Teams_RevokeTeamAccess_Dialog } from "./revoke-team-access";
 
 /**
  * The users granted access to a team (`TeamUser`), with grant and revoke. Owns the
  * `?action=grant-access` and `?action=revoke-access&userId=…` params for its dialogs.
  */
-export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
+export function Teams_TeamAccess_Card({
+    team,
+    linkPeople = true,
+    onSelfRevoked,
+}: {
+    team: TeamData;
+    /** Render names as links to org admin's user pages (default), or as plain text. */
+    linkPeople?: boolean;
+    /** Called after the signed-in user revokes their own grant, in place of closing the dialog. */
+    onSelfRevoked?: () => void;
+}) {
     const organization = useOrganization();
+    const { data: currentUser } = useUser();
 
     const [action, setAction] = useQueryState(
         "action",
@@ -55,6 +67,7 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
     // `member: ["update"]`), so revoke's focus has somewhere to land.
     const titleRef = useRef<HTMLDivElement>(null);
     const revokeGrant = grants.find((grant) => grant.userId === userId) ?? null;
+    const revokeIsSelf = revokeGrant != null && revokeGrant.userId === currentUser?.id;
 
     function openRevoke(id: string) {
         void setUserId(id, { history: "push" });
@@ -98,7 +111,11 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
                             <Item key={grant.id} variant="outline" size="sm">
                                 <ItemContent>
                                     <ItemTitle>
-                                        <OrgUserLink user={grant.user} />
+                                        {linkPeople ? (
+                                            <OrgUserLink user={grant.user} />
+                                        ) : (
+                                            grant.user.name
+                                        )}
                                         {grant.onRoster && (
                                             <Badge variant="secondary">On roster</Badge>
                                         )}
@@ -123,7 +140,7 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
                 )}
             </CardContent>
 
-            <AdminModule_GrantTeamAccess_Dialog
+            <Teams_GrantTeamAccess_Dialog
                 team={team}
                 returnFocusRef={grantButtonRef}
                 open={action === "grant-access" && team.status === "Active"}
@@ -134,10 +151,12 @@ export function AdminModule_TeamAccess_Card({ team }: { team: TeamData }) {
                 }
             />
             {revokeGrant && (
-                <AdminModule_RevokeTeamAccess_Dialog
+                <Teams_RevokeTeamAccess_Dialog
                     team={team}
                     grant={revokeGrant}
                     returnFocusRef={titleRef}
+                    isSelf={revokeIsSelf}
+                    onRevoked={revokeIsSelf ? onSelfRevoked : undefined}
                     open={action === "revoke-access"}
                     onOpenChange={(open) => (open ? undefined : closeRevoke())}
                 />

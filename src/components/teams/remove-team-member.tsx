@@ -26,7 +26,7 @@ import { PersonRef } from "@/lib/schemas/person";
 import { TeamData } from "@/lib/schemas/team";
 import { trpc } from "@/trpc/client";
 
-export function AdminModule_RemoveTeamMember_Dialog({
+export function Teams_RemoveTeamMember_Dialog({
     organizationId,
     team,
     person,
