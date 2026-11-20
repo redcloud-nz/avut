@@ -162,13 +162,13 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                     {sessionQuery.isPending ? (
                         <RainbowSpinner className="mx-auto" />
                     ) : !email ? (
-                        <Alert variant="error">
+                        <Alert variant="destructive">
                             Could not determine your email address. Please reload the page.
                         </Alert>
                     ) : !codeSent ? (
                         <>
                             {sendCode.isError && (
-                                <Alert variant="error">{sendCode.error.message}</Alert>
+                                <Alert variant="destructive">{sendCode.error.message}</Alert>
                             )}
                             <Field orientation="horizontal">
                                 <MutationButton
@@ -268,10 +268,10 @@ function SetPassword_DialogBody({ onDone }: { onDone: () => void }) {
                                     )}
                                 />
                                 {setPassword.isError && (
-                                    <Alert variant="error">{setPassword.error.message}</Alert>
+                                    <Alert variant="destructive">{setPassword.error.message}</Alert>
                                 )}
                                 {sendCode.isError && (
-                                    <Alert variant="error">{sendCode.error.message}</Alert>
+                                    <Alert variant="destructive">{sendCode.error.message}</Alert>
                                 )}
                             </FieldGroup>
                         </form>
@@ -419,7 +419,7 @@ function ChangePassword_DialogBody({ onDone }: { onDone: () => void }) {
                             )}
                         />
                         {mutation.isError && (
-                            <Alert variant="error">{mutation.error.message}</Alert>
+                            <Alert variant="destructive">{mutation.error.message}</Alert>
                         )}
                     </FieldGroup>
                 </form>

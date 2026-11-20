@@ -428,7 +428,7 @@ function D4HI3_Issue_ItemsSection({
                                         .join(" - ")}
                                 </ItemDescription>
                                 {misfitIndexes.includes(index) && (
-                                    <ItemDescription className="flex items-center gap-1 text-amber-600 dark:text-amber-500">
+                                    <ItemDescription className="flex items-center gap-1 text-warning-foreground">
                                         <AlertWarningIcon className="size-3.5" />
                                         Can&apos;t be issued to {teamTitle}
                                     </ItemDescription>
@@ -551,7 +551,7 @@ function MisfitMarker({ teamTitle }: { teamTitle: string }) {
     const label = `Can't be issued to ${teamTitle}`;
     return (
         <span title={label} className="inline-flex">
-            <AlertWarningIcon className="size-3.5 text-amber-600 dark:text-amber-500" />
+            <AlertWarningIcon className="size-3.5 text-warning" />
             <span className="sr-only">{label}</span>
         </span>
     );

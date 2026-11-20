@@ -38,7 +38,27 @@
   /* Selected (active nav item, pressed toggle, chosen list entry): the accent's caramel, heavier. */
   --selected: oklch(0.55 0.1 55 / 0.13);
   --selected-foreground: oklch(0.38 0.09 55);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* Status colours: four families, one pattern. --X is the solid (icons, bar segments, borders at
+     /25–/40, solid badges); --X-foreground is tone-coloured text, on the card or on the tint;
+     --X-subtle is a translucent tint behind a badge or alert, so it sits the same on card, page and
+     muted rows; --on-X is text on a solid --X fill. Warning is a saturated orange so it reads apart
+     from the caramel primary, and info is its own blue. */
+  --success: oklch(0.58 0.13 155);
+  --success-foreground: oklch(0.46 0.111 155);
+  --success-subtle: oklch(0.58 0.13 155 / 0.11);
+  --on-success: oklch(1 0 0);
+  --info: oklch(0.56 0.105 245);
+  --info-foreground: oklch(0.44 0.089 245);
+  --info-subtle: oklch(0.56 0.105 245 / 0.11);
+  --on-info: oklch(1 0 0);
+  --warning: oklch(0.7 0.203 58);
+  --warning-foreground: oklch(0.5 0.172 58);
+  --warning-subtle: oklch(0.7 0.203 58 / 0.176);
+  --on-warning: oklch(0.24 0.071 58);
+  --destructive: oklch(0.58 0.2 22);
+  --destructive-foreground: oklch(0.46 0.17 22);
+  --destructive-subtle: oklch(0.58 0.2 22 / 0.11);
+  --on-destructive: oklch(1 0 0);
   --border: oklch(0.912 0.0052 247.8822);
   --input: var(--border);
   --ring: oklch(0.7 0.06 55);
@@ -211,7 +231,22 @@
   --accent-foreground: oklch(0.88 0.09 55);
   --selected: oklch(0.7 0.1 55 / 0.24);
   --selected-foreground: oklch(0.88 0.09 55);
-  --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.74 0.13 155);
+  --success-foreground: oklch(0.84 0.104 155);
+  --success-subtle: oklch(0.74 0.13 155 / 0.16);
+  --on-success: oklch(0.24 0.045 155);
+  --info: oklch(0.73 0.105 245);
+  --info-foreground: oklch(0.83 0.084 245);
+  --info-subtle: oklch(0.73 0.105 245 / 0.16);
+  --on-info: oklch(0.24 0.037 245);
+  --warning: oklch(0.8 0.203 58);
+  --warning-foreground: oklch(0.9 0.162 58);
+  --warning-subtle: oklch(0.8 0.203 58 / 0.16);
+  --on-warning: oklch(0.24 0.071 58);
+  --destructive: oklch(0.74 0.2 22);
+  --destructive-foreground: oklch(0.84 0.16 22);
+  --destructive-subtle: oklch(0.74 0.2 22 / 0.16);
+  --on-destructive: oklch(0.24 0.07 22);
   --border: oklch(1 0 0 / 14%);
   --input: oklch(1 0 0 / 18%);
   --ring: oklch(0.6 0.06 55);
@@ -246,8 +281,22 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-selected: var(--selected);
   --color-selected-foreground: var(--selected-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-subtle: var(--success-subtle);
+  --color-on-success: var(--on-success);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-subtle: var(--info-subtle);
+  --color-on-info: var(--on-info);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-on-warning: var(--on-warning);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-on-destructive: var(--on-destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

@@ -107,7 +107,10 @@ export function MutationButton({
             {...props}
             disabled={disabled || status === "pending" || status === "success"}
             data-status={status}
-            className={cn("data-[status=success]:bg-green-500", className)}
+            className={cn(
+                "data-[status=success]:bg-success data-[status=success]:text-on-success",
+                className,
+            )}
         >
             {match(status)
                 .with("idle", () => text.idle)

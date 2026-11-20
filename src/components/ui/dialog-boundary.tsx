@@ -47,7 +47,7 @@ export function DialogBoundary({ children, fallbackHeader }: DialogBoundaryProps
                 <>
                     {fallbackHeader}
                     <DialogBody>
-                        <Alert variant="error">
+                        <Alert variant="destructive">
                             {error instanceof Error ? error.message : "Something went wrong."}
                         </Alert>
                     </DialogBody>

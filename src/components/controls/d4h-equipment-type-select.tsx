@@ -60,7 +60,7 @@ export function D4HEquipmentTypeSelect({
             </Skeleton>
         ))
         .with({ status: "error" }, () => (
-            <Alert variant="error" className="mb-4">
+            <Alert variant="destructive" className="mb-4">
                 <AlertTitle>Failed to load D4H types from D4H.</AlertTitle>
             </Alert>
         ))

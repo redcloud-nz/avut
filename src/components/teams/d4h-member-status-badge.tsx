@@ -5,7 +5,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import { formatD4HMemberStatus } from "@/lib/schemas/d4h/member";
-import { cn } from "@/lib/utils";
 
 /**
  * Read-only badge for a D4H member status (`OPERATIONAL` / `NON_OPERATIONAL` /
@@ -14,21 +13,22 @@ import { cn } from "@/lib/utils";
  */
 export function D4HMemberStatusBadge({ status }: { status: string }) {
     return (
-        <Badge variant="outline" className={cn("font-normal", toneFor(status))}>
+        <Badge
+            variant={variantFor(status)}
+            className={status === "RETIRED" ? "font-normal text-muted-foreground" : "font-normal"}
+        >
             {formatD4HMemberStatus(status)}
         </Badge>
     );
 }
 
-function toneFor(status: string): string | undefined {
+function variantFor(status: string) {
     switch (status) {
         case "OPERATIONAL":
-            return "border-green-600/30 text-green-700 dark:text-green-400";
+            return "success-outline";
         case "NON_OPERATIONAL":
-            return "border-amber-600/30 text-amber-700 dark:text-amber-400";
-        case "RETIRED":
-            return "text-muted-foreground";
+            return "warning-outline";
         default:
-            return undefined;
+            return "outline";
     }
 }

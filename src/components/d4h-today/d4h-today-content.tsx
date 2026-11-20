@@ -128,7 +128,7 @@ function D4HToday_Answer() {
                         </>
                     ) : (
                         <>
-                            <div className="flex size-24 items-center justify-center rounded-full bg-destructive/10">
+                            <div className="flex size-24 items-center justify-center rounded-full bg-destructive-subtle">
                                 <XIcon className="size-14 text-destructive" />
                             </div>
                             <p className="text-8xl font-black tracking-tighter text-destructive sm:text-9xl">

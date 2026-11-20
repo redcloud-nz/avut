@@ -20,11 +20,7 @@ export function D4HI3Module_OtherRecords_Badge() {
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <Badge
-                    variant="outline"
-                    tabIndex={0}
-                    className="border-amber-600/40 font-normal text-amber-700 dark:border-amber-500/40 dark:text-amber-500"
-                >
+                <Badge variant="warning-outline" tabIndex={0} className="font-normal">
                     <AlertWarningIcon />
                     {FLAG_LABEL}
                 </Badge>
@@ -38,7 +34,7 @@ export function D4HI3Module_OtherRecords_Badge() {
 export function D4HI3Module_OtherRecords_Marker() {
     return (
         <span title={FLAG_LABEL} className="inline-flex align-middle">
-            <AlertWarningIcon className="size-3.5 text-amber-600 dark:text-amber-500" />
+            <AlertWarningIcon className="size-3.5 text-warning" />
             <span className="sr-only">{FLAG_LABEL}</span>
         </span>
     );

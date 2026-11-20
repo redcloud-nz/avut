@@ -11,8 +11,19 @@ const badgeVariants = cva(
             variant: {
                 default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
                 secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+                // Status tones: a translucent tint with tone-coloured text, the same in both themes.
+                success:
+                    "bg-success-subtle text-success-foreground focus-visible:ring-success/30 [a]:hover:bg-success/20",
+                info: "bg-info-subtle text-info-foreground focus-visible:ring-info/30 [a]:hover:bg-info/20",
+                warning:
+                    "bg-warning-subtle text-warning-foreground focus-visible:ring-warning/30 [a]:hover:bg-warning/25",
                 destructive:
-                    "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+                    "bg-destructive-subtle text-destructive-foreground focus-visible:ring-destructive/30 [a]:hover:bg-destructive/20",
+                // Outline forms of the tones, for a quieter flag (D4H status, item quality).
+                "success-outline": "border-success/40 text-success-foreground",
+                "info-outline": "border-info/40 text-info-foreground",
+                "warning-outline": "border-warning/40 text-warning-foreground",
+                "destructive-outline": "border-destructive/40 text-destructive-foreground",
                 outline:
                     "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
                 ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",

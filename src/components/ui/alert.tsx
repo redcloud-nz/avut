@@ -23,10 +23,11 @@ const alertVariants = tv({
     variants: {
         variant: {
             default: "bg-card text-card-foreground",
-            destructive: "text-destructive bg-card *:[svg]:text-current",
-            error: "bg-red-50 dark:bg-red-950 text-red-900 dark:text-red-100",
-            success: "bg-green-50 dark:bg-green-950 text-green-900 dark:text-green-100",
-            warning: "bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-100",
+            // Status tones: a translucent tint with tone-coloured text, the same in both themes.
+            success: "border-success/25 bg-success-subtle text-success-foreground",
+            info: "border-info/25 bg-info-subtle text-info-foreground",
+            warning: "border-warning/30 bg-warning-subtle text-warning-foreground",
+            destructive: "border-destructive/25 bg-destructive-subtle text-destructive-foreground",
             underConstruction: "bg-pink-50 dark:bg-pink-950 text-pink-900 dark:text-pink-100",
         },
     },
@@ -39,7 +40,8 @@ type AlertVariant = NonNullable<VariantProps<typeof alertVariants>["variant"]>;
 
 const defaultIcons: Partial<Record<AlertVariant, ElementType>> = {
     default: InfoIcon,
-    error: CircleXIcon,
+    destructive: CircleXIcon,
+    info: InfoIcon,
     success: CircleCheckIcon,
     warning: TriangleAlertIcon,
     underConstruction: FlaskConicalIcon,

@@ -236,7 +236,9 @@ export function SkillsModule_ResolveConflict_Dialog({
                             </Field>
                         </div>
                     </RadioGroup>
-                    {mutation.error && <Alert variant="error">{mutation.error.message}</Alert>}
+                    {mutation.error && (
+                        <Alert variant="destructive">{mutation.error.message}</Alert>
+                    )}
                 </DialogBody>
                 <DialogFooter>
                     <DialogCloseButton variant="outline">Cancel</DialogCloseButton>

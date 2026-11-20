@@ -60,30 +60,16 @@ export const STATUS_LABELS: Record<CompetencyStatus, string> = {
 
 /** Tailwind background classes for the segmented bar in the team/org overview report. */
 export const STATUS_BAR_COLORS: Record<CompetencyStatus, string> = {
-    current: "bg-green-600",
-    expired: "bg-amber-500",
+    current: "bg-success",
+    expired: "bg-warning",
     "not-competent": "bg-destructive",
     "not-assessed": "bg-muted-foreground/30",
 };
 
 export function StatusBadge({ status }: { status: CompetencyStatus }) {
     return match(status)
-        .with("current", () => (
-            <Badge
-                variant="outline"
-                className="border-green-600 text-green-700 dark:text-green-500"
-            >
-                Current
-            </Badge>
-        ))
-        .with("expired", () => (
-            <Badge
-                variant="outline"
-                className="border-amber-600 text-amber-700 dark:text-amber-500"
-            >
-                Expired
-            </Badge>
-        ))
+        .with("current", () => <Badge variant="success-outline">Current</Badge>)
+        .with("expired", () => <Badge variant="warning-outline">Expired</Badge>)
         .with("not-competent", () => <Badge variant="destructive">Not Competent</Badge>)
         .with("not-assessed", () => <Badge variant="secondary">Not Assessed</Badge>)
         .exhaustive();
@@ -105,16 +91,10 @@ export function StatusIcon({
 
     return match(status)
         .with("current", () => (
-            <CircleCheckIcon
-                className={cn(iconClass, "text-green-600 dark:text-green-500")}
-                aria-label={label}
-            />
+            <CircleCheckIcon className={cn(iconClass, "text-success")} aria-label={label} />
         ))
         .with("expired", () => (
-            <ClockIcon
-                className={cn(iconClass, "text-amber-600 dark:text-amber-500")}
-                aria-label={label}
-            />
+            <ClockIcon className={cn(iconClass, "text-warning")} aria-label={label} />
         ))
         .with("not-competent", () => (
             <CircleXIcon className={cn(iconClass, "text-destructive")} aria-label={label} />
