@@ -28,8 +28,9 @@ import { D4HEquipmentItemLink } from "@/components/entity-links/d4h-equipment-it
 import { D4HEquipmentModelLink } from "@/components/entity-links/d4h-equipment-model-link";
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { route } from "@/lib/routes";
 import { D4HEquipmentStatus } from "@/lib/schemas/d4h/equipment-item";
@@ -208,23 +209,21 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                         </Saratoga.Actions>
                     </Saratoga.Header>
                     <div className="flex flex-col gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Type Details</CardTitle>
-                            </CardHeader>
+                        <RecordCard label="Type">
                             <CardContent>
                                 <DataList>
-                                    <DataItem inline>
+                                    <RecordCardId label="D4H ID" id={String(kind.id)} />
+                                    <DataItem>
                                         <DataItemTitle>Title</DataItemTitle>
                                         <DataItemValue>{kind.title}</DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Category</DataItemTitle>
                                         <DataItemValue>
                                             <D4HEquipmentCategoryLink category={kind.category} />
                                         </DataItemValue>
                                     </DataItem>
-                                    <DataItem inline>
+                                    <DataItem>
                                         <DataItemTitle>Owner</DataItemTitle>
                                         <DataItemValue>
                                             <D4HOwner
@@ -235,7 +234,7 @@ export function D4HModule_Type_Content({ typeId }: { typeId: number }) {
                                     </DataItem>
                                 </DataList>
                             </CardContent>
-                        </Card>
+                        </RecordCard>
                         <div>
                             <div className="mb-2 text-lg font-semibold">Items</div>
                             <Kaga.TableToolbar table={table} />

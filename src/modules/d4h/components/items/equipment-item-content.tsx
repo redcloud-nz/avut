@@ -31,14 +31,9 @@ import { D4HEquipmentTypeLink } from "@/components/entity-links/d4h-equipment-ty
 import { D4HMemberLink } from "@/components/entity-links/d4h-member-link";
 import { D4HTeamLink } from "@/components/entity-links/d4h-team-link";
 import { Protect } from "@/components/protect";
-import { Card, CardContent, CardLoadingFallback } from "@/components/ui/card";
-import {
-    DataItem,
-    DataItemAction,
-    DataItemTitle,
-    DataItemValue,
-    DataList,
-} from "@/components/ui/data-item";
+import { CardContent, CardLoadingFallback } from "@/components/ui/card";
+import { DataItem, DataItemTitle, DataItemValue, DataList } from "@/components/ui/data-item";
+import { RecordCard, RecordCardId } from "@/components/ui/record-card";
 import { useOrganization } from "@/hooks/use-organization";
 import { usePreferences } from "@/hooks/use-preferences";
 import { hasD4HTeamPermission } from "@/lib/d4h-permissions";
@@ -183,40 +178,41 @@ export function D4HModule_EquipmentItem_Content({
 
                     <Saratoga.Columns>
                         <Saratoga.Column slot="main">
-                            <Card>
+                            <RecordCard
+                                label="Item"
+                                action={
+                                    <Protect
+                                        permissions={{ d4hEquipment: ["update"] }}
+                                        render={(hasPermission) => (
+                                            <D4HModule_UpdateEquipmentItem_Dialog
+                                                teamId={teamId}
+                                                item={item}
+                                                disabledReason={updateEquipmentItemDisabledReason({
+                                                    hasPermission,
+                                                    canUpdateInD4H,
+                                                    teamTitle: team.title,
+                                                })}
+                                            />
+                                        )}
+                                    />
+                                }
+                            >
                                 <CardContent>
                                     <DataList>
-                                        <DataItem inline>
+                                        <RecordCardId label="D4H ID" id={String(item.id)} />
+                                        <DataItem>
                                             <DataItemTitle>Team</DataItemTitle>
                                             <DataItemValue>
                                                 <D4HTeamLink team={team} />
                                             </DataItemValue>
-                                            <DataItemAction className="-my-1">
-                                                <Protect
-                                                    permissions={{ d4hEquipment: ["update"] }}
-                                                    render={(hasPermission) => (
-                                                        <D4HModule_UpdateEquipmentItem_Dialog
-                                                            teamId={teamId}
-                                                            item={item}
-                                                            disabledReason={updateEquipmentItemDisabledReason(
-                                                                {
-                                                                    hasPermission,
-                                                                    canUpdateInD4H,
-                                                                    teamTitle: team.title,
-                                                                },
-                                                            )}
-                                                        />
-                                                    )}
-                                                />
-                                            </DataItemAction>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Type</DataItemTitle>
                                             <DataItemValue>
                                                 <D4HEquipmentTypeLink type={item.kind} />
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Category</DataItemTitle>
                                             <DataItemValue>
                                                 {category ? (
@@ -226,7 +222,7 @@ export function D4HModule_EquipmentItem_Content({
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Brand</DataItemTitle>
                                             <DataItemValue>
                                                 {item.brand.id != null && item.brand.title ? (
@@ -241,7 +237,7 @@ export function D4HModule_EquipmentItem_Content({
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Model</DataItemTitle>
                                             <DataItemValue>
                                                 {item.model?.id != null && item.model.title ? (
@@ -267,18 +263,18 @@ export function D4HModule_EquipmentItem_Content({
                                                 </DataItemValue>
                                             </DataItem>
                                         )}
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Serial Number</DataItemTitle>
                                             <DataItemValue>{item.serial}</DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>D4H Status</DataItemTitle>
                                             <DataItemValue className="flex flex-wrap items-center gap-2">
                                                 {D4HEquipmentStatus.label(item.status)}
                                                 {statusBadge}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Issued To</DataItemTitle>
                                             <DataItemValue>
                                                 {holder ? (
@@ -297,24 +293,24 @@ export function D4HModule_EquipmentItem_Content({
                                                 )}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Critical</DataItemTitle>
                                             <DataItemValue>
                                                 {item.isCritical ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Monitor</DataItemTitle>
                                             <DataItemValue>
                                                 {item.isMonitor ? "Yes" : "No"}
                                             </DataItemValue>
                                         </DataItem>
-                                        <DataItem inline>
+                                        <DataItem>
                                             <DataItemTitle>Barcode</DataItemTitle>
                                             <DataItemValue>{item.barcode}</DataItemValue>
                                         </DataItem>
                                         {dates.map(({ label, value }) => (
-                                            <DataItem key={label} inline>
+                                            <DataItem key={label}>
                                                 <DataItemTitle>{label}</DataItemTitle>
                                                 <DataItemValue>{formatDate(value)}</DataItemValue>
                                             </DataItem>
@@ -327,7 +323,7 @@ export function D4HModule_EquipmentItem_Content({
                                         </DataItem>
                                     </DataList>
                                 </CardContent>
-                            </Card>
+                            </RecordCard>
                             <ItemContentsBoundary>
                                 <ItemContents teamId={teamId} itemId={itemId} />
                             </ItemContentsBoundary>
