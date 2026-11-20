@@ -1,0 +1,72 @@
+---
+title: Bundles
+description: Standard-issue kit lists, and comparing them with what a D4H team's members hold.
+section: d4h-i3
+order: 30
+keyTerms: ["ppe-template", "d4h"]
+---
+
+# Bundles
+
+A **bundle** is a named list of [templates](/docs/d4h-i3#templates) that go
+together, such as the kit a new member is issued ("Recruit") or what every
+responder should carry ("Responder"). Compare a bundle with a D4H team to see,
+for each member, which of its items they hold and which they're missing.
+
+## Creating a bundle
+
+**Bundles** lists your organisation's bundles. **New Bundle** asks for a
+**Name** and an optional **Description**.
+
+A bundle's page shows its details and a **Templates** card, listing each
+template with its category. The **+** button on the card opens **Add Templates**,
+where you tick the templates to add, grouped by category, and the bin button on a row
+removes one. A bundle is just a set of templates, with no order or quantities.
+
+A template is flagged on the card if it's been deleted, or has no D4H type. Both
+are left out of comparisons.
+
+**Edit** and **Delete** are in the page's **Actions** menu. Deleting a bundle
+moves it to the [Rubbish bin](/docs/admin/rubbish-bin), and its page then
+offers **Recover from rubbish** in the same menu.
+
+The bundle page reads nothing from D4H, so you can build bundles without a D4H
+access token.
+
+## Comparing with a team
+
+**Compare with a team** on a bundle's page asks you to pick a D4H team, then
+shows a matrix of the team's members against the bundle's templates, grouped by
+category. Each member's row counts what they hold, such as "5 of 7", and each
+template's column counts how many members hold it.
+
+Comparing reads D4H, so it needs your [D4H access token](/docs/account#d4h-access-token), and
+the **I3 Editor** or **I3 Admin** role.
+
+- **Held** means the member has an item of the template's D4H type, in any
+  size. Only items the team owns count.
+- **Missing** means they don't. An item marked Lost doesn't count as held.
+
+A held item can still be flagged in amber, by the same checks as
+[Issued Types](/docs/d4h-i3#checking-issued-items): **Incomplete** if a part
+the template requires is blank, or **Doesn't match** if its brand and model
+aren't one of the template's variants. Both still count as held. A legend above
+the matrix explains the marks.
+
+Some templates can't be compared, and are listed above the matrix as left out:
+deleted ones, ones with no D4H type, and ones whose type the team doesn't use.
+
+### One member
+
+Open a member from the matrix to see their items against the bundle, by
+category. Each template shows **Held**, **Incomplete**, **Doesn't match** or
+**Missing**, with the items behind it. Under a missing template, any of the
+member's items marked Lost are listed.
+
+A bundle doesn't know who it applies to, so whether a gap matters is up to you:
+a new member may not have been issued everything yet.
+
+## Roles
+
+- An **I3 Admin** creates, changes and deletes bundles.
+- An **I3 Editor** can view and compare them.
