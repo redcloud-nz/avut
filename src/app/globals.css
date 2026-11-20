@@ -20,8 +20,14 @@
   --impersonation-h: 0px;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+  /* Elevation (#548): flat (card, ring only) → raised (shadow-xs) → floating (popover, menus,
+     select: shadow-md on --popover) → overlay (dialog, sheet: shadow-lg on --popover-overlay). In
+     light mode every level is white; dark mode lifts each one a step, since shadows barely show. */
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
+  --popover-overlay: oklch(1 0 0);
+  /* The active tab: a solid surface a step above the tabs strip. */
+  --tab-active: var(--background);
   /* Espresso: near-black with a warm brown cast. Hover, selected and the focus ring take the
      caramel hue (55) of the dark-mode primary, so they read as soft browns in both themes. Email
      templates can't read these variables, so their buttons hardcode the espresso as #553423. */
@@ -218,8 +224,10 @@
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.235 0 0);
   --popover-foreground: oklch(0.985 0 0);
+  --popover-overlay: oklch(0.26 0 0);
+  --tab-active: oklch(0.34 0 0);
   /* Caramel, with dark text on it. */
   --primary: oklch(0.66 0.1 55);
   --primary-foreground: oklch(0.2 0.03 55);
@@ -271,6 +279,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-tab-active: var(--tab-active);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
