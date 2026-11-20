@@ -10,9 +10,17 @@ signed-in session — full `useOrganization()`/trpc context, same as any other
 - One subdirectory per task: `system/scratch/<task-name>/page.tsx`.
 - Keep it a normal `"use client"` page — no need for `generateMetadata`, prefetching,
   or any of the patterns in `docs/patterns/`; it's not a real page.
-- Delete the subdirectory when done. Everything under `system/scratch/` except this
-  README is gitignored, so nothing needs to be staged or reverted — just `rm -rf` it.
+- Scratch pages are ordinary tracked files, so Tailwind sees them like any other page and
+  every utility class works. Do scratch work on a branch (an `explore/*` branch, or the
+  feature branch it belongs to) and commit it there freely.
+- Delete the subdirectory before the branch merges, unless it's meant to stay.
 - Visit at `/orgs/<any-slug-you-have-access-to>/system/scratch/<task-name>`.
+
+## Gated by the `scratch` flag
+
+`layout.tsx` here 404s every scratch page unless the `scratch` Vercel flag (`src/lib/flags.ts`)
+is on. Keep it on in development and preview, and off in production, so a scratch page that
+reaches `integration` or `production` is never served there.
 
 ## Why this location
 
