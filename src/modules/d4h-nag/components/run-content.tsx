@@ -19,6 +19,7 @@ import {
 import { Kaga } from "@/components/blocks/kaga";
 import { Saratoga } from "@/components/blocks/saratoga";
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { EntityLink } from "@/components/entity-links/entity-link";
 import { TeamLink } from "@/components/entity-links/team-link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -140,6 +141,7 @@ export function D4HNag_Run_Content({ runId }: { runId: D4HNagRunId }) {
                         : { label: "Deleted rule" },
                     { label: `${run.dryRun ? "Dry Run" : "Run"} ${formatDateTime(run.startedAt)}` },
                 ]}
+                actions={<HelpButton id="d4h-nag" />}
             />
             <Std.ScrollContainer>
                 <Saratoga.Root>

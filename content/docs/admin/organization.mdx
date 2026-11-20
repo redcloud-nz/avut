@@ -1,6 +1,6 @@
 ---
 title: Organisation
-description: Your organisation's name and slug, its D4H link, and Organisation Settings.
+description: Your organisation's name and slug, its D4H link and access tokens, and Organisation Settings.
 section: org-admin
 order: 60
 keyTerms: ["organization", "module", "d4h"]
@@ -28,6 +28,33 @@ organisation, its server and when it was last synced.
 - **Unlink from D4H** only works once no team is linked: unlink each team
   first.
 
+## D4H Access Tokens
+
+Most of AVUT's D4H features use each member's
+[personal access token](/docs/account#d4h-access-token). Features that run with
+no one signed in, such as
+[D4H Attendance Reminders](/docs/d4h-nag), use an organisation token instead,
+kept under **Admin** › **D4H Access Tokens**.
+
+**Add D4H Access Token** asks for a **Label**, the D4H **Server** and the
+**Token**, which you create in D4H first, and its **Access**:
+
+- **Read only**, the default: AVUT can read D4H with it, but refuses any change,
+  before the request reaches D4H.
+- **Read and write**: AVUT can also make changes with it.
+
+Give a token only the access its features need. A token's page shows its
+details and the D4H organisation and teams it can see. Its **Actions** menu
+has:
+
+- **Edit**, to change its label or access,
+- **Replace token value**, to paste in a new token from D4H, say after the old
+  one expired, without setting up its features again,
+- **Refresh from D4H**, to reread what it can see,
+- **History**, and
+- **Delete**. Deleting a token here doesn't revoke it in D4H, so revoke it there
+  too. Any feature using it, such as Attendance Reminders, stops.
+
 ## Organisation Settings
 
 Everyone in the organisation can view **Organisation Settings**; only owners
@@ -37,7 +64,15 @@ and admins can change them.
 
 **Time zone** is the zone your organisation operates in. Skill check
 [session](/docs/skill-track/sessions) start and end times are entered and shown
-in it, whatever time zone each person has chosen for themselves.
+in it, whatever time zone each person has chosen for themselves. Changing it
+doesn't move sessions already saved, so an existing all-day session then reads
+as a timed one.
+
+**Reply-To address** is where replies go when someone answers an email AVUT
+sends for your organisation: invitations, [D4H I3](/docs/d4h-i3#notifications)
+notifications and receipts, and [attendance reminders](/docs/d4h-nag). AVUT
+sends from an address no one reads, so without one, replies are lost. Emails
+about someone's own account, such as sign-in codes, don't use it.
 
 ### Personnel
 
@@ -72,7 +107,8 @@ Turn a module on or off with **Enable** and **Disable**. Turning a module off
 hides it for everyone, and stops its roles being offered, but deletes nothing:
 turn it back on and everything is where you left it. Admin is always on.
 
-Some modules need another one: D4H I3 can only be turned on while D4H is.
+Some modules need another one: D4H I3 and D4H Attendance Reminders can only be
+turned on while D4H is.
 
 #### D4H I3
 
@@ -82,6 +118,12 @@ Some modules need another one: D4H I3 can only be turned on while D4H is.
 - **Notifications** — who is emailed when items are issued or returned: one list
   for the whole organisation, and one for each team linked to D4H. Edit the
   lists with the pencil button. See [Notifications](/docs/d4h-i3#notifications).
+
+#### D4H Attendance Reminders
+
+**D4H Token** is the organisation access token the reminders use to read D4H.
+Only tokens on your organisation's D4H server are offered. See
+[D4H Attendance Reminders](/docs/d4h-nag#before-you-start).
 
 #### Skill Track
 

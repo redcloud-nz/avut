@@ -6,6 +6,7 @@
  */
 
 import { Std } from "@/components/blocks/std";
+import { HelpButton } from "@/components/docs/help-button";
 import { TITLE_SEPARATOR } from "@/lib/constants";
 import { route } from "@/lib/routes";
 import { D4HNag_Rules_List } from "@/modules/d4h-nag/components/rules-list";
@@ -37,6 +38,7 @@ export default async function D4HNag_Rules_Page(props: PageProps<"/orgs/[slug]/d
                     },
                     { label: "Rules" },
                 ]}
+                actions={<HelpButton id="d4h-nag" />}
             />
             <Std.ScrollContainer>
                 <D4HNag_Rules_List />
