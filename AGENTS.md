@@ -226,27 +226,27 @@ Reusable layout systems in `src/components/blocks/`:
 
 | Block      | Purpose                                                                                                                                                                                                                                                                                                                                                                               |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Std`      | Outer page shell — `Std.SidebarInset`, `Std.Navbar` (breadcrumbs), `Std.ScrollContainer`, `Std.IndexPage`, `Std.Breadcrumbs`                                                                                                                                                                                                                                                          |
-| `Saratoga` | Content layout within the shell — `Saratoga.Root`, `Saratoga.Header`, `Saratoga.Title`, `Saratoga.Actions`, `Saratoga.Columns`/`.Column`                                                                                                                                                                                                                                              |
+| `Std`      | Outer page shell — `Std.SidebarInset` (rendered once by the authenticated layout, with `AppNavbar` above its `<Suspense>`), `Std.ScrollContainer` (rendered by `page.tsx`), `Std.IndexPage`                                                                                                                                                                                           |
+| `Saratoga` | Content layout within the shell — `Saratoga.Root`, `Saratoga.Breadcrumbs`, `Saratoga.Header`, `Saratoga.Title`, `Saratoga.Actions`, `Saratoga.Columns`/`.Column`                                                                                                                                                                                                                      |
 | `Kaga`     | Data table system wrapping TanStack Table — `Kaga.Table`, `Kaga.TableToolbar`, `Kaga.TablePagination`, `Kaga.defineColumns`, `Kaga.filterFns`                                                                                                                                                                                                                                         |
 | `Argus`    | Centered card layout for auth/form pages                                                                                                                                                                                                                                                                                                                                              |
 | `Eagle`    | JSON diff/parse comparison display (used in dev/import tooling)                                                                                                                                                                                                                                                                                                                       |
-| `Glorious` | Full-height matrix table — `Glorious.Root`, `Glorious.Header`/`.Title`/`.Subtitle`/`.Actions`, `Glorious.ScrollFrame`, `Glorious.Table`, `Glorious.TableHeader`, `Glorious.GroupSection` (collapsible sticky `<tbody>`)                                                                                                                                                               |
+| `Glorious` | Full-height matrix table — `Glorious.Root`, `Glorious.Header`/`.Breadcrumbs`/`.Title`/`.Subtitle`/`.Actions`, `Glorious.ScrollFrame`, `Glorious.Table`, `Glorious.TableHeader`, `Glorious.GroupSection` (collapsible sticky `<tbody>`)                                                                                                                                                |
 | `Hermes`   | Master-detail layout under the navbar, in place of `Std.ScrollContainer` — `Hermes.Root` (render from the route's `layout.tsx`; picks the active pane from `useSelectedLayoutSegment()`), `Hermes.List`, `Hermes.Detail`, `Hermes.Placeholder`. Both panes at `md`+, only the active one below. `Hermes.Detail` crossfades on record change, so the record route has no `loading.tsx` |
 
-Typical page layout — shell in `page.tsx`, content in the client component:
+Typical page layout. The authenticated layout renders the one navbar (`AppNavbar`: ☰, logo, notifications, theme, user menu, Help) and `Std.SidebarInset`, so a page renders neither. `page.tsx` renders `Std.ScrollContainer` around the client component, and the page's breadcrumb trail sits **in the page**, above its title:
 
 ```tsx
 // page.tsx
-<Std.SidebarInset>
-    <Std.Navbar breadcrumbs={[...]} />
+<HydrateClient>
     <Std.ScrollContainer>
-        <ClientComponent />
+        <ClientComponent breadcrumbs={[{ label: "Admin", href: route("/orgs/[slug]/admin", { slug }) }]} />
     </Std.ScrollContainer>
-</Std.SidebarInset>
+</HydrateClient>
 
 // client component — list page
 <Saratoga.Root>
+    {breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}
     <Saratoga.Header>
         <Saratoga.Title>Title</Saratoga.Title>
         <Saratoga.Actions>{/* buttons */}</Saratoga.Actions>
@@ -259,7 +259,23 @@ Typical page layout — shell in `page.tsx`, content in the client component:
 </Saratoga.Root>
 ```
 
-For detail pages use `Saratoga.Columns` with `<Saratoga.Column slot="main">` and `slot="secondary"` (2/3 + 1/3 responsive grid). Index pages (nav-list only, no client component) wrap their content in `Std.IndexPage`, which supplies its own logo/title header — `title` is a **required** prop.
+**The trail** (`Saratoga.Breadcrumbs`, items `SaratogaBreadcrumb = { label, href: Route }`) lists the page's **ancestors only**, every one a link: the `<h1>` is the current crumb and isn't repeated. A page with no ancestors (a dashboard, a module root) has no trail. An ancestor with no page to link to is dropped, except "Access Tokens", which links to `/user/settings/d4h`. Where the trail is built depends on who renders the page's root:
+
+| Page shape                                                                     | Where the trail goes                                                                                                                                                                      |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Content component owns `Saratoga.Root` (detail pages)                          | The content component renders `<Saratoga.Breadcrumbs items={[…]} />` first inside `Saratoga.Root`, built from the data it reads (a record's name on its History page).                    |
+| List component owns `Saratoga.Root`, `page.tsx` knows the trail                | The list component takes `breadcrumbs?: SaratogaBreadcrumb[]` and renders `{breadcrumbs && <Saratoga.Breadcrumbs items={breadcrumbs} />}`; `page.tsx` passes the static trail.            |
+| History page (`ObjectHistory`)                                                 | Pass `breadcrumbs` to `ObjectHistory`, ending with the record itself.                                                                                                                     |
+| `Glorious` matrix                                                              | `<Glorious.Breadcrumbs items={…} />` first inside `Glorious.Header`, before `Glorious.Title`, in every branch that renders a header. No `Std.ScrollContainer`: Glorious is full height.   |
+| `Hermes` (notes)                                                               | In the detail pane only, from `notesBreadcrumbs()` (`src/components/notes/notes-breadcrumbs.ts`). The list pane and the index route have none. No `Std.ScrollContainer`.                  |
+| `Std.IndexPage`                                                                | None. No trail and no on-page logo: the navbar carries the logo, and the sidebar is the way back up.                                                                                      |
+| No Saratoga or Glorious header (a bare `Card`)                                 | `<Saratoga.Breadcrumbs items={…} className="mb-2" />` directly above the content, inside `Std.ScrollContainer`.                                                                           |
+| Playground pages                                                               | None.                                                                                                                                                                                     |
+| The content needs a `Std.ScrollContainer` `className` that depends on its data | `page.tsx` renders a plain `Std.ScrollContainer`; the content renders its own wrapper for that branch (e.g. `<div className="flex min-h-full flex-col">` in place of `className="flex"`). |
+
+Converting an existing page to this shape, case by case with before/after code, is in [`docs/patterns/detail-page-data-fetching.md` → Page shell](docs/patterns/detail-page-data-fetching.md#page-shell-scrollcontainer-and-the-trail).
+
+For detail pages use `Saratoga.Columns` with `<Saratoga.Column slot="main">` and `slot="secondary"` (2/3 + 1/3 responsive grid). Index pages (nav-list only, no client component) wrap their content in `Std.IndexPage` inside `Std.ScrollContainer`; it renders `title` (a **required** prop) above the links.
 
 `Saratoga.Root` is a fixed `max-w-5xl`; it has no width variants. Constrain narrower content with `className` on a case-by-case basis.
 
