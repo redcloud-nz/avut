@@ -20,22 +20,33 @@ session is for Skills Admins.
 
 ## 1. Create the session
 
-Start from the Sessions list with **New Session**, giving it a name, when it
-runs, and optional notes. Leave the name blank and it takes the next session
-number shown in the placeholder.
+Start from the Sessions list with **New Session**, giving it a name, an
+optional team, when it runs, and optional notes. Leave the name blank and it
+takes the next session number shown in the placeholder.
 
 <Screenshot
   id="skill-track/create-session"
   caption="Leave the name blank to take the suggested session number. A new session runs all day today until you change it."
 />
 
-**When** starts as all day today. Pick another **Start date**, then:
+**Team** is optional. A session with a team starts with everyone active in that
+team as its personnel, and you can still add or remove people afterwards. Leave
+it as **No team (whole organisation)** for a session that draws on several
+teams, such as a combined training weekend. Changing the team later only
+changes the label: the personnel stay as they are. The Sessions list has a
+**Team** column, which you can filter to one team's sessions or to those with
+**No team**.
 
-- **+ Add end date** makes it an all-day session across several days.
-- **+ Add time** gives it a start and end time instead, in 15-minute steps,
-  ending two hours after the start. Remove the end with its × for a session
-  with no end, and **+ Add end time** puts one back. An end before the start
-  time is the next day. **Remove time** makes it all day again.
+**When** starts as all day today. Pick the **Date**, then use the two switches:
+
+- **Multiple days** adds an **End date**, for a session across several days.
+- Turning off **All day** gives the session a **Start time** and **End time**
+  instead, in 15-minute steps, ending two hours after the start. On a single
+  day, an end time earlier than the start runs into the next day.
+
+With both, the session runs from the start time on the first day to the end
+time on the end date. The date and time boxes stay in the same places as you
+switch, so nothing jumps around.
 
 Times are in your organisation's time zone, shown under the picker, and set in
 [Organisation Settings](/docs/admin/organization#general). The session page and
@@ -51,7 +62,8 @@ Creating a session makes you its first and only assessor, so you need a
 ## Getting around a session
 
 Creating a session drops you straight onto its own page, and every step that
-follows starts from there. To come back to it later, open **Sessions** in the
+follows starts from there. Once it's approved, an **Approved** badge sits beside
+its name. Its **Session** card shows when it runs and its team, if it has one. To come back to it later, open **Sessions** in the
 Skill Track nav and pick it out of the list.
 
 <Screenshot
@@ -82,13 +94,15 @@ The page header carries **Record**, a menu holding the two recording views
 ## 2. Choose skills
 
 Click **Skills** in the Contents card, then tick the skills this session covers.
-They come from the packages your organisation subscribes to, grouped by package
-and skill group. **Show skill descriptions** adds each skill's description, to
-help you choose. Nothing is saved until you click **Save**.
+They come from the packages your organisation subscribes to, in one list of
+sections, one for each skill group, headed "Package · Group". Each section counts
+how many of its skills you've ticked. Archived skills, and skills in an
+archived group, aren't offered. **Show skill descriptions** adds each skill's
+description, to help you choose. Nothing is saved until you click **Save**.
 
 <Screenshot
   id="skill-track/session-skills"
-  caption="Ticking the skills this session covers, under each package's skill groups."
+  caption="Ticking the skills this session covers, one section for each package's skill group."
 />
 
 ## 3. Choose personnel and assessors
@@ -174,9 +188,8 @@ recording one — the review settles which check counts (step 5).
 **Options**, in the page header, opens **Recording Options**:
 
 - **Recording Mode** — switch between **By Person** and **By Skill**.
-- **Skill Order** — **By Package/Group** (the default) nests skills under
-  their package and skill group, in the package's order, with anything no longer
-  part of an assessable group collected under "Other." **Alphabetical** lists
+- **Skill Order** — **By Package/Group** (the default) lists skills in sections
+  headed "Package · Group", in the package's order. **Alphabetical** lists
   skills by name instead.
 - **Configure Session** — change the session's **Personnel**, **Skills** or
   **Assessors** without leaving the page.
